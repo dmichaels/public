@@ -1,0 +1,993 @@
+/* C++ comtyp.pl1 - Composite type routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.20.92  DGM  028	Fix for long standing bug (typo) in COMPLETE_
+ *			EXPRESSION_TYPE which caused something like this
+ *			to fail: "T **t; f (x ? t[0] : (struct T *)0);"
+ *  07.15.92  DGM  027	Fix for 026.
+ *  06.15.92  DGM  026	Minor Fix for 025.
+ *  06.11.92  DGM  025	Update the symbol sequence number.
+ *  03.13.92  PKT  024	Updated for parameter nodes, so that the nodes
+ *			of a prototype scope can be reused.
+ *  03.26.92  DGM  023	New value-node scheme.
+ *  01.28.92  DGM  022  Fix in COMPLETE_SIGNATURE which showed up when
+ *			the paged version of the symbol table was used.
+ *  01.21.92  DGM  021	Parameter link-node changes.
+ *  01.13.92  DGM  020  Set SYM_NODE.PROTOTYPED if necessary.
+ *  12.28.91  PKT  019  Oops, same as 018.
+ *  11.12.91  DGM  018  Updated.
+ *  10.15.91  DGM  017  Minor fix in COMPLETE_SIGNATURE.
+ *  10.03.91  DGM  016  Added GET_ENUM_INTEGRAL_TYPE.
+ *  09.12.91  PKT  015  Fix in MODIFY_TYPE.
+ *  07.24.91  DGM  014  Minor update for #pragma LPI wrapper_redeclarations.
+ *  07.08.91  DGM  013  Reworked COMPOSITE_EXPRESSION_TYPE a little;
+ *			how did it ever work?
+ *  04.30.91  DGM  012  Set size in COMPLETE_CURRENT_DECLARATION;
+ *			this fixes "extern int x[]; int x[3];" bug.
+ *  02.27.91  DGM  011  Set SYM_NODE.DCL_LINE_ID/DCL_FILE_ID appropriately.
+ *  02.01.91  DGM  010  Minor fix (set SYM_NODE.FROM_TYPEDEF).
+ *  11.15.90  DGM  009  Fix in COMPLETE_ARRAY_TYPE.
+ *  11.06.90  DGM  008  Fix in COMPLETE_SIGNATURE.
+ *  10.25.90  DGM  007  Fix in COMPOSITE_EXPRESSION_TYPE.
+ *  10.22.90  DGM  006  Implemented composite types for (re)declarations
+ *			as well as for expressions (e.g. conditionals).
+ *  09.14.90  DGM  005  Changed include file names and VOP names.
+ *  09.05.90  PKT  004  Updated.  DGM.
+ *  08.31.90  DGM  003  More composite type code.
+ *  08.24.90  DGM  002  Updated for type-node hashing.
+ *  08.15.90  DGM  001  Minor fixes.
+ *  08.01.90  DGM  000  Orignal.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.20.92 028 COMTYP');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_HASH_TYPE_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PARSER_PKG;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+IN_DECLARATION	type (BOOL_T) static internal initial (TRUE);
+
+/* ---------------------------------------------------------------------
+/* COMPLETE_CURRENT_DECLARATION
+/*
+/* Assuming that the type of the symbol represented by the currently
+/* paged in sym-node is compatible with the type represented by the
+/* current type (i.e. CURRENT_TYPE, CURRENT_TOP_TYPE, CURRENT_TYPE_
+/* LEVEL, and CURENT_TYPE_FROM_TYPEDEF), construct the composite type
+/* of the two types and make the result type the type of the symbol.
+/* The composite type is constructed by completing any & all incomplete
+/* types within the types where possible (i.e. unspecified array dimensions,
+/* and unspecified function parameters (only in ANSI-C mode)), as well
+/* as merging any default arguments.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COMPLETE_CURRENT_DECLARATION: procedure ()
+			      external  (X_COMPLETE_CURRENT_DECLARATION);
+	declare
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T),
+		P		type (POINTER_T);
+
+	/* Get the composite type of CURRENT_TYPE and SYM_NODE.TYPE */
+
+	if AT_FUNCTION_DEFINITION () then do;
+		/*
+		/* favor the current declaration
+		/* so that we don't lose the signature
+		/**/
+		call COMPLETE_TYPE
+		     (CURRENT_TYPE, CURRENT_TOP_TYPE, SYM_NODE.TYPE);
+		SYM_NODE.TYPE = CURRENT_TYPE;
+		SYM_NODE.TOP_TYPE = CURRENT_TOP_TYPE;
+	end;
+	else
+		/*
+		/* favor the earlier declaration
+		/* so that wrapper redeclarations will work
+		/**/
+		call COMPLETE_TYPE
+		     (SYM_NODE.TYPE, SYM_NODE.TOP_TYPE, CURRENT_TYPE);
+
+	/*
+	/* If this symbol hasn't yet been defined, reset its declaration
+	/* point to this latest location; also, set other related data
+	/* to correspond to this latest declaration.
+	/**/
+
+	if ^SYM_NODE.DEFINED then do;
+		SYM_NODE.DCL_LINE_ID  = CURRENT_NAME_LINE_ID;
+		SYM_NODE.DCL_FILE_ID  = CURRENT_NAME_FILE_ID;
+		SYM_NODE.FROM_TYPEDEF = CURRENT_TYPE_FROM_TYPEDEF;
+	end;
+
+	if  SYM_NODE.IS_FUNCTION &
+	   (SYM_NODE.INLINE | CURRENT_INLINE) |
+	   (SYM_NODE.INTERNAL_LINKAGE | (CURRENT_STORAGE_CLASS = STATIC_ST))
+	then	SYM_NODE.SEQUENCE_NUMBER = UPDATE_SYMBOL_SEQUENCE_NUMBER ();
+
+	/* Update the symbol size field if necessary */
+
+	if SYM_NODE.SIZE = 0 then do;
+		call TYPE_SIZE (SYM_NODE.TYPE,
+				SYM_NODE.SIZE,
+				SIZE_UNITS,
+				BOUNDARY);
+		SYM_NODE.SIZE_UNITS = byte (SIZE_UNITS);
+		SYM_NODE.BOUNDARY   = byte (BOUNDARY);
+	end;
+
+	/* Update other symbol data if necessary */
+
+	if CURRENT_TOP_TYPE.CODE = byte (FUNCTION_DT) then do;
+		if CURRENT_TOP_TYPE.INCOMPLETE then do;
+			call GET_SIG_NODE_R (CURRENT_TOP_TYPE.SIGNATURE, P);
+			if P->SIG_NODE.PROTOTYPED then
+				SYM_NODE.PROTOTYPED = TRUE;
+			call RELEASE_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE);
+		end;
+		else	SYM_NODE.PROTOTYPED = TRUE;
+	end;
+
+end COMPLETE_CURRENT_DECLARATION;
+
+/* ---------------------------------------------------------------------
+/* COMPLETE_TYPE
+/*
+/* Assuming that the types represented by the given type-node ids A and
+/* B are compatible, if A is incomplete at any level, then complete it as
+/* much as possible using B; ATT is set to the resultant top-type of A.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COMPLETE_TYPE: procedure (A, ATT, B) internal;
+
+	declare
+		A		type (NID_T),
+		ATT		type (TYPE_DATA_T),
+		B		type (NID_T);
+	declare
+		(AP, BP)	type (POINTER_T),
+		(LEVEL, I)	type (SHORT_T);
+
+	call GET_TYPE_NODE (A, AP);
+	call GET_TYPE_NODE (B, BP);
+
+	LEVEL = rank (AP->TYPE_NODE.LEVEL);
+
+	do I = LEVEL to 1 by -1;
+
+	if AP->TYPE_NODE.DATA (I).CODE = byte (FUNCTION_DT) then do;
+		if (AP->TYPE_NODE.DATA (I).INCOMPLETE &
+		    BP->TYPE_NODE.DATA (I).INCOMPLETE) |
+		   (IN_DECLARATION &
+		    (AP->TYPE_NODE.DATA (I).DEFAULT_ARGUMENT |
+		     BP->TYPE_NODE.DATA (I).DEFAULT_ARGUMENT |
+		     (I = LEVEL))) then do;
+			call COMPLETE_SIGNATURE
+			     (AP->TYPE_NODE.DATA (I).SIGNATURE,
+			      BP->TYPE_NODE.DATA (I).SIGNATURE);
+			if I = LEVEL then ATT = AP->TYPE_NODE.DATA (I);
+		end;
+		else if AP->TYPE_NODE.DATA (I).INCOMPLETE &
+			^BP->TYPE_NODE.DATA (I).INCOMPLETE then do;
+			/*
+			/* Here, A has an incomplete function signature
+			/* and B does not, so we just use B's; note
+			/* that A's sig-node could be freed here.
+			/**/
+			AP->TYPE_NODE.DATA (I).SIGNATURE =
+				BP->TYPE_NODE.DATA (I).SIGNATURE;
+			AP->TYPE_NODE.DATA (I).INCOMPLETE =
+				BP->TYPE_NODE.DATA (I).INCOMPLETE;
+			AP->TYPE_NODE.DATA (I).DEFAULT_ARGUMENT =
+				BP->TYPE_NODE.DATA (I).DEFAULT_ARGUMENT;
+			if I = LEVEL then ATT = AP->TYPE_NODE.DATA (I);
+		end;
+	end;
+	else if AP->TYPE_NODE.DATA (I).CODE = byte (ARRAY_DT) then do;
+		if AP->TYPE_NODE.DATA (I).INCOMPLETE &
+		   ^BP->TYPE_NODE.DATA (I).INCOMPLETE then do;
+			/*
+			/* Here, A has an incomplete array dimension
+			/* and B does not, so we just use B's; note
+			/* that A's dim-node could be freed here.
+			/**/
+			AP->TYPE_NODE.DATA (I).DIMENSION =
+				BP->TYPE_NODE.DATA (I).DIMENSION;
+			AP->TYPE_NODE.DATA (I).INCOMPLETE =
+				BP->TYPE_NODE.DATA (I).INCOMPLETE;
+			if I = LEVEL then ATT = AP->TYPE_NODE.DATA (I);
+		end;
+	end;
+
+	end;
+
+	call RELEASE_TYPE_NODE (B);
+	call RELEASE_TYPE_NODE (A);
+
+end COMPLETE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* COMPLETE_SIGNATURE
+/*
+/* Assuming that the signatures represented by the given sig-node ids A
+/* and B are compatible, if A is incomplete at any level, then complete
+/* it as much as possible using B.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COMPLETE_SIGNATURE: procedure (A, B) internal;
+
+	declare
+		(A, B)				type (NID_T);
+	declare
+		(AP, ASP, BP, BSP)		type (POINTER_T),
+		(AL, NEXT_AL, BL, NEXT_BL)	type (NID_T),
+		THIS_HAS_DEFAULT_ARGUMENT	type (BOOL_T),
+		LAST_HAD_DEFAULT_ARGUMENT	type (BOOL_T),
+		CHECK_DEFAULT_ARGUMENTS		type (BOOL_T);
+
+	call GET_SIG_NODE_R (A, AP);
+	call GET_SIG_NODE_R (B, BP);
+
+	if ^AP->SIG_NODE.PROTOTYPED then do;
+		if ^AP->SIG_NODE.DEFINED_FUNCTION then do;
+			if (BP->SIG_NODE.EXPLICIT_NPARAMETERS > 0) |
+			    BP->SIG_NODE.PROTOTYPED |
+			    BP->SIG_NODE.ELLIPSIS then do;
+				A = B;
+				call RELEASE_SIG_NODE (B);
+				return;
+			end;
+			goto DONE_COMPLETE_SIGNATURE;
+		end;
+	end;
+	if BP->SIG_NODE.EXPLICIT_NPARAMETERS <= 0 then
+		goto DONE_COMPLETE_SIGNATURE;
+
+	CHECK_DEFAULT_ARGUMENTS	  = AP->SIG_NODE.DEFAULT_ARGUMENT |
+				    BP->SIG_NODE.DEFAULT_ARGUMENT;
+	LAST_HAD_DEFAULT_ARGUMENT = FALSE;
+
+	AL = AP->SIG_NODE.EXPLICIT_PARAMETERS;
+	BL = BP->SIG_NODE.EXPLICIT_PARAMETERS;
+
+	do while ((AL ^= NULL_NID) & (BL ^= NULL_NID));
+
+		call GET_PARAMETER_NODE (AL, ASP);
+		call GET_PARAMETER_NODE (BL, BSP);
+
+		if ^(IN_DECLARATION & CHECK_DEFAULT_ARGUMENTS) then
+			goto DO_TYPE_COMPLETION;
+
+		if ASP->PARAMETER_NODE.VALUE ^= NULL_CXX_VID then do;
+			if BSP->PARAMETER_NODE.VALUE ^= NULL_CXX_VID then do;
+				/*
+				/* Error; this parameter has already
+				/* been given a default argument value.
+				/**/
+				ASP->PARAMETER_NODE.VALUE
+					= BSP->PARAMETER_NODE.VALUE;
+				call SEMANTIC_ERROR (ERR_DUP_DEFAULT_ARG);
+			end;
+			THIS_HAS_DEFAULT_ARGUMENT = TRUE;
+		end;
+		else if BSP->PARAMETER_NODE.VALUE ^= NULL_NID then do;
+			ASP->PARAMETER_NODE.VALUE = BSP->PARAMETER_NODE.VALUE;
+			THIS_HAS_DEFAULT_ARGUMENT = TRUE;
+		end;
+		else	THIS_HAS_DEFAULT_ARGUMENT = FALSE;
+		if   ASP->PARAMETER_NODE.VALUE = NULL_CXX_VID
+		   & LAST_HAD_DEFAULT_ARGUMENT then do;
+			/*
+			/* Error; a default parameter may only be specified
+			/* after a parameter without at default parameter.
+			/**/
+			call SEMANTIC_ERROR (ERR_DEFAULT_ARG_PLACEMENT);
+		end;
+		LAST_HAD_DEFAULT_ARGUMENT = THIS_HAS_DEFAULT_ARGUMENT;
+
+		DO_TYPE_COMPLETION:
+		if AP->SIG_NODE.INCOMPLETE then do;
+			call COMPLETE_TYPE (ASP->PARAMETER_NODE.TYPE,
+					    ASP->PARAMETER_NODE.TOP_TYPE,
+					    BSP->PARAMETER_NODE.TYPE);
+		end;
+
+		NEXT_AL = ASP->PARAMETER_NODE.NEXT;
+		NEXT_BL = BSP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (BL);
+		call RELEASE_PARAMETER_NODE (AL);
+		AL = NEXT_AL;
+		BL = NEXT_BL;
+	end;
+
+	DONE_COMPLETE_SIGNATURE:
+	call RELEASE_SIG_NODE (B);
+	call RELEASE_SIG_NODE (A);
+
+end COMPLETE_SIGNATURE;
+
+/* ---------------------------------------------------------------------
+/* COMPLETE_ARRAY_SYMBOL
+/* ------------------------------------------------------------------- */
+
+COMPLETE_ARRAY_SYMBOL: procedure (SYMBOL, DIMENSION)
+		       external  (X_COMPLETE_ARRAY_SYMBOL);
+	declare
+		SYMBOL		type (NID_T),
+		DIMENSION	type (LONG_T);
+	declare
+		SP		type (POINTER_T),
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T);
+
+	call GET_SYM_NODE (SYMBOL, SP);
+	call COMPLETE_ARRAY_TYPE (SP->SYM_NODE.TYPE, DIMENSION);
+	call GET_TOP_TYPE (SP->SYM_NODE.TYPE, SP->SYM_NODE.TOP_TYPE);
+	call TYPE_SIZE (SP->SYM_NODE.TYPE, SIZE, SIZE_UNITS, BOUNDARY);
+	SP->SYM_NODE.SIZE       = SIZE;
+	SP->SYM_NODE.SIZE_UNITS = byte (SIZE_UNITS);
+	SP->SYM_NODE.BOUNDARY   = byte (BOUNDARY);
+	call RELEASE_SYM_NODE (SYMBOL);
+
+end COMPLETE_ARRAY_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* COMPLETE_ARRAY_TYPE
+/* ------------------------------------------------------------------- */
+
+COMPLETE_ARRAY_TYPE: procedure (ARRAY_TYPE, DIMENSION)
+		     external  (X_COMPLETE_ARRAY_TYPE);
+	declare
+		ARRAY_TYPE	type (NID_T),
+		DIMENSION	type (LONG_T);
+	declare
+		NEW_ARRAY_TYPE	type (NID_T),
+		INCOMPLETE	type (BOOL_T),
+		TP		type (POINTER_T),
+		(LEVEL, I)	type (SHORT_T);
+
+	call GET_TYPE_NODE_R (ARRAY_TYPE, TP);
+	LEVEL = rank (TP->TYPE_NODE.LEVEL);
+	INCOMPLETE = (TP->TYPE_NODE.DATA (LEVEL).CODE = byte (ARRAY_DT)) &
+		     TP->TYPE_NODE.DATA (LEVEL).INCOMPLETE;
+	call RELEASE_TYPE_NODE (ARRAY_TYPE);
+
+	if INCOMPLETE then do;
+		NEW_ARRAY_TYPE = COPY_TYPE (ARRAY_TYPE, 0);
+		call GET_TYPE_NODE (NEW_ARRAY_TYPE, TP);
+		TP->TYPE_NODE.DATA (LEVEL).DIMENSION =
+			CREATE_CONSTANT_DIMENSION (DIMENSION, INCOMPLETE);
+		TP->TYPE_NODE.DATA (LEVEL).INCOMPLETE = INCOMPLETE;
+		do I = 1 to LEVEL;
+			if TP->TYPE_NODE.DATA (I).INCOMPLETE then do;
+				TP->TYPE_NODE.CONTAINS_INCOMPLETE = TRUE;
+				leave;
+			end;
+		end;
+		call RELEASE_TYPE_NODE (NEW_ARRAY_TYPE);
+		ARRAY_TYPE = NEW_ARRAY_TYPE;
+	end;
+
+end COMPLETE_ARRAY_TYPE;
+
+/* ---------------------------------------------------------------------
+/* MODIFY_TYPE
+/*
+/* Return a type-node representing a type like the type represented by
+/* the given type-node, but with the given modifications; i.e. with
+/* the given number of derived type levels skipped, and possibly an
+/* additional (unqualified) top pointer level.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MODIFY_TYPE: procedure (TYPE, SKIP_NLEVELS, ADD_POINTER_LEVEL)
+	     returns   (type (NID_T))
+	     external  (X_MODIFY_TYPE);
+
+	declare
+		TYPE			type (NID_T),
+		SKIP_NLEVELS		type (SHORT_T),
+		ADD_POINTER_LEVEL	type (BOOL_T);
+	declare
+		(TP, SP, NTP)		type (POINTER_T),
+		(LEVEL, I)		type (SHORT_T),
+		NEW_TYPE		type (NID_T);
+
+	/* Check for trivial cases */
+
+	if (SKIP_NLEVELS = 0) & ^ADD_POINTER_LEVEL then
+		return (TYPE);
+
+	call GET_TYPE_NODE_R (TYPE, TP);
+
+	/* See if an additional top pointer cancels out the skip level */
+
+	if ADD_POINTER_LEVEL then do;
+		if (SKIP_NLEVELS = 1) &
+		   (TP->TYPE_NODE.TYPE_CODE
+		    (rank (TP->TYPE_NODE.LEVEL)) = byte (POINTER_DT)) then do;
+			call RELEASE_TYPE_NODE (TYPE);
+			return (TYPE);
+		end;
+	end;
+
+	/* Get the type level we're interested in */
+
+	LEVEL = rank (TP->TYPE_NODE.LEVEL) - SKIP_NLEVELS;
+	if LEVEL < 0 then LEVEL = 0;
+
+	/*
+	/* If we want an unqualified class type-node, 
+	/* we can get it from the sym-node.
+	/**/
+
+	if (LEVEL = 0) &
+	   (^ADD_POINTER_LEVEL) &
+	   (TP->TYPE_NODE.TYPE_QUALIFIERS (0) = NULL_TQ) &
+	   (IS_TAG_TYPE (rank (TP->TYPE_NODE.TYPE_CODE (0)))) then do;
+		call GET_SYM_NODE_R (TP->TYPE_NODE.TYPE_NID (0), SP);
+		NEW_TYPE = SP->SYM_NODE.TYPE;
+		call RELEASE_SYM_NODE (TP->TYPE_NODE.TYPE_NID (0));
+		return (NEW_TYPE);
+	end;
+
+	/* Sigh; we really have to create a new type-node */
+
+	if ADD_POINTER_LEVEL then do;
+		call NEW_TYPE_NODE (LEVEL + 1, NEW_TYPE, NTP);
+		NTP->TYPE_NODE.TYPE_CODE (LEVEL + 1) = byte (POINTER_DT);
+		NTP->TYPE_NODE.TYPE_QUALIFIERS (LEVEL + 1) = NULL_TQ;
+	end;
+	else	call NEW_TYPE_NODE (LEVEL, NEW_TYPE, NTP);
+
+	do I = 0 to LEVEL;
+		NTP->TYPE_NODE.DATA (I) = TP->TYPE_NODE.DATA (I);
+	end;
+
+	/* Release the type-nodes, and return the new type-node */
+
+	call HASH_TYPE (NEW_TYPE, NTP);
+	call RELEASE_TYPE_NODE (NEW_TYPE);
+	call RELEASE_TYPE_NODE (TYPE);
+	return (NEW_TYPE);
+
+end MODIFY_TYPE;
+
+/* ---------------------------------------------------------------------
+/* MODIFY_TYPE_LEVEL
+/*
+/* Return a the type-node id representing a type which is the same
+/* as the type represented by the given type-node id, except with
+/* the specified type level changed to the type represented by the
+/* given type-data record.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MODIFY_TYPE_LEVEL: procedure (TYPE, SKIP_NLEVELS, TYPE_DATA)
+		   returns   (type (NID_T))
+		   external  (X_MODIFY_TYPE_LEVEL);
+	declare
+		TYPE			type (NID_T),
+		SKIP_NLEVELS		type (SHORT_T),
+		TYPE_DATA		type (TYPE_DATA_T);
+	declare
+		(TP, NTP)		type (POINTER_T),
+		MODIFY_LEVEL		type (SHORT_T),
+		I			type (SHORT_T),
+		NEW_TYPE		type (NID_T);
+
+	call GET_TYPE_NODE_R (TYPE, TP);
+
+	call NEW_TYPE_NODE (rank (TP->TYPE_NODE.LEVEL), NEW_TYPE, NTP);
+
+	MODIFY_LEVEL = rank (TP->TYPE_NODE.LEVEL) - SKIP_NLEVELS;
+	if SKIP_NLEVELS < 0 then MODIFY_LEVEL = 0;
+
+	do I = 0 to rank (TP->TYPE_NODE.LEVEL);
+		NTP->TYPE_NODE.DATA (I) = TP->TYPE_NODE.DATA (I);
+	end;
+
+	NTP->TYPE_NODE.DATA (MODIFY_LEVEL) = TYPE_DATA;
+
+	call HASH_TYPE (NEW_TYPE, NTP);
+	call RELEASE_TYPE_NODE (NEW_TYPE);
+	call RELEASE_TYPE_NODE (TYPE);
+	return (NEW_TYPE);
+
+end MODIFY_TYPE_LEVEL;
+
+/* ---------------------------------------------------------------------
+/* ADD_TOP_TYPE
+/*
+/* Return a type-node id representing a type which is the same as the
+/* type represented by the given type, except with an additional top
+/* type represented by the given type-data record.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ADD_TOP_TYPE: procedure (TYPE, TOP_TYPE)
+	      returns   (type (NID_T))
+	      external  (X_ADD_TOP_TYPE);
+
+	declare
+		TYPE		type (NID_T),
+		TOP_TYPE	type (TYPE_DATA_T);
+	declare
+		(TP, NTP)	type (POINTER_T),
+		I		type (INT_T),
+		NEW_TYPE	type (NID_T);
+
+	call GET_TYPE_NODE_R (TYPE, TP);
+
+	if rank (TP->TYPE_NODE.LEVEL) >= MAX_DERIVED_TYPE_LEVEL then do;
+		/*
+		/* Too many derived levels already; can't add one.
+		/**/
+		call RELEASE_TYPE_NODE (TYPE);
+		return (NULL_NID);
+	end;
+
+	call NEW_TYPE_NODE (rank (TP->TYPE_NODE.LEVEL) + 1, NEW_TYPE, NTP);
+
+	do I = 0 to rank (TP->TYPE_NODE.LEVEL);
+		NTP->TYPE_NODE.DATA (I) = TP->TYPE_NODE.DATA (I);
+	end;
+
+	NTP->TYPE_NODE.DATA (rank (NTP->TYPE_NODE.LEVEL)) = TOP_TYPE;
+
+	call HASH_TYPE (NEW_TYPE, NTP);
+	call RELEASE_TYPE_NODE (NEW_TYPE);
+	call RELEASE_TYPE_NODE (TYPE);
+	return (NEW_TYPE);
+
+end ADD_TOP_TYPE;
+
+/* ---------------------------------------------------------------------
+/* COMPOSITE_EXPRESSION_TYPE
+/*
+/* Assuming (*assuming*) that the types represented by the given type-node
+/* ids A and B *are* compatible (when the specified number of top derived
+/* type levels within the type are skipped), return a type-node id
+/* representing the composite type of the two types.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COMPOSITE_EXPRESSION_TYPE: procedure (A, A_SKIP_NLEVELS,
+				      B, B_SKIP_NLEVELS,
+				      R, R_SKIP_NLEVELS)
+			   external  (X_COMPOSITE_EXPRESSION_TYPE);
+	declare
+		(A, B, R)			type (NID_T),
+		A_SKIP_NLEVELS			type (SHORT_T),
+		B_SKIP_NLEVELS			type (SHORT_T),
+		R_SKIP_NLEVELS			type (SHORT_T);
+	declare
+		(AP, BP, RP)			type (POINTER_T),
+		(I)				type (SHORT_T),
+		(A_LEVEL, B_LEVEL)		type (SHORT_T),
+		(A_INCOMPLETE, B_INCOMPLETE)	type (BOOL_T),
+		(RTT)				type (TYPE_DATA_T);
+
+	/* Check for the trivial case */
+
+	if (A = B) & (A_SKIP_NLEVELS = B_SKIP_NLEVELS) then do;
+		R = A;
+		R_SKIP_NLEVELS = A_SKIP_NLEVELS;
+		return;
+	end;
+
+	/* Get the type-node pointers and their effective levels */
+
+	call GET_TYPE_NODE (A, AP);
+	call GET_TYPE_NODE (B, BP);
+
+	A_LEVEL = rank (AP->TYPE_NODE.LEVEL) - A_SKIP_NLEVELS;
+	B_LEVEL = rank (BP->TYPE_NODE.LEVEL) - B_SKIP_NLEVELS;
+
+	/*
+	/* Make sure the effective type-node levels are the same.
+	/* If not then these aren't really compatible types.
+	/* this is an error, but set the result to A.
+	/**/
+
+	if A_LEVEL ^= B_LEVEL then
+		goto RETURN_A;
+
+	/* See if we have non-derived types (which are never incomplete) */
+
+	if A_LEVEL <= 0 then
+		goto RETURN_A_OR_B;
+
+	/* See if both of the types are obviously not incomplete */
+
+	if ^AP->TYPE_NODE.CONTAINS_INCOMPLETE &
+	   ^BP->TYPE_NODE.CONTAINS_INCOMPLETE then
+		goto RETURN_A_OR_B;
+
+	/* Here, one or both types *may* be incomplete */
+
+	A_INCOMPLETE = FALSE; B_INCOMPLETE = FALSE;
+
+	do I = A_LEVEL to 1 by -1;
+		if AP->TYPE_NODE.DATA (I).INCOMPLETE then
+			A_INCOMPLETE = TRUE;
+		if BP->TYPE_NODE.DATA (I).INCOMPLETE then
+			B_INCOMPLETE = TRUE;
+		if A_INCOMPLETE & B_INCOMPLETE then
+			leave;
+	end;
+
+	/* See if one or both type are not incomplete */
+
+	if ^A_INCOMPLETE then do;
+		if ^B_INCOMPLETE then
+			goto RETURN_A_OR_B;
+		else	goto RETURN_A;
+	end;
+	else if ^B_INCOMPLETE then
+		goto RETURN_B;
+
+	/*
+	/* Here, both types are definitely incomplete; just start with
+	/* the first type and try to complete it using the second type.
+	/**/
+
+	R = COPY_TYPE (A, A_SKIP_NLEVELS);
+
+	IN_DECLARATION = FALSE;
+	call COMPLETE_TYPE (R, RTT, B);
+	IN_DECLARATION = TRUE;
+
+	R_SKIP_NLEVELS = A_SKIP_NLEVELS;
+
+	goto DONE_COMPOSITE_EXPRESSION_TYPE;
+
+	RETURN_A:
+	R = A;
+	R_SKIP_NLEVELS = A_SKIP_NLEVELS;
+	goto DONE_COMPOSITE_EXPRESSION_TYPE;
+
+	RETURN_B:
+	R = B;
+	R_SKIP_NLEVELS = B_SKIP_NLEVELS;
+	goto DONE_COMPOSITE_EXPRESSION_TYPE;
+
+	RETURN_A_OR_B:
+	/*
+	/* We will prefer to return the first type with no skip
+	/* level if any, otherwise we prefer to return the first type.
+	/**/
+	if A_SKIP_NLEVELS <= 0 then do;
+		R = A;
+		R_SKIP_NLEVELS = A_SKIP_NLEVELS;
+	end;
+	else if B_SKIP_NLEVELS <= 0 then do;
+		R = B;
+		R_SKIP_NLEVELS = B_SKIP_NLEVELS;
+	end;
+	else do;
+		R = A;
+		R_SKIP_NLEVELS = A_SKIP_NLEVELS;
+	end;
+
+	DONE_COMPOSITE_EXPRESSION_TYPE:
+	call RELEASE_TYPE_NODE (B);
+	call RELEASE_TYPE_NODE (A);
+	return;
+
+end COMPOSITE_EXPRESSION_TYPE;
+
+/* ---------------------------------------------------------------------
+/* COPY_TYPE
+/* ------------------------------------------------------------------- */
+
+COPY_TYPE: procedure (T, SKIP_NLEVELS) returns (type (NID_T)) internal;
+
+	declare
+		T		type (NID_T),
+		SKIP_NLEVELS	type (SHORT_T);
+	declare
+		NEWT		type (NID_T),
+		(TP, NEWTP)	type (POINTER_T),
+		(LEVEL, I)	type (SHORT_T);
+
+	call GET_TYPE_NODE_R (T, TP);
+	if ^TP->TYPE_NODE.CONTAINS_INCOMPLETE |
+	   (SKIP_NLEVELS >= rank (TP->TYPE_NODE.LEVEL)) then do;
+		NEWT = T;
+		goto DONE_COPY_TYPE;
+	end;
+	LEVEL = rank (TP->TYPE_NODE.LEVEL) - SKIP_NLEVELS;
+	call NEW_TYPE_NODE (LEVEL, NEWT, NEWTP);
+	do I = LEVEL to 0 by -1;
+		NEWTP->TYPE_NODE.DATA (I) = TP->TYPE_NODE.DATA (I);
+		if TP->TYPE_NODE.DATA (I).CODE = byte (FUNCTION_DT) then do;
+			if TP->TYPE_NODE.DATA (I).INCOMPLETE then do;
+				NEWTP->TYPE_NODE.DATA (I).SIGNATURE =
+					COPY_SIGNATURE
+					(TP->TYPE_NODE.DATA (I).SIGNATURE);
+			end;
+		end;
+		else if TP->TYPE_NODE.DATA (I).CODE = byte (ARRAY_DT) then do;
+			if TP->TYPE_NODE.DATA (I).INCOMPLETE then do;
+				NEWTP->TYPE_NODE.DATA (I).DIMENSION =
+					COPY_DIMENSION
+					(TP->TYPE_NODE.DATA (I).DIMENSION);
+			end;
+		end;
+	end;
+	DONE_COPY_TYPE:
+	call RELEASE_TYPE_NODE (T);
+	return (NEWT);
+
+end COPY_TYPE;
+
+/* ---------------------------------------------------------------------
+/* COPY_DIMENSION
+/* ------------------------------------------------------------------- */
+
+COPY_DIMENSION: procedure (D) returns (type (NID_T)) internal;
+
+	declare
+		D		type (NID_T);
+	declare
+		NEWD		type (NID_T),
+		(DP, NEWDP)	type (POINTER_T);
+
+	call GET_DIM_NODE_R (D, DP);
+	call NEW_DIM_NODE (NEWD, NEWDP);
+	NEWDP->DIM_NODE = DP->DIM_NODE;
+	call RELEASE_DIM_NODE (NEWD);
+	call RELEASE_DIM_NODE (D);
+	return (NEWD);
+
+end COPY_DIMENSION;
+
+/* ---------------------------------------------------------------------
+/* COPY_SIGNATURE
+/* ------------------------------------------------------------------- */
+
+COPY_SIGNATURE: procedure (S) returns (type (NID_T)) internal;
+
+	declare
+		S				type (NID_T);
+	declare
+		NEW_PARAMETERS			type (NID_T),
+		NEW_EXPLICIT_PARAMETERS		type (NID_T),
+		(L, NEWS, NEWL, NEXTL, LASTL)	type (NID_T),
+		(SP, LP, NEWSP, NEWLP, LASTLP)	type (POINTER_T);
+
+	call GET_SIG_NODE_R (S, SP);
+	call NEW_SIG_NODE (NEWS, NEWSP);
+	NEWSP->SIG_NODE = SP->SIG_NODE;
+	NEW_PARAMETERS = NULL_NID;
+	do L = SP->SIG_NODE.PARAMETERS repeat (NEXTL) while (L ^= NULL_NID);
+		NEWL = COPY_SYMBOL (L);
+		call GET_SYM_NODE_R (NEWL, NEWLP);
+		NEXTL = NEWLP->SYM_NODE.NEXT_PARAMETER;
+		call RELEASE_SYM_NODE (NEWL);
+		if L ^= SP->SIG_NODE.PARAMETERS then do;
+			LASTLP->SYM_NODE.NEXT_PARAMETER = NEWL;
+			call RELEASE_SYM_NODE (LASTL);
+		end;
+		else	NEW_PARAMETERS = NEWL;
+		LASTL = NEWL; LASTLP = NEWLP;
+	end;
+	if SP->SIG_NODE.PARAMETERS ^= NULL_NID then do;
+		LASTLP->SYM_NODE.NEXT_PARAMETER = NULL_NID;
+		call RELEASE_SYM_NODE (LASTL);
+	end;
+	NEWSP->SIG_NODE.PARAMETERS	    = NEW_PARAMETERS;
+	NEW_EXPLICIT_PARAMETERS = NULL_NID;
+	do L = SP->SIG_NODE.EXPLICIT_PARAMETERS repeat (NEXTL) while (L ^= NULL_NID);
+		NEWL = COPY_PARAMETER (L);
+		call GET_PARAMETER_NODE_R (NEWL, NEWLP);
+		NEXTL = NEWLP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (NEWL);
+		if L = SP->SIG_NODE.EXPLICIT_PARAMETERS then
+			NEW_EXPLICIT_PARAMETERS = NEWL;
+		else do;
+			LASTLP->PARAMETER_NODE.NEXT = NEWL;
+			call RELEASE_PARAMETER_NODE (LASTL);
+		end;
+		LASTL = NEWL; LASTLP = NEWLP;
+	end;
+	if SP->SIG_NODE.EXPLICIT_PARAMETERS ^= NULL_NID then do;
+		LASTLP->PARAMETER_NODE.NEXT = NULL_NID;
+		call RELEASE_PARAMETER_NODE (LASTL);
+	end;
+	NEWSP->SIG_NODE.EXPLICIT_PARAMETERS = NEW_EXPLICIT_PARAMETERS;
+	call RELEASE_SIG_NODE (NEWS);
+	call RELEASE_SIG_NODE (S);
+	return (NEWS);
+
+end COPY_SIGNATURE;
+
+/* ---------------------------------------------------------------------
+/* COPY_SYMBOL
+/* ------------------------------------------------------------------- */
+
+COPY_SYMBOL: procedure (S) returns (type (NID_T)) internal;
+
+	declare
+		S			type (NID_T);
+	declare
+		NEWS			type (NID_T),
+		(SP, STP, NEWSP)	type (POINTER_T);
+
+	call GET_SYM_NODE_R (S, SP);
+	call GET_TYPE_NODE_R (SP->SYM_NODE.TYPE, STP);
+	if STP->TYPE_NODE.CONTAINS_INCOMPLETE then do;
+		call NEW_SYM_NODE (NEWS, NEWSP);
+		NEWSP->SYM_NODE = SP->SYM_NODE;
+		NEWSP->SYM_NODE.TYPE = COPY_TYPE (SP->SYM_NODE.TYPE, 0);
+		call RELEASE_SYM_NODE (NEWS);
+	end;
+	else	NEWS = S;
+	call RELEASE_TYPE_NODE (SP->SYM_NODE.TYPE);
+	call RELEASE_SYM_NODE (S);
+	return (NEWS);
+
+end COPY_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* COPY_PARAMETER
+/* ------------------------------------------------------------------- */
+
+COPY_PARAMETER: procedure (P) returns (type (NID_T)) internal;
+
+	declare
+		P			type (NID_T);
+	declare
+		NEWP			type (NID_T),
+		(PP, PTP, NEWPP)	type (POINTER_T);
+
+	call GET_PARAMETER_NODE_R (P, PP);
+	call GET_TYPE_NODE_R (PP->PARAMETER_NODE.TYPE, PTP);
+	if PTP->TYPE_NODE.CONTAINS_INCOMPLETE then do;
+		call NEW_PARAMETER_NODE (NEWP, NEWPP);
+		NEWPP->PARAMETER_NODE = PP->PARAMETER_NODE;
+		NEWPP->PARAMETER_NODE.TYPE = COPY_TYPE (PP->PARAMETER_NODE.TYPE, 0);
+		call RELEASE_PARAMETER_NODE (NEWP);
+	end;
+	else	NEWP = P;
+	call RELEASE_TYPE_NODE (PP->PARAMETER_NODE.TYPE);
+	call RELEASE_PARAMETER_NODE (P);
+	return (NEWP);
+
+end COPY_PARAMETER;
+
+/* ---------------------------------------------------------------------
+/* GET_TOP_TYPE
+/* ------------------------------------------------------------------- */
+
+GET_TOP_TYPE: procedure (TYPE, TOP_TYPE) external (X_GET_TOP_TYPE);
+
+	declare
+		TYPE		type (NID_T),
+		TOP_TYPE	type (TYPE_DATA_T);
+	declare
+		TP		type (POINTER_T);
+
+	call GET_TYPE_NODE_R (TYPE, TP);
+	call GET_TOP_LEVEL_TYPE_P (TP, 0, TOP_TYPE);
+	call RELEASE_TYPE_NODE (TYPE);
+
+end GET_TOP_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_TOP_TYPE_P
+/* ------------------------------------------------------------------- */
+
+GET_TOP_TYPE_P: procedure (TP, TOP_TYPE) external (X_GET_TOP_TYPE_P);
+
+	declare
+		TP		type (POINTER_T),
+		TOP_TYPE	type (TYPE_DATA_T);
+
+	call GET_TOP_LEVEL_TYPE_P (TP, 0, TOP_TYPE);
+
+end GET_TOP_TYPE_P;
+
+/* ---------------------------------------------------------------------
+/* GET_TOP_LEVEL_TYPE
+/* ------------------------------------------------------------------- */
+
+GET_TOP_LEVEL_TYPE: procedure (TYPE, SKIP_NLEVELS, TOP_TYPE)
+		    external  (X_GET_TOP_LEVEL_TYPE);
+	declare
+		TYPE		type (NID_T),
+		SKIP_NLEVELS	type (SHORT_T),
+		TOP_TYPE	type (TYPE_DATA_T);
+	declare
+		TP		type (POINTER_T);
+
+	call GET_TYPE_NODE_R (TYPE, TP);
+	call GET_TOP_LEVEL_TYPE_P (TP, SKIP_NLEVELS, TOP_TYPE);
+	call RELEASE_TYPE_NODE (TYPE);
+
+end GET_TOP_LEVEL_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_TOP_LEVEL_TYPE
+/* ------------------------------------------------------------------- */
+
+GET_TOP_LEVEL_TYPE_P: procedure (TP, SKIP_NLEVELS, TOP_TYPE)
+		      external  (X_GET_TOP_LEVEL_TYPE_P);
+	declare
+		TP		type (POINTER_T),
+		SKIP_NLEVELS	type (SHORT_T),
+		TOP_TYPE	type (TYPE_DATA_T);
+	declare
+		LEVEL		type (SHORT_T);
+
+	LEVEL = rank (TP->TYPE_NODE.LEVEL) - SKIP_NLEVELS;
+	if LEVEL <= 0 then LEVEL = 0;
+
+	TOP_TYPE.CODE	    = TP->TYPE_NODE.TYPE_CODE (LEVEL);
+	TOP_TYPE.QUALIFIERS = TP->TYPE_NODE.TYPE_QUALIFIERS (LEVEL);
+	TOP_TYPE.NID	    = TP->TYPE_NODE.TYPE_NID (LEVEL);
+
+end GET_TOP_LEVEL_TYPE_P;
+
+/* ---------------------------------------------------------------------
+/* GET_ENUM_INTEGRAL_TYPE
+/* ------------------------------------------------------------------- */
+
+GET_ENUM_INTEGRAL_TYPE: procedure (TD)
+			returns   (type (SHORT_T))
+			external  (X_GET_ENUM_INTEGRAL_TYPE);
+	declare
+		TD	type (TYPE_DATA_T);
+	declare
+		P	type (POINTER_T),
+		T	type (SHORT_T);
+
+	call GET_SYM_NODE_R (TD.TAG_SYMBOL, P);
+	T = rank (P->SYM_NODE.ENUM_INTEGRAL_TYPE);
+	call RELEASE_SYM_NODE (TD.TAG_SYMBOL);
+	return (T);
+
+end GET_ENUM_INTEGRAL_TYPE;
+

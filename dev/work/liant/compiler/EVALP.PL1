@@ -1,0 +1,169 @@
+/* C++ evalp.pl1 - Evaluate a pointer to a constant */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  006  New value-node scheme.
+ *  05.16.91  PKT  005  Don't assume LEFT of ADDR is REF.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  08.08.90  DGM  003  New type-node.
+ *  06.05.90  DGM  002  Updated for the new utilities.
+ *  04.19.90  DGM  001  Fixed up includes.
+ *  03.01.90  PKT  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 006 EVALP');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_EVALUATE_INTEGER_PKG;
+%include CXX_SYMBOL_TABLE_DEFS_IN;
+%include CXX_SYMBOL_TABLE_NODES_IN;
+%include CXX_NODE_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* EVALUATE_POINTER
+/*
+/* Determine if the tree denoted by V is a constant pointer.
+/* If so, return TRUE and set SYM, OFFSET, and UNITS.
+/* ------------------------------------------------------------------- */
+
+EVALUATE_POINTER: procedure (V, SYM, OFFSET, UNITS)
+		  returns   (type (BOOL_T))
+		  recursive
+		  external  (X_EVALUATE_POINTER);
+
+	declare V       	type (CXX_VID_T),
+        	SYM     	type (NID_T),
+        	OFFSET		type (LONG_T),
+        	UNITS		type (SHORT_T);
+
+	declare
+		VFLAG		type (BOOL_T),
+		VOP		type (SHORT_T),
+		RIGHT		type (CXX_VID_T),
+		LOFF		type (LONG_T),
+		LOFFU		type (SHORT_T),
+		VP		type (CXX_VID_T);
+
+	VP = V;
+        VOP = VP->CXX_VALUE_NODE.OP;
+
+        do while ((VOP = CAST_VO) |
+		  (VOP = IMPLICIT_CAST_VO) |
+		  (VOP = CONVERT_VO));
+		VP = VP->CXX_VALUE_NODE.LEFT;
+		VOP = VP->CXX_VALUE_NODE.OP;
+        end;
+
+        if VOP = INTEGER_VO then do;
+                SYM = NULL_NID;
+                OFFSET = VP->CXX_VALUE_NODE.OFFSET;
+                UNITS = ADDRESS_UNITS;
+		return (TRUE);
+	end;
+	else if VOP = ADDR_VO then do;
+		if VP->CXX_VALUE_NODE.LEFT->
+		       CXX_VALUE_NODE.OP ^= REF_VO then do;
+			/*
+			/* CONSTANT_VO or some such.
+			/**/
+			return (FALSE);
+		end;
+		else if VP->CXX_VALUE_NODE.LEFT->
+			    CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID then do;
+			/*
+			/* Has a variable offset.
+			/**/
+			return (FALSE);
+		end;
+                SYM = VP->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.LEFT_NID;
+                OFFSET = VP->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.OFFSET;
+                UNITS = rank (VP->CXX_VALUE_NODE.LEFT->
+				  CXX_VALUE_NODE.OFFSET_UNITS);
+                if VP->CXX_VALUE_NODE.LEFT->
+		       CXX_VALUE_NODE.THIRD ^= NULL_CXX_VID then do; 
+			/*
+			/* Has a locator.
+			/**/
+                        if ^EVALUATE_POINTER
+			    (VP->CXX_VALUE_NODE.LEFT->
+				 CXX_VALUE_NODE.THIRD,
+			     SYM,
+			     LOFF,
+			     LOFFU) then
+				return (FALSE);
+                        if LOFFU ^= UNITS then 
+				LOFF = ROUNDU (LOFF, LOFFU, UNITS);
+                        OFFSET = OFFSET + LOFF;
+		end;
+		return (TRUE);
+	end;
+        else if VOP = VALUE_VO then do;
+		/*
+                /* Check if this is special VALUE (REF (function))
+		/**/
+		if VP->CXX_VALUE_NODE.LEFT->
+		       CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (POINTER_DT) then
+			return (FALSE);
+		if VP->CXX_VALUE_NODE.LEFT->
+		       CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (FUNCTION_DT) then
+			return (FALSE);
+		VP = VP->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.LEFT; /* REF */
+                if VP->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (FUNCTION_DT) then
+			return (FALSE);
+
+                SYM = VP->CXX_VALUE_NODE.LEFT_NID;
+                OFFSET = 0;
+                UNITS = 0;
+		return (TRUE);
+	end;
+	else if (VOP = ADD_VO) | (VOP = SUB_VO) then do;
+                RIGHT = VP->CXX_VALUE_NODE.RIGHT;
+                if ^EVALUATE_POINTER
+		    (VP->CXX_VALUE_NODE.LEFT, SYM, OFFSET, UNITS) then
+			return (FALSE);
+                call EVALUATE_INTEGER (RIGHT, LOFF, VFLAG);
+                if VFLAG then
+			return (FALSE);
+                if (OFFSET ^= 0) & (UNITS ^= ADDRESS_UNITS) then
+			OFFSET = ROUNDU (OFFSET, UNITS, ADDRESS_UNITS);
+                UNITS = ADDRESS_UNITS;
+                if VOP = ADD_VO then
+			OFFSET = OFFSET + LOFF;
+		else	OFFSET = OFFSET - LOFF;
+		return (TRUE);
+	end;
+
+	else	return (FALSE);
+
+end EVALUATE_POINTER;
+

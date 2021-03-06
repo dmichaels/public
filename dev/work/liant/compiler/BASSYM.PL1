@@ -1,0 +1,286 @@
+/* C++ bassym.pl1 - Based symbol and based reference routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  005  New value-node scheme.
+ *  07.03.91  PKT  004  An optimization to REF_WITH_LOCATOR.
+ *  03.02.91  PKT  003  Fixed REF_WITH_LOCATOR always to return lvalue.
+ *  01.21.91  PKT  002  Fixed so that the dummy symbols created by
+ *			REF_WITH_LOCATOR would be recognized by the optimizer
+ *			as a proper based symbol.
+ *  12.17.90  PKT  001  Changed REF_WITH_LOCATOR so the type of the value
+ *			node returned is always an lvalue.
+ *  10.08.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 005 BASSYM');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_BUILD_TYPE_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_CLASS_SIZE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_DATA_INITIAL_FILE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_TYPE_MAP_IN;
+
+/* ---------------------------------------------------------------------
+/* BASED_SYM
+/* ------------------------------------------------------------------- */
+
+BASED_SYM: 	procedure (BOUNDARY)    
+		returns (type (NID_T))
+		external (X_BASED_SYM);
+
+        /* Return a symbol with the indicated BOUNDARY which
+           can be used as a dummy symbol in a REF with a locator. */
+
+declare BOUNDARY                type (SHORT_T);
+
+declare SYM (DOUBLE_WORDS)      type (SHORT_T) static
+				init ( (DOUBLE_WORDS) 0 ),
+        K                       type (SHORT_T);
+
+        K = BOUNDARY;
+        if K = 0 then
+		K = ADDRESS_UNITS;
+
+        if SYM (K) = 0 & ^AM_DEBUGGER then do; /* create them as needed */
+                SYM (K) = MAKE_SYM_NODE (TAG_SK | DUMMY_SK);
+                SYM_NODE.SIZE		= 0;
+                SYM_NODE.BOUNDARY	= byte (K);
+                SYM_NODE.SIZE_UNITS	= byte (K);
+                SYM_NODE.STORAGE_CLASS	= byte (EXTERN_ST);
+                call INSTALL_SYMBOL (SYM (K), CURRENT_GLOBAL_SCOPE);
+	end;
+
+        return (SYM (K));
+
+end BASED_SYM;
+
+
+
+
+/* ---------------------------------------------------------------------
+ * REF_WITH_LOCATOR
+ *
+ * Construct a ref equivalent to: REF (SYM, 0, LOC)
+ * Type of the ref is taken from TYPE_INFO, except that
+ * the resulting value has NOT_AN_LVALUE false.
+ * ------------------------------------------------------------------- */
+
+REF_WITH_LOCATOR: procedure (LOC, TYPE_INFO)              
+		  returns   (type (CXX_VID_T))
+		  external  (X_REF_WITH_LOCATOR);
+
+	declare
+		LOC		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+	declare
+		OFFSET		type (LONG_T),
+		THIRD		type (CXX_VID_T),
+		J		type (CXX_VID_T),
+		K1		type (SHORT_T),
+		K2		type (NID_T),
+		K		type (CXX_VID_T),
+		REF_TYPE_INFO	type (TYPE_INFO_T);
+
+        THIRD = LOC;
+        OFFSET = 0;
+
+        K1 = THIRD->CXX_VALUE_NODE.OP;
+
+	if (K1 = ADDR_VO) & ^AM_DEBUGGER then do;
+		/*
+		/* Optimize REF(,,ADDR(REF)) to plain REF, if possible.
+		/**/
+		K = THIRD->CXX_VALUE_NODE.LEFT;
+		/*
+		/* call FIND_CPLUS_VAL (K);	/* the REF */
+		/* call GET_VALUE_TYPE (REF_TYPE_INFO);
+		/* if   ^CXX_VALUE_NODE.NOT_AN_LVALUE
+		/*  & COMPATIBLE_TYPE_INFO (TYPE_INFO, REF_TYPE_INFO) then do;
+		/*	call COUNT_UP_VALUE (K);
+		/*	call COUNT_DOWN_VALUE (LOC);
+		/*	call FIND_CPLUS_VAL (K);
+		/*	return (K);
+		/* end;
+		/**/
+		call COUNT_UP_VALUE (K);
+		call COUNT_DOWN_VALUE (LOC);
+		K = COPY_VALUE (K);
+		call SET_VALUE_TYPE (TYPE_INFO);
+		K->CXX_VALUE_NODE.NOT_AN_LVALUE = FALSE;
+		return (K);
+	end;
+
+        if (K1 = ADD_VO) | (K1 = SUB_VO) then do;
+                J = THIRD->CXX_VALUE_NODE.LEFT;
+                if THIRD->CXX_VALUE_NODE.RIGHT->
+		   CXX_VALUE_NODE.OP = INTEGER_VO then do;
+                        OFFSET = THIRD->CXX_VALUE_NODE.RIGHT->
+				 CXX_VALUE_NODE.OFFSET;
+                        if K1 = SUB_VO then
+				OFFSET = -OFFSET;
+                        call COUNT_UP_VALUE (J);
+                        call COUNT_DOWN_VALUE (THIRD);
+                        THIRD = J;
+                        if THIRD->CXX_VALUE_NODE.OP = ADDR_VO then do;
+                                K = THIRD->CXX_VALUE_NODE.LEFT;
+                                call COUNT_UP_VALUE (K);
+                                call COUNT_DOWN_VALUE (THIRD);
+                                K = COPY_VALUE (K);
+                                goto HAVE_REF;
+			end;
+		end;
+	end;
+
+        /* What to use for symbol node? ... */
+
+	if IS_TAG_TYPE (rank (TYPE_INFO.TOP_TYPE.CODE)) then do;
+		/*
+		/* Use the symbol defining the type.
+		/**/
+		K2 = TYPE_INFO.TOP_TYPE.TAG_SYMBOL;
+	end;
+	else do;
+		/*
+		/* An artificial symbol with the correct boundary.
+		/**/
+		K2 = BASED_SYM (TYPE_INFO.SIZE_UNITS); 
+	end;
+
+        K = ALLOC_REF_CXX_VALUE_NODE (K2);
+        K->CXX_VALUE_NODE.THIRD = THIRD;	/* locator */
+
+HAVE_REF:
+        call SET_VALUE_TYPE (TYPE_INFO);
+
+        if OFFSET ^= 0 then
+		K = REF_PLUS_OFFSET (K, OFFSET, ADDRESS_UNITS, TYPE_INFO);
+
+	CXX_VALUE_NODE.NOT_AN_LVALUE = FALSE;
+
+        return (K);
+
+end REF_WITH_LOCATOR;
+
+
+
+
+/* ---------------------------------------------------------------------
+ * REF_PLUS_OFFSET
+ * ------------------------------------------------------------------- */
+
+REF_PLUS_OFFSET: 	procedure (V, AOFF, AOFFU, TYPE_INFO) 
+			returns (type (CXX_VID_T))
+			external (X_REF_PLUS_OFFSET);
+
+        /*
+        Augments offset of input REF, V, by constant offset AOFF.
+	Sets result type of REF to TYPE_INFO.
+
+        IMP: RIGHT of REF (variable offset) is now never used.
+        */
+
+declare /* parameters */
+        V       type (CXX_VID_T),	/* input REF value */
+        AOFF    type (LONG_T),	/* add this offset */
+	AOFFU   type (SHORT_T),	/* units of AOFF */
+	TYPE_INFO
+		type (TYPE_INFO_T);
+				/* type of output REF */
+
+declare /* locals */
+        OFFSET  type (LONG_T),
+        OFFSET_UNITS            /* original offset units */
+                type (SHORT_T),
+        LOC     type (CXX_VID_T),  /* locator */
+	LOC_TYPE
+		type (TYPE_INFO_T),
+        K       type (CXX_VID_T);  /* result value id */
+
+        K = COPY_VALUE (V);
+        call SET_VALUE_TYPE (TYPE_INFO);
+
+        OFFSET = K->CXX_VALUE_NODE.OFFSET;
+        OFFSET_UNITS = rank (K->CXX_VALUE_NODE.OFFSET_UNITS);
+
+        if (OFFSET ^= 0) & (OFFSET_UNITS ^= AOFFU) then do;
+		/*
+		/* Convert original REF's offsets to AOFF units.
+		/* New units are always <= old units.
+		/**/
+                OFFSET = ROUNDU (OFFSET, OFFSET_UNITS, AOFFU);
+	end;
+
+        /* Fold by adding AOFF to constant or locator */
+
+        OFFSET = OFFSET + AOFF;
+
+        if (K->CXX_VALUE_NODE.THIRD ^= NULL_CXX_VID) &
+	    ((OFFSET < -32768) | (OFFSET > 32767)) then do;
+                LOC = K->CXX_VALUE_NODE.THIRD;
+		CXX_VALUE_NODE_PTR = LOC;
+                call GET_VALUE_TYPE (LOC_TYPE);
+                LOC = ALLOC_CXX_VALUE_NODE_LR
+		      (ADD_VO, LOC, INTEGER_VALUE (OFFSET, 0));
+                call SET_VALUE_TYPE (LOC_TYPE);
+                OFFSET = 0;
+                K->CXX_VALUE_NODE.THIRD = LOC;
+	end;
+
+        K->CXX_VALUE_NODE.OFFSET = OFFSET;
+        K->CXX_VALUE_NODE.OFFSET_UNITS = byte (AOFFU);
+        return (K);
+
+end REF_PLUS_OFFSET;

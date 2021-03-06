@@ -1,0 +1,57 @@
+/* C++ C_VOP_MAP_IN - Value node operation (vop) codes */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ ***********************************************************************/
+
+
+declare
+
+VOPMAP
+			/* NOT_VOP		*/	, 15
+			/* COMPLEMENT_VOP	*/	, 15
+			/* PLUS_VOP		*/	, 15
+			/* MINUS_VOP		*/	, 15
+			/* STAR_VOP		*/	, 15
+			/* ADDR_VOP		*/	, 15
+			/* ADD_VOP		*/	, 13
+			/* SUB_VOP		*/	, 13
+			/* MUL_VOP		*/	, 14
+			/* AND_VOP		*/	, 9
+			/* DIV_VOP		*/	, 4
+			/* MOD_VOP		*/	, 14
+			/* LSHIFT_VOP		*/	, 12
+			/* RSHIFT_VOP		*/	, 12
+			/* AND_AND_VOP		*/	, 6
+			/* OR_OR_VOP		*/	, 5
+			/* OR_VOP		*/	, 7
+			/* XOR_VOP		*/	, 8
+			/* LT_VOP		*/	, 11
+			/* LE_VOP		*/	, 11
+			/* GT_VOP		*/	, 11
+			/* GE_VOP		*/	, 11
+			/* EQ_VOP		*/	, 10
+			/* NE_VOP		*/	, 10
+			/* ASSIGN_VOP		*/	, -2
+			/* ADD_ASSIGN_VOP	*/	, -2
+			/* SUB_ASSIGN_VOP	*/	, -2
+			/* MUL_ASSIGN_VOP	*/	, -2
+			/* DIV_ASSIGN_VOP	*/	, -2
+			/* MOD_ASSIGN_VOP	*/	, -2
+			/* AND_ASSIGN_VOP	*/	, -2
+			/* OR_ASSIGN_VOP	*/	, -2
+			/* XOR_ASSIGN_VOP	*/	, -2
+			/* LSHIFT_ASSIGN_VOP	*/	, -2
+			/* RSHIFT_ASSIGN_VOP	*/	, -2
+			/* CONDITIONAL_VOP	*/	, -3
+			/* COLON_VOP		*/	, -3
+

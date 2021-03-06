@@ -1,0 +1,577 @@
+/* CPP pp_err.pl1 - Preprocessor error message routine */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  11.11.93  DGM  008  PL/I bug workaround.
+ *  02.10.92  DGM  007R Updated to handle ERR_PP_NO_MAIN_FILE.
+ *  02.10.92  DGM  007  Removed PP_ABORT and PP_WARNING.
+ *  06.17.91  DGM  006  Yet another change, this one sanctioned by PKT
+ *			and TLF; severity 2 ERRORs are now VIOLATIONs .
+ *  05.29.91  DGM  005  Minor format change.
+ *  03.20.91  DGM  004  Fix misspelling.
+ *  11.15.90  DGM  003  Updated to new "messages" facility.
+ *  09.25.90  DGM  002  Include file name changes.
+ *  06.05.90  DGM  001  Updated.
+ *  06.05.90  DGM  000  First CPP component version.
+ *
+ **********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 11.11.93 008 PPERR');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CPP_UTL_DEFS_IN;
+%include CPP_UTL_WRITE_PKG;
+%include CPP_UTL_MESSAGES_PKG;
+%include CPP_UTL_ABORT_PKG;
+%include CPP_STANDARD_DEFS_IN;
+%include CPP_EXTERNAL_NAME_MAP_IN;
+%include CPP_COMPILATION_SWITCHES_IN;
+%include CPP_SOURCE_MGR_PKG;
+%include CPP_ERROR_CODES_IN;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+%replace MAX_MESSAGE_LENGTH		by 1024;
+%replace MAX_LINE_LENGTH		by 79;
+
+%replace INSERT_MARKER			by 127;
+%replace NEWLINE			by CHA_NEWLINE;
+%replace TAB				by CHA_TAB;
+
+%replace SCANNER			by 1;
+%replace PREPROCESSOR			by 2;
+
+/* Error Code Ranges */
+
+%replace ERROR_CODE_OFFSET		by 21750;
+
+%replace LB_CPP_OR_CXXFE_ERROR_CODE	by 20000;
+%replace HB_CPP_OR_CXXFE_ERROR_CODE	by 21999;
+%replace LB_CXXFE_ERROR_CODE		by 20000;
+%replace HB_CXXFE_ERROR_CODE		by 21750;
+%replace LB_CPP_ERROR_CODE		by 21750;
+%replace HB_CPP_ERROR_CODE		by 21999;
+%replace LB_UTIL_ERROR_CODE		by  2000;
+%replace HB_UTIL_ERROR_CODE		by  2999;
+%replace LB_ALLOC_ERROR_CODE		by  6000;
+%replace HB_ALLOC_ERROR_CODE		by  6999;
+%replace LB_OPTIM_ERROR_CODE		by  3000;
+%replace HB_OPTIM_ERROR_CODE		by  3999;
+%replace LB_CGG_ERROR_CODE		by  5000;
+%replace HB_CGG_ERROR_CODE		by  5999;
+%replace LB_OED_ERROR_CODE		by  4000;
+%replace HB_OED_ERROR_CODE		by  4999;
+
+/* Diagnostic severity definitions */
+
+%replace NOTE_DIAGNOSTIC		by 0;
+%replace WARNING_DIAGNOSTIC		by 1;
+%replace VIOLATION_DIAGNOSTIC		by 2;
+%replace ERROR_DIAGNOSTIC		by 3;
+%replace ABORT_DIAGNOSTIC		by 4;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+SHORT_STRING_T	character (16) varying based,
+STRING_T	character (32767) varying based,
+MESSAGE_T	character (MAX_MESSAGE_LENGTH) varying based;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 CURRENT_ERROR_DATA,
+  2 CURRENT_ERROR_CODE			type (LONG_T),
+  2 CURRENT_ERROR_KIND			type (SHORT_T),
+  2 CURRENT_ERROR_SEVERITY		type (SHORT_T),
+  2 CURRENT_ERROR_INSERT (1 : 9)	type (POINTER_T),
+  2 CURRENT_ERROR_INSERTS		type (SHORT_T),
+  2 CURRENT_ERROR_FROM_XERROR		type (BOOL_T);
+
+declare
+
+SEVERITY_NAME			(0 : 4) character (11) varying
+				static internal initial (
+	  'NOTE ('
+	, 'WARNING ('
+	, 'VIOLATION ('
+	, 'ERROR ('
+	, 'ABORT ('
+),
+
+ERROR_NAME			(0 : 2) character (13) varying
+				static internal initial (
+	  'INTERNAL '
+	, 'SCANNER '
+	, 'PREPROCESSOR '
+),
+
+TERSE_ERROR_NAME		(0 : 1) character (25) varying
+				static internal initial (
+	  'scanner diagnostic #'
+	, 'preprocessor diagnostic #'
+),
+
+
+NO_MESSAGE_MESSAGE		character (29) varying
+				static internal initial (
+
+	'Diagnostic message not found.'
+),
+
+
+UNKNOWN_FILE_NAME	character  (21) varying
+			static internal initial (
+			
+	'<unknown-source-file>'
+);
+
+declare
+
+CXX_PRODUCT_NAME	character (9) varying
+			static internal initial ('LPI-C++: '),
+C_PRODUCT_NAME		character (7) varying
+			static internal initial ('LPI-C: ');
+
+/* ---------------------------------------------------------------------
+/* PRINT_ERROR
+/* ------------------------------------------------------------------- */
+
+PRINT_ERROR: procedure internal;
+
+	declare
+		(I, J, L, N)		type (SHORT_T),
+		C			type (CHAR_T),
+		MESSAGE			type (MESSAGE_T),
+		SEVERITY		type (SHORT_T),
+		SINGLE_INSERT		type (SHORT_T),
+		NUMBERED_INSERTS	type (SHORT_T),
+		TEXT_PTR		type (POINTER_T),
+		TEXT			type (STRING_T) based (TEXT_PTR);
+
+	if CURRENT_ERROR_CODE = (ERR_PP_NO_MAIN_FILE + ERROR_CODE_OFFSET) then do;
+		call GET_MESSAGE (CURRENT_ERROR_CODE,
+				  TEXT_PTR,
+				  CURRENT_ERROR_SEVERITY, 
+				  SINGLE_INSERT,
+				  NUMBERED_INSERTS);
+		if CURRENT_ERROR_INSERTS >= 1 then do;
+			MESSAGE = substr (TEXT, 1, SINGLE_INSERT) ||
+				  CURRENT_ERROR_INSERT (1)->STRING_T ||
+				  substr (TEXT, SINGLE_INSERT + 1);
+			call WRITE_ERROR_LINE (MESSAGE);
+		end;
+		else	call WRITE_ERROR_LINE (TEXT);
+		call XABORT (0);
+	end;
+
+	/* See if we want a minimal (very terse) diagnostic */
+
+	if SW_VERY_TERSE_DIAGNOSTICS then do;
+		call PRINT_VERY_TERSE_DIAGNOSTIC ();
+		goto DONE_PRINT_ERROR;
+	end;
+
+	/* Get the error mesage text, its severity code, and insert data */
+
+	call GET_MESSAGE (CURRENT_ERROR_CODE,
+			  TEXT_PTR,
+			  CURRENT_ERROR_SEVERITY, 
+			  SINGLE_INSERT,
+			  NUMBERED_INSERTS);
+
+	/* If this message doesn't exist, print a special message */
+
+	if CURRENT_ERROR_SEVERITY < 0 then do;
+		CURRENT_ERROR_SEVERITY = 2;
+		call WRITE_ERROR_LINE ('');
+		call PRINT_ERROR_ID_LINE ();
+		call WRITE_ERROR_LINE (NO_MESSAGE_MESSAGE);
+		goto DONE_PRINT_ERROR;
+	end;
+
+	/* See if we want to ignore this message */
+
+	if SILENT then do;
+		if CURRENT_ERROR_SEVERITY <= 1 then
+			return;
+	end;
+
+	/* Prepare to print the error message; first print a blank line */
+
+	call WRITE_ERROR_LINE ('');
+
+	/* Print the main error identification line */
+
+	call PRINT_ERROR_ID_LINE ();
+
+	/*
+	/* If there is only a single insert, then SINGLE_INSERT will be
+	/* non-negative and will represent the (0 indexed) position in
+	/* message text where the insert belongs; if there are numbered
+	/* (and probably multiple) inserts, then SINGLED_INSERT will be
+	/* negative and NUMBERED_INSERTS will be non-zero, and the message
+	/* text string will contain occurrences of INSERT_MARKER's followed
+	/* by a single digit insert number.
+	/**/
+
+	/* Handle a single insert if any */
+
+	if SINGLE_INSERT >= 0 then do;
+		if CURRENT_ERROR_INSERTS >= 1 then do;
+			MESSAGE = substr (TEXT, 1, SINGLE_INSERT) ||
+				  CURRENT_ERROR_INSERT (1)->STRING_T ||
+				  substr (TEXT, SINGLE_INSERT + 1);
+		end;
+	end;
+
+	/* Handle numbered inserts if any */
+
+	else if NUMBERED_INSERTS ^= 0 then do;
+		MESSAGE = '';
+		do I = 1 to length (TEXT);
+			C = substr (TEXT, I, 1);
+			if C = byte (INSERT_MARKER) then do;
+				I = I + 1;
+				N = rank (substr (TEXT, I, 1)) - rank ('0');
+				if (N >= 1) &
+				   (N <= CURRENT_ERROR_INSERTS) then do;
+					MESSAGE =
+					MESSAGE ||
+					CURRENT_ERROR_INSERT (N)->STRING_T;
+				end;
+			end;
+			else	MESSAGE = MESSAGE || C;
+		end;
+	end;
+
+	/* Handle no inserts; print message verbatim */
+
+	else do;
+		call WRITE_ERROR_LINE (TEXT);
+		goto DONE_PRINT_ERROR;
+	end;
+
+	/*
+	/* Inserts could cause line wrap and possible embedded new-lines
+	/* to mess things up, so change the new-lines to blanks, and then
+	/* split up lines (i.e. with new-lines) while trying to fit as
+	/* many words on a line as is possible.
+       	/**/
+
+	L = length (MESSAGE);
+
+	do I = 1 to L;
+		C = substr (MESSAGE, I ,1);
+		if (C = byte (NEWLINE)) | (C = byte (TAB)) then
+			substr (MESSAGE, I, 1) = ' ';
+	end;
+
+	MESSAGE = MESSAGE || ' ';
+
+	do I = 1 while (I < L);                   
+		do J = min (I + MAX_LINE_LENGTH, L + 1) to I by -1 
+		while (substr (MESSAGE, J, 1) ^= ' ');
+			;
+		end;                
+		call WRITE_ERROR_LINE (substr (MESSAGE, I, J - I));
+		I = J + 1;
+	end;
+
+	DONE_PRINT_ERROR:
+
+	/* Abort if this is a compiler error (severity 4 or greater) */
+
+	if CURRENT_ERROR_SEVERITY >= ABORT_DIAGNOSTIC then do;
+		call WRITE_ERROR_LINE ('');
+		call XABORT (0);
+	end;
+
+	/* Update the error counts */
+
+	if CURRENT_ERROR_SEVERITY <= 1 then
+		TOTAL_SEVERITY_1_ERRORS = TOTAL_SEVERITY_1_ERRORS + 1;
+	else if CURRENT_ERROR_SEVERITY = 2 then
+		TOTAL_SEVERITY_2_ERRORS = TOTAL_SEVERITY_2_ERRORS + 1;
+	else if CURRENT_ERROR_SEVERITY >= 3 then
+		TOTAL_SEVERITY_3_ERRORS = TOTAL_SEVERITY_3_ERRORS + 1;
+	TOTAL_MESSAGES = TOTAL_MESSAGES + 1;
+	if CURRENT_ERROR_SEVERITY > MAX_SEVERITY then
+		MAX_SEVERITY = CURRENT_ERROR_SEVERITY;
+
+end PRINT_ERROR;
+
+/* ---------------------------------------------------------------------
+/* PRINT_VERY_TERSE_DIAGNOSTIC
+/*
+/* Construct a very terse diagnostic message.
+/* E.g. ``"file.c", line 45: syntax error #123''
+/* ------------------------------------------------------------------- */
+
+PRINT_VERY_TERSE_DIAGNOSTIC: procedure internal;
+
+	declare
+		S		type (STRING_T),
+		LINE_ID		type (LONG_T),
+		FILE_NAME_PTR	type (POINTER_T);
+
+	/* Get the current line number */
+
+	LINE_ID = CURRENT_SOURCE.PHYSICAL_LINE +
+		  CURRENT_SOURCE.LINE_ADJUSTMENT;
+
+	/* Get the current file name */
+
+	if CURRENT_SOURCE.ASSUMED_NAME ^= null () then
+		FILE_NAME_PTR = CURRENT_SOURCE.ASSUMED_NAME;
+	else if CURRENT_SOURCE.PHYSICAL_NAME ^= null () then
+		FILE_NAME_PTR = CURRENT_SOURCE.PHYSICAL_NAME;
+	else	FILE_NAME_PTR = addr (UNKNOWN_FILE_NAME);
+
+	/* Construct the rest of the error string */
+
+	S = '"';
+	S = S || FILE_NAME_PTR->STRING_T;
+	S = S || '", line ';
+	S = S || trim (char (LINE_ID));
+	S = S || ': ';
+	S = S || TERSE_ERROR_NAME (CURRENT_ERROR_KIND);
+	S = S || trim (char (CURRENT_ERROR_CODE));
+
+	/* Print the error string */
+
+	call WRITE_ERROR_LINE (S);
+
+end PRINT_VERY_TERSE_DIAGNOSTIC;
+
+/* ---------------------------------------------------------------------
+/* PRINT_ERROR_ID_LINE
+/*
+/* Construct the first line of an error message.
+/* E.g. ``** SYNTAX ERROR-2 (123): line 45, "file.c"''
+/* ------------------------------------------------------------------- */
+
+PRINT_ERROR_ID_LINE: procedure internal;
+
+	declare
+		S		type (STRING_T),
+		LINE_ID		type (LONG_T),
+		FILE_NAME_PTR	type (POINTER_T);
+
+	/* Get the current line number */
+
+	LINE_ID = CURRENT_SOURCE.PHYSICAL_LINE +
+		  CURRENT_SOURCE.LINE_ADJUSTMENT;
+
+	/* Get the current file name */
+
+	if CURRENT_SOURCE.ASSUMED_NAME ^= null () then
+		FILE_NAME_PTR = CURRENT_SOURCE.ASSUMED_NAME;
+	else if CURRENT_SOURCE.PHYSICAL_NAME ^= null () then
+		FILE_NAME_PTR = CURRENT_SOURCE.PHYSICAL_NAME;
+	else	FILE_NAME_PTR = addr (UNKNOWN_FILE_NAME);
+
+	/* Construct the rest of the error string */
+
+	S = ERROR_NAME (CURRENT_ERROR_KIND) ||
+	    SEVERITY_NAME (CURRENT_ERROR_SEVERITY) ||
+	    ERROR_CODE_NAME () ||
+	    '): line ' ||
+	    trim (char (LINE_ID)) || ', "' ||
+	    FILE_NAME_PTR->STRING_T || '"';
+
+	/* Print the error string */
+
+	call WRITE_ERROR_LINE (S);
+
+/* ---------------------------------------------------------------------
+/* ERROR_CODE_NAME
+/* ------------------------------------------------------------------- */
+
+ERROR_CODE_NAME: procedure () returns (type (SHORT_STRING_T)) internal;
+
+	declare
+		S	character (MAX_LINE_LENGTH) varying;
+
+	if (CURRENT_ERROR_CODE >= LB_CXXFE_ERROR_CODE) &
+	   (CURRENT_ERROR_CODE <= HB_CXXFE_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_CXXFE_ERROR_CODE));
+	else if (CURRENT_ERROR_CODE >= LB_CPP_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_CPP_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_CPP_ERROR_CODE));
+	else if (CURRENT_ERROR_CODE >= LB_CPP_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_CPP_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_CPP_ERROR_CODE));
+	else if (CURRENT_ERROR_CODE >= LB_UTIL_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_UTIL_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_UTIL_ERROR_CODE))
+		    || 'U';
+	else if (CURRENT_ERROR_CODE >= LB_ALLOC_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_ALLOC_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_ALLOC_ERROR_CODE))
+		    || 'A';
+	else if (CURRENT_ERROR_CODE >= LB_OPTIM_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_OPTIM_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_OPTIM_ERROR_CODE))
+		    || 'O';
+	else if (CURRENT_ERROR_CODE >= LB_CGG_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_CGG_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_CGG_ERROR_CODE))
+		    || 'G';
+	else if (CURRENT_ERROR_CODE >= LB_OED_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_OED_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_OED_ERROR_CODE))
+		    || 'E';
+	else	S = trim (char (CURRENT_ERROR_CODE)) || 'X';
+
+	return (S);
+
+end ERROR_CODE_NAME;
+
+end PRINT_ERROR_ID_LINE;
+
+/* ---------------------------------------------------------------------
+/* SCAN_ERROR
+/* ------------------------------------------------------------------- */
+
+SCAN_ERROR: procedure (ERROR) external (X_SCAN_ERROR);
+
+	declare
+		ERROR	type (SHORT_T);
+
+	CURRENT_ERROR_KIND	= SCANNER;
+	CURRENT_ERROR_CODE	= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS	= 0;
+	call PRINT_ERROR ();
+
+end SCAN_ERROR;
+
+/* ---------------------------------------------------------------------
+/* SCAN_ERROR_I
+/* ------------------------------------------------------------------- */
+
+SCAN_ERROR_I: procedure (ERROR, S) external (X_SCAN_ERROR_I);
+
+	declare
+		ERROR	type (SHORT_T),
+		S	character (*) varying;
+
+	CURRENT_ERROR_KIND		= SCANNER;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 1;
+	CURRENT_ERROR_INSERT (1)	= addr (S);
+	call PRINT_ERROR ();
+
+end SCAN_ERROR_I;
+
+/* ---------------------------------------------------------------------
+/* SCAN_ERROR_ON_LINE
+/*
+/* Emit an error message appropriate for the given ERROR_CODE with the
+/* given additional MESSAGE.  The current line number is given by the
+/* LINE argument, the current file is gotten from CURRENT_SOURCE.
+/* ------------------------------------------------------------------- */
+
+SCAN_ERROR_ON_LINE: procedure (ERROR_CODE, LINE, MESSAGE)
+		    external  (X_SCAN_ERROR_ON_LINE);
+	declare
+		ERROR_CODE	fixed binary (15),
+		LINE		fixed binary (31),
+		MESSAGE		character (*) varying;
+	declare
+		SAVE_LINE	fixed binary (31);
+
+	SAVE_LINE = CURRENT_SOURCE.PHYSICAL_LINE;
+	CURRENT_SOURCE.PHYSICAL_LINE = LINE;
+	call SCAN_ERROR (ERROR_CODE);
+	CURRENT_SOURCE.PHYSICAL_LINE = SAVE_LINE;
+
+end SCAN_ERROR_ON_LINE;
+
+/* ---------------------------------------------------------------------
+/* SCAN_ERROR_I_ON_LINE
+/*
+/* Emit an error message appropriate for the given ERROR_CODE with the
+/* given additional MESSAGE.  The current line number is given by the
+/* LINE argument, the current file is gotten from CURRENT_SOURCE.
+/* ------------------------------------------------------------------- */
+
+SCAN_ERROR_I_ON_LINE: procedure (ERROR_CODE, LINE, MESSAGE)
+		      external  (X_SCAN_ERROR_I_ON_LINE);
+
+	declare
+		ERROR_CODE	fixed binary (15),
+		LINE		fixed binary (31),
+		MESSAGE		character (*) varying;
+	declare
+		SAVE_LINE	fixed binary (31);
+
+	SAVE_LINE = CURRENT_SOURCE.PHYSICAL_LINE;
+	CURRENT_SOURCE.PHYSICAL_LINE = LINE;
+	call SCAN_ERROR_I (ERROR_CODE, MESSAGE);
+	CURRENT_SOURCE.PHYSICAL_LINE = SAVE_LINE;
+
+end SCAN_ERROR_I_ON_LINE;
+
+/* ---------------------------------------------------------------------
+/* PP_ERROR
+/* ------------------------------------------------------------------- */
+
+PP_ERROR: procedure (ERROR) external (X_PP_ERROR);
+
+	declare
+		ERROR	type (SHORT_T);
+
+	CURRENT_ERROR_KIND	= PREPROCESSOR;
+	CURRENT_ERROR_CODE	= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS	= 0;
+	call PRINT_ERROR ();
+
+end PP_ERROR;
+
+/* ---------------------------------------------------------------------
+/* PP_ERROR_I
+/* ------------------------------------------------------------------- */
+
+PP_ERROR_I: procedure (ERROR, S) external (X_PP_ERROR_I);
+
+	declare
+		ERROR	type (SHORT_T),
+		S	character (*) varying;
+
+	CURRENT_ERROR_KIND		= PREPROCESSOR;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 1;
+	CURRENT_ERROR_INSERT (1)	= addr (S);
+	call PRINT_ERROR ();
+
+end PP_ERROR_I;
+

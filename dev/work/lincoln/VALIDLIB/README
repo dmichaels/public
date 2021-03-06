@@ -1,0 +1,11 @@
+----------------------------------------------------------------------
+This directory contains the source files necessary to make
+the VALID Logic Systems applications library.  These routines
+may be used by various local applications programs which need
+to interface with the VALID packager (i.e. its output files),
+such as the "wirelist" and "layout" programs.
+
+		David Michaels (david@ll-sst)
+		M.I.T Lincolon Laboratory (group 24)
+		December 1984
+----------------------------------------------------------------------

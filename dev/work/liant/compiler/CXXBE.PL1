@@ -1,0 +1,1032 @@
+/* C++ cxxbe.pl1 - Front-end "back-end" (post-pass) */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.27.93  DGM  066 	Fix for Intel 386/486 SVR4 port.
+ *  05.13.93  DGM  065 	No change.
+ *  05.13.93  DGM  064 	Support for -(no)locnm and -(no)locord.
+ *  11.09.92  DGM  062 	Minor fix for -lint.
+ *  10.27.92  DGM  061R	Clear SYM_NODE.REFERENCE_COUNT for optimizer;
+ *			we set it indirectly via SYM_NODE.SEQUENCE_NUMBER
+ *			which is overlaid on it.
+ *  10.06.92  DGM  061 	Reorder symbols when necessary to get correct
+ *			relocation from output-editor on UNIX-V (this
+ *			seems to be a deficiency of the UNIX-V OE).
+ *  09.30.92  DGM  060 	Set SYM_NODE.RETURNS_AT in
+ *			PATCH_EXTERNAL_LINKAGE_SYMBOL ().
+ *  07.21.92  DGM  059 	Mangle internal linkage "local" symbol names.
+ *  06.26.92  DGM  058 	"Fix" for allocate deficiency (give it some
+ *			help by setting BSS_AT).
+ *  05.19.92  DGM  057 	Added #pragma weak support; minor fix.
+ *  05.12.92  DGM  056  Added FORTRAN/PASCAL/PLI_LINKAGE support.
+ *  05.02.92  DGM  055R	Set SYM_NODE.DO_NOT_DELETE_PROCEDURE.
+ *  04.18.92  PKT  055	Merged 052->053 with 052->054.
+ *  03.26.92  DGM  054	New value-node scheme.
+ *  03.30.92  DGM  053	Updated for the new SYM_NODE.LOCAL_AT.
+ *  02.24.92  PKT  052	Changed to remove block nodes of unreferenced
+ *			functions.
+ *  02.03.92  PKT  051  Fix in BACK_END_STORAGE_CLASS to restore the
+ *			ability to omit some static member definitions.
+ *  01.28.92  DGM  050  Fix in MAKE_PARAMETER_LINK_NODE_LIST which
+ *			showed up when the paged version of the
+ *			symbol table was used.
+ *  01.21.92  DGM  049	Added MAKE_PARAMETER_LINK_NODE_LIST.
+ *  01.13.92  PKT  048	Changed to set SYM_NODE.ALIAS according to
+ *			CXX_OPTIMIZER_NEEDS_ALIAS_BIT for based symbols
+ *			and externals.
+ *  12.12.91  DGM  047  Fix in BACK_END_STORAGE_CLASS (a little scary);
+ *			fixed linking problem for calc demo on V.4.
+ *  11.20.91  DGM  046  Merge.
+ *  11.19.91  PKT  045L Changed to use BACK_END_TYPE_BY_REFERENCE.
+ *  11.18.91  DGM  043  Emit warning compilation-unit with no external
+ *			definitions.
+ *  10.03.91  DGM  042  Ignore asm & compilation-assert function symbols;
+ *			Handle short enums.
+ *  09.06.91  PKT  041  Fix BACK_END_STORAGE_CLASS.
+ *  09.06.91  DGM  040  Updated 039 stuff.
+ *  08.23.91  DGM  039  Set up to give never-used warning if -lint.
+ *  08.19.91  DGM  038  Picked up ANSI-C FE changes (from 06.05.90)
+ *			for floating point constant folding.
+ *  08.03.91  PKT  037  Fix diagnostic.
+ *  07.24.91  DGM  036  Move call of EMIT_VFTS to END_GLOBAL_SCOPE.
+ *  07.23.91  DGM  035R Set SYM_NODE.NOT_OPTIMIZABLE if "volatile".
+ *  07.22.91  DGM  035R Removed assignment of SYM_NODE.REFERENCED
+ *			to SYM_NODE.COMMON.REFERENCED.
+ *  07.08.91  PKT  035  Fixed SYM_NODE.REFERENCED.
+ *  07.08.91  DGM  034  Minor fix - wasn't mangling name "abc" for:
+ *			f () { void abc (); } void abc () { }
+ *			Also, minor change for BlackBird optimizer.
+ *  06.17.91  PKT  033  Made undefined label severity 3. 
+ *  06.17.91  DGM  032  Fix for PATCH_EXTERNAL_LINKAGE_SYMBOL.
+ *  06.03.91  DGM  031  Added PATCH_EXTERNAL_LINKAGE_SYMBOL;
+ *  03.08.91  DGM  030  Miscellaneous/important fixes.
+ *  02.28.91  DGM  029  Error message improvements.
+ *  02.21.91  PKT  029  Fixed so that symbols created by
+ *			REF_WITH_LOCATOR will be recognized by the
+ *			optimizer as based symbols.  Updated for
+ *			pointers to members.
+ *  02.11.91  DGM  028  Minor fix (first call to BACK_END_TYPE_SIZE).
+ *  02.01.91  DGM  027  Updated to the new global names scheme.
+ *  01.31.91  DGM  026  More anonymous union fixes.
+ *  01.18.91  DGM  025  Check SYM_NODE.INTERNAL_LINKAGE rahter then
+ *			SYM_NODE.STORAGE_CLASS = STATIC_ST for
+ *			ERR_UNDEF_STATIC_FUN error.  In debug mode, set
+ *			BLOCK_NODE.NAME always to the demangled name.
+ *			Fix in BACK_END_STORAGE_CLASS for anon. unions.
+ *  01.11.91  DGM  024  Minor update.
+ *  11.29.90  DGM  023  Set BLOCK_NODE.NAME for CodeWatch.
+ *  11.15.90  DGM  022  Suppress allocation of externals for unreferenced
+ *			symbols, even in debug mode.
+ *  10.24.90  PKT  021  Widening prototyped integral type parameters.
+ *  10.18.90  TLF  020  Minor fix for undefined tags in COMPLETE_SYMBOL.
+ *  10.10.90  DGM  019  Changes for pure virtual functions.
+ *  09.25.90  DGM  018  Preprocessor include file name changes.
+ *  09.17.90  PKT  017  Changed for parameters that have a copy constructor.
+ *  09.14.90  DGM  016  Changed include file names and VOP names.
+ *  09.13.90  DGM  015  Changed xxx_SC names to xxx_ST.
+ *  09.12.90  DGM  014  Minor fix for undefined tags in COMPLETE_SYMBOL.
+ *  09.05.90  PKT  013  Updated for variable-sized arrays.
+ *  09.04.90  DGM  012  Don't mangle "main" function name.
+ *  08.08.90  DGM  011  New type-node.
+ *  08.07.90  PKT  010  Updated.
+ *  07.10.90  DGM  009  Guard against unused VFTs being marked as a
+ *			global reference (used SYM_NODE.IS_DUMMY).
+ *  06.29.90  DGM  008  Ignore type-less DUMMY_SK symbols
+ *  06.13.90  DGM  007  Set SYM_NODE.COMMON.SHOULD_INLINE.
+ *  05.25.90  DGM  006  Linkage related fixes, and call EMIT_VFTS.
+ *  04.27.90  DGM  005  Changed type map names from IS_xxx to IS_xxx_TYPE.
+ *  04.24.90  DGM  004  Miscellaneous changes for initialization.
+ *  04.04.90  DGM  003  Changed DIM_NODE field names.
+ *  03.27.90  DGM  002  Fix in BACK_END_STORAGE_CLASS.
+ *  03.02.90  DGM  001  Updated.
+ *  02.15.90  DGM  000  Orignal; adapted from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.27.93 065 CXXBE');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include ROUNDU_DCL;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_SOURCE_MGR_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_MANGLED_NAMES_PKG;
+%include CXX_INTEGRAL_PROMOTION_PKG;
+%include CXX_TARGET_DATA_CONVERSION_PKG;
+%include CXX_PRAGMA_WEAK_PKG;
+%include CXX_RELOCATION_DEPENDENCY_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+FOUND_EXTERNAL_DEFINITION      type (BOOL_T) static internal initial (FALSE),
+HAVE_ONE_OR_MORE_LOCAL_SYMBOLS type (BOOL_T) static internal initial (FALSE);
+
+/* ---------------------------------------------------------------------
+/* CXXBE
+/*
+/* C++ front-end post-pass.  Runs through the symbol table and sets
+/* it up for the back-end.  Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+CXXBE: procedure external;
+
+	declare
+		(B, NEXT_B)		type (NID_T),
+		(LAST_B, REFERENCED_B)	type (NID_T),
+		(S, NEXT_S, PREV_S, C)	type (NID_T),
+		(TYPE, SIZE)		type (SHORT_T),
+		(BP, SP)		type (POINTER_T);
+
+	/*
+	/* Remove block nodes for unreferenced functions from
+	/* the list of blocks.  These are marked by the front
+	/* end with BLOCK_NODE.FINISHED.
+	/**/
+
+	LAST_B		= NULL_NID;
+	REFERENCED_B	= NULL_NID;
+
+	do B = BLOCK_LIST_ID repeat NEXT_B while (B ^= NULL_NID);
+		call SET_BLOCK_NODE (B);
+		NEXT_B = BLOCK_NODE.NEXT;
+		if ^BLOCK_NODE.FINISHED then do;
+			if REFERENCED_B ^= LAST_B then do;
+				/*
+				/* Patch the link from the referenced block.
+				/**/
+				call SET_BLOCK_NODE (REFERENCED_B);
+				BLOCK_NODE.NEXT = B;
+			end;
+			REFERENCED_B = B;
+		end;
+		LAST_B = B;
+	end;
+
+	if REFERENCED_B ^= LAST_B then do;
+		/*
+		/* Patch the link from the referenced block.
+		/**/
+		call SET_BLOCK_NODE (REFERENCED_B);
+		BLOCK_NODE.NEXT = B;
+	end;
+
+	/*
+	/* Visit each and every symbol in each and every
+	/* block and complete its data for the back-end.
+	/**/
+
+	do B = BLOCK_LIST_ID repeat NEXT_B while (B ^= NULL_NID);
+		call SET_BLOCK_NODE (B);
+		NEXT_B = BLOCK_NODE.NEXT;
+		BLOCK_NODE.CONTEXT_LIST = NULL_NID;
+		PREV_S = NULL_NID;
+		do S = BLOCK_NODE.DCL_LIST repeat NEXT_S while (S ^= NULL_NID);
+			call SET_SYM_NODE (S);
+			NEXT_S = SYM_NODE.BROTHER;
+			call COMPLETE_SYMBOL ();
+		end;
+	end;
+
+	/*
+	/* Walk the the constant-list of the outer-most (imaginary)
+	/* block, and fill in the back-end type and size data, e.g.
+	/* precision/length in token-node.
+	/**/
+
+	call SET_BLOCK_NODE_R (BLOCK_LIST_ID);
+
+	do C = BLOCK_NODE.CONSTANT_LIST
+	repeat TOKEN_NODE.ADDRESS while (C ^= NULL_NID);
+
+		call SET_TOKEN_NODE (C);
+
+		TYPE = rank (TOKEN_NODE.TYPE);
+		SIZE = TOKEN_NODE.SIZE;
+
+		if ((TYPE = CHAR_CONSTANT_TOKEN) |
+		    (TYPE = WCHAR_CONSTANT_TOKEN) |
+		    (TYPE = COOKED_CHAR_CONSTANT_TOKEN) |
+		    (TYPE = COOKED_WCHAR_CONSTANT_TOKEN)) &
+		   (TOKEN_NODE.BLOCK_LIST = -1) then do;
+			TYPE = CHAR_BT;
+		end;
+		else if TYPE = FLOAT_CONSTANT_TOKEN then do;
+			/*
+			/* FLOAT_TC/DOUBLE_TC saved here by EMITT.
+			/**/
+			TYPE = TOKEN_NODE.REPLACEMENT;
+			call TARGET_CONVERSION
+			     (addr (TOKEN_NODE.SPELLING), TYPE, 0);
+		end;
+		if IS_ARITHMETIC_TYPE (TYPE) then do;
+			call SIMPLE_BACK_END_TYPE_SIZE ((TYPE), TYPE, SIZE);
+			TOKEN_NODE.TYPE = byte (TYPE);
+			TOKEN_NODE.REPLACEMENT = SIZE;
+		end;
+	end;
+
+	/*
+	/* For symbols which have associated relocation data;
+	/* these symbols will be picked off and placed on a
+	/* separate list which will then be tacked onto the front
+	/* of the block dcl-list.  N.B. this is only done on certain
+	/* systems for which we have a deficient output-editor,
+	/* namely UNIX-V; this is hooked on the build-list constant
+	/* CXX_NEEDS_RELOCATION_ORDERING & WRITE_RELOCATION_DATA (datini).
+	/**/
+
+	call REORDER_RELOCATION_SYMBOLS (HAVE_ONE_OR_MORE_LOCAL_SYMBOLS);
+
+	/*
+	/* Setting this global variable for the back-end to -1 suppresses
+	/* any additional code to support starting program execution at an
+	/* entry other than 'main'.  C requires a 'main' entry somewhere.
+	/*
+	/* If it is useful to support some more flexible rule later, the
+	/* front-end variable MAIN_START_SYMBOL has been set to the sym-node
+	/* id of the first external entry in this module, is zero if there
+	/* are no external entries here.
+	/**/
+
+        MAIN_START_ENTRY_SYM = -1;
+
+	/* Give a warning if no external definitions were found */
+
+	if ^FOUND_EXTERNAL_DEFINITION then do;
+		call SEMANTIC_ERROR_AT (ERR_NO_EXTERN_DEF,
+					CURRENT_SOURCE.LINE,
+					CURRENT_SOURCE.FILE);
+	end;
+
+	/* Process any recorded #pragma weak directives */
+
+	call PROCESS_PRAGMA_WEAK_NAMES ();
+
+	/* Done */
+
+	return;
+
+end CXXBE;
+
+/* ---------------------------------------------------------------------
+/* COMPLETE_SYMBOL
+/*
+/* Complete/patch-up the symbol represented by the current-node-id for
+/* the back-end components.  If the symbol is to be removed from its
+/* containing block's dcl-list then return FALSE, otherwise return TRUE.
+/* ------------------------------------------------------------------- */
+
+COMPLETE_SYMBOL: procedure internal;
+
+	declare
+		THIS_SYMBOL		type (NID_T),
+		THIS_DIMENSIONS		(0 : MAX_DERIVED_TYPE_LEVEL)
+					type (LONG_T),
+		THIS_MULTIPLIERS	(0 : MAX_DERIVED_TYPE_LEVEL)
+					type (LONG_T),
+		THIS_NDIMENSIONS	type (SHORT_T),
+		THIS_DIM_UNDEFINED	type (BOOL_T),
+		THIS_TOP_TYPE		type (SHORT_T),
+		THIS_SIZE		type (LONG_T),
+		THIS_SIZE_UNITS		type (SHORT_T),
+		THIS_DIM_SIZE		type (LONG_T),
+		THIS_NAME		type (NID_T),
+		THIS_NEW_NAME		type (NID_T),
+		THIS_BY_REFERENCE	type (BOOL_T),
+		THIS_TYPE_LEVEL		type (SHORT_T),
+		LOWER			type (LONG_T),
+		K			type (NID_T),
+		SZ			type (LONG_T),
+		PROMOTED_TYPE		type (SHORT_T),
+		I			type (SHORT_T),
+		FIELD1			type (SHORT_T),
+		(TP, DP, P)		type (POINTER_T),
+		GAVE_ERROR		type (BOOL_T),
+		BACK_END_TYPE		type (SHORT_T),
+		BACK_END_STORAGE	type (SHORT_T),
+		LOW_LEVEL_TYPE		type (NID_T),
+		LOW_LEVEL_TYPE_DATA	type (TYPE_DATA_T);
+	declare
+		size			builtin;
+
+	/* Clear this SYM_NODE.REFERENCE_COUNT for the optimizer */
+
+	SYM_NODE.REFERENCE_COUNT = 0;
+
+	/* See if we already did this symbol */
+
+        if rank (SYM_NODE.COMMON.TYPE) ^= 0 then
+		return;
+
+	/* Ignore ASM & COMPILATION_ASSERT functions */
+
+	if SYM_NODE.IS_FUNCTION &
+	   (SYM_NODE.ASM_FUNCTION |
+	    SYM_NODE.COMPILATION_ASSERT_FUNCTION) then
+		return;
+
+	THIS_SYMBOL = CURRENT_NODE_ID;
+
+	/* See if this is a type-less dummy symbol (ignore) */
+
+	if SYM_NODE.TYPE = NULL_NID then do;
+		if SYM_NODE.IS_DUMMY & ^SYM_NODE.IS_TAG then
+			return;
+		else if ^SYM_NODE.IS_DUMMY then do;
+			/*
+			/* Here, something is probably wrong -- give a warning.
+			/**/
+			call COMPILER_ERROR_AT_II
+			     (ERR_TYPELESS_SYM_NODE,
+			      (SYM_NODE.DCL_LINE_ID), SYM_NODE.DCL_FILE_ID,
+			      trim (char (CURRENT_NODE_ID)),
+			      FULL_QUALIFIED_SYMBOL_NAME
+			      (QUALIFIED_SYMBOL_NAME (THIS_SYMBOL)));
+			return;
+		end;
+
+		/*
+		/* Otherwise, the symbol was generated in BASED_SYM,
+		/* and should not be ignored, for the optimizer.
+		/**/
+		THIS_TYPE_LEVEL = 0;
+		THIS_TOP_TYPE = STRUCT_BT;
+	end;
+
+	else do;
+		call GET_TYPE_NODE_R (SYM_NODE.TYPE, TP);
+		THIS_TYPE_LEVEL = rank (TP->TYPE_NODE.LEVEL);
+		THIS_TOP_TYPE = rank (SYM_NODE.TOP_TYPE.CODE);
+	end;
+
+/*	/*
+/*	/* Bug work-around.
+/*	/*
+/*	/*	SYM_NODE.REFERENCED = TRUE;
+/*	/*
+/*	/* Shoot, I don't remember what the bug was; now I'm
+/*	/* running into problems because implicitly declared
+/*	/* copy constructors are getting undefined references;
+/*	/* the following is a hack to deal with this.
+/*	/**/
+/*
+/*	if SYM_NODE.IS_CONSTRUCTOR_FUNCTION then do;
+/*		call GET_SYM_NODE_R (SYM_NODE.ENCLOSING_SCOPE_OWNER, P);
+/*		if P->SYM_NODE.COPY_CONSTRUCTOR = THIS_SYMBOL then do;
+/*			if SYM_NODE.IS_DUMMY & ^SYM_NODE.DEFINED then
+/*				SYM_NODE.REFERENCED = FALSE;
+/*		end;
+/*		call RELEASE_SYM_NODE (SYM_NODE.ENCLOSING_SCOPE_OWNER);
+/*	end;
+/**/
+		
+	/* Get some basic symbol data */
+
+        THIS_NAME = SYM_NODE.NAME;
+
+	/* Handle class objects */
+
+	if SYM_NODE.IS_PARAMETER then
+		THIS_BY_REFERENCE = BACK_END_TYPE_BY_REFERENCE (SYM_NODE.TYPE);
+	else	THIS_BY_REFERENCE = FALSE;
+
+        /* Collect array dimensions */
+
+	GAVE_ERROR = FALSE;
+
+	THIS_NDIMENSIONS = 0;
+
+	do I = THIS_TYPE_LEVEL to 1 by -1
+	while (TP->TYPE_NODE.TYPE_CODE (I) = byte  (ARRAY_DT));
+		call GET_DIM_NODE_R (TP->TYPE_NODE.TYPE_NID (I), DP);
+		THIS_DIM_UNDEFINED = DP->DIM_NODE.INCOMPLETE;
+		if THIS_DIM_UNDEFINED then
+			THIS_DIM_SIZE = 0;
+		else
+			THIS_DIM_SIZE = DP->DIM_NODE.VALUE;
+		THIS_SIZE	= DP->DIM_NODE.ELEMENT_SIZE;
+		THIS_SIZE_UNITS = rank (DP->DIM_NODE.ELEMENT_SIZE_UNITS);
+		call RELEASE_DIM_NODE (TP->TYPE_NODE.TYPE_NID (I));
+		if THIS_SIZE_UNITS > HALF_WORDS then do;
+			/*
+			/* Convert any units larger than HALF_WORDS to
+			/* HALF_WORDS.  This may not be necessary anymore.
+			/**/
+			THIS_SIZE = ROUNDU (THIS_DIM_SIZE,
+					    THIS_SIZE_UNITS,
+					    HALF_WORDS);
+			THIS_SIZE_UNITS = HALF_WORDS;
+		end;
+		if (THIS_DIM_UNDEFINED) & SYM_NODE.DEFINED then do;
+			/*
+			/* Error; this array is of unknown length.
+			/**/
+			if ^GAVE_ERROR then do;
+				if ^SW_CLASSIC_C_MODE then do;
+					call SEMANTIC_ERROR_AT_I
+						(ERR_ARRAY_ZERO_SIZE,
+						 (SYM_NODE.DCL_LINE_ID),
+						 SYM_NODE.DCL_FILE_ID,
+						 QUALIFIED_SYMBOL_NAME
+						 (THIS_SYMBOL));
+					GAVE_ERROR = TRUE;
+				end;
+			end;
+		end;
+		THIS_MULTIPLIERS (THIS_NDIMENSIONS) = THIS_SIZE;
+		THIS_DIMENSIONS (THIS_NDIMENSIONS)  = THIS_DIM_SIZE;
+		THIS_NDIMENSIONS = THIS_NDIMENSIONS + 1;
+	end;
+
+	if THIS_TOP_TYPE = ARRAY_DT then
+		THIS_TOP_TYPE = rank (TP->TYPE_NODE.TYPE_CODE (0));
+
+        if (THIS_NDIMENSIONS > 0) &
+	    SYM_NODE.IS_PARAMETER | THIS_BY_REFERENCE then do;
+                /*
+		/* An array parameter is actually a pointer;
+		/* a parameter for class object with a copy constructor
+		/* uses a pointer.
+		/**/
+                THIS_NDIMENSIONS = 0;
+                THIS_TOP_TYPE = POINTER_DT;
+		call SIMPLE_TYPE_SIZE (POINTER_DT,
+				       THIS_SIZE,
+				       THIS_SIZE_UNITS, 0);
+                SYM_NODE.SIZE       = THIS_SIZE;
+                SYM_NODE.SIZE_UNITS = byte (THIS_SIZE_UNITS);
+	end;
+
+	if THIS_TOP_TYPE = FUNCTION_DT then do;
+                BACK_END_STORAGE = STO_CONSTANT;
+                if ^SYM_NODE.DEFINED & SYM_NODE.INTERNAL_LINKAGE
+		   & ^SYM_NODE.IS_DUMMY then do;
+			if SYM_NODE.REFERENCED then do;
+				/*
+				/* If an identifier declared with
+				/* internal linkage is used in an
+				/* expression (other than within
+				/* sizeof), there shall be exactly
+				/* one external definition for the
+				/* identifer.
+				/**/
+				call SEMANTIC_ERROR_AT_I
+					(ERR_UNDEF_STATIC_FUN,
+					 (SYM_NODE.DCL_LINE_ID),
+					 SYM_NODE.DCL_FILE_ID,
+					 FULL_QUALIFIED_SYMBOL_NAME
+					 (THIS_SYMBOL));
+
+			end;
+		end;
+		if SYM_NODE.DEFINED then do;
+			/*
+			/* Duplicate the parameter list (a sym-node list
+			/* linked thru the NEXT_PARAMETER field) into a
+			/* link-node list and hang it off of FIELD1 of
+			/* the function sym-node.
+			/**/
+			/* call MAKE_PARAMETER_LINK_NODE_LIST (); */
+			call MAKE_BACK_END_PARAMETER_LIST (NULL_NID, NULL_NID);
+		end;
+	end;
+	else do;
+                if ^(SYM_NODE.IS_CONSTANT | THIS_BY_REFERENCE) then
+			SYM_NODE.VARIABLE_AT = TRUE;
+		BACK_END_STORAGE = BACK_END_STORAGE_CLASS ();
+	end;
+
+        if ((SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (FUNCTION_SCOPE)) |
+            (SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (BLOCK_SCOPE))) &
+	   (SYM_NODE.STORAGE_CLASS = byte (STATIC_ST)) &
+	   (^SYM_NODE.DEFINED) then do;
+		/*
+		/* Allocated in outer block only.
+		/**/
+		BACK_END_STORAGE = 0;
+	end;
+	else if BACK_END_STORAGE = STO_BASED then
+		SYM_NODE.ALIAS = CXX_OPTIMIZER_NEEDS_ALIAS_BIT;
+	else if (SYM_NODE.EXTERNAL_LINKAGE) |
+		(SYM_NODE.STORAGE_CLASS = byte (EXTERN_ST)) then do;
+                SYM_NODE.EXTERNAL_AT = TRUE;
+/*
+/*		/*
+/*		/* Here, check for a *dummy* external-linkage incomplete
+/*		/* (zero size) array symbol; only an unused virtual
+/*		/* function table will possess all of these attributes.
+/*		/**/ 
+/*		if (rank (SYM_NODE.TOP_TYPE.CODE) = ARRAY_DT) &
+/*		   (SYM_NODE.SIZE = 0) &
+/*		   (SYM_NODE.IS_DUMMY) then do;
+/*			/*
+/*			/* This *dummy* external-linkage incomplete
+/*			/* (zero size) array symbol will be *not*
+/*			/* be marked as a global reference (this is
+/*			/* presumably an unused virtual function table).
+/*			/**/
+/*			SYM_NODE.EXTERNAL_AT = FALSE;
+/*
+/*		end;
+/*		else
+/**/
+                if THIS_TOP_TYPE ^= FUNCTION_DT then do;
+			SYM_NODE.ALIAS = CXX_OPTIMIZER_NEEDS_ALIAS_BIT;
+                       	if SYM_NODE.DEFINED then
+				SYM_NODE.GLOBALDEF_AT = TRUE;
+			else	SYM_NODE.GLOBALREF_AT = TRUE;
+		end;
+	end;
+
+        if SYM_NODE.IS_LABEL then do;
+		if SYM_NODE.LABEL_TO_USE ^= NULL_NID then do;
+			call SEMANTIC_ERROR_AT_I
+			     (ERR_UNDEF_LABEL,
+			      (SYM_NODE.DCL_LINE_ID), SYM_NODE.DCL_FILE_ID,
+			      TOKEN_NAME (SYM_NODE.NAME));
+		end;
+		SYM_NODE.FIELD2 = 0;
+	end;
+
+        if SYM_NODE.IS_TAG then do;
+		if (^SYM_NODE.DEFINED) &
+		   (SYM_NODE.REFERENCED) &		/* DGM (006) */
+		   (SYM_NODE.NAME ^= NULL_NID) then do;
+			call SEMANTIC_ERROR_AT_I
+			     (ERR_UNDEF_IDENTIFIER,
+			      (SYM_NODE.DCL_LINE_ID), SYM_NODE.DCL_FILE_ID,
+			      QUALIFIED_SYMBOL_TYPE_NAME (THIS_SYMBOL));
+		end;
+	end;
+
+	if THIS_TOP_TYPE = MEMBER_POINTER_DT then do;
+		/*
+		/* Translated type depends on whether it
+		/* points to member data or member function.
+		/**/
+		LOW_LEVEL_TYPE = GET_MEMBER_POINTER_TYPE 
+			         (TP->TYPE_NODE.DATA (THIS_TYPE_LEVEL-1));
+		call GET_TOP_TYPE (LOW_LEVEL_TYPE, LOW_LEVEL_TYPE_DATA);
+		call SIMPLE_BACK_END_TYPE_SIZE
+		     (rank (LOW_LEVEL_TYPE_DATA.CODE),
+		      BACK_END_TYPE,
+		      FIELD1);
+	end;
+	else if THIS_TOP_TYPE = ENUM_BT then do;
+		call BACK_END_TYPE_SIZE (SYM_NODE.TOP_TYPE,
+					 BACK_END_TYPE,
+					 FIELD1);
+	end;
+	else do;
+		call SIMPLE_BACK_END_TYPE_SIZE (THIS_TOP_TYPE,
+						BACK_END_TYPE,
+						FIELD1);
+	end;
+
+        SYM_NODE.CONSTANT_SIZE = TRUE;
+
+        if (BACK_END_TYPE = CHAR_) | (BACK_END_TYPE = BIT_ALIGNED_) then
+		SYM_NODE.CONSTANT_LENGTH = TRUE;
+
+        if BACK_END_STORAGE = STO_MEMBER then
+		SYM_NODE.CONSTANT_OFFSET = TRUE;
+
+        if rank (SYM_NODE.BOUNDARY) = 0 then
+		SYM_NODE.BOUNDARY = byte (ADDRESS_UNITS);
+
+        if (BACK_END_TYPE = CHAR_) &
+	   (THIS_NDIMENSIONS > 0) &
+	   (SYM_NODE.FIELD1 = 0) then do;
+                /*
+		/* Make array of char into a character string.
+		/**/
+                THIS_NDIMENSIONS = THIS_NDIMENSIONS - 1;
+                FIELD1 = FIELD1 * THIS_DIMENSIONS (THIS_NDIMENSIONS);
+	end;
+
+        if BACK_END_TYPE = STRUCTURE_ then do;
+		if SYM_NODE.IS_TAG then do;
+                        do K = SYM_NODE.FIELD1
+                        repeat SYM_NODE.BROTHER while (K ^= 0);
+				call SET_SYM_NODE (K);
+				call COMPLETE_SYMBOL ();
+                        end;
+                        call SET_SYM_NODE (THIS_SYMBOL);
+		end;
+	end;
+	else if FIELD1 ^= 0 then
+		SYM_NODE.FIELD1 = FIELD1;
+
+        if THIS_NDIMENSIONS > 0 then do;
+                if THIS_TOP_TYPE = LABEL_BT then do;
+			/*
+                        /* D is always 1
+                        /* This is only case where we use a non-zero LB.
+			/**/
+                        LOWER = SYM_NODE.LOCATION;
+                        SYM_NODE.LOCATION = 0;
+			/* so UPPER is right */
+                        THIS_DIMENSIONS (0) = LOWER + THIS_DIMENSIONS (0);
+		end;
+		else	LOWER = 0;
+
+		/* Array-node size: THIS_NDIMENSIONS * BOUND_SIZE */
+
+		call NEW_ARRAY_NODE (SYM_NODE.ARRAY_ID, P);
+
+		P->ARRAY_NODE.DIMENSIONS	    = byte (THIS_NDIMENSIONS);
+		P->ARRAY_NODE.ELEMENT_SIZE          = THIS_SIZE;
+		P->ARRAY_NODE.ELEMENT_SIZE_UNITS    = byte (THIS_SIZE_UNITS);
+		P->ARRAY_NODE.MULTIPLIER_UNITS      = byte (THIS_SIZE_UNITS);
+		P->ARRAY_NODE.CONSTANT_ELEMENT_SIZE = TRUE;
+
+		do I = 0 to THIS_NDIMENSIONS - 1;
+		    P->ARRAY_NODE.BOUND (I).LOWER = LOWER;
+		    P->ARRAY_NODE.BOUND (I).UPPER = THIS_DIMENSIONS (I) - 1;
+		    P->ARRAY_NODE.BOUND (I).MULTIPLIER = THIS_MULTIPLIERS (I);
+		    P->ARRAY_NODE.BOUND (I).CONSTANT_UPPER = TRUE;
+		    P->ARRAY_NODE.BOUND (I).CONSTANT_LOWER = TRUE;
+		    P->ARRAY_NODE.BOUND (I).CONSTANT_MULTIPLIER = TRUE;
+		end;
+
+		call RELEASE_ARRAY_NODE (SYM_NODE.ARRAY_ID);
+	end;
+
+	if SYM_NODE.IS_MEMBER &
+	   (rank (SYM_NODE.OFFSET_UNITS) > HALF_WORDS) then do;
+		/*
+		/* Convert any units largest than HALF_WORDS to HALF_WORDS.
+		/* -NOTE- This may not be necessary anymore.
+		/**/
+                SYM_NODE.LOCATION = ROUNDU (SYM_NODE.LOCATION,
+					    rank (SYM_NODE.OFFSET_UNITS),
+					    HALF_WORDS);
+                SYM_NODE.OFFSET_UNITS = byte (HALF_WORDS);
+	end;
+
+        /*                                                                  
+        /* Check if this is a "widened" int param. If so, change the SIZE   
+        /* and SIZE_UNITS to that of the "widened" type for the allocator   
+        /* but leave the original type intact. See EXPAND(REF_VO) in expv  
+        /* for related code. Since only "widened" types are pushed as params
+        /* this is also true for non-prototyped symbols. 
+        /**/
+
+        if IS_INTEGRAL_TYPE (THIS_TOP_TYPE) & SYM_NODE.IS_PARAMETER then do;
+		/* Get its widened type */
+		PROMOTED_TYPE = INTEGRAL_PROMOTION (THIS_TOP_TYPE);
+		if PROMOTED_TYPE ^= THIS_TOP_TYPE then do;
+			call SIMPLE_TYPE_SIZE (PROMOTED_TYPE, THIS_SIZE, 
+					       THIS_SIZE_UNITS, 0);
+			SYM_NODE.SIZE       = THIS_SIZE;
+			SYM_NODE.SIZE_UNITS = byte (THIS_SIZE_UNITS);
+		end;
+	end;
+        
+        if rank (SYM_NODE.SIZE_UNITS) > HALF_WORDS then do;
+		/*
+		/* Convert any units largest than HALF_WORDS to HALF_WORDS.
+		/* -NOTE- This may not be necessary anymore.
+		/**/
+                SYM_NODE.SIZE = ROUNDU (SYM_NODE.SIZE,
+					rank (SYM_NODE.SIZE_UNITS),
+					HALF_WORDS);
+                SYM_NODE.SIZE_UNITS = byte (HALF_WORDS);
+	end;
+
+	/* Supress allocation if necessary */
+
+        if ^SYM_NODE.REFERENCED & ^SYM_NODE.DEFINED then do;
+		if SYM_NODE.EXTERNAL_LINKAGE |
+		   (^SYMBOL_TABLE &
+		     ((SYM_NODE.STORAGE_CLASS = byte (STATIC_ST)) |
+		      (SYM_NODE.STORAGE_CLASS = byte (AUTO_ST)))) then do;
+			if ^SYM_NODE.IS_FUNCTION |
+			    (SYM_NODE.NAME ^= MAIN_NAME) then do;
+                		BACK_END_STORAGE = 0;
+                		SYM_NODE.EXTERNAL_AT = FALSE;
+			end;
+		end;
+	end;
+
+	/* Set local (static internal linkage) symbol indicator */
+
+	if ^SW_DISCARD_LOCAL_NAMES &
+	    SYM_NODE.INTERNAL_LINKAGE &
+	   (SYM_NODE.IS_DATA | SYM_NODE.IS_FUNCTION) &
+	   (SYM_NODE.NAME ^= NULL_NID) then do;
+		SYM_NODE.LOCAL_AT = TRUE;
+		HAVE_ONE_OR_MORE_LOCAL_SYMBOLS = TRUE;
+	end;
+
+	/*
+	/* If this is a volatile object, then turn on the
+	/* ALIAS attribute and turn off the REGISTER attribute.
+	/**/
+
+	if TP->TYPE_NODE.DATA (rank (TP->TYPE_NODE.LEVEL)).VOLATILE then do;
+		SYM_NODE.ALIAS = TRUE;
+		SYM_NODE.NOT_OPTIMIZABLE = TRUE;
+		SYM_NODE.REGISTER_AT = FALSE;
+	end;
+
+	if SYM_NODE.TYPE ^= NULL_NID then
+		call RELEASE_TYPE_NODE (SYM_NODE.TYPE);
+
+	/* Set the back-end type and storage */
+
+        SYM_NODE.COMMON.STORAGE		= byte (BACK_END_STORAGE);
+        SYM_NODE.COMMON.TYPE		= byte (BACK_END_TYPE);
+
+	/*
+	/* Set up a mangled name if necessary.
+	/*
+	/* (Probably not necessary to check for "static" member,
+	/* rather just member, since if its a "static" member,
+	/* EXTERNAL_AT should have already been set.
+	/**/
+
+	SYM_NODE.COMMON.NAME = SYM_NODE.NAME;
+
+	if SYM_NODE.EXTERNAL_AT | SYM_NODE.LOCAL_AT then do;
+		if SYM_NODE.IS_MEMBER &
+		  ^SYM_NODE.IS_NON_STATIC_DATA_MEMBER then do;
+			SYM_NODE.COMMON.NAME =
+				FORM_IDENTIFIER_TOKEN
+					(MANGLED_SYMBOL_NAME (THIS_SYMBOL));
+		end;
+		else if (SYM_NODE.LINKAGE_KIND = byte (DEFAULT_LINKAGE)) |
+			(SYM_NODE.LINKAGE_KIND = byte (Cxx_LINKAGE)) then do;
+			if SYM_NODE.IS_FUNCTION then do;
+				if SYM_NODE.NAME ^= MAIN_NAME then do;
+					SYM_NODE.COMMON.NAME =
+						FORM_IDENTIFIER_TOKEN
+							(MANGLED_SYMBOL_NAME
+								(THIS_SYMBOL));
+				end;
+			end;
+		end;
+		else if (SYM_NODE.LINKAGE_KIND = byte (FORTRAN_LINKAGE)) |
+			(SYM_NODE.LINKAGE_KIND = byte (PASCAL_LINKAGE)) |
+			(SYM_NODE.LINKAGE_KIND = byte (PLI_LINKAGE)) then do;
+				SYM_NODE.COMMON.NAME =
+					UPPER_CASE_NAME (SYM_NODE.NAME);
+		end;
+	end;
+
+	/* Set the external definition flag */
+
+	if SYM_NODE.EXTERNAL_AT & SYM_NODE.DEFINED then
+		FOUND_EXTERNAL_DEFINITION = TRUE;
+
+	/* Set the name of a function block for CodeWatch if necessary */
+
+	if SYMBOL_TABLE then do;
+		if (THIS_TOP_TYPE = FUNCTION_DT) & SYM_NODE.DEFINED then do;
+			call GET_BLOCK_NODE_R (SYM_NODE.VALUE, P);
+			P->BLOCK_NODE.ENTRY_ID = THIS_SYMBOL;
+			if SYM_NODE.NAME ^= MAIN_NAME then do;
+				P->BLOCK_NODE.NAME =
+					FORM_IDENTIFIER_TOKEN
+					(FULL_QUALIFIED_SYMBOL_NAME
+					 (THIS_SYMBOL));
+			end;
+			call RELEASE_BLOCK_NODE (SYM_NODE.VALUE);
+		end;
+	end;
+
+	if SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL ^= NULL_NID then
+		call PATCH_EXTERNAL_LINKAGE_SYMBOL ();
+
+
+	SYM_NODE.DO_NOT_DELETE_PROCEDURE = SYM_NODE.REFERENCED;
+
+	/*
+	/* If desired (-lint), warn about:
+	/*
+	/* - unused data symbols which are internal
+	/*   linkage or undefined external-linkage.
+	/* - unused function symbols which are internal linkage.
+	/**/
+
+	if SW_LINT then do;
+		if ^SYM_NODE.REFERENCED &
+		   ^SYM_NODE.IS_DUMMY &
+		   ^SYM_NODE.IS_MEMBER &
+		   (SYM_NODE.IS_DATA &
+		    (^SYM_NODE.EXTERNAL_LINKAGE | ^SYM_NODE.DEFINED)) |
+		   (SYM_NODE.IS_FUNCTION & SYM_NODE.INTERNAL_LINKAGE)
+		then do;
+			call SEMANTIC_ERROR_AT_I
+			     (ERR_NEVER_USED,
+			      (SYM_NODE.DCL_LINE_ID), SYM_NODE.DCL_FILE_ID,
+			      FULL_SYMBOL_NAME (THIS_SYMBOL));
+		end;
+	end;
+
+	/*
+	/* The allocator should always set SYMBOL_NODE.BSS_AT
+	/* appropriately, but it doesn't this case:
+	/*
+	/*	struct S { long *m; };
+	/*	static long x;
+	/*	struct S s = { &x };
+	/*
+	/* So we do it here.
+	/**/
+
+	if (SYM_NODE.COMMON.STORAGE = byte (STO_STATIC)) &
+	   ^SYM_NODE.EXTERNAL_AT &
+	   ^SYM_NODE.INITIAL_AT then
+		SYM_NODE.BSS_AT = TRUE;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* PATCH_EXTERNAL_LINKAGE_SYMBOL
+/* ------------------------------------------------------------------- */
+
+PATCH_EXTERNAL_LINKAGE_SYMBOL: procedure internal;
+
+	declare P type (POINTER_T);
+
+	if SYM_NODE.DEFINED then do;
+		call GET_SYM_NODE (SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL, P);
+		P->SYM_NODE.REFERENCED		= SYM_NODE.REFERENCED |
+						  P->SYM_NODE.REFERENCED;
+		P->SYM_NODE.DEFINED		= TRUE;
+		P->SYM_NODE.DEFINED_SCOPE	= SYM_NODE.DEFINED_SCOPE;
+		P->SYM_NODE.VALUE		= SYM_NODE.VALUE;
+		P->SYM_NODE.FIELD1		= SYM_NODE.FIELD1;
+		P->SYM_NODE.FIELD2		= SYM_NODE.FIELD2;
+		P->SYM_NODE.INITIAL_AT		= SYM_NODE.INITIAL_AT;
+		P->SYM_NODE.GLOBALDEF_AT	= SYM_NODE.GLOBALDEF_AT;
+		P->SYM_NODE.GLOBALREF_AT	= SYM_NODE.GLOBALREF_AT;
+		P->SYM_NODE.RETURNS_AT		= SYM_NODE.RETURNS_AT;
+		P->SYM_NODE.EXTERNAL_AT		= SYM_NODE.EXTERNAL_AT;
+		P->SYM_NODE.EXTERNAL_LINKAGE	= SYM_NODE.EXTERNAL_LINKAGE;
+		P->SYM_NODE.INTERNAL_LINKAGE	= SYM_NODE.INTERNAL_LINKAGE;
+		P->SYM_NODE.COMMON.STORAGE	= SYM_NODE.COMMON.STORAGE;
+		P->SYM_NODE.COMMON.NAME		= SYM_NODE.COMMON.NAME;
+		call RELEASE_SYM_NODE (SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL);
+		SYM_NODE.VALUE			= NULL_NID;
+		SYM_NODE.FIELD1			= NULL_NID;
+		SYM_NODE.FIELD2			= NULL_NID;
+		SYM_NODE.INITIAL_AT		= FALSE;
+	end;
+	SYM_NODE.COMMON.TYPE	= byte (0);
+	SYM_NODE.COMMON.STORAGE	= byte (0);
+	SYM_NODE.EXTERNAL_AT	= FALSE;
+	SYM_NODE.REFERENCED	= FALSE;
+
+end PATCH_EXTERNAL_LINKAGE_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* BACK_END_STORAGE_CLASS
+/*
+/* Return the back-end storage code of the currently paged in sym-node.
+/* ------------------------------------------------------------------- */
+
+BACK_END_STORAGE_CLASS: procedure returns (type (SHORT_T)) internal;
+
+	declare
+		SC	type (SHORT_T);
+
+	if SYM_NODE.IS_TYPE then
+		SC = STO_BASED;
+
+	else if SYM_NODE.IS_NON_STATIC_DATA_MEMBER then
+		SC = STO_MEMBER;
+
+	else if SYM_NODE.IS_ENUM_MEMBER then
+		SC = STO_CONSTANT;
+
+	else if SYM_NODE.IS_PARAMETER then
+		SC = STO_PARAMETER;
+
+	else if SYM_NODE.IS_LABEL then
+		SC = STO_CONSTANT;
+
+	else if SYM_NODE.EXTERNAL_LINKAGE |
+		(SYM_NODE.STORAGE_CLASS = byte (NULL_ST)) then do;
+		if SYM_NODE.DEFINED |
+		   (SYM_NODE.IS_DATA & SYM_NODE.IS_AGGREGATE_MEMBER
+				     & SW_LAX_STATIC_MEMBER_DEFINITION
+				     & SYM_NODE.SIZE ^= 0) then
+			SC = STO_STATIC;
+		else	SC = STO_UDEFEXT;
+	end;
+
+	else if SYM_NODE.INTERNAL_LINKAGE |
+		(SYM_NODE.STORAGE_CLASS = byte (STATIC_ST)) then do;
+		if SYM_NODE.DEFINED then
+			SC = STO_STATIC;
+		else	SC = 0;
+	end;
+
+	else if SYM_NODE.STORAGE_CLASS = byte (AUTO_ST) then
+		SC = STO_AUTOMATIC;
+
+	return (SC);
+
+end BACK_END_STORAGE_CLASS;
+
+/* ---------------------------------------------------------------------
+/* MAKE_PARAMETER_LINK_NODE_LIST
+/*
+/* Create the link-node list of parameter symbols for the function
+/* represented by the currently paged in sym-node id and hang it off
+/* of the function's FIELD1 sym-node id field (but if FIELD1 is not
+/* NULL_NID then do nothing).  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MAKE_PARAMETER_LINK_NODE_LIST: procedure internal;
+
+	declare
+		(SP, PP, LP, PREV_LP)	type (POINTER_T),
+		(L, PREV_L)		type (NID_T),
+		(P, NEXT_P)		type (NID_T);
+
+	if SYM_NODE.FIELD1 ^= NULL_NID then
+		return;
+
+	call GET_SIG_NODE_R (SYM_NODE.TOP_TYPE.SIGNATURE, SP);
+
+	PREV_L = NULL_NID;
+
+	do P = SP->SIG_NODE.PARAMETERS repeat (NEXT_P) while (P ^= NULL_NID);
+		call GET_SYM_NODE_R (P, PP);
+		NEXT_P = PP->SYM_NODE.NEXT_PARAMETER;
+		call RELEASE_SYM_NODE (P);
+		call NEW_LINK_NODE (L, LP);
+		LP->LINK_NODE.VALUE = P;
+		LP->LINK_NODE.NEXT  = NULL_NID;
+		if PREV_L ^= NULL_NID then do;
+			PREV_LP->LINK_NODE.NEXT = L;
+			call RELEASE_LINK_NODE (PREV_L);
+		end;
+		else	SYM_NODE.FIELD1 = L;
+		PREV_L = L; PREV_LP = LP;
+	end;
+
+	if PREV_L ^= NULL_NID then
+		call RELEASE_LINK_NODE (PREV_L);
+
+	call RELEASE_SIG_NODE (SYM_NODE.TOP_TYPE.SIGNATURE);
+
+end MAKE_PARAMETER_LINK_NODE_LIST;
+
+UPPER_CASE_NAME: procedure (NAME) returns (type (NID_T)) internal;
+
+	declare
+		NAME	type (NID_T);
+	declare
+		S	character (1024) varying;
+
+	return (FORM_IDENTIFIER_TOKEN
+		(translate (TOKEN_NAME (NAME),
+			    'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+			    'abcdefghijklmnopqrstuvwxyz')));
+
+end UPPER_CASE_NAME;
+
+end COMPLETE_SYMBOL;
+

@@ -1,0 +1,1632 @@
+/* C++ member.pl1 - Support for member subobject expressions. */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  08.10.92  DGM  030	Full qualified symbol name for diagnostic.
+ *  07.22.92  PKT  029	Experimental warning for non-const member
+ *			function called for rvalue.
+ *  04.17.92  PKT  028	Updated for 'this' qualifiers in SIG_NODE.
+ *  04.14.92  PKT  028	Fixed .* for array members.
+ *  03.26.92  DGM  027	New value-node scheme.
+ *  01.23.92  PKT  026	Fixed TODO causing const-ness check to fail.
+ *  01.22.92  PKT  025	Fixed regression relating to CHECK_CALL_THRU_OBJECT.
+ *  01.13.92  DGM  024  Multi-node space fixes.
+ *  12.16.91  PKT  023  Updated.
+ *  11.15.91  DGM  022  Obsolete .mpl version.
+ *  11.15.91  DGM  021  Obsolete .mpl version.
+ *  10.27.91  PKT  020  Added calls to DETERMINE_SIZE, as required.
+ *  10.25.91  PKT  019  Modified interface to DEREFERENCE_MEMBER.
+ *			Fixed non-const member function diagnostic.
+ *  09.24.91  PKT  018  Handle array members of non-lvalue structures.
+ *  07.09.91  PKT  017  Stopped setting SYM_NODE.REFERENCED for virtual
+ *			access to member function symbol.
+ *			Set ARRAY_DESIGNATOR for array members expressions.
+ *  07.08.91  DGM  016  Call IS_ACCESSIBLE_STATIC, not IS_ACCESSIBLE.
+ *  06.27.91  PKT  015  Added FIXUP_MEMBER_CALL.
+ *  06.14.91  PKT  014  Support for trivial "operator=", cfront 1.2 mode.
+ *  06.03.91  PKT  013  Added support for DESTRUCTOR_VO, for int::~int.
+ *  04.09.91  PKT  012  Improved DEREFERENCE_MEMBER to handle
+ *			static members as well as non-static.
+ *  03.27.91  PKT  011  Updated.
+ *  03.26.91  PKT  010  Removed superfluous calls to COUNT_UP_VALUE.
+ *  03.08.91  PKT  009  Fixed DEREFERENCE_MEMBER to return paged in.
+ *  02.21.91  DGM  008  Minor fix in MEMBER_OF_OBJECT.
+ *  02.21.91  PKT  007  Enhanced MEMBER_FUNCTION_CALL to take a member
+ *			pointer expression; added MEMBER_OF_OBJECT.
+ *  02.11.91  DGM  006  Minor fix in DEREFERENCE_MEMBER.
+ *  02.01.91  DGM  005  Updated to new global names scheme.
+ *  01.31.91  DGM  004  Updated for static anonymous union  references.
+ *  01.27.91  PKT  003  Updated for member pointers; added DEREFERENCE_MEMBER,
+ *			taking some code from parexp.
+ *  01.11.91  PKT  002  Fixes and improvements.  Added static data member
+ *			support to ACCESS_DATA_MEMBER.
+ *  12.28.90  PKT  001  Bug fixes.
+ *  12.11.90  PKT  000  Original.  Extracted from expv.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 08.10.92 030 MEMBER');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_ADD_XREF_PKG;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_CONVERT_CLASS_POINTER_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_BASSYM_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_CHECK_ARGUMENT_LIST_PKG;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_MEMBER_POINTER_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+
+/* ---------------------------------------------------------------------
+/* ACCESS_DATA_MEMBER
+/*
+/* Process a reference to a non-static data member of 
+/* a structure value (possibly lvalue),
+/* expanding it, checking it for ambiguity and access.
+/*
+/* The structure VALUE shall have had TRANSMUTE_WITH_TEMP done to it.
+/*
+/* VICTIM is a returned expression for destroying a created temp.
+/* ------------------------------------------------------------------- */
+
+ACCESS_DATA_MEMBER: procedure (VALUE, MEMBER_REFERENCE)
+		    returns (type (CXX_VID_T))
+		    external (X_ACCESS_DATA_MEMBER);
+
+	declare
+		VALUE		type (CXX_VID_T),
+		MEMBER_REFERENCE
+				type (CXX_VID_T);
+	declare
+		INTERMEDIATE_CLASS
+				type (NID_T),
+		MEMBER_SYMBOL	type (NID_T),
+		MEMBER_OWNER	type (NID_T),
+		KV		type (CXX_VID_T),
+		MEMBER_TYPE_INFO
+				type (TYPE_INFO_T),
+		DERIVED_TYPE_INFO
+				type (TYPE_INFO_T),
+		DERIVED_CLASS	type (NID_T),
+		LEFT		type (CXX_VID_T),
+		(KV1, KV2)	type (CXX_VID_T),
+		OFFSET		type (LONG_T),
+		OFFSET_UNITS	type (SHORT_T),
+		RIGHT		type (CXX_VID_T),
+		THIRD		type (CXX_VID_T),
+		RIGHT_SHORT	type (SHORT_T) defined (RIGHT),
+		THIRD_NID	type (NID_T) defined (THIRD),
+		IS_SIGNED	type (BOOL_T),
+		K		type (SHORT_T),
+		AU		type (NID_T),
+		RESULT		type (CXX_VID_T),
+		IS_DATA		type (BOOL_T),
+		IS_STATIC	type (BOOL_T),
+		IS_CONSTANT	type (BOOL_T),
+		INDEX		type (LONG_T),
+		VFTP_OFFSET	type (LONG_T),
+		FUNC_SYMBOL	type (NID_T),
+		K2		type (NID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	IS_CONSTANT = IS_CONSTANT_MEMBER_POINTER (MEMBER_REFERENCE, FALSE);
+	CXX_VALUE_NODE_PTR = MEMBER_REFERENCE;
+	MEMBER_OWNER = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+
+	if CXX_VALUE_NODE.OP = MEMBER_PTR_VO then do;
+		/*
+		/* Access to member symbol has not been checked;
+		/* Use qualifier to disambiguate.  Also, may be bit
+		/* field, so to get the most useful size get it out of
+		/* the symbol.
+		/**/
+		MEMBER_SYMBOL = CXX_VALUE_NODE.LEFT_NID;
+		INTERMEDIATE_CLASS = CXX_VALUE_NODE.RIGHT_NID;
+
+		/* Get the type of the member in MEMBER_TYPE_INFO */
+
+		call SET_SYM_NODE_R (MEMBER_SYMBOL);
+	        call GET_SYMBOL_TYPE (MEMBER_TYPE_INFO);
+		if MEMBER_TYPE_INFO.SIZE_UNITS ^= BITS then
+			call DETERMINE_SIZE (MEMBER_TYPE_INFO);
+	end;
+	else do;
+		MEMBER_SYMBOL = NULL_NID;
+		INTERMEDIATE_CLASS = NULL_NID;
+
+		/* Get the type of the member in MEMBER_TYPE_INFO */
+
+		call GET_VALUE_TYPE (MEMBER_TYPE_INFO);
+		call STRIP_TOP_TYPE (MEMBER_TYPE_INFO, TRUE);
+	end;
+	MEMBER_TYPE_INFO.NOT_AN_LVALUE = FALSE;
+
+	/* must be data member */
+	if rank (MEMBER_TYPE_INFO.TYPE_CODE) = FUNCTION_DT then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+	call GET_VALUE_TYPE (DERIVED_TYPE_INFO);
+	DERIVED_CLASS = DERIVED_TYPE_INFO.TOP_TYPE.TAG_SYMBOL;
+
+	LEFT = VALUE;
+	/* Adjust LEFT for subobject containing member, checking access. */
+	call ACCESS_MEMBER (LEFT, 
+			    DERIVED_CLASS, INTERMEDIATE_CLASS, 
+			    MEMBER_OWNER, MEMBER_SYMBOL);
+
+	/*
+	/* Here, LEFT refers to a VALUE (REF (class_symbol)).
+	/* We want only the REF.
+	/*
+	/* LEFT may also be VALUE (COMMA (something, REF (class_symbol))),
+	/* and COUNT of the REF may be > 1.
+	/**/
+
+	KV = CXX_VALUE_NODE.LEFT;	/* REF */
+	call COUNT_UP_VALUE (KV);
+	call COUNT_DOWN_VALUE (LEFT);	/* VALUE */
+	LEFT = KV;			/* REF */
+
+        if MEMBER_SYMBOL ^= NULL_NID & ^AM_DEBUGGER then do;
+		call NOTE_SYMBOL_REFERENCE (MEMBER_SYMBOL);
+		if XREF then
+			call ADDXRF (MEMBER_SYMBOL, FALSE);
+        end;
+
+	/* Pass any and all type qualifiers of struct/union to member */
+
+	MEMBER_TYPE_INFO.TOP_TYPE.QUALIFIERS 
+		=   MEMBER_TYPE_INFO.TOP_TYPE.QUALIFIERS
+		  | DERIVED_TYPE_INFO.TOP_TYPE.QUALIFIERS;
+
+	if MEMBER_TYPE_INFO.EXTRA_PTR_LEVEL then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	MEMBER_TYPE_INFO.TYPE = MODIFY_TYPE_LEVEL
+				(MEMBER_TYPE_INFO.TYPE,
+				 MEMBER_TYPE_INFO.DERIVED_TYPE_SKIP,
+				 MEMBER_TYPE_INFO.TOP_TYPE);
+		
+	if IS_CONSTANT then do;
+		call MEMBER_POINTER_INFO (MEMBER_REFERENCE, FALSE, FALSE,
+					  IS_DATA, IS_STATIC,
+					  OFFSET, INDEX, VFTP_OFFSET, 
+					  FUNC_SYMBOL);
+		/* Fix returned OFFSET to indicate actual offset. */
+		OFFSET = OFFSET-1;
+		if ^IS_DATA then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	end;
+	else
+		IS_STATIC = FALSE;
+
+	if IS_STATIC then do;
+
+		/* Handle a static data member, left not evaluated */
+
+		call COUNT_DOWN_VALUE (LEFT);
+
+		/* Make a REF to the member symbol */
+
+		/*
+		/* Handle static anonymous union members, e.g.:
+		/* class A { static union { int x, y; } } a; a.x = 1;
+		/* In this case a dummy symbol is created representing a
+		/* static member *object* of the anonymous union type (in
+		/* ANON_UNION_OBJECT of the anonoymous union tag sym-node)
+		/* and the reference is transformed to a.__dummy__.
+		/**/
+
+		if MEMBER_SYMBOL = NULL_NID then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+		call SET_SYM_NODE_R (MEMBER_SYMBOL);
+
+		if SYM_NODE.IS_ANON_UNION_MEMBER then do;
+			call SET_SYM_NODE_R (SYM_NODE.ENCLOSING_SCOPE_OWNER);
+			AU = SYM_NODE.ANON_UNION_OBJECT;
+			call SET_SYM_NODE (AU);
+        		if ^AM_DEBUGGER then do;
+				call NOTE_SYMBOL_REFERENCE ((CURRENT_NODE_ID));
+				if XREF then
+					call ADDXRF ((CURRENT_NODE_ID), FALSE);
+        		end;
+			LEFT = ALLOC_REF_CXX_VALUE_NODE (AU);
+		end;
+		else	LEFT = ALLOC_REF_CXX_VALUE_NODE (MEMBER_SYMBOL);
+
+		call SET_VALUE_TYPE (MEMBER_TYPE_INFO);
+		RESULT = CONSTRUCT_VALUE (LEFT);
+		return (RESULT);
+	end;
+	
+        /*    
+	/* If LEFT of VALUE is a COMMA, this arose from one of the
+	/* following possibilities:
+        /* 1) Either an expression like: "(s1, s2).m" or "(e1,..., eN).m"
+        /*    or 
+        /* 2) Comma was generated internally (see below) for the case of:  
+        /*    f ().m1 , i.e. call function --> struct/union.  
+        /*                                                                  
+        /*    For the case f ().m1.m2.m3, etc, the left of dot will be the 
+        /*    comma generated for the call function. The right of comma will 
+        /*    be a value/ref for the previous dot. 
+
+	/*    LEFT is set to the right of comma, to make the things look 
+	/*    a simple expansion of m1.m2.m3...  KV1 saves the comma.
+	/*    LEFT becomes a ref with locator combined with the 
+        /*    previous LEFT, after which LEFT is hung back off the RIGHT of 
+        /*    COMMA.
+	/*
+	/* We expect only one COMMA between VALUE and
+	/* REF, because of the transformation done in EXPAND(COMMA_VO),
+	/* so that RIGHT of a COMMA is not a COMMA.
+	/**/
+	
+	call DETACH_COMMA (LEFT, KV1, KV2);
+
+	if IS_CONSTANT then do;
+		OFFSET_UNITS = ADDRESS_UNITS;
+
+		if MEMBER_TYPE_INFO.SIZE_UNITS = BITS then do;
+			/*
+			/* Get the pertinent bit-field data.
+			/**/
+			call SET_SYM_NODE_R (MEMBER_SYMBOL);
+			RIGHT_SHORT	= rank (SYM_NODE.TOP_TYPE.CODE);
+			THIRD_NID	= SYM_NODE.TYPE;
+			IS_SIGNED	= SYM_NODE.SIGNED_BIT_FIELD;
+			call DETERMINE_FIELD
+			     (MEMBER_TYPE_INFO, K, OFFSET, OFFSET_UNITS);
+		end;
+
+		if AM_DEBUGGER & (MEMBER_SYMBOL ^= NULL_NID) then do;
+			/* Make a more explicit REF node for Codewatch. */
+			LEFT = PLAIN_VALUE_OF_REF (LEFT);
+			LEFT = GET_VALUE_AND_EXPAND_L (IMPLICIT_ADDR_VO, LEFT);
+			LEFT = REF_WITH_LOCATOR (LEFT, MEMBER_TYPE_INFO);
+			LEFT = COPY_VALUE (LEFT);
+			LEFT->CXX_VALUE_NODE.LEFT_NID = MEMBER_SYMBOL;
+			LEFT->CXX_VALUE_NODE.LEFT_IS_NID = TRUE;
+			LEFT->CXX_VALUE_NODE.LEFT_IS_NOT_VID = TRUE;
+		end;
+		LEFT = REF_PLUS_OFFSET (LEFT, OFFSET, OFFSET_UNITS, 
+					MEMBER_TYPE_INFO);
+	end;
+	else do;
+		/* Non-constant member pointer. */
+		RIGHT = TRANSMUTE_WITH_TEMP (MEMBER_REFERENCE, NULL_CXX_VID,
+					     FALSE, AUTO_ST, COPY_VO);
+
+		LEFT = REF_PLUS_OFFSET (LEFT, -1, ADDRESS_UNITS,
+					          MEMBER_TYPE_INFO);
+		LEFT = PLAIN_VALUE_OF_REF (LEFT);
+		LEFT = GET_VALUE_AND_EXPAND_L (IMPLICIT_ADDR_VO, LEFT);
+		LEFT = CAST_TO_SIMPLE_POINTER (LEFT, CHAR_BT);
+		CXX_VALUE_NODE_PTR = RIGHT;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		call STRIP_TOP_TYPE (TYPE_INFO, FALSE);
+		K2 = GET_MEMBER_POINTER_TYPE (TYPE_INFO.TOP_TYPE);
+		call SET_TYPE_NODE_R (K2);
+		call GET_TYPE_NODE_TYPE (TYPE_INFO);
+		CXX_VALUE_NODE_PTR = RIGHT;
+		call SET_VALUE_TYPE (TYPE_INFO);
+		LEFT = GET_VALUE_AND_EXPAND_LR (ADD_VO, LEFT, RIGHT);
+		LEFT = REF_WITH_LOCATOR (LEFT, MEMBER_TYPE_INFO);
+	end;
+
+	call REATTACH_COMMA (LEFT, KV1, KV2);
+	RESULT = CONSTRUCT_VALUE (LEFT);
+	return (RESULT);
+
+/* ---------------------------------------------------------------------
+/* CONSTRUCT_VALUE
+/*
+/* Construct VALUE operation, based on LEFT.
+/* Handle bit-field info.
+/* ------------------------------------------------------------------- */
+
+CONSTRUCT_VALUE: procedure (LEFT)
+		 returns   (type (CXX_VID_T))
+		 internal;
+
+	declare
+		LEFT		type (CXX_VID_T);
+	declare
+		RESULT		type (CXX_VID_T);
+
+	RESULT = ALLOC_CXX_VALUE_NODE_L (VALUE_VO, LEFT);
+
+	if MEMBER_TYPE_INFO.TYPE_CODE ^= byte (ARRAY_DT) then do;
+
+		RESULT = EXPAND_VALUE (RESULT);
+
+		if RESULT->CXX_VALUE_NODE.OP ^= VALUE_VO then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		/*
+		/* If it's not something odd like an array name,
+		/* fill in the bit field information and lvalue-ness.
+		/**/
+
+		if MEMBER_TYPE_INFO.SIZE_UNITS = BITS then do;
+			RESULT->CXX_VALUE_NODE.RIGHT_SHORT =
+				RIGHT_SHORT;	/* type-code */
+			RESULT->CXX_VALUE_NODE.RIGHT_IS_NOT_VID =
+				TRUE;
+			RESULT->CXX_VALUE_NODE.SIGNED_BIT_FIELD =
+				IS_SIGNED;	/* signed? */
+			RESULT->CXX_VALUE_NODE.THIRD_NID =
+				THIRD_NID;	/* type-node id */
+			RESULT->CXX_VALUE_NODE.THIRD_IS_NID =
+				TRUE;
+			RESULT->CXX_VALUE_NODE.THIRD_IS_NOT_VID =
+				TRUE;
+			RESULT->CXX_VALUE_NODE.OFFSET =
+				K;		/* shift value */
+		end;
+
+		CXX_VALUE_NODE.NOT_AN_LVALUE = DERIVED_TYPE_INFO.NOT_AN_LVALUE;
+	end;
+	else if ^DERIVED_TYPE_INFO.NOT_AN_LVALUE then do;
+		RESULT = EXPAND_VALUE (RESULT);
+		RESULT->CXX_VALUE_NODE.ARRAY_DESIGNATOR = TRUE;
+	end;
+	else do;
+		/*
+		/* e.g. foo().array_member
+		/* Leave it as type "array".
+		/**/
+		call SET_VALUE_TYPE (MEMBER_TYPE_INFO);
+		RESULT->CXX_VALUE_NODE.UNARY = TRUE;
+		RESULT->CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+	end;
+
+	return (RESULT);
+
+end CONSTRUCT_VALUE;
+
+end ACCESS_DATA_MEMBER;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_FUNCTION_CALL
+/*
+/* MEMBER_POINTER is a pointer to the member function to be called.
+/* If a compile-time constant, it may or may not need access checking
+/* done to it.  It may be a DESTRUCTOR_VO in which case the given
+/* object is simply destroyed, in which case the object's type may be 
+/* anything short of an array with run-time dimension.
+/*
+/* OBJECT is the object whose address is to become 'this' for the call.
+/* Typically, it is VALUE(REF(symbol)) but it can be a CALL_VO expression
+/* as well.
+/*
+/* ARGUMENTS, NARGUMENTS, and VICTIM are modified for the inserted 'this'
+/* argument.  On input, they represent an argument list, the number of
+/* arguments in the list, and the expression to invoke for any
+/* associated destruction. ARGUMENTS and NARGUMENTS are modified to 
+/* account for 'this' being pushed in front of the first argument. 
+/* VICTIM is is modified to take into account destruction of 'this' 
+/* if necessary.
+/*
+/* Returned is the value node id for the LEFT of a CALL_VO, embodying
+/* all of the work for virtual function call and pointer-to-member
+/* evaluation.  If MEMBER_POINTER is a DESTRUCTOR_VO, then the returned
+/* value may be INTEGER_VALUE(0,0), in which case the destruction has no 
+/* effect and all that should happen is to evaluate the first (and only)
+/* argument.  If MEMBER_POINTER is a MEMBER_POINTER_VO for a trivial
+/* assignment, then the returned value may be INTEGER_VALUE(1,0).
+/* ------------------------------------------------------------------- */
+
+MEMBER_FUNCTION_CALL: procedure (MEMBER_POINTER,
+				 OBJECT,
+				 ARGUMENTS,
+				 NARGUMENTS,
+				 VICTIM)
+		      returns   (type (CXX_VID_T))
+		      external (X_MEMBER_FUNCTION_CALL);
+	declare
+		MEMBER_POINTER	type (CXX_VID_T),
+		OBJECT			type (CXX_VID_T),
+		ARGUMENTS		type (CXX_VID_T),
+		NARGUMENTS		type (SHORT_T),
+		VICTIM			type (CXX_VID_T);
+	declare
+		OBJECT_TYPE		type (TYPE_INFO_T),
+		BAD_QUALIFIERS		type (TYPE_DATA_T),
+		SIGP			type (POINTER_T),
+		MEMBER_FUNCTION		type (NID_T),
+		CLASS_QUALIFIER		type (NID_T),
+		LEFT			type (CXX_VID_T),
+		MEMBER_OWNER		type (NID_T),
+		MFP			type (POINTER_T),
+		(V, KV)			type (CXX_VID_T),
+		THIS			type (CXX_VID_T),
+		DELTA			type (CXX_VID_T),
+		VFTP			type (CXX_VID_T),
+		OBJECT_VICTIM		type (CXX_VID_T),
+		VIRTUALLY		type (LONG_T),
+		OFFSET			type (LONG_T),
+		VFTI			type (LONG_T),
+		VFTP_OFFSET		type (LONG_T),
+		FUNCTION_SYMBOL		type (NID_T),
+		CALL_THRU_OBJECT	type (BOOL_T),
+		CLASS_SYM		type (NID_T),
+		BASE_CLASS_SYM		type (NID_T),
+		VFTE_TYPE		type (NID_T),
+		VFTE_TOP_TYPE		type (TYPE_DATA_T),
+		VFTP_TYPE		type (NID_T),
+		VFTP_TOP_TYPE		type (TYPE_DATA_T),
+		VFTP_TYPE_INFO		type (TYPE_INFO_T),
+		IS_CONSTANT		type (BOOL_T),
+		IS_STATIC		type (BOOL_T),
+		IS_PURE			type (BOOL_T),
+		IS_TRIVIAL_DTOR		type (BOOL_T),
+		IS_TRIVIAL_ASSIGN	type (BOOL_T),
+		TYPE_INFO		type (TYPE_INFO_T),
+		THIS_TEMP		type (CXX_VID_T),
+		MEMBER_TEMP		type (CXX_VID_T),
+		TEMP_REF		type (CXX_VID_T),
+		MEMBER			type (CXX_VID_T),
+		INDEX			type (CXX_VID_T),
+		VFAD			type (CXX_VID_T),
+		FAD			type (CXX_VID_T);
+
+	CXX_VALUE_NODE_PTR = OBJECT;
+	call GET_VALUE_TYPE (OBJECT_TYPE);
+	if rank (OBJECT_TYPE.CODE) = REFERENCE_DT then
+		call STRIP_TOP_TYPE (OBJECT_TYPE, FALSE);
+
+	/*
+	/* Make sure we aren't calling a non-const member function
+	/* thru a const object or a non-volatile member function
+	/* thru a volatile object (C++ARM, sec.9.3.1, p.177).
+	/* Report the error after we know the function is not static.
+	/**/
+
+	CXX_VALUE_NODE_PTR = MEMBER_POINTER;
+	if   OBJECT_TYPE.QUALIFIED
+	   & CXX_VALUE_NODE.VOP ^= DESTRUCTOR_VO
+	   & ^SW_CFRONT_1_2_MODE then do;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		call STRIP_TOP_TYPE (TYPE_INFO, FALSE);  /* function type */
+		call GET_SIG_NODE_R (TYPE_INFO.TOP_TYPE.SIGNATURE, SIGP);
+		BAD_QUALIFIERS.QUALIFIERS
+			      =   OBJECT_TYPE.TOP_TYPE.QUALIFIERS
+			        & ^ SIGP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS;
+		call RELEASE_SIG_NODE (TYPE_INFO.TOP_TYPE.SIGNATURE);
+	end;
+	else
+		BAD_QUALIFIERS.QUALIFIERS = NULL_TQ;
+
+	/*
+	/* Warn if a non-const member function is called for a non-lvalue,
+	/* analogous to initializing a non-const reference with a non-lvalue.
+	/**/
+	if   OBJECT_TYPE.NOT_AN_LVALUE
+	   & ^SW_X_REFERENCE_TEMP then do;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		call STRIP_TOP_TYPE (TYPE_INFO, FALSE);  /* function type */
+		call GET_SIG_NODE_R (TYPE_INFO.TOP_TYPE.SIGNATURE, SIGP);
+		if ^SIGP->SIG_NODE.THIS_QUALIFIERS.CONST then
+			BAD_QUALIFIERS.QUALIFIERS
+				= BAD_QUALIFIERS.QUALIFIERS | ANY_TQ;
+		call RELEASE_SIG_NODE (TYPE_INFO.TOP_TYPE.SIGNATURE);
+		FUNCTION_SYMBOL = NULL_NID;
+	end;
+
+	LEFT = TRANSMUTE_WITH_TEMP (OBJECT, 
+				    OBJECT_VICTIM,
+				    FALSE, 
+				    AUTO_ST, 
+				    ADDR_VO);
+	/* 
+	/* OBJECT_VICTIM is  be an expression to destroy OBJECT 
+	/* (if necessary)  (possibly this destroys a superobject of OBJECT).
+	/* Take care of the destructors.
+	/**/
+	VICTIM = CONCATENATE_STATEMENTS (VICTIM, OBJECT_VICTIM);
+
+	IS_CONSTANT = IS_CONSTANT_MEMBER_POINTER (MEMBER_POINTER, FALSE);
+	IS_TRIVIAL_DTOR = FALSE;
+	IS_TRIVIAL_ASSIGN = FALSE;
+	CXX_VALUE_NODE_PTR = MEMBER_POINTER;
+
+	if CXX_VALUE_NODE.OP = DESTRUCTOR_VO then do;
+		/* Object's destructor is to be called. */
+
+		VIRTUALLY = CXX_VALUE_NODE.OFFSET;
+		call COUNT_DOWN_VALUE (MEMBER_POINTER);
+
+		if ^OBJECT_TYPE.EXTRA_PTR_LEVEL then
+			MEMBER_FUNCTION = DESTRUCTOR_OF_TYPE 
+					  (OBJECT_TYPE.TYPE,
+					   OBJECT_TYPE.DERIVED_TYPE_SKIP);
+		else
+			MEMBER_FUNCTION = NULL_NID;
+
+		IS_TRIVIAL_DTOR = (MEMBER_FUNCTION = NULL_NID);
+
+		if ^IS_TRIVIAL_DTOR then do;
+			/*
+			/* Insert arg to indicate most-derived,
+			/* and no delete.
+			/**/
+			ARGUMENTS = GET_VALUE_AND_EXPAND_LR
+				    (ARG_VO,
+				     INTEGER_VALUE_ZERO (),
+				     ARGUMENTS);
+			MEMBER_POINTER = GET_SIMPLE_MEMBER_VALUE
+					 (MEMBER_FUNCTION);
+			/*
+			/* If the destructor member function is not 
+			/* to work virtually, specify so.
+			/**/
+			CXX_VALUE_NODE.OFFSET = VIRTUALLY;
+		end;
+	end;
+	MEMBER_OWNER = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+
+	if CXX_VALUE_NODE.OP = MEMBER_PTR_VO then do;
+		/*
+		/* Access to member symbol has not been checked;
+		/* Use qualifier to disambiguate.  May be overloaded.
+		/**/
+		MEMBER_FUNCTION = CXX_VALUE_NODE.LEFT_NID;
+		call GET_SYM_NODE (MEMBER_FUNCTION, MFP);
+		IS_PURE = MFP->SYM_NODE.PURE;
+		IS_TRIVIAL_ASSIGN = MFP->SYM_NODE.TRIVIAL;
+		call RELEASE_SYM_NODE (MEMBER_FUNCTION);
+		CLASS_QUALIFIER = CXX_VALUE_NODE.RIGHT_NID;
+	end;
+	else do;
+		MEMBER_FUNCTION = NULL_NID;
+		IS_PURE = FALSE;
+		CLASS_QUALIFIER = NULL_NID;
+	end;
+
+	/*
+	/* See if we want to call this function non-virtually even if it
+	/* is a virtual function.  
+	/**/
+	CALL_THRU_OBJECT = CHECK_CALL_THRU_OBJECT (LEFT);
+
+	/* Adjust LEFT for subobject containing member, checking access. */
+
+	if ^IS_TRIVIAL_DTOR then do;
+		call ACCESS_MEMBER (LEFT, 
+				    OBJECT_TYPE.TAG_SYMBOL, 
+				    CLASS_QUALIFIER, 
+				    MEMBER_OWNER, 
+				    MEMBER_FUNCTION);
+	end;
+
+	BASE_CLASS_SYM = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+
+	/* Get a pointer to "this".  THIS represents the address of OBJECT. */
+
+	THIS = GET_VALUE_AND_EXPAND_L (IMPLICIT_ADDR_VO, LEFT);
+	THIS = CAST_TO_SIMPLE_POINTER (THIS, CHAR_BT);
+	call GET_VALUE_TYPE (TYPE_INFO);
+
+	if IS_TRIVIAL_DTOR then do;
+		IS_STATIC = FALSE;
+		FAD = INTEGER_VALUE_ZERO ();
+	end;
+	else if IS_TRIVIAL_ASSIGN then do;
+		call COUNT_DOWN_VALUE (MEMBER_POINTER);
+		/*
+		/* Process the reference to the member function.
+		/**/
+
+		if ^AM_DEBUGGER & XREF then
+			call ADDXRF (MEMBER_FUNCTION, FALSE);
+		call ADD_TO_GENERATE_LIST (MEMBER_FUNCTION);
+
+		/*
+		/* No need to adjust 'this' for the change between the
+		/* function's class and the class MEMBER_POINTER belongs to,
+		/* because assignment operators are not inherited.
+		/**/
+
+		IS_STATIC = FALSE;
+		FAD = INTEGER_VALUE_ONE ();
+	end;
+	else if IS_CONSTANT then do;
+		/*
+		/* Note that for pure virtual functions, explicitly-suppressed 
+		/* virtualness yields a direct call to member function (which
+		/* is why such a function may be defined).  But optimized
+		/* call_thru_object for a pure virtual function should go 
+		/* through the virtual table so as to get the run-time error.
+		/**/
+		call MEMBER_POINTER_INFO (MEMBER_POINTER, 
+			FALSE, CALL_THRU_OBJECT & ^IS_PURE,
+			('0'B), IS_STATIC,
+			OFFSET, VFTI, VFTP_OFFSET, FUNCTION_SYMBOL);
+
+		/* Note reference to member function symbol. */
+
+		if MEMBER_FUNCTION ^= NULL_NID & ^AM_DEBUGGER then do;
+			if XREF then
+				call ADDXRF (MEMBER_FUNCTION, FALSE);
+		end;
+
+		/*
+		/* Adjust 'this' for the change between the function's
+		/* class and the class MEMBER_POINTER belongs to.
+		/**/
+
+		THIS = GET_VALUE_AND_EXPAND_LR 
+		       (ADD_VO, THIS, INTEGER_VALUE (OFFSET, 0));
+
+		/*
+		/* If this function is virtual (which should be called
+		/* virtually), then set up a virtual function call.
+		/**/
+
+		if VFTI > 0 then do;
+
+			/* Set up virtual function table entry type. */
+			VFTE_TYPE = GET_VFT_ENTRY_TYPE (VFTE_TOP_TYPE);
+
+			/* Get the virtual function table index */
+
+			VFTI = VFTI - 1;
+
+			/*
+			/* Check for illegal pure virtual function call,
+			/* through an object with known virtual table.
+			/**/
+			if IS_PURE & CALL_THRU_OBJECT then
+				call SEMANTIC_ERROR_I
+				     (ERR_PURE_FUN_CALL,
+				      QUALIFIED_SYMBOL_TYPE_NAME 
+					(MEMBER_FUNCTION));
+			/*
+			/* Get a reference to
+			/* the virtual function table pointer 
+			/**/
+			call COUNT_UP_VALUE (THIS);
+			VFTP = GET_VALUE_AND_EXPAND_LR
+			       (ADD_VO, THIS, INTEGER_VALUE (VFTP_OFFSET, 0));
+			VFTP_TYPE = GET_VFT_POINTER_TYPE (VFTP_TOP_TYPE);
+			call SET_TYPE_NODE_R (VFTP_TYPE);
+			call GET_TYPE_NODE_TYPE (VFTP_TYPE_INFO);
+			call DETERMINE_SIZE (VFTP_TYPE_INFO);
+			VFTP = REF_WITH_LOCATOR (VFTP, VFTP_TYPE_INFO);
+			VFTP = GET_VALUE_AND_EXPAND_L (VALUE_VO, VFTP);
+			VFTP = GET_VALUE_AND_EXPAND_LR
+			       (ADD_VO, VFTP, INTEGER_VALUE (VFTI, INT_BT));
+			VFTP = GET_VALUE_AND_EXPAND_L (STAR_VO, VFTP);
+
+			/* Adjust the "this" pointer argument */
+
+			if ^SW_ADJUST_THIS_VIA_THUNK then do;
+				call COUNT_UP_VALUE (VFTP);
+				DELTA = GET_DOT_AND_EXPAND
+					(VFTP, VFT_DELTA_NAME);
+				THIS  = GET_VALUE_AND_EXPAND_LR
+					(ADD_VO, THIS, DELTA);
+				THIS  = CAST_TO_CLASS_POINTER
+					(THIS, MEMBER_OWNER);
+			end;
+
+			/*
+			/* Get the function address field from
+			/* the virtual function table entry.
+			/**/
+
+			FAD = GET_DOT_AND_EXPAND
+			      (VFTP, VFT_FUNCTION_ADDRESS_NAME);
+		end;
+
+		/* Otherwise, set up non-virtual member function call */
+
+		else do;
+			V = GET_VALUE_REF_AND_EXPAND (FUNCTION_SYMBOL);
+			FAD = GET_VALUE_AND_EXPAND_L (ADDR_VO, V);
+		end;
+	end;
+
+	else do;
+		/* Handle non-constant pointer to member function. */
+
+		/*
+		/* The generated code corresponds to:
+		/*
+		/* member_temp = ...
+		/* this_temp = this + member_temp.this_delta,
+		/* (member_temp.index > 0
+		/*   ? ( vftp = (*(vftp_type*)( this_temp
+		/*			      + member_temp.u.vftp_offset)
+		/*	        )[member_temp.index-1], 
+		/*	 this_temp += vftp.delta, 
+		/*	 vftp.address )
+		/*   : member_temp.u.address)
+		/* (this_temp, ...)
+		/**/
+
+		THIS_TEMP = GET_TEMP_VALUE (TYPE_INFO, AUTO_ST, FALSE);
+		/*
+		/* Now THIS_TEMP is a DECLARE_TEMP node for the temporary
+		/* that holds the 'this'.  It is necessary to use a temporary
+		/* here, because the 'this' expression is referenced before 
+		/* and after the upcoming conditional.  
+		/**/
+
+		call GET_LOW_LEVEL_TYPE_INFO (MEMBER_POINTER, 
+					      TYPE_INFO, ('0'B));
+		MEMBER_TEMP = GET_TEMP_VALUE (TYPE_INFO, AUTO_ST, FALSE);
+		call COUNT_UP_VALUE (MEMBER_TEMP);
+		TEMP_REF = GET_TEMP_REF(MEMBER_TEMP);
+		call COUNT_UP_VALUE (TEMP_REF);
+		V = INITIALIZE_OBJECT (TEMP_REF, MEMBER_POINTER);
+		MEMBER = GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF);
+		/*
+		/* Now member_temp is a declare_temp node for the temporary
+		/* that holds the member pointer value.  It was necessary
+		/* to force a temporary here, because the member pointer
+		/* expression is referenced in all parts of the upcoming
+		/* conditional.  Member holds the value.
+		/**/
+
+		/* Adjust 'this' before saving it in the temp. */
+		DELTA = GET_DOT_AND_EXPAND (MEMBER, MFP_THIS_DELTA_NAME);
+		THIS = GET_VALUE_AND_EXPAND_LR (ADD_VO, THIS, DELTA);
+
+		call COUNT_UP_VALUE (THIS_TEMP);
+		TEMP_REF = GET_TEMP_REF (THIS_TEMP);
+		KV = INITIALIZE_OBJECT (TEMP_REF, THIS);
+		V = CONCATENATE_STATEMENTS (V, KV);
+
+		/* Set up the virtual case of the conditional. */
+
+		call COUNT_UP_VALUE (MEMBER_TEMP);
+		TEMP_REF = GET_TEMP_REF (MEMBER_TEMP);
+		MEMBER = GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF);
+		CALL COUNT_UP_VALUE (MEMBER);
+		VFTP = GET_DOT_AND_EXPAND (MEMBER, MFP_UNION_NAME);
+		VFTP = GET_DOT_AND_EXPAND (VFTP, MFP_VIRTUAL_DELTA_NAME);
+
+		call COUNT_UP_VALUE (THIS_TEMP);
+		TEMP_REF = GET_TEMP_REF (THIS_TEMP);
+		THIS = GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF);
+		VFTP = GET_VALUE_AND_EXPAND_LR (ADD_VO, THIS, VFTP);
+		VFTP_TYPE = GET_VFT_POINTER_TYPE (VFTP_TOP_TYPE);
+		call SET_TYPE_NODE_R (VFTP_TYPE);
+		call GET_TYPE_NODE_TYPE (VFTP_TYPE_INFO);
+		call DETERMINE_SIZE (VFTP_TYPE_INFO);
+		VFTP = REF_WITH_LOCATOR (VFTP, VFTP_TYPE_INFO);
+		VFTP = GET_VALUE_AND_EXPAND_L (VALUE_VO, VFTP);
+
+		INDEX = GET_DOT_AND_EXPAND (MEMBER, MFP_VIRTUAL_INDEX_NAME);
+		INDEX = GET_VALUE_AND_EXPAND_LR
+			(SUB_VO,
+		 	 INDEX,
+			 INTEGER_VALUE
+			 (1, rank (CXX_VALUE_NODE.TOP_TYPE.CODE)));
+		VFTP = GET_VALUE_AND_EXPAND_LR (ADD_VO, VFTP, INDEX);
+		VFTP = GET_VALUE_AND_EXPAND_L (STAR_VO, VFTP);
+
+		/* Adjust the "this" pointer argument */
+
+		if ^SW_ADJUST_THIS_VIA_THUNK then do;
+			call COUNT_UP_VALUE (VFTP);
+			DELTA = GET_DOT_AND_EXPAND (VFTP, VFT_DELTA_NAME);
+
+			call COUNT_UP_VALUE (THIS_TEMP);
+			TEMP_REF = GET_TEMP_REF (THIS_TEMP);
+			call COUNT_UP_VALUE (TEMP_REF);
+			THIS = GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF);
+			THIS = GET_VALUE_AND_EXPAND_LR (ADD_VO, THIS, DELTA);
+			KV = INITIALIZE_OBJECT (TEMP_REF, THIS);
+		end;
+		else	KV = NULL_CXX_VID;
+
+		/*
+		/* Get the function address field from
+		/* the virtual function table entry.
+		/**/
+
+		VFAD = GET_DOT_AND_EXPAND (VFTP, VFT_FUNCTION_ADDRESS_NAME);
+		VFAD = EFFECT_BEFORE_VALUE (KV, VFAD);
+
+		/*
+		/* VFAD sets up 'this' and holds the function address
+		/* from the virtual table.
+		/**/
+
+		/* Set up the non-virtual case of the conditional. */
+
+		call COUNT_UP_VALUE (MEMBER_TEMP);
+		TEMP_REF = GET_TEMP_REF (MEMBER_TEMP);
+		MEMBER = GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF);
+		MEMBER = GET_DOT_AND_EXPAND (MEMBER, MFP_UNION_NAME);
+		FAD = GET_DOT_AND_EXPAND (MEMBER, MFP_ADDRESS_NAME);
+
+		/* Finish the conditional. */
+		FAD = GET_VALUE_AND_EXPAND_LR (COLON_VO, VFAD, FAD);
+
+		MEMBER = GET_VALUE_AND_EXPAND_L
+			 (VALUE_VO, GET_TEMP_REF (MEMBER_TEMP));
+		INDEX  = GET_DOT_AND_EXPAND (MEMBER, MFP_VIRTUAL_INDEX_NAME);
+		INDEX  = GET_VALUE_AND_EXPAND_LR
+			 (GT_VO,
+			  INDEX,
+			  INTEGER_VALUE
+			  (0, rank (CXX_VALUE_NODE.TOP_TYPE.CODE)));
+		INDEX = EFFECT_BEFORE_VALUE (V, INDEX);
+		FAD = GET_VALUE_AND_EXPAND_LR (CONDITIONAL_VO, INDEX, FAD);
+
+		IS_STATIC = FALSE;
+		THIS = GET_VALUE_AND_EXPAND_L
+		       (VALUE_VO, GET_TEMP_REF (THIS_TEMP));
+	end;
+
+	/* Insert "this" as an extra (first) argument, or discard "this". */
+
+	if ^IS_STATIC then do;
+		NARGUMENTS = NARGUMENTS + 1;
+		ARGUMENTS = GET_VALUE_AND_EXPAND_LR (ARG_VO, THIS, ARGUMENTS);
+		if BAD_QUALIFIERS.CONST then
+			call SEMANTIC_ERROR (ERR_CALL_CONST_THRU_NON_CONST);
+		else if BAD_QUALIFIERS.VOLATILE then
+			call SEMANTIC_ERROR (ERR_CALL_VOL_THRU_NON_VOL);
+		else if   BAD_QUALIFIERS.QUALIFIED
+		        & FUNCTION_SYMBOL ^= NULL_NID then do;
+			/*
+			/* Warning; non-const member function
+			/* called for non-lvalue object.
+			/**/
+			call SEMANTIC_ERROR_I (ERR_CALL_MBR_FUNC_RVALUE,
+					       FULL_QUALIFIED_SYMBOL_NAME
+					       (FUNCTION_SYMBOL));
+		end;
+			
+	end;
+	else do;
+		/* Static member function, 'this' not evaluated. */
+		call COUNT_DOWN_VALUE (THIS);
+	end;
+
+	/* Return the function reference value */
+
+	return (FAD);
+
+/* ---------------------------------------------------------------------
+/* CHECK_CALL_THRU_OBJECT
+/*
+/* Given a value node that's a VALUE of a REF, determine whether 
+/* the object's virtual function table is known and can be circumvented.
+/* It may either be a class *object* (i.e. not thru a pointer or reference)
+/* or the "this" parameter of a constructor or destructor.
+/* 
+/* Trashes current-node-id and current-value-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_CALL_THRU_OBJECT: procedure (V) 
+			internal
+			returns (type (BOOL_T));
+
+	declare
+		V		type (CXX_VID_T);
+
+	CXX_VALUE_NODE_PTR = V;
+
+	if (CXX_VALUE_NODE.OP ^= VALUE_VO) |
+	   (CXX_VALUE_NODE.TOP_TYPE.CODE = byte (REFERENCE_DT)) then
+		return (FALSE);
+
+	CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+
+	if CXX_VALUE_NODE.OP ^= REF_VO then
+		return (FALSE);
+
+	/* Have VALUE (REF (...)) */
+
+	if CXX_VALUE_NODE.THIRD = NULL_CXX_VID then
+		return (TRUE);
+
+	if (CURRENT_SCOPE_TYPE ^= FUNCTION_SCOPE) |
+	   (CURRENT_FUNCTION_SCOPE = NULL_NID) then
+		return (FALSE);
+
+	call SET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE);
+	call SET_SYM_NODE_R (SCOPE_NODE.OWNER);
+	if ^SYM_NODE.IS_CONSTRUCTOR_FUNCTION &
+	   ^SYM_NODE.IS_DESTRUCTOR_FUNCTION then
+		return (FALSE);
+
+	if CXX_VALUE_NODE.LEFT_NID = NULL_NID then
+		return (FALSE);
+
+	call SET_SYM_NODE_R (CXX_VALUE_NODE.LEFT_NID);
+	if ^SYM_NODE.IS_AGGREGATE_TAG then
+		return (FALSE);
+
+	CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.THIRD;
+	if (CXX_VALUE_NODE.OP ^= VALUE_VO) |
+	   (CXX_VALUE_NODE.LEFT = NULL_CXX_VID) then
+		return (FALSE);
+
+	CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+	if (CXX_VALUE_NODE.VOP ^= REF_VO) |
+	    (CXX_VALUE_NODE.LEFT_NID = NULL_NID) then
+		return (FALSE);
+
+	call SET_SYM_NODE_R (CXX_VALUE_NODE.LEFT_NID);
+	if ^SYM_NODE.IS_PARAMETER | ^SYM_NODE.IS_DUMMY then
+		return (FALSE);
+
+	if SYM_NODE.NAME ^= THIS_PARAMETER_NAME then
+		return (FALSE);
+
+	return (TRUE);
+
+end CHECK_CALL_THRU_OBJECT;
+
+end MEMBER_FUNCTION_CALL;
+
+/* ---------------------------------------------------------------------
+ * FIXUP_MEMBER_CALL
+ *
+ * Fix things up following a call to MEMBER_FUNCTION_CALL when ops
+ * for an actual call are needed (i.e. when the member function
+ * is not cast to void).  Handle the situations in which 
+ * MEMBER_FUNCTION_CALL creates an int rather than a function designator,
+ * to indicate that inline ops for trivial destruction or assignment
+ * are to be emitted.
+ *
+ * OFFSET is CXX_VALUE_NODE.OFFSET from the INTEGER_VO value node returned
+ * by MEMBER_FUNCTION_CALL.
+ *
+ * ARG_LIST is the third argument to MEMBER_FUNCTION_CALL, which
+ * MEMBER_FUNCTION_CALL uses to set up the argument list.
+ *
+ * REUSE_VID is a spare value node, which FIXUP_MEMBER_CALL will reuse
+ * or recycle after setting CXX_VALUE_NODE.LEFT and CXX_VALUE_NODE.RIGHT
+ * with VIDs of its own.  On return, REUSE_VID indicates the expression
+ * containing the necessary inline ops.
+ * ------------------------------------------------------------------- */
+
+FIXUP_MEMBER_CALL: procedure (OFFSET, ARG_LIST, REUSE_VID)
+		   returns   (type (CXX_VID_T))
+		   external  (X_FIXUP_MEMBER_CALL);
+
+	declare
+		OFFSET		type (LONG_T),
+		ARG_LIST	type (CXX_VID_T),
+		REUSE_VID	type (CXX_VID_T);
+	declare
+		(LEFT, RIGHT)	type (CXX_VID_T),
+		WORK_TYPE	type (TYPE_INFO_T),
+		LEFT_REF	type (CXX_VID_T),
+		OBJ_P		type (CXX_VID_T);
+
+	if OFFSET = 1 then do;
+		/* Trivial assignment. */
+		/* Argument has been converted to const T&. */
+
+		/* Get this and argument. */
+		CXX_VALUE_NODE_PTR = ARG_LIST;
+		LEFT = CXX_VALUE_NODE.LEFT; /* 'this' argument */
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.RIGHT;
+		RIGHT = CXX_VALUE_NODE.LEFT; /* rhs of assign argument */
+		call COUNT_UP_VALUE (LEFT);
+		call COUNT_UP_VALUE (RIGHT);
+		call COUNT_DOWN_VALUE (ARG_LIST);
+
+		/* Both arguments are pointers; dereference them. */
+		RIGHT = GET_VALUE_AND_EXPAND_L (IMPLICIT_STAR_VO, RIGHT);
+		call SET_SYM_NODE_R (CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL);
+		call SET_TYPE_NODE_R ((SYM_NODE.TYPE));
+		call GET_TYPE_NODE_TYPE (WORK_TYPE);
+		call DETERMINE_SIZE (WORK_TYPE);
+		WORK_TYPE.NOT_AN_LVALUE = FALSE;
+
+		/* 'this' pointer had been converted to void * */
+		CXX_VALUE_NODE_PTR = LEFT;
+		if CXX_VALUE_NODE.OP ^= CAST_VO then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		OBJ_P = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (OBJ_P);
+		call COUNT_DOWN_VALUE (LEFT);
+		LEFT_REF = REF_WITH_LOCATOR (OBJ_P, WORK_TYPE);
+		call COUNT_UP_VALUE (LEFT_REF);
+		LEFT = GET_VALUE_AND_EXPAND_L (VALUE_VO, LEFT_REF);
+
+		/* Form simple assignment. */
+		CXX_VALUE_NODE_PTR = REUSE_VID;
+		CXX_VALUE_NODE.OP = ASSIGN_VO;
+		CXX_VALUE_NODE.LEFT = LEFT_REF;
+		CXX_VALUE_NODE.RIGHT = RIGHT;
+		call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+
+		REUSE_VID = GET_VALUE_AND_EXPAND_LR
+			    (COMMA_VO, REUSE_VID, LEFT);
+	end;
+	else if OFFSET = 0 then do;
+		/* Trivial explicit destructor; nothing to call. */
+
+		/* Recycle REUSE_VID. */
+		CXX_VALUE_NODE_PTR = REUSE_VID;
+		CXX_VALUE_NODE.LEFT = NULL_CXX_VID;
+		CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+		call COUNT_DOWN_VALUE (REUSE_VID);
+
+		/* Get this. */
+		CXX_VALUE_NODE_PTR = ARG_LIST;
+		LEFT = CXX_VALUE_NODE.LEFT; /* 'this' argument */
+		call COUNT_UP_VALUE (LEFT);
+		call COUNT_DOWN_VALUE (ARG_LIST);
+		REUSE_VID = CONVERT_TO_VOID (LEFT);
+
+	end;
+	else	call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+end FIXUP_MEMBER_CALL;
+
+/* ---------------------------------------------------------------------
+/* ACCESS_MEMBER
+/*
+/* Check access to member and adjust the object through which it is
+/* referenced, from the object mentioned explicitly to the left of
+/* the dot, to the subobject which contains the member immediately.
+/*
+/* Returns with the revised OBJECT paged in.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+ACCESS_MEMBER: procedure (OBJECT, OBJ_CLASS, CLASS_QUALIFIER, 
+			  MEMBER_OWNER, MEMBER)
+	       internal;
+	declare
+		OBJECT		type (CXX_VID_T),
+		OBJ_CLASS	type (NID_T),
+		CLASS_QUALIFIER	type (NID_T),
+		MEMBER_OWNER	type (NID_T),
+		MEMBER		type (NID_T);
+	declare
+		MP		pointer,
+		(KV1,KV2)	type (CXX_VID_T);
+
+	/* Because the object in question may be associated with
+	/* some side effects which must precede or follow its fetch,
+	/* we look deep to the actual VALUE (REF).
+	/**/
+	call DETACH_COMMA (OBJECT, KV1, KV2);
+
+	/*
+	/* Set up the reference to the member, for the access.
+	/*
+	/* If we are referencing an inherited member;
+	/* turn the class reference into a pointer so it
+	/* can be converted into a pointer to the appropriate
+	/* base class, and then dereference it.
+	/*
+	/* Diagnose inaccessible/ambiguous member.
+	/**/
+	OBJECT = GET_VALUE_AND_EXPAND_L (IMPLICIT_ADDR_VO, OBJECT);
+	if ^DERIVED_TO_BASE_CLASS_POINTER (OBJECT, 
+					   OBJ_CLASS,
+					   MEMBER_OWNER,
+					   CLASS_QUALIFIER,
+					   MEMBER,
+					   FALSE,
+					   DOT_STAR_VO) then ;
+	OBJECT = GET_VALUE_AND_EXPAND_L (STAR_VO, OBJECT);
+
+	call REATTACH_COMMA (OBJECT, KV1, KV2);
+
+end ACCESS_MEMBER;
+
+/* ---------------------------------------------------------------------
+/* DETERMINE_FIELD
+/*
+/* According to the currently paged-in sym-node, set BIT_SHIFT,
+/* OFFSET, and OFFSET_UNITS.  If the bit field can be handled as
+/* a smaller type, set the smaller type into TI (which is assumed
+/* to represent the type of the paged-in sym-node on entry).
+/* ------------------------------------------------------------------- */
+
+DETERMINE_FIELD: procedure (TI, BIT_SHIFT, OFFSET, OFFSET_UNITS)
+		 internal;
+
+	declare
+		TI		type (TYPE_INFO_T),
+		BIT_SHIFT	type (SHORT_T),
+		OFFSET		type (LONG_T),
+		OFFSET_UNITS	type (SHORT_T);
+	declare
+	        I       type (SHORT_T),
+	        T       type (SHORT_T), /* possible type */
+	        W       type (LONG_T),  /* bit size of field word */
+	        B       type (LONG_T),  /* bits stored "before" the SIZE bits */
+	        S       type (LONG_T),  /* size of type T */
+	        SU      type (SHORT_T), /* units of S */
+		BDY	type (SHORT_T),
+	        B1	type (LONG_T),  /* cell of lowest addressed bit */
+	        B2	type (LONG_T);  /* cell of highest addressed bit */
+
+        /* Get size of full bit-field in bits */
+
+	call BIT_FIELD_TYPE_SIZE (rank (SYM_NODE.TOP_TYPE.CODE), W, SU, BDY);
+
+	/*
+	/* Bits stored "before" the SIZE bits.
+	/* Note that SYM_NODE.FIELD2 is the number
+	/* of remaining bits in the storage unit.
+	/**/
+
+        B = W - (SYM_NODE.SIZE + SYM_NODE.FIELD2); 
+
+	/*
+        /* Set BIT_SHIFT to the number of bits the containing integer
+	/* must be right-shifted to align the field in the low-order
+        /* part of the integer.
+	/**/
+
+        if BITS_PACKED_LEFT_TO_RIGHT then 
+		BIT_SHIFT = SYM_NODE.FIELD2; /* bits "after" */
+ 	else	BIT_SHIFT = B;               /* bits "before" */
+
+        /* Look for better fit (i.e. smaller type); first char then short */
+
+        do I = 0 to 1;
+
+		if I = 0 then
+			T = CHAR_BT;
+		else	T = SHORT_BT;
+
+		if ^SYM_NODE.SIGNED_BIT_FIELD then
+			T = MAP_TO_UNSIGNED_TYPE (T);
+
+		/* Divide full field of W bits into storage cells of type T */
+
+		call SIMPLE_TYPE_SIZE (T, S, SU, BDY);
+		S = ROUNDU (S, SU, BITS);
+
+		/* Cell of lowest addressed bit */
+
+		B1 = divide (B, S, 31);
+
+		/* Cell of highest addressed bit*/
+
+		B2 = divide (B + SIZE - 1, S, 31);
+
+		/* Are all the bits in the same cell? */
+
+		if B1 = B2 then do;
+
+			/*
+			/* Found a smaller type that fits
+			/* (does not span two storage cells of type T).
+			/**/
+
+			TI.TYPE = GET_BASIC_TYPE (T);
+			call GET_TOP_TYPE (TI.TYPE, TI.TOP_TYPE);
+
+			/*
+			/* Adjust bit shift value
+			/* (bits to the "right" of field in cell)
+			/**/
+
+			if BITS_PACKED_LEFT_TO_RIGHT then 
+				BIT_SHIFT = (B2 + 1) * S - (B + SIZE);
+			else	BIT_SHIFT = B - B1 * S;
+
+			/* Adjust OFFSET for REF */
+
+			if B1 = 0 then 
+				return;		/* No change */
+
+			S = ROUNDU (B1 * S, BITS, SU);
+
+			if S = 0 then
+				return;		/* No change */
+
+			/* Add to OFFSET */
+
+			if OFFSET_UNITS ^= SU then do;
+				OFFSET = ROUNDU (OFFSET, OFFSET_UNITS, SU);
+				OFFSET_UNITS = SU;
+			end;
+			OFFSET = OFFSET + S;
+			return;
+		end;
+
+	        /* Try next larger type */
+        end;
+
+end DETERMINE_FIELD;
+
+/* ---------------------------------------------------------------------
+/* DEREFERENCE_MEMBER
+/*
+/* MEMBER_REF is a MEMBER_REF_VO value node (so its type must be
+/* fudged as pointer-to-member rather than reference-to-member).  
+/* Dereference it if possible, based on 'this->' of the current function.  
+/* If not possible, diagnose the problem.
+/* If symbol is a static member, eliminate the MEMBER_REF_VO without
+/* using 'this->'.
+/* If called while the expression is possibly OVERLOADED, an overloaded
+/* function is handled as a non-static member.  This flag is set if
+/* the MEMBER_REF has not yet had its overloading resolved.
+/* Returns with result value node paged in.
+/* ------------------------------------------------------------------- */
+
+DEREFERENCE_MEMBER: procedure (MEMBER_REF, OVERLOADED)
+		    returns  (type (CXX_VID_T))
+		    external (X_DEREFERENCE_MEMBER);
+
+	declare
+		MEMBER_REF	type (CXX_VID_T),
+		OVERLOADED	type (BOOL_T);
+	declare
+		P		type (POINTER_T),
+		THIS_SYMBOL	type (NID_T),
+		SCOPE_SYMBOL	type (NID_T),
+		THIS_V		type (CXX_VID_T),
+		DEREF_V		type (CXX_VID_T),
+		MEMBER_PTR	type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		MEMBER_SCOPE_SYMBOL	
+				type (NID_T),
+		MEMBER_SYMBOL	type (NID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		IS_STATIC	type (BOOL_T),
+		IS_OVERLOADED	type (BOOL_T);
+
+	CXX_VALUE_NODE_PTR = MEMBER_REF;
+	SCOPE_SYMBOL = CXX_VALUE_NODE.RIGHT_NID;
+	MEMBER_SCOPE_SYMBOL = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+	MEMBER_SYMBOL = CXX_VALUE_NODE.LEFT_NID;
+	if SCOPE_SYMBOL = NULL_NID then
+		SCOPE_SYMBOL = MEMBER_SCOPE_SYMBOL;
+	call GET_SYM_NODE_R (MEMBER_SYMBOL, P);
+	IS_OVERLOADED = (P->SYM_NODE.OVERLOAD & OVERLOADED);
+	IS_STATIC = ( rank (P->SYM_NODE.STORAGE_CLASS) = STATIC_ST
+		    & ^ IS_OVERLOADED );
+	call RELEASE_SYM_NODE (MEMBER_SYMBOL);
+
+	/* 
+	/* If SYMBOL was found due to the current function being
+	/* a member function, find its 'this' pointer for
+	/* implicit 'this->'.
+	/**/
+	THIS_SYMBOL = NULL_NID;
+	if ( (CURRENT_SCOPE_TYPE = FUNCTION_SCOPE)
+	   | (CURRENT_SCOPE_TYPE = BLOCK_SCOPE) ) then do;
+		call GET_SYM_NODE_R (CURRENT_FUNCTION, P);
+		/*
+		/* We are at local scope, referencing a non-static
+		/* class member (which isn't an anonymous union
+		/* member, or it is, but the anonymous union is nested
+		/* within a another class).
+		/**/
+		if   P->SYM_NODE.IS_AGGREGATE_MEMBER
+		   & IS_ANY_BASE_CLASS_OF (
+			    SCOPE_SYMBOL,
+			    P->SYM_NODE.ENCLOSING_SCOPE_OWNER) then do;
+			/*
+			/* SYMBOL was found in the class of which
+			/* the current function is a member. 
+			/**/
+			THIS_SYMBOL = LOOKUP_THIS_PARAMETER (CURRENT_FUNCTION);
+			/* might be null if static function */
+		end;
+		call RELEASE_SYM_NODE (CURRENT_FUNCTION);
+	end;
+	if   IS_STATIC 
+	   | (IS_OVERLOADED & THIS_SYMBOL = NULL_NID) then do;
+		/*
+		/* If it's overloaded but there's no 'this' symbol,
+		/* we don't know whether it's static.  Missing object
+		/* check will be performed later.
+		/**/
+		call GET_SYM_NODE_R (MEMBER_SYMBOL, P);
+		if ^IS_OVERLOADED then do;
+			/*
+			/* Check access now.
+			/**/
+			if ^IS_ACCESSIBLE_STATIC (MEMBER_SYMBOL) then do;
+				if ^AM_DEBUGGER then do;
+					call SEMANTIC_ERROR_I
+					     (ERR_PRIV_BASE_MEMBER_REF,
+					      FULL_QUALIFIED_SYMBOL_NAME
+					      (MEMBER_SYMBOL));
+				end;
+			end;
+		end;
+		RESULT = GET_VALUE_REF_AND_EXPAND (MEMBER_SYMBOL);
+		if P->SYM_NODE.TOP_TYPE.CODE = byte (FUNCTION_DT) then do;
+			/*
+			/* This is a function designator.  Fix it up for
+			/* automatic conversion to pointer-to-function
+			/* in almost all contexts.
+			/**/
+			RESULT = GET_VALUE_AND_EXPAND_L (ADDR_VO, RESULT);
+			CXX_VALUE_NODE.FUNCTION_DESIGNATOR = TRUE;
+		end;
+		else if P->SYM_NODE.TOP_TYPE.CODE = byte (ARRAY_DT) then
+			CXX_VALUE_NODE.ARRAY_DESIGNATOR = TRUE;
+		call RELEASE_SYM_NODE (MEMBER_SYMBOL);
+	end;
+	else if THIS_SYMBOL ^= NULL_NID then do;
+		/*
+		/* The reference becomes implicitly "this->" qualified.
+		/**/
+		THIS_V = GET_VALUE_REF_AND_EXPAND (THIS_SYMBOL);
+		DEREF_V = GET_VALUE_AND_EXPAND_L (STAR_VO, THIS_V);
+		MEMBER_PTR = COPY_VALUE (MEMBER_REF);
+		CXX_VALUE_NODE.OP = MEMBER_PTR_VO;
+		RESULT = MEMBER_OF_OBJECT (DEREF_V, MEMBER_PTR);
+	end;
+	else do;
+		/*
+		/* Missing object.
+		/**/
+		if IS_NESTED_SCOPE_OF (CURRENT_CLASS_SCOPE,
+				       MEMBER_SCOPE_SYMBOL) then do;
+			/*
+			/* Error; a nested class (i.e. a class defined
+			/* a class) may not reference non-static
+			/* members in an enclosing class scope
+			/* (C++ARM, sec.9.7).
+			/**/
+			call SEMANTIC_ERROR_I (ERR_NON_STATIC_MEM_REF,
+					       FULL_QUALIFIED_SYMBOL_NAME
+					       (MEMBER_SYMBOL));
+		end;
+		else if CURRENT_SCOPE_TYPE = PROTOTYPE_SCOPE then do;
+			if CURRENT_FUNCTION_SCOPE = NULL_NID then do;
+				/*
+				/* Error; a non-static data member may not be
+				/* used in a default argument expression except
+				/* thru an object (C++ARM, sec.8.2.6, p.143).
+				/**/
+				call SEMANTIC_ERROR_I
+				     (ERR_DEFAULT_ARG_USES_MEM,
+				      FULL_QUALIFIED_SYMBOL_NAME
+				      (MEMBER_SYMBOL));
+			end;
+			else do;
+				/*
+				/* Error; "this" may not be used in a
+				/* default argument expression.  E.g.:
+				/* "struct{int a;g(){int f(int x=a);}};"
+				/**/
+				call SEMANTIC_ERROR_I
+				     (ERR_DEFAULT_ARG_USES_THIS,
+				      FULL_QUALIFIED_SYMBOL_NAME
+				      (MEMBER_SYMBOL));
+			end;
+		end;
+		else do;
+			/*
+			/* Error; a non-static member must be referenced
+			/* thru an object (C++ARM, sec.9.3, p.174).
+			/**/
+			call SEMANTIC_ERROR_I (ERR_NON_STATIC_MEM_REF,
+					       FULL_QUALIFIED_SYMBOL_NAME
+					       (MEMBER_SYMBOL));
+		end;
+
+		/* 
+		/* Substitute an uninitialized value of the
+		/* member symbol's type.
+		/**/
+		/* -TODO- fix this up so that GCV won't complain about
+		/* unconstructable type, once GCV gets a context argument.
+		/* (Later.) I've given it the context argument, but am not
+		/* sure whether this will always suppress the error message.
+		/**/
+		call GET_SYM_NODE_R (MEMBER_SYMBOL, P);
+		RESULT = GET_CONSTRUCTOR_VALUE (P->SYM_NODE.TYPE, NULL_CXX_VID,
+						NULL_NID, IMPLICIT_CAST_VO);
+		call RELEASE_SYM_NODE (MEMBER_SYMBOL);
+		call COUNT_DOWN_VALUE (MEMBER_REF);
+		CXX_VALUE_NODE_PTR = RESULT;
+	end; /* error: missing object */
+
+	return (RESULT);
+
+/* ---------------------------------------------------------------------
+/* IS_NESTED_SCOPE_OF
+/*
+/* If the scope represented by the given scope-node id A, is nested
+/* (lexically) within the scope represented by the given scope-node
+/* id B, then return TRUE, otherwise FALSE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+IS_NESTED_SCOPE_OF: procedure (A, B) returns (type (BOOL_T)) internal;
+
+	declare
+		(A, B)		type (NID_T);
+	declare
+		(AP, SP)	type (POINTER_T),
+		(S, NEXT_S)	type (NID_T);
+
+	if (A = NULL_NID) | (B = NULL_NID) | (A = B) then
+		return (FALSE);
+
+	call GET_SCOPE_NODE_R (A, AP);
+
+	do S = AP->SCOPE_NODE.ENCLOSING_SCOPE
+	repeat (NEXT_S) while (S ^= NULL_NID);
+		if S = B then do;
+			call RELEASE_SCOPE_NODE (A);
+			return (TRUE);
+		end;
+		call GET_SCOPE_NODE_R (S, SP);
+		NEXT_S = SP->SCOPE_NODE.ENCLOSING_SCOPE;
+		call RELEASE_SCOPE_NODE (S);
+	end;
+
+	call RELEASE_SCOPE_NODE (A);
+	return (FALSE);
+
+end IS_NESTED_SCOPE_OF;
+
+end DEREFERENCE_MEMBER;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_OF_OBJECT
+/*
+/* Given an object expression and a pointer-to-member of that object, 
+/* return an expression for the designated function or subobject.
+/* Analogous to the source-level operator '.*'.  Also supports
+/* ordinary '.' once the name to the right of the dot has been 
+/* set up as a member pointer.  This is always part of the expansion pass.
+/* In many cases it produces a DOT_STAR expression tree, which must
+/* be handled later during transmutation.
+/*
+/* OBJECT should be VALUE (REF (...)) --> class/struct/union,
+/* possibly with some COMMAs interspersed.  Its type is
+/* already checked, and no VALUE_OF need be done.
+/*
+/* MEMBER is a pointer-to-member,
+/* one possible form being MEMBER_POINTER_VO.
+/* It has already been checked that RIGHT's TYPE
+/* is a base class of LEFT's.
+/*
+/* Returns with the result value paged in.
+/* ------------------------------------------------------------------- */
+MEMBER_OF_OBJECT: procedure (OBJECT, MEMBER)
+		  returns   (type (CXX_VID_T))
+		  external  (X_MEMBER_OF_OBJECT);
+
+	declare
+		OBJECT		type (CXX_VID_T),
+		MEMBER		type (CXX_VID_T);
+	declare
+		MEMBER_TYPE_INFO
+				type (TYPE_INFO_T),
+		OBJECT_TYPE_INFO
+				type (TYPE_INFO_T),
+		RESULT		type (CXX_VID_T),
+		VICTIM		type (CXX_VID_T),
+		TYPE_CODE	type (SHORT_T);
+	
+        /*
+        /* Special case added: where LEFT is a CALL_FUNCTION --> struct/union.
+        /* This case has been modified to properly handle f ().m1.m2.m3 ... .
+        /*
+        /*    [ p->m is transformed to this.]
+        /**/
+
+	CXX_VALUE_NODE_PTR = OBJECT;
+        call GET_VALUE_TYPE (OBJECT_TYPE_INFO);
+
+	/* Get the type of the member symbol in MEMBER_TYPE_INFO */
+
+	CXX_VALUE_NODE_PTR = MEMBER;
+	call GET_VALUE_TYPE (MEMBER_TYPE_INFO);
+	call STRIP_TOP_TYPE (MEMBER_TYPE_INFO, TRUE);	/* DGM (008) */
+
+	TYPE_CODE = rank (MEMBER_TYPE_INFO.TOP_TYPE.CODE);
+
+	/* Handle a member function */
+
+	if TYPE_CODE = FUNCTION_DT then do;
+		/*
+		/* Expand to a DOT_STAR_VO operation, with:
+		/*      LEFT a VALUE (REF (object)),
+		/*      RIGHT the member reference of the member function, 
+		/*  and TYPE the member function's type.
+		/**/
+		MEMBER_TYPE_INFO.NOT_AN_LVALUE = TRUE;
+		RESULT = ALLOC_CXX_VALUE_NODE_LR (DOT_STAR_VO, OBJECT, MEMBER);
+		call SET_VALUE_TYPE (MEMBER_TYPE_INFO);
+		return (RESULT);
+	end;
+
+	if ^ ( ( TYPE_CODE = ARRAY_DT & ^ OBJECT_TYPE_INFO.NOT_AN_LVALUE ) 
+	     | IS_SCALAR_TYPE (TYPE_CODE) ) then do;
+		/* Defer processing aggregates.  This is absolutely
+		/* essential in case the type "needs copy" because this
+		/* expression might initialize a reference, and thereby
+		/* get into a loop initializing the temp for the reference.
+		/* (This used to happen because the DOT could get expanded into
+		/* a VALUE(REF) with NOT_AN_LVALUE set.)
+		/*
+		/* Note that the reason for not deferring all DOT processing
+		/* for data members is just that PKT didn't want to insert
+		/* TRANSMUTE_WITH_TEMP calls for every operand of every simple
+		/* little built-in operation.
+		/**/
+
+		MEMBER_TYPE_INFO.NOT_AN_LVALUE= OBJECT_TYPE_INFO.NOT_AN_LVALUE;
+		MEMBER_TYPE_INFO.TOP_TYPE.QUALIFIERS
+			=   MEMBER_TYPE_INFO.TOP_TYPE.QUALIFIERS
+			  | OBJECT_TYPE_INFO.TOP_TYPE.QUALIFIERS;
+
+		/* Type from symbol to right of dot */
+
+		RESULT = ALLOC_CXX_VALUE_NODE_LR (DOT_STAR_VO, OBJECT, MEMBER);
+		call SET_VALUE_TYPE (MEMBER_TYPE_INFO);
+		return (RESULT);
+	end;
+
+	/* Handle transmutation pass, if necessary. */
+	RESULT = TRANSMUTE_WITH_TEMP (OBJECT, VICTIM, FALSE, AUTO_ST, ADDR_VO);
+	RESULT = ACCESS_DATA_MEMBER (RESULT, MEMBER);
+	RESULT = VALUE_BEFORE_EFFECT (RESULT, VICTIM);
+	return (RESULT);
+
+end MEMBER_OF_OBJECT;

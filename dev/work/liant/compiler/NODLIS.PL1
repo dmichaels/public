@@ -1,0 +1,179 @@
+/* C++ nodlis.pl1 - Dynamic node list package */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.06.92  DGM  001  Fix in DELETE_NODE_LIST.
+ *  11.06.90  DGM  000  Original.
+ *  11.02.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.06.92 001 NODLIS');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_NODE_LIST_IN;
+
+/* ---------------------------------------------------------------------
+/* APPEND_TO_NODE_LIST
+/* ------------------------------------------------------------------- */
+
+APPEND_TO_NODE_LIST: procedure (NLP, ID)
+		     external  (X_APPEND_TO_NODE_LIST);
+
+	declare
+		NLP		type (POINTER_T),
+		ID		type (NID_T);
+	declare
+		NEWP		type (POINTER_T);
+
+	allocate NODE_DATA set (NEWP);
+	NEWP->NODE_DATA.ID = ID;
+	NEWP->NODE_DATA.NEXT = null ();
+	if NLP ^= null () then do;
+		NEWP->NODE_DATA.PREV = NLP->NODE_DATA.PREV;
+		NLP->NODE_DATA.PREV->NODE_DATA.NEXT = NEWP;
+	end;
+	else	NLP = NEWP;
+	NLP->NODE_DATA.PREV = NEWP;
+
+end APPEND_TO_NODE_LIST;
+
+/* ---------------------------------------------------------------------
+/* APPEND_TO_NODE_LIST_WITH_ID
+/* ------------------------------------------------------------------- */
+
+APPEND_TO_NODE_LIST_WITH_CODE: procedure (NLP, ID, CODE)
+			       external  (X_APPEND_TO_NODE_LIST_WITH_CODE);
+	declare
+		NLP		type (POINTER_T),
+		ID		type (NID_T),
+		CODE		type (SHORT_T);
+
+	call APPEND_TO_NODE_LIST (NLP, ID);
+	NLP->NODE_DATA.PREV->NODE_DATA.CODE = CODE;
+
+end APPEND_TO_NODE_LIST_WITH_CODE;
+
+/* ---------------------------------------------------------------------
+/* APPEND_TO_NODE_LIST_WITH_VALUE
+/* ------------------------------------------------------------------- */
+
+APPEND_TO_NODE_LIST_WITH_VALUE: procedure (NLP, ID, VALUE)
+				external  (X_APPEND_TO_NODE_LIST_WITH_VALUE);
+	declare
+		NLP		type (POINTER_T),
+		ID		type (NID_T),
+		VALUE		type (LONG_T);
+
+	call APPEND_TO_NODE_LIST (NLP, ID);
+	NLP->NODE_DATA.PREV->NODE_DATA.VALUE = VALUE;
+
+end APPEND_TO_NODE_LIST_WITH_VALUE;
+
+/* ---------------------------------------------------------------------
+/* ALREADY_ON_NODE_LIST
+/* ------------------------------------------------------------------- */
+
+ALREADY_ON_NODE_LIST: procedure (NLP, ID)
+		      returns   (type (BOOL_T))
+		      external  (X_ALREADY_ON_NODE_LIST);
+	declare
+		NLP		type (POINTER_T),
+		ID		type (NID_T);
+	declare
+		P		type (POINTER_T);
+
+	do P = NLP repeat (P->NODE_DATA.NEXT) while (P ^= null ());
+		if P->NODE_DATA.ID = ID then
+			return (TRUE);
+	end;
+	return (FALSE);
+
+end ALREADY_ON_NODE_LIST;
+
+/* ---------------------------------------------------------------------
+/* ALREADY_ON_NODE_LIST_WITH_CODE
+/* ------------------------------------------------------------------- */
+
+ALREADY_ON_NODE_LIST_WITH_CODE: procedure (NLP, ID, CODE)
+				returns   (type (BOOL_T))
+				external  (X_ALREADY_ON_NODE_LIST_WITH_CODE);
+	declare
+		NLP		type (POINTER_T),
+		ID		type (NID_T),
+		CODE		type (SHORT_T);
+	declare
+		P		type (POINTER_T);
+
+	do P = NLP repeat (P->NODE_DATA.NEXT) while (P ^= null ());
+		if (P->NODE_DATA.ID = ID) & (P->NODE_DATA.CODE = CODE) then
+			return (TRUE);
+	end;
+	return (FALSE);
+
+end ALREADY_ON_NODE_LIST_WITH_CODE;
+
+/* ---------------------------------------------------------------------
+/* REMOVE_LAST_FROM_NODE_LIST
+/* ------------------------------------------------------------------- */
+
+REMOVE_LAST_FROM_NODE_LIST: procedure (NLP)
+			    external  (X_REMOVE_LAST_FROM_NODE_LIST);
+	declare
+		NLP		type (POINTER_T);
+	declare
+		LASTP		type (POINTER_T);
+
+	if NLP = null () then
+		return;
+	LASTP = NLP->NODE_DATA.PREV;
+	if LASTP ^= NLP then do;
+		NLP->NODE_DATA.PREV = LASTP->NODE_DATA.PREV;
+		LASTP->NODE_DATA.PREV->NODE_DATA.NEXT = null ();
+	end;
+	else	NLP = null ();
+	free LASTP->NODE_DATA;
+
+end REMOVE_LAST_FROM_NODE_LIST;
+
+/* ---------------------------------------------------------------------
+/* DELETE_NODE_LIST
+/* ------------------------------------------------------------------- */
+
+DELETE_NODE_LIST: procedure (NLP) external (X_DELETE_NODE_LIST);
+
+	declare
+		NLP		type (POINTER_T);
+	declare
+		(P, NEXT_P)	type (POINTER_T);
+
+	do P = NLP repeat NEXT_P while (P ^= null ());
+		NEXT_P = P->NODE_DATA.NEXT;
+		free P->NODE_DATA;
+	end;
+	NLP = null ();
+
+end DELETE_NODE_LIST;
+

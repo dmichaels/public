@@ -1,0 +1,207 @@
+/* # CPP pp_err.txt - ANSI-C/C++ preprocessor diagnostic messages
+/* 
+/* ########################################################################
+/* #  This product is the property of Language Processors, Inc. and is    #
+/* #  licensed pursuant to a written license agreement.  No portion of    #
+/* #  this product may be reproduced without the written permission of    #
+/* #  Liant Software Corporation except pursuant to the license agreement.#
+/* ########################################################################
+/* 
+/* ########################################################################
+/* #
+/* #  LPI EDIT HISTORY
+/* #
+/* #  07.20.91  DGM  005  Updated.
+/* #  07.09.91  DGM  004  Updated.
+/* #  03.20.91  DGM  002  Updated.
+/* #  03.08.91  DGM  001  Updated.
+/* #  11.12.90  DGM  000  Original; new format.
+/* #
+/* ########################################################################
+/* 
+/* # ---------------------------------------------------------------------
+/* #
+/* # This file defines the CPP component messages.
+/* #
+/* # This component has been allocated 250 message
+/* # codes in the message range 21750-21999.
+/* #
+/* # ---------------------------------------------------------------------
+/* 
+*ORG 21750
+/* 
+/* # ---------------------------------------------------------------------
+/* # Scanner and Preprocessor Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* PP_OPEN 4
+1   4   Cannot open main source file "$1".!
+/* PP_READ 3
+2   3   Read error; panic.!
+/* PP_EOF_IN_TOKEN 2
+3   2   End-of-file encountered within a token.!
+/* PP_EOF_IN_LINE 2
+4   2   End-of-file encountered within a line.!
+/* PP_EOF_IN_COMMENT 2
+5   2   End-of-file encountered within a comment.!
+/* PP_EOF_IN_DIRECTIVE 3
+6   3   End-of-file encountered within a preprocessing directive.!
+/* PP_EOF_IN_MACRO_CALL 3
+7   3   End-of-file encountered within an invocation of a
+        function-like macro.  Incomplete macro expansion of "$1".!
+/* PP_EOF_IN_EXCLUDED_GROUP 2
+8   2   End-of-file encountered while skipping a conditionally excluded group
+        (e.g. after a #if 0) $1.!
+/* PP_ILLEGAL_DIRECTIVE_CHAR 1
+9   1   An illegal character (vertical-tab or form-feed) was encountered within
+        a preprocessing directive; ignored.  Use -xgs to supress this warning.!
+/* PP_UNKNOWN_DIRECTIVE 2
+10  2   Unknown preprocessing directive "#$1"; directive ignored.!
+/* PP_EMPTY_DIRECTIVE 2
+11  2   Empty "#$1" directive; directive ignored.!
+/* PP_EXTRA_TEXT_DIRECTIVE 2
+12  2   Extraneous text at end of a "#$1" directive; ignored.!
+/* PP_NO_DIRECTIVE_IDENTIFIER 2
+13  2   Missing identifier in "#$1" directive; directive ignored.!
+/* PP_ILLEGAL_UNDEF_IDENTIFIER 2
+14  2   Illegal attempt to #undef the predefined macro name "$1"; ignored.!
+/* PP_ILLEGAL_DEFINE_IDENTIFIER 2
+15  2   Illegal attempt to #define the predefined macro name "$1"; ignored.!
+/* PP_DUP_DEFINE 1
+16  1   Pernicious macro redefinition; $1.  This definition
+        will not replace the previous definition.!
+/* PP_DUP_DEFINE_OK 1
+17  1   Pernicious macro redefinition; $1.  This definition
+        will replace the previous definition.!
+/* PP_ERROR 4
+18  4   Encountered #error directive: $1!
+/* PP_NOTE 0
+19  0   Encountered #note directive: $1!
+/* PP_ILLEGAL_INCLUDE 2
+20  2   Illegal #include directive; directive ignored.!
+/* PP_LONG_INCLUDE_NAME 2
+21  2   Long #include header name "$1"; will be truncated.!
+/* PP_OPEN_INCLUDE 2
+22  2   Cannot open #include file "$1"; directive ignored.!
+/* PP_ILLEGAL_LINE 2
+23  2   Illegal #line directive; ignored.!
+/* PP_UNKNOWN_PRAGMA 1
+24  1   Unknown #pragma directive; directive ignored.!
+/* PP_EXTRA_DIRECTIVE 2
+25  2   Extraneous "#$1" encountered; ignored.!
+/* PP_NO_ENDIF 2
+26  2   Terminating #endif expected for conditionally
+        included group (e.g. after a #if 1); assumed.!
+/* PP_EXPRESSION 2
+27  2   Illegal expression in #if/#elif directive; zero result assumed.!
+/* PP_BIG_INTEGER 1
+28  1   The value of an integer in a #if/#elif expression is too large.!
+/* PP_ILLEGAL_ESCAPE 1
+29  1   Unknown escape sequence within a character constant in
+        a #if/#elif expression ; the backslash will be ignored.!
+/* PP_BIG_ESCAPE 1
+30  1   The value of an escape sequence within a character constant in
+        a #if/#elif expression is too large (larger than UCHAR_MAX).!
+/* PP_ZERO_DIVIDE 2
+31  2   Divide-by-zero in #if/#elif directive; zero result assumed.!
+/* PP_LONG_TOKEN 2
+32  2   Token too long "$1"; will be truncated to 512 characters.!
+/* PP_NEWLINE_IN_CHAR 2
+33  2   Newline within character constant; close quote assumed.!
+/* PP_NEWLINE_IN_STRING 2
+34  2   Newline within string literal; close quote assumed.!
+/* PP_NEWLINE_IN_FILE_NAME 2
+35  2   Newline within source file name; close delimiter assumed.!
+/* PP_MULTI_BYTE_CHAR 1
+36  1   Error within multi-byte character constant.!
+/* PP_ILLEGAL_PARAMETERS 2
+37  2   Illegal parameter list format in the definition of the function-like
+        macro "$1".  Definition ignored.!
+/* PP_DUP_PARAMETERS 2
+38  2   Duplicate parameter name(s) in the definition of the function-like
+        macro "$1".  Definition ignored.!
+/* PP_TOO_MANY_PARAMETERS 2
+39  2   Too many parameters in the definition of the function-like macro "$1".
+        This implementation imposes a limit of 256.  Definition ignored.!
+/* PP_HARMLESS_DUP_DEFINE 1
+40  1   Harmless redefinition of the macro (different parameter names).
+        $1.!
+/* PP_ILLEGAL_STRINGIZE 2
+41  2   Illegal stringize operator (#) in the definition of the
+        function-like macro "$1".  Note that this operator must precede
+        a parameter in the replacement list.  Operator will be ignored.!
+/* PCC_WARN_STRINGIZE 1
+42  1   Macro "$1" contains a parameter within a string literal; parameter
+        substitution therein would not be ANSI conforming.  If this behavior
+        is desired, use the "-xs" command-line option.!
+/* PCC_WARN_CHARIZE 1
+43  1   Macro "$1" contains a parameter within a character constant;
+        parameter substitution therein would not be ANSI conforming.
+        If this behavior is desired, use the "-xc" command-line option.!
+/* PCC_DO_STRINGIZE 1
+44  1   The replacement list for the function-like macro "$1"
+        contains a parameter within a string literal; as requested,
+        will perform non-ANSI conforming parameter substitution therein.!
+/* PCC_DO_CHARIZE 1
+45  1   The replacement list for the function-like macro "$1"
+        contains a parameter within a character constant; as requested,
+        will perform non-ANSI conforming parameter substitution therein.!
+/* PP_TOKEN_PASTE_RESULT 3
+46  3   Illegal token-paste (##) result "$1".  Note that the result of
+        a token-paste operation must be ONE legal preprocessing token.
+        Result will be ignored; incomplete macro expansion.!
+/* PP_LONG_STRINGIZE_TOKEN 3
+47  3   Stringize (#) result too long "$1".
+        Resultant string literal will be shortened to 256 characters.!
+/* PP_ILLEGAL_TOKEN_PASTE 2
+48  2   Illegal token-paste operator (##) in the definition of the macro
+        "$1".  Note that this operator may NOT occur at the beginning
+        or the end of the replacement list.  Operator will be ignored.!
+/* PP_LONG_TOKEN_PASTE 3
+49  3   Token-paste (##) result too long "$1".
+        Resultant token will be truncated to 256 characters.!
+/* PP_TOO_FEW_MACRO_ARGS 2
+50  2   Too few arguments given in the invocation of the macro
+        function "$1"; null argument(s) will be supplied.!
+/* PP_TOO_MANY_MACRO_ARGS 2
+51  2   Too many arguments given in the invocation of the macro
+        function "$1"; excess argument(s) will be discarded.!
+/* PP_NULL_MACRO_ARG 2
+52  2   Null argument(s) given in the invocation
+        of the function-like macro "$1"; ignored.!
+/* PP_PARTIAL_MACRO_CALL 3
+53  3   Partial invocation of the function-like macro "$1" within an
+        argument of an outer macro function invocation.  Note that
+        each function-like macro argument is completely expanded AS IF
+        it formed the rest of the source file.  Invocation terminated.!
+/* PP_MACRO_STACK_OVERFLOW 3
+54  3   Macro expansion stack overflow due to too many nested macro
+        invocations.  Incomplete macro expansion of "$1".!
+/* PP_MACRO_ARG_STACK_OVERFLOW 3
+55  3   Macro expansion stack overflow due to too many nested function-like
+        macro arguments.  Incomplete macro expansion of "$1".!
+/* PP_ONCE 2
+56  2   Non-standard #once preprocessing directive encountered; this this include file
+        is to be included only once.  Use -xonce or -cppx to suppress this warning.!
+/* PP_IDENT 2
+57  2   Non-standard #ident preprocessing directive encountered; ignored;
+        Use -xident or -cppx to suppress this warning.!
+/* PP_ASSERT 2
+58  2   Non-standard #$ preprocessing directive encountered; ok.
+        Use -xassert or -cppx to suppress this warning.!
+/* PP_ASSERT_SYNTAX 2
+59  2   Illegal syntax in #$ directive; ignored.!
+/* PP_ELSEIF 2
+60  2   Non-standard #elseif preprocessing directive encountered; treated as #elif.
+        Use -xelseif or -cppx to suppress this warning.!
+/* PP_FILE 2
+61  2   Non-standard #file preprocessing directive encountered; ok.
+        Use -xfile or -cppx to suppress this warning.!
+/* PP_EXTRA_TEXT_DIRECTIVE_OK 1
+62  1   Extraneous text at end of a "#$1" directive; ignored.
+        Use -xtt or -cppx to supress this warning.!
+/* PP_ILLEGAL_FILE 2
+63  2   Illegal syntax in #file directive; ignored.!
+/* PP_MALFORMED_PRAGMA 2
+64  2   Malformed #pragma directive; directive ignored.!
+/* 

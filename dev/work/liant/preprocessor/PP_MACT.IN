@@ -1,0 +1,50 @@
+/* CPP CPP_MACRO_TABLES_IN - Macro tables */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.08.91  DGM  003  Added ASSERT_MACRO_TABLE.
+ *  09.25.90  DGM  002  Include file name changes.
+ *  06.11.90  DGM  001	Original.
+ *
+ ***********************************************************************/
+
+/*
+ * The size (HB_MACRO_TABLE) of the macro definition hash table should
+ * be a prime number.  So, here is a nice little selection of possible
+ * values for your hacking enjoyment:
+ *
+ *      23    31   47   53   97  101 113   127  131  149  151
+ *      251  257  509  521 1021 1031 1531 2039 2053 2557 2579
+ *     3067 3079 3583 3593 4093 4099 4603 4621 5119 5147 5623
+ *     5639 6143 6151 6653 6659 7159 7177 7673 7681 8191 8209
+ */
+
+%replace HB_MACRO_TABLE		by 1031;
+%replace HB_ASSERT_MACRO_TABLE	by   47;
+
+declare
+
+MACRO_TABLE		(1 : HB_MACRO_TABLE) pointer
+			static external
+			initial ((HB_MACRO_TABLE) (null ())),
+
+ASSERT_MACRO_TABLE	(1 : HB_ASSERT_MACRO_TABLE) pointer
+			static external
+			initial ((HB_ASSERT_MACRO_TABLE) (null ()));
+
+declare
+
+TOTAL_MACRO_DEFINITIONS		fixed binary (31)
+				static external initial (0),
+TOTAL_ASSERT_DEFINITIONS	fixed binary (31)
+				static external initial (0);
+

@@ -1,0 +1,1288 @@
+/* c++ bindut.pl1 - Expression binding utility package */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  08.10.92  041  DGM	Rather scary fix in BINARY_CHECKS.
+ *  06.05.92  040  DGM	Fix in GENERAL_VALUE_OF to not mess up the
+ *			type of a member-pointer (null) constant.
+ *  04.29.92  039  PKT	Fixed GENERAL_VALUE_OF for array designators.
+ *  04.03.92  039  PKT	Made GENERAL_VALUE_OF external.
+ *  04.23.92  038R PKT	Fix for new value-node scheme.
+ *  03.26.92  038  DGM	New value-node scheme.
+ *  03.04.92  037  DGM	Fix for:
+ *			main () { int f (); }
+ *			g () { int f (); int x; x = f (); }
+ *  01.20.92  036  PKT	Enhanced CHECK_ARROW_OVERLOAD to support
+ *			operator-> returning class type.
+ *  01.10.92  035  PKT	Removed type class parameters from
+ *			BINARY_CHECKS, UNARY_CHECKS,
+ *			CHECK_BINARY_OVERLOAD, and CHECK_UNARY_OVERLOAD.
+ *  12.31.91  035  PKT	Changed BINARY_CHECKS and UNARY_CHECKS to
+ *			do VALUE_OF _after_ overloaded operator checking.
+ *  12.20.91  034  PKT  Oops. Same as 033.
+ *  11.12.91  033  DGM  Updated GET_INTEGRAL_CONSTANT_VALUE.
+ *  10.30.91  032R PKT  Fix GENERAL_VALUE_OF for values with NULL_BT.
+ *  10.29.91  032R PKT  Fix GENERAL_VALUE_OF for -ansic.
+ *  10.27.91  032  PKT  Revised VALUE_OF, created GENERAL_VALUE_OF to
+ *			check that value has good size.
+ *  10.24.91  031L PKT  Updated.
+ *  09.06.91  029  DGM  Fix for 028.
+ *  08.23.91  028  DGM  Implemented -lint used-before-set warning.
+ *  07.08.91  027  PKT  Added NOTE_SYMBOL_REFERENCE.
+ *			Cleaned up ARRAY_DESIGNATOR & FUNCTION_DESIGNATOR.
+ *  06.28.91  026  PKT  Changed GET_INTEGRAL_CONSTANT_VALUE to rely on
+ *			INTEGER_VALUE.  Call to FIXUP_MEMBER_CALL.
+ *  06.17.91  025  DGM  Fix to not translate integral "const" lvalues to
+ *			there corresponding values for the left side of
+ *			assignments, and increments/decrements.
+ *  07.14.91  024  PKT  Support for trivial "operator=".
+ *			Support for obsolete postfix ++ and --.
+ *  06.05.91  023  PKT  Compatible overloading of postinc and postdec.
+ *  05.24.91  022  PKT  Fixes to overloading bugs.
+ *  03.04.91  021  PKT  Updated VALUE_OF/SIMPLE_VALUE_OF to handle
+ *			what's hidden in comma expressions, and for
+ *			better overloaded expression support.
+ *  02.27.91  020  DGM  Updated VALUE_OF/SIMPLE_VALUE_OF to clear
+ *			ARRAY_DESIGNATOR and FUNCTION_DESIGNATOR.
+ *  02.21.91  019  PKT  Updated for pointers to member functions.
+ *  02.01.91  018  DGM  Updated to new global names scheme.
+ *  01.27.91  017  PKT  Updated for member pointers.
+ *  01.18.91  016  DGM  Properly support enumerators (in AUTO_DEREF).
+ *  01.10.91  015  PKT  Fixed so that overloaded operators are invoked
+ *			as member functions when appropriate.
+ *  12.28.90  014  PKT  Update for earlier improvement to
+ *			TRANSMUTE_WITH_TEMP, to fix lingering bug.
+ *  12.17.90  013  PKT	Fixed bugs in CHECK_BINARY_OVERLOAD and
+ *			CHECK_UNARY_OVERLOAD so return type of CALL
+ *			has its size in place.  Also updated for
+ *			improved TRANSMUTE_WITH_TEMP.
+ *  12.17.90  012  DGM  Added GET_INTEGRAL_CONSTANT_VALUE
+ *  11.09.90  011  PKT  Fixed bugs in CHECK_BINARY_OVERLOAD and
+ *			CHECK_UNARY_OVERLOAD so destructors for
+ *			operands are called.
+ *  10.18.90  010  TLF  Fixed bugs in CHECK_BINARY_OVERLOAD and 
+ *                      CHECK_UNARY_OVERLOAD having to do with
+ *                      class type operands that were the result
+ *                      of calling a constructor.
+ *  09.25.90  009  DGM  Preprocessor include file name changes.
+ *  09.14.90  008  DGM  Changed include file names and VOP names.
+ *  09.13.90  007  DGM  Changed xxx_SC names to xxx_ST.
+ *  09.06.90  006  TLF  Modified CHECK_BINARY_OVERLOAD to handle
+ *                      overloading of comma.
+ *  08.29.90  005  TLF  Fixed so that 'this' is not passed to static
+ *                      member functions.
+ *  08.27.90  004  TLF  More support for overloading.
+ *  08.21.90  003  TLF  Added support for overloaded operators. DGM.
+ *  08.08.90  002  DGM  New type-node.
+ *  07.23.90  001  TLF  Added support for user conversions.
+ *  06.06.90  TLF  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 08.10.92 041 BINDUT');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%nolist;
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_ADD_XREF_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_PP_TOKEN_POD_IN;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_INITIALIZE_STRING_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_OPERATOR_NAME_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_FOLD_VALUE_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_PROCESS_CONSTANT_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_INTEGRAL_PROMOTION_PKG;
+%include CXX_EVALUATE_INTEGER_PKG;
+%include CXX_EVALUATE_POINTER_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_LOOKUP_BUILTIN_PKG;
+%include CXX_CHECK_ARGUMENT_LIST_PKG;
+%include CXX_EXPRESSION_COMPATIBILITY_PKG;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_TYPE_CLASS_PKG;
+%include CXX_OVERLOAD_PKG;
+%include CXX_OPERATOR_TOKEN_MAP_IN;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_MEMBER_VALUE_PKG;
+%include CXX_MEMBER_POINTER_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%list;
+
+/* ---------------------------------------------------------------------
+/* VALUE_OF
+/*
+/* Get the value of the value which is the input argument.
+/* For C++, this means automatically dereferencing a reference type value.
+/*
+/* If the value whose value-id is the input argument V has a top type of
+/* REFERENCE, then automatically dereference it, and return the value-node
+/* id of the dereferenced value.
+/*
+/* If V is a reference-to-member, i.e. is a MEMBER_REF_VO with a type of
+/* MEMBER_POINTER_DT, then attempt to dereference it based on "this->".
+/*
+/* If V is the name of a const integral object, with a known initializer,
+/* substitute the initial value using INTEGER_VO.
+/* ------------------------------------------------------------------- */
+
+VALUE_OF: procedure (V) returns (type (CXX_VID_T)) external (X_VALUE_OF);
+
+	declare
+		V		type (CXX_VID_T);
+
+	return (GENERAL_VALUE_OF (V, TRUE, FALSE));
+
+end VALUE_OF;
+
+/* ---------------------------------------------------------------------
+/* GENERAL_VALUE_OF
+/*
+/* Get the value of the value which is the input argument.
+/* For C++, this means automatically dereferencing a reference type value.
+/*
+/* If the value whose value-id is the input argument V has a top type of
+/* REFERENCE, then automatically dereference it, and return the value-node
+/* id of the dereferenced value.
+/*
+/* If V is a reference-to-member, i.e. is a MEMBER_REF_VO with a type of
+/* MEMBER_POINTER_DT, then attempt to dereference it based on "this->".
+/*
+/* If V is the name of a const integral object, with a known initializer,
+/* substitute the initial value using INTEGER_VO.  This optimization
+/* must be suppressed if the ADDRESS of the lvalue is to be used.
+/*
+/* If the value is being FETCHed, check that its size is known.
+/* ------------------------------------------------------------------- */
+
+GENERAL_VALUE_OF: procedure (V, FETCH, ADDRESS) returns (type (CXX_VID_T))
+		  external  (X_GENERAL_VALUE_OF);
+
+	declare
+		V		type (CXX_VID_T),
+		FETCH		type (BOOL_T),
+		ADDRESS		type (BOOL_T);
+	declare
+  		WORK_TYPE	type (TYPE_INFO_T),
+		VALUE		type (LONG_T),
+		(V1, V2)	type (CXX_VID_T),
+		OVLD_SYM	type (NID_T),
+		RESULT_V	type (CXX_VID_T),
+		TYPE_CODE	type (SHORT_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		TI		type (TYPE_INFO_T);
+
+
+	CXX_VALUE_NODE_PTR = V;
+
+	/*
+	/* -TODO- Eliminate this SW_C_PLUS_PLUS test.  Instead, test for
+	/*        type being reference, or member pointer, or integral.
+	/*        Maybe this is too common to be worth the effort.
+	/*	  Still, it's wrong to have this test.
+	/**/
+	if SW_C_PLUS_PLUS then do;
+		call GET_VALUE_TYPE (WORK_TYPE);
+		TYPE_CODE = rank (WORK_TYPE.TOP_TYPE.CODE);
+		if TYPE_CODE = REFERENCE_DT then do;
+			/*
+	  		/* This is a reference type.
+			/* Change the type to pointer,
+			/* so that the dereference semantics are satisfied.
+	  		/**/
+			call STRIP_TOP_TYPE (WORK_TYPE, FALSE);
+			call ADD_POINTER_LEVEL (WORK_TYPE);
+	  		call SET_VALUE_TYPE (WORK_TYPE);
+			/* Now dereference it */
+	  		RESULT_V = GET_VALUE_AND_EXPAND_L (IMPLICIT_STAR_VO, V);
+		end;
+		else if TYPE_CODE = POINTER_DT then do;
+			/*
+			/* Avoid DETACH_COMMA because it messes up
+			/* array designators.
+			/**/
+			RESULT_V = V;
+		end;
+		else do;
+			RESULT_V = V;
+			call DETACH_COMMA (RESULT_V, V1, V2);
+			if (TYPE_CODE = MEMBER_POINTER_DT) &
+			   (RESULT_V->CXX_VALUE_NODE.OP = MEMBER_REF_VO)
+			then do;
+				/*
+				/* Dereference a member reference, but defer
+				/* doing so for an overloaded member function.
+				/**/
+				call GET_TOP_LEVEL_TYPE_INFO
+				     (WORK_TYPE, 1, TYPE_DATA);
+				if TYPE_DATA.CODE ^= byte (FUNCTION_DT) then
+					RESULT_V = DEREFERENCE_MEMBER
+						   (RESULT_V, TRUE);
+			end;
+			else if ^ADDRESS then do;
+				if (TYPE_CODE = MEMBER_POINTER_DT) &
+				   (RESULT_V->CXX_VALUE_NODE.OP = INTEGER_VO)
+				then do;
+					CXX_VALUE_NODE_PTR = RESULT_V;
+					call GET_VALUE_TYPE (TI);
+					RESULT_V = GET_INTEGER_VALUE
+						   (VALUE, WORK_TYPE.TOP_TYPE);
+					CXX_VALUE_NODE_PTR = RESULT_V;
+					call SET_VALUE_TYPE (TI);
+				end;
+				else if GET_INTEGRAL_CONSTANT_VALUE
+					(RESULT_V, VALUE, 0) then do;
+					RESULT_V = GET_INTEGER_VALUE
+						   (VALUE, WORK_TYPE.TOP_TYPE);
+				end;
+			end;
+			call REATTACH_COMMA (RESULT_V, V1, V2);
+		end;
+	end;
+	else	RESULT_V = V;
+
+	/*
+	/* Report the error of fetching a type for which we're lacking
+	/* size information.
+	/* Note that the C standard says the behavior is undefined.
+	/* We allow (support?) "fetch" of a void value (INITIALIZE_OBJECT).
+	/* FUNCTION_DT and VOID_BT are here as exceptions because they
+	/* are always special and the errors are caught elsewhere.
+	/**/
+
+        if FETCH &
+           (RESULT_V->CXX_VALUE_NODE.SIZE_UNITS = byte (0)) &
+	   (RESULT_V->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (FUNCTION_DT)) &
+	   (RESULT_V->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (VOID_BT)) &
+	   (RESULT_V->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (NULL_BT)) then do;
+		call GET_VALUE_TYPE (WORK_TYPE);
+		call DETERMINE_SIZE (WORK_TYPE);
+		if WORK_TYPE.SIZE_UNITS = 0 then
+			call SEMANTIC_ERROR (ERR_UNKNOWN_SIZE); 
+	end;
+
+	CXX_VALUE_NODE_PTR = RESULT_V;
+
+	return (RESULT_V);
+
+end GENERAL_VALUE_OF;
+
+/* ---------------------------------------------------------------------
+/* GET_INTEGRAL_CONSTANT_VALUE
+/*
+/* If the value tree represented by the given value-node id represents an
+/* integral constant, then count down the value tree return, the actual
+/* value of the integral constant in VALUE, and return TRUE.  Otherwise,
+/* return FALSE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_INTEGRAL_CONSTANT_VALUE: procedure (V, RESULT_VALUE, RESULT_TYPE)
+			     returns   (type (BOOL_T))
+			     external  (X_GET_INTEGRAL_CONSTANT_VALUE);
+	declare
+		V		type (CXX_VID_T),
+		RESULT_VALUE	type (LONG_T),
+		RESULT_TYPE	type (SHORT_T);
+	declare
+		IS_NON_CONSTANT	type (BOOL_T);
+
+	call EVALUATE_INTEGER (V, RESULT_VALUE, IS_NON_CONSTANT);
+	if ^IS_NON_CONSTANT then do;
+		RESULT_TYPE = rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE);
+		call COUNT_DOWN_VALUE (V);
+		return (TRUE);
+	end;
+	else	return (FALSE);
+
+end GET_INTEGRAL_CONSTANT_VALUE;
+
+/* ---------------------------------------------------------------------
+/* BINARY_CHECKS
+/*
+/* Do binary checks for the operator whose value id is ARG_VID.
+/* ------------------------------------------------------------------- */
+
+BINARY_CHECKS: procedure (ARG_VID,
+			  ARG_LEFT,
+			  ARG_RIGHT,
+			  ARG_THIRD,
+			  DONE)
+	       external  (X_BINARY_CHECKS);
+
+	declare	
+		ARG_VID			type (CXX_VID_T),
+		ARG_LEFT		type (CXX_VID_T),
+		ARG_RIGHT		type (CXX_VID_T),
+		ARG_THIRD		type (CXX_VID_T),
+		DONE			type (BOOL_T);
+	declare
+		THIS_LEFT		type (CXX_VID_T),
+		THIS_RIGHT		type (CXX_VID_T),
+		THIS_VOP		type (SHORT_T),
+		ARG_CODES_LEFT		type (SHORT_T),
+		ARG_CODES_RIGHT		type (SHORT_T),
+		DOING_ASSIGNMENT	type (BOOL_T),
+		T			type (NID_T);
+
+	DONE = FALSE;
+
+	THIS_LEFT	= ARG_VID->CXX_VALUE_NODE.LEFT;
+	THIS_RIGHT	= ARG_VID->CXX_VALUE_NODE.RIGHT;
+	THIS_VOP	= ARG_VID->CXX_VALUE_NODE.VOP;
+
+	ARG_CODES_LEFT = VOP_OPERAND_TYPE (THIS_VOP);
+	ARG_CODES_RIGHT = UNRESTRICTED_TYPE 
+			  (VOP_OPERAND_TYPE (THIS_VOP));
+
+	if (THIS_VOP = ASSIGN_VO)		|
+	   (THIS_VOP = IMPLICIT_ASSIGN_VO)	|
+	   (THIS_VOP = COPY_VO)			then
+		DOING_ASSIGNMENT = TRUE;
+	else	DOING_ASSIGNMENT = FALSE;
+
+	/*
+	/* -TODO- Incorporate USED_BEFORE_SET checks into VALUE_OF.
+	/* -TODO- Don't use SW_C_PLUS_PLUS here.  Either call the checks
+	/*        function all of the time, or set a global flag when an
+	/*        operator is overloaded.
+	/**/
+	
+	if SW_C_PLUS_PLUS then do;
+
+		/*************************************************
+		/*  This is where we should do overload checking.
+		/*************************************************/
+		
+		call CHECK_BINARY_OVERLOAD (ARG_VID, DONE);
+
+		if DONE then
+			goto EXIT_BINARY_CHECKS;
+	
+		/* Check for user conversions */
+
+		THIS_LEFT = CHECK_USER_CONVERSION
+			    (THIS_LEFT, ARG_CODES_LEFT, NULL_NID);
+
+		if DOING_ASSIGNMENT &
+		   (THIS_LEFT->CXX_VALUE_NODE.TOP_TYPE.NID = NULL_NID) then do;
+			T = MODIFY_TYPE
+			    (THIS_LEFT->CXX_VALUE_NODE.TYPE,
+			     THIS_LEFT->CXX_VALUE_NODE.DERIVED_TYPE_SKIP,
+			     THIS_LEFT->CXX_VALUE_NODE.EXTRA_PTR_LEVEL = TRUE);
+			THIS_RIGHT = CHECK_USER_CONVERSION
+				     (THIS_RIGHT, NULL_TK, T);
+		end;
+		else do;
+			THIS_RIGHT = CHECK_USER_CONVERSION
+				     (THIS_RIGHT, ARG_CODES_RIGHT, NULL_NID);
+		end;
+
+		ARG_VID->CXX_VALUE_NODE.LEFT = THIS_LEFT;
+		ARG_VID->CXX_VALUE_NODE.RIGHT = THIS_RIGHT;
+	end;
+ 
+	if DOING_ASSIGNMENT then
+		THIS_LEFT = GENERAL_VALUE_OF (THIS_LEFT, FALSE, TRUE);
+	else if TYPE_HAS_RESTRICTION (ARG_CODES_LEFT, 
+				      LVALUE_TYPE_RESTRICTION) then
+		THIS_LEFT = GENERAL_VALUE_OF (THIS_LEFT, TRUE, TRUE);
+	else	THIS_LEFT = GENERAL_VALUE_OF (THIS_LEFT, TRUE, FALSE);
+
+	THIS_RIGHT = GENERAL_VALUE_OF (THIS_RIGHT, TRUE, FALSE);
+
+	/* Warn about value used before set if desired */
+
+	if SW_LINT then do;
+		call CHECK_IF_USED_BEFORE_SET (THIS_LEFT, THIS_VOP);
+		call CHECK_IF_USED_BEFORE_SET (THIS_RIGHT, REF_VO);
+	end;
+	
+	ARG_VID->CXX_VALUE_NODE.LEFT = THIS_LEFT;
+	ARG_VID->CXX_VALUE_NODE.RIGHT = THIS_RIGHT;
+	
+	ARG_LEFT = ARG_VID->CXX_VALUE_NODE.LEFT;
+	ARG_RIGHT = ARG_VID->CXX_VALUE_NODE.RIGHT;
+	ARG_THIRD = ARG_VID->CXX_VALUE_NODE.THIRD;
+
+EXIT_BINARY_CHECKS:
+
+end BINARY_CHECKS;
+
+/* ---------------------------------------------------------------------
+/* UNARY_CHECKS
+/*
+/* Do unary checks for the operator whose value id is ARG_VID.
+/* ------------------------------------------------------------------- */
+
+UNARY_CHECKS: procedure (ARG_VID, ARG_LEFT, DONE)
+	      external  (X_UNARY_CHECKS);
+
+	declare	
+		ARG_VID		type (CXX_VID_T),
+		ARG_LEFT	type (CXX_VID_T),
+		DONE		type (BOOL_T);
+	declare
+		THIS_VOP	type (SHORT_T),
+		THIS_LEFT	type (CXX_VID_T),
+		ARG_CODES	type (SHORT_T);
+
+	THIS_LEFT	= ARG_VID->CXX_VALUE_NODE.LEFT;
+	THIS_VOP	= ARG_VID->CXX_VALUE_NODE.OP;
+
+	ARG_CODES = VOP_OPERAND_TYPE (THIS_VOP);
+	
+	if SW_C_PLUS_PLUS then do;
+
+		/*************************************************
+		/*  This is where we should do overload checking.
+		/*************************************************/
+		
+		call CHECK_UNARY_OVERLOAD (ARG_VID, DONE);
+		if DONE then
+			goto EXIT_UNARY_CHECKS;
+	
+		/* Check for user conversions */
+
+		CXX_VALUE_NODE_PTR = THIS_LEFT;
+		THIS_LEFT = CHECK_USER_CONVERSION
+			    (THIS_LEFT, ARG_CODES, NULL_NID);
+	end;
+ 
+	if (THIS_VOP = UNARY_AND_VO)	then
+		THIS_LEFT = GENERAL_VALUE_OF (THIS_LEFT, FALSE, TRUE);
+	else if TYPE_HAS_RESTRICTION (ARG_CODES, 
+				      LVALUE_TYPE_RESTRICTION) then
+		THIS_LEFT = GENERAL_VALUE_OF (THIS_LEFT, TRUE, TRUE);
+	else	THIS_LEFT = GENERAL_VALUE_OF (THIS_LEFT, TRUE, FALSE);
+
+	/* Warn about value used before set if desired */
+
+	if SW_LINT then
+		call CHECK_IF_USED_BEFORE_SET (THIS_LEFT, THIS_VOP);
+
+	CXX_VALUE_NODE_PTR = ARG_VID;
+
+	ARG_VID->CXX_VALUE_NODE.LEFT = THIS_LEFT;
+	ARG_LEFT = ARG_VID->CXX_VALUE_NODE.LEFT;
+
+	DONE = FALSE;
+
+EXIT_UNARY_CHECKS: ;
+
+end UNARY_CHECKS;
+
+/* ---------------------------------------------------------------------
+/* CHECK_BINARY_OVERLOAD
+/*
+/* Checks to see if the binary operation denoted by ARG_VID is
+/* overloaded.  If not, sets DONE to FALSE.  If so, sets DONE to
+/* TRUE, and returns in ARG_VID an expression tree that calls the
+/* appropriate overloaded operator function.
+/* ------------------------------------------------------------------- */
+
+CHECK_BINARY_OVERLOAD: procedure (ARG_VID, DONE)
+		       external  (X_CHECK_BINARY_OVERLOAD);
+	declare
+		ARG_VID		type (CXX_VID_T),
+		DONE		type (BOOL_T);
+	declare
+		THIS_VOP	type (SHORT_T),
+		ORIG_VOP	type (SHORT_T),
+		THIS_LEFT	type (CXX_VID_T),
+		ORIG_LEFT	type (CXX_VID_T),
+		THIS_RIGHT	type (CXX_VID_T),
+		CALL_VID	type (CXX_VID_T),
+		T_VID		type (CXX_VID_T),
+		ARG_LIST	type (CXX_VID_T),
+		VICTIM		type (CXX_VID_T),
+		OBJ_VICTIM	type (CXX_VID_T),
+		OP_NAME		type (NID_T),
+		GLIST		type (NID_T),
+		MLIST		type (NID_T),
+		OVERLOAD_FUNC   type (NID_T),
+		FUNC_VALUE	type (CXX_VID_T),
+		NARGS		type (SHORT_T),
+		WORK_TYPE	type (TYPE_INFO_T),
+		LEFT_IS_CLASS	type (BOOL_T),
+		RIGHT_IS_CLASS	type (BOOL_T),
+		LEFT_CLASS	type (NID_T),
+		SIGNATURE	type (NID_T);
+
+	DONE = FALSE;
+
+	/* Get the value, and save needed data from it */
+
+	THIS_VOP = ARG_VID->CXX_VALUE_NODE.OP;
+	ORIG_VOP = ARG_VID->CXX_VALUE_NODE.OP;
+	THIS_LEFT = ARG_VID->CXX_VALUE_NODE.LEFT;
+	ORIG_LEFT = ARG_VID->CXX_VALUE_NODE.LEFT;
+	THIS_RIGHT = ARG_VID->CXX_VALUE_NODE.RIGHT;
+ 
+	/* Determine if the left operand is a class type */
+
+	LEFT_IS_CLASS = IS_AGGREGATE_TAG_TYPE
+			(rank (THIS_LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE));
+	LEFT_CLASS = THIS_LEFT->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+	if THIS_LEFT-> CXX_VALUE_NODE.TOP_TYPE.CODE =
+	   byte (REFERENCE_DT) then do;
+		CXX_VALUE_NODE_PTR = THIS_LEFT;
+		call GET_VALUE_TYPE (WORK_TYPE);
+		call STRIP_TOP_TYPE (WORK_TYPE, FALSE);
+		LEFT_IS_CLASS = IS_AGGREGATE_TAG_TYPE (rank (WORK_TYPE.CODE));
+		LEFT_CLASS = WORK_TYPE.TAG_SYMBOL;
+	end;
+ 
+	/* Determine if the right operand is a class type */
+
+	RIGHT_IS_CLASS = IS_AGGREGATE_TAG_TYPE
+			 (rank (THIS_RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE));
+	if THIS_RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE =
+	   byte (REFERENCE_DT) then do;
+		CXX_VALUE_NODE_PTR = THIS_RIGHT;
+		call GET_VALUE_TYPE (WORK_TYPE);
+		call STRIP_TOP_TYPE (WORK_TYPE, FALSE);
+		RIGHT_IS_CLASS = IS_AGGREGATE_TAG_TYPE (rank (WORK_TYPE.CODE));
+	end;
+
+	/*
+	/* If neither is a class type, then
+	/* there is no chance for overloading.
+	/**/
+
+	if ^LEFT_IS_CLASS & ^RIGHT_IS_CLASS then
+		return;
+ 
+	/*
+	/* Convert the VOP code to a token
+	/* to be looked up in the symbol table.
+	/**/
+
+	OP_NAME = OPERATOR_NAME (VOP_TO_TOKEN (THIS_VOP));
+
+	/*
+	/* Look for a global definition of the operator.  
+	/* If one is found, then it is the head of a list
+	/* of global overloaded operators for this operator.
+	/**/
+
+	GLIST = LOOKUP_NAME (OP_NAME, VANILLA_SK, CURRENT_GLOBAL_SCOPE);
+ 
+	/*
+	/* If the left operand is a class, then
+	/* look for the operator in the class.
+	/**/
+
+	if LEFT_IS_CLASS then do;
+		/*
+		/* Search the class for the head of the list of
+		/* the overloaded operator list for this operator.
+		/**/
+		MLIST = SEARCH_CLASS (LEFT_CLASS, OP_NAME, ANY_SK);
+	end;
+	else	MLIST = NULL_NID;
+
+	/* Build an argument list for the potential call */
+
+	call COUNT_UP_VALUE (THIS_RIGHT);
+	ARG_LIST = GET_VALUE_AND_EXPAND_L (ARG_VO, THIS_RIGHT);
+
+	/* We must place the left operand into the arg list too. */
+
+	call COUNT_UP_VALUE (THIS_LEFT);
+	ARG_LIST = GET_VALUE_AND_EXPAND_LR (ARG_VO, THIS_LEFT, ARG_LIST);
+
+	OVERLOAD_FUNC = OVERLOAD (ARG_LIST, GLIST, MLIST, THIS_VOP);
+
+	if OVERLOAD_FUNC = NULL_NID then
+		call COUNT_DOWN_VALUE (ARG_LIST);
+
+	else do;
+		/*
+		/* Generate a call to the overloaded function.
+		/**/
+		call SET_SYM_NODE_R (OVERLOAD_FUNC);
+		call GET_SYMBOL_TYPE (WORK_TYPE);
+
+		/* Get the function signature */
+
+		SIGNATURE = WORK_TYPE.TOP_TYPE.SIGNATURE;
+
+		/* Strip to return type */
+
+		call STRIP_TOP_TYPE (WORK_TYPE, TRUE);
+
+		if SYM_NODE.IS_MEMBER then do;
+			/*
+		 	/* An argument has been added to the arglist.
+			/* The overloaded operator found is a member
+			/* operator, so the extra argument must now
+			/* be removed from the arglist.
+			/**/ 
+			T_VID = ARG_LIST;
+			ARG_LIST = T_VID->CXX_VALUE_NODE.RIGHT;
+			T_VID->CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+			call COUNT_DOWN_VALUE (T_VID);
+		end;
+
+		if SYM_NODE.IS_MEMBER &
+		   SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST) then
+			CALL_VID = NULL_CXX_VID;
+		else	CALL_VID = GET_VALUE_REF_AND_EXPAND (OVERLOAD_FUNC);
+
+
+		/* Make the call value */
+
+		if WORK_TYPE.TOP_TYPE.CODE = byte (VOID_BT) then
+			THIS_VOP = CALL_VO;
+		else	THIS_VOP = CALL_FUNCTION_VO;
+
+		CALL_VID = ALLOC_CXX_VALUE_NODE_LR
+			   (THIS_VOP, CALL_VID, ARG_LIST);
+
+		call SET_VALUE_TYPE (WORK_TYPE);
+
+		NARGS = CHECK_ARGUMENTS (CALL_VID,
+					 SIGNATURE,
+					 OVERLOAD_FUNC,
+					 VICTIM);
+		ARG_LIST = CALL_VID->CXX_VALUE_NODE.RIGHT;
+
+		/*
+		/* If the function is a member function,
+		/* then we must add 'this' to the argument list.
+		/**/
+
+		call SET_SYM_NODE_R (OVERLOAD_FUNC);
+
+		if SYM_NODE.IS_MEMBER 
+		 & rank(SYM_NODE.STORAGE_CLASS) ^= STATIC_ST then do;
+			call COUNT_UP_VALUE (THIS_LEFT);
+			FUNC_VALUE = GET_SIMPLE_MEMBER_VALUE (OVERLOAD_FUNC);
+			THIS_LEFT = MEMBER_FUNCTION_CALL (
+					FUNC_VALUE, THIS_LEFT,
+					ARG_LIST, NARGS, VICTIM);
+
+			if THIS_LEFT->CXX_VALUE_NODE.OP = INTEGER_VO then do;
+				/* Trivial assignment. */
+				call FIXUP_MEMBER_CALL 
+				     (THIS_LEFT->CXX_VALUE_NODE.OFFSET,
+				      ARG_LIST,
+				      CALL_VID);
+
+				/* Dispose of phony function designator. */
+				call COUNT_DOWN_VALUE (THIS_LEFT);
+
+				/* Dispose of the original value */
+				call COUNT_DOWN_VALUE (ARG_VID);
+
+				DONE = TRUE;
+				CALL_VID = VALUE_BEFORE_EFFECT 
+					   (CALL_VID, VICTIM);
+				ARG_VID = CALL_VID;
+				return;
+			end;
+			else do;
+				CALL_VID->CXX_VALUE_NODE.LEFT = THIS_LEFT;
+				CALL_VID->CXX_VALUE_NODE.RIGHT = ARG_LIST;
+				NARGS = CHECK_ARG_SAVE (CALL_VID);
+			end;
+		end;
+		else
+			call NOTE_SYMBOL_REFERENCE (OVERLOAD_FUNC);
+
+		/* Dispose of the original value */
+
+		call COUNT_DOWN_VALUE (ARG_VID);
+
+		CXX_VALUE_NODE_PTR = CALL_VID;
+
+		/* Set number of arguments */
+
+		CALL_VID->CXX_VALUE_NODE.OFFSET = NARGS;
+
+		DONE = TRUE;
+		CALL_VID = VALUE_BEFORE_EFFECT (CALL_VID, VICTIM);
+		ARG_VID = CALL_VID;
+	end;
+
+end CHECK_BINARY_OVERLOAD;
+
+/* ---------------------------------------------------------------------
+/* CHECK_UNARY_OVERLOAD
+/*
+/* Checks to see if the unary operation denoted by ARG_VID is
+/* overloaded.  If not, sets DONE to FALSE.  If so, sets DONE to
+/* TRUE, and returns in ARG_VID an expression tree that calls the
+/* appropriate overloaded operator function.
+/* ------------------------------------------------------------------- */
+
+CHECK_UNARY_OVERLOAD: procedure (ARG_VID, DONE)
+		      external  (X_CHECK_UNARY_OVERLOAD);
+	declare
+		ARG_VID		type (CXX_VID_T),
+		DONE		type (BOOL_T);
+	declare
+		THIS_VOP	type (SHORT_T),
+		THIS_LEFT	type (CXX_VID_T),
+		CALL_VID	type (CXX_VID_T),
+		ARG_LIST	type (CXX_VID_T),
+		VICTIM		type (CXX_VID_T),
+		OBJ_VICTIM	type (CXX_VID_T),
+		T_VID		type (CXX_VID_T),
+		TEMP_INT	type (CXX_VID_T),
+		OP_NAME		type (NID_T),
+		LEFT_IS_CLASS	type (BOOL_T),
+		LEFT_CLASS	type (NID_T),
+		GLIST		type (NID_T),
+		MLIST		type (NID_T),
+		OVERLOAD_FUNC   type (NID_T),
+		FUNC_VALUE	type (CXX_VID_T),
+		NARGS		type (SHORT_T),
+		WORK_TYPE	type (TYPE_INFO_T),
+		SIGNATURE	type (NID_T);
+
+	DONE = FALSE;
+
+	/* Get the value, and save needed data from it */
+
+	THIS_VOP = ARG_VID->CXX_VALUE_NODE.OP;
+	THIS_LEFT = ARG_VID->CXX_VALUE_NODE.LEFT;
+ 
+	/* Determine if the left operand is a class type */
+
+	LEFT_IS_CLASS = IS_AGGREGATE_TAG_TYPE
+			(rank (THIS_LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE));
+	LEFT_CLASS = THIS_LEFT->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+	if THIS_LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE =
+	    byte (REFERENCE_DT) then do;
+		CXX_VALUE_NODE_PTR = THIS_LEFT;
+		call GET_VALUE_TYPE (WORK_TYPE);
+		call STRIP_TOP_TYPE (WORK_TYPE, FALSE);
+		LEFT_IS_CLASS = IS_AGGREGATE_TAG_TYPE (rank (WORK_TYPE.CODE));
+		LEFT_CLASS = WORK_TYPE.TAG_SYMBOL;
+	end;
+ 
+	/*
+	/* If the left operand is not a class type,
+	/* then there is no chance for overloading.
+	/**/
+
+	if ^LEFT_IS_CLASS then
+		return;
+	/*
+	/* Convert the VOP code to a token to
+	/* be looked up in the symbol table.
+	/**/
+
+	OP_NAME = OPERATOR_NAME (VOP_TO_TOKEN (THIS_VOP));
+
+	/*
+	/* Look for a global definition of the operator.  
+	/* If one is found, then it is the head of a list of
+	/* global overloaded operators for this operator.
+	/**/
+
+	GLIST = LOOKUP_NAME (OP_NAME, VANILLA_SK, CURRENT_GLOBAL_SCOPE);
+ 
+	/*
+	/* The left operand is a class, so look
+	/* for the operator in the class.
+	/**/
+
+	/*
+	/* Search the class for the head of the list
+	/* of the overloaded operator list for this operator.
+	/**/
+
+	MLIST = SEARCH_CLASS (LEFT_CLASS, OP_NAME, ANY_SK);
+
+	/* We must place the left operand into the arg list. */
+
+	call COUNT_UP_VALUE (THIS_LEFT);
+	ARG_LIST = GET_VALUE_AND_EXPAND_L (ARG_VO, THIS_LEFT);
+
+	/* If this is a post increment or post decrement, then we
+	/* must add a fake integer 0 argument to the argument list.
+	/* This is how C++ distinguishes between post and pre
+	/* increment/decrement overloads.
+	/**/
+	if ( THIS_VOP = POST_INC_VO 
+	   | THIS_VOP = POST_DEC_VO ) then do;
+		TEMP_INT = ALLOC_CXX_VALUE_NODE (INTEGER_VO);
+		call SET_VALUE_SIMPLE_TYPE (INT_BT);
+		TEMP_INT->CXX_VALUE_NODE.OFFSET = 0; /* An integer 0 */
+		TEMP_INT = GET_VALUE_AND_EXPAND_L (ARG_VO, TEMP_INT);
+		if ARG_LIST = NULL_CXX_VID then do;
+			/*
+			/* Must create a fake argument list.
+			/**/
+			ARG_LIST = TEMP_INT;
+		end;
+		else do;
+			/*
+			/* Must attach the integer argument into
+			/* the actual arg list, as the last one.
+			/**/
+			ARG_LIST->CXX_VALUE_NODE.RIGHT = TEMP_INT;
+		end;
+
+		OVERLOAD_FUNC = OVERLOAD (ARG_LIST, GLIST, MLIST, THIS_VOP);
+
+		if OVERLOAD_FUNC = NULL_NID then do;
+			/*
+			/* For compatibility with cfront 1.2-2.1, 
+			/* try again without the fake argument.
+			/**/
+			if ARG_LIST = TEMP_INT then
+				ARG_LIST = NULL_CXX_VID;
+			else	ARG_LIST->CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+			call COUNT_DOWN_VALUE (TEMP_INT);
+
+			OVERLOAD_FUNC = OVERLOAD (ARG_LIST,
+						  GLIST,
+						  MLIST,
+						  THIS_VOP);
+
+			if   OVERLOAD_FUNC ^= NULL_NID
+			   & ^SW_X_OVERLOAD_POSTFIX then
+				call SEMANTIC_ERROR_I (ERR_OBSOLETE_INC_DEC,
+					QUALIFIED_SYMBOL_NAME (OVERLOAD_FUNC));
+		end;
+	end;
+	else
+		OVERLOAD_FUNC = OVERLOAD (ARG_LIST, GLIST, MLIST, THIS_VOP);
+
+	if OVERLOAD_FUNC = NULL_NID then do;
+		if ARG_LIST ^= NULL_NID then
+		call COUNT_DOWN_VALUE (ARG_LIST);
+	end;
+	else do;
+		/*
+		/* Generate a call to the overloaded function.
+		/**/
+		CALL_VID = GET_VALUE_REF_AND_EXPAND (OVERLOAD_FUNC);
+
+		call SET_SYM_NODE_R (OVERLOAD_FUNC);
+		call GET_SYMBOL_TYPE (WORK_TYPE);
+
+		/* Get the function signature */
+
+		SIGNATURE = WORK_TYPE.TOP_TYPE.SIGNATURE;
+
+		/* Strip to return type */
+
+		call STRIP_TOP_TYPE (WORK_TYPE, TRUE);
+
+		if SYM_NODE.IS_MEMBER then do;
+		 	/* An argument has been added to the arglist
+			/* to allow a search for a global operator.
+			/* The overloaded operator found is a member
+			/* operator, so the extra argument must now
+			/* be removed from the arglist.
+			/**/ 
+			T_VID = ARG_LIST;
+			ARG_LIST = T_VID->CXX_VALUE_NODE.RIGHT;
+			T_VID->CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+			call COUNT_DOWN_VALUE (T_VID);
+		end;
+
+		/* Make the call value */
+
+		if WORK_TYPE.TOP_TYPE.CODE = byte (VOID_BT) then
+			THIS_VOP = CALL_VO;
+		else	THIS_VOP = CALL_FUNCTION_VO;
+
+		CALL_VID = ALLOC_CXX_VALUE_NODE_LR
+			   (THIS_VOP, CALL_VID, ARG_LIST);
+
+		call SET_VALUE_TYPE (WORK_TYPE);
+
+		NARGS = CHECK_ARGUMENTS (CALL_VID,
+					 SIGNATURE,
+					 OVERLOAD_FUNC,
+					 VICTIM);
+
+		ARG_LIST = CALL_VID->CXX_VALUE_NODE.RIGHT;
+
+		/*
+		/* If the function is a member function,
+		/* then we must add 'this' to the argument list.
+		/**/
+
+		call SET_SYM_NODE_R (OVERLOAD_FUNC);
+
+		if SYM_NODE.IS_MEMBER
+		 & rank(SYM_NODE.STORAGE_CLASS) ^= STATIC_ST then do;
+			call COUNT_UP_VALUE (THIS_LEFT);
+			FUNC_VALUE = GET_SIMPLE_MEMBER_VALUE (OVERLOAD_FUNC);
+			THIS_LEFT = MEMBER_FUNCTION_CALL (
+					FUNC_VALUE, THIS_LEFT,
+					ARG_LIST, NARGS, VICTIM);
+
+			CALL_VID->CXX_VALUE_NODE.LEFT = THIS_LEFT;
+			CALL_VID->CXX_VALUE_NODE.RIGHT = ARG_LIST;
+			NARGS = CHECK_ARG_SAVE (CALL_VID);
+		end;
+		else
+			call NOTE_SYMBOL_REFERENCE (OVERLOAD_FUNC);
+
+		/* Dispose of the original value */
+
+		call COUNT_DOWN_VALUE (ARG_VID);
+
+		CXX_VALUE_NODE_PTR = CALL_VID;
+
+		/* Set number of arguments */
+
+		CALL_VID->CXX_VALUE_NODE.OFFSET = NARGS;
+		DONE = TRUE;
+		CALL_VID = VALUE_BEFORE_EFFECT (CALL_VID, VICTIM);
+		ARG_VID = CALL_VID;
+	end;
+
+end CHECK_UNARY_OVERLOAD;
+
+/* ---------------------------------------------------------------------
+/* CHECK_CALL_OVERLOAD
+/*
+/* Checks to see if the call operation whose left operand is ARG_LEFT is
+/* overloaded.  If so, counts down ARG_LEFT, and returns in the first
+/* argument the value id of DOT_STAR_VO whose left is a REF_VO
+/* to the object of the class, and whose right is a MEMBER_PTR_VO value
+/* for the sym_node id of the overloaded function to call.
+/*
+/* ARG_RIGHT is the right operand of the CALL vop being checked.  It is,
+/* of course, the actual arglist of the call on input. It is used, but
+/* not modified by this procedure.
+/*
+/* This procedure returns TRUE if an overloaded operator is found,
+/* otherwise it returns FALSE.
+/* ------------------------------------------------------------------- */
+
+CHECK_CALL_OVERLOAD: procedure (ARG_LEFT, ARG_RIGHT)
+		     returns (type (BOOL_T))
+		     external (X_CHECK_CALL_OVERLOAD);
+	declare
+		ARG_LEFT	type (CXX_VID_T),
+		ARG_RIGHT	type (CXX_VID_T);
+	declare
+		WORK_VID	type (CXX_VID_T),
+		MEMBER_VID	type (CXX_VID_T),
+		OP_NAME		type (NID_T),
+		MLIST		type (NID_T),
+		OVERLOAD_FUNC   type (NID_T),
+		WORK_TYPE	type (TYPE_INFO_T),
+		THIS_RET	type (BOOL_T),
+		ARG_LIST	type (CXX_VID_T);
+
+	THIS_RET = FALSE;
+	ARG_LEFT = VALUE_OF (ARG_LEFT);
+
+	/* Determine if the left operand is a class type */
+
+	if IS_AGGREGATE_TAG_TYPE
+	   (rank (ARG_LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+		/*
+		/* Form a 'name' for the overloaded operator '('.
+		/**/
+		OP_NAME = OPERATOR_CALL_NAME;
+ 		/*
+		/* Search the class for the head of the list
+		/* of overloaded call ( '()' ) operators.
+		/**/
+		MLIST = SEARCH_CLASS
+			(ARG_LEFT->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL,
+			 OP_NAME,
+			 ANY_SK);
+
+		/* We must place the left operand into the arg list too. */
+
+		call COUNT_UP_VALUE (ARG_LEFT);
+		call COUNT_UP_VALUE (ARG_RIGHT);
+		ARG_LIST = GET_VALUE_AND_EXPAND_LR
+			   (ARG_VO, ARG_LEFT, ARG_RIGHT);
+
+		OVERLOAD_FUNC = OVERLOAD (ARG_LIST, NULL_NID, MLIST, CALL_VO);
+
+		/* Done with cooked up argument list. */
+
+		call COUNT_DOWN_VALUE (ARG_LIST);
+
+		if OVERLOAD_FUNC ^= NULL_NID then do;
+			/*
+			/* Found one, use the current left,
+			/* to create a DOT_STAR_VO with left a VALUE((REF)) of 
+			/* the object of the class, right the sym-node
+			/* of the function to be called.
+			/*
+			/* Note that ARG_LEFT is an VALUE((REF)).
+			/**/
+			WORK_VID = ARG_LEFT;
+	
+			/* Get the type of the overloaded function */
+
+			call SET_SYM_NODE_R (OVERLOAD_FUNC);
+			call GET_SYMBOL_TYPE (WORK_TYPE);
+
+			/*
+			/* Create the DOT_STAR_VO, and set its type
+			/* to the type of the overloaded function.
+			/**/
+
+			MEMBER_VID = GET_SIMPLE_MEMBER_VALUE (OVERLOAD_FUNC);
+			WORK_VID = ALLOC_CXX_VALUE_NODE_LR
+				   (DOT_STAR_VO, WORK_VID, MEMBER_VID);
+
+			call SET_VALUE_TYPE (WORK_TYPE);
+
+			/* Return this DOT_STAR_VO */
+
+			ARG_LEFT = WORK_VID;
+			THIS_RET = TRUE;
+		end;
+	end;
+
+	return (THIS_RET);
+
+end CHECK_CALL_OVERLOAD;
+
+/* ---------------------------------------------------------------------
+/* CHECK_ARROW_OVERLOAD
+/*
+/* Checks to see if the expression denoted by ARG_VID is of class/struct
+/* type, and if so, checks to see if the class/struct has an overloaded
+/* '->' operator.  If so, this procedure returns the id of an expression
+/* tree that calls the overloaded operator.  If not, the original value
+/* of ARG_VID is returned.
+/*
+/* ------------------------------------------------------------------- */
+
+CHECK_ARROW_OVERLOAD: procedure (ARG_VID)
+		     external (X_CHECK_ARROW_OVERLOAD);
+	declare
+		ARG_VID		type (CXX_VID_T);
+
+	declare
+		ARROW_VID	type (CXX_VID_T),
+		DONE		type (BOOL_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	do while (TRUE);
+		CXX_VALUE_NODE_PTR = ARG_VID;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		if TYPE_INFO.TYPE_CODE = byte (REFERENCE_DT) then
+			call STRIP_TOP_TYPE (TYPE_INFO, FALSE);
+
+		if ^ IS_AGGREGATE_TAG_TYPE (rank (TYPE_INFO.CODE)) then do;
+			ARG_VID = VALUE_OF (ARG_VID);
+			return;
+		end;
+
+		/* The arguments is an aggregate type.
+		/* Check to see if '->' is overloaded for this type.
+		/**/
+		call COUNT_UP_VALUE (ARG_VID);
+
+		/* Make an 'ARROW_VO' value, to use in checking for unary
+		/* overload.
+		/**/
+		ARROW_VID = ALLOC_CXX_VALUE_NODE_L (ARROW_VO, ARG_VID);
+
+		call CHECK_UNARY_OVERLOAD (ARROW_VID, DONE);
+
+		if ^DONE then do;
+			/* No overload found, get rid of the ARROW_VO. 
+			/**/
+			call COUNT_DOWN_VALUE (ARROW_VID);
+			ARG_VID = VALUE_OF (ARG_VID);
+			return;
+		end;
+		else do;
+			/* Overload found, get rid of the original expression. 
+			/**/
+			call COUNT_DOWN_VALUE (ARG_VID);
+			ARG_VID = ARROW_VID;
+		end;
+	end;
+
+end CHECK_ARROW_OVERLOAD;
+
+/* ---------------------------------------------------------------------
+ * NOTE_SYMBOL_REFERENCE
+ *
+ * Takes note that the semantics of the expression being processed
+ * require a reference in the ops or in the data initial file to SYM.
+ * (Don't call this for a virtual function call through SYM, or prior
+ * to resolving overloading.)
+ * 
+ * Does nothing if IN_SIZEOF or if AM_DEBUGGER.
+ * ------------------------------------------------------------------- */
+
+NOTE_SYMBOL_REFERENCE: procedure (SYM)
+		       external  (X_NOTE_SYMBOL_REFERENCE);
+
+	declare
+		SYM		type (NID_T);
+	declare
+		SP		type (POINTER_T),
+		P		type (POINTER_T);
+
+	if ^AM_DEBUGGER & (IN_SIZEOF = 0) & (SYM ^= NULL_NID) then do;
+
+		call GET_SYM_NODE (SYM, SP);
+
+		/* Mark symbol referenced */
+
+		SP->SYM_NODE.REFERENCED = TRUE;
+
+		/* Put member function on generate list */
+
+		if  SP->SYM_NODE.IS_MEMBER &
+		   (SP->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST)) &
+		   (SP->SYM_NODE.TOP_TYPE.CODE = byte (FUNCTION_DT)) then
+			call ADD_TO_GENERATE_LIST (SYM);
+
+		if SP->SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL ^= NULL_NID
+		then do;
+			call GET_SYM_NODE_R
+			     (SP->SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL, P);
+			P->SYM_NODE.REFERENCED = TRUE;
+			call RELEASE_SYM_NODE
+			     (SP->SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL);
+		end;
+
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+end NOTE_SYMBOL_REFERENCE;
+
+/* ---------------------------------------------------------------------
+/* CHECK_IF_USED_BEFORE_SET
+/* ------------------------------------------------------------------- */
+
+CHECK_IF_USED_BEFORE_SET: procedure (V, VOP)
+			  external  (X_CHECK_IF_USED_BEFORE_SET);
+	declare
+		V	type (CXX_VID_T),
+		VOP	type (SHORT_T);
+	declare
+		THISV	type (CXX_VID_T);
+
+	if AM_DEBUGGER then
+		return;
+
+	THISV = V;
+
+	if THISV->CXX_VALUE_NODE.OP ^= VALUE_VO then
+		return;
+	if (THISV->CXX_VALUE_NODE.LEFT_IS_NOT_VID) |
+	   (THISV->CXX_VALUE_NODE.LEFT = NULL_CXX_VID) then
+		return;
+
+	if THISV->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.VOP ^= REF_VO then
+		return;
+	if ^THISV->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.LEFT_IS_NID |
+	   (THISV->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.LEFT = NULL_NID) then
+		return;
+
+	/* Here we have a simple VALUE (REF (sym-node-id)) */
+
+	call SET_SYM_NODE_R (THISV->CXX_VALUE_NODE.LEFT->
+				    CXX_VALUE_NODE.LEFT_NID);
+
+	if SYM_NODE.IS_DUMMY then do;
+		/*
+		/* Note that reference to a reference symbol is
+		/* VALUE (REF (dummy, 0, VALUE (REF (symbol))).
+		/* We ignore this (as well as any other dummy symbols) for
+		/* now, so we are currently not able to give a warning about
+		/* int a, b; int &ra = a; b = ra; since we need a way of
+		/* getting the sym-node for a from the sym-node for ra.
+		/**/
+		return;
+	end;
+
+	else if SYM_NODE.IS_PARAMETER then
+		return;
+
+	/*
+	/* If this symbol is being aliased (i.e. &symbol) or is being
+	/* assigned to then mark it having been set.  Otherwise, if it
+	/* has not been previously set (or aliased or initialized),
+	/* then give a used-before-set warning.
+	/**/
+
+	if (VOP = UNARY_AND_VO)		|
+	   (VOP = ASSIGN_VO)		|
+	   (VOP = IMPLICIT_ASSIGN_VO)	|
+	   (VOP = COPY_VO)		then
+		SYM_NODE.HAS_BEEN_SET_OR_ALIASED = TRUE;
+
+	else if ^SYM_NODE.HAS_BEEN_SET_OR_ALIASED &
+		^SYM_NODE.INITIAL_AT then do;
+		/*
+		/* Warning; this name is being used before being set.
+		/**/
+		call SEMANTIC_ERROR_II
+		     (ERR_USED_BEFORE_SET,
+		      QUALIFIED_SYMBOL_NAME
+		      (THISV->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.LEFT_NID),
+		      SYMBOL_LOCATION_NAME
+		      (THISV->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.LEFT_NID));
+		SYM_NODE.HAS_BEEN_SET_OR_ALIASED = TRUE;
+	end;
+
+end CHECK_IF_USED_BEFORE_SET;
+

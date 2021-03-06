@@ -1,0 +1,27 @@
+/* SYS SYSGETPARAM.IN - Declare GTPARM entry */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+/*
+/* EDIT HISTORY
+/*    04.10.91   VTF  001 Added block-node parameter
+/**********************************************************************/
+
+declare GTPARM entry (
+            fixed binary (15),  /* IN:  Parameter number */
+            fixed binary (15),  /* IN:  Variable type */
+            fixed binary (15),  /* IN:  block node id for procedure */
+            bit (1) aligned,    /* IN:  pass-by-value flag */
+            fixed binary (31),  /* OUT: Location in user memory */
+            fixed binary (15),  /* OUT: Bit offset in user memory */
+            fixed binary (31)   /* OUT: Other information */
+        ) returns ( bit (1) ) external;
+
+%replace VALUE_PARAM         by '1'B;
+%replace REFERENCE_PARAM     by '0'B;
+

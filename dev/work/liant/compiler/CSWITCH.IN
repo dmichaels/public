@@ -1,0 +1,490 @@
+/* C++ cswitch.in - Front-end specific switches */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  05.12.93  DGM  062  SW_DISCARD_LOCAL_NAMES.
+ *  02.19.93  DGM  061  SW_ALLOW_LOCAL_STATIC_FUN_DCL &
+ *			SW_TREAT_QUOTE_INCLUDE_AS_ANGLE.
+ *  01.21.93  DGM  060  Updated.
+ *  09.29.92  DGM  059	SW_NO_REMOVE_UNREF_FUNCTIONS.
+ *  09.17.92  DGM  058	SW_DEFAULT_UNSIGNED_CHAR.
+ *  09.08.92  DGM  057	SW_PRINT_CLASS_CATALOGUE.
+ *  08.19.92  DGM  056	SW_WARN_HIDDEN_VIRTUAL_FUNCTIONS.
+ *  06.22.92  DGM  055	SW_TRADITIONAL_MACRO_EXPANSION,
+ *			SW_ALLOW_ANY_ESCAPE_SEQUENCES,
+ *			SW_EXTENDED_PRECISION_LONG_DOUBLE,
+ *			SW_ALLOW_OVERFLOWING_CONSTANTS.
+ *			Rearranged to make room in the global switches.
+ *  06.18.92  DGM  054	SW_MONITOR_CODE_GENERATOR & SW_MONITOR_OPTIMIZER.
+ *  06.05.92  DGM  053	SW_ALLOW_DECORATED_CLASSES and
+ *			SW_ALLOW_ABI_STYLE_BIT_FIELDS.
+ *			SW_DEFINE_C_HEADER_STDC_AS_ZERO.
+ *			SW_WARN_UNQUALIFIED_NESTED_TYPE.
+ *  05.19.92  DGM  052	SW_WARN_FOR_MULTIPLE_TYPEDEFS.
+ *  04.14.92  PKT  051	SW_X_UNION_MEMBER_INIT.
+ *  04.30.92  DGM  050	SW_DEFINE_OLD_CPLUSPLUS_MACRO.
+ *  03.25.92  PKT  049	SW_ALLOW_VOID_PARAMETERS, SW_X_VOID_ELLIPSIS.
+ *  03.26.92  DGM  048	SW_NO_STATEMENT_ID_OPS.
+ *  03.05.92  DGM  047  SW_C_ONLY.
+ *  02.10.92  DGM  046  SW_PREPROCESSOR_ONLY, SW_NO_WRAPPERS.
+ *  02.05.92  DGM  045  SW_WARN_MAIN_NO_RETURN_VALUE, SW_DUMP_MAKE_DEPEND.
+ *  02.03.92  PKT  044	SW_LAX_STATIC_MEMBER_DEFINITION.
+ *  01.31.92  DGM  043  SW_WARN_EOF_IN_LINE.
+ *  01.28.92  DGM  042  SW_ALLOW_NULL_VA_START_ARG, SW_WARN_LONE_ELLIPSIS.
+ *  01.21.92  DGM  041  SW_ALLOW_EXTRANEOUS_ARG_COMMA,
+ *			SW_ALLOW_MEMBER_FUN_REF_TYPE,
+ *			SW_CFRONT_LOOKUP_NEW_TYPE_NAME.
+ *  01.13.92  DGM  040  SW_TERSE_MACRO_EXPANSION (-cppt)
+ *			SW_NO_MULTI_SPACE_NODE_SCHEME (-dbnoms),
+ *			SW_TREAT_ERROR_AS_VIOLATION (-eisv),
+ *			SW_WARN_PARAM_USED_IN_PROTO (-cfront/-lint),
+ *			SW_DUMP_NODE_ID_WATERMARK (-dbnid),
+ *			and SW_DEFINE_C_HEADER_STDC_AS_ZERO.
+ *  12.26.91  PKT  039  Added SW_X_CAST_OBJECT_TO_REFERENCE.
+ *  12.17.91  PKT  038  Added SW_X_IGNORE_TYPE_QUALIFIERS and
+ *			SW_X_FUDGE_TYPE_QUALIFIERS.
+ *  12.13.91  DGM  037  Added SW_WARN_DUP_ENUMERATOR_VALUE (-wdupenum).
+ *  11.12.91  DGM  036  Added SW_SYSTEM_WCHAR_T, et.al.
+ *  10.01.91  DGM  035  Added SW_ALLOW_ASM, SW_ALLOW_TYPEDEF_AS_BASE_CLASS,
+ *			and SW_WARN_CALL_NON_PROTO_FUN.
+ *  08.19.91  DGM  034  Updated.
+ *  08.06.91  DGM  033  Updated.
+ *  07.31.91  DGM  032  Updated.
+ *  07.24.91  DGM  031  Updated.
+ *  07.19.91  PKT  030  Added SW_SYSTEM_SIZE_T.
+ *  07.08.91  DGM  028  Updated.
+ *  06.11.91  PKT  027  Added SW_X_REFERENCE_TEMP, SW_X_CAST_LVALUE,
+ *			and SW_X_OVERLOAD_POSTFIX.  Picked up DGM's
+ *			additions of SW_X_OLD_STYLE_TOKEN_PASTING,
+ *			and SW_CFRONT_n_n_MODE (for 1.2, 2.0, and 2.1).
+ *  05.29.91  DGM  026  Added SW_LINT & SW_USE_OLD_CXX_STREAM_HEADER.
+ *  05.17.91  PKT  025  Added -xov (SW_X_OVERLOAD).
+ *  04.08.91  DGM  024  Added SW_VERBOSE.
+ *  04.01.91  DGM  023  Added SW_MONITOR_FE.
+ *  03.20.91  DGM  022  Added SW_CLASSIC_C_MODE and SW_ANSI_C_MODE.
+ *  02.27.91  DGM  021  Added -enoobj (SW_NO_OBJECT_IF_ANY_ERROR).
+ *			Added -defvft (SW_DEFINE_INTERNAL_VFT).
+ *			Added -extdefvft (SW_DEFINE_EXTERNAL_VFT).
+ *			Added -unodefvft (SW_NO_DEFINE_EXTERNAL_VFT).
+ *			Added -iocne (SW_INCLUDE_ONLY_ONCE).
+ *			Added -xonce (SW_ALLOW_ONCE_DIRECTIVE).
+ *  01.29.91  PKT  020  Added -xnbi (SW_X_NO_BRACE_INIT).
+ *  01.03.91  PKT  019  Added -xpch (SW_X_PROMOTE_CHAR).
+ *  12.17.90  PKT  018  Added -laxac (SW_LAX_ACCESS_CONTROL).
+ *  10.26.90  PKT  017  Added -laxini (SW_LAX_INTITIALIZATION).
+ *  10.12.90  DGM  016  Added -notsl (SW_NO_TYPE_SAFE_LINKAGE).
+ *  09.14.90  DGM  015  Changed include file names and VOP names.
+ *  08.31.90  DGM  014  Removed SW_DISALLOW_NON_INT_BIT_FIELDS.
+ *  08.29.90  DGM  013  Added SW_DEBUGGING_STATS (-dbstat),
+ *			SW_X_UNINITIALIZED_CONST (-xuc),
+ *			SW_NO_TYPE_HASHING (-dbnoth),
+ *			SW_NO_PERFECT_TYPE_HASHING (-dbnopth),
+ *			and SW_NO_IMPERFECT_TYPE_HASHING (-dbnoith).
+ *  08.07.90  PKT  012  Added SW_X_WARN_RETURN_VALUE (-xwrv) (to make
+ *			explicit return w/o value a warning not error).
+ *  07.18.90  DGM  011  Added SW_X_IGNORE_GRAY_SPACE (-xigs) (to ignore
+ *			"gray-space" (e.g. form-feed) within preprocessor
+ *			directives), and SW_NO_MULTIPLE_INHERITANCE (-nomi).
+ *  07.05.90  PKT  010  Added SW_ZOMBIE_TEMP.
+ *  06.29.90  DGM  009  Added SW_X_CLASSIC_C_NAME_SPACE.
+ *  06.26.90  DGM  008  Added SW_DUMP_CLASS_LAYOUT.
+ *  06.14.90  PKT  007  Added SW_TENTATIVE_DEFN, SW_LAX_POINTER,
+ *			SW_STRICT_LVALUE, SW_NO_CLASS_CAST,
+ *			SW_STRICT_REGISTER, and SW_UNDEF_FUNCTION_LAX.
+ *  05.25.90  DGM  006	Added SW_ADJUST_THIS_VIA_THUNK, SW_DUMP_VFT,
+ *			SW_VFT_ID_STRING, SW_DEFINE_EXTERNAL_VFT,
+ *			and SW_DUMP_TYPES.
+ *  04.25.90  DGM  005  SW_OLD_STYLE_FUNCTIONS & SW_NO_BASE_TYPE_WARN.
+ *  03.27.90  DGM  004  Added SW_DISALLOW_NON_INT_BIT_FIELDS.
+ *  03.02.90  DGM  003  Updated.
+ *  11.20.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include GLOBAL_IN; */
+
+/* ---------------------------------------------------------------------
+/* C++ front-end specific compilation switches which need
+/* to be passed on through to the debugger should go here.
+/*
+/* N.B. These are defined on LANSWITCH in gglobal.in (16 bytes).
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 CSWBIT				defined (LANSWITCH),
+
+  /* BYTE ONE */
+
+  2 SW_ALLOW_DOLLAR			type (BIT_T), /* -dollar */
+  2 SW_FLOAT				type (BIT_T), /* -float */
+  2 available_13			type (BIT_T), /* */
+  2 available_14			type (BIT_T), /* */
+  2 available_15			type (BIT_T), /* */
+  2 available_16			type (BIT_T), /* */
+  2 SW_IMATH               		type (BIT_T), /* -imath   */
+  2 SW_ISTRING             		type (BIT_T), /* -istring */
+
+  /* BYTE TWO */
+
+  2 SW_EXTENDED_PRECISION_LDOUBLE	type (BIT_T), /* -extld */
+  2 available_22			type (BIT_T), /* */
+  2 available_23			type (BIT_T), /* */
+  2 available_24			type (BIT_T), /* */
+  2 available_25			type (BIT_T), /* */
+  2 available_26			type (BIT_T), /* */
+  2 available_27			type (BIT_T), /* */
+  2 available_28			type (BIT_T), /* */
+
+  /* BYTE THREE */
+
+  2 SW_X_INT_CONSTANT_TYPE		type (BIT_T), /* -xic */
+  2 SW_X_UNSIGNED_PRESERVING		type (BIT_T), /* -xup */
+  2 SW_X_CHAR_POINTER			type (BIT_T), /* -xcp */
+  2 SW_X_LONG_FLOAT			type (BIT_T), /* -xlf */
+  2 available_35			type (BIT_T), /* */
+  2 available_36			type (BIT_T), /* */
+  2 available_37			type (BIT_T), /* */
+  2 available_38			type (BIT_T), /* */
+
+  /* BYTE FOUR */
+
+  2 available_41			type (BIT_T), /* */
+  2 SW_X_OLD_ESCAPES			type (BIT_T), /* -xoe */
+  2 SW_ALLOW_ANY_ESCAPE_SEQUENCES	type (BIT_T), /* -xaes */
+  2 SW_X_FLOAT_TO_DOUBLE		type (BIT_T), /* -xdb */
+  2 available_45			type (BIT_T), /* */
+  2 available_46			type (BIT_T), /* */
+  2 available_47			type (BIT_T), /* */
+  2 SW_UNDEF_FUNCTION_WARN		type (BIT_T), /* -wfundef */
+
+  /* BYTE FIVE */
+
+  2 SW_X_OVERLOAD	                type (BIT_T), /* -xov */
+  2 SW_LINT				type (BIT_T), /* -lint */
+  2 SW_C_PLUS_PLUS			type (BIT_T), /* C++ mode (default) */
+  2 available_54			type (BIT_T), /* */
+  2 available_55			type (BIT_T), /* */
+  2 SW_NO_NESTED_TYPE_NAMES		type (BIT_T), /* -xnnt */
+  2 available_57			type (BIT_T), /* */
+  2 SW_DEFINE_INTERNAL_VFT		type (BIT_T), /* -defvft */
+  2 SW_X_OLD_STYLE_FUNCTIONS		type (BIT_T), /* -xosf */
+
+  /* BYTE SIX */
+
+  2 available_61			type (BIT_T), /* */
+  2 SW_ADJUST_THIS_VIA_THUNK		type (BIT_T), /* -thunk */
+  2 available_63			type (BIT_T), /* */
+  2 SW_ALLOW_OVERFLOWING_CONSTANTS	type (BIT_T), /* -xaoc */
+  2 SW_DEFINE_EXTERNAL_VFT		type (BIT_T), /* -extdefvft */
+  2 SW_NO_DEFINE_EXTERNAL_VFT		type (BIT_T), /* -undefvft */
+  2 SW_TENTATIVE_DEFN 			type (BIT_T), /* -tdefn */
+  2 SW_LAX_POINTER			type (BIT_T), /* -laxptr */
+
+  /* BYTE SEVEN */
+
+  2 SW_STRICT_LVALUE			type (BIT_T), /* -nolvalue */
+  2 SW_NO_CLASS_CAST			type (BIT_T), /* -noclcast */
+  2 SW_STRICT_REGISTER			type (BIT_T), /* -noreg */
+  2 SW_UNDEF_FUNCTION_LAX		type (BIT_T), /* -fundef */
+  2 available_75			type (BIT_T), /* */
+  2 SW_X_NAME_SPACE			type (BIT_T), /* -xns */
+  2 SW_ZOMBIE_TEMP			type (BIT_T), /* -ztemp */
+  2 available_78			type (BIT_T), /* */
+
+  /* BYTE EIGHT */
+
+  2 SW_NO_NESTED_ENUMERATOR_NAMES	type (BIT_T), /* -ansic/-classicc */
+  2 SW_X_WARN_RETURN_VALUE		type (BIT_T), /* -xwrv */
+  2 available_83			type (BIT_T), /* */
+  2 SW_X_UNINITIALIZED_CONST		type (BIT_T), /* -xuc */
+  2 SW_USE_OLD_CXX_STREAM_HEADER	type (BIT_T), /* -oldstream */
+  2 SW_NO_PERFECT_TYPE_HASHING		type (BIT_T), /* -dbnopth */
+  2 SW_NO_IMPERFECT_TYPE_HASHING	type (BIT_T), /* -dbnoith */
+  2 available_88			type (BIT_T), /* */
+
+  /* BYTE NINE */
+
+  2 available_95			type (BIT_T), /* */
+  2 SW_NO_TYPE_SAFE_LINKAGE		type (BIT_T), /* -notsl */
+  2 SW_LAX_INITIALIZATION		type (BIT_T), /* -laxini */
+  2 SW_LAX_ACCESS_CONTROL		type (BIT_T), /* -laxac */
+  2 SW_X_PROMOTE_CHAR			type (BIT_T), /* -xpch */
+  2 available_96			type (BIT_T), /* */
+  2 available_97			type (BIT_T), /* */
+  2 available_98			type (BIT_T), /* */
+
+  /* BYTE TEN */
+
+  2 SW_C_ONLY				type (BIT_T), /* C only mode */
+  2 SW_CLASSIC_C_MODE			type (BIT_T), /* -classicc */
+  2 SW_ANSI_C_MODE			type (BIT_T), /* -ansic */
+  2 SW_FAVOR_SYSTEM_HEADER_DIR		type (BIT_T), /* -sys */
+  2 available_A5			type (BIT_T), /* */
+  2 available_A6			type (BIT_T), /* */
+  2 SW_CFRONT_1_2_MODE			type (BIT_T), /* -cfront1.2 */
+  2 SW_CFRONT_2_0_MODE			type (BIT_T), /* -cfront2.0 */
+
+  /* BYTE ELEVEN */
+
+  2 SW_CFRONT_2_1_MODE			type (BIT_T), /* -cfront2.1 */
+  2 SW_X_REFERENCE_TEMP			type (BIT_T), /* on cfront switches */
+  2 SW_X_CAST_LVALUE			type (BIT_T), /* -xcastl */
+  2 SW_X_OVERLOAD_POSTFIX		type (BIT_T), /* on cfront switches */
+  2 SW_NO_PROTO_SCOPE_TAG_NAMES		type (BIT_T), /* -xnnpt */
+  2 available_B6			type (BIT_T), /* */
+  2 SW_OPTIONAL_BASE_CLASS_NAME		type (BIT_T), /* -xobcn */
+  2 available_B8			type (BIT_T), /* */
+
+  /* BYTE TWELVE */
+
+  2 available_C1			type (BIT_T), /* */
+  2 available_C2			type (BIT_T), /* */
+  2 SW_USE_SHORTEST_POSSIBLE_ENUM	type (BIT_T), /* -shortenum */
+  2 available_C4			type (BIT_T), /* */
+  2 available_C5			type (BIT_T), /* */
+  2 available_C6			type (BIT_T), /* */
+  2 available_C7			type (BIT_T), /* */
+  2 available_C8			type (BIT_T), /* */
+
+  /* BYTE THIRTEEN */
+
+  2 SW_DO_NOT_MAP_EXIT_TO_LPI_EXIT	type (BIT_T), /* -realexit */
+  2 available_D2			type (BIT_T), /* */
+  2 available_D3			type (BIT_T), /* */
+  2 available_D4			type (BIT_T), /* */
+  2 available_D5			type (BIT_T), /* */
+  2 available_D6			type (BIT_T), /* */
+  2 SW_SYSTEM_SIZE_T			type (BIT_T), /* -syssizet */
+
+  /* BYTE FOURTEEN */
+
+  2 available_E1			type (BIT_T), /* */
+  2 available_E2			type (BIT_T), /* */
+  2 SW_POSIX_MODE			type (BIT_T), /* -posix */
+  2 available_E4			type (BIT_T), /* */
+  2 available_E5			type (BIT_T), /* */
+  2 available_E6			type (BIT_T), /* */
+  2 SW_WARN_CALL_NON_PROTO_FUN		type (BIT_T), /* -wcnpf */
+  2 SW_SYSTEM_WCHAR_T			type (BIT_T), /* -syswchart */
+
+  /* BYTE FIFTEEN */
+
+  2 SW_MULTI_CHAR_LEFT_TO_RIGHT		type (BIT_T), /* -mclr */
+  2 SW_MULTI_CHAR_RIGHT_TO_LEFT		type (BIT_T), /* -mcrl */
+  2 SW_ALLOW_ENUM_INTEGRAL_TYPE		type (BIT_T), /* -enumspec */
+  2 SW_DO_NOT_MAP_ENTRY_TO_LPI_ENTRY	type (BIT_T), /* -realentry */
+  2 SW_SYSTEM_HAS_INIT_FINI_SECTIONS	type (BIT_T), /* -initfini */
+  2 SW_MAIN_MODULE			type (BIT_T), /* has "main" function */
+  2 available_F7			type (BIT_T), /* */
+  2 SW_X_FUDGE_TYPE_QUALIFIERS		type (BIT_T), /* -xftq */
+
+  /* BYTE SIXTEEN */
+
+  2 SW_X_IGNORE_TYPE_QUALIFIERS		type (BIT_T), /* -xitq */
+  2 SW_X_CAST_OBJECT_TO_REFERENCE	type (BIT_T), /* -xcotr */
+  2 available_G3			type (BIT_T), /* */
+  2 SW_NO_MULTI_SPACE_NODE_SCHEME	type (BIT_T), /* -dbnoms */
+  2 available_G5			type (BIT_T), /* */
+  2 available_G6			type (BIT_T), /* */
+  2 available_G7			type (BIT_T), /* */
+  2 available_G8			type (BIT_T); /* */
+
+/* ---------------------------------------------------------------------
+/* C++ front-end specific compilation switches which do NOT
+/* need to be passed on through to the debugger should go here.
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 CXXSW					static external,
+
+  /* BYTE ONE */
+
+  2 SW_X_OLD_STYLE_TOKEN_PASTING	type (BIT_T), /* -xotp */
+  2 SW_X_TRAILING_TEXT			type (BIT_T), /* -xtt */
+  2 SW_X_INNOCUOUS_MACRO_REDEF		type (BIT_T), /* -xmi */
+  2 SW_X_PERNICIOUS_MACRO_REDEF		type (BIT_T), /* -xmp */
+  2 SW_X_NOTRIGRAPH			type (BIT_T), /* -xnt */
+  2 SW_X_STRINGIZE			type (BIT_T), /* -xs */
+  2 SW_X_CHARIZE			type (BIT_T), /* -xc */
+  2 SW_X_STRINGIZE_WARN			type (BIT_T), /* -xws */
+
+  /* BYTE TWO */
+
+  2 SW_X_CHARIZE_WARN			type (BIT_T), /* -xwc */
+  2 SW_PRAGMA_WARN			type (BIT_T), /* -xpg */
+  2 SW_IDENT_NOWARN			type (BIT_T), /* -xident */
+  2 SW_PRINT_FILE_NAME_AS_WE_GO		type (BIT_T), /* -see */
+  2 SW_X_IGNORE_GRAY_SPACE		type (BIT_T), /* -xigs */
+  2 SW_ALLOW_NULL_VA_START_ARG		type (BIT_T), /* -vasna/-fex */
+  2 SW_ALLOW_ONCE_DIRECTIVE		type (BIT_T), /* -xonce */
+  2 SW_PRAGMA_WRAPPER_REDECLARATIONS	type (BIT_T), /* */
+
+  /* BYTE THREE */
+
+  2 SW_INCLUDE_ONLY_ONCE		type (BIT_T), /* -ionce */
+  2 SW_ALLOW_OLD_LINE_DIRECTIVE		type (BIT_T), /* -cppx */
+  2 SW_ALLOW_CXX_STYLE_COMMENTS		type (BIT_T), /* -cxxcomments */
+  2 SW_WARN_SIZEOF_IN_PP_EXPRESSION	type (BIT_T), /* -cfront -lint */
+  2 SW_ALLOW_ELSEIF_DIRECTIVE		type (BIT_T), /* -xelseif */
+  2 SW_ALLOW_FILE_DIRECTIVE		type (BIT_T), /* -xfile */
+  2 SW_X_EMPTY_MACRO_ARGUMENT		type (BIT_T), /* -xea */
+  2 SW_ALLOW_ASSERT_DIRECTIVE		type (BIT_T), /* -xassert */
+
+  /* BYTE FOUR */
+
+  2 SW_SYSTEM_MACROS			type (BIT_T), /* -sysdef */
+  2 SW_DEFINE_STDC_AS_ONE		type (BIT_T), /* -stdc */
+  2 SW_DEFINE_C_HEADER_STDC_AS_ONE	type (BIT_T), /* -chmstdc1 */
+  2 SW_DEFINE_C_HEADER_STDC_AS_ZERO	type (BIT_T), /* -chmstdc0 */
+  2 SW_DEFINE_OLD_CPLUSPLUS_MACRO	type (BIT_T), /* -cfront* */
+  2 SW_MACRO_EXPANSION			type (BIT_T), /* -cpp */
+  2 SW_TERSE_MACRO_EXPANSION		type (BIT_T), /* -cppt */
+  2 SW_TRADITIONAL_MACRO_EXPANSION	type (BIT_T), /* -cppe */
+
+  /* BYTE FIVE */
+
+  2 SW_PREPROCESSOR_ONLY		type (BIT_T), /* -cpponly */
+  2 SW_NO_WRAPPERS			type (BIT_T), /* -nowrappers */
+  2 SW_DUMP_TOKENS			type (BIT_T), /* -tokens */
+  2 SW_DUMP_INCLUDES			type (BIT_T), /* -includes */
+  2 SW_DUMP_MACROS			type (BIT_T), /* -macros */
+  2 SW_DUMP_PREDEF_MACROS		type (BIT_T), /* -predef */
+  2 SW_DUMP_DECLARATIONS		type (BIT_T), /* -dbdcl */
+  2 SW_DUMP_VFT				type (BIT_T), /* -dbvft */
+
+  /* BYTE SIX */
+
+  2 SW_DUMP_CLASS_LAYOUT		type (BIT_T), /* -dbclay */
+  2 SW_DUMP_TYPE_HASH_TABLE		type (BIT_T), /* -dbtht */
+  2 SW_DUMP_NODE_ID_WATERMARK		type (BIT_T), /* -dbnid */
+  2 SW_DUMP_MAKE_DEPEND			type (BIT_T), /* -makedepend */
+  2 SW_TERSE_DIAGNOSTICS		type (BIT_T), /* -terse */
+  2 SW_VERY_TERSE_DIAGNOSTICS		type (BIT_T), /* -veryterse */
+  2 SW_TREAT_VIOLATION_AS_ERROR		type (BIT_T), /* -vise (-enoobj) */
+  2 SW_TREAT_VIOLATION_AS_WARNING	type (BIT_T), /* -visw */
+
+  /* BYTE SEVEN */
+
+  2 SW_TREAT_ERROR_AS_VIOLATION		type (BIT_T), /* -eisv */
+  2 SW_SILENT_ABOUT_NOTES		type (BIT_T), /* -nonote */
+  2 SW_SOURCE_FILE_NAME_IS_OPTIONAL	type (BIT_T), /* -help, -predef */
+  2 SW_X_EXTERN_SCOPE			type (BIT_T), /* -xes */
+  2 SW_X_BIT_FIELDS			type (BIT_T), /* -xbf */
+  2 SW_ABI_STYLE_BIT_FIELDS		type (BIT_T), /* -abibf */
+  2 SW_NO_BASE_TYPE_WARN		type (BIT_T), /* -nbt */
+  2 SW_DEBUGGING_STATS			type (BIT_T), /* -dbstat */
+
+  /* BYTE EIGHT */
+
+  2 SW_NODE_ID_WITH_NAME		type (BIT_T), /* -dbsid */
+  2 SW_X_NO_BRACE_INIT			type (BIT_T), /* -xnbi */
+  2 SW_ALLOW_INIT_BYPASS_IN_SWITCH	type (BIT_T), /* -xbpisw */
+  2 SW_ALLOW_OVERLOAD_KEYWORD		type (BIT_T), /* -xovkw */
+  2 SW_ALLOW_EXTRANEOUS_SEMICOLON	type (BIT_T), /* -xsemi */
+  2 SW_ALLOW_EXTRANEOUS_TYPEDEF		type (BIT_T), /* -xxtd (*) */
+  2 SW_ALLOW_EXTRANEOUS_ENUM_COMMA	type (BIT_T), /* -xeec */
+  2 SW_ALLOW_ASM			type (BIT_T), /* #pragma allow_asm */
+
+  /* BYTE NINE */
+
+  2 SW_ALLOW_TYPEDEF_AS_BASE_CLASS	type (BIT_T), /* -cfront */
+  2 SW_NON_PROTO_COMPAT_WITH_ANY	type (BIT_T), /* #pragma C-header */
+  2 SW_NOWARN_EXTERN_INTERN_CONFLICT	type (BIT_T), /* */
+  2 SW_NOWARN_EXTERN_INLINE_CONFLICT	type (BIT_T), /* -cfrontM.N */
+  2 SW_NOWARN_NO_RETURN_VALUE		type (BIT_T), /* */
+  2 SW_WARN_DUP_ENUMERATOR_VALUE	type (BIT_T), /* -wdupenum */
+  2 SW_ALLOW_PARAMETER_NAME_HIDING	type (BIT_T), /* -xpnh */
+  2 SW_WARN_PARAM_USED_IN_PROTO		type (BIT_T), /* -cfront/-lint */
+
+  /* BYTE TEN */
+
+  2 SW_ALLOW_EXTRANEOUS_ARG_COMMA	type (BIT_T), /* -cfront */
+  2 SW_ALLOW_MEMBER_FUN_REF_TYPE	type (BIT_T), /* -xmfr/-cfront */
+  2 SW_CFRONT_LOOKUP_NEW_TYPE_NAME	type (BIT_T), /* -xntnl/-cfront */
+  2 SW_WARN_MEMBER_FUN_REF_TYPE		type (BIT_T), /* -xmfr -lint */
+  2 SW_WARN_MEMBER_PTR_UNDEF_CLASS	type (BIT_T), /* -cfront -lint */
+  2 SW_WARN_LONE_ELLIPSIS		type (BIT_T), /* -well/-lint */
+  2 SW_WARN_EOF_IN_LINE			type (BIT_T), /* -weofl/-lint */
+  2 SW_LAX_STATIC_MEMBER_DEFINITION	type (BIT_T), /* -xsmd/-cfront */
+
+  /* BYTE ELEVEN */
+
+  2 SW_WARN_MAIN_NO_RETURN_VALUE	type (BIT_T), /* -wnrvm/-lint */
+  2 SW_NO_STATEMENT_ID_OPS		type (BIT_T), /* -nostmid */
+  2 SW_ALLOW_VOID_PARAMETERS		type (BIT_T), /* -xvdp */
+  2 SW_X_VOID_ELLIPSIS			type (BIT_T), /* -xvde/-cfront */
+  2 SW_X_UNION_MEMBER_INIT		type (BIT_T), /* -xumi/-cfront */
+  2 SW_WARN_FOR_MULTIPLE_TYPEDEFS	type (BIT_T), /* -xwmt */
+  2 SW_DEFER_FUNCTIONS			type (BIT_T), /* -df */
+  2 SW_ALLOW_DECORATED_CLASSES		type (BIT_T), /* -classicc/-cfront */
+
+  /* BYTE TWELVE */
+
+  2 SW_WARN_UNQUALIFIED_NESTED_TYPE	type (BIT_T), /* -nowuqnt */
+  2 SW_MONITOR_FRONT_END		type (BIT_T), /* -monfe */
+  2 SW_MONITOR_OPTIMIZER		type (BIT_T), /* -monop */
+  2 SW_MONITOR_CODE_GENERATOR		type (BIT_T), /* -moncg */
+  2 SW_REAL_LOCATION_IN_ERRORS		type (BIT_T), /* -realoc */
+  2 SW_WARN_HIDDEN_VIRTUAL_FUNCTIONS	type (BIT_T), /* -whvf */
+  2 SW_NEW_VIRTUAL_FUNCTION_OVERRIDE	type (BIT_T), /* -nvfo */
+  2 SW_PRINT_CLASS_CATALOGUE		type (BIT_T), /* -catalogue */
+
+  /* BYTE THIRTEEN */
+
+  2 SW_PRINT_VIEWS_CLASS_CATALOGUE	type (BIT_T), /* -vcatalogue */
+  2 SW_DEFAULT_UNSIGNED_CHAR		type (BIT_T), /* -uchar */
+  2 SW_NO_REMOVE_UNREF_FUNCTIONS	type (BIT_T), /* -noremfun */
+  2 SW_IGNORE_IDENT			type (BIT_T), /* -igident */
+  2 SW_IMPLICIT_PRAGMA_DATA_SECTION	type (BIT_T), /* */
+  2 SW_NEEDS_RELOCATION_ORDERING	type (BIT_T), /* -(no)relord */
+  2 SW_DEFINE_STDCPP			type (BIT_T), /* -stdcpp */
+  2 SW_NO_IMPLICIT_C_HEADER_MODE	type (BIT_T), /* -nochm */
+
+  /* BYTE FOURTEEN */
+
+  2 SW_ALLOW_LOCAL_STATIC_FUN_DCL	type (BIT_T), /* -xlsfd -classicc */
+  2 SW_TREAT_QUOTE_INCLUDE_AS_ANGLE	type (BIT_T), /* -iangle */
+  2 SW_DISCARD_LOCAL_NAMES		type (BIT_T), /* -nolocalnm */
+  2 SW_NEEDS_LOCAL_SYMBOL_ORDERING	type (BIT_T), /* -(no)locord */
+  2 available_E5			type (BIT_T), /* */
+  2 available_E6			type (BIT_T), /* */
+  2 available_E7			type (BIT_T), /* */
+  2 available_E8			type (BIT_T), /* */
+
+  /* BYTE FIFTEEN */
+
+  2 available_F1			type (BIT_T), /* */
+  2 available_F2			type (BIT_T), /* */
+  2 available_F3			type (BIT_T), /* */
+  2 available_F4			type (BIT_T), /* */
+  2 available_F5			TYPe (BIT_T), /* */
+  2 available_F6			type (BIT_T), /* */
+  2 available_F7			type (BIT_T), /* */
+  2 available_F8			type (BIT_T), /* */
+
+  /* BYTE SIXTEEN */
+
+  2 available_G1			type (BIT_T), /* */
+  2 available_G2			type (BIT_T), /* */
+  2 available_G3			type (BIT_T), /* */
+  2 available_G4			type (BIT_T), /* */
+  2 available_G5			type (BIT_T), /* */
+  2 available_G6			type (BIT_T), /* */
+  2 available_G7			type (BIT_T), /* */
+  2 available_G8			type (BIT_T); /* */
+

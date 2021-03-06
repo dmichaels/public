@@ -1,0 +1,136 @@
+.TH INTRO 3L LOCAL
+
+.SH NAME
+intro - introduction to local library functions
+
+.SH SYNOPSIS
+.ft B
+#include "cdef.h"
+.ft P
+
+.SH DESCRIPTION
+This section describes
+the use of the
+local general purpose library routines.
+
+.sz -1
+\fBAvailable Functions\fP
+.sz +1
+.PP
+.in +5
+.sz -2
+.TS
+l l .
+\fBbit_is_clr\fP	- true if a given bit is clear (\fIbitmap(3L)\fP)
+\fBbit_is_set\fP	- true if a given bit is set (\fIbitmap(3L)\fP)
+\fBcfill\fP	- fill a string with a character
+\fBclrbit\fP	- clear a given bit in a bit map (\fIbitmap(3L)\fP)
+\fBclrmap\fP	- clear a bit map (\fIbitmap(3L)\fP)
+\fBcreplace\fP	- replace a character in a string
+\fBfcopy\fP	- copy a file
+\fBfdetab\fP	- tab manipulation functions (\fItab(3L)\fP)
+\fBfentab\fP	- tab manipulation functions (\fItab(3L)\fP)
+\fBfindline\fP	- find a line in a file containing a search pattern
+\fBfseek_npat\fP	- seek to a choice of patterns in a file
+\fBfseek_pat\fP	- seek to a pattern in a file
+\fBfskip\fP	- skip past specified characters in a file
+\fBftell_pat\fP	- get the offset to a pattern in a file
+\fBgetbit\fP	- return the value of a given bit (\fIbitmap(3L)\fP)
+\fBgetline\fP	- read a non-trivial line from a file
+\fBgetstring\fP	- read an n length string of given characters
+\fBisint\fP	- true if a string is all digits
+\fBrmchar\fP	- remove occurrences of characters from a string
+\fBsdelim\fP	- read a string between two delimiter strings
+\fBsindex\fP	- index to a pattern string within a string
+\fBsetbit\fP	- set a given bit in a bit map (\fIbitmap(3L)\fP)
+\fBsetmap\fP	- clear a bit map (\fIbitmap(3L)\fP)
+\fBsquish\fP	- squish multiple consecutive characters into one
+\fBsreverse\fP	- reverse a string in place
+\fBstrlower\fP	- convert string to lower case
+\fBstrsave\fP	- save a string
+\fBstrupper\fP	- convert string to upper case
+\fBwordvec\fP	- construct a word vector from a string
+.TE
+.sz +2
+.in -5
+.sp +1
+.sz -1
+\fBCompilation\fP
+.sz +1
+.PP
+In order to compile a program which uses any of these library
+routines, \fBa)\fP the appropriate header files must be included in the
+source files, \fBb)\fP the option \fI-I/u0/david/libc/h\fP
+must be given to the compiler,
+and \fBc)\fP the library itself must be loaded.  For example:
+.sp +1
+.ce 1
+\fIcc -I/u0/david/libc -o cfile cfile.c /u0/david/libc/lib.a\fP
+.sp +1
+will compile the source module \fIcfile.c\fP while looking for include
+files in the directory \fI/u0/david/libc/h\fP and finally loading the
+library named \fI/u0/david/libc/lib.a\fP with the object file \fIcfile.o\fP
+to produce the final executable file \fIcfile\fP.
+
+.sz -1
+\fBInclude Files\fP
+.sz +1
+.PP
+The include file \fIcdef.h\fP should be included by any modules that use
+any of these library routines.
+If there would be too many conflicts
+with locally defined pre-processor macro definitions, then at least
+the pertinent definitions should be made locally (the source modules
+for these functions could be searched to find out what is needed).
+The most likely things you will need are the type definitions
+\fIbool\fP and \fIvoid\fP,
+and the macro definitions (for return values) \fITRUE\fP and \fIFALSE\fP.
+The following is what is contained in \fIcdef.h\fP.
+.sp +2
+.sz -2
+.ft I
+.in +5
+.TS
+l l .
+/* General Definitions */
+
+#define BACKSLASH	'\\\\\'
+#define BACKSPACE	'\\\\b'
+#define EOS	'\\\\0'
+#define FORMFEED	'\\\\f'
+#define NEWLINE	'\\\\n'
+#define RETURN	'\\\\r'
+#define SPACE	' '
+#define TAB	'\\\\t'
+
+#define FALSE	((bool)0)
+#define TRUE	((bool)(!FALSE))
+
+/* Type Definitions */
+
+typedef int	void;
+typedef int	bool;
+
+.TE
+.sz +2
+.in -5
+.ft P
+.sp +1
+.PP
+If you do not wish to go through any of this hassle,
+then just copy the source and pertinent header data
+into your own program space.
+	
+.SH FILES
+/u0/david/libc/lib.a
+.br
+/u0/david/libc/h/cdef.h
+.br
+/u0/david/libc/man/*.3l
+.br
+/u0/david/libc/*.c
+
+.SH AUTHOR
+David Michaels (david@ll-sst) June 1984
+.br
+M.I.T. Lincoln Laboratory (Group 24)

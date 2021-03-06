@@ -1,0 +1,92 @@
+/* CodeWatch 68k GETREG.PL1 - Push the value of a machine register on the stack
+/**********************************************************************/
+/* This product is the property of Liant Software Corp.               */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Liant Software Corp. except pursuant to the          */
+/* license agreement.                                                 */
+/**********************************************************************/
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *  11.11.91  VTF  (001) Changed the interface on PUSH_REGISTER_VALUE.  It
+ *                       now calls derror for an illegal register name, rather
+ *                       than returning a status bit.
+ *  11.08.91  VTF  (000) Initial version.
+ **********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include DBGDEBUG_IN;
+%include DEVAL_DCL;
+%include SYSGETPC_IN;
+%include TARGET_IN;
+%include CVTF12_IN;
+%include DERROR_IN;
+
+PUSH_REGISTER_VALUE:  PROCEDURE(REG_NAME)
+                      external (X_PUSH_REGISTER_VALUE);
+
+    DECLARE
+        REG_NAME          CHAR (*) VARYING,
+        REG_IVALUE        fixed bin(ADDRESS_LENGTH),
+        REG_FVALUE        float bin(FLOAT_BIN_MAX_P),
+        B_POINTER         pointer based,
+        FLOAT_VALUE       float bin(47) based,
+        IS_FLOAT_VALUE    bit(1) aligned,
+        I                 fixed bin(15);
+
+/*---- debug
+    put list('**GETREG**:  ',trim(REG_NAME));
+    put skip;
+*/
+
+    IS_FLOAT_VALUE = FALSE;
+
+    if (REG_NAME = 'pc') then 
+        REG_IVALUE = SGETPC();
+    else if (REG_NAME = 'sp') then
+        REG_IVALUE = SGETSP();
+    else if (REG_NAME = 'fp') then
+        REG_IVALUE = SGETFP();
+    /* check for a[0-7] or d[0-7] */
+    else if (length(REG_NAME) = 2) then do;
+        I = rank(substr(REG_NAME,2,1)) - rank('0');
+        if (I >= 0 & I <= 7) then do;
+            if substr(REG_NAME,1,1) = 'a' then
+                REG_IVALUE = PROGRAM_REGISTER_AREA->REGS_ARRAY.A(I);
+            else if substr(REG_NAME,1,1) = 'd' then
+                REG_IVALUE = PROGRAM_REGISTER_AREA->REGS_ARRAY.D(I);
+            else if substr(REG_NAME,1,1) = 'f' then do;
+                /* convert extended floating point number to fixed bin(47) */
+                call CF12F8(REG_FVALUE,
+                       addr(PROGRAM_REGISTER_AREA->FPREGS(I*3+1))->B_POINTER);
+                IS_FLOAT_VALUE = TRUE;
+            end;
+            else
+                call derror(ILLEGAL_REGISTER_NAME,REGISTER_PREFIX_CHAR 
+                                                  || REG_NAME,'');
+        end;
+        else
+            call derror(ILLEGAL_REGISTER_NAME,REGISTER_PREFIX_CHAR 
+                                              || REG_NAME,'');
+    end;
+    else   /* not a register */
+        call derror(ILLEGAL_REGISTER_NAME,REGISTER_PREFIX_CHAR || REG_NAME,'');
+
+    call ALLOCATE_VALUE_AREA_NUM;
+    if IS_FLOAT_VALUE then do;
+        EVAL_PTR->V_TYPE = FLOAT_BIN_;
+        EVAL_PTR->V_P = FLOAT_BIN_MAX_P;
+        EVAL_PTR->VAL_FLTBIN = REG_FVALUE;
+    end;
+    else do;
+        EVAL_PTR->V_TYPE = POINTER_;
+        EVAL_PTR->VAL_FIXBIN = REG_IVALUE;
+    end;
+
+    call PUSH_VALUE_ON_DEBUG_STACK;
+end;
+        
+    

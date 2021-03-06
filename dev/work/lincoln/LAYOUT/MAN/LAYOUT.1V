@@ -1,0 +1,118 @@
+.TH LAYOUT 1V LOCAL
+.SH NAME
+layout \- make a VALID graphics (ged) input file from a VALID parts list
+.SH SYNOPSIS
+.B layout
+[
+.B \-p
+part_list
+]
+board_name board_geom
+.PP
+.B layout
+[
+.B \-p
+part_list
+]
+.B \-g 
+ged_file
+.B \-r
+ref_file
+[
+board_name
+]
+board_geom
+.SH DESCRIPTION
+Makes a VALID graphics editor input file
+.I board_name/logic.1.1
+which will (when ged is invoked) fill the screen with
+the given board drawing
+.I board_geom
+along with all of the packages
+(i.e. DIPs, SIPs, baby boards etc.)
+which appear in the VALID parts list
+(\fIpstxprt.dat\fP by default),
+neatly placed around the perimeter of the board.
+Larger packages which will not fit around board comfortably
+will be placed (perhaps slovenly) on the board.
+.SH FEATURES
+A reference file 
+.I board_name.lay
+(or 
+.I ref_file
+if specified) will
+be produced containing a listing of each reference designator
+appearing in the parts list,
+its part name (e.g. LS04), and its package name (e.g. DIP14).
+.PP
+The user will be prompted for the name of his Scald directory
+(usaually \fIusername\fP.wrk) in which a \fIboard_name\fP entry will be made.
+If the graphics file to be made already exists,
+then the user will be prompted
+as to whether he/she wishes to overwrite it (answer \fIy\fP or \fIn\fP).
+.PP
+The drawing (directory) \fIboard_name\fP must exist.
+.PP
+If the board_name is left out,
+then both the \fB-g\fP and \fB-r\fP options must be given
+since the \fIboard_name\fP is used to create the names of
+the graphics file and the reference file.
+It is legal to give just one of these options if the board_name is given.
+If the \fB-g\fP and \fB-r\fP are given along with the \fIboard_name\fP,
+then the board_name will be ignored.
+The current board geometries recognized by \fIlayout\fP are:
+.in +10
+.TS
+l l .
+\fIuwg12a\fP	- AUGAT 8136-UWG12
+\fIhpwg1a\fP	- AUGAT 8136-HPWG1 (dense pack)
+.TE
+.in -10
+.SH EXAMPLE
+For example, to make a VALID ged file for a drawing
+named \fIdcibugmap\fP
+which will be put on an AUGAT 8136-HPWG1 board,
+you must be in a directory which
+contains a drawing (sub-directory) named \fIdcibugmap\fP,
+and the file \fIpstxnet.dat\fP must reside in the current directory.
+Then the below command will produce the VALID ged file
+\fIdcibugmap/logic.1.1\fP, and the reference file \fIdcibugmap.lay\fP.
+.PP
+.in +10
+\fIlayout dcibugmap hpwg1a\fP
+.sp 1
+.in -10
+.PP
+If different ged, reference, and parts list files are wanted,
+say \fIged_file\fP, \fIref_file\fP, \fIpart_file\fP,
+then the the following command will suffice.
+.PP
+.in +10
+\fIlayout -g ged_file -r ref_file -p part_file hpwg1a\fP
+.in -10
+.PP
+.SH WARNINGS
+Warnings will be given for devices not found in the \fIpart_map\fP file
+(this file maps device names to package names).
+It is normal(i.e not an error condition)
+for \fIlayout\fP not to find connectors in this file.
+.SH FILES
+.TS
+l l .
+pstxprt.dat	- VALID expanded parts list file
+.br
+\fIboard_name\fP/logic.1.1	- Output graphics file
+.br
+\fIboard_name\fP.lay	- Reference file
+.br
+/u0/lincoln/part_map	- Maps part names to package names
+.br
+.TE
+.SH SEE ALSO
+wirelist(1V), validlist(1V)
+.SH AUTHOR
+David Michaels (david@ll-sst)
+.br
+M.I.T. Lincoln Laboratory (Group 24)
+.br
+June 1984

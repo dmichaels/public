@@ -1,0 +1,565 @@
+/* C++ hshtyp.pl1 - Type-node hashing routines */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.26.92  DGM  009  Minor fix for stats.
+ *  03.26.92  DGM  008  New value-node scheme.
+ *  12.04.91  DGM  007  Changed interface to HASHT.
+ *  02.27.91  PKT  006  Fix; set SHARED bit on entries in perfect table.
+ *  01.10.91  DGM  005  Fix; wasn't looking at TYPE_NODE.TYPEDEF
+ *			for perfect type-node hashing.
+ *  10.23.90  DGM  004  Minor update.
+ *  09.14.90  DGM  003  Changed include file names and VOP names.
+ *  09.12.90  DGM  002  Fix to perfect type hashing algorithm.
+ *  08.31.90  DGM  001  Fixed typo in HASH_TYPE.
+ *  08.29.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.26.92 009 HSHTYP');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN; 
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG; 
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* External function declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+HASHT		entry    (type (POINTER_T) value, type (SHORT_T) value)
+		returns  (type (LONG_T))
+		external;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+%replace LB_TYPE_HASH_TABLE		by    1;
+%replace HB_TYPE_HASH_TABLE		by 1031;
+%replace SIZE_TYPE_HASH_TABLE		by 1031;
+
+%replace LB_PERFECT_TYPE_HASH_TABLE	by    1;
+%replace HB_PERFECT_TYPE_HASH_TABLE	by  160;
+%replace SIZE_PERFECT_TYPE_HASH_TABLE	by  160;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+TYPE_HASH_TABLE		(LB_TYPE_HASH_TABLE : HB_TYPE_HASH_TABLE)
+			type (NID_T) static internal
+			initial ((SIZE_TYPE_HASH_TABLE) (NULL_NID)),
+
+PERFECT_TYPE_HASH_TABLE	(LB_PERFECT_TYPE_HASH_TABLE :
+			 HB_PERFECT_TYPE_HASH_TABLE)
+			type (NID_T) static internal
+			initial ((SIZE_PERFECT_TYPE_HASH_TABLE) (NULL_NID));
+
+declare
+
+HASHING_RESOLUTIONS		type (LONG_T) static internal initial (0),
+HASHING_CLASH_RESOLUTIONS	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* HASH_TYPE
+/*
+/* If the type represented by the given type-node id and associated
+/* pointer may be hashed (i.e. pooled/shared), then either enter the
+/* type-node into the hash table (if it's not yet there), or set the
+/* given type-node id and associated pointer to the matching type-node
+/* found in the hash table.
+/*
+/* Currently, only types which contain *no* function types, *no* array
+/* and no "incomplete" types will be hashed.  In addition, a certain set
+of "common" types be "perfectly" hashed; those types are the following:
+/*
+/*   - basic-types; i.e. VOID_BT, FLOAT_BT, DOUBLE_BT, LDOUBLE_BT,
+/*     CHAR_BT, SCHAR_BT, UCHAR_BT, SHORT_BT, SSHORT_BT, USHORT_BT,
+/*     INT_BT, SINT_BT, UINT_BT, LONG_BT, SLONG_BT, or ULONG_BT.
+/*   - const basic-type.
+/*   - pointer to const-or-non-const-basic-type
+/*   - const pointer to const-or-non-const-basic-type
+/*   - reference to const-or-non-const-basic-type
+/*   - const reference to const-or-non-const-basic-type
+/*
+/* Doing out the arithmetic, we find that there are 160 "common" types.
+/*
+/* Note that the SW_NO_TYPE_HASHING flag turns off all type-node hashing,
+/* SW_NO_PERFECT_TYPE_HASHING flag turns off "perfect" type-node hashing,
+/* and SW_NO_IMPERFECT_TYPE_HASHING flag turns off normal type-node hashing.
+/*
+/* Note that the typedef-id field of a type-node *is* considered part of
+/* type for hashing purposes (unlike general usage).
+/* ------------------------------------------------------------------- */
+
+HASH_TYPE: procedure (TYPE, TYPE_PTR) external (X_HASH_TYPE);
+
+	declare
+		TYPE		type (NID_T),
+		TYPE_PTR	type (POINTER_T);
+	declare
+		I		type (SHORT_T),
+		HASH		type (LONG_T),
+		(T, NEXT_T)	type (NID_T),
+		TP		type (POINTER_T);
+
+	/* See if this is an "incomplete" type-node */
+
+	if TYPE_PTR->TYPE_NODE.CONTAINS_INCOMPLETE then
+		return;
+
+	/*
+	/* See if this is a "common" type which can be perfectly hashed;
+	/* this code a bit strange for speed.  N.B. the following perfect
+	/* hashing algorithm assumes that the basic type codes begin at 1.
+	/**/
+
+	if (TYPE_PTR->TYPE_NODE.TYPEDEF = NULL_NID) &
+	   (rank (TYPE_PTR->TYPE_NODE.LEVEL) <= 1) &
+	   (IS_BASIC_TYPE (rank (TYPE_PTR->TYPE_NODE.CODE (0)))) &
+	   (^TYPE_PTR->TYPE_NODE.VOLATILE (0)) &
+	   (^SW_NO_PERFECT_TYPE_HASHING) then do;
+
+	if TYPE_PTR->TYPE_NODE.LEVEL = byte (0) then do;
+		if TYPE_PTR->TYPE_NODE.CONST (0) then
+			HASH = rank (TYPE_PTR->TYPE_NODE.CODE (0)) + 16;
+		else	HASH = rank (TYPE_PTR->TYPE_NODE.CODE (0));
+		if PERFECT_TYPE_HASH_TABLE (HASH) ^= NULL_NID then do;
+			call FREE_TYPE_NODE_P (TYPE, TYPE_PTR);
+			TYPE = PERFECT_TYPE_HASH_TABLE (HASH);
+			call GET_TYPE_NODE_R (TYPE, TYPE_PTR);
+		end;
+		else do;
+			PERFECT_TYPE_HASH_TABLE (HASH) = TYPE;
+			TYPE_PTR->TYPE_NODE.SHARED = TRUE;
+		end;
+		return;
+	end;
+	else if TYPE_PTR->TYPE_NODE.CODE (1) = byte (POINTER_DT) then do;
+		if ^TYPE_PTR->TYPE_NODE.VOLATILE (1) then do;
+			if TYPE_PTR->TYPE_NODE.CONST (0) then
+				HASH = rank (TYPE_PTR->TYPE_NODE.CODE (0)) + 16;
+			else	HASH = rank (TYPE_PTR->TYPE_NODE.CODE (0));
+			if TYPE_PTR->TYPE_NODE.CONST (1) then
+				HASH = HASH + 32;
+			else	HASH = HASH + 64;
+			if PERFECT_TYPE_HASH_TABLE (HASH) ^= NULL_NID then do;
+				call FREE_TYPE_NODE_P (TYPE, TYPE_PTR);
+				TYPE = PERFECT_TYPE_HASH_TABLE (HASH);
+				call GET_TYPE_NODE_R (TYPE, TYPE_PTR);
+			end;
+			else do;
+				PERFECT_TYPE_HASH_TABLE (HASH) = TYPE;
+				TYPE_PTR->TYPE_NODE.SHARED = TRUE;
+			end;
+			return;
+		end;
+	end;
+	else if TYPE_PTR->TYPE_NODE.CODE (1) = byte (REFERENCE_DT) then do;
+		if ^TYPE_PTR->TYPE_NODE.VOLATILE (1) then do;
+			if TYPE_PTR->TYPE_NODE.CONST (0) then
+				HASH = rank (TYPE_PTR->TYPE_NODE.CODE (0)) + 16;
+			else	HASH = rank (TYPE_PTR->TYPE_NODE.CODE (0));
+			if TYPE_PTR->TYPE_NODE.CONST (1) then
+				HASH = HASH + 96;
+			else	HASH = HASH + 128;
+			if PERFECT_TYPE_HASH_TABLE (HASH) ^= NULL_NID then do;
+				call FREE_TYPE_NODE_P (TYPE, TYPE_PTR);
+				TYPE = PERFECT_TYPE_HASH_TABLE (HASH);
+				call GET_TYPE_NODE_R (TYPE, TYPE_PTR);
+			end;
+			else do;
+				PERFECT_TYPE_HASH_TABLE (HASH) = TYPE;
+				TYPE_PTR->TYPE_NODE.SHARED = TRUE;
+			end;
+			return;
+		end;
+	end;
+	else if (TYPE_PTR->TYPE_NODE.CODE (1) = byte (FUNCTION_DT)) |
+		(TYPE_PTR->TYPE_NODE.CODE (1) = byte (ARRAY_DT)) then
+		return;
+	end;
+
+	/* Get the hash value for the give type */
+
+	HASH = HASHT (addr (TYPE_PTR->TYPE_NODE.DATA),
+		      rank (TYPE_PTR->TYPE_NODE.LEVEL));
+
+	/* A negative hash value means this type-node is unhash-able */
+
+	if HASH < 0 then
+		return;
+
+	/* See if (imperfect) type-node hashing is disabled */
+
+	if SW_NO_IMPERFECT_TYPE_HASHING then
+		return;
+
+	/* Look for the given type in the hash table */
+
+	do T = TYPE_HASH_TABLE (HASH) repeat (NEXT_T) while (T ^= NULL_NID);
+
+		call GET_TYPE_NODE_R (T, TP);
+
+		/* See if this type-node is the same */
+
+		if TYPE_PTR->TYPE_NODE.TYPEDEF ^= TP->TYPE_NODE.TYPEDEF then
+			goto CONTINUE;
+		if TYPE_PTR->TYPE_NODE.LEVEL ^= TP->TYPE_NODE.LEVEL then
+			goto CONTINUE;
+
+		HASHING_RESOLUTIONS = HASHING_RESOLUTIONS + 1;
+
+		do I = rank (TYPE_PTR->TYPE_NODE.LEVEL) to 0 by -1;
+			if TYPE_PTR->TYPE_NODE.DATA (I).WORD ^=
+			   TP->TYPE_NODE.DATA (I).WORD then
+				goto CONTINUE;
+		end;
+
+		/* Here, we found the type-node */
+
+		call FREE_TYPE_NODE_P (TYPE, TYPE_PTR);
+		TYPE = T;
+		TYPE_PTR = TP;
+		return;
+
+		/* Here, we did not find the type-node; keep looking */
+
+		CONTINUE:
+		NEXT_T = TP->TYPE_NODE.NEXT;
+		call RELEASE_TYPE_NODE (T);
+		if NEXT_T ^= NULL_NID then
+			HASHING_CLASH_RESOLUTIONS =
+				HASHING_CLASH_RESOLUTIONS + 1;
+	end;
+
+	/*
+	/* Here, the given type is not yet in the hash table;
+	/* link the type-node into the type-node hash table.
+	/**/
+
+	TYPE_PTR->TYPE_NODE.SHARED  = TRUE;
+	TYPE_PTR->TYPE_NODE.NEXT    = TYPE_HASH_TABLE (HASH);
+	TYPE_HASH_TABLE (HASH) = TYPE;
+
+/* ---
+
+HASHT: procedure (TP) returns (type (LONG_T)) internal;
+
+	declare
+		TP	type (POINTER_T);
+	declare
+		HASH	type (LONG_T),
+		I	type (SHORT_T);
+
+	do I = 0 to rank (TP->TYPE_NODE.LEVEL);
+		if (TP->TYPE_NODE.DATA (I).CODE = byte (FUNCTION_DT)) |
+		   (TP->TYPE_NODE.DATA (I).CODE = byte (ARRAY_DT)) then
+			return (-1);
+		HASH = HASH * ((rank (TP->TYPE_NODE.DATA (I).CODE) * 4) +
+			       binary ((TP->TYPE_NODE.DATA (I).QUALIFIERS)));
+		if TP->TYPE_NODE.DATA (I).NID ^= NULL_NID then
+			HASH = HASH * TP->TYPE_NODE.DATA (I).NID;
+		if HASH = 0 then
+			HASH = 1;
+	end;
+	HASH = HASH * 10464;
+	HASH = mod (HASH, 1048576 0x100000);
+	return (mod (HASH, SIZE_TYPE_HASH_TABLE));
+
+end HASHT;
+
+--- */
+
+end HASH_TYPE;
+
+/* ---------------------------------------------------------------------
+/* DUMP_TYPE_NODE_HASHING_STATS
+/* ------------------------------------------------------------------- */
+
+DUMP_TYPE_NODE_HASHING_STATS: procedure
+			      external  (X_DUMP_TYPE_NODE_HASHING_STATS);
+	declare
+		S				character (512) varying,
+		NS				character (64) varying,
+		I				type (SHORT_T),
+		(T, NEXT_T)			type (NID_T),
+		TP				type (POINTER_T),
+		PERFECTLY_HASHED_TYPES		type (LONG_T),
+		UNUSED_HASH_SLOTS		type (LONG_T),
+		USED_HASH_SLOTS			type (LONG_T),
+		MULTIPLY_USED_HASH_SLOTS	type (LONG_T),
+		SINGLY_USED_HASH_SLOTS		type (LONG_T),
+		WORST_HASHING_CLASH		type (LONG_T),
+		HASHED_TYPES			type (LONG_T),
+		HASHING_CLASHES			type (LONG_T),
+		TYPES_HASHED_TO_THIS_SLOT	type (LONG_T),
+		AVERAGE_HASH_SLOT_USAGE		float binary (52);
+	declare
+		sqrt	builtin;
+	declare
+		SPACES	character (64) varying
+			static initial
+	('                                                                ');
+
+	AVERAGE_HASH_SLOT_USAGE		= 0;
+	USED_HASH_SLOTS			= 0;
+	UNUSED_HASH_SLOTS		= 0;
+	HASHED_TYPES			= 0;
+	HASHING_CLASHES			= 0;
+	WORST_HASHING_CLASH		= 0;
+	MULTIPLY_USED_HASH_SLOTS	= 0;
+	SINGLY_USED_HASH_SLOTS		= 0;
+	TYPES_HASHED_TO_THIS_SLOT	= 0;
+
+	do I = LB_TYPE_HASH_TABLE to HB_TYPE_HASH_TABLE;
+		if TYPE_HASH_TABLE (I) = NULL_NID then do;
+			/*
+			/* Empty type-node hash table slot.
+			/**/
+			UNUSED_HASH_SLOTS = UNUSED_HASH_SLOTS + 1;
+			goto CONTINUE;
+		end;
+		TYPES_HASHED_TO_THIS_SLOT = 0;
+		do T = TYPE_HASH_TABLE (I) repeat (NEXT_T)
+		while (T ^= NULL_NID);
+			TYPES_HASHED_TO_THIS_SLOT =
+				TYPES_HASHED_TO_THIS_SLOT + 1;
+			call GET_TYPE_NODE_R (T, TP);
+			NEXT_T = TP->TYPE_NODE.NEXT;
+			call RELEASE_TYPE_NODE (T);
+		end;
+		HASHED_TYPES = HASHED_TYPES + TYPES_HASHED_TO_THIS_SLOT;
+		if TYPES_HASHED_TO_THIS_SLOT = 1 then do;
+			/*
+			/* Once used type-node hash table slot.
+			/**/
+			SINGLY_USED_HASH_SLOTS = SINGLY_USED_HASH_SLOTS + 1;
+			AVERAGE_HASH_SLOT_USAGE = AVERAGE_HASH_SLOT_USAGE + 1;
+		end;
+		else do;
+			/*
+			/* Multiply used type-node hash table slot.
+			/**/
+			MULTIPLY_USED_HASH_SLOTS = MULTIPLY_USED_HASH_SLOTS + 1;
+			AVERAGE_HASH_SLOT_USAGE =
+				AVERAGE_HASH_SLOT_USAGE +
+				(TYPES_HASHED_TO_THIS_SLOT *
+				 TYPES_HASHED_TO_THIS_SLOT);
+			WORST_HASHING_CLASH =
+				max (WORST_HASHING_CLASH,
+				     TYPES_HASHED_TO_THIS_SLOT);
+		end;
+		CONTINUE:
+	end;
+
+	USED_HASH_SLOTS		= SIZE_TYPE_HASH_TABLE - UNUSED_HASH_SLOTS;
+	HASHING_CLASHES		= HASHED_TYPES - USED_HASH_SLOTS;
+
+	if USED_HASH_SLOTS > 0 then do;
+		AVERAGE_HASH_SLOT_USAGE	=
+			sqrt (AVERAGE_HASH_SLOT_USAGE / USED_HASH_SLOTS);
+	end;
+
+	PERFECTLY_HASHED_TYPES = 0;
+	do I = LB_PERFECT_TYPE_HASH_TABLE to HB_PERFECT_TYPE_HASH_TABLE;
+		if PERFECT_TYPE_HASH_TABLE (I) ^= NULL_NID then do;
+			PERFECTLY_HASHED_TYPES = PERFECTLY_HASHED_TYPES + 1;
+		end;
+	end;
+
+	NS = trim (char (PERFECTLY_HASHED_TYPES));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Type-nodes in perfect hash table:         ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (SIZE_TYPE_HASH_TABLE));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Type-node hash table size:                ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (HASHED_TYPES));
+	NS = substr (SPACES, 1, 6 - length (NS)) || NS;
+	S  = 'Type-nodes in hash table:                 ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	/*
+	NS = trim (char (AVERAGE_HASH_SLOT_USAGE));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Average type-node hash slot usage:        ' || NS;
+	call WRITE_DEBUG_LINE (S);
+	*/
+
+	NS = trim (char (UNUSED_HASH_SLOTS));
+	NS = substr (SPACES, 1, 6 - length (NS)) || NS;
+	S  = 'Vacant type-node hash table slots:        ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (USED_HASH_SLOTS));
+	NS = substr (SPACES, 1, 6 - length (NS)) || NS;
+	S  = 'Occupied type-node hash table slots:      ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (SINGLY_USED_HASH_SLOTS));
+	NS = substr (SPACES, 1, 6 - length (NS)) || NS;
+	S  = 'Singly used type-node hash table slots:   ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (MULTIPLY_USED_HASH_SLOTS));
+	NS = substr (SPACES, 1, 6 - length (NS)) || NS;
+	S  = 'Multiply used type-node hash table slots: ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	if WORST_HASHING_CLASH > 0 then do;
+		NS = trim (char (WORST_HASHING_CLASH + 1));
+		NS = substr (SPACES, 1, 6 - length (NS)) || NS;
+		S  = 'Worst type-node hash slot clash:          ' || NS;
+		call WRITE_DEBUG_LINE (S);
+	end;
+
+	NS = trim (char (HASHING_CLASHES));
+	NS = substr (SPACES, 1, 6 - length (NS)) || NS;
+	S  = 'Type-node hashing clashes:                ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (HASHING_RESOLUTIONS));
+	NS = substr (SPACES, 1, 6 - length (NS)) || NS;
+	S  = 'Type-node hashing compatibility checks:   ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (HASHING_CLASH_RESOLUTIONS));
+	NS = substr (SPACES, 1, 6 - length (NS)) || NS;
+	S  = 'Type-node clash compatibility checks:     ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	if SW_DUMP_TYPE_HASH_TABLE then
+		call DUMP_TYPE_HASH_TABLE ();
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* DUMP_TYPE_HASH_TABLE
+/* ------------------------------------------------------------------- */
+
+DUMP_TYPE_HASH_TABLE: procedure internal;
+
+	declare
+		I		type (SHORT_T),
+		(T, NEXT_T)	type (NID_T),
+		S		character (512) varying,
+		NS		character (64) varying;
+
+	do I = LB_TYPE_HASH_TABLE to HB_TYPE_HASH_TABLE;
+		if TYPE_HASH_TABLE (I) = NULL_NID then
+			goto CONTINUE;
+		S  = 'Type-node hash table slot #';
+		S = S || trim (char (I)) || ':';
+		S = S || substr (SPACES, 1, 42 - length (S));
+		S = S || substr (SPACES, 1, 5);
+		NS = trim (char (NUMBER_OF_TYPE_NODES_IN_LIST
+			         (TYPE_HASH_TABLE (I))));
+		NS = NS || substr (SPACES, 1, 3 - length (NS));
+		S = S || NS || TYPE_NAME (TYPE_HASH_TABLE (I), '');
+		call WRITE_DEBUG_LINE (S);
+		call GET_TYPE_NODE_R (TYPE_HASH_TABLE (I), TP);
+		NEXT_T = TP->TYPE_NODE.NEXT;
+		call RELEASE_TYPE_NODE (TYPE_HASH_TABLE (I));
+		do T = NEXT_T repeat (NEXT_T) while (T ^= NULL_NID);
+			S = substr (SPACES, 1, 50) || TYPE_NAME (T, '');
+			call WRITE_DEBUG_LINE (S);
+			call GET_TYPE_NODE_R (T, TP);
+			NEXT_T = TP->TYPE_NODE.NEXT;
+			call RELEASE_TYPE_NODE (T);
+		end;
+		CONTINUE:
+	end;
+
+	call DUMP_PERFECT_TYPE_HASH_TABLE ();
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* NUMBER_OF_TYPE_NODES_IN_LIST
+/* ------------------------------------------------------------------- */
+
+NUMBER_OF_TYPE_NODES_IN_LIST: procedure (TNL)
+			      returns   (type (SHORT_T))
+			      internal;
+	declare
+		TNL		type (NID_T);
+	declare
+		N		type (SHORT_T),
+		(T, NEXT_T)	type (NID_T);
+
+	N = 0;
+	do T = TNL repeat (NEXT_T) while (T ^= NULL_NID);
+		N = N + 1;
+		call GET_TYPE_NODE_R (T, TP);
+		NEXT_T = TP->TYPE_NODE.NEXT;
+		call RELEASE_TYPE_NODE (T);
+	end;
+	return (N);
+
+end NUMBER_OF_TYPE_NODES_IN_LIST;
+
+/* ---------------------------------------------------------------------
+/* DUMP_PERFECT_TYPE_HASH_TABLE
+/* ------------------------------------------------------------------- */
+
+DUMP_PERFECT_TYPE_HASH_TABLE: procedure internal;
+
+	declare
+		I		type (SHORT_T),
+		(T, NEXT_T)	type (NID_T),
+		S		character (512) varying;
+
+	do I = LB_PERFECT_TYPE_HASH_TABLE to HB_PERFECT_TYPE_HASH_TABLE;
+		if PERFECT_TYPE_HASH_TABLE (I) ^= NULL_NID then do;
+			S  = 'Perfect type-node hash table slot #';
+			S = S || trim (char (I)) || ':';
+			S = S || substr (SPACES, 1, 47 - length (S));
+			S = S || TYPE_NAME (PERFECT_TYPE_HASH_TABLE (I), '');
+			call WRITE_DEBUG_LINE (S);
+		end;
+	end;
+
+end DUMP_PERFECT_TYPE_HASH_TABLE;
+
+end DUMP_TYPE_HASH_TABLE;
+
+end DUMP_TYPE_NODE_HASHING_STATS;
+
+

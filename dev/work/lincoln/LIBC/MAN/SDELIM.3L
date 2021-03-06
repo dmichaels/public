@@ -1,0 +1,29 @@
+.TH SDELIM 3L LOCAL
+
+.SH NAME
+sdelim - read a string between two delimiter strings
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+sdelim(str, open, close, target)
+.br
+char *str, *open, *close, *target;
+.ft P
+
+.SH DESCRIPTION
+Given a string \fIstr\fP, and an opening and closing delimiter
+string \fIopen\fP and \fIclose\fP, this function will copy the portion
+of the string which lies between the delimiters into the target
+string.  The target is assumed to have enough space allocated to
+hold the characters between the delimiters plus an EOS character.
+If either of the delimiters is not found, or the opening one is
+after the closing one, then NULL is returned, otherwise a pointer
+to the target is returned.
+
+.SH FILES
+sdelim.c
+
+.SH SEE ALSO
+sindex(3L), cindex(3S), scanf(3S), wordvec(3L)

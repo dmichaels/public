@@ -1,0 +1,2694 @@
+/* C++ xinife.pl1 - Parse front-end command line options. */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  05.13.93  DGM  079	Added -(no)locnm (SW_DISCARD_LOCAL_NAMES)
+ *			and -(no)locord (SW_NEEDS_LOCAL_SYMBOL_ORDERING.
+ *  01.21.93  DGM  078	Updated; added -rawclassicc (or -rawcc) to be
+ *			equivalent to -classicc -nochm -nowrappers;
+ *			added -iangle and -xlsfd.
+ *  10.29.92  DGM  077R	Added -nochm.
+ *  10.26.92  DGM  077	Hacked around grossness of 076.
+ *  10.23.92  DGM  076	Hacked around grossness of 075.
+ *  10.20.92  DGM  075	Updated for new (gross) UTIL message about
+ *			using optimizer for faster code; yech.
+ *  09.29.92  DGM  074	Added -noremfun.
+ *  09.17.92  DGM  073	Put -support into the message file.
+ *  09.17.92  DGM  072	Fudge.
+ *  09.09.92  DGM  071	Added -support.
+ *  08.19.92  DGM  070	Added -whvf (SW_WARN_HIDDEN_VIRTUAL_FUNCTIONS)
+ *			and -nvfo (SW_NEW_VIRTUAL_FUNCTION_OVERRIDE).
+ *  08.13.92  DGM  069	Added -authors.
+ *  06.25.92  DGM  068	Minor fix.
+ *			Made -defer the default!
+ *  06.22.92  DGM  067	New -cpp (SW_TRADITIONAL_MACRO_EXPANSION),
+ *			-xaes (SW_ALLOW_ANY_ESCAPE_SEQUENCES) and
+ *			-xaoc (SW_ALLOW_OVERFLOWING_CONSTANTS).
+ *  06.18.92  DGM  066	Unset -istring & -imath if -deb.
+ *			Added -monfe, -monop, -moncg.
+ *  06.11.92  DGM  065	Added -xline (per request of burn@sequoia.com).
+ *  06.04.92  DGM  064	Added -xwmt (SW_WARN_FOR_MULTIPLE_TYPEDEFS).
+ *			Added -abibf (SW_ABI_STYLE_BIT_FIELDS).
+ *			Added -chmstdc, -chmstdc0, -chmstdc1.
+ *			Added -nowuqnt (^SW_WARN_UNQUALIFIED_NESTED_TYPE).
+ *  04.14.92  PKT  062	Added -xumi.
+ *  04.30.92  DGM  061	SW_DEFINE_OLD_CPLUSPLUS_MACRO.
+ *  03.25.92  PKT  060	SW_ALLOW_VOID_PARAMETERS, SW_X_VOID_ELLIPSIS.
+ *  03.26.92  DGM  059	Added -nostmid switch.
+ *  03.24.92  DGM  058  C-only implies -realentry/-realexit by default.
+ *  03.13.92  DGM  057R Addd -pack1, -pack2, -pack4 (so we can use
+ *			-Zp1, -Zp2, -Zp4 from lpicxx/lpicc.
+ *  03.12.92  DGM  057R Fix for Sequoia C-only version (LPI-C 1.4.0).
+ *  03.10.92  DGM  057R Maded extended precision long double *not* the
+ *			default; this was wrong but only for Sequoia.
+ *  03.04.92  DGM  057  SW_C_ONLY, EXTENDED_PRECISION_LONG_DOUBLE.
+ *  02.10.92  DGM  056  SW_PREPROCESSOR_ONLY, SW_NO_WRAPPERS.
+ *  02.05.92  DGM  055  Removed any way to set SW_WARN_MEMBER_PTR_UNDEF_CLASS.
+ *			Added SW_WARN_MAIN_NO_RETURN_VALUE (-wnrvm).
+ *  02.03.92  PKT  054	Added SW_LAX_STATIC_MEMBER_DEFINITION.
+ *  01.31.92  DGM  053  Added SW_WARN_EOF_IN_LINE.
+ *  01.29.92  DGM  052  Added SW_ALLOW_NULL_VA_START_ARG
+ *			and SW_WARN_LONE_ELLIPSIS (-wle).
+ *  01.24.92  DGM  051  Changed PRINT_VERSION to use LPI_PRODUCT_VERSION.
+ *  01.22.92  DGM  050  SW_ALLOW_EXTRANEOUS_ARG_COMMA (-xeac/-cfrontM.N),
+ *			SW_ALLOW_MEMBER_FUN_REF_TYPE (-xmfrt/-cfrontM.N),
+ *			SW_CFRONT_LOOKUP_NEW_TYPE_NAME (-xntnl/-cfrontM.N).
+ *  01.13.92  DGM  049  Added -cppt, -dbnoms, -dbnid, -xpnh, -eisv.
+ *  12.26.91  PKT  048	Added -xcotr for compatible cast to reference.
+ *  12.17.91  PKT  047  Added -xftq and -xitq for const qualifier handling.
+ *  12.16.91  DGM  046  Added -wdupenum (for Sequoia) and -pack N.
+ *  11.20.91  DGM  045  Added -syswchart, et. al.
+ *  11.12.91  DGM  044  Added -syswchart, et. al.
+ *  10.24.91  PKT  043  Fixed -cfront2.1 to turn off nested types.
+ *  10.03.91  DGM  042  Added -wcnpf (SW_WARN_CALL_NON_PROTO_FUN)
+ *			and SW_ALLOW_TYPEDEF_AS_BASE_CLASS.
+ *  09.06.91  DGM  041  Implemented environment variables
+ *			for include file directories:
+ *				LPI_CXX_SYSTEM_HEADER_DIR
+ *				LPI_CXX_SYSTEM_WRAPPER_DIR
+ *				LPI_CXX_HEADER_DIR
+ *				LPI_CXX_ANSI_C_HEADER_DIR
+ *  08.19.91  DGM  040  Updated.
+ *  08.15.91  DGM  039  Updated.
+ *  08.06.91  DGM  038  Updated.
+ *  08.01.91  DGM  037  Updated.
+ *  07.24.91  DGM  036  Updated.
+ *  07.18.91  PKT  035  Added -syssizet (SW_SYSTEM_SIZE_T).
+ *  07.18.91  DGM  034  Updated.
+ *  07.08.91  DGM  033  Added -xnnpt (SW_NO_PROTO_SCOPE_TAG_NAMES), etc.
+ *  06.17.91  DGM  032  Updated.
+ *  06.11.91  PKT  031  Added -xcastl (SW_X_CAST_LVALUE), and support
+ *			for SW_X_REFERENCE_TEMP and SW_X_OVERLOAD_POSTFIX.  
+ *			Picked up DGM's updates, and changes for
+ *			-cfront1.2, -cfront2.0, -cfront2.1, and -xotp.
+ *  05.29.91  DGM  030  Added -oldstream (SW_USE_OLD_CXX_STREAM_HEADER)
+ *			and -lint (SW_LINT).
+ *  05.17.91  PKT  029  Added -xov (SW_X_OVERLOAD).
+ *  04.08.91  DGM  028  Added -verbose (SW_VERBOSE) & -version (SW_VERSION).
+ *  04.01.91  DGM  027  Added -dbmon (SW_MONITOR_FE).
+ *  03.20.91  DGM  026  Updated.
+ *  02.27.91  DGM  025  Added -enoobj (SW_NO_OBJECT_IF_ANY_ERROR).
+ *			Added -defvft (SW_DEFINE_INTERNAL_VFT).
+ *			Added -defextvft (SW_DEFINE_EXTERNAL_VFT).
+ *			Added -undefvft (SW_NO_DEFINE_EXTERNAL_VFT).
+ *			Added -ionce (SW_INCLUDE_ONLY_ONCE).
+ *			Added -xonce (SW_ALLOW_ONCE_DIRECTIVE).
+ *  02.26.91  TLF  024  Fixed processing of some 'no' switches:
+ *			nostdc, nomi, and notsl.
+ *  01.29.91  PKT  023  Added -xnbi (SW_NO_BRACE_INIT).
+ *  01.03.91  PKT  022  Added -xpch (SW_X_PROMOTE_CHAR).
+ *  12.17.90  PKT  021  Added -laxac (SW_LAX_ACCESS_CONTROL).
+ *  11.01.90  PKT  020  Added -laxini (SW_LAX_INITIALIZATION).
+ *  10.12.90  DGM  019  Added -notsl (SW_NO_TYPE_SAFE_LINKAGE).
+ *  09.14.90  DGM  018  Changed include file names and VOP names.
+ *  08.31.90  DGM  017  Changed meaning of -xbf; removed -xnnibf.
+ *  08.29.90  DGM  016  Added -dbstat, -dbtht, -dbnoth, -dbnopth,
+ *			-dbnoith, and -xuc.
+ *  08.14.90  DGM  015  Added -classic; updated -ansic.
+ *  08.07.90  PKT  014  Added -xwrv (SW_X_WARN_RETURN_VALUE) to make
+ *			explicit return w/o value a warning not error.
+ *  07.20.90  PKT  013  Fixes to -ztemp and -reg.
+ *  07.18.90  DGM  012  Added -xigs (SW_X_IGNORE_GRAY_SPACE)
+ *			and -nomi (SW_NO_MULTIPLE_INHERITANCE).
+ *  07.05.90  PKT  011  Added -ztemp (SW_ZOMBIE_TEMP).
+ *  06.29.90  DGM  010  Added -xns (SW_X_NAME_SPACE).
+ *  06.26.90  DGM  009  Added -dbclay (SW_DUMP_CLASS_LAYOUT).
+ *  06.14.90  PKT  008  Added -ansic & -nocxx for C compatibility.
+ *  06.06.90  DGM  007  Updated for the new utilities.
+ *  05.25.90  DGM  006  Added -dbtyp, -dbvft, and -dbdcl (-d_dcl).
+ *  04.25.90  DGM  005  Added -nbt (SW_NO_BASE_TYPE_WARN)
+ *			and -xosf (SW_OLD_STYLE_FUNCTIONS) flags.
+ *  03.27.90  DGM  004  Added -xnnibf (no non-int bit-field) flag.
+ *  03.02.90  DGM  003  Updated.
+ *  09.01.89  DGM  001  Original; cloned/modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 05.13.93 079 XINIFE');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include GBL_FILE_NAMES_IN;		/* SOURCE_FILE_NAME */
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ENVIRONMENT_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_COMPILATION_DATA_IN;
+%include CXX_HOST_SYSTEM_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PROCESS_DECLARATION_PKG;	/* SET_DEFAULT_STRUCT_ALIGMENT */
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_SIZE_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+%replace MAX_FLAGS		by 190;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+	STRING_T	character (LINE_SIZE) varying based;
+
+/* ---------------------------------------------------------------------
+/* XINIFE
+/*
+/*  (Exported entry declaration of this routine is in XINIT_DCL)
+/*
+/*
+/*  This procedure is called by XCOMND to process a command
+/*  line option (switch).  Some options can be (or are required to be)
+/*  followed by an argument value.
+/*
+/*  OPTION is either a null string (see below) or is a keyword
+/*  option found on the command line.  The keyword prefix character
+/*  (if applicable) has been removed and all uppercase letters have been
+/*  changed to lowercase.
+/*
+/*  If OPTION is one of the keyword options recognized by this routine,
+/*  the appropriate global flags and variables are set.
+/*  If the keyword can be followed with an optional argument,
+/*  this routine reads it and gets its value and appends the argument
+/*  string to the OPTION variable passed in by caller.
+/*
+/*  When caller reaches the end of the argument list, this routine 
+/*  is called one final time with OPTION = ''.  On this final call, 
+/*  this routine can do any necessary post processing such as
+/*  defaulting of unspecified options and checking for inconsistent option
+/*  combinations.  Returned status should be 0 if O.K or -1 if errors
+/*  on this final call.
+/*
+/*  For each option recognized (or for defaulted options on the
+/*  final call), the routine ADD_OPTION is called to add the option to
+/*  the listing header options line.  ADD_OPTION is supplied by the caller
+/*  and is passed in as an entry parameter.
+/*
+/*  If an option is recognized but invalid, this routine should issue a 
+/*  diagnostic message (call XERR below) and return with STATUS = -1.
+/*
+/*  This routine should determine the first time it is called and
+/*  perform any required initialization of variables and flags
+/*  related to options supported here.
+/*
+/*  Returns a status code in STATUS as follows:
+/*
+/*      -1  invalid: report here, caller will abort.
+/*       0  not recognized by this routine
+/*       1  recognized and O.K.
+/* ------------------------------------------------------------------- */
+
+XINIFE: procedure (OPTION, STATUS, ADD_OPTION);
+
+	declare
+		OPTION				type (STRING_T),
+		STATUS				type (SHORT_T),
+		ADD_OPTION			entry (type (STRING_T));
+	declare
+		ARG				type (STRING_T),
+		LONG_ARG_INTEGER		type (LONG_T),
+		SHORT_ARG_INTEGER		type (SHORT_T),
+		YES				type (BOOL_T),
+		NO				type (BOOL_T),
+		SUPPRESS			type (BOOL_T),
+		OPTION_SEEN			type (SHORT_T);
+	declare
+		FIRST_TIME			type (BOOL_T)
+						static initial (TRUE),
+		SEEN_FLAG (MAX_FLAGS)		type (BIT_T)
+						static initial
+						((MAX_FLAGS)(FALSE)),
+		EXPLICIT_OPT_OR_NOOPT_SEEN	type (BOOL_T)
+						static initial (FALSE);
+
+	/* First time processing */
+
+	if FIRST_TIME then do;
+		call SET_DEFAULTS ();
+		SIGNAL_USED		= FALSE;
+		FIRST_TIME		= FALSE;
+	end;
+
+	/* Last time processing */
+
+	if length (OPTION) = 0 then do;
+		call POST_PROCESS ();
+		STATUS = 0;
+		return;
+	end;
+
+	/* Remove an "no" prefix and set flags accordingly */
+
+	if index (OPTION, 'no') = 1 then do;
+		OPTION = substr (OPTION, 3);
+		YES = FALSE;
+		NO  = TRUE;
+	end;
+	else do;
+		YES = TRUE;
+		NO  = FALSE;
+	end;
+
+	SUPPRESS = FALSE;	/* unless overridden for the option */
+	OPTION_SEEN = 0;	/* set > 0 to check for duplicate option */
+	goto FIND_OPTION;	/* and finish back at one of the points below */
+
+FOUND_EXIT:
+
+	if NO then
+		OPTION = 'no' || OPTION;
+
+	if ^SUPPRESS then
+		call ADD_OPTION (OPTION);  /* Report option on listing header */
+
+	if OPTION_SEEN > 0 then do;
+		if SEEN_FLAG (OPTION_SEEN) then
+			call OPTION_ERROR
+			     ('Inconsistent or duplicate option: ' || OPTION);
+		SEEN_FLAG (OPTION_SEEN) = TRUE;
+	end;
+
+	STATUS = 1;
+	return;
+
+NOT_FOUND_EXIT:
+	STATUS = 0;
+	return;
+
+BAD_OPTION:
+	if NO then
+		OPTION = 'no' || OPTION;
+	call OPTION_ERROR ('Invalid option: ' || OPTION);
+
+ERROR_EXIT:
+	STATUS = -1;
+	return;
+
+FIND_OPTION:
+
+	/* -----------------------------------------------------------------
+	/* Parse command-line options
+	/* --------------------------------------------------------------- */
+
+	/*
+	/* Hack around wanky message in XINIOP about using -opt for
+	/* faster code if neither -opt nor -noopt were specified.
+	/**/
+	if (OPTION = 'opt') | (OPTION = 'noopt') then do;
+		EXPLICIT_OPT_OR_NOOPT_SEEN = TRUE;
+		goto NOT_FOUND_EXIT;
+	end;
+
+	/*
+	/* Allow dollar signs in identifiers.
+	/**/
+	if (OPTION = 'dollar') then do;
+		OPTION_SEEN = 1;
+		SW_ALLOW_DOLLAR = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Use single precision floating point code where appropriate.
+	/**/
+	if (OPTION = 'float') then do;
+		OPTION_SEEN = 2;
+		SW_FLOAT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Do floating point math library functions in-line where possible.
+	/**/
+	if (OPTION = 'imath') then do;
+		OPTION_SEEN = 3;
+		SW_IMATH = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Do string handling library functions in-line where possible
+	/**/
+	 if (OPTION = 'istring') then do;
+		OPTION_SEEN = 4;
+		SW_ISTRING = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Change the default standard system header directory.
+	/**/
+	if (OPTION = 'stdsyspath') & YES then do;
+		OPTION_SEEN = 5;
+		if ^GET_STRING_ARGUMENT () then do;
+		    call OPTION_ERROR
+			 ('A directory name is required for -stdsyspath.');
+		end;
+		STANDARD_SYSTEM_HEADER_DIR = ARG;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Change the default standard ANSI-C header directory.
+	/**/
+	if ((OPTION = 'stdcpath') | (OPTION = 'stdpath')) & YES then do;
+		OPTION_SEEN = 6;
+		if ^GET_STRING_ARGUMENT () then do;
+		    call OPTION_ERROR
+			 ('A directory name is required for -stdcpath.');
+		end;
+		STANDARD_ANSI_C_HEADER_DIR = ARG;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Change the default standard C++ header directory.
+	/**/
+	if (OPTION = 'stdcxxpath') & YES then do;
+		OPTION_SEEN = 7;
+		if ^GET_STRING_ARGUMENT () then do;
+		    call OPTION_ERROR
+			 ('A directory name is required for -stdcxxpath.');
+		end;
+		STANDARD_CXX_HEADER_DIR = ARG;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Look in the standard system header directory first.
+	/**/
+	if ((OPTION = 'sys') | (OPTION = 'syspath')) then do;
+		OPTION_SEEN = 9;
+		SW_FAVOR_SYSTEM_HEADER_DIR = TRUE;
+		SW_SYSTEM_SIZE_T = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Predefine ``standard'' system macros (e.g. "sun", "unix", "mc68020").
+	/**/
+	if (OPTION = 'sysdef') then do;
+		OPTION_SEEN = 10;
+		SW_SYSTEM_MACROS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Dump the predefined macros.
+	/**/
+	if (OPTION = 'predef') then do;
+		OPTION_SEEN = 11;
+		SW_DUMP_PREDEF_MACROS = YES;
+		SW_SOURCE_FILE_NAME_IS_OPTIONAL = YES;
+		SW_PREPROCESSOR_ONLY = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Include the specified file automatically at start up.
+	/**/
+	if (OPTION = 'include') then do;
+		OPTION_SEEN = 12;
+		if ^GET_STRING_ARGUMENT () then do;
+		    call OPTION_ERROR
+			 ('A source file name is required for -include.');
+		end;
+		STARTUP_INCLUDE_FILE = ARG;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Dump the names of include files (see PPLIST).
+	/**/
+	if (OPTION = 'files') then do;
+		OPTION_SEEN = 13;
+		SW_DUMP_INCLUDES = YES;
+		SW_PREPROCESSOR_ONLY = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -cppo
+	/*  Dump the expanded preprocessor output listing (old format).
+	/**/
+	if (OPTION = 'cppo') then do;
+		OPTION_SEEN = 14;
+		SW_MACRO_EXPANSION = YES;
+		SW_PREPROCESSOR_ONLY = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Dump all user defined preprocessor macros (and replacement lists).
+	/**/
+	if (OPTION = 'macros') then do;
+		OPTION_SEEN = 15;
+		SW_DUMP_MACROS = YES;
+		SW_PREPROCESSOR_ONLY = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Dump preprocessor tokens as they're sent out.
+	/**/
+	if (OPTION = 'tokens') then do;
+		OPTION_SEEN = 16;
+		SW_DUMP_TOKENS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Set the number of preprocessing tokens to process
+	/* (i.e. send out) at a time; the default is the whole file.
+	/**/
+	if (OPTION = 'ppn') then do;
+		OPTION_SEEN = 17;
+		if ^GET_INTEGER_ARGUMENT () then do;
+			call OPTION_ERROR
+			     ('Option -ppntok requires' ||
+			      ' a maximum token buffer count to follow.');
+		end;
+		PP_MAX_TOKENS = LONG_ARG_INTEGER;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Causes all of the preprocessing phase to run first.
+	/* Equivalent to "-ppntok -1";
+	/**/
+	if (OPTION = 'ppall') then do;
+		OPTION_SEEN = 18;
+		PP_MAX_TOKENS = -1;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Causes the preprocessor to process tokens one at a time.
+	/* Equivalent to "-ppntok 1";
+	/**/
+	if (OPTION = 'ppone') then do;
+		OPTION_SEEN = 19;
+		PP_MAX_TOKENS = 1;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Emit warning instead of error for calls 
+	/* to previously undeclared functions.
+	/**/
+	if (OPTION = 'wfundef') then do;
+		OPTION_SEEN = 20;
+		SW_UNDEF_FUNCTION_WARN = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Permit undeclared functions, generating no message.
+	/**/
+	if (OPTION = 'fundef') then do;
+		OPTION_SEEN = 21;
+		SW_UNDEF_FUNCTION_LAX = YES;
+		goto FOUND_EXIT;
+	end;
+
+	/* -----------------------------------------------------------------
+	/* Classic-C compatibility mode switches.
+	/* --------------------------------------------------------------- */
+
+	/*
+	/* Emit a warning for each unknown #pragma encountered.
+	/**/
+	if (OPTION = 'xpg') | (OPTION = 'pragmas') then do;
+		OPTION_SEEN = 22;
+		SW_PRAGMA_WARN = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Refrain from emitting a warning for #ident directives.
+	/**/
+	if (OPTION = 'xid') | (OPTION = 'xident') then do;
+		OPTION_SEEN = 23;
+		SW_IDENT_NOWARN = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Allow trailing text on end of #else and #endif directives.
+	/**/
+	if (OPTION = 'xtt') then do;
+		OPTION_SEEN = 24;
+		SW_X_TRAILING_TEXT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Turn on both -xmi and -xmp options.
+	/**/
+	if (OPTION = 'xmr') then do;
+		OPTION_SEEN = 25;
+		SW_X_INNOCUOUS_MACRO_REDEF = TRUE;
+		SW_X_PERNICIOUS_MACRO_REDEF = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Allow innocuous redefinitions of macro functions
+	/* (differing only in the spelling of parameters names).
+	/**/
+	if (OPTION = 'xmi') then do;
+		OPTION_SEEN = 26;
+		SW_X_INNOCUOUS_MACRO_REDEF = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Allow pernicious (destructive) redefinitions of macros.
+	/**/
+	if (OPTION = 'xmp') then do;
+		OPTION_SEEN = 27;
+		SW_X_PERNICIOUS_MACRO_REDEF = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Do Classic-C (PCC-style) macro parameter
+	/* expansion within string literals.
+	/**/
+	if (OPTION = 'xs') then do;
+		OPTION_SEEN = 28;
+		SW_X_STRINGIZE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Warn about Classic-C (PCC-style) macro parameter
+	/* expansion within string literals.
+	/**/
+	if (OPTION = 'xws') then do;
+		OPTION_SEEN = 29;
+		SW_X_STRINGIZE_WARN = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Do Classic-C (PCC-style) macro parameter
+	/* expansion within character constants.
+	/**/
+	if (OPTION = 'xc') then do;
+		OPTION_SEEN = 30;
+		SW_X_CHARIZE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Warn about Classic-C (PCC-style) macro parameter
+	/* expansion within character constants.
+	/**/
+	if (OPTION = 'xwc') then do;
+		OPTION_SEEN = 31;
+		SW_X_CHARIZE_WARN = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Allow empty arguments in macro invocation without warning.
+	/**/
+	if (OPTION = 'xea') then do;
+		OPTION_SEEN = 32;
+		SW_X_EMPTY_MACRO_ARGUMENT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Allow "long float" as a synonym for "double" in a declarator.
+	/**/
+	if (OPTION = 'xlf') then do;
+		OPTION_SEEN = 33;
+		SW_X_LONG_FLOAT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Use Classic-C style scoping rules
+	/* for "extern" declarations in blocks.
+	/**/
+	if (OPTION = 'xes') then do;
+		OPTION_SEEN = 34;
+		SW_X_EXTERN_SCOPE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Perform integral promotions by Classic-C "unsigned-preserving"
+	/* rather that ANSI-C "value-preserving" rules.
+	/**/
+	if (OPTION = 'xup') then do;
+		OPTION_SEEN = 35;
+		SW_X_UNSIGNED_PRESERVING = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Assign types to integral constant by Classic-C rules.
+	/**/
+	if (OPTION = 'xic') then do;
+		OPTION_SEEN = 36;
+		SW_X_INT_CONSTANT_TYPE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Accept "char *" as equivalent to generic pointer type "void *".
+	/**/
+	if (OPTION = 'xcp') then do;
+		OPTION_SEEN = 37;
+		SW_X_CHAR_POINTER = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Warn about char, short, and long type bit-fields.
+	/**/
+	if (OPTION = 'xbf') then do;
+		OPTION_SEEN = 38;
+		SW_X_BIT_FIELDS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Allow ONLY old Classic-C escape sequences.
+	/**/
+	if (OPTION = 'xoe') then do;
+		OPTION_SEEN = 39;
+		SW_X_OLD_ESCAPES = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Do not map trigraph sequences.
+	/**/
+	if (OPTION = 'xnt') then do;
+		OPTION_SEEN = 40;
+		SW_X_NOTRIGRAPH = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Treat all "float" like "double".
+	/**/
+	if (OPTION = 'xdb') then do;
+		OPTION_SEEN = 41;
+		SW_X_FLOAT_TO_DOUBLE = YES;
+		goto FOUND_EXIT;
+	end;
+         /* 
+         /* Ignore "gray-space" (e.g. form-feed) within
+	 /* preprocessing directives (i.e. without warning).
+         /**/
+         if (OPTION = 'xigs') then do;
+		OPTION_SEEN = 42;
+		SW_X_IGNORE_GRAY_SPACE = TRUE;
+     		goto FOUND_EXIT;
+         end;
+	/*
+	/* -stdc causes __STDC__ to be defined.
+	/* -nostdc causes __STDC__ to be undefined.
+	/**/
+	if (OPTION = 'stdc') then do;
+		OPTION_SEEN = 43;
+		SW_DEFINE_STDC_AS_ONE = YES;
+		goto FOUND_EXIT;
+	end;
+
+	/* -----------------------------------------------------------------
+	/* End of Classic-C compatibility modes switches.
+	/* --------------------------------------------------------------- */
+
+        /* 
+	/* -define name            ==>  #define name 1
+	/* -define name=text       ==>  #define name text
+       	/* -define name=           ==>  #define name
+       	/* -define name(ids)       ==>  #define name(ids) 1
+       	/* -define name(ids)=text  ==>  #define name(ids) text
+       	/* -define name(ids)=      ==>  #define name(ids)
+        /**/
+	if (OPTION = 'define') then do;
+                 if ^YES then
+                     goto BAD_OPTION;
+                 if ^GET_STRING_ARGUMENT() then
+                     call OPTION_ERROR
+			   ('define option is missing an argument');
+                 call HANDLE_DEFINE_OPTION (ARG);
+     		goto FOUND_EXIT;
+	end;
+        /* 
+	/* -undefine name  ==>  #undef name
+	/* -undef name     ==>  #undef name
+        /**/
+	if (OPTION = 'undef') | (OPTION = 'undefine') then do;
+                 if ^YES then
+                     goto BAD_OPTION;
+                 if ^GET_STRING_ARGUMENT() then
+                     call OPTION_ERROR
+			   ('define option is missing an argument');
+                 call HANDLE_UNDEF_OPTION (ARG);
+     		 goto FOUND_EXIT;
+	end;
+         /* 
+         /* Give terse diagnostics (no token context).
+         /**/
+         if (OPTION = 'terse') then do;
+		OPTION_SEEN = 44;
+		SW_TERSE_DIAGNOSTICS = TRUE;
+     		goto FOUND_EXIT;
+         end;
+         /* 
+         /* Give very terse diagnostics; one line
+	 /* (only error code & line/file information).
+         /**/
+         if (OPTION = 'veryterse') then do;
+		OPTION_SEEN = 45;
+		SW_VERY_TERSE_DIAGNOSTICS = TRUE;
+     		goto FOUND_EXIT;
+         end;
+         /* 
+         /* For ANSI/Classic-C compatibility, disallow nested types.
+         /**/
+         if (OPTION = 'xnnt') then do;
+		OPTION_SEEN = 46;
+		SW_NO_NESTED_TYPE_NAMES = TRUE;
+     		goto FOUND_EXIT;
+         end;
+         /* 
+         /* Dump declarations.
+         /**/
+         if (OPTION = 'dbdcl') then do;
+		OPTION_SEEN = 47;
+		SW_DUMP_DECLARATIONS = TRUE;
+     		goto FOUND_EXIT;
+         end;
+         /* 
+         /* For ANSI/Classic-C compatibility, interpret "void f()"
+	 /* as an old-style function taking unknown arguments,
+	 /* rather than a C++ function taking no arguments, and
+	 /* give no warning/error for old-style function definitions;
+	 /* note that we give old-style functions "C" linkage.
+         /**/
+         if (OPTION = 'xosf') then do;
+		OPTION_SEEN = 49;
+		SW_X_OLD_STYLE_FUNCTIONS = TRUE;
+     		goto FOUND_EXIT;
+         end;
+         /* 
+	 /* Give a warning whenever a base type is not
+	 /* given (and is therefore assumed to be "int").
+         /**/
+         if (OPTION = 'nbt') then do;
+		OPTION_SEEN = 50;
+		SW_NO_BASE_TYPE_WARN = TRUE;
+     		goto FOUND_EXIT;
+         end;
+         /* 
+	 /* Dump virtual function table data.
+         /**/
+         if (OPTION = 'dbvft') then do;
+		OPTION_SEEN = 51;
+		SW_DUMP_VFT = TRUE;
+     		goto FOUND_EXIT;
+         end;
+	/*
+	/* Permit tentative definitions and redefinitions, except 
+	/* for objects with constructors and destructors.  The
+	/* alternative is full enforcement of the C++ definition
+	/* rules, i.e. no redefinition at all.
+	/**/
+	if (OPTION = 'tdefn') then do;
+		OPTION_SEEN = 53;
+		SW_TENTATIVE_DEFN = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Permit assignment of a void* pointer to any pointer.
+	/**/
+	if (OPTION = 'laxptr') then do;
+		OPTION_SEEN = 54;
+		SW_LAX_POINTER = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* 'nolvalue' suppresses the C++ feature that the result of
+	/* a comma or assignment may be an lvalue.
+	/**/
+	if (OPTION = 'lvalue') then do;
+		OPTION_SEEN = 55;
+		SW_STRICT_LVALUE = ^YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* 'noclcast' suppresses the ability to
+	/* cast to a class, struct, or union.
+	/**/
+	if (OPTION = 'clcast') then do;
+		OPTION_SEEN = 56;
+		SW_NO_CLASS_CAST = ^YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* 'reg' suppresses the C++ feature that it's OK
+	/* to take  the address of a register variable.
+	/**/
+	if (OPTION = 'reg') then do;
+		OPTION_SEEN = 57;
+		SW_STRICT_REGISTER = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Support Classic/ANSI-C name spaces (for tags).
+	/**/
+	if (OPTION = 'xns') then do;
+		OPTION_SEEN = 58;
+		SW_X_NAME_SPACE = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* Turn on all Classic-C compatibility modes.
+	/**/
+	if ((OPTION = 'classicc') |
+	    (OPTION = 'cc') |
+	    (OPTION = 'xall')) & YES then do;
+		OPTION_SEEN = 59;
+		if (SW_ANSI_C_MODE & ^SW_C_ONLY) |
+		    SW_CFRONT_1_2_MODE |
+		    SW_CFRONT_2_0_MODE |
+		    SW_CFRONT_2_1_MODE then do;
+			call OPTION_ERROR
+			     ('May not use -classicc with -ansic, ' ||
+			       '-cfront1.2, -cfront2.0, or -cfront2.1');
+		end;
+		call SET_CLASSIC_C_SWITCHES ();
+		call SET_CLASSIC_CPP_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -ansic
+	/*  Turn on all ANSI-C compatibility modes.
+	/**/
+	if (OPTION = 'ansic') & YES then do;
+		if SW_CLASSIC_C_MODE |
+		   SW_CFRONT_1_2_MODE |
+		   SW_CFRONT_2_0_MODE |
+		   SW_CFRONT_2_1_MODE then do;
+			call OPTION_ERROR
+			     ('May not use -ansic with -classicc, ' ||
+			      '-cfront1.2, -cfront2.0, or -cfront2.1');
+		end;
+		OPTION_SEEN = 60;
+		call SET_ANSI_C_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+        /* 
+        /* Dump class layouts
+        /**/
+        if (OPTION = 'dbclay') then do;
+		OPTION_SEEN = 61;
+		SW_DUMP_CLASS_LAYOUT = TRUE;
+     		goto FOUND_EXIT;
+        end;
+	/*
+	/* '-ztemp' means to avoid (if possible) destroying objects
+	/* representing the intermediate stages of expression evaluation
+	/* until the end of the block in which they appear.
+	/**/
+	if (OPTION = 'ztemp') then do;
+		OPTION_SEEN = 63;
+		SW_ZOMBIE_TEMP = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xwrv' makes it a warning to have an explicit return with
+	/* no expression from a function whose return type is not void.
+	/* Normally it is an error in C++.
+	/**/
+	if (OPTION = 'xwrv') then do;
+		OPTION_SEEN = 64;
+		SW_X_WARN_RETURN_VALUE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xuc' suppressed diagnostic for uninitialized const objects.
+	/**/
+	if (OPTION = 'xuc') then do;
+		OPTION_SEEN = 65;
+		SW_X_UNINITIALIZED_CONST = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-dbnth' turns off all type-node hashing.
+	/**/
+	if (OPTION = 'dbnoth') then do;
+		OPTION_SEEN = 66;
+		SW_NO_PERFECT_TYPE_HASHING   = TRUE;
+		SW_NO_IMPERFECT_TYPE_HASHING = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-dbnopth' turns off perfect type-node hashing.
+	/**/
+	if (OPTION = 'dbnopth') then do;
+		OPTION_SEEN = 67;
+		SW_NO_PERFECT_TYPE_HASHING = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-dbnoith' turns off imperfect type-node hashing.
+	/**/
+	if (OPTION = 'dbnoith') then do;
+		OPTION_SEEN = 68;
+		SW_NO_IMPERFECT_TYPE_HASHING = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-dbtht' dumps the type-node hash table.
+	/**/
+	if (OPTION = 'dbtht') then do;
+		OPTION_SEEN = 69;
+		SW_DUMP_TYPE_HASH_TABLE = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-dbstat' dumps internal compiler debugging statistics.
+	/**/
+	if (OPTION = 'dbstat') then do;
+		OPTION_SEEN = 70;
+		SW_DEBUGGING_STATS = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-dbsid' will tack the sym-node id of a
+	/* symbol name onto the end of a symbol name.
+	/**/
+	if (OPTION = 'dbsid') then do;
+		OPTION_SEEN = 71;
+		SW_NODE_ID_WITH_NAME = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-notsl' (no type safe linkage)
+	/* will prevent names from being mangled.
+	/**/
+	if (OPTION = 'tsl') then do;
+		OPTION_SEEN = 72;
+		SW_NO_TYPE_SAFE_LINKAGE = ^YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-laxini' (lax initialization)
+	/* to permit jumps to bypass initialized declarations
+	/**/
+	if (OPTION = 'laxini') then do;
+		OPTION_SEEN = 73;
+		SW_LAX_INITIALIZATION = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-laxac' (lax access control)
+	/* Check access only to those members to which references are emitted,
+	/* not to copy constructors and destructors which the compiler
+	/* _might_ use.  See note on p. 285 of Ellis & Stroustrup.
+	/* Applies also to copying of temporaries not generated.
+	/**/
+	if (OPTION = 'laxac') then do;
+		OPTION_SEEN = 74;
+		SW_LAX_ACCESS_CONTROL = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xpch' (promote char)
+	/* to make character constants int type rather than char.
+	/**/
+	if (OPTION = 'xpch') then do;
+		OPTION_SEEN = 75;
+		SW_X_PROMOTE_CHAR = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xnbi' (no brace initializer)
+	/* When at file scope a class object is initialized, 
+	/* and the initializer does not have enclosing braces,
+	/* construe it as initializing the first member.
+	/* Pre-ANSI compatibility, supported by New C.
+	/**/
+	if (OPTION = 'xnbi') then do;
+		OPTION_SEEN = 76;
+		SW_X_NO_BRACE_INIT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -vise (violation is error) will inhibits the generation of an
+	/* object file if the highest severity diagnostic issued was a
+	/* violation (severity 2 error).
+	/**/
+	if (OPTION = 'vise') | (OPTION = 'enoobj') then do;
+		OPTION_SEEN = 77;
+		SW_TREAT_VIOLATION_AS_ERROR = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -defvft causes the generation of all virtual function tables
+	/* internally; no heuristics are used to inhibit their generation.
+	/**/
+	if (OPTION = 'defvft') then do;
+		OPTION_SEEN = 78;
+		SW_DEFINE_INTERNAL_VFT = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -defextvft causes the generation of all virtual function tables
+	/* externally; no heuristics are used to inhibit their generation.
+	/**/
+	if (OPTION = 'defextvft') then do;
+		OPTION_SEEN = 78;
+		SW_DEFINE_EXTERNAL_VFT = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -undefvft inhibits the generation of all virtual function tables.
+	/**/
+	if (OPTION = 'undefvft') then do;
+		OPTION_SEEN = 79;
+		SW_NO_DEFINE_EXTERNAL_VFT = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xonce allows the #once preprocessing directive without warning.
+	/**/
+	if (OPTION = 'xonce') then do;
+		OPTION_SEEN = 80;
+		SW_ALLOW_ONCE_DIRECTIVE = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -ionce will cause all include files to be included only once;
+	/*  this is like an implicit #once directive in every include file.
+	/**/
+	if (OPTION = 'ionce') then do;
+		OPTION_SEEN = 81;
+		SW_INCLUDE_ONLY_ONCE = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -dbmon will monitor the front-end for UNIX profiling;
+	/* after running a compilation, do: profile -a -s lpicxx mon.out.
+	/**/
+	if (OPTION = 'dbmon') | (OPTION = 'monfe') then do;
+		OPTION_SEEN = 82;
+		SW_MONITOR_FRONT_END = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -see will print the name of each file as it is processed.
+	/**/
+	if (OPTION = 'headers') then do;
+		OPTION_SEEN = 83;
+		SW_PRINT_FILE_NAME_AS_WE_GO = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -version will print the version of the compiler.
+	/**/
+	if (OPTION = 'version') | (OPTION = 'copyright') then do;
+		OPTION_SEEN = 84;
+		call PRINT_VERSION ();
+		SW_SOURCE_FILE_NAME_IS_OPTIONAL = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xov' (compatible overload resolution)
+	/* Prefer a call needing only standard conversions
+	/* over one requiring user-defined conversions.
+	/* For compatibility with earlier overloading rules;
+	/* See ARM p. 315.
+	/**/
+	if (OPTION = 'xov') then do;
+		OPTION_SEEN = 85;
+		SW_X_OVERLOAD = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -lint will turn on various warnings; may differ
+	/* between C++, ANSI C, and Classic C modes.  See main.
+	/**/
+	if (OPTION = 'lint') then do;
+		OPTION_SEEN = 86;
+		SW_LINT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -oldstream will cause <oldstream.h> to be included rather than
+	/* <stream.h> for full 1.2 compatibility; this is done simply by
+	/* #defining __LPI_CXX_OLD_STREAM__ in the preprocessor.
+	/**/
+	if (OPTION = 'oldstream') then do;
+		OPTION_SEEN = 87;
+		SW_USE_OLD_CXX_STREAM_HEADER = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xotp old-style token-pasting to be use in preprocessing.
+	/**/
+	if (OPTION = 'xotp') then do;
+		OPTION_SEEN = 88;
+		SW_X_OLD_STYLE_TOKEN_PASTING = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -classiccpp will cause Classic C preprocessor techniques
+	/*  to be used as much as possible.
+	/**/
+	if (OPTION = 'classiccpp') then do;
+		OPTION_SEEN = 89;
+		call SET_CLASSIC_CPP_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -cfront1.2 will cause LPI-C++ to act as much as possible
+	/*  like AT&T's C++ CFRONT version 1.2.
+	/**/
+	if (OPTION = 'cfront1.2') then do;
+		if SW_CLASSIC_C_MODE | SW_ANSI_C_MODE |
+		   SW_CFRONT_2_0_MODE | SW_CFRONT_2_1_MODE then do;
+			call OPTION_ERROR
+			     ('May not use -cfront1.2 with -ansic, ' ||
+			       '-classic, -cfront2.0, or -cfront2.1');
+		end;
+		OPTION_SEEN = 90;
+		call SET_CFRONT_1_2_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -cfront2.0 will cause LPI-C++ to act as much as possible
+	/*  like AT&T's C++ CFRONT version 2.0.
+	/**/
+	if (OPTION = 'cfront2.0') then do;
+		if SW_CLASSIC_C_MODE | SW_ANSI_C_MODE |
+		   SW_CFRONT_1_2_MODE | SW_CFRONT_2_1_MODE then do;
+			call OPTION_ERROR
+			     ('May not use -cfront2.0 with -ansic, ' ||
+			       '-classic, -cfront1.2, or -cfront2.1');
+		end;
+		OPTION_SEEN = 91;
+		call SET_CFRONT_2_0_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -cfront2.1 will cause LPI-C++ to act as much as possible
+	/*  like AT&T's C++ CFRONT version 2.1.
+	/**/
+	if (OPTION = 'cfront2.1') |
+	   (OPTION = 'cfront') then do;
+		if SW_CLASSIC_C_MODE | SW_ANSI_C_MODE |
+		   SW_CFRONT_1_2_MODE | SW_CFRONT_2_0_MODE then do;
+			call OPTION_ERROR
+			     ('May not use -cfront2.1 with -ansic, ' ||
+			       '-classic, -cfront1.2, or -cfront2.0');
+		end;
+		OPTION_SEEN = 92;
+		call SET_CFRONT_2_1_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xcastl' (compatible cast lvalue)
+	/* Permit cast of an lvalue to be an lvalue, as per cc.
+	/**/
+	if (OPTION = 'xcastl') then do;
+		OPTION_SEEN = 93;
+		SW_X_CAST_LVALUE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xnnpt
+	/*  Install tags declared for the first time in prototype
+	/*  scope into the containing (non-prototype) scope.
+	/**/
+	if (OPTION = 'xnnpt') then do;
+		OPTION_SEEN = 94;
+		SW_NO_PROTO_SCOPE_TAG_NAMES = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xbpisw' (bypass initialization in switch statment)
+	/* Permits trivial initializations (i.e. with no constructor call)
+	/* within switch statements to be bypassed without warning.
+	/**/
+	if (OPTION = 'xbpisw') then do;
+		OPTION_SEEN = 95;
+		SW_ALLOW_INIT_BYPASS_IN_SWITCH = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xobcn' (optional base class name)
+	/* Allow the omission of the base class name
+	/* in a base class initializer.
+	/**/
+	if (OPTION = 'xobcn') then do;
+		OPTION_SEEN = 96;
+		SW_OPTIONAL_BASE_CLASS_NAME = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xassert'
+	/* Allow the #assert/#unassert preprocessing directive.
+	/**/
+	if (OPTION = 'xassert') then do;
+		OPTION_SEEN = 97;
+		SW_ALLOW_ASSERT_DIRECTIVE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xelseif'
+	/* Allow the #assert/#unassert preprocessing directive.
+	/**/
+	if (OPTION = 'xelseif') then do;
+		OPTION_SEEN = 98;
+		SW_ALLOW_ELSEIF_DIRECTIVE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xfile'
+	/* Allow the #file preprocessing directive.
+	/**/
+	if (OPTION = 'xfile') then do;
+		OPTION_SEEN = 99;
+		SW_ALLOW_FILE_DIRECTIVE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-cppx'
+	/* Allow preprocessor extensions.
+	/**/
+	if (OPTION = 'cppx') then do;
+		OPTION_SEEN = 100;
+		call SET_CPP_EXTENSION_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-shortenum'
+	/* Use the shortest possible enum (i.e. char, short)
+	/**/
+	if (OPTION = 'shortenum') then do;
+		OPTION_SEEN = 101;
+		SW_USE_SHORTEST_POSSIBLE_ENUM = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xovkw'
+	/* Allow the overload keyword without warning.
+	/**/
+	if (OPTION = 'xovkw') then do;
+		OPTION_SEEN = 102;
+		SW_ALLOW_OVERLOAD_KEYWORD = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xsemi'
+	/* Allow extraneous semi-colons without a warning.
+	/**/
+	if (OPTION = 'xsemi') then do;
+		OPTION_SEEN = 103;
+		SW_ALLOW_EXTRANEOUS_SEMICOLON = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-help'
+	/**/
+	if (OPTION = 'help') then do;
+		OPTION_SEEN = 104;
+		SW_SOURCE_FILE_NAME_IS_OPTIONAL = TRUE;
+		call SIMPLE_DIAGNOSTIC (ERR_OPTIONS_HELP_MESSAGE);
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -visw (violation is warning) alters the exit status of the
+	/* compiler if the highest severity diagnostic issued was a
+	/* violation (severity 2 error) to be the same as if the
+	/* highest severity diagnostic issued was a warning (e.g
+	/* zero exit status on UNIX).
+	/**/
+	if (OPTION = 'visw') then do;
+		OPTION_SEEN = 105;
+		SW_TREAT_VIOLATION_AS_WARNING = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -realexit
+	/*  Do not map "exit" to "____lpi_cxx_exit"; this is
+	/*  necessary to compile our run-time which calls "exit" :-)
+	/**/
+	if (OPTION = 'realexit') then do;
+		OPTION_SEEN = 106;
+		SW_DO_NOT_MAP_EXIT_TO_LPI_EXIT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -lpi
+	/**/
+	if (OPTION = 'ansiclib') then do;
+		OPTION_SEEN = 107;
+		call SET_ANSI_C_LIB_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -stdsyswpath
+	/*  Change the default standard system header wrapper directory.
+	/**/
+	if (OPTION = 'stdsyswpath') & YES then do;
+		OPTION_SEEN = 108;
+		if ^GET_STRING_ARGUMENT () then do;
+		    call OPTION_ERROR
+			 ('A directory name is required for -stdsyswpath.');
+		end;
+		STANDARD_SYSTEM_HEADER_WRAP_DIR = ARG;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -nonote
+	/*  Ignore level 0 diagnostics.
+	/**/
+	if (OPTION = 'note') then do;
+		OPTION_SEEN = 109;
+		SW_SILENT_ABOUT_NOTES = NO;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xeec
+	/*  Allow extraneous commas in enumeration.
+	/**/
+	if (OPTION = 'xeec') then do;
+		OPTION_SEEN = 110;
+		SW_ALLOW_EXTRANEOUS_ENUM_COMMA = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -syssizet (system size_t)
+	/*  Use size_t type for the given OS variant.
+	/*  When using -sys, a user may want -nosyssizet.
+	/**/
+	if (OPTION = 'syssizet') then do;
+		OPTION_SEEN = 111;
+		SW_SYSTEM_SIZE_T = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -cxxcomments
+	/*  Allow C++ style comments (this option is relavent
+	/* for -ansic or -classicc only, but always allow it).
+	/**/
+	if (OPTION = 'cxxcomments') & YES then do;
+		OPTION_SEEN = 112;
+		SW_ALLOW_CXX_STYLE_COMMENTS = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -posix
+	/**/
+	if (OPTION = 'posix') then do;
+		OPTION_SEEN = 113;
+		SW_POSIX_MODE = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xnc is equivalent to -nostdc
+	/* -noxnc is equivalent to -stdc
+	/**/
+	if (OPTION = 'xnc') then do;
+		OPTION_SEEN = 114;
+		SW_DEFINE_STDC_AS_ONE = NO;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -fullansic
+	/*  Same as -ansic -ansiclib
+	/**/
+	if (OPTION = 'fullansic') & YES then do;
+		if SW_CLASSIC_C_MODE |
+		   SW_CFRONT_1_2_MODE |
+		   SW_CFRONT_2_0_MODE |
+		   SW_CFRONT_2_1_MODE then do;
+			call OPTION_ERROR
+			     ('May not use -fullansic with -classicc, ' ||
+			      '-cfront1.2, -cfront2.0, or -cfront2.1');
+		end;
+		OPTION_SEEN = 115;
+		call SET_ANSI_C_SWITCHES ();
+		call SET_ANSI_C_LIB_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -wcnpf
+	/**/
+	if (OPTION = 'wcnpf') then do;
+		OPTION_SEEN = 116;
+		SW_WARN_CALL_NON_PROTO_FUN = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -syswchart
+	/*  Use wchar_t type for the given OS variant.
+	/*  When using -sys, a user may want -nosyswchart.
+	/**/
+	if (OPTION = 'syswchart') then do;
+		OPTION_SEEN = 117;
+		SW_SYSTEM_WCHAR_T = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -mclr
+	/* Force multi character constants (e.g. 'abcd') to be packed
+	/* into ints from left to right (big end-ian, e.g. MC680x0, SPARC).
+	/**/
+	if (OPTION = 'mclr') then do;
+		OPTION_SEEN = 118;
+		SW_MULTI_CHAR_LEFT_TO_RIGHT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -mcrl
+	/* Force multi character constants (e.g. 'abcd') to be packed
+	/* into ints from left to right (little end-ian, e.g. i386).
+	/**/
+	if (OPTION = 'mcrl') then do;
+		OPTION_SEEN = 119;
+		SW_MULTI_CHAR_RIGHT_TO_LEFT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -enumspec
+	/*  Allow type-specifier after enum keyword.
+	/**/
+	if (OPTION = 'enumspec') then do;
+		OPTION_SEEN = 120;
+		SW_ALLOW_ENUM_INTEGRAL_TYPE = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -fex
+	/*  Enable front-end extensions
+	/**/
+	if (OPTION = 'fex') then do;
+		OPTION_SEEN = 121;
+		call SET_FE_EXTENSION_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -extensions
+	/*  Enable front-end and preprocessor extensions
+	/**/
+	if (OPTION = 'extensions') then do;
+		OPTION_SEEN = 122;
+		call SET_FE_EXTENSION_SWITCHES ();
+		call SET_CPP_EXTENSION_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -realentry
+	/*  Do not map the "main" startup to a call to "____lpi_cxx_entry".
+	/**/
+	if (OPTION = 'realentry') then do;
+		OPTION_SEEN = 123;
+		SW_DO_NOT_MAP_ENTRY_TO_LPI_ENTRY = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -initfini
+	/**/
+	if (OPTION = 'initfini') then do;
+		OPTION_SEEN = 124;
+		SW_SYSTEM_HAS_INIT_FINI_SECTIONS = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -wdupenum
+	/**/
+	if (OPTION = 'wdupenum') then do;
+		OPTION_SEEN = 125;
+		SW_WARN_DUP_ENUMERATOR_VALUE = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -pack [ 1 | 2 | 4 ]
+	/**/
+	if (OPTION = 'pack') then do;
+		OPTION_SEEN = 126;
+		if ^GET_INTEGER_ARGUMENT () then
+			call OPTION_ERROR
+			     ('Option -pack requires a 1, 2, or 4 argument.');
+		if (SHORT_ARG_INTEGER ^= 1) &
+		   (SHORT_ARG_INTEGER ^= 2) &
+		   (SHORT_ARG_INTEGER ^= 4) then
+			call OPTION_ERROR
+			     ('Option -pack requires a 1, 2, or 4 argument.');
+		call SET_DEFAULT_STRUCT_ALIGNMENT (SHORT_ARG_INTEGER);
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xitq' (compatible type qualifiers)
+	/* Ignore type qualifiers such as 'const' at certain points
+	/* where cfront ignores them.
+	/**/
+	if (OPTION = 'xitq') then do;
+		OPTION_SEEN = 127;
+		SW_X_IGNORE_TYPE_QUALIFIERS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xftq' (compatible fudge type qualifiers)
+	/* Fudge type qualifiers such as 'const' at certain points
+	/* where cfront allows constness violations.
+	/**/
+	if (OPTION = 'xftq') then do;
+		OPTION_SEEN = 128;
+		SW_X_FUDGE_TYPE_QUALIFIERS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xcotr' (compatible cast object to reference)
+	/* Support cfront "feature" allowing non-lvalue to be cast
+	/* to a reference type provided copying the operand type
+	/* is non-trivial.
+	/**/
+	if (OPTION = 'xcotr') then do;
+		OPTION_SEEN = 129;
+		SW_X_CAST_OBJECT_TO_REFERENCE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-cppt' same as -cpp but terse (simply one token per line).
+	/**/
+	if (OPTION = 'cppt') then do;
+		OPTION_SEEN = 130;
+		SW_MACRO_EXPANSION = YES;
+		SW_TERSE_MACRO_EXPANSION = YES;
+		SW_PREPROCESSOR_ONLY = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-dbnoms' disable the multi-space node scheme.
+	/* By default we put C++ specific nodes in an alternate space.
+	/**/
+	if (OPTION = 'dbnoms') then do;
+		OPTION_SEEN = 131;
+		SW_NO_MULTI_SPACE_NODE_SCHEME = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-dbnid' print the high node id watermark at each phase.
+	/**/
+	if (OPTION = 'dbnid') then do;
+		OPTION_SEEN = 132;
+		SW_DUMP_NODE_ID_WATERMARK = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-xpnh' allow parameter name hiding (with a warning).
+	/*         E.g.: f (int *p) { char *p; }
+	/**/
+	if (OPTION = 'xpnh') then do;
+		OPTION_SEEN = 133;
+		SW_ALLOW_PARAMETER_NAME_HIDING = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* '-eisv' treat errors as violations, i.e. to
+	/* try to force generation of a object file.
+	/**/
+	if (OPTION = 'eisv') then do;
+		OPTION_SEEN = 134;
+		SW_TREAT_ERROR_AS_VIOLATION = TRUE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xeac
+	/*  Allow extraneous commas in argument lists.
+	/**/
+	if (OPTION = 'xeac') then do;
+		OPTION_SEEN = 135;
+		SW_ALLOW_EXTRANEOUS_ARG_COMMA = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xmfrt
+	/*  Allow member-function-reference types (cfront extension).  E.g.:
+	/*    struct A *ap;
+	/*    typedef void A::T();
+	/*    T *mp;       // Same as: void (A::*mp)();
+	/*    (ap->*mp)(); // A must be defined by this point
+	/**/
+	if (OPTION = 'xmfrt') then do;
+		OPTION_SEEN = 136;
+		SW_ALLOW_MEMBER_FUN_REF_TYPE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xntnl
+	/*  Use cfront style new-expression type-name lookup rules.
+	/**/
+	if (OPTION = 'xntnl') then do;
+		OPTION_SEEN = 137;
+		SW_CFRONT_LOOKUP_NEW_TYPE_NAME = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -chmstdc1
+	/*  Define __STDC__ as 1 in C-header mode.
+	/**/
+	if (OPTION = 'chmstdc1') & YES then do;
+		OPTION_SEEN = 138;
+		SW_DEFINE_C_HEADER_STDC_AS_ONE	= TRUE;
+		SW_DEFINE_C_HEADER_STDC_AS_ZERO	= FALSE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -wle
+	/*  Warn about lone ellipsis.
+	/**/
+	if (OPTION = 'wle') then do;
+		OPTION_SEEN = 139;
+		SW_WARN_LONE_ELLIPSIS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -weofl
+	/*  Warn end-of-file within a line
+	/*  (violation of ANSI-C, 2.1.1.2).
+	/**/
+	if (OPTION = 'weofl') then do;
+		OPTION_SEEN = 140;
+		SW_WARN_EOF_IN_LINE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xsmd (lax static member definition)
+	/* Support cfront anachronism allowing static member
+	/* definition to be omitted.
+	/**/
+	if (OPTION = 'xsmd') then do;
+		OPTION_SEEN = 141;
+		SW_LAX_STATIC_MEMBER_DEFINITION = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -wnrvm
+	/*  Warn for main not explicitly returning a value.
+	/**/
+	if (OPTION = 'wnrvm') then do;
+		OPTION_SEEN = 142;
+		SW_WARN_MAIN_NO_RETURN_VALUE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -lpicxxhelp
+	/**/
+	if (OPTION = 'lpicxxhelp') then do;
+		OPTION_SEEN = 143;
+		SW_SOURCE_FILE_NAME_IS_OPTIONAL = TRUE;
+		if SW_C_ONLY then
+			call SIMPLE_DIAGNOSTIC
+			     (ERR_LPIC_OPTIONS_HELP_MESSAGE);
+		else	call SIMPLE_DIAGNOSTIC
+			     (ERR_LPICXX_OPTIONS_HELP_MESSAGE);
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -makedepend
+	/**/
+	if (OPTION = 'makedepend') then do;
+		OPTION_SEEN = 144;
+		SW_DUMP_MAKE_DEPEND = YES;
+		SW_PREPROCESSOR_ONLY = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -nowrappers
+	/**/
+	if (OPTION = 'wrappers') then do;
+		OPTION_SEEN = 145;
+		SW_NO_WRAPPERS = NO;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -cpponly
+	/**/
+	if (OPTION = 'cpponly') then do;
+		OPTION_SEEN = 146;
+		SW_PREPROCESSOR_ONLY = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -cxx
+	/**/
+	if (OPTION = 'cxx') & YES then do;
+		OPTION_SEEN = 147;
+		call SET_CXX_SWITCHES ();
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -extld
+	/**/
+	if (OPTION = 'extld') then do;
+		OPTION_SEEN = 148;
+		SW_EXTENDED_PRECISION_LDOUBLE = YES;
+		EXTENDED_PRECISION_LONG_DOUBLE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -lpild
+	/**/
+	if (OPTION = 'lpild') then do;
+		OPTION_SEEN = 149;
+		SW_DO_NOT_MAP_EXIT_TO_LPI_EXIT = YES;
+		SW_DO_NOT_MAP_ENTRY_TO_LPI_ENTRY = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'pack1') then do;
+		OPTION_SEEN = 150;
+		call SET_DEFAULT_STRUCT_ALIGNMENT (1);
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'pack2') then do;
+		OPTION_SEEN = 151;
+		call SET_DEFAULT_STRUCT_ALIGNMENT (2);
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'pack4') then do;
+		OPTION_SEEN = 152;
+		call SET_DEFAULT_STRUCT_ALIGNMENT (4);
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -nostmid
+	/**/
+	if (OPTION = 'stmid') then do;
+		OPTION_SEEN = 153;
+		SW_NO_STATEMENT_ID_OPS = ^YES;
+		goto FOUND_EXIT;
+	end;
+	/* -xvdp (allow void parameters)
+	/* C standard doesn't say you can't declare a function
+	/* having void parameters.  (Just don't call or define it.)
+	/**/
+	if (OPTION = 'xvdp') then do;
+		OPTION_SEEN = 154;
+		SW_ALLOW_VOID_PARAMETERS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xvde (void ellipsis (void, ...))
+	/* Cfront doesn't complain about function declarator (void, ...)
+	/* takes it as synonymous with (...).
+	/**/
+	if (OPTION = 'xvde') then do;
+		OPTION_SEEN = 155;
+		SW_X_VOID_ELLIPSIS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xumi (union member initialization)
+	/* Cfront doesn't complain about multiple initialization of
+	/* union members in base/member initializer lists.
+	/**/
+	if (OPTION = 'xumi') then do;
+		OPTION_SEEN = 156;
+		SW_X_UNION_MEMBER_INIT = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xmt
+	/* Allow multiple compatible typedefs.
+	/**/
+	if (OPTION = 'xwmt') then do;
+		OPTION_SEEN = 157;
+		SW_WARN_FOR_MULTIPLE_TYPEDEFS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -defer
+	/*  Defer the processing of internal linkage
+	/*  functions defined within include files.
+	/**/
+	if (OPTION = 'defer') then do;
+		OPTION_SEEN = 158;
+		SW_DEFER_FUNCTIONS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -abibf
+	/**/
+	if (OPTION = 'abibf') then do;
+		OPTION_SEEN = 159;
+		SW_ABI_STYLE_BIT_FIELDS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -chmstdc0
+	/*  Define __STDC__ as 0 in C-header mode (default).
+	/**/
+	if (OPTION = 'chmstdc0') & YES then do;
+		OPTION_SEEN = 160;
+		SW_DEFINE_C_HEADER_STDC_AS_ZERO	= TRUE;
+		SW_DEFINE_C_HEADER_STDC_AS_ONE	= FALSE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -chmstdc
+	/*  Define __STDC__ as 0 in C-header mode.
+	/**/
+	if (OPTION = 'chmstdc') then do;
+		OPTION_SEEN = 161;
+		SW_DEFINE_C_HEADER_STDC_AS_ZERO	= YES;
+		SW_DEFINE_C_HEADER_STDC_AS_ONE	= FALSE;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -wuqnt
+	/*  Warn for unqualified nested type usage
+	/* (this is is only useful.
+	/**/
+	if (OPTION = 'wuqnt') then do;
+		OPTION_SEEN = 162;
+		SW_WARN_UNQUALIFIED_NESTED_TYPE	= YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -xline
+	/*  Allow old-style #number directives.
+	/**/
+	if (OPTION = 'wuqnt') then do;
+		OPTION_SEEN = 163;
+		SW_ALLOW_OLD_LINE_DIRECTIVE = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -moncg
+	/**/
+	if (OPTION = 'moncg') then do;
+		OPTION_SEEN = 164;
+		SW_MONITOR_CODE_GENERATOR = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -monop
+	/**/
+	if (OPTION = 'monop') then do;
+		OPTION_SEEN = 165;
+		SW_MONITOR_OPTIMIZER = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'cpp') then do;
+		OPTION_SEEN = 166;
+		SW_MACRO_EXPANSION = YES;
+		SW_TRADITIONAL_MACRO_EXPANSION = YES;
+		SW_PREPROCESSOR_ONLY = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'xaes') then do;
+		OPTION_SEEN = 167;
+		SW_ALLOW_ANY_ESCAPE_SEQUENCES = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'xaoc') then do;
+		OPTION_SEEN = 168;
+		SW_ALLOW_OVERFLOWING_CONSTANTS = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -nodiag N
+	/*  Don't even flinch at diagnostic number N.
+	/**/
+	if (OPTION = 'diag') & NO then do;
+		if GET_INTEGER_ARGUMENT () then
+			call IGNORE_DIAGNOSTIC (LONG_ARG_INTEGER);
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'realoc') then do;
+		OPTION_SEEN = 169;
+		SW_REAL_LOCATION_IN_ERRORS = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'whvf') then do;
+		OPTION_SEEN = 170;
+		SW_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'nvfo') then do;
+		OPTION_SEEN = 171;
+		SW_NEW_VIRTUAL_FUNCTION_OVERRIDE = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'uchar') then do;
+		OPTION_SEEN = 172;
+		SW_DEFAULT_UNSIGNED_CHAR = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'support') then do;
+		OPTION_SEEN = 173;
+		call PRINT_SUPPORT ();
+		SW_SOURCE_FILE_NAME_IS_OPTIONAL = TRUE;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'remfun') then do;
+		OPTION_SEEN = 174;
+		SW_NO_REMOVE_UNREF_FUNCTIONS = NO;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'igident') then do;
+		OPTION_SEEN = 175;
+		SW_IGNORE_IDENT = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'relord') then do;
+		OPTION_SEEN = 176;
+		SW_NEEDS_RELOCATION_ORDERING = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -nochm: do not enter C-header mode implicitly for
+	/*         system headers, i.e. only enter C-header mode
+	/*         when "#pragma C-header (on)" is specified.
+	/**/
+	if (OPTION = 'chm') then do;
+		OPTION_SEEN = 177;
+		SW_NO_IMPLICIT_C_HEADER_MODE = NO;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -stdcpp causes __STDCPP__ *and* __ANSI_CPP__ to be defined;
+	//  this is the default except in -classicc mode. 
+	/* -nostdcpp causes __STDCPP__ *and* __ANSI_CPP__ to be undefined;
+	/*  this is the defualt only in -classicc mode.
+	/**/
+	if (OPTION = 'stdcpp') then do;
+		OPTION_SEEN = 178;
+		SW_DEFINE_STDCPP = YES;
+		goto FOUND_EXIT;
+	end;
+	/*
+	/* -rawclassicc -rawcc
+	/*  Same as -classicc -nochm -nowrappers
+	/**/
+	if ((OPTION = 'rawclassicc') | (OPTION = 'rawcc')) & YES then do;
+		OPTION_SEEN = 179;
+		if (SW_ANSI_C_MODE & ^SW_C_ONLY) |
+		    SW_CFRONT_1_2_MODE |
+		    SW_CFRONT_2_0_MODE |
+		    SW_CFRONT_2_1_MODE then do;
+			call OPTION_ERROR
+			     ('May not use -rawclassicc with -ansic, ' ||
+			       '-cfront1.2, -cfront2.0, or -cfront2.1');
+		end;
+		call SET_CLASSIC_C_SWITCHES ();
+		call SET_CLASSIC_CPP_SWITCHES ();
+		SW_NO_WRAPPERS = YES;
+		SW_NO_IMPLICIT_C_HEADER_MODE = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'iangle') then do;
+		OPTION_SEEN = 180;
+		SW_TREAT_QUOTE_INCLUDE_AS_ANGLE = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'xlsfd') then do;
+		OPTION_SEEN = 181;
+		SW_ALLOW_LOCAL_STATIC_FUN_DCL = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'locnm') then do;
+		OPTION_SEEN = 182;
+		SW_DISCARD_LOCAL_NAMES = NO;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'locord') then do;
+		OPTION_SEEN = 183;
+		SW_NEEDS_LOCAL_SYMBOL_ORDERING = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'catalogue') then do;
+		OPTION_SEEN = 184;
+		SW_PRINT_CLASS_CATALOGUE = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'vcatalogue') then do;
+		OPTION_SEEN = 185;
+		SW_PRINT_CLASS_CATALOGUE = YES;
+		SW_PRINT_VIEWS_CLASS_CATALOGUE = YES;
+		goto FOUND_EXIT;
+	end;
+	if (OPTION = 'authors') then do;
+		OPTION_SEEN = 186;
+		call PRINT_AUTHORS ();
+		SW_SOURCE_FILE_NAME_IS_OPTIONAL = TRUE;
+		goto FOUND_EXIT;
+	end;
+
+	/* -----------------------------------------------------------------
+	/* End of command-line options
+	/* --------------------------------------------------------------- */
+
+	goto NOT_FOUND_EXIT;
+
+/* ---------------------------------------------------------------------
+/* SET_DEFAULTS
+/* ------------------------------------------------------------------- */
+
+SET_DEFAULTS: procedure internal;
+
+	SW_C_PLUS_PLUS			 = TRUE;
+	SW_FAVOR_SYSTEM_HEADER_DIR	 = TRUE;
+	SW_SYSTEM_SIZE_T		 = TRUE;
+	SW_SYSTEM_WCHAR_T		 = TRUE;
+	SW_SYSTEM_MACROS		 = TRUE;
+	SW_SYSTEM_HAS_INIT_FINI_SECTIONS = CXX_SYS_HAS_INIT_FINI_SECTIONS;
+	SW_WARN_SIZEOF_IN_PP_EXPRESSION  = TRUE;
+	SW_ALLOW_NULL_VA_START_ARG	 = TRUE;
+	SW_ABI_STYLE_BIT_FIELDS		 = CXX_ABI_STYLE_UNNAMED_BIT_FIELDS;
+	SW_DEFINE_C_HEADER_STDC_AS_ZERO	 = TRUE;
+	SW_NO_STATEMENT_ID_OPS		 = TRUE;
+	SW_NO_PROTO_SCOPE_TAG_NAMES	 = TRUE;
+	SW_DEFER_FUNCTIONS		 = TRUE; /* 068 */
+	SW_WARN_HIDDEN_VIRTUAL_FUNCTIONS = TRUE;
+	SW_NEW_VIRTUAL_FUNCTION_OVERRIDE = TRUE;
+	SW_IMPLICIT_PRAGMA_DATA_SECTION	 = CXX_IMPLICIT_PRAGMA_DATA_SECTION;
+	SW_NEEDS_RELOCATION_ORDERING	 = CXX_NEEDS_RELOCATION_ORDERING;
+	SW_NEEDS_LOCAL_SYMBOL_ORDERING	 = CXX_NEEDS_LOCAL_SYMBOL_ORDERING;
+	SW_DEFINE_STDCPP		 = TRUE;
+
+	if CXX_C_ONLY then do;
+		SW_C_ONLY = TRUE;
+		SW_NO_WRAPPERS = TRUE;
+		call SET_ANSI_C_SWITCHES ();
+		call PROCESS_C_ENVIRONMENT_VARS ();
+	end;
+	else	call PROCESS_CXX_ENVIRONMENT_VARS ();
+
+end SET_DEFAULTS;
+
+/* ---------------------------------------------------------------------
+/* PROCESS_CXX_ENVIRONMENT_VARS
+/* ------------------------------------------------------------------- */
+
+PROCESS_CXX_ENVIRONMENT_VARS: procedure;
+
+	declare S character (1024) varying;
+
+	if GET_ENV_VALUE ('LPI_CXX_SYSTEM_HEADER_DIR', S) then
+		STANDARD_SYSTEM_HEADER_DIR = S;
+	if GET_ENV_VALUE ('LPI_CXX_ANSI_C_HEADER_DIR', S) then
+		STANDARD_ANSI_C_HEADER_DIR = S;
+	if GET_ENV_VALUE ('LPI_CXX_SYSTEM_WRAPPER_DIR', S) then
+		STANDARD_SYSTEM_HEADER_WRAP_DIR = S;
+	if GET_ENV_VALUE ('LPI_CXX_HEADER_DIR', S) then
+		STANDARD_CXX_HEADER_DIR = S;
+
+end PROCESS_CXX_ENVIRONMENT_VARS;
+
+/* ---------------------------------------------------------------------
+/* PROCESS_C_ENVIRONMENT_VARS
+/* ------------------------------------------------------------------- */
+
+PROCESS_C_ENVIRONMENT_VARS: procedure;
+
+	declare S character (1024) varying;
+
+	if GET_ENV_VALUE ('LPI_C_SYSTEM_HEADER_DIR', S) then
+		STANDARD_SYSTEM_HEADER_DIR = S;
+	if GET_ENV_VALUE ('LPI_C_ANSI_C_HEADER_DIR', S) then
+		STANDARD_ANSI_C_HEADER_DIR = S;
+	if GET_ENV_VALUE ('LPI_C_SYSTEM_WRAPPER_DIR', S) then
+		STANDARD_SYSTEM_HEADER_WRAP_DIR = S;
+
+end PROCESS_C_ENVIRONMENT_VARS;
+
+/* ---------------------------------------------------------------------
+/* POST_PROCESS
+/* ------------------------------------------------------------------- */
+
+POST_PROCESS: procedure internal;
+
+	declare
+		STATUS	type (SHORT_T);
+	declare
+		XINIOP	entry (type (STRING_T),
+			       type (SHORT_T),
+			       entry (type (STRING_T))) external;
+
+	if SW_C_ONLY then do;
+		if SW_FAVOR_SYSTEM_HEADER_DIR then do;
+			SW_DO_NOT_MAP_ENTRY_TO_LPI_ENTRY = TRUE;
+			SW_DO_NOT_MAP_EXIT_TO_LPI_EXIT	 = TRUE;
+		end;
+		else do;
+			SW_DO_NOT_MAP_ENTRY_TO_LPI_ENTRY = FALSE;
+			SW_DO_NOT_MAP_EXIT_TO_LPI_EXIT	 = FALSE;
+		end;
+	end;
+
+	/* Set up if this has .init/.fini object file sections */
+
+	if SW_SYSTEM_HAS_INIT_FINI_SECTIONS then do;
+		SW_DO_NOT_MAP_ENTRY_TO_LPI_ENTRY = TRUE;
+		SW_DO_NOT_MAP_EXIT_TO_LPI_EXIT	 = TRUE;
+	end;
+
+	/* Fill in the size/boundary tables for long double */
+
+	if SW_EXTENDED_PRECISION_LDOUBLE then
+		call EXTENDED_LONG_DOUBLE_TYPE_SIZE (TRUE);
+	else	call EXTENDED_LONG_DOUBLE_TYPE_SIZE (FALSE);
+
+	/* Set the lint-like switches if desired */
+
+	if SW_LINT then
+		call SET_LINT_SWITCHES ();
+
+	/* For certain options, a source file name need not be given */
+
+	if length (SOURCE_FILE_NAME) <= 0 then do;
+		if SW_SOURCE_FILE_NAME_IS_OPTIONAL then do;
+			if SW_DUMP_PREDEF_MACROS then
+				SOURCE_FILE_NAME = '/dev/null';
+		end;
+		else do;
+			call SIMPLE_DIAGNOSTIC (ERR_MISSING_SOURCE_FILE_NAME);
+			STATISTICS = FALSE;
+			return;
+		end;
+	end;
+
+	if SW_PREPROCESSOR_ONLY then
+		STATISTICS = FALSE;
+
+	if SYMBOL_TABLE then do;
+		OPTIMIZE = FALSE;
+		SW_NO_STATEMENT_ID_OPS = FALSE;
+		SW_ISTRING = FALSE;
+		SW_IMATH = FALSE;
+	end;
+
+	if LISTING | FULL_LIST | CODE_MAP | MAP then
+		SW_NO_STATEMENT_ID_OPS = FALSE;
+
+	if DEBUG1 then do;
+		if DEBUG1_LEVEL >= 0 then do;
+			TRACE_PAR_CALLS     = TRUE;
+			TRACE_PAR_ENTRIES   = DEBUG1_LEVEL >= 2;
+			TRACE_PARSE         = DEBUG1_LEVEL >= 3;
+			TRACE_EMIT_TREE     = DEBUG1_LEVEL >= 5;
+			TRACE_EXPAND_VALUE  = DEBUG1_LEVEL >= 6;
+		end;
+		else do;
+			TRACE_PAR_ENTRIES   = DEBUG1_LEVEL = -2;
+			TRACE_PARSE         = DEBUG1_LEVEL = -3;
+			TRACE_EMIT_TREE     = DEBUG1_LEVEL = -5;
+			TRACE_EXPAND_VALUE  = DEBUG1_LEVEL = -6;
+		end;
+	end;
+
+	if ^EXPLICIT_OPT_OR_NOOPT_SEEN then
+		call XINIOP ('noopt', STATUS, ADD_OPTION);
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* SET_LINT_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_LINT_SWITCHES: procedure;
+
+	SW_WARN_DUP_ENUMERATOR_VALUE		= TRUE;
+	SW_PRAGMA_WARN				= TRUE;
+	SW_NO_BASE_TYPE_WARN			= TRUE;
+	SW_NOWARN_NO_RETURN_VALUE		= FALSE;
+	SW_NOWARN_EXTERN_INTERN_CONFLICT	= FALSE;
+	SW_NOWARN_EXTERN_INLINE_CONFLICT	= FALSE;
+	if ^SW_C_PLUS_PLUS then do;
+		SW_UNDEF_FUNCTION_WARN		= TRUE;
+		SW_X_WARN_RETURN_VALUE		= TRUE;
+	end;
+	SW_WARN_PARAM_USED_IN_PROTO		= TRUE;
+	SW_ALLOW_EXTRANEOUS_SEMICOLON		= FALSE;
+	SW_ALLOW_EXTRANEOUS_TYPEDEF		= FALSE;
+	SW_ALLOW_DECORATED_CLASSES		= FALSE;
+	SW_ALLOW_EXTRANEOUS_ENUM_COMMA		= FALSE;
+	SW_ALLOW_EXTRANEOUS_ARG_COMMA		= FALSE;
+	SW_ALLOW_OVERLOAD_KEYWORD		= FALSE;
+	SW_WARN_MEMBER_FUN_REF_TYPE		= TRUE;
+	SW_WARN_SIZEOF_IN_PP_EXPRESSION		= TRUE;
+	SW_WARN_LONE_ELLIPSIS			= TRUE;
+	SW_ALLOW_NULL_VA_START_ARG	 	= FALSE;
+	SW_WARN_EOF_IN_LINE			= TRUE;
+	SW_WARN_MAIN_NO_RETURN_VALUE		= TRUE;
+
+end SET_LINT_SWITCHES;
+
+end POST_PROCESS;
+
+/* ---------------------------------------------------------------------
+/* SET_FE_EXTENSION_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_FE_EXTENSION_SWITCHES: procedure internal;
+
+	SW_ALLOW_ENUM_INTEGRAL_TYPE	= TRUE;
+	SW_ALLOW_NULL_VA_START_ARG	= TRUE;
+
+end SET_FE_EXTENSION_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* SET_CPP_EXTENSION_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_CPP_EXTENSION_SWITCHES: procedure internal;
+
+	SW_X_TRAILING_TEXT		= TRUE;
+	SW_IDENT_NOWARN			= TRUE;
+	SW_ALLOW_ONCE_DIRECTIVE		= TRUE;
+	SW_ALLOW_ASSERT_DIRECTIVE	= TRUE;
+	SW_ALLOW_ELSEIF_DIRECTIVE	= TRUE;
+	SW_ALLOW_FILE_DIRECTIVE		= TRUE;
+	SW_X_INNOCUOUS_MACRO_REDEF	= TRUE;
+	SW_ALLOW_OLD_LINE_DIRECTIVE	= TRUE;
+
+end SET_CPP_EXTENSION_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* SET_CLASSIC_CPP_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_CLASSIC_CPP_SWITCHES: procedure internal;
+
+	SW_X_TRAILING_TEXT		= TRUE;
+	SW_X_OLD_ESCAPES		= TRUE;
+	SW_ALLOW_ONCE_DIRECTIVE		= TRUE;
+	SW_IDENT_NOWARN			= TRUE;
+	SW_X_NOTRIGRAPH			= TRUE;
+	SW_X_INNOCUOUS_MACRO_REDEF	= TRUE;
+	SW_X_PERNICIOUS_MACRO_REDEF	= TRUE;
+	SW_X_STRINGIZE			= TRUE;
+	SW_X_CHARIZE			= TRUE;
+	SW_X_EMPTY_MACRO_ARGUMENT	= TRUE;
+	SW_X_IGNORE_GRAY_SPACE		= TRUE;
+	SW_X_OLD_STYLE_TOKEN_PASTING	= TRUE;
+	SW_ALLOW_ASSERT_DIRECTIVE	= TRUE;
+	SW_DEFINE_STDCPP		= FALSE;
+
+end SET_CLASSIC_CPP_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* SET_CLASSIC_C_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_CLASSIC_C_SWITCHES: procedure internal;
+
+	SW_C_PLUS_PLUS			 = FALSE;
+	SW_CLASSIC_C_MODE		 = TRUE;
+  	SW_TENTATIVE_DEFN		 = TRUE;
+	SW_LAX_POINTER			 = TRUE;
+	SW_STRICT_LVALUE		 = TRUE;
+	SW_NO_CLASS_CAST		 = TRUE;
+	SW_STRICT_REGISTER		 = TRUE;
+	SW_UNDEF_FUNCTION_LAX		 = TRUE;
+	SW_X_OLD_STYLE_FUNCTIONS	 = TRUE;
+	SW_X_NAME_SPACE			 = TRUE;
+	SW_X_LONG_FLOAT			 = TRUE;
+	SW_X_EXTERN_SCOPE		 = TRUE;
+	SW_X_UNSIGNED_PRESERVING	 = TRUE;
+	SW_X_INT_CONSTANT_TYPE		 = TRUE;
+	SW_X_CHAR_POINTER		 = TRUE;
+	SW_X_OLD_ESCAPES		 = TRUE;
+	SW_X_FLOAT_TO_DOUBLE		 = TRUE;
+	SW_X_WARN_RETURN_VALUE		 = TRUE;
+	SW_X_UNINITIALIZED_CONST	 = TRUE;
+	SW_LAX_INITIALIZATION		 = TRUE;
+	SW_X_PROMOTE_CHAR		 = TRUE;
+	SW_X_NO_BRACE_INIT		 = TRUE;
+	SW_NO_NESTED_TYPE_NAMES		 = TRUE;
+	SW_NO_NESTED_ENUMERATOR_NAMES	 = TRUE;
+	SW_X_CAST_LVALUE		 = TRUE;
+	SW_ALLOW_EXTRANEOUS_SEMICOLON	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_TYPEDEF	 = TRUE;
+	SW_ALLOW_DECORATED_CLASSES	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_ENUM_COMMA	 = TRUE;
+	SW_NOWARN_EXTERN_INTERN_CONFLICT = TRUE;
+	SW_NOWARN_NO_RETURN_VALUE	 = TRUE;
+	SW_DO_NOT_MAP_EXIT_TO_LPI_EXIT	 = TRUE;
+	SW_DO_NOT_MAP_ENTRY_TO_LPI_ENTRY = TRUE;
+	SW_ALLOW_ANY_ESCAPE_SEQUENCES	 = TRUE;
+	SW_ALLOW_OVERFLOWING_CONSTANTS   = TRUE;
+	SW_NO_PROTO_SCOPE_TAG_NAMES	 = FALSE;
+	SW_ALLOW_LOCAL_STATIC_FUN_DCL	 = TRUE;
+
+end SET_CLASSIC_C_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* SET_ANSI_C_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_ANSI_C_SWITCHES: procedure internal;
+
+  	SW_C_PLUS_PLUS			= FALSE;
+  	SW_ANSI_C_MODE			= TRUE;
+  	SW_TENTATIVE_DEFN		= TRUE;
+	SW_LAX_POINTER			= TRUE;
+	SW_STRICT_LVALUE		= TRUE;
+	SW_NO_CLASS_CAST		= TRUE;
+	SW_STRICT_REGISTER		= TRUE;
+	SW_UNDEF_FUNCTION_LAX		= TRUE;
+	SW_X_OLD_STYLE_FUNCTIONS	= TRUE;
+	SW_X_BIT_FIELDS			= TRUE;
+	SW_X_NAME_SPACE			= TRUE;
+	SW_X_WARN_RETURN_VALUE		= TRUE;
+	SW_X_UNINITIALIZED_CONST	= TRUE;
+	SW_NO_TYPE_SAFE_LINKAGE		= TRUE;
+	SW_LAX_INITIALIZATION		= TRUE;
+	SW_X_PROMOTE_CHAR		= TRUE;
+	SW_NO_NESTED_TYPE_NAMES		= TRUE;
+	SW_NO_NESTED_ENUMERATOR_NAMES	= TRUE;
+	SW_NOWARN_NO_RETURN_VALUE	= TRUE;
+	SW_DEFINE_STDC_AS_ONE		= TRUE;
+	SW_SYSTEM_MACROS		= FALSE;
+	SW_ALLOW_NULL_VA_START_ARG	= FALSE;
+	SW_WARN_EOF_IN_LINE		= TRUE;
+	SW_ALLOW_VOID_PARAMETERS	= TRUE;
+	SW_NO_PROTO_SCOPE_TAG_NAMES	= FALSE;
+
+end SET_ANSI_C_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* SET_ANSI_C_LIB_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_ANSI_C_LIB_SWITCHES: procedure internal;
+
+	SW_FAVOR_SYSTEM_HEADER_DIR	= FALSE;
+	SW_SYSTEM_SIZE_T		= FALSE;
+	SW_SYSTEM_WCHAR_T		= FALSE;
+
+end SET_ANSI_C_LIB_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* SET_CFRONT_1_2_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_CFRONT_1_2_SWITCHES: procedure internal;
+
+	SW_CFRONT_1_2_MODE		 = TRUE;
+	SW_ZOMBIE_TEMP			 = TRUE;
+	SW_LAX_ACCESS_CONTROL		 = TRUE;
+	SW_X_OVERLOAD			 = TRUE;
+	SW_NO_NESTED_TYPE_NAMES		 = TRUE;
+	SW_X_REFERENCE_TEMP		 = TRUE;
+	SW_X_OVERLOAD_POSTFIX		 = TRUE;
+	SW_NO_PROTO_SCOPE_TAG_NAMES	 = TRUE;
+	SW_ALLOW_INIT_BYPASS_IN_SWITCH	 = TRUE;
+	SW_OPTIONAL_BASE_CLASS_NAME	 = TRUE;
+	SW_ALLOW_OVERLOAD_KEYWORD	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_SEMICOLON	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_TYPEDEF	 = TRUE;
+	SW_ALLOW_DECORATED_CLASSES	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_ENUM_COMMA	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_ARG_COMMA	 = TRUE;
+	SW_ALLOW_TYPEDEF_AS_BASE_CLASS	 = TRUE;
+	SW_X_IGNORE_TYPE_QUALIFIERS	 = TRUE;
+	SW_X_FUDGE_TYPE_QUALIFIERS	 = TRUE;
+	SW_NOWARN_EXTERN_INLINE_CONFLICT = TRUE;
+	SW_ALLOW_PARAMETER_NAME_HIDING	 = TRUE;
+	SW_WARN_PARAM_USED_IN_PROTO	 = TRUE;
+	SW_ALLOW_MEMBER_FUN_REF_TYPE	 = TRUE;
+	SW_X_CAST_OBJECT_TO_REFERENCE	 = TRUE;
+	SW_CFRONT_LOOKUP_NEW_TYPE_NAME	 = TRUE;
+	SW_WARN_SIZEOF_IN_PP_EXPRESSION  = FALSE;
+	SW_LAX_STATIC_MEMBER_DEFINITION	 = TRUE;
+	SW_X_VOID_ELLIPSIS               = TRUE;
+	SW_DEFINE_OLD_CPLUSPLUS_MACRO	 = TRUE;
+	SW_X_UNION_MEMBER_INIT		 = TRUE;
+
+end SET_CFRONT_1_2_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* SET_CFRONT_2_0_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_CFRONT_2_0_SWITCHES: procedure internal;
+
+	SW_CFRONT_2_0_MODE		 = TRUE;
+	SW_ZOMBIE_TEMP			 = TRUE;
+	SW_LAX_ACCESS_CONTROL		 = TRUE;
+	SW_X_OVERLOAD			 = TRUE;
+	SW_NO_NESTED_TYPE_NAMES		 = TRUE;
+	SW_X_REFERENCE_TEMP		 = TRUE;
+	SW_X_OVERLOAD_POSTFIX		 = TRUE;
+	SW_NO_PROTO_SCOPE_TAG_NAMES	 = TRUE;
+	SW_ALLOW_INIT_BYPASS_IN_SWITCH	 = TRUE;
+	SW_OPTIONAL_BASE_CLASS_NAME	 = TRUE;
+	SW_ALLOW_OVERLOAD_KEYWORD	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_SEMICOLON	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_TYPEDEF	 = TRUE;
+	SW_ALLOW_DECORATED_CLASSES	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_ENUM_COMMA	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_ARG_COMMA	 = TRUE;
+	SW_ALLOW_TYPEDEF_AS_BASE_CLASS	 = TRUE;
+	SW_X_IGNORE_TYPE_QUALIFIERS	 = TRUE;
+	SW_X_FUDGE_TYPE_QUALIFIERS	 = TRUE;
+	SW_NOWARN_EXTERN_INLINE_CONFLICT = TRUE;
+	SW_ALLOW_PARAMETER_NAME_HIDING	 = TRUE;
+	SW_WARN_PARAM_USED_IN_PROTO	 = TRUE;
+	SW_ALLOW_MEMBER_FUN_REF_TYPE	 = TRUE;
+	SW_X_CAST_OBJECT_TO_REFERENCE	 = TRUE;
+	SW_CFRONT_LOOKUP_NEW_TYPE_NAME	 = TRUE;
+	SW_WARN_SIZEOF_IN_PP_EXPRESSION  = FALSE;
+	SW_LAX_STATIC_MEMBER_DEFINITION	 = TRUE;
+	SW_X_VOID_ELLIPSIS               = TRUE;
+	SW_DEFINE_OLD_CPLUSPLUS_MACRO	 = TRUE;
+	SW_X_UNION_MEMBER_INIT		 = TRUE;
+
+end SET_CFRONT_2_0_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* SET_CFRONT_2_1_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_CFRONT_2_1_SWITCHES: procedure internal;
+
+	SW_CFRONT_2_1_MODE		 = TRUE;
+	SW_ZOMBIE_TEMP			 = TRUE;
+	SW_LAX_ACCESS_CONTROL		 = TRUE;
+	SW_X_OVERLOAD			 = TRUE;
+	SW_NO_NESTED_TYPE_NAMES		 = TRUE;
+	SW_X_REFERENCE_TEMP		 = TRUE;
+	SW_X_OVERLOAD_POSTFIX		 = TRUE;
+	SW_NO_PROTO_SCOPE_TAG_NAMES	 = TRUE;
+	SW_ALLOW_INIT_BYPASS_IN_SWITCH	 = TRUE;
+	SW_ALLOW_OVERLOAD_KEYWORD	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_SEMICOLON	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_TYPEDEF	 = TRUE;
+	SW_ALLOW_DECORATED_CLASSES	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_ENUM_COMMA	 = TRUE;
+	SW_ALLOW_EXTRANEOUS_ARG_COMMA	 = TRUE;
+	SW_ALLOW_TYPEDEF_AS_BASE_CLASS	 = TRUE;
+	SW_X_IGNORE_TYPE_QUALIFIERS	 = TRUE;
+	SW_X_FUDGE_TYPE_QUALIFIERS	 = TRUE;
+	SW_NOWARN_EXTERN_INLINE_CONFLICT = TRUE;
+	SW_ALLOW_PARAMETER_NAME_HIDING	 = TRUE;
+	SW_WARN_PARAM_USED_IN_PROTO	 = TRUE;
+	SW_ALLOW_MEMBER_FUN_REF_TYPE	 = TRUE;
+	SW_X_CAST_OBJECT_TO_REFERENCE	 = TRUE;
+	SW_CFRONT_LOOKUP_NEW_TYPE_NAME	 = TRUE;
+	SW_WARN_SIZEOF_IN_PP_EXPRESSION  = FALSE;
+	SW_LAX_STATIC_MEMBER_DEFINITION	 = TRUE;
+	SW_X_VOID_ELLIPSIS               = TRUE;
+	SW_DEFINE_OLD_CPLUSPLUS_MACRO	 = TRUE;
+	SW_X_UNION_MEMBER_INIT		 = TRUE;
+	SW_WARN_UNQUALIFIED_NESTED_TYPE	 = TRUE;
+
+end SET_CFRONT_2_1_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* SET_CXX_SWITCHES
+/* ------------------------------------------------------------------- */
+
+SET_CXX_SWITCHES: procedure internal;
+
+	SW_X_LONG_FLOAT			 = FALSE;
+	SW_X_EXTERN_SCOPE		 = FALSE;
+	SW_X_UNSIGNED_PRESERVING	 = FALSE;
+	SW_X_INT_CONSTANT_TYPE		 = FALSE;
+	SW_X_CHAR_POINTER		 = FALSE;
+	SW_X_OLD_ESCAPES		 = FALSE;
+	SW_X_FLOAT_TO_DOUBLE		 = FALSE;
+	SW_X_NO_BRACE_INIT		 = FALSE;
+	SW_X_CAST_LVALUE		 = FALSE;
+	SW_ALLOW_EXTRANEOUS_SEMICOLON	 = FALSE;
+	SW_ALLOW_EXTRANEOUS_TYPEDEF	 = FALSE;
+	SW_ALLOW_DECORATED_CLASSES	 = FALSE;
+	SW_ALLOW_EXTRANEOUS_ENUM_COMMA	 = FALSE;
+	SW_NOWARN_EXTERN_INTERN_CONFLICT = FALSE;
+	SW_DO_NOT_MAP_EXIT_TO_LPI_EXIT	 = FALSE;
+	SW_DO_NOT_MAP_ENTRY_TO_LPI_ENTRY = FALSE;
+
+  	SW_C_PLUS_PLUS			= TRUE;
+  	SW_ANSI_C_MODE			= TRUE;
+  	SW_CLASSIC_C_MODE		= FALSE;
+  	SW_TENTATIVE_DEFN		= FALSE;
+	SW_LAX_POINTER			= FALSE;
+	SW_STRICT_LVALUE		= FALSE;
+	SW_NO_CLASS_CAST		= FALSE;
+	SW_STRICT_REGISTER		= FALSE;
+	SW_UNDEF_FUNCTION_LAX		= FALSE;
+	SW_X_OLD_STYLE_FUNCTIONS	= FALSE;
+	SW_X_BIT_FIELDS			= FALSE;
+	SW_X_NAME_SPACE			= FALSE;
+	SW_X_WARN_RETURN_VALUE		= FALSE;
+	SW_X_UNINITIALIZED_CONST	= FALSE;
+	SW_NO_TYPE_SAFE_LINKAGE		= FALSE;
+	SW_LAX_INITIALIZATION		= FALSE;
+	SW_X_PROMOTE_CHAR		= FALSE;
+	SW_NO_NESTED_TYPE_NAMES		= FALSE;
+	SW_NO_NESTED_ENUMERATOR_NAMES	= FALSE;
+	SW_NOWARN_NO_RETURN_VALUE	= FALSE;
+	SW_DEFINE_STDC_AS_ONE		= FALSE;
+	SW_SYSTEM_MACROS		= TRUE;
+	SW_ALLOW_NULL_VA_START_ARG	= TRUE;
+	SW_WARN_EOF_IN_LINE		= FALSE;
+
+	SW_C_ONLY			= FALSE;
+	SW_NO_WRAPPERS			= FALSE;
+
+	call PROCESS_CXX_ENVIRONMENT_VARS ();
+
+end SET_CXX_SWITCHES;
+
+/* ---------------------------------------------------------------------
+/* OPTION_ERROR
+/*
+/* Print error message and quit immediately
+/* ------------------------------------------------------------------- */
+
+OPTION_ERROR: procedure (MESSAGE) internal;
+
+	declare MESSAGE	character (*) varying;
+
+	call WRITE_ERROR_LINE (MESSAGE);
+	goto ERROR_EXIT;
+
+end OPTION_ERROR;
+
+/* ---------------------------------------------------------------------
+/* HANDLE_DEFINE_OPTION
+/* ------------------------------------------------------------------- */
+
+HANDLE_DEFINE_OPTION: procedure (VALUE) internal;
+
+	declare
+		VALUE		character (*) varying;
+	declare
+		TYPE		type (SHORT_T),
+		P		type (POINTER_T);
+	declare
+		1 DEFINE_ITEM   based,
+		  2 NEXT        type (POINTER_T),
+		  2 TYPE        type (SHORT_T),
+		  2 VALUE       character (80) varying;
+
+	TYPE = 1;
+	goto HANDLE_DEFINE_OR_UNDEF_OPTION;
+
+HANDLE_UNDEF_OPTION: entry (VALUE);
+
+	TYPE = 0;
+
+	HANDLE_DEFINE_OR_UNDEF_OPTION:
+
+	allocate DEFINE_ITEM set (P);
+
+	P->DEFINE_ITEM.NEXT  = null();
+	P->DEFINE_ITEM.TYPE  = TYPE;
+	P->DEFINE_ITEM.VALUE = VALUE;
+
+	if DEFINE_LIST.TAIL ^= null() then
+		DEFINE_LIST.TAIL->DEFINE_ITEM.NEXT = P;
+	else	DEFINE_LIST.HEAD = P;
+
+	DEFINE_LIST.TAIL = P;
+
+end HANDLE_DEFINE_OPTION;
+
+/* ---------------------------------------------------------------------
+/* GET_STRING_ARGUMENT
+/* ------------------------------------------------------------------- */
+
+GET_STRING_ARGUMENT: procedure returns (type (BOOL_T)) internal;
+
+	declare XARG CHARACTER (XGCLA_ARG_SIZE) varying;
+
+	if ^XGCLA (XARG, XGCLA_NONKEYWORD_TYPE) then
+		return (FALSE);
+
+	ARG = XARG;
+	OPTION = OPTION || ' ' || ARG;
+	return (TRUE);
+
+END GET_STRING_ARGUMENT;
+
+/* ---------------------------------------------------------------------
+/* GET_INTEGER_ARGUMENT
+/* ------------------------------------------------------------------- */
+
+GET_INTEGER_ARGUMENT: procedure returns  (type (BOOL_T));
+
+	declare XARG character (XGCLA_ARG_SIZE) varying;
+
+	if ^XGCLA (XARG, XGCLA_INTEGER_TYPE) then
+		return (FALSE );
+
+	ARG = XARG;
+	OPTION = OPTION || ' ' || ARG;
+
+	on ERROR goto ERROR;
+
+	LONG_ARG_INTEGER = binary (ARG, 31);
+	SHORT_ARG_INTEGER = binary (ARG, 15);
+	return (TRUE);
+
+	ERROR:
+	call OPTION_ERROR ('Invalid integer argument: ' || ARG);
+	return (FALSE);
+
+end GET_INTEGER_ARGUMENT;
+
+/* ---------------------------------------------------------------------
+/* PRINT_VERSION
+/* ------------------------------------------------------------------- */
+
+PRINT_VERSION: procedure internal;
+
+	%include VERSION_DCL;
+	%include GBL_LANGUAGE_NAME_IN;
+
+	if SW_C_ONLY then
+		ARG = PRODUCT_PREFIX || LANGUAGE_NAME (LAN_C);
+	else	ARG = PRODUCT_PREFIX || LANGUAGE_NAME (LAN_CPLUS);
+	ARG = ARG || ' ' || trim (LPI_PRODUCT_VERSION) ||
+	      ' (' || CXXFE_VERSION || ')';
+	ARG = ARG || ' -- Copyright (c) 1993 Liant Software Corporation';
+	call WRITE_CONSOLE_LINE (ARG);
+
+end PRINT_VERSION;
+
+/* ---------------------------------------------------------------------
+/* PRINT_SUPPORT
+/* ------------------------------------------------------------------- */
+
+PRINT_SUPPORT: procedure internal;
+
+	call SIMPLE_DIAGNOSTIC (ERR_SUPPORT_MESSAGE);
+
+end PRINT_SUPPORT;
+
+/* ---------------------------------------------------------------------
+/* PRINT_AUTHORS
+/* ------------------------------------------------------------------- */
+
+PRINT_AUTHORS: procedure internal;
+
+	call SIMPLE_DIAGNOSTIC (ERR_AUTHORS);
+
+end PRINT_AUTHORS;
+
+end XINIFE;
+

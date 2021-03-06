@@ -1,0 +1,34 @@
+/* CodeWatch M68 CVTF12.IN - */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.20.91  VTF  (002) Added declarations for CF8F12 and CF4F12.
+ *
+ *  04.08.91  MJF  (001) Original version.
+ *
+ **********************************************************************/
+
+    declare
+        /* Convert float bin(64) to float bin(52) */
+        CF12F8		entry ( float binary (FLOAT_BIN_MAX_P),
+				pointer ) external,
+
+        /* Convert float bin(64) to float bin(23) */
+	CF12F4		entry ( float binary (FLOAT_BIN_DFT_P),
+				pointer ) external,
+
+        /* Convert float bin(52) to float bin(64) */
+        CF8F12          entry (pointer, float bin(FLOAT_BIN_MAX_P)) external,
+
+        /* Convert float bin(23) to float bin(64) */
+        CF4F12          entry (pointer, float bin(FLOAT_BIN_DFT_P)) external;

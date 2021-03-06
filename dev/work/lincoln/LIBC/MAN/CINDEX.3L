@@ -1,0 +1,49 @@
+.TH CINDEX 3L LOCAL
+
+.SH NAME
+cindex - index to choice of characters in a string
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+cindex(str, charset, n)
+.br
+char *str, *charset;
+.br
+unsigned int n;
+.ft P
+
+.SH DESCRIPTION
+Returns a pointer to the
+\fIn\fPth occurrence of a character in the string \fIstr\fP,
+which is also part of the set of characters specified in \fIcharset\fP,
+where the \fIcharset\fP string is described as follows.
+
+If the first character in the string \fIcharset\fP is not a caret
+(^), then a pointer to the \fIn\fPth occurrence of a character in
+the string \fIstr\fP which also appears in the string \fIcharset\fP will
+be returned, or NULL if none are found.
+That is, the \fIcharset\fP string describes the set of characters to index to.
+
+If the first character in the string \fIcharset\fP is a caret (^),
+then a pointer to the \fIn\fPth occurrence of a character in the
+string \fIstr\fP which does not appear in string \fIcharset\fP will be
+returned, or NULL if none are found.
+That is, the \fIcharset\fP string describes the set of characters to index past.
+
+The backslash  character (\\) is used to escape the caret and itself as follows.
+If the first \fIcharset\fP character is a backslash, and the second
+is a caret, then the caret is to be taken literally, and the
+the backslash is ignored.  If the first and second characters
+are both backslashes, then they are to be taken as one backslash.
+
+If the the \fIcharset\fP string is NULL or empty,
+it is assumed to represent
+all white space characters (ala \fIisspace/ctype(3)\fP).
+
+.SH FILES
+cindex.c
+
+.SH SEE ALSO
+sindex(3L), sdelim(3L), fskip(3L), string(3)

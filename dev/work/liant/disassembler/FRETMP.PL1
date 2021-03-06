@@ -1,0 +1,43 @@
+/* LPI-DEBUG M68 FRETMP.PL1 - Free temporary data storage in user space */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.12.86  DGM  000  Original.  See LPI-DEBUG document
+ *                      "System Interface Specification".
+ *
+ **********************************************************************/
+
+/* --------------------------------------------------------------------
+ * FRETMP - Free user memory allocated by debugger
+ *
+ * This routine frees memory obtained by ALCTMP and DOCALL.  It
+ * is only used when the debugger runs in separate process mode.
+ *
+ * Input:  TEMPADDR - Value obtained from MRKTMP.
+ *
+ **********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include TARGET_IN;
+
+FRETMP: procedure (TEMPADDR);
+
+    declare 
+        TEMPADDR    fixed binary (ADDRESS_LENGTH);
+
+    PROGRAM_REGISTER_AREA->REGS.A7 = TEMPADDR;
+
+end FRETMP;
+

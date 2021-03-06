@@ -1,0 +1,267 @@
+/* C++ putctx.pl1 - Emit the token context of the error */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.04.91  DGM  011  Added GLOBAL_IN.
+ *  11.29.90  DGM  010  Minor fix.
+ *  09.25.90  DGM  009  Preprocessor include file name changes.
+ *  09.14.90  DGM  008  Changed include file names and VOP names.
+ *  06.05.90  DGM  007  Updated for the new utilities.
+ *  05.04.90  DGM  006  Fix dumb coding error, and replaced calls to 
+ *			SET_PEEK_TOKEN/ADVANCE_PEEK_TOKEN with calls to
+ *			SET_RAW_PEEK_TOKEN/ADVANCE_RAW_PEEK_TOKEN; this
+ *			prevents this routine from being called recursively
+ *			by the string-literal/character-constant processing
+ *			routines called by SET_PEEK_TOKEN/ADVANCE_PEEK_TOKEN.
+ *  04.19.90  DGM  005  Check for "cooked" string-literal & char-constant
+ *			in GET_TOKEN_SPELLING.
+ *  04.19.90  DGM  004  Added declaration of length builtin.
+ *  09.28.89  DGM  000  Original; cloned & modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.04.91 011 PUTCTX');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_LEXER_PKG;
+%include CXX_PP_TOKEN_POD_SPELLING_PKG;
+%include CXX_PP_CHARACTER_SET_IN;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+%replace MAX_LINE_LENGTH	by 128;
+
+/*
+/* The line is divided into a left and right section, of length
+/* LEFT_CONTEXT_LENGTH and RIGHT_CONTEXT_LENGTH respectively.
+/* The matched-token, current-token, and next-token will all be put
+/* in the right half; reasoning that the user wants to see more left
+/* context (i.e. what came before) than right.
+/**/
+
+%replace LEFT_CONTEXT_LENGTH	by 48;
+%replace RIGHT_CONTEXT_LENGTH	by 32;
+
+/* ---------------------------------------------------------------------
+/* PUTCTX
+/*
+/* Reconstruct and emit a line consisting of the token stream (with one
+/* space separating each token) in the vicinity of the error, and return
+/* in MARK the position of the *beginning* of the offending token in the
+/* line.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+PUTCTX: procedure (MARK, PHASE) external;
+
+	declare
+		MARK			type (SHORT_T),
+		PHASE			type (SHORT_T);
+	declare
+		(LINE, LCS, RCS)	character (MAX_LINE_LENGTH) varying,
+		(LCL, MTL)		type (SHORT_T),
+		(I, N)			type (SHORT_T),
+		(P, Q, R)		type (POINTER_T);
+	declare
+		TS			character
+					(MAX_TOKEN_SPELLING_LENGTH + 1) varying;
+
+	/* ------------------------------------------------------------
+	/* Stuff the matched-token and current-token spellings
+	/* into the right context portion of the token stream.
+	/* ----------------------------------------------------------- */
+
+	RCS = '';
+
+	do I = 1 to 2;
+		if I = 1 then P = MATCHED_TOKEN_PTR;
+		else	      P = CURRENT_TOKEN_PTR;
+		call SET_CURRENT_TOKEN_SPELLING (P);
+		if I = 1 then
+			MTL = length (TS);
+		else if length (TS) > 0 then
+			TS = ' ' || TS;
+		if (length (RCS) + length (TS)) > RIGHT_CONTEXT_LENGTH then do;
+			N = RIGHT_CONTEXT_LENGTH - length (RCS);
+			if N > 1 then
+				RCS = RCS || substr (TS, 1, N);
+			leave;
+		end;
+		else	RCS = RCS || TS;
+		if P->TOKEN_POD.TYPE = EOF_TOKEN then 
+			leave;
+	end;            
+
+	/* -------------------------------------------------------------------
+	/* Reconstruct the rest of the right context portion of the token
+	/* stream (RCS). If the right-most token won't fit, truncate its tail.
+	/* ----------------------------------------------------------------- */
+
+	call SET_RAW_PEEK_TOKEN ();
+
+	do while ('1'B);
+		call SET_CURRENT_TOKEN_SPELLING (PEEK_TOKEN_PTR);
+		if length (TS) > 0 then
+			TS = ' ' || TS;
+		if (length (RCS) + length (TS)) > RIGHT_CONTEXT_LENGTH then do;
+			N = RIGHT_CONTEXT_LENGTH - length (RCS);
+			if N > 1 then
+				RCS = RCS || substr (TS, 1, N);
+			leave;
+		end;
+		else	RCS = RCS || TS;
+		if PEEK_TOKEN.TYPE = EOF_TOKEN then 
+			leave;
+		call ADVANCE_RAW_PEEK_TOKEN ();
+	end;
+
+	/* ---------------------------------------------------------
+	/* Reconstruct the left context portion of the token stream;
+	/* set the left context spelling (LCS) and length (LCL).
+	/* If the left-most token won't fit, truncate its head.
+	/* ------------------------------------------------------- */
+
+	LCS = '';
+	LCL = LEFT_CONTEXT_LENGTH + (RIGHT_CONTEXT_LENGTH - length (RCS));
+
+	do I = TOKEN_CONTEXT_INDEX to 1 by -1
+	while (TOKEN_CONTEXT (I) ^= null ());
+		call SET_CURRENT_TOKEN_SPELLING (TOKEN_CONTEXT (I));
+		if length (TS) > 0 then
+			TS = TS || ' ';
+		if (length (TS) + length (LCS)) > LCL then do;
+			N = LCL - length (LCS);
+			if N > 1 then
+				LCS = substr (TS, length (TS) - N + 1) || LCS;
+			goto MARK_CONTEXT;
+		end;
+		else	LCS = TS || LCS;
+	end;
+
+	do I = MAX_TOKEN_CONTEXT to (TOKEN_CONTEXT_INDEX + 1) by -1
+	while (TOKEN_CONTEXT (I) ^= null ());
+		call SET_CURRENT_TOKEN_SPELLING (TOKEN_CONTEXT (I));
+		if length (TS) > 0 then
+			TS = TS || ' ';
+		if (length (TS) + length (LCS)) > LCL then do;
+			N = LCL - length (LCS);
+			if N > 1 then
+				LCS = substr (TS, length (TS) - N + 1) || LCS;
+			leave;
+		end;
+		else	LCS = TS || LCS;
+	end;
+
+	/* -------------------------------------
+	/* Set the final position of the marker.
+	/* ----------------------------------- */
+
+	MARK_CONTEXT:
+
+	MARK = length (LCS) + 1;
+
+	if ((MARK + MTL + 1) <= RIGHT_CONTEXT_LENGTH) then
+		MARK = MARK + MTL + 1;
+
+	/* ----------------------------------------------------
+	/* Put the final context line together and dump it out.
+	/* -------------------------------------------------- */
+
+	LINE = LCS || RCS;
+	call WRITE_ERROR_LINE (LINE);
+
+	return;
+
+/* =====================================================================
+/* SET_CURRENT_TOKEN_SPELLING
+/*
+/* Return in TS the token spelling representing the token pointed to by
+/* the given token pod pointer TP.  Make sure that the token spelling is
+/* prepared for printing out in an error message (e.g. all characters
+/* within string literals and characters constants are printable).
+/*
+/* -TODO- Maybe shorten really long strings so as not to hog up the line.
+/* =================================================================== */
+
+SET_CURRENT_TOKEN_SPELLING: procedure (TP) internal;
+
+	declare
+		TP		type (POINTER_T);
+	declare
+		(C, I, L, T)	type (SHORT_T),
+		Q		type (CHAR_T);
+
+	TS = TOKEN_SPELLING (TP);
+
+	T = TP->TOKEN_POD.TYPE;
+
+	if	(T = STRING_LITERAL_TOKEN) |
+		(T = CHAR_CONSTANT_TOKEN) |
+		(T = COOKED_STRING_LITERAL_TOKEN) |
+		(T = COOKED_CHAR_CONSTANT_TOKEN) then
+		I = 2;
+
+	else if (T = WSTRING_LITERAL_TOKEN) |
+		(T = WCHAR_CONSTANT_TOKEN) |
+		(T = COOKED_WSTRING_LITERAL_TOKEN) |
+		(T = COOKED_WCHAR_CONSTANT_TOKEN) then
+		I = 3;
+
+	else	return;
+
+	/* ------------------------------------------------------
+	/* Replace all characters which were mapped from escape
+	/* sequences as well as non printing characters to a dot.
+	/* ---------------------------------------------------- */
+
+	L = length (TS) - 1;
+
+	if substr (TS, L, 1) = byte (NULL_CHAR) then do;
+		Q = substr (TS, 1, L + 1);
+		L = L - 1;
+		TS = substr (TS, 1, L) || Q;
+	end;
+
+	do I = I to L;
+
+		C = rank (substr (TS, I, 1));
+
+		/* ------------------------------------------
+		/* -WARNING- The following two tests *assume*
+		/* that we are using an ASCII character set!!
+		/* ---------------------------------------- */
+
+		if (C < SPACE_CHAR) | (C > TILDE_CHAR) then
+			substr (TS, I, 1) = byte (UNDERSCORE_CHAR);
+	end;
+
+end SET_CURRENT_TOKEN_SPELLING;
+
+end PUTCTX;
+

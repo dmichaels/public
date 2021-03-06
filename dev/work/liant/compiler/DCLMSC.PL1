@@ -1,0 +1,417 @@
+/* C++ dclmsc.pl1 - Miscellaneous symbol/type declaration routines */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.02.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)DCLMSC  000  4/2/90  (c) 1990 Language Processors, Inc.');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include C_STANDARD_DEFS_IN;
+%include C_EXTERNAL_NAME_MAP_IN;
+%include C_GLOBAL_DECLARATION_DATA_IN;
+%include C_GLOBAL_SEMANTIC_DATA_IN;
+%include C_PAR_DECLARATION_PKG;
+%include C_DECLARATION_STACK_PKG;
+%include C_LEXER_TOKENS_PKG;
+%include C_SYMBOL_TABLE_PKG;
+%include C_NODE_MGR_PKG;
+%include C_TYPE_SIZE_PKG;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_IMPLICIT
+/*
+/* This is used to declare a simple symbol with the given name, name-kind,
+/* storage-class, and base-type, on the fly.  This is called, for example,
+/* when a reference to an undeclared variable is made and we want to
+/* continue as if it was declared as "int x", after giving a diagnostic.
+/* ------------------------------------------------------------------- */
+
+DECLARE_IMPLICIT: procedure (NAME, NAME_KIND, SC, BT)
+		  returns   (type (NID_T))
+		  external  (X_DECLARE_IMPLICIT);
+	declare
+		NAME		type (NID_T),
+		NAME_KIND	type (SHORT_T),
+		SC		type (SHORT_T),
+		BT		type (SHORT_T);
+
+	call SAVE_DECLARATION_STATE ();
+	call CLEAR_DECLARATION ();
+
+	CURRENT_NAME          = NAME;
+	CURRENT_NAME_KIND     = NAME_KIND;
+	CURRENT_STORAGE_CLASS = SC;
+	CURRENT_BASE_TYPE     = BT;
+
+	call SET_DECLARATION ();
+
+	call RESTORE_DECLARATION_STATE ();
+
+	return (CURRENT_SYMBOL);
+
+end DECLARE_IMPLICIT;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_IMPLICIT_FUNCTION
+/*
+/* This is used to declare a simple old-style function symbol with the
+/* given name, name-kind, storage-class, and return-type, on the fly.
+/* This is called, for example in ANSI-C mode, when a call to an
+/* undeclared function is encountered and we want to implicitly
+/* declare it as "extern int f()".
+/* ------------------------------------------------------------------- */
+
+DECLARE_IMPLICIT_FUNCTION: procedure (NAME, NAME_KIND, SC, BT)
+			   returns   (type (NID_T))
+			   external  (X_DECLARE_IMPLICIT_FUNCTION);
+	declare
+		NAME		type (NID_T),
+		NAME_KIND	type (SHORT_T),
+		SC		type (SHORT_T),
+		BT		type (SHORT_T);
+
+	call SAVE_DECLARATION_STATE ();
+	call CLEAR_DECLARATION ();
+
+	CURRENT_NAME          = NAME;
+	CURRENT_NAME_KIND     = NAME_KIND;
+	CURRENT_STORAGE_CLASS = SC;
+	CURRENT_BASE_TYPE     = BT;
+
+	call BEGIN_FUNCTION_TYPE ();
+
+	CURRENT_PROTOTYPED = FALSE;
+
+	call SET_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE_QUALIFIER ();
+
+	call SET_DECLARATION ();
+
+	call RESTORE_DECLARATION_STATE ();
+
+	return (CURRENT_SYMBOL);
+
+end DECLARE_IMPLICIT_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_LABEL
+/*
+/* Build a new label symbol-node, based on the current name.  Returns
+/* with the label symbol-node paged in and assigned to CURRENT_SYMBOL.
+/* ------------------------------------------------------------------- */
+
+DECLARE_LABEL: procedure (NAME)
+	       returns   (type (NID_T))
+	       external  (X_DECLARE_LABEL);
+
+	declare
+		NAME		type (NID_T);
+	declare
+		THIS_TYPE	type (NID_T),
+		THIS_SYMBOL	type (NID_T),
+		THIS_SIZE	type (LONG_T),
+        	THIS_SIZE_UNITS	type (SHORT_T),
+		THIS_BOUNDARY	type (SHORT_T);
+
+	THIS_SYMBOL = MAKE_SYMBOL (LABEL_SK);
+
+	SYM_NODE.TYPE 		= GET_SIMPLE_TYPE (LABEL_BT);
+	SYM_NODE.TOP_TYPE 	= byte (LABEL_BT);
+	SYM_NODE.NAME		= CURRENT_NAME;
+	SYM_NODE.NAME_KIND	= byte (VANILLA_NAME);
+
+	/* ANSI-C set the STORAGE_CODE to byte (CONSTANT_SC) ? */
+
+	/*
+	/* I (PKT) am not sure we need this size
+	/* information so soon, but ANSI-C did this.
+	/**/
+
+	call SIMPLE_TYPE_SIZE (LABEL_BT, THIS_SIZE,
+			       THIS_SIZE_UNITS, THIS_BOUNDARY);
+
+        SYM_NODE.SIZE           = THIS_SIZE;
+        SYM_NODE.SIZE_UNITS     = byte (THIS_SIZE_UNITS);
+        SYM_NODE.OFFSET_UNITS   = byte (THIS_SIZE_UNITS);
+        SYM_NODE.BOUNDARY       = byte (THIS_BOUNDARY);
+
+	call INSTALL_SYMBOL (THIS_SYMBOL, CURRENT_FUNCTION_SCOPE);
+
+	return (THIS_SYMBOL);
+
+end DECLARE_LABEL;
+
+/* ---------------------------------------------------------------------
+/* GET_SIMPLE_TYPE
+/*
+/* Return a type-node id representing the given simple (base) type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_SIMPLE_TYPE: procedure (BT)
+		 returns   (type (NID_T))
+		 external  (X_GET_SIMPLE_TYPE);
+	declare
+		BT		type (SHORT_T);
+	declare
+		P		pointer,
+		THIS_TYPE	type (NID_T);
+
+	call NEW_TYPE_NODE (THIS_TYPE, P);
+	P->TYPE_NODE.LEVEL		= byte (0);
+	P->TYPE_NODE.TYPE (0)		= byte (BT);
+	P->TYPE_NODE.TYPE_QUALIFIER (0)	= NULL_TQ;
+	P->TYPE_NODE.TYPE_ID		= NULL_ID;
+	P->TYPE_NODE.TYPEDEF_ID		= NULL_ID;
+	P->TYPE_NODE.DIMENSIONS		= NULL_ID;
+	P->TYPE_NODE.SIGNATURES		= NULL_ID;
+	P->TYPE_NODE.CLASSES		= NULL_ID;
+	call RELEASE_TYPE_NODE (THIS_TYPE);
+	return (THIS_TYPE);
+
+end GET_SIMPLE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_POINTER_TYPE
+/*
+/* Return a type-node id representing a pointer to the given base type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_POINTER_TYPE: procedure (BT)
+		  returns   (type (NID_T))
+		  external  (X_GET_POINTER_TYPE);
+	declare
+		BT		type (SHORT_T);
+	declare
+		P		pointer,
+		THIS_TYPE	type (NID_T);
+
+	call NEW_TYPE_NODE (THIS_TYPE, P);
+	P->TYPE_NODE.LEVEL		= byte (1);
+	P->TYPE_NODE.TYPE (1)		= byte (POINTER_DT);
+	P->TYPE_NODE.TYPE (0)		= byte (BT);
+	P->TYPE_NODE.TYPE_QUALIFIER (0)	= NULL_TQ;
+	P->TYPE_NODE.TYPE_ID		= NULL_ID;
+	P->TYPE_NODE.TYPEDEF_ID		= NULL_ID;
+	P->TYPE_NODE.DIMENSIONS		= NULL_ID;
+	P->TYPE_NODE.SIGNATURES		= NULL_ID;
+	P->TYPE_NODE.CLASSES		= NULL_ID;
+	call RELEASE_TYPE_NODE (THIS_TYPE);
+	return (THIS_TYPE);
+
+end GET_POINTER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_MEMBER_POINTER_TYPE
+/*
+/* If the given (top) type code is not a function type, then return a
+/* type-node id representing a pointer-to-data-member type (i.e. "void *").
+/* Otherwise, if it (the given type code) is a function type, then return
+/* a type-node id representing a pointer-to-member-function type, i.e:
+/*
+/*	// See C++ARM, section 8.1.2c
+/*
+/*	struct ___PointerToMemberFunction___ { 
+/*		short	       delta;
+/*		short	       index;
+/*		union { void  *faddr;
+/*			short  voffset;
+/*		}	       u;
+/*	};
+/*
+/* Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_MEMBER_POINTER_TYPE: procedure (TOP_TYPE)
+			 returns   (type (NID_T))
+			 external  (X_GET_MEMBER_POINTER_TYPE);
+
+	declare
+		TOP_TYPE			type (SHORT_T);
+	declare
+		THIS_TYPE			type (NID_T),
+		THIS_SYMBOL			type (NID_T),
+		SAVE_MATCHED_TOKEN_TYPE		type (SHORT_T),
+		SNID				type (SNID_T);
+	declare
+		MEMBER_DATA_POINTER_TYPE	type (NID_T)
+						static initial (NULL_ID),
+		MEMBER_FUNCTION_POINTER_TYPE	type (NID_T)
+						static initial (NULL_ID);
+
+	/* See if we want a pointer-to-member for a non-function type */
+
+	if TOP_TYPE ^= FUNCTION_DT then do;
+		if MEMBER_DATA_POINTER_TYPE = NULL_ID then
+			MEMBER_DATA_POINTER_TYPE = GET_POINTER_TYPE (VOID_BT);
+		return (MEMBER_DATA_POINTER_TYPE);
+	end;
+
+	/* Here, we want a pointer-to-member for function type */
+
+	if MEMBER_FUNCTION_POINTER_TYPE ^= NULL_ID then
+		return (MEMBER_FUNCTION_POINTER_TYPE);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* Save pertinent declaration processing data */
+
+	call SAVE_SCOPE_STATE ();
+	call SAVE_DECLARATION_STATE ();
+	call SAVE_NAME_STATE ();
+	call SAVE_TYPE_STATE ();
+
+	/* Save the matched-token */
+
+	SAVE_MATCHED_TOKEN_TYPE = MATCHED_TOKEN.TYPE;
+
+	/* Set to global scope */
+
+	call FORCE_GLOBAL_SCOPE ();
+
+	/* Declare the tag "struct __PointerToMemberFunction___" */
+
+	call CLEAR_DECLARATION ();
+
+	MATCHED_TOKEN.TYPE = KW_STRUCT_TOKEN;
+
+	call BEGIN_CLASS_DECLARATION ();
+
+	CURRENT_NAME = FORM_IDENTIFIER_TOKEN ('___PointerToMemberFunction___');
+
+	call SET_TAG_NAME ();
+	THIS_SYMBOL = CURRENT_BASE_TYPE_ID;
+
+	/* Begin the struct body */
+
+	call BEGIN_CLASS_BODY ();
+
+	/* Declare the first member "short delta" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = SHORT_BT;
+	call SET_MEMBER_BASE_TYPE ();
+	CURRENT_NAME = FORM_IDENTIFIER_TOKEN ('delta');
+	call SET_MEMBER_DECLARATION ();
+
+	/* Declare the second member "short index" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = SHORT_BT;
+	call SET_MEMBER_BASE_TYPE ();
+	CURRENT_NAME = FORM_IDENTIFIER_TOKEN ('index');
+	call SET_MEMBER_DECLARATION ();
+
+	/* Declare the (unnamed) union member tag */
+
+	call CLEAR_DECLARATION ();
+	MATCHED_TOKEN.TYPE = KW_UNION_TOKEN;
+	call BEGIN_CLASS_DECLARATION ();
+
+	/* Begin the union member body */
+
+	call BEGIN_CLASS_BODY ();
+
+	/* Declare the first union member "void *faddr" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_MEMBER_BASE_TYPE ();
+	call SET_POINTER_TYPE ();
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	CURRENT_NAME = FORM_IDENTIFIER_TOKEN ('faddr');
+	call SET_MEMBER_DECLARATION ();
+
+	/* Declare the second union member "short voffset" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = SHORT_BT;
+	call SET_MEMBER_BASE_TYPE ();
+	CURRENT_NAME = FORM_IDENTIFIER_TOKEN ('voffset');
+	call SET_MEMBER_DECLARATION ();
+
+	/* End the union member declaration */
+
+	call END_CLASS_BODY ();
+	call SET_CLASS_DECLARATION ();
+
+	/* Declare the third struct member "union { ... } u" */
+
+	call SET_MEMBER_BASE_TYPE ();
+	CURRENT_NAME = FORM_IDENTIFIER_TOKEN ('u');
+	call SET_MEMBER_DECLARATION ();
+
+	/* End the struct declaration */
+
+	call END_CLASS_BODY ();
+	call SET_CLASS_DECLARATION ();
+
+	/* Restore the matched-token */
+
+	MATCHED_TOKEN.TYPE = SAVE_MATCHED_TOKEN_TYPE;
+
+	/* Get the type-node id of the struct just created */
+
+	call SET_SYM_NODE (THIS_SYMBOL);
+	MEMBER_FUNCTION_POINTER_TYPE = SYM_NODE.TYPE;
+
+	/* Restore pertinent declaration processing data */
+
+	call RESTORE_TYPE_STATE ();
+	call RESTORE_NAME_STATE ();
+	call RESTORE_DECLARATION_STATE ();
+	call RESTORE_SCOPE_STATE ();
+
+	/* Restore the current-node-id */
+
+	call RESTORE_NODE (SNID);
+
+	/* Return the type-node id of the pointer-to-member struct */
+
+	return (MEMBER_FUNCTION_POINTER_TYPE);
+
+/* ---------------------------------------------------------------------
+/* FORCE_GLOBAL_SCOPE
+/* ------------------------------------------------------------------- */
+
+FORCE_GLOBAL_SCOPE: procedure internal;
+	
+	CURRENT_SCOPE_TYPE		= GLOBAL_SCOPE;
+	CURRENT_SCOPE			= CURRENT_GLOBAL_SCOPE;
+	CURRENT_CLASS_SCOPE     	= NULL_ID;
+	CURRENT_BLOCK_SCOPE     	= NULL_ID;
+	CURRENT_FUNCTION_SCOPE  	= NULL_ID;
+	CURRENT_PROTOTYPE_SCOPE 	= NULL_ID;
+	CURRENT_NON_CLASS_SCOPE		= CURRENT_GLOBAL_SCOPE;
+	CURRENT_GLOBAL_OR_LOCAL_SCOPE	= CURRENT_GLOBAL_SCOPE;
+
+end FORCE_GLOBAL_SCOPE;
+
+end GET_MEMBER_POINTER_TYPE;
+

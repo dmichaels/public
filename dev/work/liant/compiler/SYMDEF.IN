@@ -1,0 +1,277 @@
+/* C++ CXX_SYMBOL_TABLE_DEFS_IN - Symbol table definitions */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  05.12.92  DGM  021  Added FORTRAN_LINKAGE, PASCAL_LINKAGE, PLI_LINAKGE.
+ *  01.21.92  DGM  020  Added MEMBER_REFERENCE_DT.
+ *  07.18.91  DGM  019  Added HB_LINKAGE.
+ *  05.24.91  PKT  018  Added TYPE_DESTRUCTOR_NK.
+ *  02.01.91  DGM  017  Changed xxx_NAME to xxx_NK.
+ *  10.22.90  DGM  016  Added DEFAULT_ARGUMENT_TQ.
+ *  09.14.90  DGM  015  Changed include file names and VOP names.
+ *  09.13.90  DGM  014  Changed xxx_SC names to xxx_ST.
+ *  08.31.90  DGM  013  Obsolesenced SSHORT_T, SINT_T, and SLONG_T.
+ *  08.29.90  DGM  012  Added NBASIC_TYPES and MAX_TYPE_LEVEL.
+ *  08.08.90  DGM  011  New type-node.
+ *  07.19.90  DGM  010  Added NON_STATIC_DATA_MEMBER_SK.
+ *  05.10.90  DGM  009  Updated DUMMY_SK.
+ *  04.27.90  DGM  008  Removed bit-field base-type codes & reorganized.
+ *  03.27.90  DGM  007  Added ANON_UNION_[MEMBER/TAG]_SK.
+ *  03.02.90  DGM  006  Updated; new name space (symbol kind) definitions.
+ *			TODO, maybe get rid of the BIT_FIELD types; may
+ *			not need them after all.
+ *  02.22.90  DGM  005  Updated.
+ *  02.15.90  DGM  004  Updated.
+ *  10.02.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Symbol Kind Definitions
+/*
+/* These definitions encode attributes of a symbol scope, type,
+/* storage-class, and name.  They are used mainly to implement
+/* name spaces, but can be very useful in general.  They are
+/* (in general) set by the SET_XXX_DECLARATION routines in PARDCL.
+/*
+/* These attribute bits (of type LONG_BITS_T) may be set, cleared, and
+/* tested using standard (C-like) bitwise OR/AND idioms.  E.g to turn on
+/* an attribute use: "K = K | TAG_SK", to turn off an attribute
+/* use: "K = K & ^TAG_SK", and to test for an attribute use:
+/* "if (K & TAG_SK) = TAG_SK then".
+/*
+/* These x_SK definitions are used to set the KIND_UNION field in the
+/* SYM_NODE (in CXX_SYMBOL_TABLE_NODES_IN); this field contains corresponding
+/* structure bit field declarations which must be kept in sync with the
+/* definitions here.  This is so that when referencing the symbol "kind"
+/* directly from the SYM_NODE, we can use for example "if SYM_NODE.IS_TAG
+/* then" instead of "if (SYM_NODE.KIND & TAG_SK) = TAG_SK then".
+/*
+/* Note the way the bits are OR'd together to create composite "kinds";
+/* e.g. a STRUCT_TAG is also an AGGREGATE_TAG, a TAG, and a TYPE.
+/* ------------------------------------------------------------------- */
+
+/*
+/* Symbol "kind" definitions -- note the following main kinds:
+/*
+/* - ANY_SK refers to any type *or* non-type symbol, but *not* a label.
+/* - VANILLA_SK refers to any non-type symbol.
+/* - TYPE_SK refers to any type symbol.
+/* - LABEL_SK refers to any label symbol.
+/* - TAG_SK refers to any class, struct, (anonymous) union, or enum tag.
+/* - MEMBER_SK refers to any class, struct, (anonymous) union, or enum member.
+/* - AGGREGATE_TAG_SK refers to any class, struct, (anonymous) union tag.
+/* - AGGREGATE_MEMBER_SK refers to any class, struct, (anonymous) union member.
+/* - NON_STATIC_DATA_MEMBER_SK refers to any class, struct, (anonymous)
+/*   union member (NOT an enum member) which is neither a member function 
+/*   nor a static member.
+/**/
+
+%replace ANY_SK                    by '00000000000000000000000000000001'B;
+%replace VANILLA_SK                by '00000000000000000000000000000011'B;
+%replace FUNCTION_SK               by '00000000000000000000000000000111'B;
+%replace VANILLA_FUNCTION_SK       by '00000000000000000000000000001111'B;
+%replace CONSTRUCTOR_FUNCTION_SK   by '00000000000000000000000000010111'B;
+%replace DESTRUCTOR_FUNCTION_SK    by '00000000000000000000000000100111'B;
+%replace CONVERSION_FUNCTION_SK    by '00000000000000000000000001000111'B;
+%replace OPERATOR_FUNCTION_SK      by '00000000000000000000000010000111'B;
+%replace DATA_SK                   by '00000000000000000000000100000011'B;
+%replace PARAMETER_SK              by '00000000000000000000001100000011'B;
+%replace CONSTANT_SK               by '00000000000000000000010100000011'B;
+%replace TYPE_SK                   by '00000000000000000000100000000001'B;
+%replace TAG_SK                    by '00000000000000000001100000000001'B;
+%replace AGGREGATE_TAG_SK          by '00000000000000000011100000000001'B;
+%replace CLASS_STRUCT_TAG_SK       by '00000000000000000111100000000001'B;
+%replace CLASS_TAG_SK              by '00000000000000001111100000000001'B;
+%replace STRUCT_TAG_SK             by '00000000000000010111100000000001'B;
+%replace UNION_TAG_SK              by '00000000000000100011100000000001'B;
+%replace ANON_UNION_TAG_SK         by '00000000000001000011100000000001'B;
+%replace ENUM_TAG_SK               by '00000000000010000001100000000001'B;
+%replace MEMBER_SK                 by '00000000000100000000000000000001'B;
+%replace ENUM_MEMBER_SK            by '00000000001100000000010100000011'B;
+%replace AGGREGATE_MEMBER_SK       by '00000000010100000000000000000001'B;
+%replace CLASS_STRUCT_MEMBER_SK    by '00000000110100000000000000000001'B;
+%replace CLASS_MEMBER_SK           by '00000001110100000000000000000001'B;
+%replace STRUCT_MEMBER_SK          by '00000010110100000000000000000001'B;
+%replace UNION_MEMBER_SK           by '00000100010100000000000000000001'B;
+%replace ANON_UNION_MEMBER_SK      by '00001000010100000000000000000001'B;
+%replace NON_STATIC_DATA_MEMBER_SK by '00010000010100000000000100000011'B;
+%replace BIT_FIELD_SK              by '00110000010100000000000100000011'B;
+%replace LABEL_SK                  by '01000000000000000000000000000010'B;
+%replace DUMMY_SK                  by '10000000000000000000000000000000'B;
+
+/* ---------------------------------------------------------------------
+/* Name "kind" Definitions
+/* ------------------------------------------------------------------- */
+
+%replace LB_NAME_KIND		by 0;
+%replace VANILLA_NK		by 0;
+%replace OPERATOR_NK		by 1;
+%replace CONSTRUCTOR_NK		by 2;
+%replace DESTRUCTOR_NK		by 3;
+%replace CONVERSION_NK		by 4;
+%replace TYPE_DESTRUCTOR_NK	by 5;
+%replace HB_NAME_KIND		by 5;
+
+/* ---------------------------------------------------------------------
+/* Storage Class Definitions (see C_TOKEN_MAP_IN & CXX_TYPE_MAP_IN)
+/* ------------------------------------------------------------------- */
+
+%replace NULL_ST	by  0;	/* Null storage class code */
+
+%replace LB_ALL_ST	by  1;
+%replace AUTO_ST	by  1;  /* auto */
+%replace REGISTER_ST	by  2;  /* register */
+%replace EXTERN_ST	by  3;  /* extern */
+%replace STATIC_ST	by  4;  /* static */
+%replace TYPEDEF_ST	by  5;  /* typedef */
+%replace HB_ALL_ST	by  5;
+
+/* ---------------------------------------------------------------------
+/* Type Qualifier Definitions
+/*
+/* Note that the bits may be OR'd together to create composite types.
+/*
+/* To turn on bit X in A do:   A = A | X_TQ;
+/* To turn off bit X in A do:  A = A & ^X_TQ;
+/* To test for bit X in A do:  if A & X_TQ then ...
+/*
+/* -TODO- currently this last one (only) generates slow code (run-time
+/* call); to get fast code, use "if (A & X_TQ) ^= NULL_TQ"; this should
+/* get fied at some point.  On second thought, it may be better in
+/* general to use "if (A & X_TQ) = X_TQ"; this will work properly in case
+/* X_TQ is defined with more than one bit on, like the KIND definitions.
+/* ------------------------------------------------------------------- */
+
+%replace NULL_TQ	     by '00000000'B;
+%replace ANY_TQ		     by '00000001'B;  /* const/volatile qualified */
+%replace CONST_TQ	     by '00000011'B;  /* const qualified */
+%replace VOLATILE_TQ	     by '00000101'B;  /* volatile qualified */
+%replace NOALIAS_TQ	     by '00001001'B;  /* for future use */
+%replace ALL_TQ		     by '00001111'B;  /* all qualifiers */
+
+%replace INCOMPLETE_TQ	     by '10000000'B;  /* Not a type qualifier! */
+%replace DEFAULT_ARGUMENT_TQ by '01000000'B;  /* Not a type qualifier! */
+
+/* ---------------------------------------------------------------------
+/* Base and Derived Type Definitions
+/*
+/* See C_TOKEN_MAP_IN and CXX_TYPE_MAP_IN for various mapping arrays.
+/* ------------------------------------------------------------------- */
+
+/* Base-type definitions */
+
+%replace LB_ALL_TYPES              by  0;
+%replace LB_BASE_TYPES             by  0;
+%replace NULL_BT                   by  0;
+%replace NULL_DT                   by  0;
+%replace LB_BASIC_TYPES            by  1;
+%replace VOID_BT                   by  1; /* void */
+%replace LB_ARITHMETIC_TYPES       by  2;
+%replace LB_BASIC_ARITHMETIC_TYPES by  2;
+%replace LB_FLOATING_TYPES         by  2;
+%replace FLOAT_BT                  by  2; /* float */
+%replace DOUBLE_BT                 by  3; /* double */
+%replace LDOUBLE_BT                by  4; /* long double */
+%replace HB_FLOATING_TYPES         by  4;
+%replace LB_INTEGRAL_TYPES         by  5;
+%replace LB_BASIC_INTEGRAL_TYPES   by  5;
+%replace CHAR_BT                   by  5; /* char */
+%replace SCHAR_BT                  by  6; /* signed char */
+%replace UCHAR_BT                  by  7; /* unsigned char */
+%replace SHORT_BT                  by  8; /* short */
+%replace SSHORT_BT                 by  9; /* signed short -- OBSOLETE */
+%replace USHORT_BT                 by 10; /* unsigned short */
+%replace INT_BT                    by 11; /* int */
+%replace SINT_BT                   by 12; /* signed int -- OBSOLETE */
+%replace UINT_BT                   by 13; /* unsigned int */
+%replace LONG_BT                   by 14; /* long */
+%replace SLONG_BT                  by 15; /* signed long -- OBSOLETE */
+%replace ULONG_BT                  by 16; /* unsigned long */
+%replace HB_BASIC_INTEGRAL_TYPES   by 16;
+%replace HB_BASIC_ARITHMETIC_TYPES by 16;
+%replace HB_BASIC_TYPES            by 16;
+%replace LOGICAL_BT                by 17; /* int (?) */
+%replace ENUMERATOR_BT             by 18; /* enum member -- OBSOLETE */
+%replace LB_TAG_TYPES              by 19;
+%replace ENUM_BT                   by 19; /* enum */
+%replace HB_INTEGRAL_TYPES         by 19;
+%replace HB_ARITHMETIC_TYPES       by 19;
+%replace CLASS_BT                  by 20; /* class */
+%replace STRUCT_BT                 by 21; /* struct */
+%replace UNION_BT                  by 22; /* union */
+%replace HB_TAG_TYPES              by 22;
+%replace HB_BASE_TYPES             by 22;
+%replace LB_DERIVED_TYPES          by 23;
+%replace REFERENCE_DT              by 23; /* reference-to */
+%replace POINTER_DT                by 24; /* pointer-to */
+%replace MEMBER_POINTER_DT         by 25; /* pointer-to-member-of-type */
+%replace ARRAY_DT                  by 26; /* array-of */
+%replace FUNCTION_DT               by 27; /* function-returning */
+%replace MEMBER_REFERENCE_DT       by 28; /* reference-to-member-function */
+%replace HB_DERIVED_TYPES          by 28;
+
+%replace TYPEDEF_BT                by 29; /* typedef */
+%replace LABEL_BT                  by 30; /* label */
+
+%replace HB_ALL_TYPES              by 30;
+
+/* Quantities */
+
+%replace NBASIC_TYPES		   by 16;
+
+/* Maximum number of derived types (including expanded typedef's) */
+
+%replace MAX_DERIVED_TYPE_LEVEL	   by 15;
+%replace MAX_TYPE_LEVEL	 	   by 16; /* MAX_DERIVED_TYPE_LEVEL + 1 */
+
+/* ---------------------------------------------------------------------
+/* Member Access Definitions
+/* ------------------------------------------------------------------- */
+
+%replace NULL_ACCESS	  by  0;	/* Null member access code */
+%replace PUBLIC_ACCESS	  by  1;	/* Public access */
+%replace PROTECTED_ACCESS by  2;	/* Protected access */
+%replace PRIVATE_ACCESS	  by  3;	/* Private access */
+%replace NO_ACCESS	  by  4;	/* Absolutely no access */
+
+/* ---------------------------------------------------------------------
+/* Scope Type Definitions
+/* ------------------------------------------------------------------- */
+
+%replace NULL_SCOPE		by 0;
+%replace GLOBAL_SCOPE		by 1;
+%replace CLASS_SCOPE		by 2;
+%replace BLOCK_SCOPE		by 3;
+%replace FUNCTION_SCOPE		by 4;
+%replace PROTOTYPE_SCOPE	by 5;
+
+/* ---------------------------------------------------------------------
+/* Linkage Definitions
+/* ------------------------------------------------------------------- */
+
+%replace DEFAULT_LINKAGE	by 0;	/* extern "C++"     linkage */
+%replace CXX_LINKAGE		by 1;	/* extern "C++"     linkage */
+%replace C_LINKAGE		by 2;	/* extern "C"       linkage */
+%replace FORTRAN_LINKAGE	by 3;	/* extern "FORTRAN" linkage */
+%replace PASCAL_LINKAGE		by 4;	/* extern "Pascal"  linkage */
+%replace PLI_LINKAGE		by 5;	/* extern "PL/I"    linkage */
+%replace HB_LINKAGE		by 5;
+

@@ -1,0 +1,928 @@
+/* C++ dclscp.pl1 - Scope declaration routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  08.19.92  DGM  040 	Regression fix in REMAKE_PROTOTYPE_SCOPE; wasn't
+ *			checking SYM_NODE.FROM_TYPEDEF for diagnostic.
+ *  08.11.92  DGM  039 	Fix for deferred functions in END_GLOBAL_SCOPE.
+ *  07.15.92  DGM  038 	Fix in BEGIN_PROTOTYPE_SCOPE.
+ *  06.19.92  DGM  037 	Internal statistics.
+ *  05.29.92  DGM  036 	Fix for deferred function processing.
+ *  05.19.92  DGM  035 	Set SOURCE_NODE.NLINES for the main source file.
+ *  03.27.92  PKT  034R	Prototype scopes no longer linked on debugger's
+ *			list of scopes.
+ *  03.13.92  PKT  034	Added REMAKE_PROTOTYPE_SCOPE.
+ *  03.26.92  DGM  033	New value-node scheme.
+ *  03.19.92  DGM  032 	Addd CURRENT_SCOPE_PAST_DECLARATIONS.
+ *  02.27.92  PKT  031R	Fixed REMOVE_UNREFERENCED_FUNCTIONS for -debug.
+ *  02.24.92  PKT  031	Added call to REMOVE_UNREFERENCED_FUNCTIONS.
+ *  09.26.91  PKT  030  Updated includes.
+ *  07.31.91  DGM  029  Call GENERATE_VFTS from END_GLOBAL_SCOPE iteratively
+ *			along with GENERATE_DEFAULT_PROCEDURES until there
+ *			are no more.  Packaged up the XLINK stuff into
+ *			GENERATE_INIT_FINI_PROCEDURES.
+ *  07.24.91  DGM  028
+ *  07.08.91  DGM  027  Added CURRENT_NON_PROTOTYPE_SCOPE.
+ *  06.05.91  DGM  026  Oops. CodeWatch needed the SCOPE_NODE.SCOPES list.
+ *  05.29.91  DGM  025  Updated.
+ *			BEGIN_FUNCTION_SCOPE (typedef signature sharing).
+ *  04.01.91  DGM  024  Fix in BEGIN_FUNCTION_SCOPE to set the enclosing
+ *			scope correctly.
+ *  03.08.91  DGM  023  Call SET_SOURCE_MAP from END_GLOBAL_SCOPE.
+ *  02.27.91  DGM  022
+ *  02.11.91  DGM  021  Reuse the prototype scope for the function scope.
+ *  01.18.91  DGM  020  Bug fix in END_FUNCTION_SCOPE.
+ *  01.10.91  DGM  019  Bug fix in SET_NEW_SCOPE.
+ *  12.05.90  DGM  018  Changes in the setting of BLOCK_NODE.FATHER,
+ *			BLOCK_NODE.MAX_DISPLAY_LEVEL, & SYM_NODE.BLOCK
+ *			in BEGIN_FUNCTION_SCOPE to support "nested"
+ *			functions, i.e. member function definitions
+ *			at local scope.
+ *  11.12.90  TLF  017  Added code in END_GLOBAL_SCOPE to emit
+ * 			the global startup and cleanup procedures.
+ *  11.02.90  TLF  016  Added call to DECLARE_XLINK_STRUCT in
+ *                      END_GLOBAL_SCOPE.
+ *  10.18.90  TLF  015  Added call to GENERATE_DEFAULT_PROCS in
+ *                      END_GLOBAL_SCOPE.
+ *  09.14.90  DGM  014  Changed include file names and VOP names.
+ *  09.12.90  DGM  013  Minor fix for SET_CURRENT_SCOPE.
+ *  09.05.90  PKT  012  Updated to declare built-in functions and emit
+ *			destructor finishup code.
+ *  09.04.90  DGM  011  Added SET_CURRENT_SCOPE.
+ *  08.07.90  PKT  010  More support for destructors and control flow
+ *			checking.
+ *  07.20.90  PKT  009  Updated for destructors.
+ *  07.03.90  DGM  008  Added class, function, block, and prototype
+ *			scope level counts, mostly to make sure that
+ *			the corresponding CURRENT_xxx_SCOPE gets
+ *			cleared when the level goes to zero.
+ *  06.05.90  DGM  007  Updated for the new utilities.
+ *  05.25.90  DGM  006  Set the SYM_NODE.VALUE for functions here.
+ *  05.01.90  DGM  005  Set EXTERNAL_BLOCK to BLOCK_LIST_ID.
+ *  04.25.90  DGM  004  Fix in BEGIN_FUNCTION_SCOPE to set the enclosing
+ *			scope of the new function scope the enclosing
+ *			scope of the function symbol rather than the
+ *			current scope (for member functions).
+ *  03.27.90  DGM  003  Updated.
+ *  03.02.90  DGM  002  Updated.
+ *  12.15.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 08.19.92 040 DCLSCP');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_STATS_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SCOPE_STACK_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_EMIT_DESTRUCTOR_CODE_PKG;
+%include CXX_CHECK_FLOW_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_GENERATE_INIT_FINI_PKG;
+%include CXX_PSECT_PKG;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_VIRTUAL_FUNCTION_TABLE_PKG;
+%include CXX_REMOVE_FUNCTIONS_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_DEFER_FUNCTION_PKG;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_GLOBAL_SCOPE
+/* ------------------------------------------------------------------- */
+
+BEGIN_GLOBAL_SCOPE: procedure external (X_BEGIN_GLOBAL_SCOPE);
+
+	declare SNID type (SNID_T);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/*
+	/* +----------------------+
+	/* | BACK-END REQUIREMENT |
+	/* +----------------------+
+	/*
+	/* First, set up a block-node.
+	/**/
+
+	call ALLOC_BLOCK_NODE ();
+
+	BLOCK_NODE.FATHER        = NULL_NID;
+	BLOCK_NODE.TYPE          = byte (IMAGINARY);
+	BLOCK_NODE.FIRST_LINE_ID = CURRENT_SOURCE.LINE;
+
+	CURRENT_BLOCK	= CURRENT_NODE_ID;
+	BLOCK_LIST_ID	= CURRENT_NODE_ID;
+	EXTERNAL_BLOCK	= CURRENT_NODE_ID;
+
+	/* Make a new scope-node and make it current */
+
+	call SET_NEW_SCOPE (GLOBAL_SCOPE);
+
+	/*
+	/* Declare built-in operator new, operator delete,
+	/* and array construction and destruction.
+	/**/
+
+	call DECLARE_BUILT_INS ();
+
+	/* Restore the current-node-id */
+
+	call RESTORE_NODE (SNID);
+
+end BEGIN_GLOBAL_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* END_GLOBAL_SCOPE
+/* ------------------------------------------------------------------- */
+
+END_GLOBAL_SCOPE: procedure external (X_END_GLOBAL_SCOPE);
+
+	declare
+		P	type (POINTER_T),
+		N	type (LONG_T);
+
+	/* Page-in the global scope-node */
+
+	call GET_SCOPE_NODE (CURRENT_SCOPE, P);
+
+	/* Fill in the rest of this global scope data */
+
+	P->SCOPE_NODE.LAST_LINE_ID = CURRENT_SOURCE.LINE;
+	P->SCOPE_NODE.LAST_FILE_ID = CURRENT_SOURCE.FILE;
+
+	/*
+	/* Generate any functions which were deferred and referenced,
+	/* default constructors, copy constructors, destructors, and/or
+	/* assignment operators, as well as any virtual function tables
+	/* iteratively until there are no more of any of these to generate
+	/* (the generation of one can in turn cause the need for the other
+	/* to be generated).
+	/**/
+
+	if INTERNAL_STATISTICS then
+		call XSTAT ('Parser');
+
+	do until ((PARSE_DEFERRED_FUNCTIONS () = 0) &
+		  ^DEFAULT_PROCEDURES_TO_GENERATE ());
+		call GENERATE_DEFAULT_PROCEDURES ();
+		call GENERATE_VFTS ();
+	end;
+
+	call CLEANUP_DEFERRED_FUNCTIONS ();
+	call DELETE_VFT_QUEUE ();
+
+	if INTERNAL_STATISTICS then
+		call XSTAT ('Defer');
+
+	/*
+	/* Define/emit the global initialization/finalization functions
+	/* for this compilation unit, and define the global init/fini
+	/* data structure and global pointer; the latter will be used
+	/* to to create a linked list of init/fini routines for each
+	/* compilation unit in the program using our "patcher" program.
+	/* Fortunately with the coming of UNIX V.4, this hack won't be
+	/* necessary as we will emit the global init/fini into the
+	/* special ".init" and ".fini" text sections of the object file;
+	/* The V.4 linker will take care of the rest!
+	/**/
+
+	call GENERATE_INIT_FINI_PROCEDURES (P);
+
+	if INTERNAL_STATISTICS then
+		call XSTAT ('InitFini');
+
+	/* Release the global scope-node */
+
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+	/*
+	/* +----------------------+
+	/* | BACK-END REQUIREMENT |
+	/* +----------------------+
+	/*
+	/* Fill in the rest of this block-node.
+	/**/
+
+	call GET_BLOCK_NODE (CURRENT_BLOCK, P);
+
+	P->BLOCK_NODE.LAST_LINE_ID = CURRENT_SOURCE.LINE;
+
+	call RELEASE_BLOCK_NODE (CURRENT_BLOCK);
+
+	/* Set up the source file map (for CodeWatch) */
+
+	if SYMBOL_TABLE then
+		call SET_SOURCE_MAP (MATCHED_TOKEN.LINE);
+
+	/* Eliminate ops for unnecessary functions */
+
+	if ^SYMBOL_TABLE then
+		call REMOVE_UNREFERENCED_FUNCTIONS ();
+
+	if INTERNAL_STATISTICS then
+		call XSTAT ('Cleanup');
+
+end END_GLOBAL_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_CLASS_SCOPE
+/* ------------------------------------------------------------------- */
+
+BEGIN_CLASS_SCOPE: procedure (CLASS_SYMBOL)
+		   external  (X_BEGIN_CLASS_SCOPE);
+
+	declare
+		CLASS_SYMBOL		type (NID_T);
+	declare
+		ENCLOSING_SCOPE		type (NID_T),
+		ENCLOSING_SCOPE_TYPE	type (SHORT_T),
+		SNID			type (SNID_T);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* Save the current scope */
+
+	call SAVE_SCOPE_STATE ();
+
+	/* Determine the enclosing semantic scope of the new scope */
+
+	ENCLOSING_SCOPE		= CURRENT_SCOPE;
+	ENCLOSING_SCOPE_TYPE	= CURRENT_SCOPE_TYPE;
+
+	/* Make a new scope-node and make it current */
+
+	call SET_NEW_SCOPE (CLASS_SCOPE);
+
+	/* Fill in the rest of the class scope data */
+
+	SCOPE_NODE.OWNER		= CLASS_SYMBOL;
+	SCOPE_NODE.ENCLOSING_SCOPE	= ENCLOSING_SCOPE;
+	SCOPE_NODE.ENCLOSING_SCOPE_TYPE	= byte (ENCLOSING_SCOPE_TYPE);
+
+	/* Fill in the pertinent class symbol data */
+
+	call SET_SYM_NODE (CLASS_SYMBOL);
+
+	SYM_NODE.DEFINED_SCOPE		= CURRENT_SCOPE;
+
+	/* Restore the current-node-id */
+
+	call RESTORE_NODE (SNID);
+
+end BEGIN_CLASS_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* END_CLASS_SCOPE
+/* ------------------------------------------------------------------- */
+
+END_CLASS_SCOPE: procedure external (X_END_CLASS_SCOPE);
+
+	declare P type (POINTER_T);
+
+	/* Fill in the rest of this class scope data */
+
+	call GET_SCOPE_NODE (CURRENT_SCOPE, P);
+
+	P->SCOPE_NODE.LAST_FILE_ID  = CURRENT_SOURCE.FILE;
+	P->SCOPE_NODE.LAST_LINE_ID  = CURRENT_SOURCE.LINE;
+
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+	/* Restore the previous scope */
+
+	call RESTORE_SCOPE_STATE ();
+
+end END_CLASS_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_FUNCTION_SCOPE
+/* ------------------------------------------------------------------- */
+
+BEGIN_FUNCTION_SCOPE: procedure (FUNCTION_SYMBOL)
+		      external  (X_BEGIN_FUNCTION_SCOPE);
+
+	declare
+		FUNCTION_SYMBOL		type (NID_T);
+	declare
+		(BP, FP, SP)		type (POINTER_T);
+
+	/* Get the this function */
+
+	call GET_SYM_NODE_R (FUNCTION_SYMBOL, FP);
+
+	/*
+	/* +----------------------+
+	/* | BACK-END REQUIREMENT |
+	/* +----------------------+
+	/*
+	/* Set up a block-node for the function.
+	/*
+	/* Note that the FATHER field of the block-node and the BLOCK
+	/* field of the function sym-node always refer to the external
+	/* (imaginary) block, even for "nested" functions.
+	/*
+	/* Note that if we are compiling in debug mode (SYMBOL_TABLE),
+	/* then NAME field gets the *demangled* name (see CXXBE);
+	/* otherwise it gets the *unmangled* name.
+	/*
+	/* TODO; somehow, set the first/last line id to the
+	/* actual line on which the "{" or "}" is found.
+	/**/
+
+	call NEW_BLOCK_NODE (CURRENT_BLOCK, BP);
+
+	BP->BLOCK_NODE.TYPE		 = byte (FUNCTION);
+	BP->BLOCK_NODE.NAME		 = FP->SYM_NODE.NAME;
+	BP->BLOCK_NODE.FIRST_LINE_ID	 = FP->SYM_NODE.DCL_LINE_ID;
+	BP->BLOCK_NODE.MAX_DISPLAY_LEVEL = 0;
+	BP->BLOCK_NODE.FATHER		 = EXTERNAL_BLOCK;
+
+	call RELEASE_BLOCK_NODE (CURRENT_BLOCK);
+
+	FP->SYM_NODE.BLOCK		 = EXTERNAL_BLOCK;
+	FP->SYM_NODE.VALUE		 = CURRENT_BLOCK;
+
+	call GET_SIG_NODE_R (FP->SYM_NODE.TOP_TYPE.SIGNATURE, SP);
+
+	/* We will *reuse* the prototype scope */
+
+	call LINK_SCOPE (SP->SIG_NODE.DEFINED_SCOPE);
+
+	/* Save the current scope */
+
+	call SAVE_SCOPE_STATE ();
+
+	/* Set the current scope data */
+
+	CURRENT_SCOPE		      = SP->SIG_NODE.DEFINED_SCOPE;
+	CURRENT_SCOPE_TYPE	      = FUNCTION_SCOPE;
+	CURRENT_FUNCTION_SCOPE	      = CURRENT_SCOPE;
+	CURRENT_NON_CLASS_SCOPE	      = CURRENT_SCOPE;
+	CURRENT_NON_PROTOTYPE_SCOPE   = CURRENT_SCOPE;
+	CURRENT_GLOBAL_OR_LOCAL_SCOPE = CURRENT_SCOPE;
+
+	call RELEASE_SIG_NODE (FP->SYM_NODE.TOP_TYPE.SIGNATURE);
+
+	/*
+	/* Fill in rest of the function scope data.
+	/*
+	/* N.B. we don't set SCOPE_NODE.TYPE to FUNCTION_SCOPE here,
+	/* rather we leave it as PROTOTYPE_SCOPE for the time being.
+	/* It should (*will*) get set to FUNCTION_SCOPE very soon
+	/* after this when INSTALL_PARAMETERS is called.  Actually,
+	/* INSTALL_PARAMETERS should probably get called from here!
+	/*
+	/* N.B. the enclosing scope is changed to reflect the scope of
+	/* of the *function* symbol rather than that of the signature.
+	/* This done (for example) to make sure that the enclosing scope
+	/* of a friend function body which is defined at global scope,
+	/* is in fact the global scope rather than the class scope of
+	/* the class in which it was declared a friend.  (Note PKT
+	/* believes that the enclosing scope of the signature will
+	/* now agree with that of the function symbol.)
+	/**/
+
+	call GET_SCOPE_NODE (CURRENT_SCOPE, SP);
+
+	SP->SCOPE_NODE.ENCLOSING_SCOPE	    = FP->SYM_NODE.ENCLOSING_SCOPE;
+	SP->SCOPE_NODE.ENCLOSING_SCOPE_TYPE = FP->SYM_NODE.ENCLOSING_SCOPE_TYPE;
+	SP->SCOPE_NODE.OWNER		    = FUNCTION_SYMBOL;
+	SP->SCOPE_NODE.BLOCK		    = CURRENT_BLOCK;
+	SP->SCOPE_NODE.FIRST_LINE_ID	    = FP->SYM_NODE.DCL_LINE_ID;
+	SP->SCOPE_NODE.FIRST_FILE_ID	    = FP->SYM_NODE.DCL_FILE_ID;
+
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+	/* Fill in the pertinent function symbol data */
+
+	FP->SYM_NODE.DEFINED_SCOPE = CURRENT_SCOPE;
+
+	/* Release this function sybmol */
+
+	call RELEASE_SYM_NODE (FUNCTION_SYMBOL);
+
+	/* Set the current (function) scope owner */
+
+	CURRENT_FUNCTION = FUNCTION_SYMBOL;
+
+end BEGIN_FUNCTION_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* END_FUNCTION_SCOPE
+/* ------------------------------------------------------------------- */
+
+END_FUNCTION_SCOPE: procedure external (X_END_FUNCTION_SCOPE);
+
+	declare SNID type (SNID_T);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/*
+	/* +----------------------+
+	/* | BACK-END REQUIREMENT |
+	/* +----------------------+
+	/*
+	/* Fill in the rest of this block-node
+	/* and reset the current block-node.
+	/**/
+
+	call SET_BLOCK_NODE (CURRENT_BLOCK);
+
+	BLOCK_NODE.LAST_LINE_ID = CURRENT_SOURCE.LINE;
+
+	/* Fill in the rest of this function scope data */
+
+	call SET_SCOPE_NODE (CURRENT_SCOPE);
+
+	SCOPE_NODE.LAST_LINE_ID  = CURRENT_SOURCE.LINE;
+	SCOPE_NODE.LAST_FILE_ID  = CURRENT_SOURCE.FILE;
+
+	/* Emit destructor finishup code */
+
+	call SET_SYM_NODE_R (CURRENT_FUNCTION);
+	if SYM_NODE.IS_DESTRUCTOR_FUNCTION then
+		call EMIT_DESTRUCTOR_FINISHUP_CODE (CURRENT_FUNCTION);
+
+	/* No more need for the destructor expressions */
+
+	call RELEASE_FUNCTION_DTORS ();
+
+	/* Restore the previous scope */
+
+	call RESTORE_SCOPE_STATE ();
+
+	/* Set the current block-node */
+
+	call SET_SCOPE_NODE (CURRENT_SCOPE);
+
+	CURRENT_BLOCK = SCOPE_NODE.BLOCK;
+
+	/* Restore the current-node-id */
+
+	call RESTORE_NODE (SNID);
+
+end END_FUNCTION_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_BLOCK_SCOPE
+/* ------------------------------------------------------------------- */
+
+BEGIN_BLOCK_SCOPE: procedure external (X_BEGIN_BLOCK_SCOPE);
+
+	declare
+		ENCLOSING_SCOPE		type (NID_T),
+		ENCLOSING_SCOPE_TYPE	type (SHORT_T),
+		P			type (POINTER_T),
+		SNID			type (SNID_T);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* Save the current scope */
+
+	call SAVE_SCOPE_STATE ();
+
+	/* Determine the enclosing semantic scope of the new scope */
+
+	ENCLOSING_SCOPE		= CURRENT_SCOPE;
+	ENCLOSING_SCOPE_TYPE	= CURRENT_SCOPE_TYPE;
+
+	/* Make a new scope-node and make it current */
+
+	call SET_NEW_SCOPE (BLOCK_SCOPE);
+
+	/* Fill in rest of the block scope data */
+
+	SCOPE_NODE.OWNER		= CURRENT_FUNCTION;
+	SCOPE_NODE.ENCLOSING_SCOPE	= ENCLOSING_SCOPE;
+	SCOPE_NODE.ENCLOSING_SCOPE_TYPE	= byte (ENCLOSING_SCOPE_TYPE);
+
+	/* The current set of object destructor expressions is that
+	/* of the enclosing scope, which is a block or function.
+	/**/
+
+	call GET_SCOPE_NODE_R (ENCLOSING_SCOPE, P);
+	SCOPE_NODE.DESTRUCTORS = P->SCOPE_NODE.DESTRUCTORS;
+	call COUNT_UP_VALUE (SCOPE_NODE.DESTRUCTORS);
+	SCOPE_NODE.LEVEL = P->SCOPE_NODE.LEVEL + 1;
+	call RELEASE_SCOPE_NODE (ENCLOSING_SCOPE);
+
+	/* Restore the current-node-id */
+
+	call RESTORE_NODE (SNID);
+
+end BEGIN_BLOCK_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* END_BLOCK_SCOPE
+/* ------------------------------------------------------------------- */
+
+END_BLOCK_SCOPE: procedure external (X_END_BLOCK_SCOPE);
+
+	declare
+		(P, Q)		type (POINTER_T),
+		LAST_LINE_ID	type (LONG_T),
+		SAVE_LINE_ID	type (LONG_T);
+
+	/* Get the line number of the "}" */
+
+	LAST_LINE_ID = MATCHED_TOKEN.LINE;
+
+	/* Fill in the rest of this block scope data */
+
+	call GET_SCOPE_NODE (CURRENT_SCOPE, P);
+
+	P->SCOPE_NODE.LAST_LINE_ID  = LAST_LINE_ID;
+	P->SCOPE_NODE.LAST_FILE_ID  = CURRENT_SOURCE.FILE;
+
+	/*
+	/* Fudge/force the current source line to be the closing
+	/* "}" of the block for any exit code which gets emitted.
+	/**/
+
+	SAVE_LINE_ID		= CURRENT_SOURCE.LINE;
+	CURRENT_SOURCE.LINE	= LAST_LINE_ID;
+	DIAG_LINE_ID		= LAST_LINE_ID;
+
+	/* Call the destructors for the scope's objects */
+
+	call GET_SCOPE_NODE (P->SCOPE_NODE.ENCLOSING_SCOPE, Q);
+	call COUNT_UP_VALUE (P->SCOPE_NODE.DESTRUCTORS);
+	call COUNT_UP_VALUE (Q->SCOPE_NODE.DESTRUCTORS);
+	call EMIT_STATEMENT (DESTROY_DIFFERENCE (P->SCOPE_NODE.DESTRUCTORS, 
+						 Q->SCOPE_NODE.DESTRUCTORS));
+	call RELEASE_SCOPE_NODE (P->SCOPE_NODE.ENCLOSING_SCOPE);
+	call COUNT_DOWN_DESTRUCTORS (P->SCOPE_NODE.DESTRUCTORS);
+	P->SCOPE_NODE.DESTRUCTORS = NULL_CXX_VID;
+
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+	/* Track the definability of label symbols */
+
+	call CHECK_FLOW_AT_BLOCK_EXIT ();
+
+	/* Restore the correct current source line */
+
+	CURRENT_SOURCE.LINE	= SAVE_LINE_ID;
+	DIAG_LINE_ID		= SAVE_LINE_ID;
+
+	/* Restore the previous scope */
+
+	call RESTORE_SCOPE_STATE ();
+
+end END_BLOCK_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_PROTOTYPE_SCOPE
+/* ------------------------------------------------------------------- */
+
+BEGIN_PROTOTYPE_SCOPE: procedure (ENCLOSING_CLASS_SCOPE)
+		       external  (X_BEGIN_PROTOTYPE_SCOPE);
+
+	declare
+		ENCLOSING_CLASS_SCOPE	type (NID_T);
+	declare
+		ENCLOSING_SCOPE		type (NID_T),
+		ENCLOSING_SCOPE_TYPE	type (SHORT_T),
+		SNID			type (SNID_T);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* Save the current scope */
+
+	call SAVE_SCOPE_STATE ();
+
+	/* Determine the enclosing semantic scope of the new scope */
+
+	ENCLOSING_SCOPE		= CURRENT_SCOPE;
+	ENCLOSING_SCOPE_TYPE	= CURRENT_SCOPE_TYPE;
+
+	/* Make a new scope-node and make it current */
+
+	call SET_NEW_SCOPE (PROTOTYPE_SCOPE);
+
+	/* Fill in the rest of the prototype scope data */
+
+	if ENCLOSING_CLASS_SCOPE = NULL_NID then do;
+		SCOPE_NODE.ENCLOSING_SCOPE	= ENCLOSING_SCOPE;
+		SCOPE_NODE.ENCLOSING_SCOPE_TYPE	= byte (ENCLOSING_SCOPE_TYPE);
+	end;
+	else do;
+		SCOPE_NODE.ENCLOSING_SCOPE	= ENCLOSING_CLASS_SCOPE;
+		SCOPE_NODE.ENCLOSING_SCOPE_TYPE	= byte (CLASS_SCOPE);
+		CURRENT_NON_PROTOTYPE_SCOPE	= ENCLOSING_CLASS_SCOPE;
+	end;
+
+	/* Restore the current-node-id */
+
+	call RESTORE_NODE (SNID);
+
+end BEGIN_PROTOTYPE_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* END_PROTOTYPE_SCOPE
+/* ------------------------------------------------------------------- */
+
+END_PROTOTYPE_SCOPE: procedure external (X_END_PROTOTYPE_SCOPE);
+
+	declare P type (POINTER_T);
+
+	/* Fill in the rest of this prototype scope data */
+
+	call GET_SCOPE_NODE (CURRENT_SCOPE, P);
+
+	P->SCOPE_NODE.LAST_FILE_ID  = CURRENT_SOURCE.FILE;
+	P->SCOPE_NODE.LAST_LINE_ID  = CURRENT_SOURCE.LINE;
+
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+	/* Restore the previous scope */
+
+	call RESTORE_SCOPE_STATE ();
+
+end END_PROTOTYPE_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* REMAKE_PROTOTYPE_SCOPE
+/*
+/* Regenerate the prototype scope of the given function symbol
+/* prior to calling BEGIN_FUNCTION_BODY when the compiler is generating
+/* the body of a function.  Because we haven't just finished 
+/* parsing an actual declaration of the function symbol, 
+/* the prototype scope is absent.
+/*
+/* Currently functions having 0 or 1 parameter are supported by
+/* REMAKE_PROTOTYPE_SCOPE.  PARAMETER_NAME allows the caller to
+/* provide a name for the parameter, if desired.
+/* ------------------------------------------------------------------- */
+
+REMAKE_PROTOTYPE_SCOPE: procedure (FUNC_SYM, PARAMETER_NAME, DIAGNOSE)
+			external  (X_REMAKE_PROTOTYPE_SCOPE);
+	declare
+		FUNC_SYM		type (NID_T),
+		PARAMETER_NAME		type (NID_T),
+		DIAGNOSE		type (BOOL_T);
+	declare
+		(FP, SP, PP)		type (POINTER_T),
+		CLASS_SCOPE_ID		type (NID_T),
+		SIG			type (NID_T),
+		PROTOTYPE_SCOPE_ID	type (NID_T),
+		(PARAM, NEXT_PARAM)	type (NID_T),
+		PREV_SYM		type (NID_T),
+		PREV_SYM_P		type (POINTER_T),
+		THIS_PARAMETER		type (NID_T);
+
+	call GET_SYM_NODE_R (FUNC_SYM, FP);
+	if FP->SYM_NODE.IS_MEMBER then
+		CLASS_SCOPE_ID = FP->SYM_NODE.ENCLOSING_SCOPE;
+	else
+		CLASS_SCOPE_ID = NULL_NID;
+	SIG = FP->SYM_NODE.TOP_TYPE.SIGNATURE;
+	call RELEASE_SYM_NODE (FUNC_SYM);
+
+	call GET_SIG_NODE (SIG, SP);
+	if SP->SIG_NODE.DEFINED_SCOPE ^= NULL_NID then do;
+		call RELEASE_SIG_NODE (SIG);
+		return;
+	end;
+
+	/*
+	/* Check for a function type typedef being used in a function
+	/* definition; e.g. "typedef int F(); F x { }" is illegal
+	/* (C++ARM, 7.1.3, and ANSI-C, 3.7.1).  This is the only
+	/* reason for the FROM_TYPEDEF sym-node field!
+	/**/
+
+	if SYM_NODE.FROM_TYPEDEF then do;
+		if DIAGNOSE then
+			call SEMANTIC_ERROR (ERR_FUN_TYPEDEF);
+	end;
+
+	call BEGIN_PROTOTYPE_SCOPE (CLASS_SCOPE_ID);
+	PROTOTYPE_SCOPE_ID = CURRENT_SCOPE;
+
+	/* If type of the function symbol has explicit parameters, */
+	PREV_SYM = NULL_NID;
+	do PARAM = SP->SIG_NODE.EXPLICIT_PARAMETERS 
+			   repeat (NEXT_PARAM) 
+			   while (PARAM ^= NULL_NID);
+		/* Install the parameters in prototype scope. */
+
+		/* Set the current type to the parameter type. */
+		call GET_PARAMETER_NODE_R (PARAM, PP);
+		CURRENT_TYPE = PP->PARAMETER_NODE.TYPE;
+		CURRENT_TOP_TYPE = PP->PARAMETER_NODE.TOP_TYPE;
+		NEXT_PARAM = PP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (PARAM);
+		CURRENT_BASE_TYPE_SIGNED = FALSE;
+		CURRENT_TYPE_FROM_TYPEDEF = FALSE;
+		CURRENT_BASE_TYPE_UNSPECIFIED = FALSE;
+
+		/* Set the current storage class. */
+		CURRENT_STORAGE_CLASS = AUTO_ST;
+
+		/* Set the current name. */
+		CURRENT_NAME = PARAMETER_NAME;
+
+		/* Build a parameter symbol node. */
+		THIS_PARAMETER = BUILD_SYMBOL (PARAMETER_SK);
+		SYM_NODE.IS_DUMMY = TRUE;
+
+		/* Link this symbol into the prototype scope. */
+		call INSTALL_SYMBOL (THIS_PARAMETER, PROTOTYPE_SCOPE_ID);
+
+		/* Link this symbol on the next-parameter list. */
+		if PREV_SYM = NULL_NID then
+			SP->SIG_NODE.PARAMETERS = THIS_PARAMETER;
+		else do;
+			call GET_SYM_NODE (PREV_SYM, PREV_SYM_P);
+			PREV_SYM_P->SYM_NODE.NEXT_PARAMETER = THIS_PARAMETER;
+			call RELEASE_SYM_NODE (PREV_SYM);
+		end;
+		PREV_SYM = THIS_PARAMETER;
+	end;
+
+	call END_PROTOTYPE_SCOPE ();
+
+	SP->SIG_NODE.DEFINED_SCOPE = PROTOTYPE_SCOPE_ID;
+	SP->SIG_NODE.NPARAMETERS = SP->SIG_NODE.EXPLICIT_NPARAMETERS;
+
+	call RELEASE_SIG_NODE (SIG);
+
+end REMAKE_PROTOTYPE_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* SET_NEW_SCOPE
+/*
+/* Allocate and initialize a new scope-node of the given type.
+/* The global CURRENT_SCOPE is set to the new scope-node id, and it
+/* is left paged in upon return.
+/* ------------------------------------------------------------------- */
+
+SET_NEW_SCOPE: procedure (THIS_TYPE) internal;
+
+	declare
+		THIS_TYPE	type (SHORT_T);
+	declare
+		(P, Q)		type (POINTER_T);
+
+	/* Allocate a new scope */
+
+	call ALLOC_SCOPE_NODE ();
+
+	/* Fill in the basic scope data */
+
+	SCOPE_NODE.TYPE			= byte (THIS_TYPE);
+	SCOPE_NODE.BLOCK		= CURRENT_BLOCK;
+	SCOPE_NODE.FIRST_FILE_ID	= CURRENT_SOURCE.FILE;
+	SCOPE_NODE.FIRST_LINE_ID	= CURRENT_SOURCE.LINE;
+
+	/*
+	/* Initialize these to zero/null only if paranoid ...
+	/*
+	/* SCOPE_NODE.ENCLOSING_SCOPE_TYPE	= byte (NULL_SCOPE);
+	/* SCOPE_NODE.OWNER			= NULL_NID;
+	/* SCOPE_NODE.ENCLOSING_SCOPE		= NULL_NID;
+	/* SCOPE_NODE.SYMBOLS			= NULL_NID;
+	/* SCOPE_NODE.LAST_SYMBOL		= NULL_NID;
+	/* SCOPE_NODE.NSYMBOLS			= 0;
+	/* SCOPE_NODE.LEVEL			= 0;
+	/* SCOPE_NODE.LAST_FILE_ID		= NULL_NID;
+	/* SCOPE_NODE.LAST_LINE_ID		= 0;
+	/* SCOPE_NODE.INITIALIZED_SYMBOL	= NULL_NID;
+	/* SCOPE_NODE.DESTRUCTORS		= NULL_CXX_VID;
+	/* SCOPE_NODE.SCOPES			= NULL_NID;
+	/* SCOPE_NODE.NEXT_SCOPE		= NULL_NID;
+	/* SCOPE_NODE.LAST_SCOPE		= NULL_NID;
+	/**/
+
+	if THIS_TYPE ^= PROTOTYPE_SCOPE then
+		call LINK_SCOPE (CURRENT_NODE_ID);
+
+	/*
+	/* Return with the new scope-node paged in, and set to
+	/* CURRENT_SCOPE; also, set the rest of current scope data.
+	/**/
+
+	CURRENT_SCOPE			= CURRENT_NODE_ID;
+	CURRENT_SCOPE_TYPE		= THIS_TYPE;
+	CURRENT_SCOPE_PAST_DECLARATIONS	= FALSE;
+
+	goto SCOPE_TYPE (THIS_TYPE);
+
+	SCOPE_TYPE (GLOBAL_SCOPE):
+	CURRENT_GLOBAL_SCOPE		= CURRENT_SCOPE;
+	CURRENT_NON_CLASS_SCOPE		= CURRENT_SCOPE;
+	CURRENT_NON_PROTOTYPE_SCOPE	= CURRENT_SCOPE;
+	CURRENT_GLOBAL_OR_LOCAL_SCOPE	= CURRENT_SCOPE;
+	CURRENT_CLASS_SCOPE		= NULL_NID;
+	CURRENT_FUNCTION_SCOPE		= NULL_NID;
+	CURRENT_BLOCK_SCOPE		= NULL_NID;
+	CURRENT_PROTOTYPE_SCOPE		= NULL_NID;
+	CURRENT_FUNCTION		= NULL_NID;
+	return;
+
+	SCOPE_TYPE (CLASS_SCOPE):
+	CURRENT_CLASS_SCOPE		= CURRENT_SCOPE;
+	CURRENT_NON_PROTOTYPE_SCOPE	= CURRENT_SCOPE;
+	return;
+
+	SCOPE_TYPE (FUNCTION_SCOPE):
+	CURRENT_FUNCTION_SCOPE		= CURRENT_SCOPE;
+	CURRENT_NON_CLASS_SCOPE		= CURRENT_SCOPE;
+	CURRENT_NON_PROTOTYPE_SCOPE	= CURRENT_SCOPE;
+	CURRENT_GLOBAL_OR_LOCAL_SCOPE	= CURRENT_SCOPE;
+	return;
+
+	SCOPE_TYPE (BLOCK_SCOPE):
+	CURRENT_BLOCK_SCOPE		= CURRENT_SCOPE;
+	CURRENT_NON_CLASS_SCOPE		= CURRENT_SCOPE;
+	CURRENT_NON_PROTOTYPE_SCOPE	= CURRENT_SCOPE;
+	CURRENT_GLOBAL_OR_LOCAL_SCOPE	= CURRENT_SCOPE;
+	return;
+
+	SCOPE_TYPE (PROTOTYPE_SCOPE):
+	CURRENT_PROTOTYPE_SCOPE		= CURRENT_SCOPE;
+	CURRENT_NON_CLASS_SCOPE		= CURRENT_SCOPE;
+	return;
+
+end SET_NEW_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* LINK_SCOPE
+/*
+/* Link the scope onto the scopes list of the CURRENT_SCOPE; 
+/* this is used only by the debugger.
+/* ------------------------------------------------------------------- */
+
+LINK_SCOPE: procedure (SCOPE_ID)
+	    internal;
+
+	declare
+		SCOPE_ID	type (NID_T);
+
+	declare
+		(P, Q)		pointer;
+
+	if SYMBOL_TABLE & (CURRENT_NON_PROTOTYPE_SCOPE ^= NULL_NID) then do;
+		call GET_SCOPE_NODE (CURRENT_NON_PROTOTYPE_SCOPE, P);
+		if P->SCOPE_NODE.LAST_SCOPE ^= NULL_NID then do;
+			call GET_SCOPE_NODE (P->SCOPE_NODE.LAST_SCOPE, Q);
+			Q->SCOPE_NODE.NEXT_SCOPE = SCOPE_ID;
+			call RELEASE_SCOPE_NODE (P->SCOPE_NODE.LAST_SCOPE);
+		end;
+		else	P->SCOPE_NODE.SCOPES = SCOPE_ID;
+		P->SCOPE_NODE.LAST_SCOPE = SCOPE_ID;
+		call RELEASE_SCOPE_NODE (CURRENT_NON_PROTOTYPE_SCOPE);
+	end;
+
+end LINK_SCOPE;
+
+

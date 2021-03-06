@@ -1,0 +1,609 @@
+/* C++ CXX_SYMBOL_TABLE_NODES_IN - Symbol table nodes declarations */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  10.27.92  DGM  062R	Removed SYM_NODE.RELOCATION_ORDERING_DATA;
+ *			use SYM_NODE.COMMON.SET instead -- there turned
+ *			out to be a conflict when unioning this with
+ *			SYM_NODE.EXPRESSION -- I'm running out of space!
+ *			The only other use of SET in the front-end is
+ *			for sym-nodes representing tags (to hold the
+ *			sym-node id of the last in the list of
+ *			non-static data-members).
+ *  10.06.92  DGM  062	Added SYM_NODE.RELOCATION_ORDERING_DATA,
+ *			SYM_NODE.HAS_RELOCATION_SUCCESSOR_LIST,
+ *			and SYM_NODE.HAS_PREDECESSOR_COUNT.
+ *  08.31.92  DGM  061	Added SYM_NODE.DEFERRED which is set to TRUE
+ *			for functions which were defined by the user
+ *			but were deferred and never actually defined;
+ *			this is needed by CodeWatch for better diagnostics.
+ *  05.29.92  DGM  060	Added SYM_NODE.ANON_UNION_MEMBER (representing
+ *			the biggest member of an anonymous union which
+ *			is itself a non-static member).
+ *  05.19.92  DGM  059	Added SYM_NODE.SOURCE for use by the debugger.
+ *  04.17.92  PKT  058	Updated SIGNATURE_NODE to hold 'this' qualifiers.
+ *  03.13.92  PKT  057	Added SYM_NODE.HAS_FLAG.
+ *  03.06.92  PKT  057	Fixed SYM_NODE to reuse space.
+ *			Added SCOPE_NODE.CONTAINS_TAG_SYMBOL.
+ *			Introduced PARAMETER_NODEs.
+ *  03.26.92  DGM  056	New value-node scheme.
+ *  02.27.92  PKT  055R	Moved SYM_NODE.FIRST_OPID for backward
+ *			compatibility.
+ *  02.24.92  PKT  055	Added SYM_NODE.FIRST_OPID.
+ *  01.21.92  DGM  054	Added SYM_NODE.NEXT_PARAMETER.
+ *  01.13.92  DGM  053	Added LIST_NODE (same LINK_NODE but FE only).
+ *  11.12.91  DGM  052	Added SYM_NODE.MAIN_FUNCTION.
+ *  10.03.91  DGM  051	Added SYM_NODE.ASM_FUNCTION.
+ *  09.26.91  PKT  050  Added SYM_NODE.PERMITS_AGGREGATE_INIT.
+ *  08.23.91  DGM  049	Added SYM_NODE.HAS_BEEN_SET_OR_ALIASED
+ *			and SYM_NODE.CONTAINS_CALL_TO_SETJMP.
+ *  07.31.91  DGM  048	Added SYM_NODE.PROTOTYPED and
+ *			SYM_NODE.LINKAGE_KIND_SPECIFIED.
+ *  07.30.91  TLF  047  Added OBJ_CONSTRUCTED_ID in SYM_NODE.
+ *  07.22.91  DGM  046R Removed SYM_NODE.REFERENCED.
+ *  07.18.91  DGM  046  Added SYM_NODE.BASE_TYPE_UNSPECIFIED.
+ *  07.08.91  DGM  045  Added SCOPE_NODE.INITIALIZED_SYMBOL.
+ *  06.21.91  PKT  044  Added SYM_NODE.HAS_CONST_INITIALIZER.
+ *  06.05.91  DGM  043  Oops.  CodeWatch needs SYM_NODE.{SCOPES,NEXT_
+ *			SCOPE,LAST_SCOPE} which I deleted in 042!
+ *  05.29.91  DGM  042  Added SYM_NODE.DERIVED_CLASSES (for CodeWatch);
+ *			added SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMDOL,
+ *			SYM_NODE.IS_FIRST_EXTERNAL_LINKAGE_SYMBOL;
+ *			removed SCOPE_NODE.NEXT_SCOPE,SCOPES,LAST_SCOPE;
+ *			much rearranging.
+ *  05.02.91  DGM  041  Added SYM_NODE.SPECIFIC1 (gross!) to communicate
+ *			to the back-end "varargs" information.
+ *  02.27.91  DGM  040  Added SYM_NODE.SIGNED.
+ *  02.01.91  DGM  039  Removed SYM_NODE.OPERATOR.
+ *  01.31.91  DGM  038  Added SYM_NODE.ANON_UNION_OBJECT.
+ *  12.17.90  DGM  037  Added SYM_NODE.CONST_INITIALIZER.
+ *  12.07.90  DGM  036  Added VBC_NODE and SYM_NODE.VIRTUAL_BASE_CLASSES.
+ *  11.29.90  DGM  035  Added SYM_NODE.BRANCH_AROUND_LABEL.
+ *  11.06.90  DGM  034  Added SYM_NODE.ASSIGNMENT, OPERATOR, FROM_TYPEDEF,
+ *			and NEXT_VIRTUAL_FUNCTION.
+ *  10.22.90  DGM  033  Added TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT
+ *			and TYPE_DATA.DEFAULT_ARGUMENT.
+ *  10.18.90  TLF  032  Added ON_GENERATE_LIST bit to SYM_NODE.
+ *  10.12.90  DGM  031  Changed names IS_ALSO_TYPE/IS_ALSO_NON_TYPE
+ *			to IS_ALSO_TAG/IS_ALSO_NON_TAG.
+ *  09.14.90  DGM  030  Changed include file names and VOP names.
+ *  09.12.90  DGM  029  Added SYM_NODE.TRIVIAL & SYM_NODE.COPY_CONSTRUCTOR.
+ *  09.05.90  PKT  028  Bifurcated DIM_NODE.VALUE for DIM_NODE.VALUE_ID;
+ *                      to SYM_NODE class union added HAS_NON_PUBLIC_MEMBER,
+ *			NEEDS_INIT, NEEDS_COPY, NEEDS_ASSIGN,
+ *			and NEEDS_DESTRUCTION.
+ *  08.31.90  DGM  027  Added SYM_NODE.SIGNED_BIT_FIELD.
+ *  08.29.90  DGM  026  Minor update to type-node.
+ *  08.08.90  DGM  025  New type-node.
+ *  08.07.90  PKT  024  Added support for destructors and control flow
+ *			analysis.
+ *  07.26.90  DGM  023  Added SYM_NODE.VISITED (see ctor.pl1, sigh).
+ *  07.23.90  DGM  022  Added SYM_NODE.CONVERSION_TYPE.
+ *  07.20.90  PKT  021  Changed type of SCOPE_NODE.DESTRUCTORS to VID_T.
+ *  06.26.90  DGM  019  Added SYM_NODE.CONVERSION.
+ *  06.06.90  DGM  018  Updated for the new utilities.
+ *  05.31.90  PKT  017  Removed SYM_NODE.IN_INITIALIZER.
+ *  05.17.90  DGM  016  Added SYM_NODE.VIRTUAL_FUNCTION_TABLE.
+ *  05.15.90  DGM  015  Added SYM_NODE.NON_VIRTUAL_SIZE and BASE_CLASS_DATA.
+ *  05.10.90  DGM  014  Added SYM_NODE fields for virtual functions
+ *			and virtual base classes.
+ *  05.02.90  DGM  013  Added SYM_NODE.{IN_INITIALIZER,HAS_CONST_MEMBER}.
+ *  04.25.90  DGM  012  Added SYM_NODE.SAVED_FUNCTION_BODIES et.al.
+ *  04.23.90  DGM  011  Added SIG_NODE.DEFINED_FUNCTION
+ *			(for old-style function compatibility checks).
+ *  04.04.90  DGM  010  Changes DIM_NODE field names.
+ *  03.27.90  DGM  009  Changes to SYM_NODE, SIG_NODE, SCOPE_NODE, etc.
+ *  03.02.90  DGM  008  Updated; new IS_xx bits in SYM_NODE.
+ *  02.27.90  PKT  007  Updated DIM_NODE.SIZE to LONG_T.
+ *  02.22.90  DGM  006  Updated.
+ *  02.15.90  DGM  005  Updated.
+ *  02.05.90  DGM  004  Updated.
+ *  12.12.89  DGM  002  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include GLOBAL_IN;              */
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_SYMBOL_TABLE_DEFS_IN; */
+
+/* ---------------------------------------------------------------------
+/* TYPE_NODE: describes a fundamental C++ type
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 TYPE_QUALIFIER_T		based,
+
+  2 type_qualifier_union	union,
+
+    3 QUALIFIERS		type (BYTE_BITS_T),
+    3 TYPE_QUALIFIERS		type (BYTE_BITS_T),
+    3 type_qualifier_bits,
+      4 INCOMPLETE		type (BIT_T),	/* Not a type qualifier */
+      4 DEFAULT_ARGUMENT	type (BIT_T),	/* Not a type qualifier */
+      4 available_03		type (BIT_T),
+      4 available_04		type (BIT_T),
+      4 NOALIAS			type (BIT_T),	/* For future use */
+      4 VOLATILE		type (BIT_T),	/* volatile qualified */
+      4 CONST			type (BIT_T),	/* const qualified */
+      4 QUALIFIED		type (BIT_T);	/* const/volatile qualified */
+
+declare
+
+1 TYPE_DATA_T			based,			/* 4 bytes */
+
+  2 type_data_union		union,
+
+    3 WORD			type (LONG_T),
+
+    3 type_data_data,
+
+      4 type_code_union		union,
+        5 CODE			type (BYTE_T),
+        5 TYPE_CODE		type (BYTE_T),
+
+      4 type_qualifier_data	type (TYPE_QUALIFIER_T),
+
+      4 type_nid_union		union,
+        5 NID			type (NID_T),
+        5 TYPE_NID		type (NID_T),
+        5 DIMENSION		type (NID_T),
+        5 SIGNATURE		type (NID_T),
+        5 TAG_SYMBOL		type (NID_T),
+        5 TYPEDEF_SYMBOL	type (NID_T);
+
+declare
+
+1 TYPE_NODE_HEADER_T		based (NODE_PTR),
+  2 NEXT			type (NID_T),
+  2 TYPEDEF			type (NID_T),
+  2 LEVEL			type (BYTE_T),
+  2 CONTAINS_INCOMPLETE		type (BIT_T),
+  2 CONTAINS_DEFAULT_ARGUMENT	type (BIT_T),
+  2 SHARED			type (BIT_T),
+  2 available_01		type (BIT_T),
+  2 available_02		type (BIT_T),
+  2 available_03		type (BIT_T),
+  2 available_04		type (BIT_T),
+  2 available_05		type (BIT_T);
+
+declare
+
+1 TYPE_NODE			based (NODE_PTR),
+  2 HEADER			type (TYPE_NODE_HEADER_T),
+  2 DATA			(0 : MAX_DERIVED_TYPE_LEVEL)
+				type (TYPE_DATA_T);
+
+/* ---------------------------------------------------------------------
+/* DIM_NODE: Describes one array dimension
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 DIM_NODE			based (NODE_PTR),
+
+  2 dimension_value_union	union,
+    3 VALUE			type (LONG_T),
+    3 VALUE_ID			type (CXX_VID_T),
+  2 ELEMENT_SIZE		type (LONG_T),
+  2 ELEMENT_SIZE_UNITS		type (BYTE_T),
+  2 INCOMPLETE			type (BIT_T),
+  2 available_01		type (BIT_T),
+  2 available_02		type (BIT_T),
+  2 available_03		type (BIT_T),
+  2 available_04		type (BIT_T),
+  2 available_05		type (BIT_T),
+  2 available_06		type (BIT_T),
+  2 available_07		type (BIT_T);
+
+/* ---------------------------------------------------------------------
+/* SIG_NODE: Describes one function signature (i.e. a parameter list)
+/* ------------------------------------------------------------------- */
+
+declare			 /* 14 BYTES */
+
+1 SIG_NODE		 based (NODE_PTR),
+
+  2 NPARAMETERS		 type (SHORT_T), /* Total number of parameters */
+  2 PARAMETERS		 type (NID_T),   /* Complete parameter link-node list */
+  2 EXPLICIT_PARAMETERS	 type (NID_T),   /* Explicit parameter parameter-node list */
+  2 EXPLICIT_NPARAMETERS type (SHORT_T), /* Number of explicit parameters */
+  2 DEFINED_SCOPE	 type (NID_T),   /* Scope-node id prototype scope */
+  2 THIS_QUALIFIERS	 type (TYPE_QUALIFIER_T), /* Qualifier of 'this' */
+  2 ELLIPSIS		 type (BIT_T),   /* Ellipsis present ? */
+  2 PROTOTYPED		 type (BIT_T),   /* Prototyped ? */
+  2 DEFINED_FUNCTION	 type (BIT_T),   /* Corresponding function defined ? */
+  2 INCOMPLETE		 type (BIT_T),   /* Contains incomplete type ? */
+  2 DEFAULT_ARGUMENT	 type (BIT_T),   /* Contains default arguments ? */
+  2 available_01	 type (BIT_T),
+  2 available_02	 type (BIT_T),
+  2 available_03	 type (BIT_T);
+
+/* ---------------------------------------------------------------------
+/* SYM_NODE: Describes a symbol  (144 bytes)
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 SYM_NODE				based (NODE_PTR),
+
+  /* STANDARD "SYMBOL_NODE" PORTION -- 68 bytes (new), 48 bytes (old) */
+
+  2 COMMON				type (SYMBOL_NODE.COMMON_PART),
+
+  /* C++ SPECIFIC PORTION OF NODE -- 76 bytes */
+
+  2 symbol_data_1			union,		/* 4 BYTES */
+
+    3 function_symbol_data,
+      4 function_symbol_data_union	union,
+        5 SPECIFIC1			type (SHORT_T),
+        5 VARARGS_ID			type (SHORT_T),
+
+    3 class_symbol_data,
+      4 BASE_CLASSES			type (NID_T),
+
+    3 label_symbol_data,
+      4 NEXT_LABEL			type (NID_T),
+
+  2 symbol_kind_data_union		union,		/* 4 BYTES */
+    3 symbol_kind_data_bits,
+      4 IS_DUMMY			type (BIT_T),
+      4 IS_LABEL			type (BIT_T),
+      4 IS_BIT_FIELD			type (BIT_T),
+      4 IS_NON_STATIC_DATA_MEMBER	type (BIT_T),
+      4 IS_ANON_UNION_MEMBER		type (BIT_T),
+      4 IS_UNION_MEMBER			type (BIT_T),
+      4 IS_STRUCT_MEMBER		type (BIT_T),
+      4 IS_CLASS_MEMBER			type (BIT_T),
+      4 IS_CLASS_STRUCT_MEMBER		type (BIT_T),
+      4 IS_AGGREGATE_MEMBER		type (BIT_T),
+      4 IS_ENUM_MEMBER			type (BIT_T),
+      4 IS_MEMBER			type (BIT_T),
+      4 IS_ENUM_TAG			type (BIT_T),
+      4 IS_ANON_UNION_TAG		type (BIT_T),
+      4 IS_UNION_TAG			type (BIT_T),
+      4 IS_STRUCT_TAG			type (BIT_T),
+      4 IS_CLASS_TAG			type (BIT_T),
+      4 IS_CLASS_STRUCT_TAG		type (BIT_T),
+      4 IS_AGGREGATE_TAG		type (BIT_T),
+      4 IS_TAG				type (BIT_T),
+      4 IS_TYPE				type (BIT_T),
+      4 IS_CONSTANT			type (BIT_T),
+      4 IS_PARAMETER			type (BIT_T),
+      4 IS_DATA				type (BIT_T),
+      4 IS_OPERATOR_FUNCTION		type (BIT_T),
+      4 IS_CONVERSION_FUNCTION		type (BIT_T),
+      4 IS_DESTRUCTOR_FUNCTION		type (BIT_T),
+      4 IS_CONSTRUCTOR_FUNCTION		type (BIT_T),
+      4 IS_VANILLA_FUNCTION		type (BIT_T),
+      4 IS_FUNCTION			type (BIT_T),
+      4 IS_VANILLA			type (BIT_T),
+      4 IS_NON_LABEL			type (BIT_T),
+    3 KIND				type (LONG_BITS_T),
+  2 EXPRESSION				type (CXX_VID_T),
+  2 TOP_TYPE				type (TYPE_DATA_T),
+  2 NAME				type (NID_T),
+  2 TYPE				type (NID_T),
+  2 ENCLOSING_SCOPE_OWNER		type (NID_T),
+  2 ENCLOSING_SCOPE			type (NID_T),
+  2 NEXT_SYMBOL				type (NID_T),
+  2 OTHER_SYMBOL			type (NID_T),
+  2 FIRST_EXTERNAL_LINKAGE_SYMBOL	type (NID_T),
+  2 STORAGE_CLASS			type (BYTE_T),
+  2 ENCLOSING_SCOPE_TYPE		type (BYTE_T),
+  2 ACCESS				type (BYTE_T),
+  2 LINKAGE_KIND			type (BYTE_T),
+  2 INTERNAL_LINKAGE			type (BIT_T),
+  2 EXTERNAL_LINKAGE			type (BIT_T),
+  2 IS_ALSO_TAG				type (BIT_T),
+  2 IS_ALSO_NON_TAG			type (BIT_T),
+  2 HAS_RELOCATION_SUCCESSOR_LIST	type (BIT_T),
+  2 DEFINED				type (BIT_T),
+  2 FROM_TYPEDEF			type (BIT_T),
+  2 IS_FIRST_EXTERNAL_LINKAGE_SYMBOL	type (BIT_T),
+  2 BASE_TYPE_UNSPECIFIED		type (BIT_T),
+  2 HAS_RELOCATION_PREDECESSOR_COUNT	type (BIT_T),
+  2 LINKAGE_KIND_SPECIFIED		type (BIT_T),
+  2 available_05			type (BIT_T),
+  2 available_06			type (BIT_T),
+  2 available_07			type (BIT_T),
+  2 available_08			type (BIT_T),
+  2 available_09			type (BIT_T),
+
+  2 symbol_data_2			union,		/* 42 BYTES */
+
+    3 function_and_class_symbol_data,
+
+      4 DEFINED_SCOPE			type (NID_T),
+      4 BEFRIENDS			type (NID_T),
+
+      4 function_or_class_symbol_data	union,		/* 38 BYTES */
+	5 function_symbol_data,				/* 38 BYTES */
+	  6 SAVED_FUNCTION_BODY,
+	    7 FIRST_TOKEN		type (POINTER_T),
+	    7 LAST_TOKEN		type (POINTER_T),
+	    7 SOURCE_STATE		type (POINTER_T),
+	    7 NEXT			type (NID_T),
+	    7 PREV			type (NID_T),
+	  6 FIRST_OPID			type (OID_T),
+	  6 NEXT_VIRTUAL_FUNCTION	type (NID_T),
+	  6 VIRTUAL_FUNCTION_INDEX	type (SHORT_T),
+	  6 NEXT_OVERLOAD		type (NID_T),
+	  6 C_OVERLOAD			type (NID_T),
+	  6 BRANCH_AROUND_LABEL		type (CXX_VID_T),
+	  6 FIRST_LABEL			type (NID_T),
+	  6 ASM_FUNCTION		type (BIT_T),
+	  6 COMPILATION_ASSERT_FUNCTION	type (BIT_T),
+	  6 MAIN_FUNCTION		type (BIT_T),
+	  6 HAS_FLAG			type (BIT_T), /* for most-derived */
+	  6 available_04		type (BIT_T),
+	  6 available_05		type (BIT_T),
+	  6 available_06		type (BIT_T),
+	  6 DEFERRED			type (BIT_T),
+	  6 OVERLOAD			type (BIT_T),
+	  6 INLINE			type (BIT_T),
+	  6 VIRTUAL			type (BIT_T),
+	  6 PURE			type (BIT_T),
+	  6 TRIVIAL			type (BIT_T),
+	  6 ON_GENERATE_LIST		type (BIT_T),
+	  6 PROTOTYPED			type (BIT_T),
+	  6 CONTAINS_CALL_TO_SETJMP	type (BIT_T),
+	  6 SOURCE			type (NID_T),
+
+	5 class_symbol_data,				/* 38 BYTES */
+	  6 NON_VIRTUAL_SIZE		type (LONG_T),
+	  6 VIRTUAL_FUNCTION_COUNT	type (SHORT_T),
+	  6 VIRTUAL_FUNCTION_TABLE	type (NID_T),
+	  6 VIRTUAL_BASE_CLASSES	type (NID_T),
+	  6 NBASE_CLASSES		type (SHORT_T),
+	  6 BASE_MEMBERS		type (NID_T),
+	  6 DERIVED_CLASSES		type (NID_T),
+	  6 FRIENDS			type (NID_T),
+	  6 CONSTRUCTOR			type (NID_T),
+	  6 COPY_CONSTRUCTOR		type (NID_T),
+	  6 DESTRUCTOR			type (NID_T),
+	  6 CONVERSION			type (NID_T),
+	  6 ASSIGNMENT			type (NID_T),
+	  6 ANON_UNION_OBJECT_OR_MEMBER	union,
+	    7 ANON_UNION_OBJECT		type (NID_T),
+	    7 ANON_UNION_MEMBER		type (NID_T),
+	  6 ENCLOSING_CLASS		type (NID_T),
+	  6 SAVED_FUNCTION_BODIES	type (NID_T),
+	  6 ENUM_INTEGRAL_TYPE		type (BYTE_T),
+	  6 available_01		type (BYTE_T),
+	  6 HAS_VIRTUAL_BASES		type (BIT_T),
+	  6 ABSTRACT			type (BIT_T),
+	  6 HAS_CONST_MEMBER		type (BIT_T),
+	  6 HAS_NON_PUBLIC_MEMBER	type (BIT_T),
+	  6 NEEDS_INIT			type (BIT_T),
+	  6 NEEDS_COPY			type (BIT_T),
+	  6 NEEDS_DESTRUCTION		type (BIT_T),
+	  6 NEEDS_ASSIGN		type (BIT_T),
+	  6 HAS_ABSTRACT_BASE		type (BIT_T),
+	  6 PERMITS_AGGREGATE_INIT	type (BIT_T),
+	  6 HAS_ENUM_INTEGRAL_TYPE	type (BIT_T),
+	  6 available_03		type (BIT_T),
+	  6 available_04		type (BIT_T),
+	  6 available_05		type (BIT_T),
+	  6 available_06		type (BIT_T),
+	  6 available_07		type (BIT_T),
+
+    3 label_symbol_data,
+      4 DESTRUCTORS			type (CXX_VID_T),
+      4 LABEL_TO_USE			type (NID_T),
+      4 BYPASSED_SYMBOL			type (NID_T),
+      4 BLOCK_LEVEL			type (SHORT_T),
+      4 OK_TO_REACH			type (BIT_T),
+      4 available_01			type (BIT_T),
+      4 available_02			type (BIT_T),
+      4 available_03			type (BIT_T),
+      4 available_04			type (BIT_T),
+      4 available_05			type (BIT_T),
+      4 available_06			type (BIT_T),
+      4 available_07			type (BIT_T),
+      4 available_08			type (BIT_T),
+      4 available_09			type (BIT_T),
+      4 available_10			type (BIT_T),
+      4 available_11			type (BIT_T),
+      4 available_12			type (BIT_T),
+      4 available_13			type (BIT_T),
+      4 available_14			type (BIT_T),
+      4 available_15			type (BIT_T),
+
+    3 plain_symbol_data,
+
+      4 CONST_INITIALIZER		type (LONG_T),
+      4 OBJ_CONSTRUCTED_ID		type (NID_T),
+      4 SIGNED_BIT_FIELD		type (BIT_T),
+      4 SIGNED				type (BIT_T),
+      4 HAS_CONST_INITIALIZER		type (BIT_T),
+      4 HAS_BEEN_SET_OR_ALIASED		type (BIT_T),
+      4 available_03			type (BIT_T),
+      4 available_04			type (BIT_T),
+      4 available_05			type (BIT_T),
+      4 available_06			type (BIT_T),
+      4 available_07			type (BIT_T),
+      4 available_08			type (BIT_T),
+      4 available_09			type (BIT_T),
+      4 available_10			type (BIT_T),
+      4 available_11			type (BIT_T),
+      4 available_12			type (BIT_T),
+      4 available_13			type (BIT_T),
+      4 available_14			type (BIT_T),
+      4 NEXT_PARAMETER			type (NID_T);
+
+/* ---------------------------------------------------------------------
+/* SCOPE_NODE: Describes a global, class, function, or block scope
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 SCOPE_NODE				based (NODE_PTR),
+
+  2 FIRST_LINE_ID			type (LONG_T),
+  2 LAST_LINE_ID			type (LONG_T),
+  2 FIRST_FILE_ID			type (NID_T),
+  2 LAST_FILE_ID			type (NID_T),
+  2 OWNER				type (NID_T),
+  2 SYMBOLS				type (NID_T),
+  2 LAST_SYMBOL				type (NID_T),
+  2 NSYMBOLS				type (NID_T),
+  2 SCOPES				type (NID_T),
+  2 NEXT_SCOPE				type (NID_T),
+  2 LAST_SCOPE				type (NID_T),
+  2 LEVEL				type (SHORT_T),
+  2 INITIALIZED_SYMBOL			type (NID_T),
+  2 BLOCK				type (NID_T),
+  2 DESTRUCTORS				type (CXX_VID_T),
+  2 ENCLOSING_SCOPE			type (NID_T),
+  2 available_short			type (SHORT_T),
+  2 ENCLOSING_SCOPE_TYPE		type (BYTE_T),
+  2 TYPE				type (BYTE_T),
+  2 available_00			type (BYTE_T),
+  2 INITIALIZED_SYMBOL_NEEDS_INIT	type (BIT_T),
+  2 CONTAINS_TAG_SYMBOL			type (BIT_T),
+  2 available_01			type (BIT_T),
+  2 available_02			type (BIT_T),
+  2 available_03			type (BIT_T),
+  2 available_04			type (BIT_T),
+  2 available_05			type (BIT_T),
+  2 available_06			type (BIT_T);
+
+/* ---------------------------------------------------------------------
+/* BASE_CLASS_NODE: Describes one base class of a derived class
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 BASE_CLASS_NODE	based (NODE_PTR),
+
+  2 NEXT		type (NID_T),   /* Next base class */
+  2 SYMBOL		type (NID_T),   /* Base class sym-node id */
+  2 OFFSET		type (LONG_T),  /* Byte offset in derived class */
+  2 ACCESS		type (BYTE_T),  /* Access to this base class */
+  2 VIRTUAL		type (BIT_T),   /* Virtual base class ? */
+  2 HAS_VFT_POINTER	type (BIT_T),   /* Has the virtual table pointer ? */
+  2 ABSTRACT		type (BIT_T),   /* Abstract base class ? */
+  2 available_01	type (BIT_T),
+  2 available_02	type (BIT_T),
+  2 available_03	type (BIT_T),
+  2 available_04	type (BIT_T),
+  2 available_05	type (BIT_T);
+
+/* ---------------------------------------------------------------------
+/* VBC_NODE: Describes one virtual base class of a derived class
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 VBC_NODE		based (NODE_PTR),
+
+  2 NEXT		type (NID_T),	/* Next virtual base class */
+  2 SYMBOL		type (NID_T),	/* Virtual base class sym-node id */
+  2 OFFSET		type (LONG_T),	/* Byte offset in derived class */
+  2 BASE_CLASS_NODE_ID	type (SHORT_T),	/* Corresponding base-class-node id */
+  2 PREV		type (NID_T),	/* Previous virtual base class */
+  2 available_01	type (SHORT_T);	/* */
+
+/* ---------------------------------------------------------------------
+/* DERIVED_CLASS_NODE: Describes one derived class (for CodeWatch)
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 DERIVED_CLASS_NODE	based (NODE_PTR),
+
+  2 NEXT		type (NID_T),   /* Next derived class */
+  2 SYMBOL		type (NID_T),   /* Derived class sym-node id */
+  2 ACCESS		type (BYTE_T),  /* Access to this derived class */
+  2 VIRTUAL		type (BIT_T),   /* Virtually derived class ? */
+  2 available_01	type (BIT_T),
+  2 available_02	type (BIT_T),
+  2 available_03	type (BIT_T),
+  2 available_04	type (BIT_T),
+  2 available_05	type (BIT_T),
+  2 available_06	type (BIT_T),
+  2 available_07	type (BIT_T);
+
+/* ---------------------------------------------------------------------
+/* FRIEND_NODE: Describes one friend or befriender
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 FRIEND_NODE		based (NODE_PTR),
+
+  2 SYMBOL		type (NID_T),
+  2 NEXT		type (NID_T);
+
+/* ---------------------------------------------------------------------
+/* BASE_MEMBER_NODE: Describes base member access adjustment declaration
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 BASE_MEMBER_NODE	based (NODE_PTR),
+
+  2 NEXT		type (NID_T),
+  2 CLASS		type (NID_T),
+  2 MEMBER		type (NID_T),
+  2 ACCESS		type (BYTE_T),
+  2 available_01	type (BYTE_T);
+
+/* ---------------------------------------------------------------------
+/* SOURCE_NODE: Describes one source file of the source map
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 SOURCE_NODE			based (NODE_PTR),
+  2 PARENT			type (NID_T),
+  2 PARENT_FILE			type (NID_T),
+  2 PARENT_ASSUMED_FILE		type (NID_T),
+  2 PARENT_LINE			type (LONG_T),
+  2 PARENT_LINE_ADJUSTMENT	type (SHORT_T),
+  2 FILE			type (NID_T),
+  2 LEVEL			type (SHORT_T),
+  2 INCLUDES			type (NID_T),
+  2 NEXT_INCLUDE		type (NID_T),
+  2 LAST_INCLUDE		type (NID_T),
+  2 NLINES			type (LONG_T),
+  2 available_01		type (LONG_T);
+
+/* ---------------------------------------------------------------------
+/* LIST_NODE: Exactly like a link-node except front-end specific
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 LIST_NODE		based (NODE_PTR),
+
+  2 VALUE		type (NID_T),
+  2 NEXT		type (NID_T);
+
+/* ---------------------------------------------------------------------
+/* PARAMETER_NODE: Describes a function parameter
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 PARAMETER_NODE			based (NODE_PTR),
+
+  2 TOP_TYPE				type (TYPE_DATA_T),
+  2 TYPE				type (NID_T),
+  2 VALUE				type (CXX_VID_T),
+  2 NEXT				type (NID_T);

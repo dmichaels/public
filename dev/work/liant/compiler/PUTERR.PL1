@@ -1,0 +1,32 @@
+/* C++ puterr.pl1 - Emit an error message */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.21.89  DGM  Original; cloned & modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+PUTERR: procedure (MSG);
+
+%include 'incfil';
+
+/* %include WRITE_ERROR_LINE_DCL; */
+
+%include UTL_EXT_NAMES_IN;
+%include LINE_UTILS_DCL;
+
+	declare MSG character (*) varying;
+
+        call WRITE_ERROR_LINE (MSG);
+
+end PUTERR;
+

@@ -1,0 +1,36 @@
+/* CodeWatch M68 SGETPC.PL1 - Return user program PC */
+
+/**********************************************************************/
+/* This product is the property of Liant Software Corporation         */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Liant Software Corporation except pursuant to the    */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  10.09.91  MJF  (001) Added SGETNPC().
+ *
+ *  04.02.87  DGM  Moved from UNIX to M68 divergence.
+ *
+ **********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include TARGET_IN;
+
+SGETPC: procedure RETURNS(FIXED BIN(31));
+
+     return (PROGRAM_REGISTER_AREA->REGS.PC);
+
+end SGETPC;
+
+SGETNPC: procedure returns(FIXED BIN(31));
+
+     return (0);
+
+end SGETNPC;

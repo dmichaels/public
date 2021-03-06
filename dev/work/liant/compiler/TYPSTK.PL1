@@ -1,0 +1,300 @@
+/* C++ typstk.pl1 - Declaration semantic stack manipulation routines */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  02.18.93  DGM  010  Increased stack sizes.
+ *  03.13.92  PKT  009  Added TOP_DERIVED_TYPE_DATA.
+ *  01.21.92  DGM  008  Added POKE_TOP_DERIVED_TYPE.
+ *  03.08.91  DGM  007  Changed TOP_DERIVED_TYPE.
+ *  12.17.90  DGM  006  Added TOP_DERIVED_TYPE.
+ *  09.25.90  DGM  005  Removed PUSH_OVER_DERIVED_TYPE,
+ *			CHANGE_DERIVED_TYPE, and TOP_DERIVED_TYPE.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  08.29.90  DGM  003  Removed SAVE/RESTORE_TYPE_STATE.
+ *  08.21.90  DGM  002  Added CHANGE_DERIVED_TYPE.
+ *  08.14.90  DGM  001  Simplified; push/pop TYPE_DATA_T rather than
+ *			the derived type code, dimension/signature/tag,
+ *			and type qualifier separately.
+ *  08.08.90  DGM  000  Original; spliced out of dclstk.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 02.18.93 010 TYPSTK');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+
+/* =====================================================================
+/* PUSH_DERIVED_TYPE/POP_DERIVED_TYPE
+/* =================================================================== */
+
+/* Derived type stack - for pointer, reference, array, function types */
+
+%replace HB_DERIVED_TYPE_STACK		by 256;
+
+declare
+
+DERIVED_TYPE_STACK		(0 : HB_DERIVED_TYPE_STACK - 1)
+				type (TYPE_DATA_T) static internal,
+DERIVED_TYPE_STACK_TOP		type (SHORT_T) static internal
+				initial (HB_DERIVED_TYPE_STACK);
+
+/* ---------------------------------------------------------------------
+/* PUSH_DERIVED_TYPE
+/*
+/* Push the given type-data element DT onto the derived type stack.
+/* If the stack is full, then emit an appropriate diagnostic.
+/* ------------------------------------------------------------------- */
+
+PUSH_DERIVED_TYPE: procedure (DT)
+		   external  (X_PUSH_DERIVED_TYPE);
+
+	declare DT type (TYPE_DATA_T);
+
+	if DERIVED_TYPE_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_DERIVED_TYPE_STACK_OVERFLOW);
+		return;
+	end;
+	DERIVED_TYPE_STACK_TOP = DERIVED_TYPE_STACK_TOP - 1;
+	DERIVED_TYPE_STACK (DERIVED_TYPE_STACK_TOP) = DT;
+
+end PUSH_DERIVED_TYPE;
+
+/* ---------------------------------------------------------------------
+/* POKE_TOP_DERIVED_TYPE
+/*
+/* Insert the given type-data element DT into the derived type stack just
+/* below the LEVEL'th element down (where the top element on the stack is
+/* regarded as the first element down on the stack).  If LEVEL <= 0 or
+/* there is no LEVEL'th element down on the stack, then do nothing.  If
+/* there stack is full, then emit an appropriate diagnostic.
+/* ------------------------------------------------------------------- */
+
+POKE_DERIVED_TYPE: procedure (DT, LEVEL) external (X_POKE_DERIVED_TYPE);
+
+	declare
+		DT	type (TYPE_DATA_T),
+		LEVEL	type (SHORT_T);
+	declare
+		I	type (INT_T);
+
+	if (LEVEL <= 0) |
+	   ((DERIVED_TYPE_STACK_TOP + LEVEL - 1) >= HB_DERIVED_TYPE_STACK)
+	then	return;
+	else if DERIVED_TYPE_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_DERIVED_TYPE_STACK_OVERFLOW);
+		return;
+	end;
+	DERIVED_TYPE_STACK_TOP = DERIVED_TYPE_STACK_TOP - 1;
+	do I = DERIVED_TYPE_STACK_TOP to DERIVED_TYPE_STACK_TOP + LEVEL - 1;
+		DERIVED_TYPE_STACK (I) = DERIVED_TYPE_STACK (I + 1);
+	end;
+	DERIVED_TYPE_STACK (I) = DT;
+
+end POKE_DERIVED_TYPE;
+
+/* ---------------------------------------------------------------------
+/* POP_DERIVED_TYPE
+/*
+/* Pop and return in DT the top type-data element on the derived type
+/* stack. If the stack is empty, then emit an appropriate diagnostic.
+/* ------------------------------------------------------------------- */
+
+POP_DERIVED_TYPE: procedure (DT)
+		  external  (X_POP_DERIVED_TYPE);
+
+	declare DT type (TYPE_DATA_T);
+
+	if DERIVED_TYPE_STACK_TOP >= HB_DERIVED_TYPE_STACK then do;
+		call COMPILER_ERROR (ERR_DERIVED_TYPE_STACK_UNDERFLOW);
+		return;
+	end;
+	DT = DERIVED_TYPE_STACK (DERIVED_TYPE_STACK_TOP);
+	DERIVED_TYPE_STACK_TOP = DERIVED_TYPE_STACK_TOP + 1;
+
+end POP_DERIVED_TYPE;
+
+/* ---------------------------------------------------------------------
+/* TOP_DERIVED_TYPE
+/*
+/* Return the code of the LEVEL'th element down on the derived type
+/* stack (where the top element on the stack is regarded as the first
+/* element down on the stack).  If LEVEL <= 0 or there is no LEVEL'th
+/* element down on the stack, then return NULL_DT.
+/* ------------------------------------------------------------------- */
+
+TOP_DERIVED_TYPE: procedure (LEVEL)
+		  returns   (type (SHORT_T))
+		  external  (X_TOP_DERIVED_TYPE);
+
+	declare LEVEL	type (SHORT_T);
+	declare I	type (SHORT_T);
+
+	if (LEVEL <= 0) |
+	   ((DERIVED_TYPE_STACK_TOP + LEVEL - 1) >= HB_DERIVED_TYPE_STACK)
+	then	return (NULL_DT);
+	return (rank (DERIVED_TYPE_STACK
+		      (DERIVED_TYPE_STACK_TOP + LEVEL - 1).CODE));
+
+end TOP_DERIVED_TYPE;
+
+/* ---------------------------------------------------------------------
+/* TOP_DERIVED_TYPE_DATA
+/*
+/* Return the TYPE_DATA of the LEVEL'th element down on the derived type
+/* stack (where the top element on the stack is regarded as the first
+/* element down on the stack).  If LEVEL <= 0 or there is no LEVEL'th
+/* element down on the stack, then return NULL everything.
+/* ------------------------------------------------------------------- */
+
+TOP_DERIVED_TYPE_DATA: procedure (LEVEL, TYPE_DATA)
+		       external  (X_TOP_DERIVED_TYPE_DATA);
+
+	declare LEVEL		type (SHORT_T),
+		TYPE_DATA	type (TYPE_DATA_T);
+	declare I	type (SHORT_T);
+
+	if (LEVEL <= 0) |
+	   ((DERIVED_TYPE_STACK_TOP + LEVEL - 1) >= HB_DERIVED_TYPE_STACK)
+	then do;
+		TYPE_DATA.CODE = byte (NULL_DT);
+		TYPE_DATA.QUALIFIERS = NULL_TQ;
+		TYPE_DATA.NID = NULL_NID;
+	end;
+	else
+		TYPE_DATA = DERIVED_TYPE_STACK
+			    (DERIVED_TYPE_STACK_TOP + LEVEL - 1);
+	return;
+
+end TOP_DERIVED_TYPE_DATA;
+
+/* =====================================================================
+/* PUSH_TYPE_QUALIFIER/POP_TYPE_QUALIFIER
+/* =================================================================== */
+
+%replace HB_TYPE_QUALIFIER_STACK	by 128;
+
+declare
+
+TYPE_QUALIFIER_STACK		(0 : HB_TYPE_QUALIFIER_STACK - 1)
+				type (BYTE_BITS_T) static internal,
+TYPE_QUALIFIER_STACK_TOP	type (SHORT_T) static internal
+				initial (HB_TYPE_QUALIFIER_STACK);
+
+/* ---------------------------------------------------------------------
+/* PUSH_TYPE_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+PUSH_TYPE_QUALIFIER: procedure (TQ)
+		     external  (X_PUSH_TYPE_QUALIFIER);
+
+	declare TQ type (BYTE_BITS_T);
+
+	if TYPE_QUALIFIER_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_TYPEQ_STACK_OVERFLOW);
+		return;
+	end;
+	TYPE_QUALIFIER_STACK_TOP = TYPE_QUALIFIER_STACK_TOP - 1;
+	TYPE_QUALIFIER_STACK (TYPE_QUALIFIER_STACK_TOP) = TQ;
+
+end PUSH_TYPE_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* POP_TYPE_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+POP_TYPE_QUALIFIER: procedure
+		    returns   (type (BYTE_BITS_T))
+		    external  (X_POP_TYPE_QUALIFIER);
+
+	declare TQ type (BYTE_BITS_T);
+
+	if TYPE_QUALIFIER_STACK_TOP >= HB_TYPE_QUALIFIER_STACK then do;
+		call COMPILER_ERROR (ERR_TYPEQ_STACK_UNDERFLOW);
+		return (NULL_TQ);
+	end;
+	TQ = TYPE_QUALIFIER_STACK (TYPE_QUALIFIER_STACK_TOP);
+	TYPE_QUALIFIER_STACK_TOP = TYPE_QUALIFIER_STACK_TOP + 1;
+	return (TQ);
+
+end POP_TYPE_QUALIFIER;
+
+/* =====================================================================
+/* PUSH_CLASS_QUALIFIER/POP_CLASS_QUALIFIER
+/* =================================================================== */
+
+/* Class qualifier stack - for pointers (to members) */
+
+%replace HB_CLASS_QUALIFIER_STACK	by 128;
+
+declare
+
+CLASS_QUALIFIER_STACK		(0 : HB_CLASS_QUALIFIER_STACK - 1)
+				type (NID_T) static internal,
+CLASS_QUALIFIER_STACK_TOP	type (SHORT_T) static internal
+				initial (HB_CLASS_QUALIFIER_STACK);
+
+/* ---------------------------------------------------------------------
+/* PUSH_CLASS_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+PUSH_CLASS_QUALIFIER: procedure (CQ)
+		      external  (X_PUSH_CLASS_QUALIFIER);
+
+	declare CQ type (NID_T);
+
+	if CLASS_QUALIFIER_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_CLASS_STACK_OVERFLOW);
+		return;
+	end;
+	CLASS_QUALIFIER_STACK_TOP = CLASS_QUALIFIER_STACK_TOP - 1;
+	CLASS_QUALIFIER_STACK (CLASS_QUALIFIER_STACK_TOP) = CQ;
+
+end PUSH_CLASS_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* POP_CLASS_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+POP_CLASS_QUALIFIER: procedure
+		     returns   (type (NID_T))
+		     external  (X_POP_CLASS_QUALIFIER);
+
+	declare CQ type (NID_T);
+
+	if CLASS_QUALIFIER_STACK_TOP >= HB_CLASS_QUALIFIER_STACK then do;
+		call COMPILER_ERROR (ERR_CLASS_STACK_UNDERFLOW);
+		return (NULL_TQ);
+	end;
+	CQ = CLASS_QUALIFIER_STACK (CLASS_QUALIFIER_STACK_TOP);
+	CLASS_QUALIFIER_STACK_TOP = CLASS_QUALIFIER_STACK_TOP + 1;
+	return (CQ);
+
+end POP_CLASS_QUALIFIER;
+
+

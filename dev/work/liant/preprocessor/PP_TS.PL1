@@ -1,0 +1,342 @@
+/* CPP pp_ts.pl1 - Return the spelling of the given token pod */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.25.92  DGM  009  Split TOKEN_NODE into separate space.
+ *  06.18.92  DGM  008  #pragma LPI data_section.
+ *  06.11.92  DGM  007  #pragma LPI C-header ( on | off )
+ *  05.15.92  DGM  006  Updated.
+ *  08.02.91  DGM  005  Updated.
+ *  07.24.91  DGM  004  Updated.
+ *  07.18.91  DGM  003  Updated.
+ *  09.25.90  DGM  002  Include file name changes.
+ *  06.05.90  DGM  001  Updated.
+ *  06.05.90  DGM  000  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  03.02.90  DGM  006  Updated.
+ *  02.22.90  DGM  005  Updated.
+ *  01.19.90  DGM  004  Updated.
+ *  12.12.89  DGM  000  Original for C++.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.25.92 009 PPTS');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN; 
+%include CPP_UTL_DEFS_IN;
+%include CPP_UTL_SYMBOL_TABLE_PKG;
+%include CPP_STANDARD_DEFS_IN;
+%include CPP_EXTERNAL_NAME_MAP_IN;
+%include CPP_CHARACTER_SET_IN;
+%include CPP_TOKEN_LIMITS_IN;
+%include CPP_TOKEN_POD_IN;
+%include CPP_TOKEN_MAP_SPELLING_IN;
+%include CPP_TOKEN_POD_SPELLING_IN;
+
+/* ---------------------------------------------------------------------
+/* TOKEN_SPELLING
+/*
+/* Given a pointer to a token pod, return a character string containing
+/* the spelling of the token.  If the given pointer is null, or the
+/* token pod represents an unknown token type, then an empty string
+/* will be returned.
+/* ------------------------------------------------------------------- */
+
+TOKEN_SPELLING: procedure (TP)
+		returns   (character (MAX_TOKEN_SPELLING_LENGTH) varying)
+		external  (X_TOKEN_SPELLING);
+
+	declare
+		TP	type (POINTER_T);
+	declare
+		T	type (SHORT_T),
+		X	type (SHORT_T),
+		V	type (NID_T),
+		P	type (POINTER_T);
+	declare
+		S	character (MAX_TOKEN_SPELLING_LENGTH) varying;
+
+	S = '';
+
+	/* Return an empty string for a null token pointer */
+
+	if TP = null() then
+		return (S);
+
+	/* Get the (absolute value of the) token type */
+
+	T = TP->TOKEN_POD.TYPE; if T < 0 then T = -T;
+
+	/* Return an empty string for a null type token */
+
+	if T = NULL_TOKEN then
+		return (S);
+
+	/* Get spelling for token pods which explicitly contain it */
+
+	if (T >= LB_SPELLING_TOKEN) & (T <= HB_SPELLING_TOKEN) then do;
+
+		/* Identifer token spelling */
+
+		if T = IDENTIFIER_TOKEN then do;
+			V = TP->TOKEN_POD.SPELLING_NODE;
+			if V = 0 then return (S);
+			if V < 0 then V = -V;
+			S = TOKEN_NAME (V);
+		end;
+
+		/* String literal token */
+
+		/*
+		/* -TODO- Check for funky characters like newlines and tabs
+		/* in string literals and character constants, and translate
+		/* them to the appropriate backslash sequence; this is so
+		/* the token context error print out doesn't get messed up.
+		/* Hmm, maybe this should actually be done by PUCTX.
+		/**/
+
+		else if (T = COOKED_STRING_LITERAL_TOKEN) |
+			(T = STRING_LITERAL_TOKEN) then do;
+			if TP->TOKEN_POD.SPELLING_PTR = null() then
+				return (S);
+			S = byte (DQUOTE_CHAR) ||
+			    TP->TOKEN_POD.SPELLING_PTR->
+			    TOKEN_SPELLING_POD.SPELLING ||
+			    byte (DQUOTE_CHAR);
+		end;
+
+		/* Character constant token */
+
+		else if (T = COOKED_CHAR_CONSTANT_TOKEN) |
+			(T = CHAR_CONSTANT_TOKEN) then do;
+			if TP->TOKEN_POD.SPELLING_PTR = null() then
+				return (S);
+			S = byte (SQUOTE_CHAR) ||
+			    TP->TOKEN_POD.SPELLING_PTR->
+			    TOKEN_SPELLING_POD.SPELLING ||
+			    byte (SQUOTE_CHAR);
+		end;
+
+		/* Wide string literal token */
+
+		else if (T = COOKED_WSTRING_LITERAL_TOKEN) |
+			(T = WSTRING_LITERAL_TOKEN) then do;
+			if TP->TOKEN_POD.SPELLING_PTR = null() then
+				return (S);
+			S = byte (UPPER_L_CHAR) ||
+			    byte (DQUOTE_CHAR) ||
+			    TP->TOKEN_POD.SPELLING_PTR->
+			    TOKEN_SPELLING_POD.SPELLING ||
+			    byte (DQUOTE_CHAR);
+		end;
+
+		/* Wide character constant token */
+
+		else if (T = COOKED_WCHAR_CONSTANT_TOKEN) |
+			(T = WCHAR_CONSTANT_TOKEN) then do;
+			if TP->TOKEN_POD.SPELLING_PTR = null() then
+				return (S);
+			S = byte (UPPER_L_CHAR) ||
+			    byte (SQUOTE_CHAR) ||
+			    TP->TOKEN_POD.SPELLING_PTR->
+			    TOKEN_SPELLING_POD.SPELLING ||
+			    byte (SQUOTE_CHAR);
+		end;
+
+		/* Other (arithmetic constants and preprocessing numbers) */
+
+		else do;
+			if TP->TOKEN_POD.SPELLING_PTR = null() then
+				return (S);
+			S = TP->TOKEN_POD.SPELLING_PTR->
+			    TOKEN_SPELLING_POD.SPELLING;
+		end;
+	end;
+
+	/* Simple token (puncuator or operator); index into OP_TOKEN */
+
+	else if (T >= LB_OP_TOKEN) & (T <= HB_OP_TOKEN) then
+		S = OP_TOKEN (T);
+
+	/* Keyword token; index into KW_TOKEN */
+
+	else if (T >= LB_KW_TOKEN) & (T <= HB_KW_TOKEN) then
+		S = KW_TOKEN (T);
+
+	/* Single character token */
+
+	else if T = SINGLE_CHAR_TOKEN then
+		S = byte (TP->TOKEN_POD.VALUE);
+
+	/* Pseudo token; index into PSEUDO_TOKEN */
+
+	else if (T >= LB_PSEUDO_TOKEN) & (T <= HB_PSEUDO_TOKEN) then do;
+		if T = PRAGMA_TOKEN then do;
+			S = '<#pragma';
+			X = rank (TP->TOKEN_POD.VALUE_ONE);
+			if X = PRAGMA_C_HEADER_PK then do;
+				S = S || ' C-header (';
+				X = rank (TP->TOKEN_POD.VALUE_TWO);
+				if X = 0 then
+					S = S || 'off';
+				else if X = 1 then
+					S = S || 'on';
+				else	S = S || trim (char (X));
+				S = S || ')>';
+			end;
+			else if X = PRAGMA_LIST_PK then do;
+				X = rank (TP->TOKEN_POD.VALUE_TWO);
+				S = S || ' list (' || trim (char (X)) || ')';
+			end;
+			else if X = PRAGMA_PACK_PK then do;
+				X = rank (TP->TOKEN_POD.VALUE_TWO);
+				S = S || ' pack (' || trim (char (X)) || ')';
+			end;
+			else if X = PRAGMA_VARARGS_USED_PK then
+				S = S || ' varargs_used>';
+			else if X = PRAGMA_WRAPPER_REDECLARATIONS_PK then do;
+				S = S || ' wrapper_redeclarations (';
+				X = rank (TP->TOKEN_POD.VALUE_TWO);
+				if X = 0 then
+					S = S || 'off';
+				else if X = 1 then
+					S = S || 'on';
+				else	S = S || trim (char (X));
+				S = S || ')>';
+			end;
+			else if X = PRAGMA_ALLOW_ASM_PK then do;
+				S = S || ' allow_asm (';
+				X = rank (TP->TOKEN_POD.VALUE_TWO);
+				if X = 0 then
+					S = S || 'off';
+				else if X = 1 then
+					S = S || 'on';
+				else	S = S || trim (char (X));
+				S = S || ')>';
+			end;
+			else if X = PRAGMA_WEAK_PK then do;
+				S = S || ' weak ' ||
+				    TOKEN_NAME (TP->TOKEN_POD.VALUE_FIVE);
+				if TP->TOKEN_POD.VALUE_SIX ^= 0 then do;
+					S = S || ' = ' ||
+					    TOKEN_NAME
+					    (TP->TOKEN_POD.VALUE_SIX);
+				end;
+				S = S || '>';
+			end;
+			else if X = PRAGMA_DATA_SECTION_PK then do;
+				S = S || ' data_section ("';
+				P = TP->TOKEN_POD.VALUE_SEVEN;
+				S = S ||
+				    TOKEN_NAME (P->DATA_SECTION_NODE.NAME) ||
+				    '",' ||
+				    trim (char
+					  (P->DATA_SECTION_NODE.ATTRIBUTES)) ||
+				    ',' ||
+				    trim (char
+					  (P->DATA_SECTION_NODE.ALIGNMENT)) ||
+				    ',' ||
+				    trim (char
+					  (P->DATA_SECTION_NODE.ADDRESS)) ||
+				    ')>';
+			end;
+			else	S = S || 'unknown (' ||
+				    trim (char (X)) || ')>';
+		end;
+		else	S = PSEUDO_TOKEN (T);
+	end;
+
+	/* Preprocessing token; index into PP_TOKEN */
+
+	else if T = PP_MACRO_PARAMETER_TOKEN then
+		S = '<macro-parameter-' ||
+		    trim (char (TP->TOKEN_POD.VALUE)) || '>';
+
+	else if (T >= LB_PP_TOKEN) & (T <= HB_PP_TOKEN) then
+		S = PP_TOKEN (T);
+
+	/* Return pointer to the static internal name */
+
+	return (S);
+
+end TOKEN_SPELLING;
+
+/* ---------------------------------------------------------------------
+/* SIMPLE_TOKEN_SPELLING
+/* ------------------------------------------------------------------- */
+
+SIMPLE_TOKEN_SPELLING: procedure (TOKEN_CODE)
+		       returns   (character
+				  (MAX_TOKEN_SPELLING_LENGTH) varying)
+		       external  (X_SIMPLE_TOKEN_SPELLING);
+
+	declare TOKEN_CODE type (SHORT_T);
+
+	if (TOKEN_CODE >= LB_OP_TOKEN) &
+	   (TOKEN_CODE <= HB_OP_TOKEN) then
+		return  (OP_TOKEN (TOKEN_CODE));
+
+	else if (TOKEN_CODE >= LB_KW_TOKEN) &
+		(TOKEN_CODE <= HB_KW_TOKEN) then
+		return  (KW_TOKEN (TOKEN_CODE));
+
+	else if (TOKEN_CODE >= LB_PP_TOKEN) &
+		(TOKEN_CODE <= HB_PP_TOKEN) then
+		return  (PP_TOKEN (TOKEN_CODE));
+
+	else if (TOKEN_CODE >= LB_PSEUDO_TOKEN) &
+		(TOKEN_CODE <= HB_PSEUDO_TOKEN) then
+		return (PSEUDO_TOKEN (TOKEN_CODE));
+
+	else	return ('');
+
+end SIMPLE_TOKEN_SPELLING;
+
+/* ---------------------------------------------------------------------
+/* TOKEN_NAME
+/*
+/* Returns a string representing the name specified in the given
+/* (simple) token-node.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+TOKEN_NAME: procedure (TOKEN)
+	    returns   (character (MAX_TOKEN_SPELLING_LENGTH) varying)
+	    internal;
+
+	declare
+		TOKEN	fixed binary (15);
+	declare
+		S	character (MAX_TOKEN_SPELLING_LENGTH) varying,
+		P	pointer;
+
+	if TOKEN = NULL_ID then
+		return ('');
+
+	call GET_TOKEN_R (TOKEN, P);
+	S = substr (P->TOKEN_NODE.SPELLING, 1, P->TOKEN_NODE.SIZE);
+	call RELEASE_TOKEN (TOKEN);
+
+	return (S);
+
+end TOKEN_NAME;
+

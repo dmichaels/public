@@ -1,0 +1,135 @@
+/* C++ intpar.pl1 - Internal (by-hand) parse begin/end routines */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  005  New value-node scheme.
+ *  05.13.91  DGM  004  Set CURRENTLY_DOING_INTERNAL_PARSE flag.
+ *  04.23.91  DGM  003  Save/restore CURRENT_BLOCK.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  09.12.90  DGM  001  Fix/typo.
+ *  09.05.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 005 INTPAR');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_SET_SCOPE_PKG;
+%include CXX_INTERNAL_PARSE_IN;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+INTERNAL_PARSE_LEVEL	type (SHORT_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* BEGIN_INTERNAL_PARSE
+/*
+/* Sets up to internally parse a declaration by hand.  The given (pointer
+/* to a) PARSE_STATE_DATA_T record will be filled in with the current
+/* parse state; it should be used by the caller only as a parameter in
+/* a corresponding call to END_INTERNAL_PARSE.  If SCOPE is not NULL_NID
+/* then the scope will be set to the scope represented by that scope-node
+/* id.  Preserves current-node-id.
+/*
+/* TODO: yet another PL/I compiler bug prevents us from passing type
+/* PARSE_STATE_DATA_T as the first argument, so we pass as pointer to it.
+/* ------------------------------------------------------------------- */
+
+BEGIN_INTERNAL_PARSE: procedure (S, SCOPE)
+		      external  (X_BEGIN_INTERNAL_PARSE);
+	declare
+		S	type (POINTER_T),
+		SCOPE	type (NID_T);
+		
+	/* Save the current parse state */
+
+	call SAVE_NODE (S->PARSE_STATE_DATA_T.NODE_DATA);
+	S->PARSE_STATE_DATA_T.DECLARATION_DATA
+		= addr (GLOBAL_DECLARATION_DATA)->DECLARATION_STATE_DATA_T;
+	S->PARSE_STATE_DATA_T.TYPE_DATA
+		= addr (GLOBAL_TYPE_DATA)->TYPE_STATE_DATA_T;
+	S->PARSE_STATE_DATA_T.SEMANTIC_DATA
+		= addr (GLOBAL_SEMANTIC_DATA)->SEMANTIC_STATE_DATA_T;
+	S->PARSE_STATE_DATA_T.MATCHED_TOKEN_DATA
+		= MATCHED_TOKEN;
+	S->PARSE_STATE_DATA_T.GLOBAL_CURRENT_BLOCK
+		= CURRENT_BLOCK;
+
+	/* Set the scope if desired */
+
+	if SCOPE ^= NULL_NID then
+		call SET_CURRENT_SCOPE (SCOPE);
+
+	/* Set the internal parse level & flag */
+
+	INTERNAL_PARSE_LEVEL = INTERNAL_PARSE_LEVEL + 1;
+	CURRENTLY_DOING_INTERNAL_PARSE = TRUE;
+
+end BEGIN_INTERNAL_PARSE;
+
+/* ---------------------------------------------------------------------
+/* END_INTERNAL_PARSE
+/*
+/* Reverses the actions of BEGIN_INTERNAL_PARSE.
+/* Restores current-node-id.
+/* ------------------------------------------------------------------- */
+
+END_INTERNAL_PARSE: procedure (S)
+		    external  (X_END_INTERNAL_PARSE);
+
+	declare S type (POINTER_T);
+
+	addr (GLOBAL_DECLARATION_DATA)->DECLARATION_STATE_DATA_T
+		= S->PARSE_STATE_DATA_T.DECLARATION_DATA;
+	addr (GLOBAL_TYPE_DATA)->TYPE_STATE_DATA_T
+		= S->PARSE_STATE_DATA_T.TYPE_DATA;
+	addr (GLOBAL_SEMANTIC_DATA)->SEMANTIC_STATE_DATA_T
+		= S->PARSE_STATE_DATA_T.SEMANTIC_DATA;
+	MATCHED_TOKEN
+		= S->PARSE_STATE_DATA_T.MATCHED_TOKEN_DATA;
+	CURRENT_BLOCK
+		= S->PARSE_STATE_DATA_T.GLOBAL_CURRENT_BLOCK;
+	call RESTORE_NODE (S->PARSE_STATE_DATA_T.NODE_DATA);
+
+	/* Set the internal parse level & flag */
+
+	INTERNAL_PARSE_LEVEL = INTERNAL_PARSE_LEVEL - 1;
+	if INTERNAL_PARSE_LEVEL <= 0 then
+		CURRENTLY_DOING_INTERNAL_PARSE = FALSE;
+
+end END_INTERNAL_PARSE;
+
+

@@ -1,0 +1,29 @@
+.TH RMCHAR 3L LOCAL
+
+.SH NAME
+rmchar - remove occurrences of characters from a string
+
+.SH SYNOPSIS
+.ft B
+int
+.br
+rmchar(str, charset, n)
+.br
+char *str, *charset;
+.br
+int n;
+.ft P
+
+.SH DESCRIPTION
+Removes the first \fIn\fP occurrences in string \fIstr\fP of any
+character appearing in the character set string \fIcharset\fP.
+If \fIn\fP is less than or equal to zero,
+then \fIall\fP occurrences of any \fIcharset\fP characters will be removed.
+If \fIcharset\fP is NULL or empty,
+then it will be assumed to represent all white space characters
+(.i.e. blanks, tabs, & newlines).
+Returns the number of characters actually removed.
+
+.SH FILES
+rmchar.c
+

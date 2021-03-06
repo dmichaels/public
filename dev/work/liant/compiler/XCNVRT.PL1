@@ -1,0 +1,102 @@
+/* C++ xcnvrt.pl1 - Convert a data image to target form */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.03.91  DGM  002  Changed to use SIMPLE_BACK_END_TYPE_SIZE.
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  04.19.90  DGM  000  Original; derived from ANSI-C XTARG.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 09.26.91 002 XCNVRT');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_SIZE_PKG;
+
+/* ---------------------------------------------------------------------
+/* TARGET_CONVERSION
+/*
+/* Convert the data pointed to by DATA_PTR to target form; this is only
+/* used when compiling in cross mode.  If the DATA_TYPE is zero, then
+/* this is assumed to be a string-literal of size DATA_SIZE, otherwise,
+/* DATA_TYPE is assumed to be a type code valid type code (in this case
+/* DATA_SIZE is not used).  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+TARGET_CONVERSION: procedure (DATA_PTR, DATA_TYPE, DATA_SIZE)
+		   external  (X_TARGET_CONVERSION);
+	declare
+		DATA_PTR	pointer,
+		DATA_TYPE	type (SHORT_T),
+		DATA_SIZE	type (SHORT_T);
+	declare
+		THIS_TYPE	type (SHORT_T),
+		THIS_SIZE	type (SHORT_T);
+	declare
+		XANYT		entry ((0 : 512) type (SHORT_T),
+				       type (SHORT_T),
+				       type (LONG_T))
+				external;
+	declare
+		XBUFF		(0 : 512) type (SHORT_T) based,
+		XDOPEI          type (LONG_T),
+		1 XDOPE         defined (XDOPEI),
+		  2 TYPE	character (1),
+		  2 DIMS	character (1),
+		  2 SIZE	type (SHORT_T);
+
+	if ^AM_CROSS then
+		return;
+
+	if (DATA_TYPE = CHAR_BT) |
+	   (DATA_TYPE = UCHAR_BT) |
+	   (DATA_TYPE = SCHAR_BT) then do;
+		/*
+		/* No conversion needed (or supported).
+		/**/
+		return;
+	end;
+	if DATA_TYPE = 0 then do;
+		/*
+		/* Special string-literal conversion.
+		/**/
+		XDOPE.TYPE = byte (CHAR_);
+		XDOPE.SIZE = DATA_SIZE;
+	end;
+	else do;
+		call SIMPLE_BACK_END_TYPE_SIZE (DATA_TYPE,
+						THIS_TYPE,
+						THIS_SIZE);
+		XDOPE.TYPE = byte (THIS_TYPE);
+		XDOPE.SIZE = THIS_SIZE;
+	end;
+
+	XDOPE.DIMS = byte (0);
+
+	call XANYT (DATA_PTR->XBUFF, 0, XDOPEI);
+
+end TARGET_CONVERSION;
+

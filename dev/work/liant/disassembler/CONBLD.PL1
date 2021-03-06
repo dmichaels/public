@@ -1,0 +1,62 @@
+/* CodeWatch M68 CONBLD.PL1 - Build label or entry constant */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ * LPI EDIT HISTORY
+ *
+ * 02.23.90  MJF  004  Changed DERROR calls to use replace constants.
+ *
+ * 08.10.89  DCZ  003  Added NLS support;
+ *		       derror replaces writtt calls.
+ *		       Added DERROR_IN.
+ *
+ * 11.25.86  DGM  Fixed to get correct result for ENTRY_ types; it's
+ *                (apparently) the same as for LABEL_ types (i.e. add
+ *                the code base address of this module to the given
+ *                offset.  This fixed a problem which prevented the
+ *                CALL command to work when calling an internal (PL/1)
+ *                routine.
+ *
+ **********************************************************************/
+
+CONBLD: procedure (TYPE, OFFSET, FRAME, CODE, STATIC, RESULT, RET_CODE);
+
+%include 'incfil';
+%include SYSTTY_IN;
+%include SYSFRAMES_IN;
+%include GBLDTYPES_IN;
+%include DERROR_IN;
+
+    declare
+        TYPE        fixed binary (15),
+        OFFSET      fixed binary (31),
+        FRAME       fixed binary (31),
+        CODE        fixed binary (31),
+        STATIC      fixed binary (31),
+        RESULT      pointer,
+        RET_CODE    fixed binary (15);
+
+    declare
+        FB31 (2)    fixed binary (31) based (RESULT);
+
+    if (TYPE = LABEL_) | (TYPE = ENTRY_) then
+        FB31(1) = OFFSET + CODE;
+    else
+        FB31(1) = OFFSET + STATIC;
+
+    FB31(2) = LCLADR (FRAME);
+
+    if FB31(2) = 0 then
+	call derror ( NO_ENV_FOR_LABEL_ENTRY_CONSTANT, '', '');
+
+    RET_CODE = 0;
+
+end CONBLD;

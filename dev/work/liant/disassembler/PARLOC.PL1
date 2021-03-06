@@ -1,0 +1,59 @@
+/* LPI-DEBUG PARLOC.PL1 - Get parameter location on stack */
+
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  12.02.86  DGM  Original.  Needed for the implementation
+ *                 of the PL/1 VALUE attribute (Applicon).
+ *
+ **********************************************************************/
+
+PARLOC: procedure (PARAM_NO, VAR_TYPE, LOCATION, BITOFF, OTHER)
+        returns   (bit (1));
+
+/* ---------------------------------------------------------------------
+/* PARLOC - Get a parameter location address from a stack frame
+/*          This is basically one level of indirection up from  GTPARM
+/*
+/* In:     PARAM_NO = Parameter number (1 to # parameters).
+/*         VAR_TYPE = Symbol type code, to allow indirection through
+/*                   descriptors when the machine uses them.
+/*         LOCATION = Memory address of parameter base from current env.
+/*         NODE_PTR -> BLOCK_NODE for procedure block.
+/* Out:    LOCATION = Stack address of parameter.
+/*         BITOFF   = Bit offset of parameter (in case not aligned).
+/*         OTHER    = Other data to keep (e.g. Ring number).
+/* Return: TRUE if success, FALSE if some sort of failure.
+/****************************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include TARGET_IN;
+
+    declare 
+        PARAM_NO   fixed binary (15),
+        VAR_TYPE   fixed binary (15),
+        LOCATION   fixed binary (ADDRESS_LENGTH),
+        BITOFF     fixed binary (15),
+        OTHER      fixed binary (31);
+
+    declare
+        DUMMY      fixed binary (31),
+        PARAM_LOC  fixed binary (ADDRESS_LENGTH);
+
+        LOCATION = LOCATION + $PARAMETER_OFFSET + ((PARAM_NO - 1) * 4);
+        return (TRUE);
+
+end PARLOC;
+

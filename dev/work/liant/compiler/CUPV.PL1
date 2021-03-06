@@ -1,0 +1,77 @@
+/* C++ cupv.pl1 - Increment count of value-node */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  007  New value-node scheme.
+ *  09.14.90  DGM  006  Changed include file names and VOP names.
+ *  08.08.90  DGM  005  New type-node.
+ *  07.25.90  PKT  004  Added support for LEFT_VALUE_VO.
+ *  07.05.90  PKT  003  New treatment of COUNT=0.
+ *  06.06.90  DGM  002  Updated for the new utilities.
+ *  04.19.90  DGM  001  Fixed up includes.
+ *  01.18.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 007 CUPV');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* COUNT_UP_VALUE
+/* ------------------------------------------------------------------- */
+
+COUNT_UP_VALUE: procedure (V)         
+		recursive
+		external  (X_COUNT_UP_VALUE);
+
+	declare V type (CXX_VID_T);
+
+	if V = NULL_CXX_VID then
+		return;
+
+	else if V->CXX_VALUE_NODE.COUNT < 0 then
+		return;
+
+	V->CXX_VALUE_NODE.COUNT = V->CXX_VALUE_NODE.COUNT + 1;
+
+	if ((V->CXX_VALUE_NODE.OP = CAST_VO) |
+	    (V->CXX_VALUE_NODE.OP = IMPLICIT_CAST_VO) |
+	    (V->CXX_VALUE_NODE.OP = LEFT_VALUE_VO)) &
+	   (^V->CXX_VALUE_NODE.LEFT_IS_NOT_VID) then
+		call COUNT_UP_VALUE (V->CXX_VALUE_NODE.LEFT);
+	else if (V->CXX_VALUE_NODE.OP = COMMA_VO) &
+		(^V->CXX_VALUE_NODE.RIGHT_IS_NOT_VID) then
+		call COUNT_UP_VALUE (V->CXX_VALUE_NODE.RIGHT);
+
+end COUNT_UP_VALUE;
+

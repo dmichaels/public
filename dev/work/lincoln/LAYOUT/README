@@ -1,0 +1,25 @@
+----------------------------------------------------------------------
+This directory contains the source files necessary to make
+the VALID "layout" program.  This program is run by the logic
+designer who, after making and compiling a logic drawing, now
+wishes to graphically layout the devices (DIPs etc.) on a wirewrap
+board (e.g augat uwg12a).  This program will produce a graphics
+editor file which will (when "ged" is invoked) place all of the
+devices used be the designer around the perimeter of the board so
+that (s)he merely needs to use the mouse to place them on the board.
+
+This program currently supports two wirewrap board geometries,
+the AUGAT UWG12, and the AUGAT HPWG12.  The only board dependant
+information needed by the program is the physical length and width
+of the board, and the physical x/y offset from the lower left corner
+of the board to pin one of the board (all in 1000ths of an inch).
+To add a new board geometry, this information (along with the name of
+the board) must be entered into the "bgeomtbl" in the file "bgeom.c".
+The simplest way to do this, is to clone one of the existing entries
+and change the numbers appropriatly.
+
+
+		David Michaels (david@ll-sst)
+		M.I.T Lincolon Laboratory (group 24)
+		December 1984
+----------------------------------------------------------------------

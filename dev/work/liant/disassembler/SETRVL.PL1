@@ -1,0 +1,161 @@
+/* CodeWatch M68 SETRVL.PL1 - Set user function return value */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   7.1.92   VTF  005  Added support for setting extended precision long
+ *                      double return values.
+ *
+ *  02.23.90  MJF  004  Changed DERROR calls to use replace constants.
+ *
+ *  08.10.89  DCZ  003  Added NLS support;
+ *			derror replaces verror calls.
+ *			Added DERROR_IN.
+ *
+ *  06.15.87  DGM  002  Fixed code to handle "bit(1)" return value types.
+ *			Check the high bit of the low byte of D0.
+ *
+ *  05.26.87  DGM  001  Code to handle "bit(1)" return value types.
+ *
+ *  03.20.87  DGM  000  Original.  See LPI-DEBUG document
+ *                      "System Interface Specification".
+ *
+ **********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include DBGDEBUG_IN;
+%include SYSRESUME_IN;
+%include SYSWRITUSER_IN;
+%include SYSREADUSER_IN;
+%include UNXDBG_IN;
+%include SYSTTY_IN;
+%include TARGET_IN;
+%include DERROR_IN;  /* 003 */
+
+/* --------------------------------------------------------------------
+ * SETRVL will set the value which is about to be returned from a
+ * called user function and copy it to the specified debugger memory.
+ */
+
+SETRVL: procedure (REGPTR,TYPE,PRECISION,LENGTH,UNITS,PTR);
+
+    declare
+        REGPTR    pointer,            /* Pointer to register save area */
+        TYPE      fixed binary (15),  /* Return data type */
+        PRECISION fixed binary (15),  /* Return data precision */
+        LENGTH    fixed binary (31),  /* Return data length in UNITS */
+        UNITS     fixed binary (15),  /* Return data units of size */
+        PTR       pointer;            /* Pointer to return data area */
+
+    declare 
+        RETURN_VALUE_ADDRESS  fixed binary (ADDRESS_LENGTH),
+        I                     fixed binary (15);
+
+    declare
+        B_FIXBIN_DFT    fixed binary  (FIXED_BIN_DFT_P) based,
+        B_FIXBIN_MAX    fixed binary  (FIXED_BIN_MAX_P) based,
+        B_FLTBIN_DFT    float binary  (FLOAT_BIN_SINGLE_P) based,
+        B_FLTBIN_MAX    float binary  (FLOAT_BIN_DOUBLE_P) based,
+        B_LONG_DBL(3)   fixed binary  (31)               based,
+        B_POINTER       pointer                         based;
+
+    declare
+        1  FLOATWORD    based,
+           2  HIGH      fixed binary (31),
+           2  LOW       fixed binary (31);
+
+    if (TYPE = 0) | (LENGTH <= 0) then
+        return;
+
+    if TYPE = FIXED_BIN_ then do;
+
+        if PRECISION = FIXED_BIN_MAX_P then
+             REGPTR->REGS.D0 = PTR->B_FIXBIN_MAX;
+        else REGPTR->REGS.D0 = PTR->B_FIXBIN_DFT;
+
+    end;
+
+    else if TYPE = POINTER_ then do;
+
+        addr(REGPTR->REGS.D0)->B_POINTER = PTR->B_POINTER;
+
+    end;
+
+    else if TYPE = FLOAT_BIN_ then do;
+
+        if PRECISION > FLOAT_BIN_DOUBLE_P then do;
+                PROGRAM_REGISTER_AREA->FPREGS(1) = PTR->B_LONG_DBL(1);
+                PROGRAM_REGISTER_AREA->FPREGS(2) = PTR->B_LONG_DBL(2);
+                PROGRAM_REGISTER_AREA->FPREGS(3) = PTR->B_LONG_DBL(3);
+        end;
+        else if PRECISION > FLOAT_BIN_SINGLE_P then do;
+             REGPTR->REGS.D0 = PTR->FLOATWORD.HIGH;
+             REGPTR->REGS.D1 = PTR->FLOATWORD.LOW;
+        end;
+        else addr(REGPTR->REGS.D0)->B_FLTBIN_DFT = PTR->B_FLTBIN_DFT;
+
+    end;
+
+    else if ((TYPE = BIT_) | (TYPE = BIT_ALIGNED_)) & (PRECISION = 1) then do;
+
+        if PTR->B_FIXBIN_DFT ^= 0 then
+             REGPTR->REGS.D0 = -1;
+        else REGPTR->REGS.D0 =  0;
+
+    end;
+
+    else do;
+
+        call REAUSR (SON_ID, CURRENT_ENV.FRAME_ADDR,
+                     REGPTR->REGS.A6 + $RETURN_VALUE_OFFSET,
+                     4, addr(RETURN_VALUE_ADDRESS), I);
+        if I ^= 0 then do;
+	    call derror ( CANNOT_READ_RETURN_VALUE_ADDRESS, '', '');
+            return;
+        end;
+        call WRIUSR (SON_ID, CURRENT_ENV.FRAME_ADDR, RETURN_VALUE_ADDRESS,
+                     SIZE_IN_BYTES(LENGTH,UNITS), PTR, I);
+        if I ^= 0 then do;
+	    call derror ( CANNOT_WRITE_RETURN_VALUE, '', '');
+            return;
+        end;
+    end;
+
+    SIZE_IN_BYTES: procedure (SIZE, SIZE_UNITS)
+                   returns (fixed binary (15));
+        declare
+            SIZE        fixed binary (31),
+            SIZE_UNITS  fixed binary (15);
+        declare
+            RESULT      fixed binary (15);
+
+        if SIZE_UNITS = BITS then do;
+             RESULT = divide (SIZE,BITS_PER_BYTE,15);
+             if mod (SIZE,BITS_PER_BYTE) > 0 then
+                 RESULT = RESULT + 1;
+        end;
+        else if SIZE_UNITS = BYTES then
+             RESULT = SIZE;
+        else if SIZE_UNITS = HALF_WORDS then
+             RESULT = SIZE * BYTES_PER_HALF;
+        else if SIZE_UNITS = WORDS then
+             RESULT = SIZE * BYTES_PER_WORD;
+        else if SIZE_UNITS = DOUBLE_WORDS then
+             RESULT = SIZE * BYTES_PER_DOUBLE;
+        else RESULT = 0;
+        return (RESULT);
+
+    end SIZE_IN_BYTES;
+
+end SETRVL;
+

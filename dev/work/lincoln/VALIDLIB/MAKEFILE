@@ -1,0 +1,72 @@
+########################################################################
+# PROGRAM:	VALID Applications Library
+# FILE:		Makefile
+# AUTHOR:	David Michaels (david@ll-sst)
+# DATE:		December 1984
+########################################################################
+
+########################################################################
+#		Directories
+########################################################################
+
+CLIB_DIR =		../../libc
+
+CLIB_HDIR =		$(CLIB_DIR)/h
+
+VALIDLIB_HDIR =		h
+
+########################################################################
+#		Libraries
+########################################################################
+
+CLIB =			$(CLIB_DIR)/lib.a
+
+VALIDLIB =		validlib.a
+
+########################################################################
+#		Header Files
+########################################################################
+
+VALIDLIB_HEADS =
+
+CLIB_HEADS =	 	$(CLIB_HDIR)/cdef.h
+
+########################################################################
+#		Source Files
+########################################################################
+
+CFILES =	validfiles.c
+
+OFILES =	validfiles.o
+
+CLIB_CFILES =	$(CLIB_DIR)/cindex.c $(CLIB_DIR)/findline.c
+
+CLIB_OFILES =	$(CLIB_DIR)/cindex.o $(CLIB_DIR)/findline.o
+
+ALL_CFILES =	$(CFILES) $(CLIB_CFILES)
+
+ALL_OFILES =	$(OFILES) $(CLIB_OFILES)
+
+########################################################################
+#		Flags
+########################################################################
+
+INCLUDES =	-I$(CLIB_HDIR) -I$(VALIDLIB_HDIR)
+
+CFLAGS =	-O $(INCLUDES)
+
+########################################################################
+#		Make Dependencies
+########################################################################
+
+validlib.a:	$(ALL_OFILES)
+		ar rcv $(VALIDLIB) $(ALL_OFILES)
+		ranlib validlib.a
+		@echo Done.
+
+validfiles.o:	validfiles.c $(VALIDLIB_HEADS) $(CLIB)
+		cc $(CFLAGS) -c validfiles.c $(CLIB)
+
+$(CLIB):
+		cd $(CLIB_DIR) ; make
+

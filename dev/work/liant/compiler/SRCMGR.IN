@@ -1,0 +1,57 @@
+/* C++ CXX_SOURCE_MGR_IN - Declaration for the front-end source manager */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  06.11.90  DGM  Updated for the new utilities.
+ *  11.08.89  DGM  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Type declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 SOURCE_STATE_DATA	based,
+  2 FILE		type (NID_T),
+  2 ASSUMED_FILE	type (NID_T),
+  2 LINE		type (LONG_T),
+  2 LINE_ADJUSTMENT	type (SHORT_T),
+  2 INCLUDED_BY		type (POINTER_T),
+  2 ID			type (NID_T);
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+CURRENT_SOURCE		type (SOURCE_STATE_DATA)
+			based (CURRENT_SOURCE_PTR),
+
+CURRENT_SOURCE_PTR	pointer
+			initial  (null())
+			external (X_CURRENT_SOURCE_PTR);
+

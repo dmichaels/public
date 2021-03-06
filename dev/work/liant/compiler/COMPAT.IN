@@ -1,0 +1,125 @@
+/* C++ CXX_TYPE_COMPATIBILITY_IN - Type compatibility uility definitions */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  07.31.91  DGM  007  Updated.
+ *  06.17.91  DGM  006  Removed IGNORE_ALL_QUALIFIERS_TCM
+ *			and IGNORE_POINTED_TO_QUALIFIERS_TCM.
+ *  09.22.90  DGM  005  Changed SHORT_BITS_T to TCM_T.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  08.29.90  DGM  003  Added TYPE_LEVEL_MODIFIED_TCM; removed
+ *			IGNORE_DIMENSIONS_TCM and IGNORE_SIGNATURES_TCM.
+ *  08.08.90  DGM  002  New type-node.
+ *  02.09.90  DGM  001  Updated.
+ *  01.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* None */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+
+/* ---------------------------------------------------------------------
+/* Global data
+/* ------------------------------------------------------------------- */
+
+/*
+/* If any of the type compatibility routines returns FALSE (i.e not
+/* compatible), then the global TYPE_COMPATIBILITY_STATUS will be set
+/* to a code indicating what sort of incompatibility was encountered
+/* first (i.e. at the top-most level).  The replace constants for
+/* the codes used  are of the form INCOMPATIBLE_xxx_TCS (see below).
+/**/
+
+declare
+
+TYPE_COMPATIBILITY_STATUS	type (SHORT_T)
+				static
+				external (X_TYPE_COMPATIBILITY_STATUS);
+
+/* ---------------------------------------------------------------------
+/* Definitions
+/* ------------------------------------------------------------------- */
+
+/* Type compatibility status codes */
+
+%replace COMPATIBLE_TCS				by  0;
+
+%replace INCOMPATIBLE_TCS			by  1;
+%replace INCOMPATIBLE_TYPES_TCS			by  1;
+
+%replace INCOMPATIBLE_QUALIFIERS_TCS		by  2;
+%replace INCOMPATIBLE_DIMENSIONS_TCS		by  3;
+%replace INCOMPATIBLE_SIGNATURES_TCS		by  4;
+%replace INCOMPATIBLE_MEMBER_POINTERS_TCS	by  5;
+
+%replace INCOMPATIBLE_PTR_QUALIFIERS_TCS	by  6;
+%replace INCOMPATIBLE_NON_PTR_PTR_TCS		by  7;
+%replace INCOMPATIBLE_PTR_NON_PTR_TCS		by  8;
+
+%replace DISTINCT_TCS				by  9;
+%replace NOT_DISTINCT_TCS			by 10;
+
+/*
+/* Type compatibility modes -- type (TCM_T).
+/* Must sync with TYPE_COMPATIBILITY_MODE_T below.
+/**/
+
+%replace DEFAULT_TCM				by '00000000'B;
+%replace available_01_TCM			by '00000001'B;
+%replace EXTRA_POINTER_TCM			by '00000011'B;
+%replace IGNORE_TOP_REFERENCE_TCM		by '00000101'B;
+%replace IGNORE_TOP_QUALIFIERS_TCM		by '00001000'B;
+%replace IGNORE_TOP_TWO_QUALIFIERS_TCM		by '00011000'B;
+%replace available_02_TCM			by '00100000'B;
+%replace TREAT_DOUBLE_AS_FLOAT_TCM		by '01000000'B;
+%replace PROMOTED_TCM				by '10000000'B;
+
+/* ---------------------------------------------------------------------
+/* Type Definitions
+/* ------------------------------------------------------------------- */
+
+/*
+/* The type of TCM_T was changed from bit (16) to bit (8) to work-around a
+/* PL/I compiler bug (68k code generator) which causes an ADD instruction
+/* to be used instead of an OR when ORing two bit (16)'s together; the bug
+/* is not present for bit (32)'s or bit (8)'s.  10.19.90 DGM.
+/**/
+
+declare
+
+TCM_T					bit (8) aligned based;
+
+declare
+
+1 TYPE_COMPATIBILITY_MODE_T		based,
+  2 type_compatibility_mode_union	union,
+    3 MODE				type (TCM_T),
+    3 type_compatibility_mode_bits,
+      4 PROMOTED			type (BIT_T),
+      4 TREAT_DOUBLE_AS_FLOAT		type (BIT_T),
+      4 available_02			type (BIT_T),
+      4 IGNORE_TOP_TWO_QUALIFIERS	type (BIT_T),
+      4 IGNORE_TOP_QUALIFIERS		type (BIT_T),
+      4 IGNORE_TOP_REFERENCE		type (BIT_T),
+      4 EXTRA_POINTER			type (BIT_T),
+      4 available_01			type (BIT_T);
+

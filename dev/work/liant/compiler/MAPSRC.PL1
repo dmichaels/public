@@ -1,0 +1,280 @@
+/* C++ mapsrc.pl1 - Map source to execution char-set & expand escapes */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  04.08.91  DGM  004  Updated to workaround i386 PL/I X-compiler bug.
+ *  09.25.90  DGM  003  Preprocessor include file name changes.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  05.15.90  DGM  001  Updated for new error message interface.
+ *  11.28.89  DGM  000  Original; extracted from LEXER.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (32) varying static internal initial
+
+('@(#)LPI (c) 4/8/91 004 MAPSRC');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_PP_CHARACTER_SET_IN;
+%include CXX_SYSTEM_IN;
+%include CXX_ERROR_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* MAPSRC
+/*
+/* Map the source character set to the execution character set,
+/* and translate escape sequences in the given character string.
+/* ------------------------------------------------------------------- */
+
+MAPSRC: procedure (S) external;
+
+	declare
+		S		character (*) varying;
+	declare
+		L		type (INT_T),
+		LEN		type (INT_T),
+		(I, J, N)	type (INT_T),
+		RANK_C		type (SHORT_T),
+		SIMPLE		type (BOOL_T),
+		C		type (BYTE_T);
+
+	/*
+	/* Map source character set to execution character set.
+	/**/
+
+	/* A no-op for now */
+
+	/* Translate escape sequences in strings and character constants */
+
+	LEN = length (S);
+	L = LEN;
+	I = 0;
+	do while (L > 0);	/* Loop thru the string */
+		I = I + 1;
+		L = L - 1;
+		if (substr (S, I, 1) = byte (BACKSLASH_CHAR)) then do;
+			SIMPLE = TRUE;
+			C = substr (S, I + 1, 1);
+			if      C = byte (LOWER_N_CHAR) then	/* \n */
+				RANK_C = NEWLINE_CHAR;
+			else if C = byte (LOWER_T_CHAR) then	/* \t */
+				RANK_C = HORIZONTAL_TAB_CHAR;
+			else if C = byte (LOWER_R_CHAR) then	/* \r */
+				RANK_C = RETURN_CHAR;
+			else if C = byte (LOWER_F_CHAR) then	/* \f */
+				RANK_C = FORMFEED_CHAR;
+			else if C = byte (LOWER_B_CHAR) then	/* \b */
+				RANK_C = BACKSPACE_CHAR;
+			else if C = byte (LOWER_V_CHAR) then	/* \v */
+				RANK_C = VERTICAL_TAB_CHAR;
+			else if C = byte (SQUOTE_CHAR) then	/* \' */
+				RANK_C = SQUOTE_CHAR;
+			else if C = byte (DQUOTE_CHAR) then	/* \" */
+				RANK_C = DQUOTE_CHAR;
+			else if C = byte (BACKSLASH_CHAR) then	/* \\ */
+				RANK_C = BACKSLASH_CHAR;
+			else if ^SW_X_OLD_ESCAPES &
+				(C = byte (LOWER_A_CHAR)) then	/* \a */
+				RANK_C = ALERT_CHAR;
+			else if ^SW_X_OLD_ESCAPES &
+				(C = byte (QUESTION_CHAR)) then	/* \? */
+				RANK_C = ALERT_CHAR;
+			else if (C < byte (ZERO_CHAR)) |
+				(C > byte (SEVEN_CHAR)) then do;
+				if ^SW_X_OLD_ESCAPES &
+				   (C = byte (LOWER_X_CHAR)) then do;
+					if L > 1 then	/* must be hex */
+						SIMPLE = FALSE;
+					else	/* L = 1, '\x', \ is ignored */
+						RANK_C = rank (C);
+				end;
+				else	RANK_C = rank(C); /* \ is ignored */
+
+				if SIMPLE then do;
+					/*
+					/* Error; not hex/oct, unprotected.
+					/**/
+					call LEXICAL_ERROR (ERR_BAD_ESCAPE_SEQ);
+				end;
+			end;
+			else	SIMPLE = FALSE;                 
+
+			/*
+			/* Translate and shift the string literal
+			/* left to overwrite the backslash.
+			/**/
+
+			if SIMPLE then do;
+				L = L - 1;
+				substr (S, I, 1) = byte (RANK_C);
+				/*
+				S = substr (S, 1, I) || substr (S, I + 2, L);
+				*/
+				call SPLICE_STRING (S, I + 1, 1, L);
+
+			end;
+			else do;
+				/*
+				/* Not a simple escape sequence.
+				/* I.e. will be \xhex or \octal.
+				/**/
+				if ^SW_X_OLD_ESCAPES &
+				   (C = byte(LOWER_X_CHAR)) then do;
+					/*
+					/* \xhex
+					/**/
+					N = L - 1;
+					RANK_C = HEX (S, I + 2, N);
+					J = 2; /* account for \x */
+				end;
+		                else do;
+					/*
+					/* \octal (at most 3 characters)
+					/**/
+					N = min (3, L);
+					RANK_C = OCTAL (S, I + 1, N);
+					J = 1; /* account for \ */
+				end;
+
+				/* Substitute and move left */
+
+				L = L - J - N + 1; /* rest of length */
+				substr (S, I, 1) = byte (RANK_C); /* rm \ */
+				/*
+				S = substr (S, 1, I) ||
+				    substr (S, I + J + N, L);
+				*/
+				call SPLICE_STRING (S, I + 1, J + N - 1, L);
+			end;
+		end;
+	end;        
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* HEX 
+/*
+/* Convert a HEX string to its binary value.
+/* ------------------------------------------------------------------- */
+
+HEX: procedure (S, POSITION, SIZE) returns (type (LONG_T)) internal;
+
+	declare
+		S		character (*) varying,
+		POSITION	type (SHORT_T),
+		SIZE		type (SHORT_T);
+	declare
+		X		type (LONG_T),	/* result value */
+		(V, D)		type (INT_T),	/* index/digit value */
+		(I, J)		type (INT_T),
+		(OK, OVERFLOW)	type (BOOL_T);
+
+	OVERFLOW = FALSE; OK = FALSE; X = 0;
+
+	do I = 1 to SIZE;
+		V = index ('0123456789abcdefABCDEF',
+			   substr(S, POSITION + I - 1, 1));
+		if V = 0 then leave;
+		D = V - 1;
+		if D > 15 then D = D - 6; /* was upper case hex digit */
+		X = X * 16 + D; 
+		if (X > MAX_UCHAR) & ^OVERFLOW then do;
+			call LEXICAL_ERROR (ERR_BIG_HEX_ESCAPE);
+			OVERFLOW = TRUE;
+		end;
+		OK = TRUE;
+	end;
+
+	if ^OK then do;
+		call LEXICAL_ERROR (ERR_BAD_ESCAPE_SEQ);
+		X = 0;
+	end;
+
+	SIZE = I - 1;	/* Pass back actual string length */
+	return (X);	/* Return its hex value */
+
+end HEX;
+
+/* ---------------------------------------------------------------------
+/* OCTAL 
+/*
+/* Convert an OCTAL string to its binary value.
+/* ------------------------------------------------------------------- */
+
+OCTAL: procedure (S, POSITION, SIZE) returns (type (LONG_T)) internal;
+
+	declare
+		S		character (*) varying,
+		POSITION	type (SHORT_T),
+		SIZE		type (SHORT_T);
+	declare
+		X		type (LONG_T),	/* result value */
+		(V, D)		type (INT_T),	/* index/digit value */
+		(I, J)		type (INT_T),
+		(OK, OVERFLOW)	type (BOOL_T);
+
+	OVERFLOW = FALSE; OK = FALSE; X = 0;
+
+	do I = 1 to SIZE;
+		V = index ('01234567', substr (S, POSITION + I - 1, 1));
+		if V = 0 then leave;
+		D = V - 1;
+		X = X * 8 + D; 
+		if (X > MAX_UCHAR) & ^OVERFLOW then do;
+			call LEXICAL_ERROR (ERR_BIG_OCTAL_ESCAPE);
+			OVERFLOW = TRUE;
+		end;
+		OK = TRUE;
+	end;
+
+	if ^OK then do;
+		call LEXICAL_ERROR (ERR_BAD_ESCAPE_SEQ);
+		X = 0;
+	end;
+
+	SIZE = I - 1;	/* Pass back actual string length */
+	return (X);	/* Return its octal value */
+
+end OCTAL;
+
+SPLICE_STRING: procedure (S, SKIP_POSITION, SKIP_SIZE, REMAINING_SIZE) internal;
+
+	declare
+		S		character (*) varying,
+		SKIP_POSITION	type (SHORT_T),
+		SKIP_SIZE	type (SHORT_T),
+		REMAINING_SIZE	type (SHORT_T);
+	declare
+		I		type (SHORT_T);
+
+	do I = 0 to REMAINING_SIZE - 1;
+		substr (S, SKIP_POSITION + I, 1)
+			= substr (S, SKIP_POSITION + SKIP_SIZE + I, 1);
+	end;
+	S = substr (S, 1, (SKIP_POSITION - 1) + REMAINING_SIZE);
+
+end SPLICE_STRING;
+
+end MAPSRC;
+

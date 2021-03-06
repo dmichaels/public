@@ -1,0 +1,49 @@
+/* LPI-DEBUG M68 MRKTMP.PL1 - Mark start of temp space in user space */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.12.86  DGM  000  Original.  See LPI-DEBUG document 
+ *                      "System Interface Specification".
+ *
+ **********************************************************************/
+
+/***********************************************************************
+ * MRKTMP Description:
+ *
+ * This routine remembers the current allocation of local storage, to
+ * allow a simple deallocation later.  It is only used when the debugger
+ * runs in separate process mode.  The seqence of operations used by the
+ * debugger to obtain storage for calls and their arguments is to perform
+ * a MRKTMP call, do zero or more ALCTMP calls, a DOCALL, resume execution
+ * to actually perform the call, and then do a FRETMP call using the
+ * TEMPADDR to return all of the obtained storage.
+ *
+ * Output: TEMPADDR - Value which can be supplied to FRETMP to free
+ *                    any memory obtained in subsequent calls.
+ *
+ **********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include TARGET_IN;
+
+MRKTMP: procedure (TEMPADDR);
+
+    declare 
+        TEMPADDR    fixed binary (ADDRESS_LENGTH);
+
+    TEMPADDR = PROGRAM_REGISTER_AREA->REGS.A7;
+
+end MRKTMP;
+

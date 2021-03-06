@@ -1,0 +1,660 @@
+/* C++ cnvptr.pl1 - Pointer conversion package */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.15.92  PKT  010	Squish roaches in DERIVED_TO_BASE_CLASS_POINTER.
+ *  03.26.92  DGM  009  New value-node scheme.
+ *  01.11.91  PKT  008  Improved diagnostics for inaccessible members.
+ *  01.10.91  DGM  007  No inaccessible member diagnostic for debugger.
+ *  12.17.90  PKT  006  Added access control.  Extended the interface
+ *			to DERIVED_TO_BASE_CLASS_POINTER.
+ *  10.12.90  PKT  005  Minor fixes & check for BC = DC.  DGM.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  07.05.90  DGM  003  Updated.
+ *  07.03.90  DGM  002  Updated.
+ *  06.29.90  DGM  001  Fixes in PROCESS_EXPRESSION.
+ *  06.25.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.15.92 010 CNVPTR');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+NO_EXPRESSION	type (BOOL_T) static internal initial (FALSE),
+BASE_CLASS	type (NID_T) static internal initial (NULL_NID),
+CURRENT_OFFSET	type (LONG_T) static internal initial (0),
+FOUND_VIRTUAL	type (BOOL_T) static internal initial (FALSE);
+
+/* ---------------------------------------------------------------------
+/* DERIVED_TO_BASE_CLASS_POINTER
+/*
+/* If the class represented by the sym-node DC is not derived from
+/* (or the same as) the class represented by the sym-node BC then simply
+/* return FALSE.
+/* Otherwise, *assuming* that V represents an expression whose type is
+/* pointer to a class of type DC, then convert that expression to a
+/* pointer to a class of type BC, and return TRUE.
+/*
+/* If IC is NULL_NID then it will be ignored, 
+/* otherwise it is a sym-node id representing an "intermediate"
+/* base class of DC, a pointer to which DC will be converted first before
+/* being converted to a pointer to BC.
+/* It is up to the caller to check that IC is a base of DC, and BC is
+/* a base of IC.
+/*
+/* If MEMBER is NULL_NID then it will be ignored,
+/* otherwise it is a sym-node id representing a particular member
+/* of BC whose access is to be checked rather then the access to BC.
+/*
+/* POINTER_CONVERSION indicates whether the extra code should be emitted
+/* which will convert null pointers.
+/*
+/* CHECK_ACCESS indicates whether to diagnose conversion to an inaccessible
+/* base class.
+/*
+/* Trashes current-node-id and current-value-node-id.
+/* ------------------------------------------------------------------- */
+
+DERIVED_TO_BASE_CLASS_POINTER: procedure (V, DC, BC, IC, MEMBER,
+					  POINTER_CONVERSION, VOP)
+			       returns   (type (BOOL_T))
+			       external  (X_DERIVED_TO_BASE_CLASS_POINTER);
+	declare
+		V			type (CXX_VID_T),
+		DC			type (NID_T),
+		BC			type (NID_T),
+		IC			type (NID_T),
+		MEMBER			type (NID_T),
+		POINTER_CONVERSION	type (BOOL_T),
+		VOP			type (SHORT_T);
+	declare
+		DP			type (POINTER_T),
+		DERIVED_CLASS		type (NID_T),
+		FOUND			type (BOOL_T),
+		FOUND_VIRT		type (BOOL_T),
+		NFOUND			type (SHORT_T),
+		MP			pointer,
+		ACCESS			type (SHORT_T),
+		CLASS_STRING		character (512) varying,
+		MEMBER_STRING		character (512) varying;
+
+	/* Check for ambiguous base class. */
+	
+	call CHECK_BASE_CLASSES (BC, DC, IC, FOUND_VIRT, NFOUND);
+	if NFOUND = 0 then
+		return (FALSE);
+	if NFOUND > 1 then do;
+		/*
+		/* Ambiguous base class reference.
+		/**/
+		if POINTER_CONVERSION then do;
+			/*
+			/* Error; cannot convert a pointer to a derived class
+			/* (DC) to a pointer to an ambiguous base class (BC).
+			/**/
+			call SEMANTIC_ERROR_II (ERR_AMBIG_DERIVED_BASE_PTR_CNV,
+						SYMBOL_NAME (DC),
+						SYMBOL_NAME (BC));
+		end;
+		else do;
+			/*
+			/* Error; this is an ambiguous reference to a
+			/* base class (BC) from a derived class (DC).
+			/**/
+			call SEMANTIC_ERROR_II (ERR_AMBIG_BASE_CLASS_REF,
+						SYMBOL_NAME (BC),
+						SYMBOL_NAME (DC));
+		end;
+	end;
+
+	/* 
+	/* Check accessibility.
+	/**/
+	if MEMBER = NULL_NID then
+		ACCESS = PUBLIC_ACCESS;
+	else do;
+		call GET_SYM_NODE_R (MEMBER, MP);
+		ACCESS = rank (MP->SYM_NODE.ACCESS);
+		call RELEASE_SYM_NODE (MEMBER);
+	end;
+
+	if IC = NULL_NID then
+		ACCESS = EFFECTIVE_ACCESS (MEMBER, BC, DC, ACCESS);
+	else do;
+		ACCESS = EFFECTIVE_ACCESS (MEMBER, BC, IC, ACCESS);
+		ACCESS = EFFECTIVE_ACCESS (MEMBER, IC, DC, ACCESS);
+	end;
+	if ACCESS ^= PUBLIC_ACCESS & VOP ^= CAST_VO
+				   & VOP ^= IMPLICIT_CAST_VO
+				   & VOP ^= FUNCTIONAL_CAST_VO 
+				   & ^AM_DEBUGGER then do;
+		if MEMBER ^= NULL_NID then do;
+			/*
+			/* Error; inaccessible reference
+			/* to a base class member.
+			/**/
+			if DC = BC then
+				call SEMANTIC_ERROR_I (
+					ERR_PRIV_BASE_MEMBER_REF,
+					FULL_QUALIFIED_SYMBOL_NAME (MEMBER));
+			else if IC = NULL_NID | IC = BC | IC = DC then
+				call SEMANTIC_ERROR_II (ERR_PRIV_REF_VIA_OBJ,
+					FULL_QUALIFIED_SYMBOL_NAME (MEMBER),
+					SYMBOL_NAME (DC));
+			else do;
+				CLASS_STRING = SYMBOL_NAME (IC);
+				MEMBER_STRING = FULL_SYMBOL_NAME (MEMBER);
+				call SEMANTIC_ERROR_II (ERR_PRIV_REF_VIA_OBJ,
+					CLASS_STRING || '::' || MEMBER_STRING,
+					SYMBOL_NAME (DC));
+			end;
+		end;
+		else if POINTER_CONVERSION then do;
+			/*
+			/* Error; cannot convert a pointer to a derived class
+			/* (DC) to a pointer to inaccessible base class (BC).
+			/**/
+			call SEMANTIC_ERROR_II (ERR_PRIV_DERIVED_BASE_PTR_CNV,
+						SYMBOL_NAME (DC),
+						SYMBOL_NAME (BC));
+		end;
+		else do;
+			/*
+			/* Error; this is an illegal reference to a
+			/* base class (BC) from a derived class (DC) due
+			/* to insufficient access privileges.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_PRIV_BASE_CLASS_REF,
+						SYMBOL_NAME (BC),
+						SYMBOL_NAME (DC));
+		end;
+	end;
+
+	CURRENT_OFFSET	= 0;
+	FOUND_VIRTUAL	= FALSE;
+
+	BASE_CLASS = BC;
+	if (IC ^= NULL_NID) & (BASE_CLASS ^= IC) then do;
+		/*
+		/* intermediate to base conversions, if necessary
+		/* These are done first, because PROCESS_EXPRESSION
+		/* reverses the order of the calculation.
+		/**/
+		call GET_SYM_NODE_R (IC, DP);
+		FOUND = CONVERT_RELATED_CLASS_POINTERS (DP);
+		call RELEASE_SYM_NODE (IC);
+
+		BASE_CLASS = IC;
+	end;
+
+	if DC ^= BASE_CLASS then do;
+		/* base or intermediate to derived conversions, if necessary */
+		call GET_SYM_NODE_R (DC, DP);
+		FOUND = CONVERT_RELATED_CLASS_POINTERS (DP);
+		call RELEASE_SYM_NODE (DC);
+	end;
+
+	/*
+	/* Here, we are converting a derived
+	/* class pointer to a base class pointer.
+	/**/
+
+	call ADD_OFFSET ();
+	call PROCESS_EXPRESSION (V, POINTER_CONVERSION);
+	V = CAST_TO_CLASS_POINTER (V, BC);
+	return (TRUE);
+
+end DERIVED_TO_BASE_CLASS_POINTER;
+
+/* ---------------------------------------------------------------------
+/* BASE_TO_DERIVED_CLASS_POINTER
+/*
+/* If the class represented by the sym-node BC is not a proper base class of
+/* the class represented by the sym-node DC then simply return FALSE.
+/* Otherwise return TRUE after doing as follows:
+/*
+/* Assuming that V represents an expression whose type is pointer to
+/* class of type BC, convert that expression to a pointer to a class
+/* of type DC.  This kind of conversion (base class pointer to derived
+/* class pointer) may only be done using an explicit cast, so if CAST is
+/* FALSE, then it is an error and an appropriate diagnostic will be emitted.
+/* Also, if BC is a virtual base class (directly or indirectly) of DC,
+/* then it is an error and an appropriate diagnostic
+/* will be emitted.
+/*
+/* Trashes current-node-id and current-value-node-id.
+/* ------------------------------------------------------------------- */
+
+BASE_TO_DERIVED_CLASS_POINTER: procedure (V, BC, DC, CAST)
+			       returns   (type (BOOL_T))
+			       external  (X_BASE_TO_DERIVED_CLASS_POINTER);
+	declare
+		V		type (CXX_VID_T),
+		BC		type (NID_T),
+		DC		type (NID_T),
+		CAST		type (BOOL_T);
+	declare
+		DP		type (POINTER_T),
+		AMBIGUOUS	type (BOOL_T),
+		INACCESSIBLE	type (BOOL_T),
+		VIRTUAL		type (BOOL_T),
+		E		type (SHORT_T),
+		FOUND		type (BOOL_T);
+
+	if BC = DC then
+		return (FALSE);
+
+	if ^IS_BASE_CLASS_OF (BC, DC, AMBIGUOUS, INACCESSIBLE, VIRTUAL) then
+		return (FALSE);
+
+	if ^CAST then do;
+		/*
+		/* Error; a pointer to a base class may not be converted to
+		/* a pointer to a derived class without an appropriate cast.
+		/**/
+		E = ERR_BASE_DERIVED_PTR_CNV;
+		call SEMANTIC_ERROR_II (E, SYMBOL_NAME (BC), SYMBOL_NAME (DC));
+	end;
+	if VIRTUAL then do;
+		/*
+		/* Error; a pointer to a virtual base class may not
+		/* be converted to a pointer to a derived class.
+		/**/
+		E = ERR_VBASE_DERIVED_PTR_CNV;
+		goto ERROR;
+	end;
+	if AMBIGUOUS then do;
+		/*
+		/* Error; a pointer to an ambiguous base class may
+		/* not be converted to a pointer to a derived class.
+		/**/
+		E = ERR_AMBIG_BASE_DERIVED_PTR_CNV;
+		goto ERROR;
+	end;
+	if INACCESSIBLE & ^CAST & ^AM_DEBUGGER then do;
+		/*
+		/* Error; a pointer to an inaccessible base class
+		/* may not be converted to a pointer to derived class.
+		/**/
+		E = ERR_PRIV_BASE_DERIVED_PTR_CNV;
+		call SEMANTIC_ERROR_II (E, SYMBOL_NAME (BC), SYMBOL_NAME (DC));
+	end;
+
+	BASE_CLASS	= BC;
+	CURRENT_OFFSET	= 0;
+	FOUND_VIRTUAL	= FALSE;
+	NO_EXPRESSION	= TRUE;
+
+	call GET_SYM_NODE_R (DC, DP);
+
+	FOUND = CONVERT_RELATED_CLASS_POINTERS (DP);
+
+	call RELEASE_SYM_NODE (DC);
+
+	NO_EXPRESSION	= FALSE;
+
+	if ^FOUND then do;
+		/*
+		/* Here, BC is not a base class of DC -- should not happen.
+		/**/
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		return (TRUE);
+	end;
+
+	call SUBTRACT_OFFSET ();
+	call PROCESS_EXPRESSION (V, TRUE);
+	V = CAST_TO_CLASS_POINTER (V, DC);
+	return (TRUE);
+
+	ERROR:
+	call SEMANTIC_ERROR_II (E, SYMBOL_NAME (BC), SYMBOL_NAME (DC));
+	V = CAST_TO_CLASS_POINTER (V, DC);
+	return (TRUE);
+
+end BASE_TO_DERIVED_CLASS_POINTER;
+
+/* ---------------------------------------------------------------------
+/* BASE_CLASS_OFFSET
+/* ------------------------------------------------------------------- */
+
+BASE_CLASS_OFFSET: procedure (DC, BC, OFFSET)
+		   returns   (type (SHORT_T))
+		   external  (X_BASE_CLASS_OFFSET);
+	declare
+		DC	type (NID_T),
+		BC	type (NID_T),
+		OFFSET	type (LONG_T);
+	declare
+		DP	type (POINTER_T),
+		STATUS	type (SHORT_T);
+
+	if DC = BC then
+		return (0);
+
+	BASE_CLASS	= BC;
+	CURRENT_OFFSET	= 0;
+	FOUND_VIRTUAL	= FALSE;
+	NO_EXPRESSION	= TRUE;
+
+	call GET_SYM_NODE_R (DC, DP);
+
+	STATUS = CONVERT_RELATED_CLASS_POINTERS (DP);
+
+	call RELEASE_SYM_NODE (DC);
+
+	NO_EXPRESSION	= FALSE;
+
+	if STATUS = 0 then do;
+		/*
+		/* Here, BC is not a base class of DC.
+		/**/
+		return (0);
+	end;
+	
+	if FOUND_VIRTUAL then
+		return (-1);
+
+	return (1);
+
+end BASE_CLASS_OFFSET;
+
+/* ---------------------------------------------------------------------
+/* NON_VIRTUAL_BASE_CLASS_OFFSET
+/* ------------------------------------------------------------------- */
+
+NON_VIRTUAL_BASE_CLASS_OFFSET: procedure (DC, BC, OFFSET)
+			       returns   (type (SHORT_T))
+			       external  (X_NON_VIRTUAL_BASE_CLASS_OFFSET);
+	declare
+		DC	type (NID_T),
+		BC	type (NID_T),
+		OFFSET	type (LONG_T);
+	declare
+		DP	type (POINTER_T),
+		STATUS	type (SHORT_T);
+
+	if DC = BC then
+		return (0);
+
+	BASE_CLASS	= BC;
+	CURRENT_OFFSET	= 0;
+	FOUND_VIRTUAL	= FALSE;
+	NO_EXPRESSION	= TRUE;
+
+	call GET_SYM_NODE_R (DC, DP);
+
+	STATUS = CONVERT_RELATED_CLASS_POINTERS (DP);
+
+	call RELEASE_SYM_NODE (DC);
+
+	NO_EXPRESSION	= FALSE;
+
+	if STATUS = 0 then do;
+		/*
+		/* Here, BC is not a base class of DC.
+		/**/
+		return (0);
+	end;
+	
+	if FOUND_VIRTUAL then
+		return (-1);
+
+	return (1);
+
+end NON_VIRTUAL_BASE_CLASS_OFFSET;
+
+/* ---------------------------------------------------------------------
+/* CONVERT_RELATED_CLASS_POINTERS
+/*
+/* Accumulates information regarding the conversion between two
+/* classes, BASE_CLASS and the derived class whose symbol node is pointed
+/* to by DP.  Performs a depth-first search for BASE_CLASS among the
+/* direct or indirect bases of the derived class.
+/*
+/* When CONVERT_RELATED_CLASS_POINTERS returns (unless suppressed
+/* with NO_EXPRESSION) either
+/*	(1) FALSE is returned and no expression has been accumulated, or
+/*	(2) an expression has been accumulated which converts
+/*	    the class of DP to the class of BASE_CLASS.
+/* ------------------------------------------------------------------- */
+
+CONVERT_RELATED_CLASS_POINTERS: procedure (DP)
+				returns (type (BOOL_T))
+				recursive
+				internal;
+	declare
+		DP		type (POINTER_T);
+	declare
+		(BC, NEXT_BC)	type (NID_T),
+		(P, BCP)	type (POINTER_T),
+		DONE		type (BOOL_T);
+
+	do BC = DP->SYM_NODE.BASE_CLASSES repeat (NEXT_BC)
+	while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		if BCP->BASE_CLASS_NODE.SYMBOL = BASE_CLASS then
+			leave;
+		call GET_SYM_NODE_R (BCP->BASE_CLASS_NODE.SYMBOL, P);
+		DONE = CONVERT_RELATED_CLASS_POINTERS (P);
+		call RELEASE_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL);
+		if DONE then
+			leave;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	if BC = NULL_NID then
+		return (FALSE);
+
+	if BCP->BASE_CLASS_NODE.VIRTUAL then do;
+		/*
+		/* Build an access expression.
+		/**/
+		call ADD_OFFSET ();
+		call DEREFERENCE_POINTER (BCP->BASE_CLASS_NODE.SYMBOL);
+		CURRENT_OFFSET = 0;
+		FOUND_VIRTUAL  = TRUE;
+	end;
+
+	CURRENT_OFFSET = CURRENT_OFFSET + BCP->BASE_CLASS_NODE.OFFSET;
+
+	call RELEASE_BASE_CLASS_NODE (BC);
+
+	return (TRUE);
+
+end CONVERT_RELATED_CLASS_POINTERS;
+
+/* ---------------------------------------------------------------------
+/* Expression Processing (to accomodate top-down tree building)
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 OP				based,
+  2 KIND			type (SHORT_T),
+  2 class_or_offset_union	union,
+    3 CLASS			type (NID_T),
+    3 OFFSET			type (LONG_T),
+  2 NEXT			type (POINTER_T);
+
+declare
+
+EXPRESSION_LIST			type (POINTER_T)
+				static internal initial (null ());
+
+/* ---------------------------------------------------------------------
+/* DEREFERENCE_POINTER
+/* ------------------------------------------------------------------- */
+
+DEREFERENCE_POINTER: procedure (CLASS) internal;
+
+	declare
+		CLASS	type (NID_T);
+	declare
+		P	type (POINTER_T);
+
+	if NO_EXPRESSION then
+		return;
+
+	allocate OP set (P);
+	P->OP.KIND	= STAR_VO;
+	P->OP.CLASS	= CLASS;
+	P->OP.NEXT	= EXPRESSION_LIST;
+	EXPRESSION_LIST	= P;
+
+end DEREFERENCE_POINTER;
+
+/* ---------------------------------------------------------------------
+/* ADD_OFFSET
+/* ------------------------------------------------------------------- */
+
+ADD_OFFSET: procedure internal;
+
+	declare P type (POINTER_T);
+
+	if NO_EXPRESSION then
+		return;
+
+	if CURRENT_OFFSET = 0 then
+		return;
+
+	if EXPRESSION_LIST ^= null () then do;
+		if EXPRESSION_LIST->OP.KIND = ADD_VO then do;
+			EXPRESSION_LIST->OP.OFFSET
+				= EXPRESSION_LIST->OP.OFFSET +
+				  CURRENT_OFFSET;
+			if EXPRESSION_LIST->OP.OFFSET = 0 then do;
+				P = EXPRESSION_LIST;
+				EXPRESSION_LIST = P->OP.NEXT;
+				free P->OP;
+			end;
+			return;
+		end;
+	end;
+
+	allocate OP set (P);
+	P->OP.KIND	= ADD_VO;
+	P->OP.OFFSET	= CURRENT_OFFSET;
+	P->OP.NEXT	= EXPRESSION_LIST;
+	EXPRESSION_LIST	= P;
+
+end ADD_OFFSET;
+
+/* ---------------------------------------------------------------------
+/* SUBTRACT_OFFSET
+/* ------------------------------------------------------------------- */
+
+SUBTRACT_OFFSET: procedure internal;
+
+	declare SAVE_OFFSET type (LONG_T);
+
+	SAVE_OFFSET = CURRENT_OFFSET;
+	CURRENT_OFFSET = -CURRENT_OFFSET;
+	call ADD_OFFSET ();
+	CURRENT_OFFSET = SAVE_OFFSET;
+
+end SUBTRACT_OFFSET;
+
+/* ---------------------------------------------------------------------
+/* PROCESS_EXPRESSION
+/* ------------------------------------------------------------------- */
+
+PROCESS_EXPRESSION: procedure (V, PRESERVE_NULL) internal;
+
+	declare
+		V		type (CXX_VID_T),
+		PRESERVE_NULL	type (BOOL_T);
+	declare
+		SV		type (CXX_VID_T),
+		AV		type (CXX_VID_T),
+		BV		type (CXX_VID_T),
+		(P, NEXT_P)	type (POINTER_T);
+
+	SV = V;
+
+	do P = EXPRESSION_LIST repeat (NEXT_P) while (P ^= null ());
+		if P->OP.KIND = ADD_VO then do;
+			if P->OP.OFFSET = 0 then
+				goto CONTINUE;
+			V = GET_VALUE_AND_EXPAND_LR
+			    (ADD_VO,
+			     CAST_TO_SIMPLE_POINTER (V, CHAR_BT),
+			     INTEGER_VALUE (P->OP.OFFSET, INT_BT));
+		end;
+		else if P->OP.KIND = STAR_VO then do;
+			V = GET_VALUE_AND_EXPAND_L
+			    (STAR_VO,
+			     CAST_TO_CLASS_POINTER_POINTER (V, P->OP.CLASS));
+		end;
+		CONTINUE: NEXT_P = P->OP.NEXT; free P->OP;
+	end;
+	EXPRESSION_LIST = null ();
+
+	if PRESERVE_NULL & (SV ^= V) then do;
+		/*
+		/* ((char *)SV ^= NULL) ? (char *)V : NULL
+		/**/
+		call COUNT_UP_VALUE (SV);
+		V = GET_VALUE_AND_EXPAND_LR
+			(CONDITIONAL_VO,
+			 GET_VALUE_AND_EXPAND_LR
+				(NE_VO,
+				 CAST_TO_SIMPLE_POINTER (SV, CHAR_BT),
+				 NULL_SIMPLE_POINTER_VALUE (CHAR_BT)),
+			 GET_VALUE_AND_EXPAND_LR
+				(COLON_VO,
+				 CAST_TO_SIMPLE_POINTER (V, CHAR_BT),
+				 NULL_SIMPLE_POINTER_VALUE (CHAR_BT)));
+	end;
+
+end PROCESS_EXPRESSION;

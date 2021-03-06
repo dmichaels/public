@@ -1,0 +1,177 @@
+/* CPP pp_ls.pl1 - Print a source line to the listing file */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  11.12.91  DGM  004  Updated.
+ *  05.30.91  DGM  003  Updated.
+ *  09.25.90  DGM  002  Include file name changes.
+ *  06.05.90  DGM  001  Updated.
+ *  06.05.90  DGM  000  First CPP component version.
+ *
+ **********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (31) varying static internal initial
+
+('@(#)LPI 11.12.91 004 PPLS');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CPP_UTL_DEFS_IN;
+%include CPP_UTL_WRITE_PKG;
+%include CPP_SOURCE_MGR_PKG;
+%include CPP_CHARACTER_SET_IN;
+
+/* ---------------------------------------------------------------------
+/* PPLSLN
+/* ------------------------------------------------------------------- */
+
+PPLSLN: procedure (LINE_PTR, LINE_LENGTH) external;
+
+	declare
+		LINE_PTR		type (POINTER_T),
+		LINE_LENGTH		type (LONG_T);
+	declare
+		P			type (POINTER_T),
+		TEMP            	character  (256) varying,
+		NSPACES			type (SHORT_T),
+		THIS_HAS_NEWLINE	type (BOOL_T);
+	declare
+		SPACES			character (10) varying
+					static internal initial ('          '),
+		HEADER			character (80) varying
+					static internal initial
+					('--------------------------------------------------------------------------------');
+	declare
+		LINE			character (1024) varying
+					static internal,
+		LAST_HAD_NEWLINE	type (BOOL_T)
+					static internal initial (TRUE);
+	declare
+		LINE_TEXT		character (32767) based (LINE_PTR);
+
+	/* Check for the end of file */
+
+	if LINE_LENGTH <= 0 then do;
+		call WRITE_LIST_LINE (HEADER);
+		if CURRENT_SOURCE.INCLUDE_LEVEL > 0 then do;
+			LINE = 'End Include File: ';
+			P = CURRENT_SOURCE.PHYSICAL_NAME;
+			TEMP = trim (P->STR);
+			LINE = LINE || TEMP || ' [' ||
+			       trim (char (CURRENT_SOURCE.INCLUDE_LEVEL)) ||
+			       ']';
+			call WRITE_LIST_LINE (LINE);
+			TEMP = trim (CURRENT_SOURCE.NEXT_DOWN->
+				     SOURCE_STATE.PHYSICAL_NAME->STR);
+			if CURRENT_SOURCE.INCLUDE_LEVEL > 1 then do;
+				LINE = 'Resume Include File: ';
+			        TEMP = TEMP ||
+				       ' [' ||
+				       trim (char
+				             (CURRENT_SOURCE.NEXT_DOWN->
+					      SOURCE_STATE.INCLUDE_LEVEL)) ||
+				       ']';
+			end;
+			else	LINE = 'Resume Main File: ';
+		end;
+		else do;
+			LINE = 'End Main File: ';
+			TEMP = trim (CURRENT_SOURCE.PHYSICAL_NAME->STR);
+		end;
+		LINE = LINE || TEMP;
+		call WRITE_LIST_LINE (LINE);
+		call WRITE_LIST_LINE (HEADER);
+		LAST_HAD_NEWLINE = TRUE;
+		return;
+	end;
+
+	THIS_HAS_NEWLINE =
+	(substr (LINE_TEXT, LINE_LENGTH, 1) = byte (NEWLINE_CHAR));
+
+	if ^LAST_HAD_NEWLINE then do;
+		if THIS_HAS_NEWLINE then do;
+			LINE = LINE || substr (LINE_TEXT, 1, LINE_LENGTH - 1);
+			call WRITE_LIST_LINE (LINE);
+			LAST_HAD_NEWLINE = TRUE;
+		end;
+		else do;
+			LINE = LINE || substr (LINE_TEXT, 1, LINE_LENGTH);
+			LAST_HAD_NEWLINE = FALSE;
+		end;
+		return;
+	end;
+
+	LINE = '';
+
+	/* Check for the beginning of file */
+
+	if CURRENT_SOURCE.PHYSICAL_LINE = 1 then do;
+		call WRITE_LIST_LINE (HEADER);
+		P = CURRENT_SOURCE.PHYSICAL_NAME;
+		TEMP = trim (P->STR);
+		if CURRENT_SOURCE.INCLUDE_LEVEL > 0 then do;
+			LINE = 'Include File: ';
+			TEMP = TEMP || ' [' ||
+			       trim (char (CURRENT_SOURCE.INCLUDE_LEVEL)) ||
+			       ']';
+		end;
+		else	LINE = 'Main File: ';
+		LINE = LINE || TEMP;
+		call WRITE_LIST_LINE (LINE);
+		call WRITE_LIST_LINE (HEADER);
+	end;
+
+	/* Get the excluded or commented source text indicator if any */
+
+	if mod (divide (CURRENT_SOURCE.FLAG, SRC_EXCLUSION, 15), 2) ^= 0 then
+        	LINE = 'x';
+	else if mod (divide (CURRENT_SOURCE.FLAG, SRC_COMMENT, 15), 2) ^= 0 then
+        	LINE = '*';
+        else	LINE = ' ';
+
+	/* Get the include level number if we're in an include file */
+
+	if CURRENT_SOURCE.INCLUDE_LEVEL > 0 then do;
+		LINE = LINE || '[' ||
+		       trim (char (CURRENT_SOURCE.INCLUDE_LEVEL)) || ']';
+        end;
+
+	/* Get the line number */
+
+	TEMP = trim (char (CURRENT_SOURCE.PHYSICAL_LINE));
+	NSPACES = 4 - length (TEMP);
+	if NSPACES > 0 then
+		LINE = LINE || substr (SPACES, 1, NSPACES);
+	LINE = LINE || TEMP || ' ';
+
+	/* Get the source line (ignore any trailing end-of-line indicator) */
+
+	if THIS_HAS_NEWLINE then do;
+		LINE = LINE || substr (LINE_TEXT, 1, LINE_LENGTH - 1);
+		call WRITE_LIST_LINE (LINE);
+		LAST_HAD_NEWLINE = TRUE;
+	end;
+	else do;
+		LINE = LINE || substr (LINE_TEXT, 1, LINE_LENGTH);
+		LAST_HAD_NEWLINE = FALSE;
+	end;
+
+end PPLSLN;
+

@@ -1,0 +1,118 @@
+/* C++ CXX_GLOBAL_SEMANTIC_DATA_IN - Global semantic analysis data */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.26.92  DGM  014  New value-node scheme.
+ *  03.19.92  DGM  013  Added CURRENT_SCOPE_PAST_DECLARATIONS.
+ *  11.12.91  DGM  012  Added CURRENT_CONSTANT
+ *  07.08.91  DGM  011  Added CURRENT_NON_PROTOTYPE_SCOPE.
+ *  11.29.90  DGM  010  Added CURRENT_BEGIN/END_SCOPE_LINE/FILE_ID for
+ *			possible future use (to get the line/file id
+ *			*exactly* correct for SCOPE_NODE.FIRST/LAST_
+ *			LINE/FILE_ID and BLOCK_NODE.LAST_LINE_ID); added
+ *			CURRENT_NAME_LINE/FILE_ID for possible future use
+ *			(to get the line/file id *exactly* correct for
+ *			SYM_NODE.DCL_LINE/FILE_ID.
+ *  09.14.90  DGM  009  Changed include file names and VOP names.
+ *  08.31.90  DGM  008  Removed CURRENT_CONVERSION_NAME.
+ *  08.08.90  DGM  007  New type-node.
+ *  05.01.90  DGM  006  Added CURRENT_TOP_TYPE_QUALIFIER.
+ *  03.27.90  DGM  005  Added CURRENT_NAME_SCOPE_SYMBOL.
+ *  02.21.90  DGM  004  Changed CURRENT_NAME_KIND type.
+ *  02.20.90  PKT  003  Added NON_CONSTANT_FLAG.
+ *  02.08.90  PKT  002  Got CURRENT_VALUE from CXX_GLOBAL_EXPRESSION_DATA_IN.
+ *  02.05.90  DGM  001  Updated.
+ *  01.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/***********************************************************************
+/* This header contains the data which may need to be shared among
+/* the different modules which perform the (declaration, expression,
+/* and statement) semantic actions during the parse.  N.B. The data
+/* maintained here should be kept to a minimum; localize this kind of
+/* semantic data as much as possible within the modules responsible
+/* for the more specific semantic actions for declarations, expressions,
+/* and statements (i.e. in the headers CXX_GLOBAL_DECLARATION_DATA_IN,
+/* CXX_GLOBAL_EXPRESSION_DATA_IN, and CXX_GLOBAL_STATEMENT_DATA_IN).
+/***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+/* %include CXX_SYMBOL_TABLE_DEFS_IN; */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 GLOBAL_SEMANTIC_DATA		external (X_GLOBAL_SEMANTIC_DATA),
+
+  /* Current name data (for declarators and primary expressions) */
+
+  2 CURRENT_NAME_DATA,
+    3 CURRENT_NAME_LINE_ID	 type (LONG_T),
+    3 CURRENT_NAME_FILE_ID	 type (NID_T),
+    3 CURRENT_NAME_KIND		 type (SHORT_T),
+    3 CURRENT_NAME		 type (NID_T),
+    3 CURRENT_NAME_SCOPE	 type (NID_T),
+    3 CURRENT_NAME_SCOPE_NAME	 type (NID_T),
+    3 CURRENT_NAME_SCOPE_SYMBOL	 type (NID_T),
+
+  /* Current scope data */
+
+  2 CURRENT_SCOPE_DATA,
+    3 CURRENT_SCOPE_TYPE		type (SHORT_T),
+    3 CURRENT_SCOPE			type (NID_T),
+    3 CURRENT_GLOBAL_SCOPE		type (NID_T),
+    3 CURRENT_CLASS_SCOPE		type (NID_T),
+    3 CURRENT_FUNCTION_SCOPE		type (NID_T),
+    3 CURRENT_BLOCK_SCOPE		type (NID_T),
+    3 CURRENT_PROTOTYPE_SCOPE		type (NID_T),
+    3 CURRENT_NON_CLASS_SCOPE		type (NID_T),
+    3 CURRENT_GLOBAL_OR_LOCAL_SCOPE	type (NID_T),
+    3 CURRENT_FUNCTION			type (NID_T),
+    3 CURRENT_NON_PROTOTYPE_SCOPE	type (NID_T),
+    3 CURRENT_SCOPE_PAST_DECLARATIONS	type (BOOL_T),
+    3 available_01			type (BOOL_T),
+
+  2 CURRENT_BEGIN_SCOPE_LINE_ID		type (LONG_T),	/* TODO */
+  2 CURRENT_END_SCOPE_LINE_ID		type (LONG_T),	/* TODO */
+
+  /* Current constant expression data */
+
+  2 OLD_CURRENT_CONSTANT_DATA,
+    3 CURRENT_CONSTANT			type (LONG_T),
+    3 NON_CONSTANT_FLAG			type (BOOL_T),
+
+  /* Current expression data */
+
+  2 CURRENT_VALUE			type (CXX_VID_T),
+
+  /* Current constant expression data */
+
+  2 CURRENT_CONSTANT_DATA,
+    3 CURRENT_CONSTANT_VALUE		type (LONG_T),
+    3 CURRENT_CONSTANT_NON_CONSTANT	type (BOOL_T),
+    3 CURRENT_CONSTANT_INTEGRAL_TYPE	type (SHORT_T),
+
+  2 END_GLOBAL_SEMANTIC_DATA		type (SHORT_T);
+

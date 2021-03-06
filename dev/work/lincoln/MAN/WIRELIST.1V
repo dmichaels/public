@@ -1,0 +1,73 @@
+.TH WIRELIST 1V LOCAL
+.SH NAME
+wirelist \- make a wirelist from VALID post-processor output.
+.SH SYNOPSIS
+.B wirelist
+board_name
+.SH DESCRIPTION
+.I Wirelist
+produces a formated wirelist
+according to the conventions of
+the Lincoln Laboratory wirewrap service (Group 72).
+The \fIboard_name\fP argument specifies a sub-directory name
+which contains the graphics file \fIlogic.1.1\fP
+which is the drawing of the physical layout of the board to be wrapped.
+The other necessary files (produced by the VALID post-processor),
+\fIpstxnet.dat\fP (expanded net list),
+and \fIpstpgnd.dat\fP (power and ground list),
+must be in the current directory.
+.PP
+The wirelist will be written into the file \fIboard_name.lst\fP,
+and for convenience, other relevant information
+will be put in the files \fIboard_name.ref\fP and \fIboard_name.des\fP.
+A error log file \fIboard_name.err\fP may also be produced
+if any errors are found in the input (the user will be notified).
+.PP
+NOTE:  Signal names
+.B 0
+and those prefixed with
+.B GND
+are treated as
+ground signals;  those prefixed with
+.B VCC
+are treated as voltage signals.
+.PP
+The board geometries currently recognized be \fIwirelist\fP are:
+.PP
+.DT
+.ti +10
+\fIuwg12a\fP	- AUGAT 8136-UWG12
+.br
+.ti +10
+\fIhpwg1a\fP	- AUGAT 8136-HPWG1 (dense pack)
+.br
+.SH DIAGNOSTICS
+Any illegal device placements
+(i.e. pins in between rows/columns, or
+pins out of bounds of the board),
+or any pin conflicts
+(i.e. more than one pin occupying the same board location)
+will be reported, and will result in program termination.
+.SH FILES
+.TS
+l l .
+\fIboard_name\fP.lst	- Final wirelist
+\fIboard_name\fP.ref	- Reference file
+\fIboard_name\fP.des	- Designator file
+\fIboard_name\fP.err	- Error log file
+\fIboard_name\fP/logic.1.1	- VALID graphics file
+pstxnet.dat	- VALID expanded net list file
+pstpgnd.dat	- VALID power and ground list file
+/u0/lincoln/layout/\fIboard_geom\fP/header	- Standard wirelist header
+.TE
+.PP
+Where \fIboard_name\fP is a board name,
+and \fIboard_geom\fP is a board geometry name.
+.SH SEE ALSO
+layout(1V), validlist(1V)
+.SH AUTHOR
+David Michaels (david@ll-sst)
+.br
+M.I.T. Lincoln Laboratory (Group 24)
+.br
+January 1984

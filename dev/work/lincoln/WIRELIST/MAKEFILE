@@ -1,0 +1,192 @@
+########################################################################
+# PROGRAM:	VALID wirelist program
+# FILE:		Makefile
+# AUTHOR:	David Michaels (david@ll-sst)
+# DATE:		December 1984
+########################################################################
+
+########################################################################
+#		Directories
+########################################################################
+
+HOME =			..
+
+CLIB_DIR =		$(HOME)/../libc
+
+CLIB_HDIR =		$(CLIB_DIR)/h
+
+VALIDLIB_DIR =		$(HOME)/validlib
+
+VALIDLIB_HDIR =		$(VALIDLIB_DIR)/h
+
+BRD_DIR =		./boards
+
+########################################################################
+#		Libraries
+########################################################################
+
+CLIB =			$(CLIB_DIR)/lib.a
+
+VALIDLIB =		$(VALIDLIB_DIR)/validlib.a
+
+ALL_LIBS =		$(CLIB) $(VALIDLIB)
+
+########################################################################
+#		Header Files
+########################################################################
+
+CLIB_HEADS =	 	$(CLIB_HDIR)/cdef.h
+
+VALIDLIB_HEADS = 	$(VALIDLIB_HDIR)/valid.h
+
+MAIN_HEADS =		main.h
+
+ALL_HEADS =		$(LIB_HEADS) $(VALIDLIB_HEADS) $(MAIN_HEADS)
+
+########################################################################
+#		Source Files
+########################################################################
+
+CFILES =	bgeom.c\
+		device.c\
+		ged_parse.c\
+		lister.c\
+		main.c\
+		netpin.c\
+		output.c\
+		package.c\
+		pgnd_parse.c\
+		signame.c\
+		xnet_parse.c
+
+OFILES =	bgeom.o\
+		device.o\
+		ged_parse.o\
+		lister.o\
+		main.o\
+		netpin.o\
+		output.o\
+		package.o\
+		pgnd_parse.o\
+		signame.o\
+		xnet_parse.o
+
+BRD_CFILES =	$(BRD_DIR)/uwg12/board.c\
+		$(BRD_DIR)/hpwg1/board.c
+
+BRD_OFILES =	$(BRD_DIR)/uwg12/board.o\
+		$(BRD_DIR)/hpwg1/board.o
+
+ALL_CFILES =	$(CFILES) $(BRD_CFILES)
+
+ALL_OFILES =	$(OFILES) $(BRD_OFILES)
+
+########################################################################
+#		Flags
+########################################################################
+
+INCLUDES =	-I$(CLIB_HDIR) -I$(VALIDLIB_HDIR)
+
+CFLAGS =	-O $(INCLUDES)
+
+########################################################################
+#		Make Dependencies
+########################################################################
+
+wirelist: 	$(ALL_OFILES) $(ALL_LIBS)
+		cc $(CFLAGS) -o wirelist $(ALL_OFILES) $(ALL_LIBS)
+		@size wirelist
+		@echo Done.
+
+$(CLIB):
+		cd $(CLIB_DIR) ; make
+
+$(VALIDLIB):
+		cd $(VALIDLIB_DIR) ; make
+
+$(ALL_OFILES):	$(MAIN_HEADS)
+
+main.o:		main.c $(VALIDLIB_HEADS)
+		$(CC) $(CFLAGS) -c main.c
+
+ged_parse.o:	ged_parse.c
+		$(CC) $(CFLAGS) -c ged_parse.c
+
+xnet_parse.o:	xnet_parse.c
+		$(CC) $(CFLAGS) -c xnet_parse.c
+
+pgnd_parse.o:	pgnd_parse.c
+		$(CC) $(CFLAGS) -c pgnd_parse.c
+
+netpin.o:	netpin.c
+		$(CC) $(CFLAGS) -c netpin.c
+
+device.o:	device.c
+		$(CC) $(CFLAGS) -c device.c
+
+signame.o:	signame.c
+		$(CC) $(CFLAGS) -c signame.c
+
+package.o:	package.c $(VALIDLIB_HEADS)
+		$(CC) $(CFLAGS) -c package.c
+
+lister.o:	lister.c $(VALIDLIB_HEADS)
+		$(CC) $(CFLAGS) -c lister.c
+
+output.o:	output.c $(VALIDLIB_HEADS)
+		$(CC) $(CFLAGS) -c output.c
+
+bgeom.o:	bgeom.c
+		$(CC) $(CFLAGS) -c bgeom.c
+
+########################################################################
+#		Board Geometry Modules
+########################################################################
+
+### AUGAT 8136-UWG12
+
+$(BRD_DIR)/uwg12/board.o:	$(BRD_DIR)/uwg12/board.c
+				cd $(BRD_DIR)/uwg12 ; \
+				make "MAIN_INCLUDES= $(INCLUDES)" board.o
+
+### AUGAT 8136-HPWG1 (dense pack)
+
+$(BRD_DIR)/hpwg1/board.o:	$(BRD_DIR)/hpwg1/board.c
+				cd $(BRD_DIR)/hpwg1 ; \
+				make "MAIN_INCLUDES= $(INCLUDES)" board.o
+
+########################################################################
+#		Utilities
+########################################################################
+
+list:
+		ipf -2	$(CFILES) $(HEADS)\
+			$(BRD_CFILES) $(BRD_HEADS)\
+			Makefile
+
+tape:
+		tar cv	$(CFILES) $(HEADS)\
+			Makefile $(BRD_DIR)/*/Makefile\
+			$(BRD_DIR)/*/*.[ch] test 
+
+man:
+		tbl Manual | nroff -man | colcrt | more -s
+
+printman:
+		tbl Manual | itroff -man
+
+install:
+		strip wirelist
+		@ls -li wirelist
+		@size wirelist
+		cp wirelist ./test
+
+protect:
+		chmod 444 $(ALL_CFILES) $(HEADS)
+
+unprotect:
+		chmod 644 $(ALL_CFILES) $(HEADS)
+
+clean:
+		rm *.o
+		wirelist

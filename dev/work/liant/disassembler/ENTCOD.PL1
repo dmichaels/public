@@ -1,0 +1,51 @@
+/* LPI-DEBUG M68 ENTCOD.PL1 - Determine "real" entry point address */
+
+/**********************************************************************
+ * This product is the property of Language Processors, Inc.          *
+ * and is licensed pursuant to a written license agreement.           *
+ * No portion of this product may be reproduced without the written   *
+ * permission of Language Processors, Inc. except pursuant to the     *
+ * license agreement.                                                 *
+ *********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  06.10.87  DGM  Original for the non-Apollo/DOMAIN Aegis OS.
+ *
+ *********************************************************************/
+
+/* ----------------------------------------------------------------
+ * ENTCOD
+ *
+ * Determine if the code starting at the given location is an
+ * entry point interlude.  If it is, then return the "real" entry
+ * point location in ENTRYLOC, and return the size in bytes of
+ * the interlude code in SIZE, and return TRUE.  Also, if the
+ * found interlude code contains an instruction to set up the
+ * data-base address, then return this address in DATABASE
+ * (otherwise set it to zero).
+ *
+ * Otherwise, if the location corresponds to a simple entry point
+ * (no interlude), then simply return the argument LOC in ENTRYLOC,
+ * return zero in SIZE and DATABASE, and return TRUE.  Otherwise,
+ * return zero in ENTRYLOC indicating that the location LOC does
+ * not correspond to an entry point at all, return zero in DATABASE,
+ * and return FALSE.
+ *
+ * !!! This is a dummy for non-Apollo M68 (called from JMPADR) !!!
+ */
+
+ENTCOD: procedure (LOC, ENTRYLOC, DATABASE, SIZE) returns (bit (1));
+
+    declare
+        LOC         fixed binary (31),
+        ENTRYLOC    fixed binary (31),
+        DATABASE    fixed binary (31),
+        SIZE        fixed binary (15);
+
+    return ('0'B);
+
+end ENTCOD;
+

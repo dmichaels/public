@@ -1,0 +1,298 @@
+/* ANSI-C kw.pl1 - ANSI-C/C++ keyword table initialization and lookup */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.21.89  DGM  001  Modified to work with C++ as well as ANSI-C.
+ *			For ANSI-C set up with "INITKW(0)".
+ *			For C++    set up with "INITKW(1)".
+ *
+ *  01.31.89  DGM  000  Original (yanked out of PREPROCESSOR).
+ *
+ ***********************************************************************/
+
+%include 'incfil';
+%include C_TOKENS_IN;
+
+/* =====================================================================
+** ANSI-C/C++ keyword data
+** =================================================================== */
+
+/* HB_EITHER_KW_TABLE: max(HB_C_PLUS_PLUS_KW_TABLE,HB_ANSI_C_KW_TABLE) */
+
+%replace HB_EITHER_KW_TABLE	by 46;
+
+declare
+	HB_KW_TABLE		fixed binary (15)
+				static internal,
+
+	KW_ID_TABLE		(HB_EITHER_KW_TABLE)
+				fixed binary (15)
+				static internal,
+
+	KW_CODE_TABLE		(HB_EITHER_KW_TABLE)
+				fixed binary (15)
+				static internal;
+
+/* =====================================================================
+** C++ keyword data
+** =================================================================== */
+
+%replace HB_C_PLUS_PLUS_KW_TABLE	by 46;
+
+declare
+	C_PLUS_PLUS_KW_NAME_TABLE	(HB_C_PLUS_PLUS_KW_TABLE)
+					character (9) varying
+					static internal initial (
+
+	  'auto'	, 'break'	, 'catch'
+	, 'case'	, 'char'	, 'class'
+	, 'const'	, 'continue'	, 'default'
+	, 'delete'	, 'do'		, 'double'
+	, 'else'	, 'enum'	, 'extern'
+	, 'float'	, 'for'		, 'friend'
+	, 'goto'	, 'if'		, 'inline'
+	, 'int'		, 'long'	, 'new'
+	, 'operator'	, 'overload'	, 'private'
+	, 'protected'	, 'public'	, 'register'
+	, 'return'	, 'short'	, 'signed'
+	, 'sizeof'	, 'static'	, 'struct'
+	, 'switch' 	, 'template'	, 'this'
+	, 'typedef'	, 'union'	, 'unsigned'
+	, 'virtual'	, 'void'	, 'volatile'
+	, 'while'
+
+	),
+
+	C_PLUS_PLUS_KW_CODE_TABLE	(HB_C_PLUS_PLUS_KW_TABLE) 
+					fixed binary (15)
+					static internal initial (
+
+	  KW_AUTO_TOKEN      , KW_BREAK_TOKEN	 , KW_CATCH_TOKEN
+	, KW_CASE_TOKEN      , KW_CHAR_TOKEN     , KW_CLASS_TOKEN
+	, KW_CONST_TOKEN     , KW_CONTINUE_TOKEN , KW_DEFAULT_TOKEN
+	, KW_DELETE_TOKEN    , KW_DO_TOKEN       , KW_DOUBLE_TOKEN
+	, KW_ELSE_TOKEN      , KW_ENUM_TOKEN     , KW_EXTERN_TOKEN
+	, KW_FLOAT_TOKEN     , KW_FOR_TOKEN      , KW_FRIEND_TOKEN
+	, KW_GOTO_TOKEN      , KW_IF_TOKEN	 , KW_INLINE_TOKEN
+	, KW_INT_TOKEN	     , KW_LONG_TOKEN	 , KW_NEW_TOKEN
+	, KW_OPERATOR_TOKEN  , KW_OVERLOAD_TOKEN , KW_PRIVATE_TOKEN
+	, KW_PROTECTED_TOKEN , KW_PUBLIC_TOKEN	 , KW_REGISTER_TOKEN
+	, KW_RETURN_TOKEN    , KW_SHORT_TOKEN	 , KW_SIGNED_TOKEN
+	, KW_SIZEOF_TOKEN    , KW_STATIC_TOKEN	 , KW_STRUCT_TOKEN
+	, KW_SWITCH_TOKEN    , KW_TEMPLATE_TOKEN , KW_THIS_TOKEN
+	, KW_TYPEDEF_TOKEN   , KW_UNION_TOKEN    , KW_UNSIGNED_TOKEN
+	, KW_VIRTUAL_TOKEN   , KW_VOID_TOKEN	 , KW_VOLATILE_TOKEN
+	, KW_WHILE_TOKEN
+
+	);
+
+/* =====================================================================
+** ANSI-C keyword data
+** =================================================================== */
+
+%replace HB_ANSI_C_KW_TABLE	by 32;
+
+declare
+	ANSI_C_KW_NAME_TABLE	(HB_ANSI_C_KW_TABLE)
+				character (8) varying
+				static internal initial (
+
+	  'auto'	, 'break'	, 'case'
+	, 'char'	, 'const'	, 'continue'
+	, 'default'	, 'do'		, 'double'
+	, 'else'	, 'enum'	, 'extern'
+	, 'float'	, 'for'		, 'goto'
+	, 'if'		, 'int'		, 'long'
+	, 'register'	, 'return'	, 'short'
+	, 'signed'	, 'sizeof'	, 'static'
+	, 'struct'	, 'switch'	, 'typedef'
+	, 'union'	, 'unsigned'	, 'void'
+	, 'volatile'	, 'while'
+
+	),
+
+	ANSI_C_KW_CODE_TABLE	(HB_ANSI_C_KW_TABLE) fixed binary (15)
+				static internal initial (
+
+	  KW_AUTO_TOKEN     , KW_BREAK_TOKEN    , KW_CASE_TOKEN
+	, KW_CHAR_TOKEN     , KW_CONST_TOKEN    , KW_CONTINUE_TOKEN
+	, KW_DEFAULT_TOKEN  , KW_DO_TOKEN       , KW_DOUBLE_TOKEN
+	, KW_ELSE_TOKEN     , KW_ENUM_TOKEN     , KW_EXTERN_TOKEN
+	, KW_FLOAT_TOKEN    , KW_FOR_TOKEN      , KW_GOTO_TOKEN
+	, KW_IF_TOKEN       , KW_INT_TOKEN      , KW_LONG_TOKEN
+	, KW_REGISTER_TOKEN , KW_RETURN_TOKEN   , KW_SHORT_TOKEN
+	, KW_SIGNED_TOKEN   , KW_SIZEOF_TOKEN   , KW_STATIC_TOKEN
+	, KW_STRUCT_TOKEN   , KW_SWITCH_TOKEN   , KW_TYPEDEF_TOKEN
+	, KW_UNION_TOKEN    , KW_UNSIGNED_TOKEN , KW_VOID_TOKEN
+	, KW_VOLATILE_TOKEN , KW_WHILE_TOKEN
+
+	);
+
+/* =====================================================================
+** ANSI-C preprocessing directive keyword data
+** =================================================================== */
+
+%replace HB_PPKW_TABLE		by 12;
+
+declare
+	PPKW_ID_TABLE		(HB_PPKW_TABLE)
+				fixed binary (15)
+				static internal,
+
+	PPKW_NAME_TABLE		(HB_PPKW_TABLE)
+				character (7) varying
+				static internal initial (
+
+	  'define'           , 'elif'             , 'else'
+	, 'endif'            , 'error'            , 'if'
+	, 'ifdef'            , 'ifndef'           , 'include'
+	, 'line'             , 'pragma'           , 'undef'
+
+	),
+
+	PPKW_CODE_TABLE		(HB_PPKW_TABLE)
+				fixed binary (15)
+				static internal initial (
+
+	  PP_KW_DEFINE_TOKEN , PP_KW_ELIF_TOKEN   , PP_KW_ELSE_TOKEN
+	, PP_KW_ENDIF_TOKEN  , PP_KW_ERROR_TOKEN  , PP_KW_IF_TOKEN
+	, PP_KW_IFDEF_TOKEN  , PP_KW_IFNDEF_TOKEN , PP_KW_INCLUDE_TOKEN
+	, PP_KW_LINE_TOKEN   , PP_KW_PRAGMA_TOKEN , PP_KW_UNDEF_TOKEN
+
+	);
+
+/* =====================================================================
+** INITKW
+**
+** Put the TOKEN_NODE id's associated with each of the ANSI-C keywords
+** (if CODE is 0) or the C++ keywords (if CODE is 1) in ascending order
+** into KW_ID_TABLE and the corresponding keyword token type codes into
+** the parallel positions in the KW_CODE_TABLE.  Likewise with the ANSI-C
+** preprocessing directive keywords and PPKW_ID_TABLE and PPKW_CODE_TABLE.
+** =================================================================== */
+
+INITKW: procedure (CODE);
+
+	declare CODE	fixed binary (15);
+
+	declare GETITOK	entry (character (*) varying)
+			returns (fixed binary (15)) external;
+
+	declare I	fixed binary (15);
+
+	/* Set up and sort the ANSI-C/C++ keyword id/code tables */
+
+	if CODE = 0 then do;
+		HB_KW_TABLE = HB_ANSI_C_KW_TABLE;	/* ANSI-C */
+		do I = 1 to HB_KW_TABLE;
+			KW_ID_TABLE(I) = GETITOK(ANSI_C_KW_NAME_TABLE(I));
+			KW_CODE_TABLE(I) = ANSI_C_KW_CODE_TABLE(I);
+		end;
+	end;
+
+	else do;
+		HB_KW_TABLE = HB_C_PLUS_PLUS_KW_TABLE;	/* C++ */
+		do I = 1 to HB_KW_TABLE;
+			KW_ID_TABLE(I) = GETITOK(C_PLUS_PLUS_KW_NAME_TABLE(I));
+			KW_CODE_TABLE(I) = C_PLUS_PLUS_KW_CODE_TABLE(I);
+		end;
+	end;
+
+	call SORT_KW_TABLES (KW_ID_TABLE, KW_CODE_TABLE, HB_KW_TABLE);
+
+	/* Set up and sort the ANSI-C preprocessor keyword id/code tables */
+
+	do I = 1 to HB_PPKW_TABLE;
+		PPKW_ID_TABLE(I) = GETITOK (PPKW_NAME_TABLE(I));
+	end;
+
+	call SORT_KW_TABLES (PPKW_ID_TABLE, PPKW_CODE_TABLE, HB_PPKW_TABLE);
+
+	/* =============================================================
+	** SORT_KW_TABLES
+	**
+	** Sort the the given ID_TABLE (1-indexed) array into ascending
+	** order, as well as the parallel TYPE_TABLE array.
+	** Just simple little bubble sort; no bigee.
+	** =========================================================== */
+
+	SORT_KW_TABLES: procedure (ID_TABLE, TYPE_TABLE, HB);
+
+		declare ID_TABLE	(*) fixed binary (15),
+			TYPE_TABLE	(*) fixed binary (15),
+			HB		fixed binary (15);
+		declare (I, J, X)	fixed binary (15);
+
+		do I = 2 to HB;
+			do J = HB to I by -1;
+				if ID_TABLE(J-1) > ID_TABLE(J) then do;
+					X = ID_TABLE(J-1);
+					ID_TABLE(J-1) = ID_TABLE(J);
+					ID_TABLE(J) = X;
+					X = TYPE_TABLE(J-1);
+					TYPE_TABLE(J-1) = TYPE_TABLE(J);
+					TYPE_TABLE(J) = X;
+				end;
+			end;
+		end;
+
+	end SORT_KW_TABLES;
+
+end INITKW;
+
+/* =====================================================================
+** KW
+**
+** If the given TOKEN_NODE id represents an ANSI-C keyword identifer,
+** then return its corresponding token type code, otherwise return -1.
+** =================================================================== */
+
+KW: procedure (ID) returns (fixed binary (15)) external;
+
+	declare ID		fixed binary (15);
+	declare (LO, HI, MID)	fixed binary (15);
+
+	LO = 1; HI = HB_KW_TABLE;
+	do while (LO <= HI);
+		MID = divide ((LO + HI), 2, 15);
+		if      ID < KW_ID_TABLE(MID) then HI = MID - 1;
+		else if ID > KW_ID_TABLE(MID) then LO = MID + 1;
+		else return (KW_CODE_TABLE(MID));
+	end;
+	return (-1);
+
+end KW;
+
+/* =====================================================================
+** PPKW
+**
+** If the given TOKEN_NODE id represents an ANSI-C preprocessing
+** directive keyword identifer, then return its corresponding
+** token type code, otherwise return -1.
+** =================================================================== */
+
+PPKW: procedure (ID) returns (fixed binary (15)) external;
+
+	declare ID		fixed binary (15);
+	declare (LO, HI, MID)	fixed binary (15);
+
+	LO = 1; HI = HB_PPKW_TABLE;
+	do while (LO <= HI);
+		MID = divide ((LO + HI), 2, 15);
+		if      ID < PPKW_ID_TABLE(MID) then HI = MID - 1;
+		else if ID > PPKW_ID_TABLE(MID) then LO = MID + 1;
+		else return (PPKW_CODE_TABLE(MID));
+	end;
+	return (-1);
+
+end PPKW;
+

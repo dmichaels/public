@@ -1,0 +1,2368 @@
+/* C++ instal.pl1 - Symbol table installation routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  08.19.92  DGM  055	Anonymous union member scoping & access fixes.
+ *  05.29.92  DGM  054	Updated INSTALL_ANONYMOUS_UNION to note the
+ *			biggest anonymous union member.
+ *  04.27.92  PKT  053	Changed INSTALL_PARAMETERS because the function
+ *			scope is always the same as the prototype scope.
+ *  04.17.92  PKT  053	Changed CREATE_SPECIAL_PARAMETERS to get
+ *			qualifiers of 'this' from SIG_NODE.
+ *			CREATE_SIGNATURE to put qualifiers in SIG_NODE.
+ *  04.30.92  DGM  052 	Diagnose undefined enum return/parameter type.
+ *  04.28.92  PKT  051R	Made REMOVE_FROM_SCOPE update scope node better.
+ *  03.09.92  PKT  051	Changed for parameter nodes.  Added
+ *			FREE_PROTOTYPE_SCOPE.
+ *  03.03.92  PKT  051	Added speedup for checking tag name.
+ *  03.26.92  DGM  050	New value-node scheme.
+ *  02.11.92  DGM  049	Fix to 047.
+ *  02.10.92  DGM  048	Name change (x_TYPE -> x_TK); clash with CodeWatch.
+ *  02.06.92  PKT  047	Let caller destroy non-prototyped, 
+ *			backend-by-reference parameter.
+ *  01.28.92  DGM  046	Give a violation for "f(...)" in ANSI-C mode.
+ *			Added MAKE_BACK_END_PARAMETER_LIST.
+ *  01.21.92  DGM  045	Parameter link-node changes.
+ *  12.31.91  PKT  044	Fixed CREATE_DIMENSION for user conversions.
+ *  01.13.92  DGM  043  Multi-node space fixes.
+ *  12.28.91  PKT  042	Fix CHANGE_SYMBOL_NAME when new name is NULL_NID.
+ *  12.19.91  DGM  041  Set the back-end return type to "void" of a
+ *			function which returns a class with a copy ctor.
+ *  12.17.91  DGM  040  Fix in SET_FUNCTION_RETURN.
+ *  11.25.91  DGM  039  Fix in INSTALL_PARAMETERS.SET_FUNCTION_RETURN;
+ *			set CONSTANT_LENGTH of return type symbol if
+ *			it's a character type.
+ *  11.12.91  DGM  038  Updated for new GET_INTEGRAL_CONSTANT_VALUE.
+ *  10.03.91  DGM  037  Updated for new [SIMPLE_]BACK_END_TYPE_SIZE.
+ *  07.31.91  DGM  036  Set SYM_NODE.C_OVERLOAD in INSTALL_SYMBOL.
+ *  07.30.91  TLF  035  Changed interface to NOTE_DESTRUCTOR.
+ *  07.08.91  DGM  034  Fix in INSTALL_PARAMETERS for f (struct X *p){};
+ *			also minor fix to set FIELD1 for return type.
+ *  05.30.91  DGM  033  Changed INSTALL_SYMBOL_IN_BLOCK to
+ *			unconditionally link function symbols
+ *			into the outermost (imaginary) block.
+ *  05.03.91  PKT  032  Enabled INSTALL_SYMBOL_IN_BLOCK code.
+ *  04.29.91  DGM  031  Fixes in INSTALL_ANONYMOUS_UNION.
+ *  04.08.91  DGM  030  Fix in INSTALL_PARAMETERS to set the size of
+ *			a class type parameter of a function which was
+ *			first declared before the class was defined.
+ *  03.25.91  TLF  029  Added code in CREATE_EXTRA_PARAMETER to
+ *			walk the parameter list and increment 
+ *			SYM_NODE.LOCATION by 1.  This is necessary
+ *			because SYM_NODE.LOCATION is the ordinal
+ *			parameter position.
+ *  03.05.91  PKT  028  Updated for destructor access fix,
+ *			ENCLOSING_SCOPE_OWNER fix.
+ *  02.21.91  PKT  027  Updated for member pointers.
+ *  02.11.91  DGM  026  Reuse the prototype scope for the function scope.
+ *  02.01.91  DGM  025  Updated to new global names scheme.
+ *  01.31.91  DGM  024  Anonymous union fixes.
+ *  01.18.91  DGM  023  Minor fix in INSTALL_SYMBOL_IN_BLOCK and
+ *			in CHANGE_SYMBOL_NAME.  Fix in INSTALL_SYMBOL
+ *			for anonymous unions.
+ *  01.14.91  DGM  022  Fixed INSTALL_ANONYMOUS_UNION for when nested.
+ *  01.10.91  DGM  021  Added INSTALL_SYMBOL_IN_BLOCK.
+ *  12.17.90  PKT  020  Updated for revised NOTE_DESTRUCTOR.
+ *  12.17.90  DGM  019  Modified CREATE_DIMENSION to deal with integral
+ *			"const" variables.
+ *  12.12.90  DGM  018  Fix in INSTALL_SYMBOL for enclosing scope of
+ *			enumerators (esp. when SW_DISALLOW_NESTED_TYPES).
+ *  11.06.90  DGM  017  Used SYM_NODE.SET instead of SYM_NODE.FIELD2 as
+ *			a temporary to maintain the FIELD1 list of non
+ *			static data members in a tag symbol; FIELD2 is
+ *			now used a the list of virtual functions declared
+ *			within a class (linked thru NEXT_VIRTUAL_FUNCTION);
+ *			DOPE_ID is now a link-node list of pure virtual
+ *			functions declared in *and* inherited by a class;
+ *			all this is done in procvf.pl1.
+ *  10.22.90  DGM  016  Fix in FIND_AND_REPLACE_TAG_SYMBOL.
+ *  10.12.90  DGM  015  Check for undefined class parameter types.
+ *  09.14.90  DGM  014  Changed include file names and VOP names.
+ *  09.13.90  DGM  013  Changed xxx_SC names to xxx_ST.
+ *  09.05.90  PKT  012  Updated.  DGM.
+ *  08.31.90  DGM  011  Updated CREATE_DIMENSION/CREATE_SIGNATURE.
+ *  08.29.90  DGM  010  Changed GET_SIMPLE_TYPE to GET_BASIC_TYPE.
+ *  08.15.90  DGM  009  New type-node.  And PKT name space changes.
+ *  08.07.90  PKT  008  Updated.
+ *  07.26.90  DGM  007  Replaced INSTALL_THIS_PARAMETER
+ *			with CREATE_SPECIAL_PARAMETERS.
+ *  07.10.90  PKT  006  Changed for destruction of parameters.
+ *  07.10.90  DGM  005  Fix for SW_X_NAME_SPACE, and set SYM_NODE.FATHER
+ *			for all members, not just non-static data members.
+ *			Added INSTALL_ANONYMOUS_UNION.
+ *  06.29.90  DGM  004  Added support for SW_X_NAME_SPACE.
+ *  06.25.90  DGM  003  Make the "this" type-node using GET_SCALAR_TYPE.
+ *  06.06.90  DGM  002  RE-CHECKOUT.  Fix in REGISTER_SYMBOL_NAME.
+ *  06.06.90  DGM  002  Updated for the new utilities.
+ *  05.25.90  DGM  001  Added INSTALL_PARAMETERS, INSTALL_THIS_PARAMETER
+ *			and other miscellaneous changes/fixes.
+ *  05.15.90  DGM  000  Orignal.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 08.19.92 055 INSTAL');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_CLASS_SIZE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_OVERLOAD_PKG;
+%include CXX_TYPE_CLASS_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;	/* -debugging- */
+%include CXX_SYMBOL_TABLE_DEBUG_PKG;	/* -debugging- */
+
+/* ---------------------------------------------------------------------
+/* INSTALL_SYMBOL
+/*
+/* Install the given symbol into the symbol list at the given scope.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+INSTALL_SYMBOL: procedure (SYMBOL, SCOPE) external (X_INSTALL_SYMBOL);
+
+	declare
+		SYMBOL		type (NID_T),
+		SCOPE		type (NID_T);
+	declare
+		SYMBOL_PTR	type (POINTER_T),
+		SCOPE_PTR	type (POINTER_T),
+		(P, Q)		type (POINTER_T),
+		OTHER		type (NID_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (SYMBOL = NULL_NID) | (SCOPE = NULL_NID) then
+		return;
+
+	/* Get a pointer to the scope-node */
+
+	call GET_SCOPE_NODE (SCOPE, SCOPE_PTR);
+
+	/* Link the symbol onto the symbol list of this scope */
+
+	if SCOPE_PTR->SCOPE_NODE.LAST_SYMBOL ^= NULL_NID then do;
+		call GET_SYM_NODE (SCOPE_PTR->SCOPE_NODE.LAST_SYMBOL, P);
+		P->SYM_NODE.NEXT_SYMBOL = SYMBOL;
+		call RELEASE_SYM_NODE (SCOPE_PTR->SCOPE_NODE.LAST_SYMBOL);
+	end;
+	else	SCOPE_PTR->SCOPE_NODE.SYMBOLS = SYMBOL;
+
+	SCOPE_PTR->SCOPE_NODE.LAST_SYMBOL = SYMBOL;
+	SCOPE_PTR->SCOPE_NODE.NSYMBOLS    = SCOPE_PTR->SCOPE_NODE.NSYMBOLS + 1;
+
+	/* Get a pointer to the sym-node */
+
+	call GET_SYM_NODE (SYMBOL, SYMBOL_PTR);
+
+	/* Set this symbol's enclosing semantic scope and scope type */
+
+	if SYMBOL_PTR->SYM_NODE.IS_ENUM_MEMBER |
+	   SYMBOL_PTR->SYM_NODE.IS_ANON_UNION_MEMBER then do;
+		/*
+		/* Fudge the enclosing scope of the enumerators
+		/* as well as anonymous union members.
+		/*
+		/* For C++, enumerators reside in the scope which is the
+		/* the lexically enclosing scope of the enumeration body;
+		/* this is true even when the old (pre 2.1) C++ rules are
+		/* applied to nested types, i.e when the -xnnt switch is
+		/* specified (i.e. when SW_NO_NESTED_TYPE_NAMES is set).
+		/*
+		/* For C, enumerators reside in the scope which is the
+		/* semantic enclosing scope of the enumeration tag; this
+		/* is hooked on SW_NO_NESTED_ENUMERATOR_NAMES which is
+		/* set in C mode.
+		/* 
+		/* Anonymous union members reside in the scope which is
+		/* the the lexically enclosing scope of the union body.
+		/* This is not affected by the -xnnt switch.
+		/**/
+		if SW_NO_NESTED_ENUMERATOR_NAMES &
+		   SYMBOL_PTR->SYM_NODE.IS_ENUM_MEMBER then do;
+			call GET_SYM_NODE_R
+			     (SCOPE_PTR->SCOPE_NODE.OWNER, P);
+			SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE
+				= P->SYM_NODE.ENCLOSING_SCOPE;
+			SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_TYPE
+				= P->SYM_NODE.ENCLOSING_SCOPE_TYPE;
+			SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER
+				= P->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+			call RELEASE_SYM_NODE
+			     (SCOPE_PTR->SCOPE_NODE.OWNER);
+		end;
+		else do;
+			SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE
+				= SCOPE_PTR->SCOPE_NODE.ENCLOSING_SCOPE;
+			SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_TYPE
+				= SCOPE_PTR->SCOPE_NODE.ENCLOSING_SCOPE_TYPE;
+			call GET_SCOPE_NODE_R
+			     (SCOPE_PTR->SCOPE_NODE.ENCLOSING_SCOPE, P);
+			SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER
+				= P->SCOPE_NODE.OWNER;
+			call RELEASE_SCOPE_NODE
+			     (SCOPE_PTR->SCOPE_NODE.ENCLOSING_SCOPE);
+		end;
+		/*
+		/* If the enclosing scope of the enclosing scope
+		/* is an anonymous union, make sure we skip it.
+		/**/
+		if SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_TYPE
+		   = byte (CLASS_SCOPE) then do;
+			call GET_SYM_NODE_R
+			     (SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER, P);
+			if P->SYM_NODE.IS_ANON_UNION_TAG then do;
+				SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE
+					= P->SYM_NODE.ENCLOSING_SCOPE;
+				SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_TYPE
+					= P->SYM_NODE.ENCLOSING_SCOPE_TYPE;
+				SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER
+					= P->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+			end;
+			call RELEASE_SYM_NODE
+			     (SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE);
+		end;
+	end;
+	else do;
+		SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE
+			= SCOPE;
+		SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_TYPE
+			= SCOPE_PTR->SCOPE_NODE.TYPE;
+		SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER
+			= SCOPE_PTR->SCOPE_NODE.OWNER;
+	end;
+
+	/*
+	/* Register the symbol (name) in the symbol table.  Handle the
+	/* situation where this symbol is a type (or non-type) and has
+	/* been previously declared in this scope as a non-type (or type).
+	/**/
+
+	call REGISTER_SYMBOL_NAME ();
+
+	/*
+	/* If this symbol is a "C" linkage function (and has not yet been
+	/* overload yet, obviously since otherwise we'd go thru OVERLOAD_
+	/* SYMBOL) then set its C_OVERLOAD field to point to itself.
+	/**/
+
+	if SYMBOL_PTR->SYM_NODE.LINKAGE_KIND = byte (C_LINKAGE) then do;
+		if SYMBOL_PTR->SYM_NODE.IS_FUNCTION &
+		   (SYMBOL_PTR->SYM_NODE.C_OVERLOAD = NULL_NID) then
+			SYMBOL_PTR->SYM_NODE.C_OVERLOAD = SYMBOL;
+	end;
+		
+	/*
+	/* If this is a member *data* symbol being installed in a class scope,
+	/* then link it onto the end of the list of sym-nodes (each linked
+	/* thru BROTHER) and hang it off of FIELD1 of the tag symbol which
+	/* defined this class scope (i.e. SCOPE_PTR->SCOPE_NODE.OWNER); note
+	/* that SET of the tag sym-node is used as a temporary to hold
+	/* each last member.  Also, set the FATHER field of the member symbol
+	/* to the sym-node of the containing tag symbol (i.e. SCOPE_PTR->
+	/* SCOPE_NODE.OWNER).  Also, update the size of the containing class.
+	/**/
+
+	if SYMBOL_PTR->SYM_NODE.IS_NON_STATIC_DATA_MEMBER then do;
+		call GET_SYM_NODE (SCOPE_PTR->SCOPE_NODE.OWNER, P);
+		if P->SYM_NODE.FIELD1 ^= NULL_NID then do;
+			call GET_SYM_NODE (P->SYM_NODE.SET, Q);
+			Q->SYM_NODE.BROTHER = SYMBOL;
+			call RELEASE_SYM_NODE (P->SYM_NODE.SET);
+			P->SYM_NODE.SET	    = SYMBOL;
+		end;
+		else do;
+			P->SYM_NODE.FIELD1 = SYMBOL;
+			P->SYM_NODE.SET	   = SYMBOL;
+		end;
+		call UPDATE_CLASS_SIZE (P, SYMBOL_PTR);
+		call RELEASE_SYM_NODE (SCOPE_PTR->SCOPE_NODE.OWNER);
+		/*
+		/* +----------------------+
+		/* | BACK-END REQUIREMENT |
+		/* +----------------------+
+		/*
+		/* Set the FATHER field appropriately.
+		/**/
+		SYMBOL_PTR->SYM_NODE.FATHER = SCOPE_PTR->SCOPE_NODE.OWNER;
+	end;
+
+	/* If this is a enumerator symbol, then do nothing */
+
+	else if SYMBOL_PTR->SYM_NODE.IS_ENUM_MEMBER then
+		;
+
+	/*
+	/* If this is a prototype scope symbol, then do nothing.
+	/* We do not place prototype scope symbols onto the DCL_LIST
+	/* of a block-node until a function body is defined, at which
+	/* point we place all of the prototype scope symbols there;
+	/* see INSTALL_PARAMETERS.
+	/**/
+
+	else if SCOPE_PTR->SCOPE_NODE.TYPE = byte (PROTOTYPE_SCOPE) then
+		;
+
+	/*
+	/* +----------------------+
+	/* | BACK-END REQUIREMENT |
+	/* +----------------------+
+	/*
+	/* Otherwise, if this is not a non-static data member symbol and not
+	/* a prototype scope symbol, then link this symbol onto
+	/* the DCL_LIST of this block-node which encloses this scope.
+	/**/
+
+	else	call INSTALL_SYMBOL_IN_BLOCK
+		     (SYMBOL, SYMBOL_PTR, SCOPE_PTR->SCOPE_NODE.BLOCK);
+
+	/* Release nodes and return */
+
+	call RELEASE_SYM_NODE (SYMBOL);
+	call RELEASE_SCOPE_NODE (SCOPE);
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* REGISTER_SYMBOL_NAME
+/*
+/* Assuming that the symbol to be installed is referred to by the sym-node
+/* id SYMBOL and the pointer SYMBOL_PTR, and that the scope in which it is
+/* being installed in is referred to by the scope-node id SCOPE, register
+/* the new symbol into the symbol table; i.e. place it on the next-of-name
+/* list.  Handle the multiple name space C++ language hack for allowing tag
+/* symbols and non-tag symbols to reside in the same scope as described
+/* below.  If the name of the symbol is null then simply return immediately.
+/*
+/* Preserves current-node-id.
+/*
+/* If the new symbol is a type symbol whose name was previously declared in
+/* the *same* scope as a non-type, then this (type) symbol will be hung off
+/* of the OTHER_SYMBOL field of the sym-node of the existing non-type symbol.
+/* For completeness, the OTHER_SYMBOL field of sym-node of the new type
+/* symbol will be set to the sym-node id of the existing non-type symbol.
+/*
+/* If the new symbol is a non-type symbol whose name was previously declared
+/* in the *same* scope as a type, then the existing type symbol will be bumped
+/* out of the symbol table proper (i.e off of the next-of-name list) and
+/* will be replaced by this non-type symbol; the existing type symbol will
+/* then be hung off of the OTHER_SYMBOL field of the sym-node of the new
+/* non-type symbol.  For completeness, the OTHER_SYMBOL field of sym-node
+/* of the existing type symbol will be set to the sym-node id of the new
+/* non-type symbol.
+/* 
+/* The IS_ALSO_TAG and IS_ALSO_NON_TAG fields will be set appropriately.
+/*
+/* In either case, if the type symbol represents a class, struct, or union
+/* tag containing a constructor, or represents a typedef symbol, then an
+/* appropriate diagnostic warning will emitted.
+/* ------------------------------------------------------------------- */
+
+REGISTER_SYMBOL_NAME: procedure internal;
+
+	declare
+		NAME_NODE_PTR		type (POINTER_T),
+		OTHER			type (NID_T),
+		NEXT_OF_NAME_LIST	type (NID_T),
+		(P, Q)			type (POINTER_T),
+		SNID			type (SNID_T);
+
+	/* ------------------------------------------------------------
+	/* N.B. Upon entry it is assumed that the sym-node of the new
+	/* symbol is pointed to by SYMBOL_PTR, its node id is set to
+	/* SYMBOL, and the scope-node id of the scope in which it will
+	/* live is in SCOPE.
+	/* ---------------------------------------------------------- */
+
+	/*
+	/* Get a pointer to the token-node of the
+	/* name, this contains the next-of-name list.
+	/*/
+
+	if SYMBOL_PTR->SYM_NODE.NAME = NULL_NID then
+		return;
+
+	call GET_TOKEN_NODE (SYMBOL_PTR->SYM_NODE.NAME, NAME_NODE_PTR);
+	NEXT_OF_NAME_LIST = NAME_NODE_PTR->TOKEN_NODE.ADDRESS;
+
+	/* 
+	/* If this symbol is a tag and already exists as a non-tag
+	/* in this scope, then don't put it on the next-of-name list.
+	/* Rather hang it off of the existing non-tag symbol.
+	/*
+	/* Conversely, if this symbol is a non-tag and already exists as
+	/* a tag in this scope, then replace the existing tag symbol on
+	/* the next-of-name list with this non-tag symbol, and hang the
+	/* replaced tag symbol off of this non-tag symbol.
+	/*
+	/* In these cases, IS_ALSO_TAG, IS_ALSO_NON_TAG, & OTHER_SYMBOL
+	/* will be set appropriately for the tag an non-tag symbols.
+	/*
+	/* This is for name space compatibility with Classic C.
+	/* See C++ARM, sec.3.1.c.
+	/**/
+
+	SYMBOL_PTR->SYM_NODE.IS_ALSO_TAG     = FALSE;
+	SYMBOL_PTR->SYM_NODE.IS_ALSO_NON_TAG = FALSE;
+	SYMBOL_PTR->SYM_NODE.OTHER_SYMBOL     = NULL_NID;
+
+	/* See if this is a tag symbol */
+
+	if SYMBOL_PTR->SYM_NODE.IS_TAG then do;
+		/* Note that scope contains a tag symbol. */
+		SCOPE_PTR->SCOPE_NODE.CONTAINS_TAG_SYMBOL = TRUE;
+
+		call SAVE_NODE (SNID);
+		OTHER = SEARCH_SCOPE
+			(SCOPE, SYMBOL_PTR->SYM_NODE.NAME, ANY_SK);
+		if (OTHER ^= NULL_NID) & ^SYM_NODE.IS_TAG then do;
+			/*
+			/* Here, the new symbol is a tag declared in the
+			/* same scope as a non-tag of the same name; this
+			/* tag symbol will be hung off of the OTHER_SYMBOL
+			/* field of the sym-node of the existing non-tag
+			/* symbol, and the OTHER_SYMBOL field of sym-node
+			/* of the new tag symbol will be set to the sym-node
+			/* id of the existing non-tag symbol.
+			/**/
+			if SYMBOL_PTR->SYM_NODE.CONSTRUCTOR ^= NULL_NID then do;
+				/*
+				/* Warning; the name of this tag (which has
+				/* a constructor) was previously declared
+				/* as a non-type.
+				/**/
+				call SEMANTIC_ERROR_II
+				     (ERR_NON_TYPE_TYPE_REDCL,
+				      QUALIFIED_SYMBOL_NAME (SYMBOL),
+				      SYMBOL_LOCATION_NAME (SYMBOL));
+			end;
+ 			SYM_NODE.IS_ALSO_TAG		     = TRUE;
+			SYM_NODE.IS_ALSO_NON_TAG	     = FALSE;
+			SYM_NODE.OTHER_SYMBOL		     = SYMBOL;
+			SYMBOL_PTR->SYM_NODE.IS_ALSO_NON_TAG = TRUE;
+			SYMBOL_PTR->SYM_NODE.OTHER_SYMBOL    = OTHER;
+			call RESTORE_NODE (SNID);
+			goto DONE_REGISTER_SYMBOL_NAME;
+		end;
+		else if SW_X_NAME_SPACE then do;
+			/*
+			/* Nifty hack to handle Classic C name spaces.  E.g.
+			/* the following is illegal C++ but legal Classic C:
+			/*
+			/*   int T; f () { struct T { int m; }; T = 3; }
+			/*
+			/* In this mode, tags are *always* bumped out of the
+			/* symbol table and hung off of the OTHER_SYMBOL field
+			/* of a dummy symbol (in this case, or a real symbol
+			/* if a non-tag with the same name was previously
+			/* declared in the same scope).  Note that this dummy
+			/* symbol will never be found by a lookup (unless a
+			/* DUMMY_SK symbol kind is explicitly asked for).
+			/**/
+			call MAKE_SYM_NODE_P (DUMMY_SK, OTHER, P);
+			P->SYM_NODE.NAME = SYMBOL_PTR->SYM_NODE.NAME;
+			call INSTALL_SYMBOL (OTHER, SCOPE);
+			P->SYM_NODE.IS_ALSO_TAG = TRUE;
+			P->SYM_NODE.OTHER_SYMBOL = SYMBOL;
+			call RELEASE_SYM_NODE (OTHER);
+			call RESTORE_NODE (SNID);
+			goto DONE_REGISTER_SYMBOL_NAME;
+		end;
+		call RESTORE_NODE (SNID);
+	end;
+
+	/* Do nothing special if this is a non-tag type (i.e. typedef) */
+
+	else if SYMBOL_PTR->SYM_NODE.IS_TYPE then
+		;
+
+	/* See if this non-type symbol name has been declared as a type */
+
+	else if FIND_AND_REPLACE_TAG_SYMBOL (OTHER, P) then do;
+		/*
+		/* Here, this  (non-type) symbol was previously
+		/* declared as a type (tag or typedef); check it out.
+		/**/
+		if P = null () then do;
+			/*
+			/* Error; this non-type name has been previously
+			/* declared in this scope as a "typedef".
+			/**/
+			call SEMANTIC_ERROR_II (ERR_TYPEDEF_NON_TYPE_REDCL,
+					        QUALIFIED_SYMBOL_NAME (OTHER),
+					        SYMBOL_LOCATION_NAME (OTHER));
+			goto DONE_REGISTER_SYMBOL_NAME;
+		end;
+		if (P->SYM_NODE.CONSTRUCTOR ^= NULL_NID) &
+		   ^SYMBOL_PTR->SYM_NODE.IS_TYPE then do;
+			/*
+			/* Warning; this name was previously declared as
+			/* an aggregate tag which contains a constructor;
+			/* this non-type (i.e. neither tag nor typedef)
+			/* declaration is therefore illegal.  For example:
+			/*
+			/* "struct s { int m; }; int s;" is legal, but.
+			/* "struct s { s(); int m; }; int s;" is illegal.
+			/**/
+			call SEMANTIC_ERROR_II
+			     (ERR_TAG_NON_TYPE_REDCL,
+			      QUALIFIED_SYMBOL_NAME (SYMBOL),
+			      SYMBOL_LOCATION_NAME (OTHER));
+		end;
+		if P->SYM_NODE.IS_ALSO_TAG then do;
+			/*
+			/* In this case, the found (and replaced) symbol
+			/* was not a tag symbol after all, but rather a
+			/* dummy symbol created for SW_X_NAME_SPACE.
+			/**/
+			SYMBOL_PTR->SYM_NODE.OTHER_SYMBOL 
+				= P->SYM_NODE.OTHER_SYMBOL;
+			call GET_SYM_NODE (P->SYM_NODE.OTHER_SYMBOL, Q);
+			Q->SYM_NODE.IS_ALSO_NON_TAG = TRUE;
+			Q->SYM_NODE.IS_ALSO_TAG     = FALSE;
+			Q->SYM_NODE.OTHER_SYMBOL    = SYMBOL;
+			call RELEASE_SYM_NODE (P->SYM_NODE.OTHER_SYMBOL);
+		end;
+		else do;
+			SYMBOL_PTR->SYM_NODE.OTHER_SYMBOL = OTHER;
+			P->SYM_NODE.IS_ALSO_NON_TAG	  = TRUE;
+			P->SYM_NODE.OTHER_SYMBOL	  = SYMBOL;
+		end;
+		SYMBOL_PTR->SYM_NODE.IS_ALSO_TAG = TRUE;
+		call RELEASE_SYM_NODE (OTHER);
+		goto DONE_REGISTER_SYMBOL_NAME;
+	end;
+
+	/* Link the symbol onto the next-of-name list */
+
+	SYMBOL_PTR->SYM_NODE.NEXT_OF_NAME = NAME_NODE_PTR->TOKEN_NODE.ADDRESS;
+	NAME_NODE_PTR->TOKEN_NODE.ADDRESS = SYMBOL;
+
+	DONE_REGISTER_SYMBOL_NAME:
+
+	call RELEASE_TOKEN_NODE (SYMBOL_PTR->SYM_NODE.NAME);
+	return;
+
+/* ---------------------------------------------------------------------
+/* FIND_AND_REPLACE_TAG_SYMBOL
+/*
+/* Search the next-of-name list pointed to by NAME_NODE_PTR for a tag
+/* symbol which resides in the scope represented by the scope-node id
+/* in SCOPE, and if found, replace it with the non-type symbol represented
+/* by the sym-node id in SYMBOL (and pointed to by SYMBOL_PTR), and return
+/* TRUE and with the sym-node id of the replaced symbol in FOUND_SYMBOL
+/* and a pointer to it in FOUND_SYMBOL_PTR.
+/*
+/* If instead of a tag symbol, a typedef symbol is found, then return its
+/* sym-node id FOUND_SYMBOL but return null () in FOUND_SYMBOL_PTR (this
+/* is to indicate an error condition -- i.e. a typedef declaration of a
+/* previously declared non-type name).
+/* 
+/* Otherwise, if not found, then return FALSE (in this
+/* case FOUND_SYMBOL and FOUND_SYMBOL_PTR will be undefined).
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+FIND_AND_REPLACE_TAG_SYMBOL: procedure (FOUND_SYMBOL, FOUND_SYMBOL_PTR)
+			     returns   (type (BOOL_T))
+			     internal;
+	declare
+		FOUND_SYMBOL		type (NID_T),
+		FOUND_SYMBOL_PTR	type (POINTER_T);
+	declare
+		NEXT_OF_NAME_LIST	type (NID_T),
+		PREV_SYMBOL		type (NID_T),
+		(S, NEXT_S)		type (NID_T),
+		(P, Q)			type (POINTER_T);
+
+	/* ----------------------------------------------------------------
+	/* N.B. Upon entry it is assumed that the sym-node id of the of
+	/* the new symbol is in SYMBOL and is pointed to by SYMBOL_PTR,
+	/* the scope-node id the scope in which it will reside is in SCOPE,
+	/* and a pointer to the token-node representing the name of the
+	/* new symbol is in NAME_NODE_PTR.
+	/* -------------------------------------------------------------- */
+
+	/*
+	/* Sort-circuit if scope has no tags.
+	/* Prototype scopes often involve names with long NEXT_OF_NAME lists,
+	/* but hardly ever have tag names.
+	/**/
+	if ^SCOPE_PTR->SCOPE_NODE.CONTAINS_TAG_SYMBOL then
+		return (FALSE);
+
+	/* Get the next-of-name list */
+
+	NEXT_OF_NAME_LIST = NAME_NODE_PTR->TOKEN_NODE.ADDRESS;
+
+	/* Search the next-of-name list for a symbol in this scope */
+
+	PREV_SYMBOL = NEXT_OF_NAME_LIST;
+
+	do S = NEXT_OF_NAME_LIST repeat (NEXT_S) while (S ^= NULL_NID);
+		call GET_SYM_NODE_R (S, P);
+		if P->SYM_NODE.ENCLOSING_SCOPE ^= SCOPE then
+			goto CONTINUE;
+		if P->SYM_NODE.IS_TAG |
+		   (P->SYM_NODE.IS_ALSO_TAG &
+		    (P->SYM_NODE.KIND = DUMMY_SK)) then do;
+			/*
+			/* Found the (tag or dummy) symbol, replace it
+			/* (S, P) with the new symbol (SYMBOL, SYMBOL_PTR),
+			/* and return the node id of the removed symbol
+			/* (S, P) in FOUND_SYMBOL, and a pointer to it
+			/* in FOUND_SYMBOL_PTR.
+			/**/
+			SYMBOL_PTR->SYM_NODE.NEXT_OF_NAME
+				= P->SYM_NODE.NEXT_OF_NAME;
+			P->SYM_NODE.NEXT_OF_NAME = NULL_NID;
+			if S ^= NEXT_OF_NAME_LIST then do;
+				call GET_SYM_NODE (PREV_SYMBOL, Q);
+				Q->SYM_NODE.NEXT_OF_NAME = SYMBOL;
+				call RELEASE_SYM_NODE (PREV_SYMBOL);
+			end;
+			else	NAME_NODE_PTR->TOKEN_NODE.ADDRESS = SYMBOL;
+			FOUND_SYMBOL	 = S;
+			FOUND_SYMBOL_PTR = P;
+			return (TRUE);
+		end;
+		else if P->SYM_NODE.IS_TYPE then do;
+			/*
+			/* Error; this non-type name has been previously
+			/* declared in this scope as a "typedef".  Pass
+			/* this error condition back to the caller.
+			/**/
+			call RELEASE_SYM_NODE (S);
+			FOUND_SYMBOL	 = S;
+			FOUND_SYMBOL_PTR = null ();
+			return (TRUE);
+		end;
+		CONTINUE:
+		NEXT_S = P->SYM_NODE.NEXT_OF_NAME;
+		call RELEASE_SYM_NODE (S);
+		PREV_SYMBOL = S;
+	end;
+
+	return (FALSE);
+
+end FIND_AND_REPLACE_TAG_SYMBOL;
+
+end REGISTER_SYMBOL_NAME;
+
+end INSTALL_SYMBOL;
+
+/* --------------------------------------------------------------------
+/* CREATE_DIMENSION
+/*
+/* Given a value-node id represent an array dimension, create a dim-node
+/* representing the corresponding dimension and return its dim-node id.
+/* If the value-node id is null or represents a non-constant expression,
+/* then the dim-node is marked as incomplete and IS_INCOMPLETE is set
+/* to TRUE.  Otherwise, the dimension is a constant expression, so the
+/* dim-node is marked is complete and IS_INCOMPLETE is set to FALSE.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CREATE_DIMENSION: procedure (DIMENSION, IS_INCOMPLETE)
+		  returns   (type (NID_T))
+		  external  (X_CREATE_DIMENSION);
+	declare
+		DIMENSION	type (CXX_VID_T),
+		IS_INCOMPLETE	type (BOOL_T);
+	declare
+		VALUE		type (LONG_T),
+		VALUE_ID	type (CXX_VID_T),
+		SIZE_T_ID	type (NID_T),
+		D		type (NID_T),
+		DP		type (POINTER_T),
+		TP		type (POINTER_T),
+		SIZE_CODE	type (SHORT_T),
+		LEVEL		type (SHORT_T);
+
+	/* It's a complete array type if it has a compile-time size */
+
+	if DIMENSION ^= NULL_CXX_VID then do;
+		if GET_INTEGRAL_CONSTANT_VALUE (DIMENSION, VALUE, 0) then do;
+			IS_INCOMPLETE = FALSE;
+			return (CREATE_CONSTANT_DIMENSION
+				(VALUE, IS_INCOMPLETE));
+		end;
+	end;
+
+	/* Here, we have a non-constant dimension */
+
+	call NEW_DIM_NODE (D, DP);
+
+	if DIMENSION ^= NULL_CXX_VID then do;
+		/*
+		/* TODO: Guard against run-time crashes by producing
+		/*       an expression which tests for negative and
+		/*       substitutes a non-negative value?
+		/**/
+
+		VALUE_ID = CHECK_USER_CONVERSION
+			   (DIMENSION, ARITHMETIC_TK, NULL_NID);
+
+		/* Get type code for size_t. */
+		SIZE_T_ID = GET_SIZET_TYPE ();
+		call GET_TYPE_NODE_R (SIZE_T_ID, TP);
+		LEVEL = rank (TP->TYPE_NODE.LEVEL);
+		SIZE_CODE = rank (TP->TYPE_NODE.DATA (LEVEL).CODE);
+		call RELEASE_TYPE_NODE (SIZE_T_ID);
+
+		DP->DIM_NODE.VALUE_ID	= CONVERT_VALUE (VALUE_ID, SIZE_CODE);
+	end;
+	else	DP->DIM_NODE.VALUE	= 0;
+
+	DP->DIM_NODE.ELEMENT_SIZE	= 0;
+	DP->DIM_NODE.ELEMENT_SIZE_UNITS	= byte (0);
+	DP->DIM_NODE.INCOMPLETE		= TRUE;
+	IS_INCOMPLETE			= TRUE;
+
+	call RELEASE_DIM_NODE (D);
+	return (D);
+
+end CREATE_DIMENSION;
+
+/* --------------------------------------------------------------------
+/* CREATE_CONSTANT_DIMENSION
+/*
+/* Given an array dimension value, create a dim-node representing the
+/* corresponding dimension and return its dim-node id.  If the given
+/* dimension is less than or equal to zero, an appropriate diagnostic
+/* will be emitted, and IS_INCOMPLETE will be set TRUE, otherwise,
+/* IS_INCOMPLETE will be set FALSE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CREATE_CONSTANT_DIMENSION: procedure (DIMENSION, IS_INCOMPLETE)
+			   returns   (type (NID_T))
+			   external  (X_CREATE_CONSTANT_DIMENSION);
+	declare
+		DIMENSION	type (LONG_T),
+		IS_INCOMPLETE	type (BOOL_T);
+	declare
+		D		type (NID_T),
+		DP		type (POINTER_T);
+
+	/* TODO: maybe return NULL_NID if DIMENSION = 0 */
+
+	if DIMENSION <= 0 then do;
+		IS_INCOMPLETE = TRUE;
+		if DIMENSION < 0 then do;
+			call SEMANTIC_ERROR (ERR_NEG_ARRAY_DIMENSION);
+			DIMENSION = 0;
+		end;
+		else	call SEMANTIC_ERROR (ERR_ZERO_ARRAY_DIMENSION);
+	end;
+	else	IS_INCOMPLETE = FALSE;
+
+	call NEW_DIM_NODE (D, DP);
+	DP->DIM_NODE.VALUE		= DIMENSION;
+	DP->DIM_NODE.ELEMENT_SIZE	= 0;
+	DP->DIM_NODE.ELEMENT_SIZE_UNITS	= byte (0);
+	DP->DIM_NODE.INCOMPLETE		= IS_INCOMPLETE;
+	call RELEASE_DIM_NODE (D);
+	return (D);
+
+end CREATE_CONSTANT_DIMENSION;
+
+/* --------------------------------------------------------------------
+/* CREATE_SIGNATURE
+/*
+/* Given a prototype scope-node id, create a sig-node representing
+/* the corresponding signature and return its sig-node id; the flags
+/* speak for themselves.  Preserves current-node-id.
+/*
+/* Recognizes the function declarator
+/*		( void )
+/* as a special case meaning no parameters.  The reasons for doing
+/* it here rather than in the parser are fairly weak.  It exposes
+/* the semantic ambiguity a little better.
+/* ------------------------------------------------------------------- */
+
+CREATE_SIGNATURE: procedure (SCOPE, HAS_ELLIPSIS, IS_PROTOTYPED, QUALIFIERS,
+			     CONTAINS_INCOMPLETE, CONTAINS_DEFAULT_ARGUMENT)
+		  returns   (type (NID_T))
+		  external  (X_CREATE_SIGNATURE);
+	declare
+		SCOPE				type (NID_T),	/* in  */
+		HAS_ELLIPSIS			type (BOOL_T),	/* in  */
+		IS_PROTOTYPED			type (BOOL_T),	/* in  */
+		QUALIFIERS			type (BYTE_BITS_T),/* in  */
+		CONTAINS_INCOMPLETE		type (BOOL_T),	/* out */
+		CONTAINS_DEFAULT_ARGUMENT	type (BOOL_T);	/* out */
+	declare
+		(SCOPE_PTR, SP, LAST_SP, TP)	type (POINTER_T),
+		(P, NEXT_P, LAST_P)		type (NID_T),
+		SIGNATURE			type (NID_T),
+		PARAMETERS			type (NID_T),
+		NPARAMETERS			type (NID_T),
+		EXPLICIT_PARAMETERS		type (NID_T),
+		PROTOTYPE_SCOPE_NSYMBOLS	type (NID_T),
+		PROTOTYPE_SCOPE_SYMBOLS		type (NID_T),
+		FOUND_VOID_SYMBOL		type (BOOL_T),
+		N				type (SHORT_T),
+		(A_PARAMETER, PREV_PARAMETER)	type (NID_T),
+		AP				type (POINTER_T);
+
+	CONTAINS_INCOMPLETE = FALSE; CONTAINS_DEFAULT_ARGUMENT = FALSE;
+
+	/* Get the pertinent data from the current (prototype) scope */
+
+	call GET_SCOPE_NODE_R (SCOPE, SCOPE_PTR);
+
+	if SCOPE_PTR->SCOPE_NODE.TYPE ^= byte (PROTOTYPE_SCOPE) then do;
+		call RELEASE_SCOPE_NODE (SCOPE);
+		return (NULL_NID);
+	end;
+
+	PROTOTYPE_SCOPE_SYMBOLS  = SCOPE_PTR->SCOPE_NODE.SYMBOLS;
+	PROTOTYPE_SCOPE_NSYMBOLS = SCOPE_PTR->SCOPE_NODE.NSYMBOLS;
+
+	call RELEASE_SCOPE_NODE (SCOPE);
+
+	/*
+	/* Create a parameter-node list representing the parameter
+	/* list of this function declaration; each parameter-node
+	/* points (in order) to each parameter sym-node in the
+	/* prototype scope.  The list is linked thru the NEXT field;
+	/* the SYMBOL field points to the sym-node.  This list hang
+	/* off of SIG_NODE.PARAMETERS.  A duplicate *link-node* list
+	/* hangs off of SYM_NODE.FIELD1 for function definitions.
+	/**/
+
+	N			= 1;
+	NPARAMETERS		= 0;
+	PARAMETERS		= NULL_NID;
+	EXPLICIT_PARAMETERS	= NULL_NID;
+	LAST_P			= NULL_NID;
+	FOUND_VOID_SYMBOL	= FALSE;
+	PREV_PARAMETER		= NULL_NID;
+
+	do P = PROTOTYPE_SCOPE_SYMBOLS repeat (NEXT_P)
+	while ((P ^= NULL_NID) & (N <= PROTOTYPE_SCOPE_NSYMBOLS));
+
+		call GET_SYM_NODE (P, SP);
+		NEXT_P = SP->SYM_NODE.NEXT_SYMBOL;
+
+		if ^SP->SYM_NODE.IS_PARAMETER then do;
+			call RELEASE_SYM_NODE (P);
+			goto CONTINUE;
+		end;
+
+		NPARAMETERS = NPARAMETERS + 1;
+
+		if SP->SYM_NODE.TYPE ^= NULL_NID then do;
+			/*
+			/* Note that if this is for an old-style function
+			/* (definition), then the parameter types have
+			/* not yet been established.  This may cause
+			/* very obscure problems.
+			/**/
+			if SP->SYM_NODE.TOP_TYPE.CODE = byte (VOID_BT) then do;
+				FOUND_VOID_SYMBOL = VOID_PARAMETER_OK ();
+				if FOUND_VOID_SYMBOL then do;
+					/* NEXT_P is null; loop will end. */
+					NPARAMETERS = 0;
+					PARAMETERS  = NULL_NID;
+					call REMOVE_FROM_SCOPE (P, SP);
+					goto CONTINUE;
+				end;
+			end;
+			call GET_TYPE_NODE_R (SP->SYM_NODE.TYPE, TP);
+			if TP->TYPE_NODE.HEADER.CONTAINS_INCOMPLETE then
+				CONTAINS_INCOMPLETE = TRUE;
+			if TP->TYPE_NODE.HEADER.CONTAINS_DEFAULT_ARGUMENT |
+		   	   SP->SYM_NODE.INITIAL_AT then
+				CONTAINS_DEFAULT_ARGUMENT = TRUE;
+			call RELEASE_TYPE_NODE (SP->SYM_NODE.TYPE);
+		end;
+
+		/* Allocate and set up a new parameter node. */
+		call NEW_PARAMETER_NODE (A_PARAMETER, AP);
+		AP->PARAMETER_NODE.TOP_TYPE = SP->SYM_NODE.TOP_TYPE;
+		AP->PARAMETER_NODE.TYPE = SP->SYM_NODE.TYPE;
+		if SP->SYM_NODE.INITIAL_AT then
+			AP->PARAMETER_NODE.VALUE = SP->SYM_NODE.EXPRESSION;
+		else
+			AP->PARAMETER_NODE.VALUE = NULL_CXX_VID;
+		AP->PARAMETER_NODE.NEXT = NULL_NID;
+		call RELEASE_PARAMETER_NODE (A_PARAMETER);
+		if PREV_PARAMETER ^= NULL_NID then do;
+			call GET_PARAMETER_NODE (PREV_PARAMETER, AP);
+			AP->PARAMETER_NODE.NEXT = A_PARAMETER;
+			call RELEASE_PARAMETER_NODE (PREV_PARAMETER);
+		end;
+		else
+			EXPLICIT_PARAMETERS = A_PARAMETER;
+		PREV_PARAMETER = A_PARAMETER;
+
+		if LAST_P ^= NULL_NID then do;
+			LAST_SP->SYM_NODE.NEXT_PARAMETER = P;
+			call RELEASE_SYM_NODE (LAST_P);
+		end;
+		else	PARAMETERS = P;
+		LAST_P = P; LAST_SP = SP;
+
+		N = N + 1;
+
+		CONTINUE:;
+	end;
+
+	if LAST_P ^= NULL_NID then
+		call RELEASE_SYM_NODE (LAST_P);
+
+	/*
+	/* In ANSI-C mode, an ellipsis which is not preceeded by a
+	/* parameter declaration is not permitted, but is in C++ mode.
+	/* Even in C++ mode it is dubious since there is no *legal*
+	/* way to reference arguments to such a function; LPI-C++
+	/* however supports the V.4 extension of allowing the second
+	/* argument to va_start to be omitted thereby facilitating this.
+	/**/
+
+	if HAS_ELLIPSIS & (NPARAMETERS = 0) then do;
+		if SW_ANSI_C_MODE & ^FOUND_VOID_SYMBOL then
+			call SEMANTIC_ERROR (ERR_ANSI_C_LONE_ELLIPSIS);
+		else if SW_WARN_LONE_ELLIPSIS then
+			call SEMANTIC_ERROR (ERR_LONE_ELLIPSIS);
+	end;
+
+	/* Allocate a new signature node */
+
+	call NEW_SIG_NODE (SIGNATURE, SP);
+
+	/* Fill in the signature node */
+
+	CONTAINS_INCOMPLETE = CONTAINS_INCOMPLETE |
+			      (^IS_PROTOTYPED & (NPARAMETERS = 0));
+
+	SP->SIG_NODE.NPARAMETERS	  = NPARAMETERS;
+	SP->SIG_NODE.PARAMETERS		  = PARAMETERS;
+	SP->SIG_NODE.EXPLICIT_NPARAMETERS = NPARAMETERS;
+	SP->SIG_NODE.EXPLICIT_PARAMETERS  = EXPLICIT_PARAMETERS;
+	SP->SIG_NODE.ELLIPSIS		  = HAS_ELLIPSIS;
+	SP->SIG_NODE.PROTOTYPED		  = IS_PROTOTYPED;
+	SP->SIG_NODE.DEFINED_SCOPE	  = SCOPE;
+	SP->SIG_NODE.DEFINED_FUNCTION	  = FALSE;
+	SP->SIG_NODE.INCOMPLETE		  = CONTAINS_INCOMPLETE;
+	SP->SIG_NODE.DEFAULT_ARGUMENT	  = CONTAINS_DEFAULT_ARGUMENT;
+	SP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS
+					  = QUALIFIERS;
+
+	/* Release and return the new sig-node id */
+
+	call RELEASE_SIG_NODE (SIGNATURE);
+	return (SIGNATURE);
+
+
+/* ---------------------------------------------------------------------
+/* VOID_PARAMETER_OK
+/*
+/* The current parameter being inspected has type void.
+/* Return whether it is the first and
+/* only symbol in the prototype scope, has no name and qualifiers.
+/* If not, it is illegal in C++; give an error message.
+/* ------------------------------------------------------------------- */
+VOID_PARAMETER_OK: procedure returns (type (BOOL_T));
+
+	declare
+		VP		pointer,
+		RESULT		type (BOOL_T);
+
+	RESULT = TRUE;
+	call GET_SYM_NODE_R (P, VP);
+	if VP->SYM_NODE.NAME ^= NULL_NID then do;
+		/*
+		/* Error; a "void" parameter should have no name.
+		/**/
+		if ^SW_ALLOW_VOID_PARAMETERS then
+			call SEMANTIC_ERROR (ERR_NAMED_VOID_PARAM);
+		RESULT = FALSE;
+	end;
+	if SP->SYM_NODE.TOP_TYPE.QUALIFIED then do;
+		/*
+		/* Error; a "void" parameter should not be qualified.
+		/**/
+		if ^SW_ALLOW_VOID_PARAMETERS then
+			call SEMANTIC_ERROR (ERR_QUAL_VOID_PARAM);
+		RESULT = FALSE;
+	end;
+	if NPARAMETERS > 1 | NEXT_P ^= NULL_NID then do;
+		/*
+		/* Error; a "void" parameter was given with other
+		/* parameters (pretend it takes no arguments).
+		/**/
+		if ^SW_ALLOW_VOID_PARAMETERS then
+			call SEMANTIC_ERROR (ERR_DUP_VOID_PARAM);
+		RESULT = FALSE;
+	end;
+	else if HAS_ELLIPSIS then do;
+		/*
+		/* Error: can't have void, ...
+		/* In cfront mode, this is a warning because
+		/* cfront accepts it.
+		/**/
+		if ^SW_X_VOID_ELLIPSIS then do;
+			if ^SW_ALLOW_VOID_PARAMETERS then
+				call SEMANTIC_ERROR (ERR_VOID_ELLIPSIS_PARAM);
+			RESULT = FALSE;
+		end;
+		else do;
+			if ^SW_ALLOW_VOID_PARAMETERS then
+				call SEMANTIC_ERROR
+				     (ERR_WARN_VOID_ELLIPSIS_PARAM);
+		end;
+	end;
+	call RELEASE_SYM_NODE (P);
+
+	return (RESULT);
+
+end VOID_PARAMETER_OK;
+
+end CREATE_SIGNATURE;
+
+/* --------------------------------------------------------------------
+/* REMOVE_FROM_SCOPE
+/*
+/* Remove the given symbol SYM (with a pointer to its node SP)
+/* from its enclosing scope, and recycle it.
+/* Note that since this frees SYM there's no need to release it following.
+/*
+/* This is not particularly efficient at the moment, but it should
+/* do fine for the void symbol in "(void)".
+/* ------------------------------------------------------------------- */
+REMOVE_FROM_SCOPE: procedure (SYM, SYMP)
+	           internal;
+
+	declare
+		SYM		type (NID_T),
+		SYMP		pointer;
+
+	declare
+		SCOPE		type (NID_T),
+		SCP		pointer,
+		PREV_S		type (NID_T),
+		PP		pointer,
+		NEXT_S		type (NID_T),
+		S		type (NID_T),
+		SP		pointer;
+
+	SCOPE = SYMP->SYM_NODE.ENCLOSING_SCOPE;
+	call GET_SCOPE_NODE (SCOPE, SCP);
+
+	/* Find the previous symbol on the NEXT_SYMBOL list. */
+	PREV_S = NULL_NID;
+	do S = SCP->SCOPE_NODE.SYMBOLS repeat (NEXT_S) while (TRUE);
+		if S = NULL_NID then
+			/* SYM not found in its scope. */
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		call GET_SYM_NODE_R (S, SP);
+		NEXT_S = SP->NEXT_SYMBOL;
+		call RELEASE_SYM_NODE (S);
+		if S = SYM then
+			leave;
+		PREV_S = S;
+	end;
+
+	/* Modify the NEXT_SYMBOL list to skip over SYM. */
+	if PREV_S ^= NULL_NID then do;
+		call GET_SYM_NODE (PREV_S, PP);
+		PP->NEXT_SYMBOL = NEXT_S;
+		call RELEASE_SYM_NODE (PREV_S);
+	end;
+	else
+		SCP->SCOPE_NODE.SYMBOLS = NEXT_S;
+
+	/* Update scope node's LAST_SYMBOL and NSYMBOLS. */
+	if SCP->SCOPE_NODE.LAST_SYMBOL = SYM then
+		SCP->SCOPE_NODE.LAST_SYMBOL = PREV_S;
+	SCP->SCOPE_NODE.NSYMBOLS = SCP->SCOPE_NODE.NSYMBOLS - 1;
+
+	call REMOVE_FROM_NEXT_OF_NAME_LIST (SYM, SYMP);
+	call FREE_SYM_NODE_P (SYM, SYMP);
+	
+	call RELEASE_SCOPE_NODE (SCOPE);
+
+end REMOVE_FROM_SCOPE;
+
+/* --------------------------------------------------------------------
+/* CREATE_SPECIAL_PARAMETERS
+/*
+/* Given a function sym-node id and a class sym-node id representing
+/* a member function (not assumed to be installed yet) and its parent
+/* class, create any special parameters which the function might need.
+/* The "this" parameter is needed for every non-static member function
+/* (this is always the first parameter when present).  For constructors
+/* and destructor functions from classes with any virtual base classes,
+/* a "not-most-derived-flag" parameter is needed.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CREATE_SPECIAL_PARAMETERS: procedure (FUNCTION_SYMBOL, CLASS_SYMBOL)
+			   external  (X_CREATE_SPECIAL_PARAMETERS);
+	declare
+		FUNCTION_SYMBOL		type (NID_T),
+		CLASS_SYMBOL		type (NID_T);
+	declare
+		FUNCTION_PTR		type (POINTER_T),
+		CLASS_PTR		type (POINTER_T),
+		THIS_TYPE		type (NID_T),
+		THIS_TOP_TYPE		type (TYPE_DATA_T),
+		SIGNATURE		type (NID_T),
+		SIGP			type (POINTER_T);
+
+	call GET_SYM_NODE_R (FUNCTION_SYMBOL, FUNCTION_PTR);
+
+	if ^FUNCTION_PTR->SYM_NODE.IS_FUNCTION |
+	   ^FUNCTION_PTR->SYM_NODE.IS_AGGREGATE_MEMBER |
+	   (FUNCTION_PTR->SYM_NODE.STORAGE_CLASS = byte (STATIC_ST)) then do;
+		call RELEASE_SYM_NODE (FUNCTION_SYMBOL);
+		return;
+	end;
+
+	/* Here, we are dealing with a non-static member function */
+
+	call GET_SYM_NODE_R (CLASS_SYMBOL, CLASS_PTR);
+
+	/*
+	/* Create the "not-most-derived" flag parameter for constructors
+	/* and destructors of classes with virtual base classes, and for
+	/* virtual destructors.
+	/**/
+
+	if FUNCTION_PTR->SYM_NODE.HAS_FLAG then do;
+
+		/* Create the "not-most-derived-flag" parameter */
+
+		THIS_TYPE		 = GET_BASIC_TYPE (INT_BT);
+		THIS_TOP_TYPE.CODE	 = byte (INT_BT);
+		THIS_TOP_TYPE.QUALIFIERS = NULL_TQ;
+		THIS_TOP_TYPE.NID	 = NULL_NID;
+
+		call CREATE_EXTRA_PARAMETER
+			(FUNCTION_PTR,
+			 NOT_MOST_DERIVED_FLAG_NAME,
+			 THIS_TYPE,
+			 THIS_TOP_TYPE);
+	end;
+
+	/* Create the "this" parameter */
+
+	SIGNATURE = FUNCTION_PTR->SYM_NODE.TOP_TYPE.SIGNATURE;
+	call GET_SIG_NODE_R (SIGNATURE, SIGP);
+
+	THIS_TYPE = GET_SCALAR_TYPE
+			(POINTER_DT,
+			 CONST_TQ,
+			 rank (CLASS_PTR->SYM_NODE.TOP_TYPE.CODE),
+			 CLASS_SYMBOL,
+			 SIGP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS);
+
+	call RELEASE_SIG_NODE (SIGNATURE);
+
+	THIS_TOP_TYPE.CODE	 = byte (POINTER_DT);
+	THIS_TOP_TYPE.QUALIFIERS = CONST_TQ;
+	THIS_TOP_TYPE.NID	 = NULL_NID;
+
+	call CREATE_EXTRA_PARAMETER
+		(FUNCTION_PTR,
+		 THIS_PARAMETER_NAME,
+		 THIS_TYPE,
+		 THIS_TOP_TYPE);
+
+	/* Release the nodes and return */
+
+	call RELEASE_SYM_NODE (CLASS_SYMBOL);
+	call RELEASE_SYM_NODE (FUNCTION_SYMBOL);
+	return;
+
+end CREATE_SPECIAL_PARAMETERS;
+
+/* ---------------------------------------------------------------------
+/* CREATE_EXTRA_PARAMETER
+/*
+/* Create and place a implicit "extra" parameter onto the *beginning*
+/* of the parameter list of the function represented by the given
+/* sym-node pointer FP.  The parameter will have a name represented
+/* by the given token-node id NAME, and type represented by the given
+/* type-node id TYPE, whose top type is given in TOP_TYPE.
+/* ------------------------------------------------------------------- */
+
+CREATE_EXTRA_PARAMETER: procedure (FP, NAME, TYPE, TOP_TYPE)
+			internal;
+	declare
+		FP		type (POINTER_T),
+		NAME		type (NID_T),
+		TYPE		type (NID_T),
+		TOP_TYPE	type (TYPE_DATA_T);
+	declare
+		SYMBOL		type (NID_T),
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T),
+		(P, SP)		type (POINTER_T);
+
+	call GET_SIG_NODE_R (FP->SYM_NODE.SIGNATURE, SP);
+
+	/* Get the size data for the extra parameter type */
+
+	call TYPE_SIZE (TYPE, SIZE, SIZE_UNITS, BOUNDARY);
+
+	/*
+	/* Build the sym-node for the parameter,
+	/* and place this extra parameter at the
+	/* beginning of the function parameter list.
+	/**/
+
+	call MAKE_SYM_NODE_P (PARAMETER_SK | DUMMY_SK, SYMBOL, P);
+
+	P->SYM_NODE.TYPE		= TYPE;
+	P->SYM_NODE.TOP_TYPE		= TOP_TYPE;
+	P->SYM_NODE.SIZE		= SIZE;
+	P->SYM_NODE.SIZE_UNITS		= byte (SIZE_UNITS);
+	P->SYM_NODE.BOUNDARY		= byte (BOUNDARY);
+	P->SYM_NODE.NAME		= NAME;
+	P->SYM_NODE.NEXT_PARAMETER	= SP->SIG_NODE.PARAMETERS;
+	SP->SIG_NODE.PARAMETERS		= SYMBOL;
+	SP->SIG_NODE.NPARAMETERS	= SP->SIG_NODE.NPARAMETERS + 1;
+
+	/* Link this symbol into the prototype scope */
+
+	call INSTALL_SYMBOL (SYMBOL, SP->SIG_NODE.DEFINED_SCOPE);
+
+	call RELEASE_SIG_NODE (FP->SYM_NODE.SIGNATURE);
+
+	call RELEASE_SYM_NODE (SYMBOL);
+
+end CREATE_EXTRA_PARAMETER;
+
+/* --------------------------------------------------------------------
+/* INSTALL_PARAMETERS
+/*
+/* Installs the parameters associated with the given function sym-node
+/* id into the (new) function scope represented by the given function
+/* scope-node id.  This should be called to inject the parameters of a
+/* function into the function scope at the start of a function definition.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+INSTALL_PARAMETERS: procedure (FUN, FUN_SCOPE)
+		    external  (X_INSTALL_PARAMETERS);
+	declare
+		FUN				type (NID_T),
+		FUN_SCOPE			type (NID_T);
+	declare
+		N				type (SHORT_T),
+		(SIZE_UNITS, BOUNDARY)		type (SHORT_T),
+		(ID, NEXT_ID)			type (NID_T),
+		(SYM, NEXT_SYM)			type (NID_T),
+		(E, NEXT_E)			type (NID_T),
+		(L, PREV_L, NEXT_L)		type (NID_T),
+		(FP, FTP, FSP, PSP)		type (POINTER_T),
+		(SP, FBP, P, Q)			type (POINTER_T),
+		(EP, ESP)			type (POINTER_T),
+		(LP, PREV_LP)			type (POINTER_T),
+		TOP_RETURN_TYPE			type (TYPE_DATA_T),
+		TOP_PTR_TYPE			type (TYPE_DATA_T),
+		CLASS_POINTER_TYPE		type (NID_T),
+		SNID				type (SNID_T),
+		DTOR_EXPRESSION			type (CXX_VID_T),
+		RETURNS_CLASS_WITH_COPY_CTOR	type (BOOL_T);
+
+	call GET_SYM_NODE (FUN, FP);
+
+	if ^FP->SYM_NODE.IS_FUNCTION then do;
+		call RELEASE_SYM_NODE (FUN);
+		return;
+	end;
+
+	/* Create 'this' and special flag for member functions. */
+
+	call CREATE_SPECIAL_PARAMETERS (FUN, 
+					FP->SYM_NODE.ENCLOSING_SCOPE_OWNER);
+
+	/* Get the top-type of the function return type */
+
+	call GET_TOP_LEVEL_TYPE (FP->SYM_NODE.TYPE, 1, TOP_RETURN_TYPE);
+
+	/*
+	/* If the return type of this function is a class type
+	/* which has a non-trivial copy constructor, then we
+	/* need to insert an extra class pointer parameter.
+	/* Might as well check that the class is defined too.
+	/**/
+
+	RETURNS_CLASS_WITH_COPY_CTOR = FALSE;
+
+	if IS_TAG_TYPE (rank (TOP_RETURN_TYPE.CODE)) then do;
+		call GET_SYM_NODE_R (TOP_RETURN_TYPE.TAG_SYMBOL, SP);
+		if ^SP->SYM_NODE.DEFINED then do;
+			if SP->SYM_NODE.IS_ENUM_TAG then do;
+				if SP->SYM_NODE.SIZE = 0 then do;
+					call SEMANTIC_ERROR_II
+				     	     (ERR_FUN_RET_UNDEF_ENUM,
+					      QUALIFIED_SYMBOL_NAME
+					      (TOP_RETURN_TYPE.TAG_SYMBOL),
+					      QUALIFIED_SYMBOL_NAME (FUN));
+					call SIMPLE_TYPE_SIZE
+					     (INT_BT,
+					      SP->SYM_NODE.SIZE,
+					      SIZE_UNITS, BOUNDARY);
+					SYM_NODE.SIZE_UNITS = byte (SIZE_UNITS);
+					SYM_NODE.BOUNDARY   = byte (BOUNDARY);
+				end;
+			end;
+			else do;
+				/*
+				/* Error; a class return type must refer to a
+				/* defined class at function definition time.
+				/**/
+				call SEMANTIC_ERROR_II
+				     (ERR_FUN_RET_UNDEF_CLASS,
+				      QUALIFIED_SYMBOL_NAME
+				       (TOP_RETURN_TYPE.TAG_SYMBOL),
+				      QUALIFIED_SYMBOL_NAME (FUN));
+				SP->SYM_NODE.SIZE	= 1;
+				SP->SYM_NODE.SIZE_UNITS	= byte (BYTES);
+				SP->SYM_NODE.BOUNDARY	= byte (BYTES);
+			end;
+		end;
+		else if SP->SYM_NODE.NEEDS_COPY then do;
+			CLASS_POINTER_TYPE = GET_CLASS_POINTER_TYPE
+					     (rank (TOP_RETURN_TYPE.CODE),
+					      TOP_RETURN_TYPE.TAG_SYMBOL);
+			call GET_TOP_TYPE (CLASS_POINTER_TYPE, TOP_PTR_TYPE);
+			call CREATE_EXTRA_PARAMETER
+			     (FP,
+			      RETURN_PARAMETER_NAME,
+			      CLASS_POINTER_TYPE,
+			      TOP_PTR_TYPE);
+			RETURNS_CLASS_WITH_COPY_CTOR = TRUE;
+		end;
+		call RELEASE_SYM_NODE (TOP_RETURN_TYPE.TAG_SYMBOL);
+	end;
+
+	/*
+	/* Get the parameter list of this function (a linked list of
+	/* link-nodes, each one pointing (in order) to a parameter
+	/* sym-node) and hang this list off of the FIELD1 field of the
+	/* function sym-node.  Also, initialize the symbol list of the
+	/* (new) function scope to the prototype scope symbol list.
+	/**/
+
+	call GET_SCOPE_NODE (FUN_SCOPE, PSP);
+	call GET_SIG_NODE (FP->SYM_NODE.TOP_TYPE.SIGNATURE, FSP);
+	
+	/* The function scope is the reused scope of the signature. */
+	if FSP->SIG_NODE.DEFINED_SCOPE ^= FUN_SCOPE then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	/* Set this previously prototype scope to be a function scope */
+
+	PSP->SCOPE_NODE.TYPE = byte (FUNCTION_SCOPE);
+
+	/* Mark the signature as having a defined function */
+
+	FSP->SIG_NODE.DEFINED_FUNCTION = TRUE;
+
+	/*
+	/* Set SYM_NODE.LOCATION to the parameter position
+	/* (one-indexed from left-to-right) of each parameter.
+	/**/
+
+	N = 0;
+	do L = FSP->SIG_NODE.PARAMETERS repeat (NEXT_L) while (L ^= NULL_NID);
+		N = N + 1;
+		call GET_SYM_NODE (L, LP);
+		LP->SYM_NODE.LOCATION = N;
+		NEXT_L = LP->SYM_NODE.NEXT_PARAMETER;
+		call RELEASE_SYM_NODE (L);
+	end;
+
+	/*
+	/* +----------------------+
+	/* | BACK-END REQUIREMENT |
+	/* +----------------------+
+	/*
+	/* Duplicate the parameter list (a sym-node list linked
+	/* thru the NEXT_PARAMETER field) into a link-node list
+	/* and hang it off of FIELD1 of the function sym-node.
+	/**/
+
+	/* Do this in CXXBE now ...
+	/*
+	/* PREV_L = NULL_NID;
+	/*
+	/* do ID = FSP->SIG_NODE.PARAMETERS
+	/* repeat (NEXT_ID) while (ID ^= NULL_NID);
+	/*	call GET_SYM_NODE_R (ID, P);
+	/*	NEXT_ID = P->SYM_NODE.NEXT_PARAMETER;
+	/*	call NEW_LINK_NODE (L, LP);
+	/*	LP->LINK_NODE.VALUE = ID;
+	/*	LP->LINK_NODE.NEXT  = NULL_NID;
+	/*	if PREV_L ^= NULL_NID then do;
+	/*		PREV_LP->LINK_NODE.NEXT = L;
+	/*		call RELEASE_LINK_NODE (PREV_L);
+	/*	end;
+	/*	else	FP->SYM_NODE.FIELD1 = L;
+	/*	PREV_L = L; PREV_LP = LP;
+	/* end;
+	/*
+	/* if PREV_L ^= NULL_NID then
+	/*	call RELEASE_LINK_NODE (PREV_L);
+	/**/
+
+	/*
+	/* Now, set the ENCLOSING_SCOPE of each sym-node which was
+	/* originally declared in prototype scope to be this function
+	/* scope.  Link each symbol onto the DCL_LIST of the block-node
+	/* for this function (via the sym-node BROTHER field).
+	/**/
+
+	call SAVE_NODE (SNID);
+
+	call GET_BLOCK_NODE (FP->SYM_NODE.VALUE, FBP);
+
+	N = PSP->SCOPE_NODE.NSYMBOLS;
+	do SYM = PSP->SCOPE_NODE.SYMBOLS
+	repeat (NEXT_SYM) while ((SYM ^= NULL_NID) & (N > 0));
+		call GET_SYM_NODE (SYM, P);
+		/*
+		/* (Re)Set the enclosing semantic scope of this symbol
+		/* from its prototype scope to this function scope.
+		/* Since the prototype scope is being reused, these
+		/* are the same scope node.
+		/**/
+		/* P->SYM_NODE.ENCLOSING_SCOPE    = FUN_SCOPE */;
+		P->SYM_NODE.ENCLOSING_SCOPE_OWNER = FUN;
+		P->SYM_NODE.ENCLOSING_SCOPE_TYPE  = byte (FUNCTION_SCOPE);
+		/*
+		/* (Re)Set the enclosing semantic scope of any enumerator
+		/* symbols defined within the prototype scope.
+		/**/
+		if P->SYM_NODE.IS_ENUM_TAG & P->SYM_NODE.DEFINED then do;
+			call GET_SCOPE_NODE_R (P->SYM_NODE.DEFINED_SCOPE, ESP);
+			do E = ESP->SCOPE_NODE.SYMBOLS
+			repeat (NEXT_E) while (E ^= NULL_NID);
+				call GET_SYM_NODE (E, EP);
+				EP->SYM_NODE.ENCLOSING_SCOPE_TYPE =
+					byte (FUNCTION_SCOPE);
+				EP->SYM_NODE.ENCLOSING_SCOPE_OWNER =
+					FUN;
+				NEXT_E = EP->SYM_NODE.NEXT_SYMBOL;
+				call RELEASE_SYM_NODE (E);
+			end;
+			call RELEASE_SCOPE_NODE (P->SYM_NODE.DEFINED_SCOPE);
+		end;
+		/*
+		/* Make sure class type parameters are defined.
+		/**/
+		else if P->SYM_NODE.IS_PARAMETER &
+			IS_TAG_TYPE
+			(rank (P->SYM_NODE.TOP_TYPE.CODE)) then do;
+			call GET_SYM_NODE_R
+				(P->SYM_NODE.TOP_TYPE.TAG_SYMBOL, Q);
+			if ^Q->SYM_NODE.DEFINED then do;
+				if Q->SYM_NODE.IS_ENUM_TAG then do;
+					if Q->SYM_NODE.SIZE = 0 then do;
+						call SEMANTIC_ERROR_II
+						     (ERR_PARAM_UNDEF_ENUM,
+						      QUALIFIED_SYMBOL_NAME
+						      (P->SYM_NODE.
+						       TOP_TYPE.TAG_SYMBOL),
+						      QUALIFIED_SYMBOL_NAME
+						      (FUN));
+						call SIMPLE_TYPE_SIZE
+						     (INT_BT,
+						      Q->SYM_NODE.SIZE,
+						      SIZE_UNITS,
+						      BOUNDARY);
+						Q->SYM_NODE.SIZE_UNITS =
+							byte (SIZE_UNITS);
+						Q->SYM_NODE.BOUNDARY =
+							byte (BOUNDARY);
+					end;
+				end;
+				else do;
+					/*
+					/* Error; a parameter with class
+					/* type must refer to a class which
+					/* has been defined.
+					/**/
+					call SEMANTIC_ERROR_II
+					     (ERR_PARAM_UNDEF_CLASS,
+					      QUALIFIED_SYMBOL_NAME
+					      (P->SYM_NODE.TOP_TYPE.TAG_SYMBOL),
+					      QUALIFIED_SYMBOL_NAME (FUN));
+					Q->SYM_NODE.SIZE	= 1;
+					Q->SYM_NODE.SIZE_UNITS	= byte (BYTES);
+					Q->SYM_NODE.BOUNDARY	= byte (BYTES);
+				end;
+			end;
+			else if P->SYM_NODE.SIZE = 0 then do;
+				/*
+				/* Fill in the size of this class type
+				/* parameter; the class was not defined
+				/* when this function was first declared.
+				/**/
+				P->SYM_NODE.SIZE       = Q->SYM_NODE.SIZE;
+				P->SYM_NODE.SIZE_UNITS = Q->SYM_NODE.SIZE_UNITS;
+				P->SYM_NODE.BOUNDARY   = Q->SYM_NODE.BOUNDARY;
+			end;
+			call RELEASE_SYM_NODE (P->SYM_NODE.TOP_TYPE.TAG_SYMBOL);
+		end;
+		/*
+		/* Make sure no void parameters.
+		/**/
+		else if   P->SYM_NODE.IS_PARAMETER
+			& rank (P->SYM_NODE.TOP_TYPE.CODE) = VOID_BT then do;
+			/*
+			/* Error; a parameter can't have void type.
+			/**/
+			call SEMANTIC_ERROR_I
+			     (ERR_PARAMETER_VOID,
+			      FULL_QUALIFIED_SYMBOL_NAME (FUN));
+		end;
+		/*
+		/* The object of this parameter may need to
+		/* be destroyed.  May trash current-node-id.
+		/**/
+		if P->SYM_NODE.IS_PARAMETER then do;
+			if ^FSP->SIG_NODE.PROTOTYPED &
+			    BACK_END_TYPE_BY_REFERENCE
+			    (P->SYM_NODE.TYPE) then do;
+				/*
+				/* If the parameter is passed by reference
+				/* to a non-prototyped function, the caller
+				/* destroys it.
+				/**/
+				;
+			end;
+			else do;
+				DTOR_EXPRESSION =
+					DESTROY_OBJECT
+					(GET_REF_AND_EXPAND (SYM),
+					 NULL_CXX_VID,
+					 P->SYM_NODE.TOP_TYPE,
+					 FALSE,
+					 NULL_NID);
+				call NOTE_DESTRUCTOR
+				     (PSP->SCOPE_NODE.DESTRUCTORS,
+				      DTOR_EXPRESSION,
+				      FALSE,
+				      NULL_CXX_VID);
+			end;
+			if (P->SYM_NODE.NAME = NULL_NID) &
+			   (P->SYM_NODE.TOP_TYPE.CODE ^=
+			    byte (VOID_BT)) then do;
+				if ^SW_C_PLUS_PLUS then do;
+					/*
+					/* Error; there is an unnamed
+					/* parameter in this function
+					/* definition declarator.
+					/**/
+					call SEMANTIC_ERROR_II
+					     (ERR_UNNAMED_PARAM,
+					      trim (char ((P->SYM_NODE.
+							      LOCATION))),
+					      QUALIFIED_SYMBOL_NAME (FUN));
+				end;
+			end;
+		end;
+		/*
+		/* +----------------------+
+		/* | BACK-END REQUIREMENT |
+		/* +----------------------+
+		/*
+		/* Place this symbol on the end of the dcl-list of the
+		/* block-node for this function.
+		/**/
+		call INSTALL_SYMBOL_IN_BLOCK (SYM, P, FP->SYM_NODE.VALUE);
+		N = N - 1;
+		NEXT_SYM = P->SYM_NODE.NEXT_SYMBOL;
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+	call RESTORE_NODE (SNID);
+
+	/* Set the function return type (etc) for the back-end */
+
+	call SET_FUNCTION_RETURN_TYPE ();
+
+	/* Release the nodes and return */
+
+	call RELEASE_BLOCK_NODE (FP->SYM_NODE.VALUE);
+	call RELEASE_SIG_NODE (FP->SYM_NODE.TOP_TYPE.SIGNATURE);
+	call RELEASE_SCOPE_NODE (FUN_SCOPE);
+	call RELEASE_SYM_NODE (FUN);
+	return;
+
+/* ---------------------------------------------------------------------
+/* SET_FUNCTION_RETURN_TYPE
+/*
+/* Set the function return type and various other back-end data for the
+/* function represented by the sym-node pointer FP, its associated
+/* sig-node pointer FSP, its associated block-node pointer FBP, and
+/* its return top-type TOP_RETURN_TYPE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SET_FUNCTION_RETURN_TYPE: procedure internal;
+
+	declare
+		SIZE			type (LONG_T),
+		SIZE_UNITS		type (SHORT_T),
+		TYPE_DATA		type (TYPE_DATA_T),
+		BACK_END_TYPE		type (SHORT_T),
+		BACK_END_BOUNDARY	type (SHORT_T),
+		P			type (POINTER_T);
+	/*
+	/* +----------------------+
+	/* | BACK-END REQUIREMENT |
+	/* +----------------------+
+	/*
+	/* Set the RETURN_LIST of the function block-node to the
+	/* appropriate returns descriptor and set the NAME, TYPE,
+	/* MAX_PARAMETERS, ENTRY_COUNT, and FLUSH_AT_CALL of the
+	/* block-node appropriately.
+	/**/
+
+	FBP->BLOCK_NODE.MAX_PARAMETERS = FSP->SIG_NODE.NPARAMETERS;
+	FBP->BLOCK_NODE.ENTRY_COUNT    = 1;
+	FBP->BLOCK_NODE.FLUSH_AT_CALL  = FALSE;
+
+	/* Get the returns descriptor; first get the function return type */
+
+	if (TOP_RETURN_TYPE.CODE = byte (VOID_BT)) |
+	   RETURNS_CLASS_WITH_COPY_CTOR then do;
+		FBP->BLOCK_NODE.TYPE		= byte (SUBROUTINE);
+		FBP->BLOCK_NODE.RETURN_LIST	= NULL_NID;
+		FP->SYM_NODE.RETURNS_AT		= FALSE;
+		FP->SYM_NODE.FIELD2		= NULL_NID;
+		return;
+	end;
+
+	/* Here, we have a function returning something (i.e. not void) */
+
+	call GET_TYPE_NODE_R (FP->SYM_NODE.TYPE, P);
+	call ANY_TYPE_SIZE (P, 1, SIZE, SIZE_UNITS, 0);
+	call RELEASE_TYPE_NODE (FP->SYM_NODE.TYPE);
+
+	/* ...
+	call SIMPLE_TYPE_SIZE (rank (TOP_RETURN_TYPE.CODE),
+			       SIZE,
+			       SIZE_UNITS,
+			       0);
+	... */
+
+	if TOP_RETURN_TYPE.CODE = byte (MEMBER_POINTER_DT) then do;
+		/*
+		/* Translated type depends on whether it
+		/* points to member data or member function.
+		/**/
+		call GET_TOP_LEVEL_TYPE
+		     (FP->SYM_NODE.TYPE, 2, TYPE_DATA);
+		call GET_TOP_TYPE
+		     (GET_MEMBER_POINTER_TYPE (TYPE_DATA),
+		      TYPE_DATA);
+		call SIMPLE_BACK_END_TYPE_SIZE
+		     (rank (TYPE_DATA.CODE),
+		      BACK_END_TYPE,
+		      BACK_END_BOUNDARY);
+	end;
+	else do;
+		call BACK_END_TYPE_SIZE (TOP_RETURN_TYPE,
+					 BACK_END_TYPE,
+					 BACK_END_BOUNDARY);
+	end;
+
+	/*
+	/* Just fill in the back-end type/size data; I don't *think*
+	/* anything else is needed, and I don't *think* this sym-node
+	/* needs to be linked into the block-node dcl-list.
+	/**/
+
+	call MAKE_SYM_NODE_P (DUMMY_SK | DATA_SK | CONSTANT_SK,
+			      FP->SYM_NODE.FIELD2,
+			      P);
+
+	P->SYM_NODE.COMMON.TYPE		= byte (BACK_END_TYPE);
+	P->SYM_NODE.SIZE		= SIZE;
+	P->SYM_NODE.SIZE_UNITS		= byte (SIZE_UNITS);
+	P->SYM_NODE.BOUNDARY		= byte (BACK_END_BOUNDARY);
+	P->SYM_NODE.FIELD1		= BACK_END_BOUNDARY;
+	P->SYM_NODE.COMMON.STORAGE	= byte (STO_BASED);
+	P->SYM_NODE.CONSTANT_SIZE	= TRUE;
+
+	if BACK_END_TYPE = CHAR_ then
+		P->SYM_NODE.CONSTANT_LENGTH = TRUE;
+
+	call RELEASE_SYM_NODE (FP->SYM_NODE.FIELD2);
+
+	call NEW_LINK_NODE (FBP->BLOCK_NODE.RETURN_LIST, P);
+	P->LINK_NODE.VALUE	= FP->SYM_NODE.FIELD2;
+	P->LINK_NODE.NEXT	= NULL_NID;
+	call RELEASE_LINK_NODE (FBP->BLOCK_NODE.RETURN_LIST);
+
+	FBP->BLOCK_NODE.TYPE	= byte (FUNCTION);
+	FP->SYM_NODE.RETURNS_AT	= TRUE;
+
+end SET_FUNCTION_RETURN_TYPE;
+
+end INSTALL_PARAMETERS;
+
+/* ---------------------------------------------------------------------
+/* FREE_PROTOTYPE_SCOPE
+/*
+/* Given a SIG_NODE id SIG, eliminate its associated scope.
+/* Free the scope node and the symbol nodes of its parameters.
+/* This is to be called only after parsing the prototype is
+/* complete and it is known that the prototype is not for a function
+/* definition (in which case the symbols must be preserved for incorporation
+/* into the function scope).
+/* 
+/* Tags declared in the prototype scope will be orphaned but that's OK
+/* in a sense because they can't be linked to anything anyway.
+/* ------------------------------------------------------------------- */
+
+FREE_PROTOTYPE_SCOPE: procedure (SIG)
+		      external  (X_FREE_PROTOTYPE_SCOPE);
+	declare
+		SIG		type (NID_T);
+	
+	declare
+		SIGP		pointer,
+		SCP		pointer,
+		SP		pointer,
+		SCOPE		type (NID_T),
+		(SYM, NEXT_SYM)	type (NID_T);
+
+	call GET_SIG_NODE (SIG, SIGP);
+	SCOPE = SIGP->SIG_NODE.DEFINED_SCOPE;
+	if SCOPE ^= NULL_NID then do;
+		call GET_SCOPE_NODE (SCOPE, SCP);
+
+		/* For each symbol in the scope, */
+
+		do SYM = SCP->SCOPE_NODE.SYMBOLS
+		repeat (NEXT_SYM) while (SYM ^= NULL_NID);
+
+			/* Either free or orphan the symbol. */
+
+			call GET_SYM_NODE_R (SYM, SP);
+			NEXT_SYM = SP->SYM_NODE.NEXT_SYMBOL;
+			if SP->SYM_NODE.IS_PARAMETER then do;
+				call REMOVE_FROM_NEXT_OF_NAME_LIST (SYM, SP);
+				call FREE_SYM_NODE_P (SYM, SP);
+			end;
+			else do;
+				SP->SYM_NODE.ENCLOSING_SCOPE_OWNER = NULL_NID;
+				SP->SYM_NODE.ENCLOSING_SCOPE = NULL_NID;
+				SP->SYM_NODE.NEXT_SYMBOL = NULL_NID;
+			end;
+			call RELEASE_SYM_NODE (SYM);
+		end;
+
+		/* Free the scope node. */
+
+		call FREE_SCOPE_NODE_P (SCOPE, SCP);
+
+		/* Fix up the sig_node. */
+		
+		SIGP->SIG_NODE.PARAMETERS = NULL_NID;
+		SIGP->SIG_NODE.DEFINED_SCOPE = NULL_NID;
+	end;
+	call RELEASE_SIG_NODE (SIG);
+
+end FREE_PROTOTYPE_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* REMOVE_FROM_NEXT_OF_NAME_LIST
+/*
+/* Remove the symbol SYMBOL with pointer SYMBOL_PTR
+/* from its next-of-name list.
+/* ------------------------------------------------------------------- */
+
+REMOVE_FROM_NEXT_OF_NAME_LIST: procedure (SYMBOL, SYMBOL_PTR)
+			       internal;
+		
+	declare
+		SYMBOL		type (NID_T),
+		SYMBOL_PTR	pointer;
+	declare
+		NAME_ID		type (NID_T),
+		NAME_PTR	pointer,
+		S		type (NID_T),
+		NEXT_S		type (NID_T),
+		PREV_S		type (NID_T),
+		P		pointer;
+
+	NAME_ID = SYMBOL_PTR->SYM_NODE.NAME;
+	if NAME_ID = NULL_NID then
+		return;
+	call GET_TOKEN_NODE (NAME_ID, NAME_PTR);
+
+	do S = NAME_PTR->TOKEN_NODE.ADDRESS
+	repeat (NEXT_S) while (S ^= NULL_NID);
+		if S = SYMBOL then do;
+			if S ^= NAME_PTR->TOKEN_NODE.ADDRESS then do;
+				call GET_SYM_NODE (PREV_S, P);
+				P->SYM_NODE.NEXT_OF_NAME =
+					SYMBOL_PTR->SYM_NODE.NEXT_OF_NAME;
+				call RELEASE_SYM_NODE (PREV_S);
+			end;
+			else	NAME_PTR->TOKEN_NODE.ADDRESS =
+					SYMBOL_PTR->SYM_NODE.NEXT_OF_NAME;
+			leave;
+		end;
+		PREV_S = S;
+		call GET_SYM_NODE_R (S, P);
+		NEXT_S = P->SYM_NODE.NEXT_OF_NAME;
+		call RELEASE_SYM_NODE (S);
+	end;
+
+	call RELEASE_TOKEN_NODE (NAME_ID);
+
+end REMOVE_FROM_NEXT_OF_NAME_LIST;
+
+/* ---------------------------------------------------------------------
+/* INSTALL_ANONYMOUS_UNION
+/*
+/* Update the anonymous union members and create and install an associated
+/* dummy anononymous union object symbol (if necessary) of the anonymous
+/* represented by the given sym-node pointer.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+INSTALL_ANONYMOUS_UNION: procedure (UP)
+			 external  (X_INSTALL_ANONYMOUS_UNION);
+	declare
+		UP			type (POINTER_T);
+	declare
+		(SIZE_UNITS, BOUNDARY)	type (SHORT_T),
+		(MP, AUOP, P)		type (POINTER_T),
+		(M, NEXT_M, AUO)	type (NID_T),
+		KIND			type (LONG_BITS_T),
+		NAME			character (512) varying,
+		MEMBERS			type (NID_T),
+		BIGGEST_MEMBER		type (NID_T),
+		SIZEOF_BIGGEST_MEMBER	type (LONG_T);
+
+	if UP->SYM_NODE.IS_AGGREGATE_MEMBER then do;
+		/*
+		/* Here, we have an anonymous union which is a member.
+		/**/
+		if UP->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST) then do;
+			/*
+			/* Here, we have an anonymous
+			/* union which is a non-static member.
+			/**/
+			call GET_SYM_NODE_R
+			     (UP->SYM_NODE.ENCLOSING_SCOPE_OWNER, P);
+			call UPDATE_CLASS_SIZE (P, UP);
+			call RELEASE_SYM_NODE
+			    (UP->SYM_NODE.ENCLOSING_SCOPE_OWNER);
+			goto INSTALL_ANONYMOUS_UNION_MEMBERS;
+		end;
+		else do;
+			/*
+			/* Here, we have an anonymous
+			/* union which is a static member.
+			/* Make a dummy anonymous union object symbol.
+			/**/
+			call MAKE_SYM_NODE_P
+			     (DATA_SK | AGGREGATE_MEMBER_SK | DUMMY_SK,
+			      AUO, AUOP);
+			AUOP->SYM_NODE.STORAGE_CLASS = byte (STATIC_ST);
+			AUOP->SYM_NODE.EXTERNAL_LINKAGE = TRUE;
+			if UP->SYM_NODE.FIELD1 ^= NULL_NID then do;
+				NAME = '____lpi_au_' ||
+					SYMBOL_NAME (UP->SYM_NODE.FIELD1);
+				AUOP->SYM_NODE.NAME =
+					FORM_IDENTIFIER_TOKEN (NAME);
+			end;
+		end;
+	end;
+	else do;
+		/*
+		/* Here, we have an anonymous union which is not a member.
+		/* Make a dummy anonymous union object symbol.
+		/**/
+		call MAKE_SYM_NODE_P (DATA_SK | DUMMY_SK, AUO, AUOP);
+		if UP->SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (GLOBAL_SCOPE)
+		then do;
+			/*
+			/* Here, we have an anonymous union at global scope.
+			/**/
+			AUOP->SYM_NODE.STORAGE_CLASS = byte (STATIC_ST);
+			AUOP->SYM_NODE.DEFINED = TRUE;
+		end;
+		else do;
+			/*
+			/* Here, we have an anonymous union at local scope.
+			/**/
+			AUOP->SYM_NODE.STORAGE_CLASS = byte (AUTO_ST);
+		end;
+	end;
+
+	/* Fill in the type/size for the dummy anonymous union object symbol */
+
+	call GET_TYPE_NODE_R (UP->SYM_NODE.TYPE, P);
+	call GET_TOP_TYPE_P (P, AUOP->SYM_NODE.TOP_TYPE);
+	call ANY_TYPE_SIZE (P, 0, AUOP->SYM_NODE.SIZE, SIZE_UNITS, BOUNDARY);
+	AUOP->SYM_NODE.SIZE_UNITS = byte (SIZE_UNITS);
+	AUOP->SYM_NODE.BOUNDARY	  = byte (BOUNDARY);
+	AUOP->SYM_NODE.TYPE	  = UP->SYM_NODE.TYPE;
+	call RELEASE_TYPE_NODE (UP->SYM_NODE.TYPE);
+
+	call RELEASE_SYM_NODE (AUO);
+
+	/* Install the dummy anonymous union object symbol */
+
+	call INSTALL_SYMBOL (AUO, UP->SYM_NODE.ENCLOSING_SCOPE);
+
+	/*
+	/* Record the dummy anonymous union symbol
+	/* in the anonymous union tag symbol.
+	/**/
+
+	UP->SYM_NODE.ANON_UNION_OBJECT = AUO;
+
+	INSTALL_ANONYMOUS_UNION_MEMBERS:
+
+	if ^UP->SYM_NODE.IS_AGGREGATE_MEMBER then
+		return;
+
+	/*
+	/* Update the LOCATION field of each anonymous union data member
+	/* symbol if the anonymous union is a non-static member of a class;
+	/* if it is a static member of a class then update its kind and
+	/* storage class.  Also, note the biggest member of the anonymous
+	/* union; this is used in the emission of the default assignment
+	/* operators and copy constructors for the enclosing class (this
+	/* may not be the best way to do this).  Also, reset the access of
+	/* each anonymous union member to that of the current anonoymous union.
+	/**/
+
+	BIGGEST_MEMBER = NULL_NID;
+
+	call GET_SCOPE_NODE_R (UP->SYM_NODE.DEFINED_SCOPE, P);
+	MEMBERS = P->SCOPE_NODE.SYMBOLS;
+	call RELEASE_SCOPE_NODE (UP->SYM_NODE.DEFINED_SCOPE);
+
+	do M = MEMBERS repeat (NEXT_M) while (M ^= NULL_NID);
+		call GET_SYM_NODE_R (M, MP);
+		MP->SYM_NODE.ACCESS = UP->SYM_NODE.ACCESS;
+		if ^MP->SYM_NODE.IS_DATA then
+			goto NEXT_MEMBER;
+		if UP->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST) then do;
+			if BIGGEST_MEMBER ^= NULL_NID then do;
+				if ROUNDU (MP->SYM_NODE.SIZE,
+					   rank (MP->SYM_NODE.SIZE_UNITS),
+					   BYTES)
+				   > SIZEOF_BIGGEST_MEMBER then do;
+					BIGGEST_MEMBER = M;
+					SIZEOF_BIGGEST_MEMBER =
+					ROUNDU (MP->SYM_NODE.SIZE,
+						rank (MP->SYM_NODE.SIZE_UNITS),
+						BYTES);
+				end;
+			end;
+			else do;
+				BIGGEST_MEMBER = M;
+				SIZEOF_BIGGEST_MEMBER =
+				ROUNDU (MP->SYM_NODE.SIZE,
+					rank (MP->SYM_NODE.SIZE_UNITS),
+					BYTES);
+			end;
+			MP->SYM_NODE.LOCATION = UP->SYM_NODE.LOCATION;
+			MP->SYM_NODE.OFFSET_UNITS = UP->SYM_NODE.OFFSET_UNITS;
+		end;
+		else do;
+			MP->SYM_NODE.IS_NON_STATIC_DATA_MEMBER = FALSE;
+			MP->SYM_NODE.STORAGE_CLASS = byte (STATIC_ST);
+		end;
+		NEXT_MEMBER:
+		NEXT_M = MP->SYM_NODE.NEXT_SYMBOL;
+		call RELEASE_SYM_NODE (M);
+	end;
+
+	if UP->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST) then
+		UP->SYM_NODE.ANON_UNION_MEMBER = BIGGEST_MEMBER;
+
+end INSTALL_ANONYMOUS_UNION;
+
+/* ---------------------------------------------------------------------
+/* CHANGE_SYMBOL_NAME
+/*
+/* Change the name of the symbol represented by the given sym-node id
+/* and associated pointer to the name represented by the given token-
+/* node id.  The symbol is *assumed* to be installed; that's why this
+/* routine is necessary -- to remove the symbol from one next-of-name
+/* list and put it on another.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CHANGE_SYMBOL_NAME: procedure (SYMBOL, SYMBOL_PTR, NEW_NAME)
+		    external  (X_CHANGE_SYMBOL_NAME);
+	declare
+		SYMBOL			type (NID_T),
+		SYMBOL_PTR		type (POINTER_T),
+		NEW_NAME		type (NID_T);
+	declare
+		(S, NEXT_S, PREV_S)	type (NID_T),
+		(NAME_PTR, P)		type (POINTER_T);
+
+	if SYMBOL_PTR->SYM_NODE.NAME = NEW_NAME then
+		return;
+	call REMOVE_FROM_NEXT_OF_NAME_LIST (SYMBOL, SYMBOL_PTR);
+
+	/* Change the symbol name */
+
+	SYMBOL_PTR->SYM_NODE.NAME = NEW_NAME;
+
+	/* Place the symbol it on its new next-of-name list */
+
+	if NEW_NAME = NULL_NID then
+		return;
+
+	call GET_TOKEN_NODE (NEW_NAME, NAME_PTR);
+	SYMBOL_PTR->SYM_NODE.NEXT_OF_NAME = NAME_PTR->TOKEN_NODE.ADDRESS;
+	NAME_PTR->TOKEN_NODE.ADDRESS = SYMBOL;
+	call RELEASE_TOKEN_NODE (NEW_NAME);
+
+end CHANGE_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* BEFRIEND_SYMBOL
+/*
+/* Make the given symbol represented by the given sym-node id
+/* FRIEND_SYMBOL, which is assumed to be either a function symbol
+/* or a class (tag) symbol, a friend of the class represented by
+/* the given sym-node id CLASS_SYMBOL, which is assumed to be a
+/* class (tag) symbol.  Preserves current-node-id
+/* ------------------------------------------------------------------- */
+
+BEFRIEND_SYMBOL: procedure (CLASS_SYMBOL, FRIEND_SYMBOL)
+		 external  (X_BEFRIEND_SYMBOL);
+	declare
+		CLASS_SYMBOL	type (NID_T),
+		FRIEND_SYMBOL	type (NID_T);
+	declare
+		CLASS_SYMBOL_PTR	type (POINTER_T),
+		FRIEND_SYMBOL_PTR	type (POINTER_T),
+		BEFRIEND_PTR		type (POINTER_T),
+		FRIEND_PTR		type (POINTER_T),
+		BEFRIEND_NID		type (NID_T),
+		FRIEND_NID		type (NID_T);
+
+	/*
+	/* Record in CLASS_SYMBOL, FRIEND_SYMBOL
+	/* as a friend of CLASS_SYMBOL.
+	/**/
+
+	call NEW_FRIEND_NODE (FRIEND_NID, FRIEND_PTR);
+	FRIEND_PTR->FRIEND_NODE.SYMBOL = FRIEND_SYMBOL;
+	call GET_SYM_NODE (CLASS_SYMBOL, CLASS_SYMBOL_PTR);
+	FRIEND_PTR->FRIEND_NODE.NEXT = CLASS_SYMBOL_PTR->SYM_NODE.FRIENDS;
+	CLASS_SYMBOL_PTR->SYM_NODE.FRIENDS = FRIEND_NID;
+	call RELEASE_SYM_NODE (CLASS_SYMBOL);
+
+	/*
+	/* Record in FRIEND_SYMBOL, CLASS_SYMBOL
+	/* as a befriender of FRIEND_SYMBOL.
+	/**/
+
+	call NEW_FRIEND_NODE (BEFRIEND_NID, BEFRIEND_PTR);
+	BEFRIEND_PTR->FRIEND_NODE.SYMBOL = CLASS_SYMBOL;
+	call GET_SYM_NODE (FRIEND_SYMBOL, FRIEND_SYMBOL_PTR);
+	BEFRIEND_PTR->FRIEND_NODE.NEXT = FRIEND_SYMBOL_PTR->BEFRIENDS;
+	FRIEND_SYMBOL_PTR->SYM_NODE.BEFRIENDS = BEFRIEND_NID;
+	call RELEASE_SYM_NODE (FRIEND_SYMBOL);
+
+end BEFRIEND_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* OVERLOAD_SYMBOL
+/*
+/* Place the symbol represented by the given sym-node id NEW_SYMBOL on
+/* the overload list of the symbol represented by the given sym-node
+/* id SYMBOL.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+OVERLOAD_SYMBOL: procedure (SYMBOL, NEW_SYMBOL)
+		 external  (X_OVERLOAD_SYMBOL);
+	declare
+		SYMBOL		type (NID_T),
+		NEW_SYMBOL	type (NID_T);
+	declare
+		BLOCK		type (NID_T),
+		SYMBOL_PTR	type (POINTER_T),
+		NEW_SYMBOL_PTR	type (POINTER_T),
+		(P, Q)		type (POINTER_T);
+
+	/* Put the new symbol on the overload list of the existing symbol */
+
+	call GET_SYM_NODE_R (SYMBOL, SYMBOL_PTR);
+	call GET_SYM_NODE (NEW_SYMBOL, NEW_SYMBOL_PTR);
+	SYMBOL_PTR->SYM_NODE.OVERLOAD = TRUE;
+	NEW_SYMBOL_PTR->SYM_NODE.OVERLOAD = TRUE;
+	NEW_SYMBOL_PTR->SYM_NODE.NEXT_OVERLOAD =
+		SYMBOL_PTR->SYM_NODE.NEXT_OVERLOAD;
+	SYMBOL_PTR->SYM_NODE.NEXT_OVERLOAD = NEW_SYMBOL;
+
+	/* Set this symbol's enclosing semantic scope, type, and owner */
+
+	NEW_SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE
+		= SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE;
+	NEW_SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_TYPE
+		= SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_TYPE;
+	NEW_SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER
+		= SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+
+	if NEW_SYMBOL_PTR->SYM_NODE.LINKAGE_KIND ^= byte (CXX_LINKAGE) then
+		SYMBOL_PTR->SYM_NODE.C_OVERLOAD = NEW_SYMBOL;
+
+	/*
+	/* +----------------------+
+	/* | BACK-END REQUIREMENT |
+	/* +----------------------+
+	/*
+	/* Link this symbol onto the end of the DCL_LIST of this
+	/* block-node which encloses this symbol. 
+	/**/
+
+	call INSTALL_SYMBOL_IN_BLOCK (NEW_SYMBOL,
+				      NEW_SYMBOL_PTR,
+				      SYMBOL_PTR->SYM_NODE.BLOCK);
+
+	/* Done */
+
+	call RELEASE_SYM_NODE (SYMBOL);
+	call RELEASE_SYM_NODE (NEW_SYMBOL);
+
+end OVERLOAD_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* INSTALL_SYMBOL_IN_BLOCK
+/*
+/* Link the symbol represented by the given sym-node id SYMBOL and
+/* associated pointer SYMBOL_PTR, onto the end of the list of sym-nodes
+/* which hang off of the dcl-list of the block-node represented by the
+/* given block-node id BLOCK.  The symbols are linked in proper declaration
+/* order using the CONTEXT_LIST field of the block-node as a temporary to
+/* refer to the last symbol.  Also, set the given symbol's containing block
+/* to the given block.  Preserves current-node-id.
+/*
+/* N.B. if the given symbol represents an external linkage symbol, then
+/* the value of the given block will be ignored and this routine will
+/* behave as if it the given block represented the outermost (imaginary
+/* block, i.e. referred to by BLOCK_LIST_ID).
+/* ------------------------------------------------------------------- */
+
+INSTALL_SYMBOL_IN_BLOCK: procedure (SYMBOL, SYMBOL_PTR, BLOCK) internal;
+
+	declare
+		SYMBOL		type (NID_T),
+		SYMBOL_PTR	type (POINTER_T),
+		BLOCK		type (NID_T);
+	declare
+		(BP, SP)	type (POINTER_T);
+
+	if SYMBOL_PTR->SYM_NODE.EXTERNAL_LINKAGE then
+		SYMBOL_PTR->SYM_NODE.BLOCK = BLOCK_LIST_ID;
+	else	SYMBOL_PTR->SYM_NODE.BLOCK = BLOCK;
+
+	call GET_BLOCK_NODE (SYMBOL_PTR->SYM_NODE.BLOCK, BP);
+	if BP->BLOCK_NODE.DCL_LIST ^= NULL_NID then do;
+		call GET_SYM_NODE (BP->BLOCK_NODE.CONTEXT_LIST, SP);
+		SP->SYM_NODE.BROTHER = SYMBOL;
+		call RELEASE_SYM_NODE (BP->BLOCK_NODE.CONTEXT_LIST);
+		BP->BLOCK_NODE.CONTEXT_LIST = SYMBOL;
+	end;
+	else do;
+		BP->BLOCK_NODE.DCL_LIST     = SYMBOL;
+		BP->BLOCK_NODE.CONTEXT_LIST = SYMBOL;
+	end;
+	call RELEASE_BLOCK_NODE (SYMBOL_PTR->SYM_NODE.BLOCK);
+
+end INSTALL_SYMBOL_IN_BLOCK;
+
+/* ---------------------------------------------------------------------
+/* MAKE_BACK_END_PARAMETER_LIST
+/*
+/* Create the link-node list of parameter symbols for the function
+/* represented by the currently paged in sym-node id and hang it off
+/* of the function's FIELD1 sym-node id field, but only if FIELD1 is
+/* not NULL_NID.  In addition, if the function was declared as taking
+/* a variable number of arguments (i.e. with ellipsis), declare a
+/* final dummy parameter on the back-end link-node parameter list;
+/* this parameter is used by VA_START.  In this case, return the
+/* sym-node id of this last dummy parameter in the given argument
+/* DUMMY_VA_PARAMETER, and also return the sym-node id of the last
+/* explicitly declared parameter in the given argument LAST_VA_PARAMETER
+/* (if there is none, i.e. the parameter-list is just "(...)", then
+/* return NULL_NID in LAST_VA_PARAMETER).  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MAKE_BACK_END_PARAMETER_LIST: procedure (LAST_VA_PARAMETER,
+					 DUMMY_VA_PARAMETER)
+			      external  (X_MAKE_BACK_END_PARAMETER_LIST);
+	declare
+		LAST_VA_PARAMETER		type (NID_T),
+		DUMMY_VA_PARAMETER		type (NID_T);
+	declare
+		(SP, PP, LP, PREV_LP, Q)	type (POINTER_T),
+		(L, PREV_L, NEXT_L)		type (NID_T),
+		(P, NEXT_P)			type (NID_T),
+		(SU, B)				type (SHORT_T);
+	declare
+		DUMMY_VA_PARAMETER_NAME		type (NID_T)
+						static initial (NULL_NID);
+
+	if DUMMY_VA_PARAMETER_NAME = NULL_NID then do;
+		DUMMY_VA_PARAMETER_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_cxx_va_dummy');
+	end;
+
+	LAST_VA_PARAMETER	= NULL_NID;
+	DUMMY_VA_PARAMETER	= NULL_NID;
+
+	/* See if we've already made the back-end parameter list */
+
+	if SYM_NODE.FIELD1 ^= NULL_NID then do;
+		call GET_SIG_NODE_R (SYM_NODE.TOP_TYPE.SIGNATURE, SP);
+		if ^SP->SIG_NODE.ELLIPSIS then do;
+			call RELEASE_SIG_NODE (SYM_NODE.TOP_TYPE.SIGNATURE);
+			return;
+		end;
+		call RELEASE_SIG_NODE (SYM_NODE.TOP_TYPE.SIGNATURE);
+		PREV_L = NULL_NID;
+		do L = SYM_NODE.FIELD1 repeat (NEXT_L) while (L ^= NULL_NID);
+			call GET_LINK_NODE_R (L, LP);
+			if LP->LINK_NODE.NEXT = NULL_NID then do;
+				DUMMY_VA_PARAMETER = LP->LINK_NODE.VALUE;
+				call RELEASE_LINK_NODE (L);
+				if PREV_L = NULL_NID then
+					return;
+				call GET_LINK_NODE_R (PREV_L, LP);
+				LAST_VA_PARAMETER = LP->LINK_NODE.VALUE;
+				call RELEASE_LINK_NODE (PREV_L);
+				return;
+			end;
+			PREV_L = L;
+			NEXT_L = LP->LINK_NODE.NEXT;
+			call RELEASE_LINK_NODE (L);
+		end;
+		return;
+	end;
+
+	call GET_SIG_NODE_R (SYM_NODE.TOP_TYPE.SIGNATURE, SP);
+
+	PREV_L = NULL_NID;
+
+	do P = SP->SIG_NODE.PARAMETERS repeat (NEXT_P) while (P ^= NULL_NID);
+		call GET_SYM_NODE_R (P, PP);
+		NEXT_P = PP->SYM_NODE.NEXT_PARAMETER;
+		call RELEASE_SYM_NODE (P);
+		call NEW_LINK_NODE (L, LP);
+		LP->LINK_NODE.VALUE = P;
+		LP->LINK_NODE.NEXT  = NULL_NID;
+		if PREV_L ^= NULL_NID then do;
+			PREV_LP->LINK_NODE.NEXT = L;
+			call RELEASE_LINK_NODE (PREV_L);
+		end;
+		else	SYM_NODE.FIELD1 = L;
+		PREV_L = L; PREV_LP = LP;
+	end;
+
+	if PREV_L ^= NULL_NID then
+		call RELEASE_LINK_NODE (PREV_L);
+
+	/*
+	/* For functions declared as taking a variable number of
+	/* arguments, we'll declare one last dummy parameter *only*
+	/* for this back-end specific parameter list.  This dummy
+	/* parameter symbol is used by the the __va_start__ builtin
+	/* (which is called from the va_start macro).  In this case,
+	/* we will also return the sym-node id of this dummy symbol.
+	/**/
+
+	if SP->SIG_NODE.ELLIPSIS then do;
+		call MAKE_SYM_NODE_P (DUMMY_SK | PARAMETER_SK,
+				      DUMMY_VA_PARAMETER,
+				      PP);
+		PP->SYM_NODE.NAME	= DUMMY_VA_PARAMETER_NAME;
+		PP->SYM_NODE.TYPE	= GET_BASIC_TYPE (INT_BT);
+		call GET_TOP_TYPE (PP->SYM_NODE.TYPE, PP->SYM_NODE.TOP_TYPE);
+		call TYPE_SIZE (PP->SYM_NODE.TYPE, PP->SYM_NODE.SIZE, SU, B);
+		PP->SYM_NODE.SIZE_UNITS	= byte (SU);
+		PP->SYM_NODE.BOUNDARY	= byte (B);
+		PP->SYM_NODE.LOCATION	= SP->SIG_NODE.NPARAMETERS + 1;
+		if SYM_NODE.DEFINED_SCOPE ^= NULL_NID then do;
+			call GET_SCOPE_NODE_R (SYM_NODE.DEFINED_SCOPE, Q);
+			call INSTALL_SYMBOL_IN_BLOCK
+			     (DUMMY_VA_PARAMETER, PP, Q->SCOPE_NODE.BLOCK);
+			call RELEASE_SCOPE_NODE (SYM_NODE.DEFINED_SCOPE);
+		end;
+		call RELEASE_SYM_NODE (DUMMY_VA_PARAMETER);
+		call NEW_LINK_NODE (L, LP);
+		LP->LINK_NODE.NEXT  = NULL_NID;
+		LP->LINK_NODE.VALUE = DUMMY_VA_PARAMETER;
+		call RELEASE_LINK_NODE (L);
+		if PREV_L ^= NULL_NID then do;
+			call GET_LINK_NODE (PREV_L, LP);
+			LP->LINK_NODE.NEXT = L;
+			LAST_VA_PARAMETER = LP->LINK_NODE.VALUE;
+			call RELEASE_LINK_NODE (PREV_L);
+		end;
+		else	SYM_NODE.FIELD1 = L;
+	end;
+
+	call RELEASE_SIG_NODE (SYM_NODE.TOP_TYPE.SIGNATURE);
+
+end MAKE_BACK_END_PARAMETER_LIST;
+

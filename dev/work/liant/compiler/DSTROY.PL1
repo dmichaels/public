@@ -1,0 +1,1334 @@
+/* C++ dstroy.pl1 - Support for automatic invocation of destructors */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.15.92  DGM  030  Fix in COMMON_DESTRUCTORS to handle null values.
+ *  05.08.92  PKT  029R	Fixed the previous fix.
+ *  05.05.92  PKT  029R	Fixed destructor call hack for 'this' qualifiers
+ *			in SIG_NODE.
+ *  04.17.92  PKT  029	Fixed COUNT_DOWN_DESTRUCTORS for emitting into
+ *			special (static init and fini) psects.
+ *  03.26.92  DGM  028	New value-node scheme.
+ *  03.26.92  DGM  027	Name change (x_TYPE -> x_TK) for CodeWatch clash.
+ *  01.06.92  PKT  026	Improved destructor access checking.
+ *  09.06.91  DGM  025  Updated MAKE_SYMBOL (obsolete) to MAKE_SYM_NODE.
+ *  07.30.91  TLF  024  Modified to support local static destructors.
+ *  07.08.91  PKT  023  Updated for NOTE_SYMBOL_REFERENCE.
+ *  06.20.91  PKT  022  Fix DESTROY_OBJECT for bit fields.
+ *  06.03.91  PKT  021  Updated in conjunction with support for int::~int.
+ *  05.08.91  PKT  020  Fixed save-exit setup so that SAVE_OP is
+ *			referenced only by EXIT_OP.
+ *  04.18.91  PKT  019  Fixed so destructors can be called for const
+ *			and volatile objects.
+ *  03.20.91  TLF  018  Added call to VALUE_OF in
+ *			EMIT_BRANCH_WITH_DTORS.
+ *  03.05.91  PKT  017  Updated for destructor access fix.
+ *  02.21.91  PKT  016  Updated for member pointers.
+ *  02.01.91  DGM  015  Updated to new global names scheme.
+ *  01.27.91  PKT  014  Updated for member pointers.
+ *  01.23.91  TLF  013  Added call to CHECK_USER_CONVERSION in 
+ *			EMIT_BRANCH_WITH_DTORS.
+ *  12.17.90  PKT  012  Changed the interface to NOTE_DESTRUCTOR.
+ *			Improved access control.
+ *  11.09.90  PKT  011  Updated comment.
+ *  11.01.90  PKT  010  Fixed uninitialized variable bug in DESTROY_OBJECT.
+ *			Updated for strict INITIALIZE_OBJECT.
+ *			Moved VALUE_BEFORE_EFFECT to clsutl.pl1.
+ *  10.24.90  PKT  009  Fix NOTE_DESTRUCTOR short circuit.
+ *  10.18.90  TLF  008  Added call to ADD_TO_GENERATE_LIST in
+ *                      DESTROY_OBJECT.
+ *  10.17.90  PKT  007  Enhancements for base/member initialization;
+ *			Fix to short circuit.
+ *  10.12.90  DGM  006  Short circuit NOTE_DESTRUCTOR for non-tag types.
+ *  09.17.90  PKT  005  Fixes to make operator delete work.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  09.05.90  PKT  003  Support for operator delete.
+ *  08.08.90  DGM  001  New type-node.
+ *  08.07.90  PKT  000  Original.  Extracted from clsutl.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.15.92 030 DSTROY');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_CHECK_ARGUMENT_LIST_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_EMIT_VALUE_TREE_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_RUN_TIME_CALL_PKG;
+%include CXX_CALL_DESTRUCTOR_IN;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_TYPE_CLASS_PKG;
+%include CXX_OVERLOAD_PKG;
+%include CXX_MEMBER_POINTER_PKG;
+%include CXX_MEMBER_VALUE_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+
+/* ---------------------------------------------------------------------
+/* Destructor Utilities
+/*
+/* These are based on the principle that at any given point in the
+/* source code, there are certain active objects.  If any of these
+/* active objects needs to be destroyed at the time it is no longer
+/* active, we keep track of that.  The active life of objects works
+/* nearly in a LIFO manner.
+/* 
+/* We keep a list of active objects using value nodes of the following
+/* kind:
+/*	VOP	DESTROY_VO
+/*	LEFT	expression to call to destroy something
+/*	RIGHT	link to the DESTROY_VO value node for the rest
+/*		of the active objects which need destruction
+/*	ID	the symbol node for the save-exit label
+/*	OFFSET	identifying number for this particular deactivation
+/*		of an object
+/*      NOT_AN_LVALUE
+/*		true if the object is a compiler temporary (does not
+/*		include temps connected with reference initialization)
+/*
+/* The LEFT expression is not value-returning, so keeping its COUNT
+/* at the appropriate value (normally 1) requires a bit of attention.
+/* The LEFT expression needs to be copied before it's stuck onto a
+/* comma expression or emitted.
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* HAS_DESTRUCTOR
+/* ------------------------------------------------------------------- */
+
+HAS_DESTRUCTOR: procedure (TYPE)
+		returns (type (BOOL_T))
+		external (X_HAS_DESTRUCTOR);
+
+	declare TYPE type (NID_T);
+
+	return (DESTRUCTOR_OF_TYPE (TYPE, 0) ^= NULL_NID);
+
+end HAS_DESTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* DESTRUCTOR_OF_TYPE
+/*
+/* If the type represented by the given type-node id has a destructor
+/* (i.e. is a class type or an n-dimensional array of class types),
+/* return the type-node id of the destructor symbol, otherwise,
+/* do nothing and return NULL_NID.  Preserves current-node-id.
+/*
+/* On entry, SKIP_NLEVELS is the number of top type levels of
+/* the type-node to be skipped before being examined.
+/*
+/* On exit, SKIP_NLEVELS indicates the number of top type levels to
+/* be skipped to get to where the destructor was found (i.e. to the
+/* class type).
+/*
+/* Note that SKIP_NLEVELS on input and output will differ iff TRUE is
+/* returned, and the type is an n-dimensional array of classes, in which
+/* case the output value of SKIP_NLEVELS will simply be the sum of the
+/* input SKIP_NLEVELS and the number of array dimensions.
+/* ------------------------------------------------------------------- */
+
+DESTRUCTOR_OF_TYPE: procedure (TYPE, SKIP_NLEVELS)
+		    returns   (type (NID_T))
+		    external  (X_DESTRUCTOR_OF_TYPE);
+	declare
+		TYPE		type (NID_T),
+		SKIP_NLEVELS	type (SHORT_T);
+	declare
+		(TP, SP)	type (POINTER_T),
+		LEVEL		type (SHORT_T),
+		DESTRUCTOR	type (NID_T);
+	
+	if TYPE = NULL_NID then
+		return (NULL_NID);
+
+	call GET_TYPE_NODE_R (TYPE, TP);
+
+	LEVEL = rank (TP->TYPE_NODE.LEVEL) - SKIP_NLEVELS;
+
+	do while ((LEVEL >= 0) &
+		  (TP->TYPE_NODE.TYPE_CODE (LEVEL) = byte (ARRAY_DT)));
+		LEVEL = LEVEL - 1;
+	end;
+
+	if (LEVEL = 0) &
+	   IS_AGGREGATE_TAG_TYPE (rank (TP->TYPE_NODE.TYPE_CODE (0))) then do;
+		call GET_SYM_NODE_R (TP->TYPE_NODE.TYPE_NID (0), SP);
+		DESTRUCTOR = SP->SYM_NODE.DESTRUCTOR;
+		if   DESTRUCTOR = NULL_NID 
+		   & SP->SYM_NODE.NEEDS_DESTRUCTION then
+			call SEMANTIC_ERROR_I (ERR_TODO_GEN_DTOR,
+				SYMBOL_NAME (TP->TYPE_NODE.TYPE_NID (0)));
+		call RELEASE_SYM_NODE (TP->TYPE_NODE.TYPE_NID (0));
+		SKIP_NLEVELS = rank (TP->TYPE_NODE.LEVEL) - LEVEL;
+	end;
+	else	DESTRUCTOR = NULL_NID;
+
+
+	call RELEASE_TYPE_NODE (TYPE);
+	return (DESTRUCTOR);
+
+end DESTRUCTOR_OF_TYPE;
+
+/* ---------------------------------------------------------------------
+/* DESTRUCT
+/*
+/* Given a ref to an object, make an expression that calls the
+/* destructor (virtually, if it's a virtual destructor and 
+/* VIRTUALLY is true).
+/* ------------------------------------------------------------------- */
+
+DESTRUCT: procedure (OBJECT, DESTRUCTOR, VIRTUALLY, DESTROY_VBASES, DELETE)
+	  returns   (type (CXX_VID_T))
+	  internal;
+
+	declare
+		OBJECT		type (CXX_VID_T),
+		DESTRUCTOR	type (NID_T),
+		VIRTUALLY	type (BOOL_T),
+		DESTROY_VBASES	type (BOOL_T),
+		DELETE		type (BOOL_T);
+	declare
+		OBJECT_VAL	type (CXX_VID_T),
+		DOT_VALUE	type (CXX_VID_T),
+		DTOR_SYM	type (POINTER_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		DOT_TYPE_INFO	type (TYPE_INFO_T),
+		ARGS		type (CXX_VID_T),
+		NARGS		type (SHORT_T),
+		DTOR_FLAG	type (LONG_T),
+		CALL_VALUE	type (CXX_VID_T),
+		DTOR_TYPE	type (TYPE_DATA_T),
+		SKIP		type (SHORT_T),
+		VICTIM		type (CXX_VID_T),
+		SAVE_QUALIFIERS	type (BYTE_BITS_T),
+		SIGP		pointer;
+
+	/* Expand to a DOT_STAR_VO operation, the destructor bound to object */
+
+	call SET_SYM_NODE_R (DESTRUCTOR);
+	call GET_SYMBOL_TYPE (TYPE_INFO);
+	DOT_VALUE = GET_SIMPLE_MEMBER_VALUE (DESTRUCTOR);
+	/*
+	/* If the destructor member function is _not_ to work virtually,
+	/* specify so.
+	/**/
+	if ^VIRTUALLY then
+		CXX_VALUE_NODE.OFFSET = 0;
+
+	/*
+	/* Kludge it so it won't be checked again for accessibility,
+	/* and so that it can be called for a const or volatile object.
+	/* -TODO- Add a parameter to MEMBER_FUNCTION_CALL for suppressing
+	/* the const/volatile check, to eliminate this hack.
+	/**/
+	call GET_VALUE_TYPE (DOT_TYPE_INFO);
+	SKIP = DOT_TYPE_INFO.DERIVED_TYPE_SKIP + 1;
+	call GET_TOP_LEVEL_TYPE (DOT_TYPE_INFO.TYPE, SKIP, DTOR_TYPE);
+	call GET_SIG_NODE (DTOR_TYPE.SIGNATURE, SIGP);
+	SAVE_QUALIFIERS = SIGP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS;
+	SIGP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS
+		= SAVE_QUALIFIERS | VOLATILE_TQ | CONST_TQ;
+	DOT_VALUE = ALLOC_CXX_VALUE_NODE_L (CAST_VO, DOT_VALUE);
+	call SET_VALUE_TYPE (DOT_TYPE_INFO);
+
+	/* Form the flags arg. */
+
+	if DESTROY_VBASES then
+		DTOR_FLAG = 0;
+	else	DTOR_FLAG = 2;
+	if DELETE then
+		DTOR_FLAG = DTOR_FLAG + 1;
+	ARGS = GET_VALUE_AND_EXPAND_L
+	       (ARG_VO, INTEGER_VALUE (DTOR_FLAG, INT_BT));
+	NARGS = 1;
+
+	/* OBJECT_VAL is the object for the member function call. */
+	OBJECT_VAL = GET_VALUE_AND_EXPAND_L (VALUE_VO, OBJECT);
+	VICTIM = NULL_CXX_VID;
+	DOT_VALUE = MEMBER_FUNCTION_CALL (DOT_VALUE, OBJECT_VAL, ARGS, NARGS, 
+								 VICTIM);
+
+	/* Restore the destructor symbol's qualifiers. */
+	SIGP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS = SAVE_QUALIFIERS;
+	call RELEASE_SIG_NODE (DTOR_TYPE.SIGNATURE);
+
+        CALL_VALUE = ALLOC_CXX_VALUE_NODE_LR (CALL_VO, DOT_VALUE, ARGS);
+	call STRIP_TOP_TYPE (TYPE_INFO, TRUE);  /* strip the "()" */
+        call SET_VALUE_TYPE (TYPE_INFO);
+        CXX_VALUE_NODE.OFFSET = CHECK_ARG_SAVE (CALL_VALUE); /* arg count */
+	CALL_VALUE = VALUE_BEFORE_EFFECT (CALL_VALUE, VICTIM);
+
+	return (CALL_VALUE);
+
+end DESTRUCT;
+
+/* ---------------------------------------------------------------------
+/* DESTROY_OBJECT
+/*
+/* Make an expression to invoke the destructor for an object.
+/* Returns the valueless expression calling the destructor.
+/*
+/* OBJECT is a ref-op expression for the object to destroy.  It does NOT
+/* get counted up.  The type of destructor called is based on OBJECT.
+/* Virtual destructor dispatch is performed if the type's destructor
+/* is virtual and the object IS_MOST_DERIVED.
+/* It is assumed that the ref is not based on a null pointer, i.e.
+/* full-featured delete is not handled here.
+/*
+/* Normally, the count argument is 0 (NULL_CXX_VID), but if not 0 then
+/* the object is just the first in an array for which the COUNT expression
+/* gives the number of elements.
+/* (Of course, each element may itself be an array.)
+/* If DELETE is TRUE, the OBJECT being destroyed must coincide with
+/* the dynamic storage being deleted.  So this does not handle deleting
+/* an array with destructors.
+/*
+/* DELETE_SYM is the operator delete symbol to use (scope resolved),
+/* usually from global scope but occasionally for an object of a class
+/* with no destructor.  It will be ignored if the object is of a class
+/* with destructor, or if DELETE is false.
+/*
+/* The returned value node id will be 0 if the type of OBJECT
+/* does not require a destructor and deletion is not required.
+/* The destruction expression does not involve CONDITIONAL_VO.
+/* The returned value node is paged in on return.
+/* ------------------------------------------------------------------- */
+
+DESTROY_OBJECT: procedure (OBJECT, COUNT, MOST_DERIVED, DELETE, DELETE_SYM)
+		returns   (type (CXX_VID_T))
+		external  (X_DESTROY_OBJECT);
+	declare
+		OBJECT			type (CXX_VID_T),
+		COUNT			type (CXX_VID_T),
+		MOST_DERIVED		type (TYPE_DATA_T),
+		DELETE			type (BOOL_T),
+		DELETE_SYM		type (NID_T);
+	declare
+		IS_MOST_DERIVED		type (BOOL_T),
+		THIS_TOP_TYPE		type (TYPE_DATA_T),
+		DESTRUCTOR		type (NID_T),
+		DTOR_CLASS_SYM		type (NID_T),
+		NLEVELS_ABOVE_CLASS	type (SHORT_T),
+		SKIP_NLEVELS		type (SHORT_T),
+		MEMBERS			type (LONG_T),
+		NEW_MEMBERS		type (LONG_T),
+		(TP, DP)		type (POINTER_T),
+		TYPE_INFO		type (TYPE_INFO_T),
+		OBJ_TYPE_INFO		type (TYPE_INFO_T),
+		SINGLE			type (BOOL_T),
+		DELETION_DONE		type (BOOL_T),
+		RESULT			type (CXX_VID_T),
+		OBJ_REF			type (CXX_VID_T),
+		OBJ_ADDR		type (CXX_VID_T),
+		(CT, T_VID)		type (CXX_VID_T),
+		DTOR			type (CXX_VID_T),
+		DEL			type (CXX_VID_T),
+		SIZE			type (LONG_T),
+		SIZE_UNITS		type (SHORT_T),
+		BOUNDARY		type (SHORT_T),
+		DTOR_FLAG		type (LONG_T),
+		ARG			type (CXX_VID_T),
+		ARGS			type (CXX_VID_T),
+		SIZE_ARG		type (CXX_VID_T),
+		DTOR_FLAG_ARG		type (CXX_VID_T),
+		TK			type (NID_T),
+		SYM			type (NID_T),
+		SIZE_T_TYPE		type (NID_T),
+		SIZE_T_DATA		type (TYPE_DATA_T),
+		SIZE_T_CODE		type (SHORT_T),
+		SP			pointer,
+		SIG_P			pointer;
+
+	if OBJECT = NULL_CXX_VID then
+		return (NULL_CXX_VID);
+
+	OBJ_REF = COPY_VALUE (OBJECT);
+	call GET_VALUE_TYPE (TYPE_INFO);
+
+	if ^TYPE_INFO.EXTRA_PTR_LEVEL then do;
+		NLEVELS_ABOVE_CLASS = TYPE_INFO.DERIVED_TYPE_SKIP;
+		DESTRUCTOR = DESTRUCTOR_OF_TYPE (TYPE_INFO.TYPE,
+						 NLEVELS_ABOVE_CLASS);
+	end;
+	else	DESTRUCTOR = NULL_NID;
+
+
+	if DESTRUCTOR ^= NULL_NID then do;
+		call NOTE_SYMBOL_REFERENCE (DESTRUCTOR);
+		call GET_TYPE_NODE_R (TYPE_INFO.TYPE, TP);
+
+		MEMBERS = 1;
+
+		do SKIP_NLEVELS = TYPE_INFO.DERIVED_TYPE_SKIP 
+			       to NLEVELS_ABOVE_CLASS;
+			call GET_TOP_LEVEL_TYPE_P (TP, SKIP_NLEVELS, 
+						   THIS_TOP_TYPE);
+			if THIS_TOP_TYPE.CODE ^= byte (ARRAY_DT) then
+				leave;
+			call GET_DIM_NODE_R (THIS_TOP_TYPE.DIMENSION, DP);
+			if ^DP->DIM_NODE.INCOMPLETE then
+				NEW_MEMBERS = MEMBERS * DP->DIM_NODE.VALUE;
+			else
+				NEW_MEMBERS = 0;
+			if NEW_MEMBERS > 0 then
+				MEMBERS = NEW_MEMBERS;
+			else
+				call COMPILER_ERROR (ERR_ASSERT_FAIL);
+			call RELEASE_DIM_NODE (THIS_TOP_TYPE.DIMENSION);
+			CXX_VALUE_NODE_PTR = OBJ_REF;
+			call GET_VALUE_TYPE (OBJ_TYPE_INFO);
+			call STRIP_TOP_TYPE (OBJ_TYPE_INFO, FALSE);
+			call SET_VALUE_TYPE (OBJ_TYPE_INFO);
+		end;
+
+		/*
+		/* The destructor is being called for the most-derived level
+		/* of the object if the most-derived type looks like the object
+		/* type.  There's no reason they should appear different, 
+		/* except in the TAG_SYMBOL of a class.
+		/**/
+
+		if IS_AGGREGATE_TAG_TYPE(rank(MOST_DERIVED.TYPE_CODE)) then
+			DTOR_CLASS_SYM = MOST_DERIVED.TAG_SYMBOL;
+		else
+			DTOR_CLASS_SYM = THIS_TOP_TYPE.TAG_SYMBOL;
+
+		call COUNT_UP_VALUE (OBJ_REF);
+		IS_MOST_DERIVED = (DTOR_CLASS_SYM = CXX_VALUE_NODE.TAG_SYMBOL);
+		OBJ_ADDR = GET_VALUE_AND_EXPAND_L
+			   (IMPLICIT_ADDR_VO,
+			    GET_VALUE_AND_EXPAND_L (VALUE_VO, OBJ_REF));
+
+		CT = COUNT;
+		if CT ^= NULL_CXX_VID then do;
+			if CT->CXX_VALUE_NODE.OP = INTEGER_VO then do;
+				MEMBERS = MEMBERS * CT->CXX_VALUE_NODE.OFFSET;
+				call COUNT_DOWN_VALUE (CT);
+				CT = NULL_CXX_VID;
+			end;
+		end;
+
+		SINGLE = FALSE;
+
+		SIZE_T_TYPE = GET_SIZET_TYPE ();
+		call GET_TOP_TYPE (SIZE_T_TYPE, SIZE_T_DATA);
+		SIZE_T_CODE = rank (SIZE_T_DATA.CODE);
+
+		if CT = NULL_CXX_VID then do;
+			if MEMBERS = 1 then
+				SINGLE = TRUE;
+			else	CT = INTEGER_VALUE (MEMBERS, SIZE_T_CODE);
+		end;
+		else do;
+			CT = CONVERT_VALUE (CT, SIZE_T_CODE);
+			CT = GET_VALUE_AND_EXPAND_LR
+			     (MUL_VO,
+			      CT,
+			      INTEGER_VALUE (MEMBERS, SIZE_T_CODE));
+		end;
+
+		if ^SINGLE then do;
+
+			/* Generate call to vec_destroy */
+
+			call COUNT_UP_VALUE (OBJ_ADDR);
+			call COUNT_DOWN_VALUE (OBJ_REF);
+			DTOR = GET_VALUE_AND_EXPAND_L
+			       (IMPLICIT_ADDR_VO,
+				GET_VALUE_REF_AND_EXPAND (DESTRUCTOR));
+			call ANY_TYPE_SIZE (TP,
+					    NLEVELS_ABOVE_CLASS,
+					    SIZE,
+					    SIZE_UNITS,
+					    BOUNDARY);
+			SIZE = ROUNDU (SIZE, SIZE_UNITS, ADDRESS_UNITS);
+			SIZE_ARG = INTEGER_VALUE (SIZE, SIZE_T_CODE);
+			if IS_MOST_DERIVED then
+				DTOR_FLAG = 0;
+			else	DTOR_FLAG = 2;
+			/* PKT testing a theory: */
+			if ^IS_MOST_DERIVED then
+				call COMPILER_ERROR (ERR_ASSERT_FAIL);
+			if DELETE then
+				DTOR_FLAG = DTOR_FLAG + 1;
+			DTOR_FLAG_ARG = INTEGER_VALUE (DTOR_FLAG, INT_BT);
+			ARGS = RUN_TIME_ARGS (OBJ_ADDR,
+				RUN_TIME_ARGS (SIZE_ARG,
+				 RUN_TIME_ARGS (CT,
+				  RUN_TIME_ARGS (DTOR,
+				   RUN_TIME_ARGS (DTOR_FLAG_ARG,
+				    NULL_CXX_VID)))));
+			RESULT = RUN_TIME_CALL (ARRAY_FINI_NAME, ARGS);
+			DELETION_DONE = FALSE;
+		end;
+		else do;
+			RESULT = DESTRUCT (OBJ_REF, DESTRUCTOR, 
+						    IS_MOST_DERIVED,
+						    IS_MOST_DERIVED, DELETE);
+			DELETION_DONE = TRUE;
+		end;
+		call RELEASE_TYPE_NODE (TYPE_INFO.TYPE);
+	end;
+	else do;
+		/* no destructor */
+		DELETION_DONE = FALSE;
+		RESULT = NULL_CXX_VID;
+		call COUNT_DOWN_VALUE (COUNT);
+		T_VID = GET_VALUE_AND_EXPAND_L (VALUE_VO, OBJ_REF);
+		if rank (T_VID->CXX_VALUE_NODE.SIZE_UNITS) = BITS then do;
+			call COUNT_DOWN_VALUE (T_VID);
+			OBJ_ADDR = NULL_CXX_VID;
+		end;
+		else
+			OBJ_ADDR = GET_VALUE_AND_EXPAND_L
+				   (IMPLICIT_ADDR_VO, T_VID);
+	end;
+	
+
+	if DELETE & ^DELETION_DONE then do;
+		/* Does this delete function take an extra size arg? */
+		call GET_SYM_NODE_R (DELETE_SYM, SP);
+		call GET_SIG_NODE_R (SP->SYM_NODE.TOP_TYPE.SIGNATURE, SIG_P);
+		if SIG_P->SIG_NODE.NPARAMETERS > 1 then do;
+			/* Form the second (size) arg. */
+			call DETERMINE_SIZE (TYPE_INFO);
+			SIZE = ROUNDU (TYPE_INFO.SIZE, TYPE_INFO.SIZE_UNITS,
+						       ADDRESS_UNITS);
+			ARG = INTEGER_VALUE (SIZE, 0);
+			ARGS = GET_VALUE_AND_EXPAND_L (ARG_VO, ARG);
+		end;
+		else
+			ARGS = NULL_CXX_VID;
+		call RELEASE_SIG_NODE (SP->SYM_NODE.TOP_TYPE.SIGNATURE);
+		call RELEASE_SYM_NODE (DELETE_SYM);
+
+		/* Form an argument that's the address of the object.*/
+		ARGS = GET_VALUE_AND_EXPAND_LR (ARG_VO, OBJ_ADDR, ARGS);
+
+		/* Form call to the function delete. */
+		DEL = GET_VALUE_AND_EXPAND_LR
+		      (CALL_FUNCTION_VO,
+		       GET_VALUE_REF_AND_EXPAND (DELETE_SYM),
+		       ARGS);
+
+		/* Combine destructor with delete. */
+		RESULT = CONCATENATE_STATEMENTS (RESULT, DEL);
+	end;
+	else
+		call COUNT_DOWN_VALUE (OBJ_ADDR);
+
+	return (RESULT);
+
+end DESTROY_OBJECT;
+
+/* ---------------------------------------------------------------------
+/* NOTE_CURRENT_DESTRUCTOR
+/*
+/* Call NOTE_DESTRUCTOR to handle a destructor for CURRENT_SYMBOL
+/* in CURRENT_SCOPE.
+/*
+/* Preserves CURRENT_NODE_ID.
+/* ------------------------------------------------------------------- */
+
+NOTE_CURRENT_DESTRUCTOR: procedure
+			 external (X_NOTE_CURRENT_DESTRUCTOR);
+
+	declare
+		P		type (POINTER_T),
+		TYPE_CODE	type (SHORT_T),
+		TOP_TYPE	type (TYPE_DATA_T),
+		DTOR_EXPRESSION	type (CXX_VID_T),
+		OBJECT		type (CXX_VID_T),
+		WORK_SCOPE	type (NID_T),
+		WORK_NID	type (NID_T),
+		WORK_VID	type (CXX_VID_T),
+		SNID		type (SNID_T),
+		NLEVELS_ABOVE_CLASS
+				type (SHORT_T),
+		DESTRUCTOR	type (NID_T);
+
+	OBJECT = GET_REF_AND_EXPAND (CURRENT_SYMBOL);
+
+	/* This test may speed things up a bit. */
+
+	TYPE_CODE = rank (OBJECT->CXX_VALUE_NODE.TOP_TYPE.CODE);
+
+	if (IS_AGGREGATE_TAG_TYPE (TYPE_CODE) | (TYPE_CODE = ARRAY_DT)) then do;
+
+		TOP_TYPE = OBJECT->CXX_VALUE_NODE.TOP_TYPE;
+
+		call SAVE_NODE (SNID);
+
+		/* Check access to destructor. */
+		NLEVELS_ABOVE_CLASS = OBJECT->CXX_VALUE_NODE.DERIVED_TYPE_SKIP;
+		DESTRUCTOR = DESTRUCTOR_OF_TYPE ((OBJECT->CXX_VALUE_NODE.TYPE),
+						 NLEVELS_ABOVE_CLASS);
+		if DESTRUCTOR ^= NULL_NID then do;
+			call GET_SYM_NODE_R (DESTRUCTOR, P);
+			if ^IS_ACCESSIBLE (DESTRUCTOR,
+			     		P->SYM_NODE.ENCLOSING_SCOPE_OWNER) then
+				call SEMANTIC_ERROR_I (ERR_PRIV_DTOR, 
+					FULL_SYMBOL_NAME (DESTRUCTOR));
+			call RELEASE_SYM_NODE (DESTRUCTOR);
+		end;
+
+		DTOR_EXPRESSION = DESTROY_OBJECT (OBJECT,
+						  NULL_CXX_VID,
+						  TOP_TYPE,
+						  FALSE,
+						  NULL_NID);
+		WORK_SCOPE = CURRENT_SCOPE;
+		WORK_VID = NULL_CXX_VID;
+		
+		/* If a destructor is needed, and we are not at global
+		/* scope, check to see if this is a static object.
+		/**/
+		if DTOR_EXPRESSION ^= NULL_CXX_VID 
+		  & CURRENT_SCOPE_TYPE ^= GLOBAL_SCOPE then do;
+			call GET_SYM_NODE (CURRENT_SYMBOL, P);
+			if rank(P->SYM_NODE.STORAGE_CLASS) = STATIC_ST then do;
+				/* This is a static object.  Make a flag
+				/* to indicate constructed or not.
+				/**/
+				WORK_SCOPE = CURRENT_GLOBAL_SCOPE;
+				WORK_NID = MAKE_FIRST_TIME_FLAG (CURRENT_SYMBOL,
+								 TRUE);
+				P->SYM_NODE.OBJ_CONSTRUCTED_ID = WORK_NID;
+				WORK_VID = GET_VALUE_REF_AND_EXPAND (WORK_NID);
+			end;
+			call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+		end;
+			
+		call GET_SCOPE_NODE (WORK_SCOPE, P);
+		call NOTE_DESTRUCTOR (P->SCOPE_NODE.DESTRUCTORS, 
+				      DTOR_EXPRESSION, FALSE, WORK_VID);
+		call RELEASE_SCOPE_NODE (WORK_SCOPE);
+		call RESTORE_NODE (SNID);
+	end;
+	else
+		call COUNT_DOWN_VALUE (OBJECT);
+
+
+end NOTE_CURRENT_DESTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* NOTE_DESTRUCTOR
+/*
+/* Note a DTOR_EXPRESSION to call at the end of the current scope.  If a
+/* destructor is needed for the class, link this new expression on
+/* to the head of the list.
+/* Calls DESTROY_OBJECT.  Bumps DESTRUCTOR_COUNT.
+/*
+/* IS_TEMP is set if the object is a compiler temp, i.e. if it should
+/* be destroyed prior to processing a label or nontrivial declaration.
+/* Thus, it should be FALSE for temps created in connection with 
+/* initializing reference variables.
+/*
+/* FLAG_VID is the vid of a ref-val of a global compiler-generated symbol 
+/* that is used to indicate whether this particular object has ever been 
+/* constructed. FLAG_VID is NULL_CXX_VID for all objects that are not static
+/* local objects.
+/*
+/* Since this modifies LIST, make sure it's tied down in memory!!
+/* ------------------------------------------------------------------- */
+
+NOTE_DESTRUCTOR: procedure (LIST, DTOR_EXPRESSION, IS_TEMP, FLAG_VID)
+		 external (X_NOTE_DESTRUCTOR);
+
+	declare
+		LIST		type (CXX_VID_T),
+		DTOR_EXPRESSION	type (CXX_VID_T),
+		IS_TEMP		type (BOOL_T),
+		FLAG_VID	type (CXX_VID_T);
+	declare
+		DTOR_COUNT	type (LONG_T) static internal initial (0);
+
+	if DTOR_EXPRESSION ^= NULL_CXX_VID then do;
+		LIST = ALLOC_CXX_VALUE_NODE_LR
+		       (DESTROY_VO, DTOR_EXPRESSION, LIST);
+		call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+		DTOR_COUNT = DTOR_COUNT + 1;
+		LIST->CXX_VALUE_NODE.THIRD = FLAG_VID;
+		LIST->CXX_VALUE_NODE.OFFSET = DTOR_COUNT;
+		LIST->CXX_VALUE_NODE.ID_NID = DECLARE_LABEL (NULL_NID);
+		LIST->CXX_VALUE_NODE.ID_IS_NID = TRUE;
+		LIST->CXX_VALUE_NODE.NOT_AN_LVALUE = IS_TEMP;
+	end;
+
+end NOTE_DESTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* DESTROY_DIFFERENCE
+/* Generate an expression calling all of the destructors in SRC
+/* which do not exist at DEST. 
+/*
+/* Uses (counts down) its arguments.
+/*
+/* One situation in which it can arise that DEST is not a subset
+/* of SRC is with the branches of an if statement.
+/* If there are zombie temps around when entering the if,
+/* and the statement of one of the branches is a declaration,
+/* then the temps will be flushed on that branch while the
+/* declaration and associated destructors are pushed onto that
+/* branch's destructor stack.
+/* ------------------------------------------------------------------- */
+
+DESTROY_DIFFERENCE: procedure (SRC, DEST)
+		    returns (type (CXX_VID_T))
+		    external (X_DESTROY_DIFFERENCE);
+
+	declare
+		SRC		type (CXX_VID_T),
+		DEST		type (CXX_VID_T);
+
+	declare
+		REMAINING_SRC	type (CXX_VID_T),
+		REMAINING_DEST	type (CXX_VID_T),
+		NEXT_DEST	type (CXX_VID_T),
+		DESTROYING_EXPR	type (CXX_VID_T),
+		DEST_OFFSET	type (LONG_T),
+		VICTIM		type (CXX_VID_T);
+
+	/* This would be tricky if destructors were not
+	/* necessarily LIFO on a destructor list.  It's possible
+	/* that some destructors for temporaries will be removed
+	/* from the list, but I think I'll handle that with two
+	/* destructor lists.
+	/**/
+
+	REMAINING_SRC = SRC;
+	REMAINING_DEST = DEST;
+	DESTROYING_EXPR = NULL_CXX_VID;
+	
+	do while ((REMAINING_SRC ^= REMAINING_DEST) &
+		  (REMAINING_SRC ^= NULL_CXX_VID));
+
+		if REMAINING_DEST ^= NULL_CXX_VID then do;
+			DEST_OFFSET = REMAINING_DEST->CXX_VALUE_NODE.OFFSET;
+			NEXT_DEST = REMAINING_DEST->CXX_VALUE_NODE.RIGHT;
+		end;
+		else	DEST_OFFSET = 0;
+
+		if REMAINING_SRC->CXX_VALUE_NODE.OFFSET > DEST_OFFSET then do;
+			/* SRC object is not on DEST list */
+			VICTIM = GET_BRANCH_SAVE_AND_EXPAND
+				 (REMAINING_SRC->CXX_VALUE_NODE.ID_NID);
+			DESTROYING_EXPR = CONCATENATE_STATEMENTS
+					  (DESTROYING_EXPR, VICTIM);
+			REMAINING_SRC = REMAINING_SRC->CXX_VALUE_NODE.RIGHT;
+		end;
+		else	REMAINING_DEST = NEXT_DEST;
+	end;
+
+	call COUNT_DOWN_VALUE (SRC);
+	call COUNT_DOWN_VALUE (DEST);
+
+	return (DESTROYING_EXPR);
+
+end DESTROY_DIFFERENCE;
+
+/* ---------------------------------------------------------------------
+/* FLUSH_TEMPORARIES
+/* Flush destructor expressions for temporaries in the CURRENT_SCOPE,
+/* emitting the code to destroy those temporaries.
+/* ------------------------------------------------------------------- */
+
+FLUSH_TEMPORARIES: procedure
+		   external (X_FLUSH_TEMPORARIES);
+
+	declare
+		ORIG		type (CXX_VID_T),
+		NON_TEMP	type (CXX_VID_T),
+		LIST		type (CXX_VID_T),
+		V		type (CXX_VID_T),
+		SP		type (POINTER_T),
+		ENCLOSING_SCOPE	type (NID_T),
+		DTORS_OF_ENCLOSING
+				type (CXX_VID_T),
+		ESP		type (POINTER_T);
+
+	if ^( CURRENT_SCOPE_TYPE = FUNCTION_SCOPE
+	    | CURRENT_SCOPE_TYPE = BLOCK_SCOPE) then
+		return;	
+
+	call GET_SCOPE_NODE (CURRENT_SCOPE, SP);
+
+	/* Find the next on the list that's a non-temp or not in
+	/* the current scope. */
+	ENCLOSING_SCOPE = SP->SCOPE_NODE.ENCLOSING_SCOPE;
+	if ENCLOSING_SCOPE = NULL_NID then
+		DTORS_OF_ENCLOSING = NULL_CXX_VID;
+	else do;
+		call GET_SCOPE_NODE_R (ENCLOSING_SCOPE, ESP);
+		DTORS_OF_ENCLOSING = ESP->SCOPE_NODE.DESTRUCTORS;
+		call RELEASE_SCOPE_NODE (ENCLOSING_SCOPE);
+	end;
+
+	ORIG = SP->SCOPE_NODE.DESTRUCTORS;
+	LIST = ORIG;
+	NON_TEMP = NULL_CXX_VID;
+	do while (LIST ^= NULL_CXX_VID & NON_TEMP = NULL_CXX_VID);
+		if ^LIST->CXX_VALUE_NODE.NOT_AN_LVALUE |
+		   (LIST = DTORS_OF_ENCLOSING) then
+			NON_TEMP = LIST;
+		LIST = LIST->CXX_VALUE_NODE.RIGHT;
+	end;
+
+	if NON_TEMP ^= ORIG then do;
+		/* Emit the destruction expressions. */
+		call COUNT_UP_VALUE (ORIG);
+		call COUNT_UP_VALUE (NON_TEMP);
+		call EMIT_STATEMENT (DESTROY_DIFFERENCE (ORIG, NON_TEMP));
+
+		/* Scratch the destructors from the scope's list */
+		call COUNT_UP_VALUE (NON_TEMP);
+		call COUNT_DOWN_DESTRUCTORS (ORIG);
+		SP->SCOPE_NODE.DESTRUCTORS = NON_TEMP;
+	end;
+
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+end FLUSH_TEMPORARIES;
+
+/* ---------------------------------------------------------------------
+/* EMIT_BRANCH_WITH_DTORS
+/* 
+/* Call this with one of the branch VOPs, a label value, and an expression
+/* value, just like EMIT (BRANCH_XXX_VOP, LABEL, EXPR).  The extra argument
+/* is DTORS, determining destruction side-effects which should take place only
+/* if the branch is taken.  
+/*
+/* This was originally EMIT_BRANCH_WITH_EFFECT.  But then I realized
+/* that EXPR might get converted, and the conversion might produced
+/* the need for more destruction.  So instead of passing this routine
+/* a fixed effect, it gets passed the target destructors, which are
+/* NOT counted down, and it destroys the difference between the
+/* current and target destructors.
+/*
+/* Returns whether the branch takes place, using the codes
+/* YES_YES, NO_NO, and MAYBE.
+/*
+/* Uses (counts down) the DTORS.
+/* ------------------------------------------------------------------- */
+
+EMIT_BRANCH_VALUE_WITH_DTORS: procedure (VOP, LABEL, EXPR, DTORS)
+			      returns   (type (SHORT_T))
+			      external  (X_EMIT_BRANCH_VALUE_WITH_DTORS);
+
+	declare
+		VOP		type (SHORT_T),
+		LABEL		type (CXX_VID_T),
+		EXPR		type (CXX_VID_T),
+		DTORS		type (CXX_VID_T);
+
+	declare BRANCH_INVERSE		(LB_BRANCH_VO : HB_BRANCH_VO)
+					type (SHORT_T) static initial (
+
+		/* BRANCH_VO		*/	  0
+		/* BRANCH_EQ_VO	*/	, BRANCH_NE_VO
+		/* BRANCH_GE_VO	*/	, BRANCH_LT_VO
+		/* BRANCH_LE_VO	*/	, BRANCH_GT_VO
+		/* BRANCH_NE_VO	*/	, BRANCH_EQ_VO
+		/* BRANCH_LT_VO	*/	, BRANCH_GE_VO
+		/* BRANCH_GT_VO	*/	, BRANCH_LE_VO
+		/* BRANCH_TRUE_VO	*/	, BRANCH_FALSE_VO
+		/* BRANCH_FALSE_VO	*/	, BRANCH_TRUE_VO
+		/* BRANCH_COMPUTED_VO	*/	, 0
+		/* BRANCH_SWITCH_VO	*/	, 0
+		/* BRANCH_SAVE_VO	*/	, 0
+									);
+
+	declare
+		INVERSE		type (SHORT_T),
+		SKIP_LABEL	type (CXX_VID_T),
+		EFFECT		type (CXX_VID_T),
+		RESULT		type (SHORT_T),
+		V		type (CXX_VID_T);
+
+	/* Convert the expression right away, because destructors
+	/* may be involved in the conversion.  Then figure just
+	/* what destruction effect is involved in the branch.
+	/**/
+	if VOP = BRANCH_FALSE_VO | VOP = BRANCH_TRUE_VO then do;
+		EXPR = VALUE_OF (EXPR);
+		EXPR = CHECK_USER_CONVERSION (EXPR, ARITHORPTR_TK, NULL_NID);
+	        EXPR = CONVERT_VALUE (EXPR, LOGICAL_BT);
+	end;
+	EFFECT = DESTROY_DIFFERENCE (CURRENT_DESTRUCTORS (), DTORS);
+
+	if EFFECT = NULL_CXX_VID then do;
+		/* nothing special here */
+		V = GET_VALUE_AND_EXPAND_LR (VOP, LABEL, EXPR);
+		if V = NULL_CXX_VID then
+			RESULT = NO_NO;
+		else if V->CXX_VALUE_NODE.OP = BRANCH_VO then
+			RESULT = YES_YES;
+		else	RESULT = MAYBE;
+		call EMIT_STATEMENT (V);
+		return (RESULT);
+	end;
+
+	INVERSE = BRANCH_INVERSE (VOP);
+	if INVERSE ^= 0 then do;
+		/* Emit code to skip around destroy and branch. */
+		SKIP_LABEL = GET_VALUE_AND_EXPAND (DECLARE_LABEL_VO);
+		call COUNT_UP_VALUE (SKIP_LABEL);
+		V = GET_VALUE_AND_EXPAND_LR (INVERSE, SKIP_LABEL, EXPR);
+		if V->CXX_VALUE_NODE.OP = BRANCH_VO then do;
+			/* always skip ==> never destroy & branch */
+			RESULT = NO_NO;
+			call COUNT_DOWN_VALUE (V);
+			call COUNT_DOWN_VALUE (EFFECT);
+			call COUNT_DOWN_VALUE (LABEL);
+			call COUNT_DOWN_VALUE (SKIP_LABEL);
+		end;
+		else do;
+			if V = NULL_CXX_VID then
+				RESULT = YES_YES;
+			else
+				RESULT = MAYBE;
+			call EMIT_STATEMENT (V); /* the skip */
+
+			call EMIT_STATEMENT (EFFECT);
+			call EMIT_STATEMENT
+			     (GET_VALUE_AND_EXPAND_L (BRANCH_VO, LABEL));
+			call EMIT_STATEMENT
+			     (GET_VALUE_AND_EXPAND_L (LABEL_VO, SKIP_LABEL));
+		end;
+	end;
+	else do;
+		/* The VOP is plain branch. */
+		RESULT = YES_YES;
+		call COUNT_DOWN_VALUE (EXPR);
+		call EMIT_STATEMENT (EFFECT);
+		call EMIT_STATEMENT
+		     (GET_VALUE_AND_EXPAND_L (BRANCH_VO, LABEL));
+	end;
+	return (RESULT);
+
+end EMIT_BRANCH_VALUE_WITH_DTORS;
+
+/* ---------------------------------------------------------------------
+/* EMIT_BRANCH_WITH_DTORS
+/* 
+/* Exactly like EMIT_BRANCH_WITH_DTORS called with BRANCH_VO and a
+/* LABEL which is a sym-node id representing the label symbol rather
+/* than on which is a value-node representing a declare-label value-node
+/* ------------------------------------------------------------------- */
+
+EMIT_BRANCH_WITH_DTORS: procedure (LABEL_SYMBOL, DTORS)
+			       returns   (type (SHORT_T))
+			       external  (X_EMIT_BRANCH_WITH_DTORS);
+	declare
+		LABEL_SYMBOL	type (NID_T),
+		DTORS		type (CXX_VID_T);
+	declare
+		EFFECT		type (CXX_VID_T);
+
+	EFFECT = DESTROY_DIFFERENCE (CURRENT_DESTRUCTORS (), DTORS);
+	if EFFECT ^= NULL_CXX_VID then
+		call EMIT_STATEMENT (EFFECT);
+	call EMIT_STATEMENT (GET_BRANCH_REF_AND_EXPAND (LABEL_SYMBOL));
+	return (YES_YES);
+
+end EMIT_BRANCH_WITH_DTORS;
+
+/* ---------------------------------------------------------------------
+/* EMIT_BRANCH_BETWEEN_DTORS
+/* 
+/* Call to branch unconditionally from one set of destructors to a
+/* smaller, contained set. 
+/*
+/* Uses (counts down) two DTORS.
+/* ------------------------------------------------------------------- */
+
+EMIT_BRANCH_BETWEEN_DTORS: procedure (LABEL, DEST_DTORS, SRC_DTORS)
+			   external (X_EMIT_BRANCH_BETWEEN_DTORS);
+
+	declare
+		LABEL		type (NID_T),
+		DEST_DTORS	type (CXX_VID_T),
+		SRC_DTORS	type (CXX_VID_T);
+
+	call EMIT_STATEMENT (DESTROY_DIFFERENCE (SRC_DTORS, DEST_DTORS));
+	call EMIT_STATEMENT (GET_BRANCH_REF_AND_EXPAND (LABEL));
+
+end EMIT_BRANCH_BETWEEN_DTORS;
+
+/* ---------------------------------------------------------------------
+/* CURRENT_DESTRUCTORS
+/* 
+/* Returns the destructors for the currently live objects in the current
+/* scope and all outer scopes.  The destructors node is counted up.
+/* ------------------------------------------------------------------- */
+
+CURRENT_DESTRUCTORS: procedure
+		     returns (type (CXX_VID_T))
+		     external (X_CURRENT_DESTRUCTORS);
+
+	declare
+		SCOPE_P		pointer,
+		DTORS		type (CXX_VID_T);
+	
+	call GET_SCOPE_NODE (CURRENT_SCOPE, SCOPE_P);
+	DTORS = SCOPE_P->SCOPE_NODE.DESTRUCTORS;
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+	call COUNT_UP_VALUE (DTORS);
+	return (DTORS);
+
+end CURRENT_DESTRUCTORS;
+	
+/* ---------------------------------------------------------------------
+/* COUNT_DOWN_DESTRUCTORS
+/*
+/* Count down the given DESTROY_VO value node, and if it is about
+/* to terminate, emit its destructor as a save-exit routine.
+/* ------------------------------------------------------------------- */
+COUNT_DOWN_DESTRUCTORS: procedure (V)
+			external (X_COUNT_DOWN_DESTRUCTORS);
+
+	declare
+		V		type (CXX_VID_T);
+
+	declare
+		SKIP		type (CXX_VID_T),
+		VICTIM		type (CXX_VID_T),
+		TEST_SKIP	type (CXX_VID_T),
+		MORE		type (BOOL_T),
+		E		type (CXX_VID_T),
+		OBJ_CONSTRUCTED type (CXX_VID_T),
+		VOID_OID	type (OID_T),
+		SAVE_VID	type (CXX_VID_T),
+		EXIT_VID	type (CXX_VID_T);
+
+	if V = NULL_CXX_VID then
+		return;
+
+	if V->CXX_VALUE_NODE.COUNT = 1 then do;
+		/* Emit branch around the branch-save routines. */
+		SKIP = GET_VALUE_AND_EXPAND (DECLARE_LABEL_VO);
+		call COUNT_UP_VALUE (SKIP);
+		call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L (BRANCH_VO, SKIP));
+
+		VICTIM = V;
+		do until (^MORE);
+			/* Emit label to save-exit routine. */
+			call EMIT_STATEMENT
+			     (GET_LABEL_REF_AND_EXPAND
+			      (VICTIM->CXX_VALUE_NODE.ID_NID));
+
+			/* Emit save-exit routine. */
+			E = VICTIM->CXX_VALUE_NODE.LEFT;
+			OBJ_CONSTRUCTED = VICTIM->CXX_VALUE_NODE.THIRD;
+			VICTIM->CXX_VALUE_NODE.LEFT = NULL_CXX_VID;
+			VICTIM->CXX_VALUE_NODE.THIRD = NULL_CXX_VID;
+
+			if OBJ_CONSTRUCTED ^= NULL_CXX_VID then
+				E = OBJ_CONSTRUCTED_TEST (OBJ_CONSTRUCTED, E);
+
+			SAVE_VID = GET_VALUE_AND_EXPAND (SAVE_VO);
+			EXIT_VID = GET_VALUE_AND_EXPAND_LR
+				   (EXIT_VO, SAVE_VID, E);
+
+			call EMIT_STATEMENT (EXIT_VID);
+
+			if VICTIM->CXX_VALUE_NODE.RIGHT = NULL_CXX_VID then 
+				MORE = FALSE;
+			else do;
+				VICTIM = VICTIM->CXX_VALUE_NODE.RIGHT;
+				MORE = (VICTIM->CXX_VALUE_NODE.COUNT = 1);
+			end;
+		end;
+
+		/* Define label for skipping around the above-emitted code. */
+		call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L (LABEL_VO, SKIP));
+	end;
+
+	call COUNT_DOWN_VALUE (V);
+
+end COUNT_DOWN_DESTRUCTORS;
+
+/* --------------------------------------------------------------------- 
+/* RELEASE_FUNCTION_DTORS
+/* 
+/* At exit from a function, release the destruction expressions,
+/* and those of the labels contained in the function.
+/* ------------------------------------------------------------------- */
+RELEASE_FUNCTION_DTORS: procedure
+			external (X_RELEASE_FUNCTION_DTORS);
+
+	declare
+		SP		pointer,
+		LP		pointer,
+		FP		pointer,
+		THIS_LABEL	type (NID_T),
+		NEXT_LABEL	type (NID_T);
+
+	call GET_SCOPE_NODE (CURRENT_FUNCTION_SCOPE, SP);
+
+	/* Set up to traverse the function's list of label symbols. */
+	call GET_SYM_NODE_R (SP->SCOPE_NODE.OWNER, FP);
+	NEXT_LABEL = FP->SYM_NODE.FIRST_LABEL;
+	call RELEASE_SYM_NODE (SP->SCOPE_NODE.OWNER);
+
+	do while (NEXT_LABEL ^= NULL_NID);
+		THIS_LABEL = NEXT_LABEL;
+		call GET_SYM_NODE (THIS_LABEL, LP);
+
+		/* Free the label's destructors. */
+		call COUNT_DOWN_DESTRUCTORS (LP->SYM_NODE.DESTRUCTORS);
+		LP->SYM_NODE.DESTRUCTORS = NULL_CXX_VID;
+
+		NEXT_LABEL = LP->SYM_NODE.NEXT_LABEL;
+		call RELEASE_SYM_NODE (THIS_LABEL);
+	end;
+
+	/* No more need for the function's destructor expressions. */
+	call COUNT_DOWN_DESTRUCTORS (SP->SCOPE_NODE.DESTRUCTORS);
+	SP->SCOPE_NODE.DESTRUCTORS = NULL_CXX_VID;
+
+	call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+
+end RELEASE_FUNCTION_DTORS;
+
+/* ---------------------------------------------------------------------
+/* POP_DESTRUCTORS
+/* 
+/* Resets the stack of currently live objects in the current scope
+/* to the given stack top.  Calls COUNT_DOWN_DESTRUCTORS for
+/* the currently live objects, which may cause emission of the save-exit
+/* routines for those objects which are leaving the stack.
+/*
+/* Uses (eventually counts down) the new stack top indicator.
+/* ------------------------------------------------------------------- */
+
+POP_DESTRUCTORS: procedure (NEW_TOP)
+		 external (X_POP_DESTRUCTORS);
+
+	declare
+		NEW_TOP		type (CXX_VID_T);
+	declare
+		SCOPE_P		pointer;
+	
+	call GET_SCOPE_NODE (CURRENT_SCOPE, SCOPE_P);
+	call COUNT_DOWN_DESTRUCTORS (SCOPE_P->SCOPE_NODE.DESTRUCTORS);
+	SCOPE_P->SCOPE_NODE.DESTRUCTORS = NEW_TOP;
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+end POP_DESTRUCTORS;
+
+/* ---------------------------------------------------------------------
+/* COMMON_DESTRUCTORS
+/*
+/* Given two DESTROY_VO expressions (i.e. lists of destruction
+/* expressions), return the common part of the two.
+/* Uses (counts down) its arguments;
+/* returns with one count on its result.
+/* ------------------------------------------------------------------- */
+
+COMMON_DESTRUCTORS: procedure (DTOR1, DTOR2)
+		    returns (type (CXX_VID_T))
+		    external (X_COMMON_DESTRUCTORS);
+
+	declare
+		DTOR1		type (CXX_VID_T),
+		DTOR2		type (CXX_VID_T);
+	declare
+		D1		type (CXX_VID_T),
+		D2		type (CXX_VID_T);
+
+	if DTOR1 = NULL_CXX_VID then do;
+		if DTOR2 ^= NULL_CXX_VID then
+			call COUNT_DOWN_VALUE (DTOR2);
+		return (NULL_CXX_VID);
+	end;
+	else if DTOR2 = NULL_CXX_VID then do;
+		if DTOR1 ^= NULL_CXX_VID then
+			call COUNT_DOWN_VALUE (DTOR1);
+		return (NULL_CXX_VID);
+	end;
+	
+	D1 = DTOR1; D2 = DTOR2;
+
+	do while (D1 ^= D2);
+		if D1->CXX_VALUE_NODE.OFFSET < D2->CXX_VALUE_NODE.OFFSET then
+			D2 = D2->CXX_VALUE_NODE.RIGHT;
+		else	D1 = D1->CXX_VALUE_NODE.RIGHT;
+	end;
+
+	call COUNT_UP_VALUE (D1);
+	call COUNT_DOWN_VALUE (DTOR1);
+	call COUNT_DOWN_VALUE (DTOR2);
+
+	return (D1);
+
+end COMMON_DESTRUCTORS;
+
+/*-------------------------------------------------------------------------
+/* OBJ_CONSTRUCTED_TEST
+/*
+/* Emit operators that test the flag used to indicate whether a
+/* static object was ever constructed or not.
+/* FLAG_VID is the value id of the first-time flag variable,
+/* which is assumed to be of INT_BT type, and is also assumed to
+/* have an initial value of 0, indicating 'first-time'.
+/* Code is returned which executes the given statement
+/* depending on whether the flag has been set.
+/*--------------------------------------------------------------------------*/
+ 
+OBJ_CONSTRUCTED_TEST: procedure (FLAG_VID, STMT_VID)
+                      returns   (type (CXX_VID_T))
+		      internal;
+
+	declare
+		FLAG_VID	type (CXX_VID_T),
+		STMT_VID	type (CXX_VID_T);
+ 
+	declare
+		V		type (CXX_VID_T);
+
+	/* FLAG_VID ? STMT_VID : NULL_CXX_VID */
+	V = GET_VALUE_AND_EXPAND_LR (COLON_VO, 
+				     STMT_VID, 
+			             GET_CONSTRUCTOR_VALUE (GET_VOID_TYPE (),
+						            NULL_CXX_VID,
+						            NULL_NID,
+						            IMPLICIT_CAST_VO));
+	V = GET_VALUE_AND_EXPAND_LR (CONDITIONAL_VO, FLAG_VID, V);
+	/* Clear up UNINITIALIZED_VO. */
+	V = INITIALIZE_OBJECT (NULL_CXX_VID, V);
+
+	return (V);
+
+end OBJ_CONSTRUCTED_TEST;
+
+
+/*---------------------------------------------------------------------
+/*
+/* MAKE_FIRST_TIME_FLAG
+/*
+/* Make a symbol_node for a first-time flag to be used in the initialization
+/* of a non-global scope static variable that has a non-constant initializer,
+/* or for a static class object.
+/* If the first time flag is being made for a static class object, then
+/* IN_GLOBAL_SCOPE is TRUE, and the first time flag is placed into 
+/* the global scope.
+/*
+/* Note that this procedure is also called from parini.pl1.
+/*-----------------------------------------------------------------------*/
+
+MAKE_FIRST_TIME_FLAG: procedure (SYMBOL, IN_GLOBAL_SCOPE)
+		      returns (type (NID_T))
+		      external (X_MAKE_FIRST_TIME_FLAG);
+	declare
+		SYMBOL			type (NID_T),
+		IN_GLOBAL_SCOPE 	type (BOOL_T);
+
+	declare
+		WORK_SYMBOL	type (NID_T),
+		WORK_SCOPE 	type (NID_T),
+		THIS_SIZE	type (LONG_T),
+		THIS_SU		type (SHORT_T),
+		THIS_BDRY	type (SHORT_T),
+		P		type (POINTER_T);
+
+	call GET_SYM_NODE_R (SYMBOL, P);
+
+	/* If this routine is being called for a static class object
+	/* not at file scope, then a 'first time' flag may already have
+	/* been created.  In this case, return the node id of the
+	/* already created symbol.
+	/**/
+	if P->SYM_NODE.IS_DATA then do;
+		if P->SYM_NODE.OBJ_CONSTRUCTED_ID ^= NULL_NID then do;
+			WORK_SYMBOL = P->SYM_NODE.OBJ_CONSTRUCTED_ID;
+			call RELEASE_SYM_NODE (SYMBOL);
+			return (WORK_SYMBOL);
+		end;
+	end;
+
+	/* If this is a static aggregate, then the first time flag must
+	/* be defined in the global scope.
+	/**/
+	if IN_GLOBAL_SCOPE then
+		WORK_SCOPE = CURRENT_GLOBAL_SCOPE;
+	else
+		WORK_SCOPE = CURRENT_SCOPE;
+
+	call RELEASE_SYM_NODE (SYMBOL);
+	
+	/* Make a sym-node for the first-time flag */
+
+	WORK_SYMBOL = MAKE_SYM_NODE (DUMMY_SK);
+
+	SYM_NODE.TYPE		  = GET_BASIC_TYPE (INT_BT);
+	call TYPE_SIZE (SYM_NODE.TYPE, THIS_SIZE, THIS_SU, THIS_BDRY);
+
+	call GET_TOP_TYPE (SYM_NODE.TYPE, SYM_NODE.TOP_TYPE);
+
+	SYM_NODE.SIZE		  = THIS_SIZE;
+	SYM_NODE.SIZE_UNITS	  = byte (THIS_SU);
+	SYM_NODE.BOUNDARY	  = byte (THIS_BDRY);
+	/* SYM_NODE.INITIAL_AT	  = TRUE; */
+	SYM_NODE.DEFINED	  = TRUE;
+	SYM_NODE.REFERENCED	  = TRUE;
+	SYM_NODE.STORAGE_CLASS	  = byte (STATIC_ST);
+
+	call INSTALL_SYMBOL (WORK_SYMBOL, WORK_SCOPE);
+
+	return (WORK_SYMBOL);
+
+end MAKE_FIRST_TIME_FLAG;

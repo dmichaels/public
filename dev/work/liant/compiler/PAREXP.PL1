@@ -1,0 +1,1595 @@
+/* C++ parexp.pl1 - Expression semantic analysis package */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.27.92  DGM  061	Correct handling for mis-parsing of:
+ *			p = new (TypeName *[NonConstantExpression]);
+ *			This fixed PER #9529.
+ *  08.19.92  DGM  060	Catch "new" of an abstract class.
+ *  04.17.92  PKT  059	Made 'this' a non-lvalue.
+ *  04.01.92  PKT  058  Streamlined delete value nodes.
+ *  03.26.92  DGM  057  New value-node scheme.
+ *  02.19.92  DGM  056  Fix in REF_VALUE for blowup in:
+ *				struct A { static char *p; };
+ *				char *A::p = NULL;
+ *  11.12.91  DGM  053  Updated.
+ *  09.04.91  PKT  052  Fixed DOT_VALUE to not cause find-node failure.
+ *  07.23.91  PKT  051  DEREFERENCE_VALUE is obsolete; now is a noop.
+ *  07.18.91  PKT  050  CONSTANT_VALUE makes its own copy of token spelling.
+ *			Fix DEREFERENCE_VALUE not to do operator* overload,
+ *			moving its code into expv.
+ *            DGM	Added IN_NEW_EXPRESSION_LEVEL to help
+ *			AT_TAG_START_OF_TAG_DEFINITION (pardri) work.
+ *  07.08.91  DGM  049  Minor accessibility fix in REF_VALUE for:
+ *			  struct A { protected: static int x; };
+ *			  struct B : public A { f () { return x; } };
+ *			which was getting flagged as an error.
+ *  06.17.91  PKT  048  Fix to delete of reference.  Eliminated STRING_VO.
+ *  06.03.91  PKT  047  Added support for int::~int, etc.
+ *  04.10.91  PKT  046  Improved support for overloaded member functions.
+ *  03.26.91  PKT  045  Fixed for explicit conversion function names,
+ *			and for detecting type names in expression context.
+ *			Added support for -ztemp with ?:, ||, and &&.
+ *  03.08.91  PKT  044  Miscellaneous fixes.
+ *  02.27.91  DGM  043  Support for CPLUS_VAL.ARRAY_DESIGNATOR.
+ *  02.21.91  PKT  042  Updated for member pointers.
+ *  02.11.91  DGM  041  Minor updates to REF_VALUE.
+ *  02.01.91  DGM  040  Updated to new global names scheme.
+ *  01.31.91  DGM  039  Updated for anonymous unions.
+ *  01.27.91  PKT  038  Updated for member pointers, moving some code
+ *			from REF_VALUE to member.pl1.  DOT_VALUE took
+ *			some code from expv.pl1.
+ *  01.18.91  DGM  037  Fixes and static member check in REF_VALUE.
+ *  01.11.91  PKT  036  Access checks for static members, new, and delete.
+ *  01.10.91  DGM  035  Fix in REF_VALUE (nested class member check).
+ *  12.17.90  PKT  034  Small bug fix to TYPE_INTO_VALUE.
+ *  12.17.90  DGM  033  Modified CHECK_CONSTANT_EXPRESSION to deal with
+ *			integral "const" variables.
+ *  11.29.90  DGM  032  Check for references to local data from a nested
+ *			function, and to non-static members from nested
+ *			classes.
+ *  11.06.90  DGM  031  Check for casting to an abstract class.
+ *  09.25.90  DGM  030  Preprocessor include file name changes.
+ *  09.17.90  PKT  029  Fix for non-constant array dimension;
+ *			support for direct call of destructor.
+ *  09.14.90  DGM  028  Changed include file names and VOP names.
+ *  09.13.90  DGM  027  Changed xxx_SC names to xxx_ST.
+ *  09.05.90  PKT  026  Support for operator new and operator delete.
+ *  08.27.90  TLF  025  Modified to support overloaded '->' and '[]'.
+ *  08.15.90  DGM  024  New type-node.
+ *  07.23.90  PKT  023  Updated.
+ *  07.03.90  DGM  021  Substituted in calls to LOOKUP_THIS_PARAMETER and
+ *			GET_THIS_PARAMETER_NAME.
+ *  06.25.90  DGM  020  Only print undeclared function warning if *both*
+ *			SW_X_OLD_STYLE_FUNCTIONS & SW_UNDEF_FUNCTION_WARN.
+ *  06.14.90  PKT  019  Updated for SW_UNDEF_FUNCTION_LAX.
+ *  06.05.90  DGM  018  Updated for the new utilities.
+ *  05.31.90  PKT  017  Added SET_FUNCTIONAL_CAST_OP.
+ *  05.15.90  DGM  016  Updated for new error message interface.
+ *  05.02.90  TLF  015  Fix minor bug in TYPE_INTO_VALUE.
+ *  04.25.90  DGM  014  Fix; clear scope qualifier in SET_THIS_NAME.
+ *			Also, changes from TLF.
+ *  04.19.90  DGM  013  C_DECLARE_MISCELLANY_PKG to CXX_DECLARE_SYMBOL_PKG.
+ *  04.18.90  PKT  012  Handles function designators;
+ *			improved support for undeclared identifiers.
+ *  04.02.90  DGM  011  CXX_PROCESS_DECLARATION_PKG to C_DECLARE_MISCELLANY_PKG.
+ *  03.27.90  DGM  010  Change to REF_VALUE for anonymous union members.
+ *  03.14.90  PKT  009  Updated for sizeof.
+ *  03.02.90  DGM  008  Updated.
+ *  02.21.90  DGM  007  Updated.
+ *  02.20.90  PKT  006  Added and updated SET_CONSTANT_EXPRESSION.
+ *  02.15.90  DGM  005  Updated for the new TYPE_NODE scheme.
+ *  01.04.90  DGM  001  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.27.92 061 PAREXP');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_LEXER_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_PP_TOKEN_POD_SPELLING_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_PROCESS_EXPRESSION_IN;
+%include CXX_TOKEN_MAP_TERMINAL_IN;
+%include CXX_PARSER_TERMINAL_CODES_IN;
+%include CXX_TERMINAL_MAP_IN;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_EXPRESSION_COMPATIBILITY_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_MEMBER_VALUE_PKG;
+%include CXX_MEMBER_POINTER_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_CONVERT_CLASS_POINTER_PKG;
+%include CXX_SEMANTIC_STACK_PKG;
+%include CXX_PROCESS_DECLARATION_PKG;
+
+/* ---------------------------------------------------------------------
+ * replace constants
+ * ------------------------------------------------------------------- */
+
+%replace ARG_PRECEDENCE			by 18;
+%replace UNARY_PRECEDENCE		by 16;
+
+/* ---------------------------------------------------------------------
+/* PAREXP
+/* ------------------------------------------------------------------- */
+
+PAREXP: procedure external;
+
+end PAREXP;
+
+/* ---------------------------------------------------------------------
+/* SET_BINARY_OP
+/* ------------------------------------------------------------------- */
+
+SET_BINARY_OP: procedure
+	       external  (X_SET_BINARY_OP);
+
+	declare 
+		T 		type (SHORT_T);
+
+	T = TOKEN_TO_TERMINAL(MATCHED_TOKEN.TYPE);
+	if T = COLON_TERMINAL then do;
+		THIS_PREC = TERMINAL_TO_BINARY_PREC (QUESTION_TERMINAL);
+		THIS_VOP = COLON_VO;
+	end;
+	else do;
+		THIS_PREC = TERMINAL_TO_BINARY_PREC(T);
+		THIS_VOP = TERMINAL_TO_BINARY_VOP(T);
+	end;
+
+end SET_BINARY_OP;
+
+/* ---------------------------------------------------------------------
+/* SET_UNARY_OP
+/* ------------------------------------------------------------------- */
+
+SET_UNARY_OP: procedure external  (X_SET_UNARY_OP);
+
+	declare 
+		T 		type (SHORT_T);
+
+	T = TOKEN_TO_TERMINAL(MATCHED_TOKEN.TYPE);
+	THIS_PREC = UNARY_PRECEDENCE;
+	THIS_VOP = TERMINAL_TO_UNARY_VOP(T);
+
+end SET_UNARY_OP;
+
+/* ---------------------------------------------------------------------
+ * POP_FOR_PRECEDENCE
+ * ------------------------------------------------------------------- */
+
+POP_FOR_PRECEDENCE: procedure external (X_POP_FOR_PRECEDENCE);
+
+        if THIS_PREC >= 0
+           then call POP_VALUES(THIS_PREC); /* left associative */
+           else do;
+                THIS_PREC = -THIS_PREC;
+                call POP_VALUES(THIS_PREC + 1); /* right associative */
+                end;
+
+end POP_FOR_PRECEDENCE;
+
+/* ---------------------------------------------------------------------
+ * PUSH_VALUE_WITH_OP
+ * ------------------------------------------------------------------- */
+
+PUSH_VALUE_WITH_OP: procedure external (X_PUSH_VALUE_WITH_OP);
+
+	declare
+		DTORS		type (CXX_VID_T),
+		RECORD_DTORS	type (BOOL_T);
+
+	if SW_ZOMBIE_TEMP then do;
+		if (THIS_VOP = CONDITIONAL_VO) |
+		   (THIS_VOP = COLON_VO) |
+		   (THIS_VOP = AND_AND_VO) |
+		   (THIS_VOP = OR_OR_VO) then do;
+			RECORD_DTORS = TRUE;
+			DTORS = CURRENT_DESTRUCTORS ();
+		end;
+		else do;
+			RECORD_DTORS = FALSE;
+			DTORS = NULL_CXX_VID;
+		end;
+	end;
+	else do;
+		RECORD_DTORS = FALSE;
+		DTORS = NULL_CXX_VID;
+	end;
+
+	if THIS_VOP = MEMBER_INIT_VO then do;
+        	call PUSH_CXX_VALUE_NODE
+		     (ALLOC_SYMBOL_CXX_VALUE_NODE
+		      (THIS_VOP, CURRENT_SYMBOL));
+	end;
+	else do;
+	        call PUSH_CXX_VALUE_NODE
+		     (ALLOC_CXX_VALUE_NODE_L (THIS_VOP, CURRENT_VALUE));
+		CXX_VALUE_NODE.THIRD = DTORS;
+		CXX_VALUE_NODE.TERNARY = RECORD_DTORS;
+	end;
+
+	CXX_VALUE_NODE.ID_SHORT = THIS_PREC;
+
+end PUSH_VALUE_WITH_OP;
+
+/* ---------------------------------------------------------------------
+ * BINARY_OPERATION
+ *
+ * The stack top has a VOP with just a left operand.  Use the current
+ * value to fill in the right operand, pop the stack and make that the
+ * current value.
+ * ------------------------------------------------------------------- */
+
+BINARY_OPERATION: procedure external (X_BINARY_OPERATION);
+
+        TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.RIGHT = CURRENT_VALUE;
+        TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.ID_SHORT = 0;
+        CURRENT_VALUE = POP_CXX_VALUE_NODE ();
+        CURRENT_VALUE = EXPAND_VALUE (CURRENT_VALUE);
+
+end BINARY_OPERATION;
+
+/* ---------------------------------------------------------------------
+ * POP_VALUES
+ *
+ * Pop from the stack all operations with precedence equal to or 
+ * higher than P, combining them into the current value.
+ * ------------------------------------------------------------------- */
+
+POP_VALUES: procedure (P) internal;
+
+	declare P type (SHORT_T);
+
+	do while (TOP_CXX_VALUE_NODE ^= NULL_CXX_VID);
+		if TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.ID_SHORT < P then
+			return;
+		TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.RIGHT = CURRENT_VALUE;
+		TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.ID_SHORT = 0;
+		CURRENT_VALUE = POP_CXX_VALUE_NODE ();
+		CURRENT_VALUE = EXPAND_VALUE (CURRENT_VALUE);
+	end;
+
+end POP_VALUES;
+
+/* ---------------------------------------------------------------------
+ * POP_ALL_VALUES
+ * ------------------------------------------------------------------- */
+
+POP_ALL_VALUES: procedure external (X_POP_ALL_VALUES);
+
+	call POP_VALUES (0);
+
+end POP_ALL_VALUES;
+
+/* ---------------------------------------------------------------------
+ * PUSH_PREFIX
+ * ------------------------------------------------------------------- */
+
+PUSH_PREFIX: procedure external (X_PUSH_PREFIX);
+
+	if THIS_VOP = SIZEOF_VO then
+		IN_SIZEOF = IN_SIZEOF + 1;
+        call PUSH_CXX_VALUE_NODE (ALLOC_CXX_VALUE_NODE (THIS_VOP));
+
+end PUSH_PREFIX;
+
+/* ---------------------------------------------------------------------
+ * POP_PREFIX
+ * ------------------------------------------------------------------- */
+
+POP_PREFIX: procedure external (X_POP_PREFIX);
+
+	declare VOP type (SHORT_T);
+
+        TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.LEFT = CURRENT_VALUE;
+        TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.ID_SHORT = 0;
+	VOP = TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.VOP;
+        CURRENT_VALUE = EXPAND_VALUE (POP_CXX_VALUE_NODE ());
+	if VOP = SIZEOF_VO then
+		IN_SIZEOF = IN_SIZEOF - 1;
+
+end POP_PREFIX;
+
+/* ---------------------------------------------------------------------
+/* SET_THIS_NAME
+/*
+/* Set the current name to a 'this' token.
+/* ------------------------------------------------------------------- */
+
+SET_THIS_NAME: procedure external (X_SET_THIS_NAME);
+
+	/* call CLEAR_SCOPE_QUALIFIER (); */
+
+	CURRENT_NAME_SCOPE		= NULL_NID;
+	CURRENT_NAME_SCOPE_NAME		= NULL_NID;
+	CURRENT_NAME_SCOPE_SYMBOL	= NULL_NID;
+
+	CURRENT_NAME = THIS_PARAMETER_NAME;
+
+	call REF_VALUE ();
+
+end SET_THIS_NAME;
+
+/* ---------------------------------------------------------------------
+/* REF_VALUE
+/*
+/* Called from the grammar whenever an identifier is REFERENCED.
+/* Note that if the identifier refers to an overloaded function, the
+/* constructed value-node does not yet represent the correct variant.
+/* ------------------------------------------------------------------- */
+
+REF_VALUE: procedure external (X_REF_VALUE);
+
+	declare 
+		SYMBOL			type (NID_T),
+		SCOPE			type (NID_T),
+		REF_V			type (CXX_VID_T),
+		MEMBER_REF_V		type (CXX_VID_T),
+		TI			type (TYPE_INFO_T),
+		(P, Q)			type (POINTER_T),
+		FUNCTION_DESIGNATOR	type (BOOL_T),
+		ARRAY_DESIGNATOR	type (BOOL_T),
+		THIS_PARAMETER		type (BOOL_T),
+		KIND			type (LONG_BITS_T);
+
+	MEMBER_REF_V = NULL_CXX_VID;
+
+	/* Look up the symbol */
+
+	if CURRENT_NAME_KIND = CONVERSION_NK then
+		KIND = CONVERSION_FUNCTION_SK;
+	else if CURRENT_NAME_KIND = TYPE_DESTRUCTOR_NK then do;
+		KIND = ANY_SK;
+		CURRENT_NAME = NULL_NID;
+	end;
+	else
+		KIND = ANY_SK;
+
+	if CURRENT_NAME_SCOPE = NULL_NID then do;
+		SCOPE = CURRENT_SCOPE;
+		SYMBOL = LOOKUP_NAME (CURRENT_NAME, KIND, SCOPE);
+		if (SYMBOL = NULL_NID) & (CURRENT_CLASS ^= NULL_NID) then do;
+			/*
+			/* Unresolved issues concerning the lookup of
+			/* symbols in friend functions defined in a class.
+			/* class A { static int m; friend f () { m = 1; }; };
+			/**/
+			SYMBOL = SEARCH_CLASS (CURRENT_CLASS,
+					       CURRENT_NAME,
+					       KIND);
+		end;
+	end;
+	else if CURRENT_NAME_SCOPE = CURRENT_GLOBAL_SCOPE then do;
+		SCOPE = CURRENT_GLOBAL_SCOPE;
+		SYMBOL = LOOKUP_NAME (CURRENT_NAME,
+				      KIND,
+				      CURRENT_GLOBAL_SCOPE);
+	end;
+	else do;
+		SCOPE = CURRENT_NAME_SCOPE;
+		SYMBOL = SEARCH_CLASS (CURRENT_NAME_SCOPE_SYMBOL,
+				       CURRENT_NAME,
+				       KIND);
+	end;
+
+	/* See if we didn't find the symbol */
+
+	if SYMBOL = NULL_NID then do;
+		call REF_UNDECLARED_VALUE ();
+		goto MAKE_SYMBOL_REFERENCE;
+	end;
+
+	if SYM_NODE.IS_TYPE then do;
+		/*
+		/* Error; this identifier was previously declared
+		/* as a type and may not be used in this context.
+		/**/
+		call SEMANTIC_ERROR_I (ERR_BAD_TYPE_REF,
+				       QUALIFIED_SYMBOL_NAME (SYMBOL));
+		SYMBOL = NULL_NID;
+		goto MAKE_SYMBOL_REFERENCE;
+	end;
+
+	/* Here, we found the symbol; see if it is a member */
+
+	if SYM_NODE.IS_ANON_UNION_MEMBER &
+	   ((SYM_NODE.ENCLOSING_SCOPE_TYPE ^= byte (CLASS_SCOPE)) |
+	    (SYM_NODE.STORAGE_CLASS = byte (STATIC_ST))) then do;
+		/*
+		/* We are referencing an anonymous union member which is
+		/* not itself a non-static member of another class (if an
+		/* anoymous union member IS a non-static member of a class,
+		/* it gets handled like any other class member reference;
+		/* otherwise, the ANON_UNION_OBJECT field of the anonyoumous
+		/* union tag symbol contains a sym-node id of a dummy symbol
+		/* representing an object of the anonymous union type; this
+		/* is all set up in INSTALL_ANONYMOUS_UNION).
+		/**/
+        	call GET_SYMBOL_TYPE (TI); TI.NOT_AN_LVALUE = FALSE;
+		call DETERMINE_SIZE (TI);
+		call SET_SYM_NODE_R (SYM_NODE.FATHER);
+		REF_V = GET_REF_AND_EXPAND (SYM_NODE.ANON_UNION_OBJECT);
+		call SET_VALUE_TYPE (TI);
+		CURRENT_VALUE = GET_VALUE_AND_EXPAND_L (VALUE_VO, REF_V);
+		goto DONE_REF_VALUE;
+	end;
+	else if SYM_NODE.IS_AGGREGATE_MEMBER &
+		( SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST)
+		| SYM_NODE.IS_FUNCTION & ^SYM_NODE.IS_CONVERSION_FUNCTION
+				       & SYM_NODE.OVERLOAD ) then do;
+		/*
+		/* Use a MEMBER_REF_VO for this value-node, so that it can
+		/* be distinguished from an expression which has had "&"
+		/* applied to it.
+		/**/
+		MEMBER_REF_V = GET_MEMBER_POINTER_VALUE 
+			       ((CURRENT_NODE_ID), CURRENT_NAME_SCOPE_SYMBOL);
+		MEMBER_REF_V->CXX_VALUE_NODE.OP = MEMBER_REF_VO;
+	end;
+	else if SYM_NODE.STORAGE_CLASS = byte (AUTO_ST) then do;
+		if CURRENT_SCOPE_TYPE = PROTOTYPE_SCOPE then do;
+			if (SYM_NODE.ENCLOSING_SCOPE = CURRENT_SCOPE) &
+			   SYM_NODE.IS_PARAMETER then do;
+				if IN_SIZEOF = 0 then do;
+					/*
+					/* Error; formal arguments of a
+					/* function may not be used in
+					/* default argument expressions.
+					/**/
+					call SEMANTIC_ERROR_I
+					     (ERR_DEFAULT_ARG_USES_PARAM,
+					      TOKEN_NAME (CURRENT_NAME));
+				end;
+				else if SW_WARN_PARAM_USED_IN_PROTO then do;
+					/*
+					/* Warning; using a formal argument
+					/* of a function within its parameter
+					/* list may be considered dubious.
+					/**/
+					call SEMANTIC_ERROR_I
+					     (ERR_PARAM_USED_IN_PROTO,
+					      TOKEN_NAME (CURRENT_NAME));
+				end;
+			end;
+			else do;
+				/*
+				/* Error; local variables may not be
+				/* used in default argument expressions.
+				/**/
+				call SEMANTIC_ERROR_I
+				     (ERR_DEFAULT_ARG_USES_LOCAL,
+				      TOKEN_NAME (CURRENT_NAME));
+			end;
+		end;
+		else if SYM_NODE.ENCLOSING_SCOPE_OWNER ^= CURRENT_FUNCTION then
+			/*
+			/* Error; a nested function (i.e. a member function
+			/* defined within a local class) may not reference
+			/* automatic data in the enclosing local scope
+			/* (C++ARM, sec.9.8).
+			/**/
+			call SEMANTIC_ERROR (ERR_NESTED_FUN_REF_AUTO);
+	end;
+
+	MAKE_SYMBOL_REFERENCE:
+
+	/*
+	/* Generate a reference value-node to the symbol;
+	/* implicitly qualify it with "this" if necessary.
+	/**/
+
+	if MEMBER_REF_V ^= NULL_CXX_VID then do;
+		/*
+		/* Non-static member reference.
+		/**/
+		if CURRENT_NAME_SCOPE ^= NULL_NID then do;
+			/*
+			/* Defer inserting "this->" in case the context is
+			/* "&" for pointer to member; also defer diagnostics. 
+			/**/
+			CURRENT_VALUE = MEMBER_REF_V;
+		end;
+		else do;
+			/* Insert "this->" now when there is no qualifier,
+			/* because "&" of such an expression may yield
+			/* the address of an object.
+			/**/
+			CURRENT_VALUE = DEREFERENCE_MEMBER (MEMBER_REF_V, TRUE);
+		end;
+	end;
+	else if SYMBOL = NULL_NID then do;
+		/* 
+		/* Error already reported.
+		/* Attempt feebly to recover by making a zero.
+		/**/
+		CURRENT_VALUE = INTEGER_VALUE_ZERO ();
+	end;
+ 	else do;
+		call GET_SYM_NODE_R (SYMBOL, P);
+		if P->SYM_NODE.IS_AGGREGATE_MEMBER then do;
+			/*
+			/* Check access now to static data members
+			/* and static non-overloaded function members.
+			/**/
+			if ^IS_ACCESSIBLE_STATIC (SYMBOL) then do;
+				if ^AM_DEBUGGER then do;
+					call SEMANTIC_ERROR_I
+					     (ERR_PRIV_BASE_MEMBER_REF,
+					      FULL_QUALIFIED_SYMBOL_NAME
+					      (SYMBOL));
+				end;
+			end;
+		end;
+		else if P->SYM_NODE.IS_ENUM_MEMBER then do;
+			call GET_SYM_NODE_R
+			     (P->SYM_NODE.TOP_TYPE.TAG_SYMBOL, Q);
+			if Q->SYM_NODE.IS_AGGREGATE_MEMBER then do;
+				if ^IS_ACCESSIBLE_STATIC
+				    (P->SYM_NODE.TOP_TYPE.TAG_SYMBOL) then do;
+					if ^AM_DEBUGGER then do;
+						call SEMANTIC_ERROR_I
+						     (ERR_PRIV_BASE_MEMBER_REF,
+						      FULL_QUALIFIED_SYMBOL_NAME
+						      (SYMBOL));
+					end;
+				end;
+			end;
+			call RELEASE_SYM_NODE
+			     (P->SYM_NODE.TOP_TYPE.TAG_SYMBOL);
+		end;
+		ARRAY_DESIGNATOR
+			= (P->SYM_NODE.TOP_TYPE.CODE = byte (ARRAY_DT));
+		FUNCTION_DESIGNATOR
+			= (P->SYM_NODE.TOP_TYPE.CODE = byte (FUNCTION_DT));
+		THIS_PARAMETER
+			= ( P->SYM_NODE.NAME = THIS_PARAMETER_NAME
+			  & SW_C_PLUS_PLUS );
+		call RELEASE_SYM_NODE (SYMBOL);
+		CURRENT_VALUE = GET_VALUE_REF_AND_EXPAND (SYMBOL);
+		if FUNCTION_DESIGNATOR then do;
+			/*
+			/* This is a function designator.  Fix it up for
+			/* automatic conversion to pointer-to-function
+			/* in almost all contexts.
+			/*
+			/* TODO: why can't this be done in EXPV(VALUE_VO)
+			/* just as an array is turned into a pointer?
+			/* PKT: Beats me!  I know I did it for a reason,
+			/* but can't find any trace of that reason.  But
+			/* what's so bad about doing it here?
+			/**/
+			CURRENT_VALUE = GET_VALUE_AND_EXPAND_L
+					(ADDR_VO, CURRENT_VALUE);
+			CURRENT_VALUE->
+			CXX_VALUE_NODE.FUNCTION_DESIGNATOR = TRUE;
+		end;
+		else if ARRAY_DESIGNATOR then
+			CURRENT_VALUE->
+			CXX_VALUE_NODE.ARRAY_DESIGNATOR = TRUE;
+		else if THIS_PARAMETER then
+			CURRENT_VALUE->
+			CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+	end;
+
+	DONE_REF_VALUE:
+	CURRENT_NAME = NULL_NID;	/* necessary ? */
+	return;
+
+/* ---------------------------------------------------------------------
+/* REF_UNDECLARED_VALUE
+/* ------------------------------------------------------------------- */
+
+REF_UNDECLARED_VALUE: procedure;
+
+	if CURRENT_NAME = THIS_PARAMETER_NAME & SW_C_PLUS_PLUS then do;
+		/*
+		/* Error; "this" may only be referenced
+		/* within a non-static member function.
+		/* TODO: recover by ...
+		/**/
+		call SEMANTIC_ERROR (ERR_THIS_REF);
+	end;
+
+	/*
+	/* Here, there is no previous visible declaration of the
+	/* referenced identifier.  If it's a function call (i.e.
+	/* the very next token after the identifier is an LPAREN)
+	/* then declare it implicitly as if it had appeared in this
+	/* current (inner-most) scope as "extern int f();" (ANSI-C
+	/* 3.3.2.2).  Even in C++, we declare this function with
+	/* this C kind of a signature for error recovery.
+	/**/
+
+	if (CURRENT_TOKEN.TYPE = LPAREN_TOKEN) &
+	   (CURRENT_NAME_SCOPE = NULL_NID) &
+	   (CURRENT_NAME_KIND ^= CONVERSION_NK) then do;
+		if SW_X_OLD_STYLE_FUNCTIONS then do;
+			if SW_UNDEF_FUNCTION_WARN then do;
+				call SEMANTIC_ERROR_I
+				     (ERR_UNDEF_FUNCTION_WARN,
+				      TOKEN_NAME (CURRENT_NAME));
+			end;
+		end;
+		else if ^SW_UNDEF_FUNCTION_LAX then do;
+			call SEMANTIC_ERROR_I
+			     (ERR_UNDEF_FUNCTION,
+			      TOKEN_NAME (CURRENT_NAME));
+		end;
+		/*
+		/* Declare a function taking an unknown number of args
+		/* (having no prototype) and returning int.  
+		/*
+		/* TODO: Perhaps when the current name scope is not
+		/* null, a suitable scope can be found in which to
+		/* declare the name.
+		/**/
+		SYMBOL = DECLARE_IMPLICIT_FUNCTION
+			 ((CURRENT_NAME), (CURRENT_NAME_KIND));
+	end;
+	else do;
+		if LOOKUP_NAME (CURRENT_NAME,
+				TYPE_SK,
+				SCOPE) ^= NULL_NID then do;
+			/*
+			/* Error; this identifier was previously declared
+			/* as a type and may not be used in this context.
+			/**/
+			call SEMANTIC_ERROR_I (ERR_BAD_TYPE_REF,
+					       TOKEN_NAME (CURRENT_NAME));
+		end;
+		else if LOOKUP_LABEL (CURRENT_NAME, SCOPE) ^= NULL_NID then do;
+			/*
+			/* Error; this identifier was previously declared
+			/* as a label and may not be used in this context.
+			/**/
+			call SEMANTIC_ERROR_I (ERR_BAD_LABEL_REF,
+					       TOKEN_NAME (CURRENT_NAME));
+		end;
+		else if CURRENT_NAME_KIND = CONVERSION_NK then do;
+			/*
+			/* Implicitly declaring a conversion name is
+			/* more difficult than PKT wants to tackle.  To
+			/* do it naively produces a flock of error messages.
+			/*
+			/* Error; undeclared name.
+			/**/
+			call SEMANTIC_ERROR_I (ERR_UNDEF_CONVERSION_FUNCTION,
+					       TYPE_NAME (CURRENT_NAME, ''));
+		end;
+		else do;
+			/*
+			/* Error; this identifier was not been previously
+			/* declared -- declaring implicitly as type "int".
+			/**/
+			call SEMANTIC_ERROR_I (ERR_UNDECLARED_ID_INT,
+					       TOKEN_NAME (CURRENT_NAME));
+			SYMBOL = DECLARE_IMPLICIT ((CURRENT_NAME));
+		end;
+	end;
+
+end REF_UNDECLARED_VALUE;
+
+end REF_VALUE;
+
+/* ---------------------------------------------------------------------
+/* DOT_VALUE
+/* ------------------------------------------------------------------- */
+
+DOT_VALUE: procedure external (X_DOT_VALUE);
+
+	declare
+		DV			type (CXX_VID_T),
+		SP			type (POINTER_T),
+		CLASS_SYM		type (NID_T),
+		TYPE_INFO		type (TYPE_INFO_T),
+		LOOKUP_TYPE_INFO	type (TYPE_INFO_T),
+		DESTRUCTOR_TYPE_INFO	type (TYPE_INFO_T),
+		TYPE			type (SHORT_T),
+		MEMBER_SYMBOL		type (NID_T),
+		LOOKUP_IS_AGGREGATE	type (BOOL_T),
+		LEFT_IS_AGGREGATE	type (BOOL_T),
+		IS_BASE			type (BOOL_T),
+		NULL_FUNC_T		type (NID_T),
+		FUNC_VALUE		type (CXX_VID_T);
+
+	CURRENT_VALUE = VALUE_OF (CURRENT_VALUE);
+
+	/*
+	/* Look for the member name (CURRENT_NAME) as a (possibly inherited)
+	/* member of the class pointed to by the left operand of '.'
+	/* (whose (pointer) type is in TYPE_INFO).  If ID is
+	/* not NULL_NID, then it is the sym-node id representing an
+	/* explicit class qualifier for the member.
+	/**/
+
+	CXX_VALUE_NODE_PTR = CURRENT_VALUE;
+        call GET_VALUE_TYPE (TYPE_INFO);
+	TYPE = rank (TYPE_INFO.TOP_TYPE.CODE);
+
+	if CURRENT_NAME_SCOPE ^= NULL_NID then do;
+		/* Name scope is a class. */
+		call SET_SYM_NODE_R (CURRENT_NAME_SCOPE_SYMBOL);
+		call GET_SYMBOL_TYPE (LOOKUP_TYPE_INFO);
+	end;
+	else if CURRENT_NAME_SCOPE_NAME ^= NULL_NID then do;
+		/* Name scope is not a class. */
+		call SET_TYPE_NODE_R (CURRENT_NAME_SCOPE_NAME);
+		call GET_TYPE_NODE_TYPE (LOOKUP_TYPE_INFO);
+	end;
+	else
+		LOOKUP_TYPE_INFO = TYPE_INFO;
+
+	/* Lookup type must be the same as, or a base of, object type. */
+
+	LEFT_IS_AGGREGATE = IS_AGGREGATE_TAG_TYPE (rank (TYPE_INFO.CODE));
+	LOOKUP_IS_AGGREGATE
+		= IS_AGGREGATE_TAG_TYPE (rank (LOOKUP_TYPE_INFO.CODE));
+
+	if  LEFT_IS_AGGREGATE ^= LOOKUP_IS_AGGREGATE then
+		IS_BASE = FALSE;
+	else if LEFT_IS_AGGREGATE then
+		IS_BASE = IS_ANY_BASE_CLASS_OF (LOOKUP_TYPE_INFO.TAG_SYMBOL, 
+						TYPE_INFO.TAG_SYMBOL);
+	else
+		IS_BASE = COMPATIBLE_SPECIAL_TYPE_INFO (
+				TYPE_INFO, IGNORE_TOP_QUALIFIERS_TCM,
+				LOOKUP_TYPE_INFO, IGNORE_TOP_QUALIFIERS_TCM);
+
+	if ^IS_BASE then do;
+		if LEFT_IS_AGGREGATE & LOOKUP_IS_AGGREGATE then
+			/*
+			/* Error; specified class is not a base of the
+			/* object's class.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_NOT_BASE_CLASS_OF,
+				SYMBOL_NAME (LOOKUP_TYPE_INFO.TAG_SYMBOL),
+				SYMBOL_NAME (TYPE_INFO.TAG_SYMBOL));
+		else if ^LEFT_IS_AGGREGATE then
+			/*
+			/* Error; value left of "." or "->" does
+			/* not refer to a class/struct/union.
+			/**/
+			call SEMANTIC_ERROR (ERR_NOT_CLASS_STRUCT_UNION);
+		else
+			/*
+			/* Error; specified class is not a base of the
+			/* object's class.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_NOT_BASE_CLASS_OF,
+				TYPE_NAME (CURRENT_NAME_SCOPE_NAME, ''),
+				SYMBOL_NAME (TYPE_INFO.TAG_SYMBOL));
+			
+		goto DOT_ERROR;
+	end;
+
+	if CURRENT_NAME_KIND = DESTRUCTOR_NK then do;
+		/*
+		/* Interpret the name to the right of the ~ in the
+		/* current scope.  See ~cplus/pkt/design/destructor_name.
+		/*
+		/* p->~D, in what scope does D get looked up to see if
+		/* it refers to the right class?  We used to just expect it
+		/* to be the name of the class of *p, but no more.
+		/**/
+		CLASS_SYM = LOOKUP_TYPE_NAME_QUIETLY (CURRENT_NAME, 
+						      CURRENT_SCOPE);
+		if CLASS_SYM = NULL_NID then
+			DESTRUCTOR_TYPE_INFO.CODE = byte (NULL_BT);
+		else
+			call GET_SYMBOL_TYPE (DESTRUCTOR_TYPE_INFO);
+	end;
+	else if CURRENT_NAME_KIND = TYPE_DESTRUCTOR_NK then do;
+		call SET_TYPE_NODE_R (CURRENT_NAME);
+		call GET_TYPE_NODE_TYPE (DESTRUCTOR_TYPE_INFO);
+	end;
+	else	DESTRUCTOR_TYPE_INFO.CODE = byte (NULL_BT);
+
+	if   (CURRENT_NAME_KIND = DESTRUCTOR_NK)
+	   | (CURRENT_NAME_KIND = TYPE_DESTRUCTOR_NK) then do;
+		/*
+		/* Verify that CURRENT_NAME is the right name
+		/* for the destructor determined by context.
+		/* LOOKUP_TYPE_INFO is the type which should have a destructor.
+		/**/
+		if DESTRUCTOR_TYPE_INFO.CODE = byte (NULL_BT) then
+				call SEMANTIC_ERROR (ERR_WRONG_DTOR);
+		else if ^ COMPATIBLE_SPECIAL_TYPE_INFO (
+			LOOKUP_TYPE_INFO, IGNORE_TOP_QUALIFIERS_TCM,
+			DESTRUCTOR_TYPE_INFO, IGNORE_TOP_QUALIFIERS_TCM) then
+				call SEMANTIC_ERROR (ERR_WRONG_DTOR);
+
+		CURRENT_NAME = DESTRUCTOR_NAME;
+	end;
+
+	if CURRENT_NAME = DESTRUCTOR_NAME then do;
+
+		if ^COMPATIBLE_SPECIAL_TYPE_INFO (
+			TYPE_INFO, IGNORE_TOP_QUALIFIERS_TCM,
+			LOOKUP_TYPE_INFO, IGNORE_TOP_QUALIFIERS_TCM)
+					then do;
+			/*
+			/* Destructor is for base of the object.
+			/* This is an error, because destructors are
+			/* not inherited.  But leave it as severity 2,
+			/* because cfront doesn't dignose this.
+			/**/
+			call SEMANTIC_ERROR (ERR_INHERIT_DESTRUCTOR);
+
+			CURRENT_VALUE = GET_VALUE_AND_EXPAND_L
+					(IMPLICIT_ADDR_VO, CURRENT_VALUE);
+			if ^DERIVED_TO_BASE_CLASS_POINTER
+			    (CURRENT_VALUE,
+			     TYPE_INFO.TAG_SYMBOL,
+			     LOOKUP_TYPE_INFO.TAG_SYMBOL,
+			     NULL_NID,
+			     NULL_NID,
+			     FALSE,
+			     DESTRUCTOR_VO) then
+				;
+			CURRENT_VALUE = GET_VALUE_AND_EXPAND_L
+					(IMPLICIT_STAR_VO, CURRENT_VALUE);
+		end;
+
+		/*
+		/* Set up an expression:
+		/*	DOT_STAR (object-expr, DESTRUCTOR ())
+		/* so that this "destructor call" can be properly
+		/* checked for use with parentheses.
+		/* CXX_VALUE_NODE.OFFSET is set to 0 when virtual call
+		/* to destructor is to be suppressed.
+		/**/
+
+		FUNC_VALUE = ALLOC_CXX_VALUE_NODE (DESTRUCTOR_VO);
+		call SET_VALUE_SIMPLE_TYPE (NULL_BT);
+		FUNC_VALUE->CXX_VALUE_NODE.UNARY = TRUE;
+		if CURRENT_NAME_SCOPE_NAME = NULL_NID then
+			FUNC_VALUE->CXX_VALUE_NODE.OFFSET = 1;
+
+		NULL_FUNC_T = GET_NULL_FUNCTION_TYPE ();
+		CURRENT_VALUE = ALLOC_CXX_VALUE_NODE_LR
+				(DOT_STAR_VO, CURRENT_VALUE, FUNC_VALUE);
+		call TYPE_INTO_VALUE (CURRENT_VALUE, NULL_FUNC_T);
+		CURRENT_VALUE->CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+	end;
+
+	else if LOOKUP_IS_AGGREGATE then do;
+		DV = ALLOC_DOT_CXX_VALUE_NODE (CURRENT_VALUE, CURRENT_NAME);
+		DV->CXX_VALUE_NODE.ID_NID = CURRENT_NAME_SCOPE_SYMBOL;
+		DV->CXX_VALUE_NODE.ID_IS_NID = TRUE;
+		if CURRENT_NAME_KIND = CONVERSION_NK then do;
+			DV->CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+			DV->CXX_VALUE_NODE.THIRD_NID = CURRENT_NAME;
+			DV->CXX_VALUE_NODE.THIRD_IS_NID = TRUE;
+			DV->CXX_VALUE_NODE.THIRD_IS_NOT_VID = TRUE;
+		end;
+		CURRENT_VALUE = EXPAND_VALUE (DV);
+	end;
+	else do;
+		call SEMANTIC_ERROR (ERR_NOT_A_MEMBER);
+		goto DOT_ERROR;
+	end;
+	return;
+
+DOT_ERROR:
+	/* Set up an int(0) value. */
+	CURRENT_VALUE = INTEGER_VALUE_ZERO ();
+
+end DOT_VALUE;
+
+/* ---------------------------------------------------------------------
+ * DEREFERENCE_VALUE
+ * Obsolete.  Does nothing because parser still calls it.
+ * ------------------------------------------------------------------- */
+
+DEREFERENCE_VALUE: procedure
+		   external (X_DEREFERENCE_VALUE);
+
+end DEREFERENCE_VALUE;
+
+
+/* ---------------------------------------------------------------------
+ * DEREFERENCE_ARROW
+ * Add a dereference to the current value which is the left of an
+ * arrow operator.
+ * ------------------------------------------------------------------- */
+
+DEREFERENCE_ARROW: procedure
+	     external (X_DEREFERENCE_ARROW);
+
+	/* First, check to see if the '->' is overloaded. */
+	call CHECK_ARROW_OVERLOAD (CURRENT_VALUE);
+
+	CURRENT_VALUE = GET_VALUE_AND_EXPAND_L (STAR_VO, CURRENT_VALUE);
+
+end DEREFERENCE_ARROW;
+
+/* ---------------------------------------------------------------------
+ * POSTINCREMENT_VALUE
+ * Add postincrementation to the current value.
+ * ------------------------------------------------------------------- */
+
+POSTINCREMENT_VALUE: procedure
+	 	     external (X_POSTINCREMENT_VALUE);
+
+	CURRENT_VALUE = GET_VALUE_AND_EXPAND_L (POST_INC_VO, CURRENT_VALUE);
+
+end POSTINCREMENT_VALUE;
+
+/* ---------------------------------------------------------------------
+ * POSTDECREMENT_VALUE
+ * Add postdecrementation to the current value.
+ * ------------------------------------------------------------------- */
+
+POSTDECREMENT_VALUE: procedure
+	 	     external (X_POSTDECREMENT_VALUE);
+
+	CURRENT_VALUE = GET_VALUE_AND_EXPAND_L (POST_DEC_VO, CURRENT_VALUE);
+
+end POSTDECREMENT_VALUE;
+
+/* ---------------------------------------------------------------------
+ * CONSTANT_VALUE
+ * ------------------------------------------------------------------- */
+
+CONSTANT_VALUE: procedure external (X_CONSTANT_VALUE);
+
+	declare
+		(TP, P)	type (POINTER_T),
+		K	type (CXX_VID_T);
+
+	/* Until we get the preprocessing headers managed better ... */
+
+	declare
+		SALLOC	entry   (type (SHORT_T))
+			returns (type (POINTER_T)) external;
+
+	/*
+	/* Copy the token spelling, because the lexer holds onto its
+	/* token spelling pod for an indeterminate length of time.
+	/**/
+
+        TP = MATCHED_TOKEN.SPELLING_PTR;
+	P = SALLOC (length (TP->TOKEN_SPELLING_POD.SPELLING));
+	P->TOKEN_SPELLING_POD.SPELLING = TP->TOKEN_SPELLING_POD.SPELLING;
+
+        K = ALLOC_EMPTY_CXX_VALUE_NODE ();
+        K->CXX_VALUE_NODE.SPTR = P;
+        K->CXX_VALUE_NODE.SIZE = length (P->TOKEN_SPELLING_POD.SPELLING);
+        CURRENT_VALUE = GET_CONSTANT_AND_EXPAND (K, MATCHED_TOKEN.TYPE);
+
+end CONSTANT_VALUE;
+
+/* ---------------------------------------------------------------------
+ * SET_ADD_OP
+ * ------------------------------------------------------------------- */
+
+SET_ADD_OP: procedure external (X_SET_ADD_OP);
+
+	THIS_PREC = 0;
+	THIS_VOP = ADD_VO;
+
+end SET_ADD_OP;
+
+
+/* ---------------------------------------------------------------------
+ * SET_SSADD_OP
+ * ------------------------------------------------------------------- */
+
+SET_SSADD_OP: procedure external (X_SET_SSADD_OP);
+
+	THIS_PREC = 0;
+	THIS_VOP = SSADD_VO;
+
+end SET_SSADD_OP;
+
+/* ---------------------------------------------------------------------
+ * SET_CAST_OP
+ * ------------------------------------------------------------------- */
+
+SET_CAST_OP: procedure external (X_SET_CAST_OP);
+
+	THIS_PREC = 0;
+	THIS_VOP = CAST_VO;
+
+end SET_CAST_OP;
+
+/* ---------------------------------------------------------------------
+ * SET_FUNCTIONAL_CAST_OP
+ * ------------------------------------------------------------------- */
+
+SET_FUNCTIONAL_CAST_OP: procedure
+	     external (X_SET_FUNCTIONAL_CAST_OP);
+
+	THIS_PREC = 0;
+	THIS_VOP = FUNCTIONAL_CAST_VO;
+
+end SET_FUNCTIONAL_CAST_OP;
+
+/* ---------------------------------------------------------------------
+ * SET_MEMBER_INIT_OP
+ * ------------------------------------------------------------------- */
+
+SET_MEMBER_INIT_OP: procedure external (X_SET_MEMBER_INIT_OP);
+
+	THIS_PREC = 0;
+	THIS_VOP = MEMBER_INIT_VO;
+
+end SET_MEMBER_INIT_OP;
+
+/* ---------------------------------------------------------------------
+ * SET_CALL_OP
+ * ------------------------------------------------------------------- */
+
+SET_CALL_OP: procedure
+	     external (X_SET_CALL_OP);
+
+	THIS_PREC = 0;
+	THIS_VOP = CALL_VO;
+
+end SET_CALL_OP;
+
+/* ---------------------------------------------------------------------
+ * SET_COMMA_OP
+ * ------------------------------------------------------------------- */
+
+SET_COMMA_OP: procedure external (X_SET_COMMA_OP);
+
+	THIS_PREC = 0;
+	THIS_VOP = EXPLICIT_COMMA_VO;
+
+end SET_COMMA_OP;
+
+/* ---------------------------------------------------------------------
+ * SET_ARGUMENT_OP
+ * ------------------------------------------------------------------- */
+
+SET_ARGUMENT_OP: procedure external (X_SET_ARGUMENT_OP);
+
+	THIS_PREC = ARG_PRECEDENCE;
+	THIS_VOP = ARG_VO;
+
+end SET_ARGUMENT_OP;
+
+/* ---------------------------------------------------------------------
+ * SET_SIZEOF_OP
+ * ------------------------------------------------------------------- */
+
+SET_SIZEOF_OP: procedure external (X_SET_SIZEOF_OP);
+
+	THIS_PREC = UNARY_PRECEDENCE;
+	THIS_VOP = SIZEOF_VO;
+
+end SET_SIZEOF_OP;
+
+/* ---------------------------------------------------------------------
+ * NULL_VALUE
+ *
+ * Make the current value null, as for an empty argument
+ * list, or the right argument of the last ARG_OP in an argument list.
+ * ------------------------------------------------------------------- */
+
+NULL_VALUE: procedure external (X_NULL_VALUE);
+
+	CURRENT_VALUE = NULL_CXX_VID;
+
+end NULL_VALUE;
+
+/* ---------------------------------------------------------------------
+ * POP_ARGUMENT_VALUES
+ * ------------------------------------------------------------------- */
+
+POP_ARGUMENT_VALUES: procedure external (X_POP_ARGUMENT_VALUES);
+
+	call NULL_VALUE;	/* The arguments are all on the stack.
+			   	   This is the right operand to the last
+				   argument op. */
+	call POP_VALUES(ARG_PRECEDENCE);
+
+end POP_ARGUMENT_VALUES;
+
+/* ---------------------------------------------------------------------
+ * TYPE_VALUE
+ * Make the current value refer to CURRENT_TYPE, as for the first operand
+ * of a cast expression.
+ * ------------------------------------------------------------------- */
+
+TYPE_VALUE: procedure external (X_TYPE_VALUE);
+
+	declare P type (POINTER_T);
+
+	if IN_NEW_EXPRESSION_LEVEL > 0 then do;
+		if (TOP_CXX_VALUE_NODE ^= NULL_CXX_VID) &
+		   (TOP_CXX_VALUE_NODE ^= null ()) then do;
+			if TOP_CXX_VALUE_NODE->
+			   CXX_VALUE_NODE.OP = NEW_VO then do;
+				/*
+				/* Hack to get correct
+				/* results for mis-parsing of:
+				/*
+				/*   p = new (TypeName *[NonConstExpr]);
+				/**/
+				call SET_TYPE_DECLARATION ();
+				return;
+			end;
+		end;
+	end;
+
+	CURRENT_VALUE = ALLOC_CXX_VALUE_NODE (TYPE_VO);
+	call TYPE_INTO_VALUE (CURRENT_VALUE, CURRENT_TYPE);
+
+	/* Non-constant sized array must not appear in a sizeof or cast */
+
+	if (CURRENT_VALUE->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (ARRAY_DT)) &
+	   (CURRENT_VALUE->CXX_VALUE_NODE.TOP_TYPE.DIMENSION ^= NULL_NID)
+	then do;
+		call GET_DIM_NODE_R
+		     (CURRENT_VALUE->CXX_VALUE_NODE.TOP_TYPE.DIMENSION, P);
+		if P->DIM_NODE.INCOMPLETE &
+		   (P->DIM_NODE.VALUE_ID ^= NULL_CXX_VID) then do;
+			call SEMANTIC_ERROR (ERR_BAD_EVAL_DIM);
+			call GET_DIM_NODE
+			     (CURRENT_VALUE->
+			      CXX_VALUE_NODE.TOP_TYPE.DIMENSION, P);
+			call COUNT_DOWN_VALUE (P->DIM_NODE.VALUE_ID);
+			P->DIM_NODE.INCOMPLETE = FALSE;
+			P->DIM_NODE.VALUE = 0;
+			call RELEASE_DIM_NODE
+			     (CURRENT_VALUE->
+			      CXX_VALUE_NODE.TOP_TYPE.DIMENSION);
+		end;
+		call RELEASE_DIM_NODE
+		     (CURRENT_VALUE->CXX_VALUE_NODE.TOP_TYPE.DIMENSION);
+	end;
+
+	/* Casting to abstract class is illegal */
+
+	if IS_AGGREGATE_TAG_TYPE
+	   (rank (CURRENT_VALUE->CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+		call GET_SYM_NODE_R
+		     (CURRENT_VALUE->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL, P);
+		if P->SYM_NODE.ABSTRACT then do;
+			if THIS_VOP ^= SIZEOF_VO then do;
+				/*
+				/* Error; this class is abstract and may not
+				/* be used as the type of an explicit cast.
+				/**/
+				call SEMANTIC_ERROR_I
+				     (ERR_ABSTRACT_CLASS_CAST,
+				      QUALIFIED_SYMBOL_NAME
+				       (CURRENT_VALUE->
+					CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL));
+			end;
+		end;
+		call RELEASE_SYM_NODE
+		     (CURRENT_VALUE->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL);
+	end;
+
+	CURRENT_VALUE = EXPAND_VALUE (CURRENT_VALUE);
+
+end TYPE_VALUE;
+
+/* ---------------------------------------------------------------------
+ * TYPE_INTO_VALUE
+ *
+ * V must be paged in.  Gives the value a type.
+ * Does not set NOT_AN_LVALUE for V.
+ * ------------------------------------------------------------------- */
+
+TYPE_INTO_VALUE: procedure (V, TYPE);
+
+	declare
+		V		type (CXX_VID_T),
+		TYPE		type (NID_T);
+	declare
+		TOP_TYPE	type (TYPE_DATA_T);
+
+	if TYPE = NULL_NID then do;
+		TOP_TYPE.CODE		= byte (NULL_BT);
+		TOP_TYPE.QUALIFIERS	= NULL_TQ;
+		TOP_TYPE.NID		= NULL_NID;
+	end;
+	else	call GET_TOP_TYPE (TYPE, TOP_TYPE);
+
+	V->CXX_VALUE_NODE.TYPE			= TYPE;
+	V->CXX_VALUE_NODE.TOP_TYPE		= TOP_TYPE;
+	V->CXX_VALUE_NODE.DERIVED_TYPE_SKIP	= 0;
+	V->CXX_VALUE_NODE.EXTRA_PTR_LEVEL	= FALSE;
+        V->CXX_VALUE_NODE.SIZE			= 0;
+        V->CXX_VALUE_NODE.SIZE_UNITS		= byte (0);
+
+end TYPE_INTO_VALUE;
+
+/* ---------------------------------------------------------------------
+ * PUSH_NEW
+ *
+ * Push a NEW_VO onto the stack.  Save the current name scope
+ * for looking up 'new'.
+ * ------------------------------------------------------------------- */
+
+PUSH_NEW: procedure external (X_PUSH_NEW);
+
+	call PUSH_CXX_VALUE_NODE
+	     (ALLOC_NEW_CXX_VALUE_NODE (CURRENT_NAME_SCOPE));
+
+	IN_NEW_EXPRESSION_LEVEL = IN_NEW_EXPRESSION_LEVEL + 1;
+
+end PUSH_NEW;
+
+/* ---------------------------------------------------------------------
+ * ENTER_PLACEMENT
+ *
+ * Current value is null or an argument list.  Add it to the
+ * stack top as the right operand of new.
+ * ------------------------------------------------------------------- */
+
+ENTER_PLACEMENT: procedure external (X_ENTER_PLACEMENT);
+
+        TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.RIGHT = CURRENT_VALUE;
+	CURRENT_VALUE = NULL_CXX_VID;
+
+end ENTER_PLACEMENT;
+
+/* ---------------------------------------------------------------------
+ * ENTER_TYPE_FOR_NEW
+ *
+ * This type is the just-parsed type name.  Add it to the stack top as the
+ * TYPE of new.  Determine which (global or class-specific) operator
+ * new is to be called.
+ * ------------------------------------------------------------------- */
+
+ENTER_TYPE_FOR_NEW: procedure external (X_ENTER_TYPE_FOR_NEW);
+
+	declare	SYM		type (NID_T),
+		TK		type (NID_T),
+		NEW_SCOPE	type (NID_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		(TSP, P)	type (POINTER_T);
+
+	CXX_VALUE_NODE_PTR = TOP_CXX_VALUE_NODE;
+	call TYPE_INTO_VALUE (TOP_CXX_VALUE_NODE, CURRENT_TYPE);
+
+	/* Look up the actual new operation to use,
+	/* taking into account whether "::" preceded "new", also
+	/* whether the type being allocated might have its own "new".
+	/**/
+	call GET_TOP_TYPE (CURRENT_TYPE, TYPE_DATA);
+	if CXX_VALUE_NODE.LEFT_NID ^= NULL_NID then
+		NEW_SCOPE = CXX_VALUE_NODE.LEFT_NID;
+	else if IS_AGGREGATE_TAG_TYPE (rank (TYPE_DATA.CODE)) then do;
+		call GET_SYM_NODE_R (TYPE_DATA.TAG_SYMBOL, TSP);
+		if TSP->SYM_NODE.ABSTRACT then do;
+			/*
+			/* Error; an object of abstract class
+			/* type may not be created.
+			/**/
+			call SEMANTIC_ERROR_I
+			     (ERR_NEW_ABSTRACT_CLASS_OBJECT,
+			      QUALIFIED_SYMBOL_NAME (TYPE_DATA.TAG_SYMBOL));
+		end;
+		NEW_SCOPE = TSP->SYM_NODE.DEFINED_SCOPE;
+		call RELEASE_SYM_NODE (TYPE_DATA.TAG_SYMBOL);
+	end;
+	else
+		NEW_SCOPE = CURRENT_GLOBAL_SCOPE;
+
+	TK = OPERATOR_NEW_NAME;
+	SYM = LOOKUP_NAME (TK, VANILLA_SK, NEW_SCOPE);
+
+	/* Check access to "new" symbol */
+
+	if SYM ^= NULL_NID then do;
+		call GET_SYM_NODE_R (SYM, P);
+		if P->SYM_NODE.IS_AGGREGATE_MEMBER then do;
+			if ^IS_ACCESSIBLE_STATIC (SYM) then do;
+				if ^AM_DEBUGGER then do;
+					call SEMANTIC_ERROR_I
+					     (ERR_PRIV_BASE_MEMBER_REF,
+					      FULL_QUALIFIED_SYMBOL_NAME
+					      (SYM));
+				end;
+			end;
+		end;
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+	/* Save the "new" symbol in the value node's left */
+
+	CXX_VALUE_NODE.LEFT_NID = SYM;
+	CXX_VALUE_NODE.LEFT_IS_NID = TRUE;
+	CXX_VALUE_NODE.LEFT_IS_NOT_VID = TRUE;
+
+end ENTER_TYPE_FOR_NEW;
+
+/* ---------------------------------------------------------------------
+ * POP_NEW
+ *
+ * Current value is null or an argument list for initializing the object
+ * created using new.  Pop the 'new' operation from the stack top and
+ * put the current value into its third operand.  Call expand value for new
+ * and leave the result as the current value.
+ * ------------------------------------------------------------------- */
+
+POP_NEW: procedure external (X_POP_NEW);
+
+	TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.THIRD = CURRENT_VALUE;
+        CURRENT_VALUE = POP_CXX_VALUE_NODE ();
+        CURRENT_VALUE = EXPAND_VALUE (CURRENT_VALUE);
+
+	IN_NEW_EXPRESSION_LEVEL = IN_NEW_EXPRESSION_LEVEL - 1;
+
+end POP_NEW;
+
+/* ---------------------------------------------------------------------
+ * PUSH_DELETE
+ *
+ * Push a DELETE_VO onto the stack.  
+ * ------------------------------------------------------------------- */
+
+PUSH_DELETE: procedure external (X_PUSH_DELETE);
+
+	call PUSH_CXX_VALUE_NODE
+	     (ALLOC_DELETE_CXX_VALUE_NODE (CURRENT_NAME_SCOPE));
+	CURRENT_VALUE = NULL_CXX_VID;
+
+end PUSH_DELETE;
+
+/* ---------------------------------------------------------------------
+ * ENTER_DELETE_DIMENSION
+ *
+ * Current value is the dimension expression for a delete. 
+ * Combine it with the stack top as the right operand of delete.
+ * ------------------------------------------------------------------- */
+
+ENTER_DELETE_DIMENSION: procedure external (X_ENTER_DELETE_DIMENSION);
+
+        TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.RIGHT = CURRENT_VALUE;
+        TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.RIGHT_IS_NOT_VID = FALSE;
+	CURRENT_VALUE = NULL_CXX_VID;
+
+end ENTER_DELETE_DIMENSION;
+
+/* ---------------------------------------------------------------------
+ * POP_DELETE
+ *
+ * Current value is the expression of a delete operation, which is supposed
+ * to be a pointer to a dynamically-allocated object.  
+ * If the name scope for 'delete' had '::', look up 'delete' in global scope,
+ * otherwise look it up according to the type of the object being deleted.
+ * Pop the 'delete' operation from the stack top and
+ * put the current value into its third operand.  Call expand value for 
+ * delete and leave the result as the current value.
+ * ------------------------------------------------------------------- */
+
+POP_DELETE: procedure external (X_POP_DELETE);
+
+	declare
+		SYM			type (NID_T),
+		TK			type (NID_T),
+		OBJECT_TYPE		type (TYPE_DATA_T),
+		DELETE_SCOPE		type (NID_T),
+		DELETE_NAME_SCOPE	type (NID_T),
+		OBJECT_POINTER		type (CXX_VID_T),
+		HAS_DIMENSION		type (BOOL_T),
+		TYPE_INFO		type (TYPE_INFO_T),
+		(TSP, P)		type (POINTER_T);
+
+	OBJECT_POINTER = CURRENT_VALUE;
+        CURRENT_VALUE = POP_CXX_VALUE_NODE ();
+	DELETE_SCOPE = CURRENT_VALUE->CXX_VALUE_NODE.LEFT_NID;
+	HAS_DIMENSION = ^CURRENT_VALUE->CXX_VALUE_NODE.RIGHT_IS_NOT_VID;
+
+	/*
+	/* Determine type of the object to be deleted, used
+	/* here _only_ to look up class-specific delete.
+	/**/
+
+	CXX_VALUE_NODE_PTR = OBJECT_POINTER;
+	call GET_VALUE_TYPE (TYPE_INFO);
+	if TYPE_INFO.CODE = byte (REFERENCE_DT) then
+		call STRIP_TOP_TYPE (TYPE_INFO, FALSE);
+	if HAS_DIMENSION then
+		OBJECT_TYPE.CODE = byte (ARRAY_DT);
+	else if TYPE_INFO.TOP_TYPE.CODE = byte (POINTER_DT) then
+		call GET_TOP_LEVEL_TYPE_INFO (TYPE_INFO, 1, OBJECT_TYPE);
+	else	OBJECT_TYPE.CODE = byte (NULL_BT);
+
+	/* Look up the actual delete operation to use,
+	/* taking into account whether "::" preceded "delete", also
+	/* whether the type being allocated might have its own "delete".
+	/* 
+	/* If the type is a class with a destructor, and "::" was not
+	/* specified, then deletion is left up to the destructor
+	/* call; set SYM to NULL_NID in this case.
+	/**/
+
+	if DELETE_SCOPE ^= NULL_NID then do;
+		/* use current DELETE_SCOPE */
+	end;
+	else if IS_AGGREGATE_TAG_TYPE (rank (OBJECT_TYPE.CODE)) then do;
+		call GET_SYM_NODE_R (OBJECT_TYPE.TAG_SYMBOL, TSP);
+		if ^TSP->SYM_NODE.NEEDS_DESTRUCTION then do;
+			DELETE_SCOPE = TSP->SYM_NODE.DEFINED_SCOPE;
+			if DELETE_SCOPE = NULL_NID then do;
+				call SEMANTIC_ERROR_I
+				     (ERR_DELETE_UNDEFINED_CLASS,
+				      QUALIFIED_SYMBOL_NAME
+				      (OBJECT_TYPE.TAG_SYMBOL));
+				DELETE_SCOPE = CURRENT_GLOBAL_SCOPE;
+			end;
+		end;
+		call RELEASE_SYM_NODE (OBJECT_TYPE.TAG_SYMBOL);
+	end;
+	else
+		DELETE_SCOPE = CURRENT_GLOBAL_SCOPE;
+
+	TK = OPERATOR_DELETE_NAME;
+	if DELETE_SCOPE ^= NULL_NID then
+		SYM = LOOKUP_NAME (TK, VANILLA_SK, DELETE_SCOPE);
+	else
+		SYM = NULL_NID;
+
+	/* Save the "delete" symbol in the value node's left.
+	/* and the object pointer expression as its third.
+	/**/
+	CURRENT_VALUE->CXX_VALUE_NODE.LEFT_NID = SYM;
+	CURRENT_VALUE->CXX_VALUE_NODE.LEFT_IS_NID = TRUE;
+	CURRENT_VALUE->CXX_VALUE_NODE.LEFT_IS_NOT_VID = TRUE;
+	CURRENT_VALUE->CXX_VALUE_NODE.THIRD = OBJECT_POINTER;
+        CURRENT_VALUE = EXPAND_VALUE (CURRENT_VALUE);
+
+	/* Check access to "delete" symbol */
+
+	if SYM ^= NULL_NID then do;
+		call GET_SYM_NODE_R (SYM, P);
+		if P->SYM_NODE.IS_AGGREGATE_MEMBER then do;
+			if ^IS_ACCESSIBLE_STATIC (SYM) then do;
+				if ^AM_DEBUGGER then do;
+					call SEMANTIC_ERROR_I
+					     (ERR_PRIV_BASE_MEMBER_REF,
+					      FULL_QUALIFIED_SYMBOL_NAME
+					      (SYM));
+				end;
+			end;
+		end;
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+end POP_DELETE;
+
+/* ---------------------------------------------------------------------
+/* SET_CONSTANT_EXPRESSION
+/* ------------------------------------------------------------------- */
+
+SET_CONSTANT_EXPRESSION: procedure external (X_SET_CONSTANT_EXPRESSION);
+
+	if GET_INTEGRAL_CONSTANT_VALUE
+	   (CURRENT_VALUE,
+	    CURRENT_CONSTANT_VALUE,
+	    CURRENT_CONSTANT_INTEGRAL_TYPE) then do;
+		CURRENT_CONSTANT_NON_CONSTANT = FALSE;
+		CURRENT_VALUE = NULL_CXX_VID;
+	end;
+	else do;
+		/*
+		/* Error; this is not integral constant
+		/* expression as is required.
+		/**/
+		call SEMANTIC_ERROR (ERR_INT_CONST_EXPR_REQ);
+		CURRENT_CONSTANT_NON_CONSTANT = TRUE;
+		CURRENT_CONSTANT_VALUE = 0;
+	end;
+
+end SET_CONSTANT_EXPRESSION;
+
+/* ---------------------------------------------------------------------
+ * AFFIX_DESTRUCTORS
+ *
+ * When a COLON is seen as part of a conditional expression, 
+ * for the sake of -ztemp determine the destructors that have been
+ * entered for the sake of the first branch of the conditional and
+ * affix them to CURRENT_VALUE.
+ * ------------------------------------------------------------------- */
+
+AFFIX_DESTRUCTORS: procedure external (X_AFFIX_DESTRUCTORS);
+
+	declare ORIGINAL_DTORS type (CXX_VID_T);
+
+	/*
+	/* Look up the destructors which held sway when the
+	/* QUESTION was seen.
+	/**/
+	if ^SW_ZOMBIE_TEMP then
+		return;
+
+        ORIGINAL_DTORS = TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.THIRD;
+	TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.THIRD = NULL_CXX_VID;
+	TOP_CXX_VALUE_NODE->CXX_VALUE_NODE.TERNARY = FALSE;
+
+	/* Affix the destruction of the newer temporaries. */
+	call COUNT_UP_VALUE (ORIGINAL_DTORS);
+	CURRENT_VALUE = VALUE_BEFORE_EFFECT (
+				(CURRENT_VALUE), 
+				DESTROY_DIFFERENCE (CURRENT_DESTRUCTORS (), 
+					            ORIGINAL_DTORS));
+
+	/* Pop the newer destruction from the current set. */
+	call POP_DESTRUCTORS (ORIGINAL_DTORS);
+
+end AFFIX_DESTRUCTORS;
+
+/* ---------------------------------------------------------------------
+ * PUSH_MARKER
+ * ------------------------------------------------------------------- */
+
+PUSH_MARKER: procedure external (X_PUSH_MARKER);
+
+	call PUSH_CXX_VALUE_NODE (NULL_CXX_VID);
+
+end PUSH_MARKER;
+
+/* ---------------------------------------------------------------------
+ * POP_MARKER
+ * ------------------------------------------------------------------- */
+
+POP_MARKER: procedure external (X_POP_MARKER);
+
+	declare THROWAWAY_VID type (CXX_VID_T);
+
+        THROWAWAY_VID = POP_CXX_VALUE_NODE ();
+
+end POP_MARKER;
+

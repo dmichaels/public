@@ -1,0 +1,63 @@
+/* ANSI-C limits.in - Limit definitions */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.15.89  PLB  Changed MAX_TOKEN_SPELLING_LENGTH to 512. See comments.
+ *  08.10.88  DGM  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+** Token length constraints.
+** ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+ * MAX_TOKEN_SPELLING_LENGTH represents the maximum length in characters
+ * which any single C token is allowed to be (the most obvious constraint
+ * this imposes is on string literals).  This value must be less than or
+ * equal to MAX_SPELLING_SIZE (defined in global/limits.in) and is
+ * ultimately limited by the size of the character string SPELLING
+ * in the definition of the LPI global symbol table TOKEN_NODE.
+ * -------
+ * HOWEVER !!! The actual constraint is that the length be less than
+ * fndnod's page size (minus the fixed length part of the token node).
+ * This is supposed to a minimum of 1024 bytes. We need as a minimum
+ * 507 as required by the Standard (one string lietral before concatenation 
+ * comprising an entire logical line). Thus, to save a "heap" of aggravation,
+ * we make its minimum length be 512 (a nice round number) and assume this 
+ * will always be less than page size. Otherwise we're up the creek.
+ * <Note that the interface to GETTOK has changed to accomodate this>.
+ * ---------------------------------------------------------------------
+ * MAX_IDENTIFIER_LENGTH represents the maximum length in characters
+ * which an identifier is allowed to be.  This value must be less than
+ * or equal to MAX_TOKEN_SPELLING_LENGTH.
+ * ---------------------------------------------------------------------
+ * NAME_LENGTH represents the number (initial) characters within
+ * an identifier which are significant (the remaining characters
+ * are ignored in symbol lookup).  This value must be less than
+ * or equal to MAX_IDENTIFIER_LENGTH.
+ * ---------------------------------------------------------------------
+ * MAX_FILE_NAME_LENGTH represents the number of characters allowed
+ * within a final include file path name.  Note that this is not
+ * necessarily the size of the file name specified in the #include
+ * directive (since that file name may be modified by qualifying it with
+ * different directory names).  Since the string representing the file
+ * name is kept in memory (rather than in a node), and since there is
+ * no static storage needed for a file name, there is no reason why it
+ * can't just be huge; so, it is.
+ * ------------------------------------------------------------------- */
+
+%replace MAX_TOKEN_SPELLING_LENGTH	by 512;
+%replace MAX_IDENTIFIER_LENGTH  	by 256;
+%replace NAME_LENGTH            	by 256;
+
+%replace MAX_FILE_NAME_LENGTH		by 4096;

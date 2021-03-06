@@ -1,0 +1,445 @@
+/* C++ defer.pl1 - Deferred processing of functions */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  08.31.92  DGM  006	Added SYM_NODE.DEFERRED.
+ *  08.13.92  DGM  005	Clear declaration data before parsing.
+ *  08.10.92  DGM  004	Set .DEFINED when deferring and
+ *			clear when when parsing (or not parsing).
+ *  06.15.92  DGM  003	Fix for 002.
+ *  06.11.92  DGM  002	Updated for correct lookup semantics using
+ *			sym-node sequencing numbers.
+ *  05.29.92  DGM  001	Updated.
+ *  05.19.92  DGM  000	Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 08.31.92 006 DEFER');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG; 
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_PARSER_PKG;
+%include CXX_SCOPE_STACK_PKG;
+%include CXX_SET_SCOPE_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_NODE_LIST_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_PROCESS_DECLARATION_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 DEFERRED_FUNCTION_DATA		based,
+  2 function_or_class_symbol_union	union,
+    3 CLASS_SYMBOL			type (NID_T),
+    3 FUNCTION_SYMBOL			type (NID_T),
+  2 IS_CLASS				type (BOOL_T),
+  2 NEXT				type (POINTER_T),
+  2 PREV				type (POINTER_T);
+
+/* ---------------------------------------------------------------------
+/* Local data definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+DEFERRED_FUNCTION_LIST			type (POINTER_T)
+					static internal initial (null ()),
+LAST_IN_DEFERRED_FUNCTION_LIST		type (POINTER_T)
+					static internal initial (null ());
+
+declare
+
+NUMBER_OF_FUNCTIONS_PARSED		type (LONG_T)
+					static internal initial (0);
+declare
+
+DOING_DEFERRED_FUNCTION_PARSE		type (BOOL_T)
+					static internal initial (FALSE);
+
+/* ---------------------------------------------------------------------
+/* NOTE_DEFERRED_FUNCTION
+/*
+/* Place the function represented by the given sym-node id F onto an
+/* internal list of "deferred" functions, i.e. functions whose bodies
+/* will skipped for now and which will be processed at the end of the
+/* compilation unit, that is iff they have been referenced.
+/* ------------------------------------------------------------------- */
+
+NOTE_DEFERRED_CURRENT_FUNCTION: procedure ()
+				external  (X_NOTE_DEFERRED_CURRENT_FUNCTION);
+	declare
+		P	type (POINTER_T);
+
+	allocate DEFERRED_FUNCTION_DATA set (P);
+	P->DEFERRED_FUNCTION_DATA.FUNCTION_SYMBOL = CURRENT_NODE_ID;
+	P->DEFERRED_FUNCTION_DATA.IS_CLASS = FALSE;
+
+	P->DEFERRED_FUNCTION_DATA.NEXT = null ();
+	if LAST_IN_DEFERRED_FUNCTION_LIST ^= null () then do;
+		LAST_IN_DEFERRED_FUNCTION_LIST->
+			DEFERRED_FUNCTION_DATA.NEXT = P;
+		P->DEFERRED_FUNCTION_DATA.PREV =
+			LAST_IN_DEFERRED_FUNCTION_LIST;
+	end;
+	else do;
+		DEFERRED_FUNCTION_LIST = P;
+		P->DEFERRED_FUNCTION_DATA.PREV = null ();
+	end;
+	LAST_IN_DEFERRED_FUNCTION_LIST = P;
+
+	SYM_NODE.DEFINED = TRUE;
+	SYM_NODE.DEFERRED = TRUE;
+
+end NOTE_DEFERRED_CURRENT_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* NOTE_DEFERRED_MEMBER_FUNCTIONS
+/*
+/* Place the class represented by the given sym-node id C onto an
+/* internal list of "deferred" member-functions, i.e. member-functions
+/* whose bodies will skipped now and which will be processed at the end
+/* of the compilation unit iff they have been referenced.  N.B. It
+/* is assumed that this routine is called at the end of a class body.
+/* ------------------------------------------------------------------- */
+
+NOTE_DEFERRED_MEMBER_FUNCTIONS: procedure (CLASS, CLASS_PTR)
+				external  (X_NOTE_DEFERRED_MEMBER_FUNCTIONS);
+	declare
+		CLASS		type (NID_T),
+		CLASS_PTR	type (POINTER_T);
+	declare
+		(FB, NEXT_FB)	type (NID_T),
+		(FP, P)		type (POINTER_T);
+
+	/*
+	/* Update the symbol sequence number of each member function
+	/* which whose function body parse is being deferred so that
+	/* all of the symbol declared within the class will be visible
+	/* when the each function body is parsed.
+	/**/
+
+	do FB = CLASS_PTR->SYM_NODE.SAVED_FUNCTION_BODIES repeat (NEXT_FB)
+	while (FB ^= NULL_NID);
+		call GET_SYM_NODE (FB, FP);
+		NEXT_FB = FP->SYM_NODE.SAVED_FUNCTION_BODY.NEXT;
+		FP->SYM_NODE.SEQUENCE_NUMBER = UPDATE_SYMBOL_SEQUENCE_NUMBER ();
+		FP->SYM_NODE.DEFINED = TRUE;
+		FP->SYM_NODE.DEFERRED = TRUE;
+		call RELEASE_SYM_NODE (FB);
+	end;
+
+	allocate DEFERRED_FUNCTION_DATA set (P);
+	P->DEFERRED_FUNCTION_DATA.CLASS_SYMBOL = CLASS;
+	P->DEFERRED_FUNCTION_DATA.IS_CLASS = TRUE;
+
+	P->DEFERRED_FUNCTION_DATA.NEXT = null ();
+	if LAST_IN_DEFERRED_FUNCTION_LIST ^= null () then do;
+		LAST_IN_DEFERRED_FUNCTION_LIST->
+			DEFERRED_FUNCTION_DATA.NEXT = P;
+		P->DEFERRED_FUNCTION_DATA.PREV =
+			LAST_IN_DEFERRED_FUNCTION_LIST;
+	end;
+	else do;
+		DEFERRED_FUNCTION_LIST = P;
+		P->DEFERRED_FUNCTION_DATA.PREV = null ();
+	end;
+	LAST_IN_DEFERRED_FUNCTION_LIST = P;
+
+end NOTE_DEFERRED_MEMBER_FUNCTIONS;
+
+/* ---------------------------------------------------------------------
+/* REMOVE_DEFERRED_FUNCTION
+/*
+/* Remove the deferred function data represented by the given
+/* DEFERRED_FUNCTION_DATA pointer from the deferred function data list.
+/* ------------------------------------------------------------------- */
+
+REMOVE_DEFERRED_FUNCTION: procedure (P) internal;
+
+	declare P type (POINTER_T);
+
+	if DEFERRED_FUNCTION_LIST = P then do;
+		DEFERRED_FUNCTION_LIST = P->DEFERRED_FUNCTION_DATA.NEXT;
+		if DEFERRED_FUNCTION_LIST ^= null () then
+			DEFERRED_FUNCTION_LIST->
+			DEFERRED_FUNCTION_DATA.PREV = null ();
+	end;
+	else	P->DEFERRED_FUNCTION_DATA.PREV->DEFERRED_FUNCTION_DATA.NEXT =
+			P->DEFERRED_FUNCTION_DATA.NEXT;
+
+	if LAST_IN_DEFERRED_FUNCTION_LIST = P then do;
+		LAST_IN_DEFERRED_FUNCTION_LIST =
+			P->DEFERRED_FUNCTION_DATA.PREV;
+		if LAST_IN_DEFERRED_FUNCTION_LIST ^= null () then
+			LAST_IN_DEFERRED_FUNCTION_LIST->
+			DEFERRED_FUNCTION_DATA.NEXT = null ();
+	end;
+	else	P->DEFERRED_FUNCTION_DATA.NEXT->DEFERRED_FUNCTION_DATA.PREV =
+			P->DEFERRED_FUNCTION_DATA.PREV;
+
+	free P->DEFERRED_FUNCTION_DATA;
+
+end REMOVE_DEFERRED_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* PARSE_DEFERRED_FUNCTIONS
+/*
+/* Traverse the deferred function list and parse/process the functions
+/* which were deferred until this point iff they have not already been
+/* defined and they are referenced; remove them from the list as they
+/* are processed.  Return the number of deferred functions parsed.
+/* ------------------------------------------------------------------- */
+
+PARSE_DEFERRED_FUNCTIONS: procedure ()
+			  returns   (type (LONG_T))
+			  external  (X_PARSE_DEFERRED_FUNCTIONS);
+	declare
+		(P, NEXT_P, CP, FP)	type (POINTER_T),
+		(FB, NEXT_FB)		type (NID_T),
+		N			type (LONG_T),
+		SNID			type (SNID_T),
+		S			character (256) varying;
+
+	DOING_DEFERRED_FUNCTION_PARSE = TRUE;
+
+	SW_DEFER_FUNCTIONS = FALSE; N = 0;
+
+	call SAVE_NODE (SNID);
+	call SAVE_SCOPE_STATE ();
+
+	do P = DEFERRED_FUNCTION_LIST repeat (NEXT_P) while (P ^= null ());
+		NEXT_P = P->DEFERRED_FUNCTION_DATA.NEXT;
+		if P->DEFERRED_FUNCTION_DATA.IS_CLASS then do;
+			call GET_SYM_NODE_R
+			     (P->DEFERRED_FUNCTION_DATA.CLASS_SYMBOL, CP);
+			call SET_CURRENT_SCOPE (CP->SYM_NODE.DEFINED_SCOPE);
+			do FB = CP->SYM_NODE.SAVED_FUNCTION_BODIES
+			repeat (NEXT_FB) while (FB ^= NULL_NID);
+				call GET_SYM_NODE_R (FB, FP);
+				NEXT_FB = FP->SYM_NODE.SAVED_FUNCTION_BODY.NEXT;
+				if FP->SYM_NODE.VALUE ^= NULL_NID then do;
+					/*
+					/* This function has been really
+					/* truly defined (i.e. not defined
+					/* but deferred); if it is a duplicate
+					/* then a diagnostic was already given.
+					/**/
+					goto NEXT_MEMBER_FUNCTION;
+				end;
+				if ^FP->SYM_NODE.REFERENCED then
+					goto NEXT_MEMBER_FUNCTION;
+				FP->SYM_NODE.DEFINED = FALSE;
+				FP->SYM_NODE.DEFERRED = FALSE;
+				call CLEAR_DECLARATION ();
+				call SET_LOOKUP_SEQUENCE_RANGE
+				     (FP->SYM_NODE.SEQUENCE_NUMBER,
+				      SYMBOL_SEQUENCE_NUMBER ());
+				CURRENT_SYMBOL = FB;
+				call PARSE_FUNCTION_BODY
+				     (FP->SYM_NODE.
+				      SAVED_FUNCTION_BODY.FIRST_TOKEN,
+				      FP->SYM_NODE.
+				      SAVED_FUNCTION_BODY.LAST_TOKEN,
+				      FP->SYM_NODE.
+				      SAVED_FUNCTION_BODY.SOURCE_STATE);
+				N = N + 1;
+				NEXT_MEMBER_FUNCTION:;
+				call RELEASE_SYM_NODE (FB);
+			end;
+			call RELEASE_SYM_NODE
+			     (P->DEFERRED_FUNCTION_DATA.CLASS_SYMBOL);
+		end;
+		else do;
+			call SET_SYM_NODE_R
+			     (P->DEFERRED_FUNCTION_DATA.FUNCTION_SYMBOL);
+			if SYM_NODE.VALUE ^= NULL_NID then do;
+				/*
+				/* This function has been really
+				/* truly defined (i.e. not defined
+				/* but deferred); if it is a duplicate
+				/* then a diagnostic was already given.
+				/**/
+				goto NEXT_DEFERRED_FUNCTION;
+			end;
+			if ^SYM_NODE.REFERENCED then
+				goto NEXT_DEFERRED_FUNCTION;
+			SYM_NODE.DEFINED = FALSE;
+			SYM_NODE.DEFERRED = FALSE;
+			call CLEAR_DECLARATION ();
+			call SET_CURRENT_SCOPE (SYM_NODE.ENCLOSING_SCOPE);
+			call SET_LOOKUP_SEQUENCE_RANGE
+			     (SYM_NODE.SEQUENCE_NUMBER,
+			      SYMBOL_SEQUENCE_NUMBER ());
+			CURRENT_SYMBOL = CURRENT_NODE_ID;
+			call PARSE_FUNCTION_BODY
+			     (SYM_NODE.
+			      SAVED_FUNCTION_BODY.FIRST_TOKEN,
+			      SYM_NODE.
+			      SAVED_FUNCTION_BODY.LAST_TOKEN,
+			      SYM_NODE.
+			      SAVED_FUNCTION_BODY.SOURCE_STATE);
+			N = N + 1;
+			call REMOVE_DEFERRED_FUNCTION (P);
+		end;
+		NEXT_DEFERRED_FUNCTION:;
+	end;
+
+	call RESTORE_SCOPE_STATE ();
+	call RESTORE_NODE (SNID);
+
+	NUMBER_OF_FUNCTIONS_PARSED = NUMBER_OF_FUNCTIONS_PARSED + N;
+
+	if SW_DEBUGGING_STATS & (N = 0) then do;
+		S = 'Deferred functions parsed:     ' ||
+		    trim (char (NUMBER_OF_FUNCTIONS_PARSED));
+		call WRITE_DEBUG_LINE (S);
+		S = 'Deferred functions not parsed: ' ||
+		    trim (char (NUMBER_OF_FUNCTIONS_NOT_PARSED ()));
+		call WRITE_DEBUG_LINE (S);
+	end;
+
+	call CLEAR_LOOKUP_SEQUENCE_RANGE ();
+
+	DOING_DEFERRED_FUNCTION_PARSE = FALSE;
+
+	return (N);
+
+end PARSE_DEFERRED_FUNCTIONS;
+
+/* ---------------------------------------------------------------------
+/* CLEANUP_DEFERRED_FUNCTIONS
+/* ------------------------------------------------------------------- */
+
+CLEANUP_DEFERRED_FUNCTIONS: procedure ()
+			    external  (X_CLEANUP_DEFERRED_FUNCTIONS);
+	declare
+		(P, NEXT_P)	type (POINTER_T),
+		(CP, FP)	type (POINTER_T),
+		(FB, NEXT_FB)	type (NID_T);
+
+	do P = DEFERRED_FUNCTION_LIST repeat (NEXT_P) while (P ^= null ());
+		NEXT_P = P->DEFERRED_FUNCTION_DATA.NEXT;
+		if P->DEFERRED_FUNCTION_DATA.IS_CLASS then do;
+			call GET_SYM_NODE_R
+			     (P->DEFERRED_FUNCTION_DATA.CLASS_SYMBOL, CP);
+			do FB = CP->SYM_NODE.SAVED_FUNCTION_BODIES
+			repeat (NEXT_FB) while (FB ^= NULL_NID);
+				call GET_SYM_NODE_R (FB, FP);
+				NEXT_FB = FP->SYM_NODE.SAVED_FUNCTION_BODY.NEXT;
+				if FP->SYM_NODE.VALUE = NULL_NID then do;
+					/*
+					/* This deferred function
+					/* was never defined.
+					/**/
+					FP->SYM_NODE.DEFINED = FALSE;
+				end;
+				call RELEASE_SYM_NODE (FB);
+			end;
+			call RELEASE_SYM_NODE
+			     (P->DEFERRED_FUNCTION_DATA.CLASS_SYMBOL);
+		end;
+		else do;
+			call GET_SYM_NODE_R
+			     (P->DEFERRED_FUNCTION_DATA.FUNCTION_SYMBOL, FP);
+			if FP->SYM_NODE.VALUE = NULL_NID then do;
+				/*
+				/* This deferred function
+				/* was never defined.
+				/**/
+				FP->SYM_NODE.DEFINED = FALSE;
+			end;
+			call RELEASE_SYM_NODE
+			     (P->DEFERRED_FUNCTION_DATA.FUNCTION_SYMBOL);
+		end;
+		call REMOVE_DEFERRED_FUNCTION (P);
+	end;
+
+end CLEANUP_DEFERRED_FUNCTIONS;
+
+/* ---------------------------------------------------------------------
+/* NUMBER_OF_FUNCTIONS_NOT_PARSED
+/*
+/* Return the number of functions on the deferred function list.
+/* ------------------------------------------------------------------- */
+
+NUMBER_OF_FUNCTIONS_NOT_PARSED: procedure returns (type (LONG_T)) internal;
+
+	declare
+		(P, NEXT_P)	type (POINTER_T),
+		(SP, FP)	type (POINTER_T),
+		(FB, NEXT_FB)	type (NID_T),
+		N		type (LONG_T);
+
+	N = 0;
+
+	do P = DEFERRED_FUNCTION_LIST repeat (NEXT_P) while (P ^= null ());
+		if P->DEFERRED_FUNCTION_DATA.IS_CLASS then do;
+			call GET_SYM_NODE_R
+			     (P->DEFERRED_FUNCTION_DATA.CLASS_SYMBOL, SP);
+			do FB = SP->SYM_NODE.SAVED_FUNCTION_BODIES
+			repeat (NEXT_FB) while (FB ^= NULL_NID);
+				call GET_SYM_NODE_R (FB, FP);
+				if ^FP->SYM_NODE.DEFINED then
+					N = N + 1;
+				NEXT_FB = FP->SYM_NODE.
+					      SAVED_FUNCTION_BODY.NEXT;
+				call RELEASE_SYM_NODE (FB);
+			end;
+			call RELEASE_SYM_NODE
+			     (P->DEFERRED_FUNCTION_DATA.CLASS_SYMBOL);
+		end;
+		else	N = N + 1;
+		NEXT_P = P->DEFERRED_FUNCTION_DATA.NEXT;
+	end;
+
+	return (N);
+
+end NUMBER_OF_FUNCTIONS_NOT_PARSED;
+
+/* ---------------------------------------------------------------------
+/* PARSING_DEFERRED_FUNCTION
+/* ------------------------------------------------------------------- */
+
+PARSING_DEFERRED_FUNCTION: procedure ()
+			   returns   (type (BOOL_T))
+			   external  (X_PARSING_DEFERRED_FUNCTION);
+
+	return (DOING_DEFERRED_FUNCTION_PARSE);
+
+end PARSING_DEFERRED_FUNCTION;
+

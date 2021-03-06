@@ -1,0 +1,60 @@
+/* LPI-DEBUG M68 OPSIZE.IN - MC68020/68881 opcode/ea size definitions */
+
+/**********************************************************************
+ * This product is the property of Language Processors, Inc.          *
+ * and is licensed pursuant to a written license agreement.           *
+ * No portion of this product may be reproduced without the written   *
+ * permission of Language Processors, Inc. except pursuant to the     *
+ * license agreement.                                                 *
+ *********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   2.12.92  VTF  (001) Changed all opcode sizes to lowercase.
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68020 User's
+ *                 Manual, and the MC68881 User's Manual.
+ *
+ *********************************************************************/
+
+/* -------------------------------------------------------------------
+ * -- Opcode Size Extension Names and Codes --
+ * ---------------------------------------------------------------- */
+
+declare OPCODE_SIZE_NAME (SIZE_UNKNOWN : SIZE_PACKED_DYN)
+			 character (2) varying static initial (
+
+	  ''	/* SIZE_UNKNOWN    : Unknown */
+	, ''	/* SIZE_NULL       : Null (unsized) */
+	, '.b'	/* SIZE_BYTE       : Byte Integer */
+	, '.w'	/* SIZE_WORD       : Word Integer */
+	, '.l'	/* SIZE_LONG       : Long Word Integer */
+	, '.s'	/* SIZE_SINGLE     : Single Precision Real */
+	, '.d'	/* SIZE_DOUBLE     : Double Precision Real */
+	, '.x'	/* SIZE_EXTENDED   : Extended Precision Real */
+	, '.p'	/* SIZE_PACKED     : Packed Decimal Real */
+	, '.p'	/* SIZE_PACKED_DYN : Packed Decimal Real (Dynamic K) */
+);
+
+declare OPSIZE_CODE (0 : 3) fixed binary (15) static initial (
+
+	  SIZE_BYTE	/* 0 : Byte */
+	, SIZE_WORD	/* 1 : Word */
+	, SIZE_LONG	/* 2 : Long */
+	, SIZE_NULL	/* 3 : Invalid */
+);
+
+declare FOPSIZE_CODE (0 : 7) fixed binary (15) static initial (
+
+	  SIZE_LONG		/* 0 : Long Word Integer */
+	, SIZE_SINGLE		/* 1 : Single Precision Real */
+	, SIZE_EXTENDED		/* 2 : Extended Precision Real */
+	, SIZE_PACKED		/* 3 : Packed Decimal Real */
+	, SIZE_WORD		/* 4 : Word Integer */
+	, SIZE_DOUBLE		/* 5 : Double Precision Real */
+	, SIZE_BYTE		/* 6 : Byte Integer */
+	, SIZE_PACKED_DYN	/* 7 : Packed Decimal Real (Dynamic) */
+);
+

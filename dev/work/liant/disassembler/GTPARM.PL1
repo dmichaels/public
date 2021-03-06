@@ -1,0 +1,87 @@
+/* CodeWatch M68 GTPARM.PL1 - Get parameter address */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.11.91  WDB  (003) Added code to conditionlly check for phoenix 
+ *		    codegen, since phoenix changed to use offsets rather
+ *		    than indices, so there is no longer a need to recalc-
+ *		    ulate it here.
+ *
+ *  04.10.91  VTF  (002) Added new parameters (BLOCKID and VALUE) to match
+ *                 changes in DFINDV.  GTPARM now gets value and
+ *                 reference parameters.  
+ *
+ *  04.02.87  DGM  Changed magic numbers 8 and 4 to $PARAMETER_OFFSET
+ *                 and STACK_UNIT_SIZE respectively.
+ *
+ **********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* GTPARM - Get a parameter address from a stack frame
+/*
+/* In:     PARAM_NO = Parameter number (1 to # params)
+/*         VAR_TYPE = Symbol type code, to allow indirection through
+/*                    descriptors when the machine uses them.
+/*         BLOCKID  = Block node id for the procedure block.
+/*         VALUE =    TRUE if variable is pass-by-value,
+/*                    FALSE if variable is pass-by-reference.
+/*         LOCATION = Memory address of parameter base from current env
+/*         NODE_PTR -> BLOCK_NODE for procedure block
+/* Out:    LOCATION = Memory address of parameter
+/*         BITOFF = Bit offset of parameter (in case not aligned)
+/*         OTHER    = Other data to keep (e.g. Ring number)
+/* Return: TRUE if success, FALSE if some sort of failure
+/****************************************************************************/
+
+GTPARM: procedure (PARAM_NO, VAR_TYPE, BLOCKID, VALUE, LOCATION, BITOFF, OTHER)
+        returns   (bit (1));
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include SYSREADUSER_IN;
+%include TARGET_IN;
+
+    declare 
+        PARAM_NO   fixed binary (15),
+        VAR_TYPE   fixed binary (15),
+        BLOCKID    fixed binary (15),
+        VALUE      bit(1) aligned,
+        LOCATION   fixed binary (ADDRESS_LENGTH),
+        BITOFF     fixed binary (15),
+        OTHER      fixed binary (31);
+
+    declare
+        PARAM_LOC  fixed binary (ADDRESS_LENGTH),
+        DUMMY      fixed binary (31),
+        STATUS     fixed binary (15);
+
+	if DEBUG_CODEGEN_TYPE = DEBUG_PHOENIX then do;
+            PARAM_LOC = LOCATION + $PARAMETER_OFFSET + PARAM_NO;
+	end;
+	else do;  /* Convert index (PARAM_NO) to offset value: */
+	   PARAM_LOC = LOCATION + $PARAMETER_OFFSET +
+                    ((PARAM_NO - 1) * STACK_UNIT_SIZE);
+	end;
+
+        if (VALUE = TRUE) then do;
+           LOCATION = PARAM_LOC;
+           STATUS = 0;
+        end;
+        else
+           call REAUSR (PROCESS_ID, DUMMY,
+                     PARAM_LOC, STACK_UNIT_SIZE, addr(LOCATION), STATUS);
+
+        return (STATUS = 0);
+
+end GTPARM;

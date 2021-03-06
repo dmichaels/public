@@ -1,0 +1,371 @@
+/* C++ main.pl1 - Main compiler driver program */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.25.92  DGM  036	Separate TOKEN_NODE space.
+ *  06.22.92  DGM  035	Added call to FREE_IGNORE_DIAGNOSTIC_LIST.
+ *  06.19.92  DGM  034	Don't call the back-end if SUPPRESS_BINARY.
+ *  06.01.92  DGM  033	Enabled an additional front-end node space;
+ *			updated GLOBAL.LAN_REV to 3 for this.
+ *  05.05.92  DGM  033	Updated LAN_REV to 2.
+ *  03.13.92  PKT  032	Updated for reuse of nodes from prototype scope.
+ *  03.26.92  DGM  031	New value-node scheme.
+ *  03.19.92  DGM  030  Do not set SUPPRESS_BINARY for preprocessor-only
+ *			runs; this was causing (e.g.) the object file
+ *			to be deleted for when -makedepend was given.
+ *  03.16.92  DGM  029R Set LANGUAGE_CODE to LAN_CPLUS just before the
+ *			end (i.e. before XFINISH) for CodeWatch.
+ *  03.13.92  DGM  029R Fix for previous 029R.
+ *  03.12.92  DGM  029R Fix for Sequoia C-only version (LPI-C 1.4.0).
+ *  03.05.92  DGM  029  Set/unset multi-space after XINIT.
+ *			Set LANGUAGE_CODE to LAN_C iff CXX_C_ONLY.
+ *  02.28.92  DGM  028R Set LAN_REV to 1 due to symbol-table
+ *			incompatibility (parameters are now linked
+ *			through SYM_NODE.NEXT_PARAMETER rather than
+ *			through LINK_NODEs.
+ *  02.10.92  DGM  028  Updated.
+ *  02.05.92  DGM  027  Removed OTHER_B node space.
+ *  01.24.92  DGM  026  Updated.
+ *  01.21.92  DGM  024  Enabled multi-space node ids.
+ *  01.13.92  DGM  023  Enabled multi-space node ids NOT.
+ *  12.16.91  DGM  022  Moved lint switch setup to XINIFE.
+ *  11.20.91  DGM  021  Updated.
+ *  08.06.91  DGM  020  Updated.
+ *  07.31.91  DGM  019  Updated.
+ *  07.18.91  DGM  018  Updated.
+ *  07.09.91  DGM  017  Updated.
+ *  06.17.91  DGM  016  Goto FINISH after RUN_PP_ONLY, not DONE.
+ *  05.29.91  DGM  015  Added -lint support.
+ *  04.01.91  DGM  014  Added support for -dbmon.
+ *  03.20.91  DGM  013  Print stat for post-parse (cxxbe) phase.
+ *  03.12.91  DGM  012  Call FUDGE_VFTS.
+ *  02.27.91  DGM  011  Support for SW_NO_OBJECT_IF_ANY_ERROR.
+ *  02.01.91  DGM  010  Call SAVE_CXXFE_GLOBAL_DATA.
+ *  11.07.90  DGM  009  Set LANGUAGE_CODE properly.
+ *  09.14.90  DGM  008  Changed include file names and VOP names.
+ *  09.12.90  DGM  007  Set SYMBOL_NODE_SIZE.
+ *  06.05.90  DGM  006  Updated for the new utilities.
+ *  03.02.90  DGM  005  Updated to CXXBE (front-end "back-end").
+ *  02.05.90  TLF  004  Added code to set XVALUE_WORD_SIZE for use by
+ *                      C++ value utilities.  Added code to set the
+ *                      EXPAND_VALUE debugging trace flag.
+ *  02.05.90  DGM  002  Updated.
+ *  09.01.89  DGM  000  Original; cloned/modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	COPYRIGHT__	character (58) varying static internal initial
+
+('@(#)LPI-C++ Copyright (c) 1992 Liant Software Corporation');
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.25.92 036 MAIN');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include GBL_FILE_NAMES_IN;	/* SOURCE_FILE_NAME */
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_STATS_PKG;
+%include CXX_UTL_MESSAGES_PKG;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_RUN_PREPROCESSOR_PKG;
+%include CXX_VIRTUAL_FUNCTION_TABLE_PKG;
+%include CXX_SAVE_GLOBAL_DATA_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* MAIN
+/*
+/* Main driver for the LPI C++ compiler.
+/* ------------------------------------------------------------------- */
+
+MAIN: procedure;
+
+	declare
+		BEGIN_MONITOR		entry external,
+		END_MONITOR		entry external;
+	declare
+		XINIT			entry external,
+		CXXFE			entry external,
+		CXXBE			entry external,
+		OPTIM			entry external,
+		ALLOC			entry external,
+		PASS3			entry external,
+		XFINSH			entry external;
+	declare
+		NO_SOURCE_FILE		type (BOOL_T),
+		SKIP_CODE_GENERATOR	type (BOOL_T),
+		LINE			character (LINE_SIZE) varying;
+	declare
+		size			builtin;
+
+	/* Monitor the front-end for profiling if desired */
+
+	if SW_MONITOR_FRONT_END then
+		call BEGIN_MONITOR ();
+
+	/*
+	/* Set the symbol-table revision number.
+	/* Up this whenever the symbol-table changes
+	/* in an incompatible way (i.e. such that an
+	/* old STB file won't work with a current debugger.)
+	/**/
+
+	GLOBAL.LAN_REV = 3;
+
+	/* Initialization & set-up */
+
+	if CXX_C_ONLY then
+		LANGUAGE_CODE = LAN_C;
+	else	LANGUAGE_CODE = LAN_CPLUS;
+
+        SYMBOL_NODE_SIZE = ROUNDU (size (SYM_NODE), BYTES, HALF_WORDS);
+        XVALUE_WORD_SIZE = ROUNDU (size (CXX_VALUE_NODE),  BYTES, WORDS);
+	call INITIALIZE_NODE_MGR ();
+
+	/* Set the null value-node value */
+
+	addr (NULL_CXX_VID)->LONG_T = 0;
+
+	/* Set abort label (obsolete with the new utilities) */
+
+	ABORT_EXIT = ABORTED;
+
+	/* Get command line options, etc. */
+
+	MAP = FALSE;
+
+	call XINIT ();
+
+	/* Enable multi-space node ids */
+
+	if ^SW_NO_MULTI_SPACE_NODE_SCHEME &
+	   ^CXX_NO_MULTI_SPACE_NODE_SCHEME then
+		call OTHER_SYMTAB_SPACES (TRUE);
+
+	/* See if we're done already */
+
+	if length (SOURCE_FILE_NAME) <= 0 then
+		goto FINISH;
+
+	/* See if we only want to run preprocessor and dump related data */
+
+	if RUN_PP_ONLY () then
+		goto FINISH;
+
+	/* Additional command-line switch processing */
+
+	if ^SUPPRESS_BINARY | FULL_LIST then
+		SKIP_CODE_GENERATOR = FALSE;
+	else	SKIP_CODE_GENERATOR = TRUE;
+
+	/* C++ front-end */
+
+	call CXXFE ();
+
+	if SW_DUMP_NODE_ID_WATERMARK then call DUMP_NODE_USAGE (1);
+
+	/* C++ front-end "back-end" -- post-parser, patcher, whatever ... */
+
+	call CXXBE ();
+
+	if SW_DUMP_NODE_ID_WATERMARK then call DUMP_NODE_USAGE (2);
+
+	/* Print the stats for this "patcher" (post-parser) phase */
+
+	if INTERNAL_STATISTICS then do;
+		/*
+		/* In this case, XSTAT ('Parser')
+		/* was called from END_GLOBAL_SCOPE.
+		/**/
+		call XSTAT ('Patcher');
+	end;
+
+	/* Was the "-halt" option given? */
+
+	if HALT then
+		goto FINISH;
+
+	/* Save pertinent front-end data for the debugger */
+
+	if SYMBOL_TABLE then
+		call SAVE_CXXFE_GLOBAL_DATA ();
+
+	/* Cleanup front-end */
+
+	call FREE_IGNORE_DIAGNOSTIC_LIST ();
+
+	/*
+	/* For the optimizer, allocator, and code generator,
+	/* we will travel incognito, as C rather than C++.
+	/**/
+
+	LANGUAGE_CODE = LAN_C;
+
+	/*
+	/* See if we want to alter the behavior of violations
+	/* (severity 2 errors) to act like severity 3 errors
+	/* or like warnings, as far as the object file creation
+	/* and compiler exit status go.
+	/**/
+
+	if MAX_SEVERITY >= 2 then do;
+		if MAX_SEVERITY = 3 then do;
+			if SW_TREAT_ERROR_AS_VIOLATION then
+				MAX_SEVERITY = 2;
+		end;
+		if MAX_SEVERITY = 2 then do;
+			if SW_TREAT_VIOLATION_AS_ERROR then do;
+				SUPPRESS_BINARY = TRUE;
+				SKIP_CODE_GENERATOR = TRUE;
+			end;
+			if SW_TREAT_VIOLATION_AS_WARNING then
+				MAX_SEVERITY = 1;
+		end;
+	end;
+
+	/* Print stats for the total parser */
+
+	if STATISTICS then do;
+		if ^INTERNAL_STATISTICS then
+			call XSTAT ('Parser');
+	end;
+
+	/* Stop monitoring the front-end for profiling */
+
+	if SW_MONITOR_FRONT_END then call END_MONITOR ();
+
+	/* Optimizer */
+
+	if OPTIMIZE & (MAX_SEVERITY < 3) then do;
+		if SW_MONITOR_OPTIMIZER then call BEGIN_MONITOR ();
+    		call OPTIM ();
+		if SW_MONITOR_OPTIMIZER then call END_MONITOR ();
+		if SW_DUMP_NODE_ID_WATERMARK then call DUMP_NODE_USAGE (3);
+	end;
+
+        /* Allocator */
+
+	if MAX_SEVERITY < 3 then do;
+		call ALLOC ();
+		if SW_DUMP_NODE_ID_WATERMARK then call DUMP_NODE_USAGE (4);
+	end;
+
+	/*
+	/* Eine kraftige haque -- in debug mode we need to write out
+	/* an identifier string in front of each virtual function table,
+	/* so here we need to bump the LOCATION field of each VFT sym-node
+	/* past the first entry which contains a pointer to a string to
+	/* the VFT identifier string.  Believe me, I've tried and tried
+	/* but there seems to be no cleaner way to do this given our
+	/* data-initial-file/relocation scheme, without making some
+	/* changes to the allocator...
+	/**/
+
+	if SYMBOL_TABLE then
+		call FUDGE_VFTS ();
+
+        /* Code Generator */
+
+	if (MAX_SEVERITY < 3) & ^SKIP_CODE_GENERATOR then do;
+		if SW_MONITOR_CODE_GENERATOR then call BEGIN_MONITOR ();
+		call PASS3 ();
+		if SW_MONITOR_CODE_GENERATOR then call BEGIN_MONITOR ();
+		if SW_DUMP_NODE_ID_WATERMARK then call DUMP_NODE_USAGE (5);
+	end;
+
+	/* Restore the language code to C++ (even if C-only; sic) */
+
+	LANGUAGE_CODE = LAN_CPLUS;
+
+        /* Cleanup & exit */
+
+	goto FINISH;
+
+ABORTED:
+	TOTAL_MESSAGES = max (TOTAL_MESSAGES, 1);
+
+FINISH:
+	ABORT_EXIT = DONE;
+	call XFINSH ();
+
+DONE:
+	return;
+
+/* ---------------------------------------------------------------------
+/* DUMP_NODE_USAGE
+/* ------------------------------------------------------------------- */
+
+DUMP_NODE_USAGE: procedure (PHASE) internal;
+
+	declare
+		PHASE		type (SHORT_T);
+	declare
+		PHASE_NAME	character (14) varying,
+		X		type (LONG_T);
+
+	if      PHASE = 1 then PHASE_NAME = 'Parser         ';
+	else if PHASE = 2 then PHASE_NAME = 'Post Parser    ';
+	else if PHASE = 3 then PHASE_NAME = 'Allocater      ';
+	else if PHASE = 4 then PHASE_NAME = 'Optimizer      ';
+	else if PHASE = 5 then PHASE_NAME = 'Code Generator ';
+	
+	X = SYMBOL_NODE_SPACE_WATERMARK ();
+
+	if ^SW_NO_MULTI_SPACE_NODE_SCHEME then do;
+		call WRITE_DEBUG_LINE
+		     (PHASE_NAME ||
+		      '-> Node Id High Watermark (Symbol node space):     ' ||
+		      trim (char (X)));
+		X = TOKEN_NODE_SPACE_WATERMARK ();
+		call WRITE_DEBUG_LINE
+		     (PHASE_NAME ||
+		      '-> Node Id High Watermark (Token node space):      ' ||
+		      trim (char (X)));
+		X = OTHER_A_NODE_SPACE_WATERMARK ();
+		call WRITE_DEBUG_LINE
+		     (PHASE_NAME ||
+		      '-> Node Id High Watermark (First C++ node space):  ' ||
+		      trim (char (X)));
+		X = OTHER_B_NODE_SPACE_WATERMARK ();
+		call WRITE_DEBUG_LINE
+		     (PHASE_NAME ||
+		      '-> Node Id High Watermark (Second C++ node space): ' ||
+		      trim (char (X)));
+	end;
+	else	call WRITE_DEBUG_LINE
+		     (PHASE_NAME ||
+		      '-> Node Id High Watermark: ' ||
+		      trim (char (X)));
+
+end DUMP_NODE_USAGE;
+
+end MAIN;
+

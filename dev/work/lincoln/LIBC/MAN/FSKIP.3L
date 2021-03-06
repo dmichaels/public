@@ -1,0 +1,57 @@
+.TH FSKIP 3L LOCAL
+
+.SH NAME
+fskip - skip past specified characters in a file
+
+.SH SYNOPSIS
+.ft B
+int
+.br
+fskip(f, charset, n)
+.br
+FILE *f;
+.br
+char *charset;
+.br
+unsigned int n;
+.ft P
+
+.SH DESCRIPTION
+Skips past the next \fIn\fP characters
+specified in the character set \fIcharset\fP,
+in the file \fIf\fP,
+and returns the next character on the input.
+.PP
+If the first character in the string \fIcharset\fP is not a caret
+(^), then the file IO pointer of the given file \fIf\fP will be set
+just past the \fIn\fPth occurrence (from the current position) of a
+character which also appears in string \fIcharset\fP will be returned,
+or NULL if none are found.  The \fIcharset\fP string in this case,
+specifies a set of characters to skip to in a file.  In other
+words, this usage will yield the next character in the file
+which appears in the string \fIcharset\fP or  EOF if none are found.
+.PP
+If the first character in the string \fIcharset\fP is a caret (^),
+then the file IO pointer of the given file \fIf\fP will be set just
+past the \fIn\fPth occurrence (from the current position) of a
+character which does not appear in string the \fIcharset\fP will be
+returned, or NULL if none are found.  The \fIcharset\fP string in
+this case, specifies a set of characters to skip past in a file.
+In other words, this usage will yield the next character in the
+file which does not appear in the string \fIcharset\fP or  EOF if
+none are found.
+.PP
+The backslash  character (\\) is used to escape the caret and itself as follows.
+If the first \fIcharset\fP character is a backslash, and the second
+is a caret, then the caret is to be taken literally, and the
+the backslash is ignored.  If the first and second characters
+are both backslashes, then they are to be taken as one backslash.
+.PP
+If the \fIcharset\fP string is NULL or empty, then it will be
+assumed to represent all white space characters (ala \fIisspace/ctype(3)\fP).
+
+.SH FILES
+fskip.c
+
+.SH SEE ALSO
+cindex(3L), fseek_pat(3L), fseek_pat(3L), findline(3L), string(3)

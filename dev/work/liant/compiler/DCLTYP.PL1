@@ -1,0 +1,1049 @@
+/* C++ dcltyp.pl1 - Miscellaneous type declaration routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  028  New value-node scheme.
+ *  11.12.91  DGM  027  Updated for wchar_t.
+ *  07.16.91  PKT  026  Made GET_SIZET_TYPE dependent on target system
+ *			variant and -sys switch.
+ *  05.29.91  PKT  025  Added GET_NULL_FUNCTION_TYPE.
+ *  05.29.91  DGM  024  Call SET_BASE_TYPE appropriately, etc.
+ *  05.14.91  PKT  023  Added a tag name for the union in ____lpi_pmf_t,
+ *			to work with recent change to anonymous unions.
+ *  04.29.91  DGM  022  Stubbed GET_SIMPLE_TYPE (obsolete).
+ *  02.21.91  DGM  021  Support LOGICAL_BT in GET_BASIC_TYPE.
+ *  02.21.91  PKT  020  Fixes for member pointers.
+ *  02.01.91  DGM  019  Updated to new global names scheme.
+ *  01.27.91  PKT  018  Updated for GET_MFP_xxx_NAME.
+ *  01.11.91  DGM  017  Updated.
+ *  11.15.90  DGM  016  Fix in GET_VFT_TYPE.
+ *  10.25.90  TLF  015  Added GET_XLINK_STRUCT_TYPE.
+ *  10.22.90  DGM  014  Fix in DECLARE_VFT_TYPE.
+ *  10.10.90  DGM  013  Minor bug fix (set CURRENT_BASE_TYPE_UNSPECIFIED).
+ *  09.14.90  DGM  012  Changed include file names and VOP names.
+ *  09.13.90  DGM  011  Changed xxx_SC names to xxx_ST.
+ *  09.12.90  DGM  010  Fix in GET_MEMBER_POINTER_TYPE.
+ *  09.05.90  PKT  009  Added SET_SCOPE_GLOBAL.
+ *  08.31.90  DGM  008  Added GET_SIZET_TYPE.
+ *  08.29.90  DGM  007  Updated for type-node hashing, and added
+ *			GET_BASIC_TYPE, GET_BASIC_POINTER_TYPE, and
+ *			GET_LABEL_TYPE, meant to eventually replace
+ *			GET_SIMPLE_TYPE and GET_SIMPLE_POINTER_TYPE.
+ *  08.15.90  DGM  006  New type-node.
+ *  07.10.90  DGM  005  Updated.
+ *  06.25.90  DGM  004  Minor changes and added GET_SIMPLE_POINTER_TYPE.
+ *  06.06.90  DGM  003  Updated for the new utilities
+ *  05.25.90  DGM  002  Many changes for VFT related types.
+ *  05.17.90  DGM  001  Added GET_VFT_TYPE.
+ *  04.19.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 028 DCLTYP');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_HASH_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_INTERNAL_PARSE_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_TARGET_SYSTEM_VARIANT_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+
+/* ---------------------------------------------------------------------
+/* GET_INT_TYPE
+/*
+/* Returns a type-node id representing a "int" type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_INT_TYPE: procedure ()
+	      returns   (type (NID_T))
+	      external  (X_GET_INT_TYPE);
+
+	return (GET_BASIC_TYPE (INT_BT));
+
+end GET_INT_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_VOID_TYPE
+/*
+/* Returns a type-node id representing a "void" type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VOID_TYPE: procedure ()
+	       returns   (type (NID_T))
+	       external  (X_GET_VOID_TYPE);
+
+	return (GET_BASIC_TYPE (VOID_BT));
+
+end GET_VOID_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_VOID_POINTER_TYPE
+/*
+/* Returns a type-node id representing a "void *" type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VOID_POINTER_TYPE: procedure ()
+		       returns   (type (NID_T))
+		       external  (X_GET_VOID_POINTER_TYPE);
+
+	return (GET_BASIC_POINTER_TYPE (VOID_BT));
+
+end GET_VOID_POINTER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_SIZET_TYPE
+/*
+/* Returns a type-node id representing a "size_t" type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_SIZET_TYPE: procedure ()
+		returns   (type (NID_T))
+		external  (X_GET_SIZET_TYPE);
+
+	if SW_SYSTEM_SIZE_T then
+		return (GET_BASIC_TYPE (SYSTEM_SIZE_T_BT));
+	else	return (GET_BASIC_TYPE (UINT_BT));
+
+end GET_SIZET_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_WCHAR_T_TYPE
+/*
+/* Returns a type-node id representing a "wchar_t" type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_WCHAR_T_TYPE: procedure ()
+		  returns   (type (NID_T))
+		  external  (X_GET_WCHAR_T_TYPE);
+
+	if SW_SYSTEM_WCHAR_T then
+		return (GET_BASIC_TYPE (SYSTEM_WCHAR_T_BT));
+	else	return (GET_BASIC_TYPE (CHAR_BT));
+
+end GET_WCHAR_T_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_WCHAR_T_TYPE_CODE
+/*
+/* Returns a type-node id representing a "wchar_t" type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_WCHAR_T_TYPE_CODE: procedure ()
+		      returns   (type (NID_T))
+		      external  (X_GET_WCHAR_T_TYPE_CODE);
+
+	if SW_SYSTEM_WCHAR_T then
+		return (SYSTEM_WCHAR_T_BT);
+	else	return (CHAR_BT);
+
+end GET_WCHAR_T_TYPE_CODE;
+
+/* ---------------------------------------------------------------------
+/* GET_BASIC_TYPE
+/*
+/* Returns a type-node id representing the the basic type specified by
+/* the given  type code; it may be one of: VOID_BT, FLOAT_BT, DOUBLE_BT,
+/* LDOUBLE_BT, CHAR_BT, SCHAR_BT, UCHAR_BT, SHORT_BT, SSHORT_BT,
+/* USHORT_BT, INT_BT, SINT_BT, UINT_BT, LONG_BT, SLONG_BT, or ULONG_BT.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_BASIC_TYPE: procedure (BT)
+		returns   (type (NID_T))
+		external  (X_GET_BASIC_TYPE);
+
+	declare
+		BT		type (SHORT_T);
+	declare
+		TP		type (POINTER_T);
+	declare
+		TYPE		(LB_BASIC_TYPES : HB_BASIC_TYPES)
+				type (NID_T) static
+				initial ((NBASIC_TYPES) (NULL_NID)),
+		LOGICAL_TYPE	type (NID_T) static initial (NULL_NID);
+
+	if BT = LOGICAL_BT then do;
+		if (LOGICAL_TYPE = NULL_NID) | AM_DEBUGGER then do;
+			call NEW_TYPE_NODE (0, LOGICAL_TYPE, TP);
+			TP->TYPE_NODE.DATA (0).CODE	  = byte (LOGICAL_BT);
+			TP->TYPE_NODE.DATA (0).QUALIFIERS = NULL_TQ;
+			TP->TYPE_NODE.DATA (0).NID	  = NULL_NID;
+			call RELEASE_TYPE_NODE (LOGICAL_TYPE);
+		end;
+		return (LOGICAL_TYPE);
+	end;
+
+	if (TYPE (BT) = NULL_NID) | AM_DEBUGGER then do;
+		call NEW_TYPE_NODE (0, TYPE (BT), TP);
+		TP->TYPE_NODE.DATA (0).CODE		= byte (BT);
+		TP->TYPE_NODE.DATA (0).QUALIFIERS	= NULL_TQ;
+		TP->TYPE_NODE.DATA (0).NID		= NULL_NID;
+		call HASH_TYPE (TYPE (BT), TP);
+		call RELEASE_TYPE_NODE (TYPE (BT));
+	end;
+	return (TYPE (BT));
+
+end GET_BASIC_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_BASIC_POINTER_TYPE
+/*
+/* Return a type-node id representing a pointer to the given
+/* simple base type.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_BASIC_POINTER_TYPE: procedure (BT)
+			returns   (type (NID_T))
+			external  (X_GET_BASIC_POINTER_TYPE);
+	declare
+		BT	type (SHORT_T);
+	declare
+		TP	type (POINTER_T);
+	declare
+		TYPE	(LB_BASIC_TYPES : HB_BASIC_TYPES)
+			type (NID_T) static
+			initial ((NBASIC_TYPES) (NULL_NID));
+
+	if (TYPE (BT) = NULL_NID) | AM_DEBUGGER then do;
+		call NEW_TYPE_NODE (1, TYPE (BT), TP);
+		TP->TYPE_NODE.DATA (1).CODE		= byte (POINTER_DT);
+		TP->TYPE_NODE.DATA (1).QUALIFIERS	= NULL_TQ;
+		TP->TYPE_NODE.DATA (1).NID		= NULL_NID;
+		TP->TYPE_NODE.DATA (0).CODE		= byte (BT);
+		TP->TYPE_NODE.DATA (0).QUALIFIERS	= NULL_TQ;
+		TP->TYPE_NODE.DATA (0).NID		= NULL_NID;
+		call HASH_TYPE (TYPE (BT), TP);
+		call RELEASE_TYPE_NODE (TYPE (BT));
+	end;
+	return (TYPE (BT));
+
+end GET_BASIC_POINTER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_LABEL_TYPE
+/*
+/* Return a type-node id representing type "void".
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_LABEL_TYPE: procedure ()
+		returns   (type (NID_T))
+		external  (X_GET_LABEL_TYPE);
+
+	declare
+		LABEL_TYPE	type (NID_T) static initial (NULL_NID);
+	declare
+		TP		type (POINTER_T);
+
+	if (LABEL_TYPE = NULL_NID) | AM_DEBUGGER then do;
+		call NEW_TYPE_NODE (0, LABEL_TYPE, TP);
+		TP->TYPE_NODE.DATA (0).CODE		= byte (LABEL_BT);
+		TP->TYPE_NODE.DATA (0).QUALIFIERS	= NULL_TQ;
+		TP->TYPE_NODE.DATA (0).NID		= NULL_NID;
+		call HASH_TYPE (LABEL_TYPE, TP);
+		call RELEASE_TYPE_NODE (LABEL_TYPE);
+	end;
+	return (LABEL_TYPE);
+
+end GET_LABEL_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_SIMPLE_ARRAY_TYPE
+/*
+/* Return a type-node id representing a NDIMENSION array of the given
+/* simple base-type.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_SIMPLE_ARRAY_TYPE: procedure (BASE_TYPE, NDIMENSIONS)
+		       returns   (type (NID_T))
+		       external  (X_GET_SIMPLE_ARRAY_TYPE);
+	declare
+		BASE_TYPE	type (SHORT_T),
+		NDIMENSIONS	type (LONG_T);
+	declare
+		(D, T)		type (NID_T),
+		(DP, TP)	type (POINTER_T),
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T);
+
+	call SIMPLE_TYPE_SIZE (BASE_TYPE, SIZE, SIZE_UNITS, BOUNDARY);
+
+	call NEW_DIM_NODE (D, DP);
+	DP->DIM_NODE.VALUE			= NDIMENSIONS;
+	DP->DIM_NODE.ELEMENT_SIZE		= SIZE;
+	DP->DIM_NODE.ELEMENT_SIZE_UNITS		= byte (SIZE_UNITS);
+	call RELEASE_DIM_NODE (D);
+
+	call NEW_TYPE_NODE (1, T, TP);
+	TP->TYPE_NODE.DATA (1).CODE		= byte (ARRAY_DT);
+	TP->TYPE_NODE.DATA (1).QUALIFIERS	= NULL_TQ;
+	TP->TYPE_NODE.DATA (1).NID		= D;
+	TP->TYPE_NODE.DATA (0).CODE		= byte (BASE_TYPE);
+	TP->TYPE_NODE.DATA (0).QUALIFIERS	= NULL_TQ;
+	TP->TYPE_NODE.DATA (0).NID		= NULL_NID;
+	call HASH_TYPE (T, TP);
+	call RELEASE_TYPE_NODE (T);
+	return (T);
+
+end GET_SIMPLE_ARRAY_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_CLASS_TYPE
+/*
+/* Return a type-node id representing a pointer to the given base type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_CLASS_TYPE: procedure (TAG_BT, TAG_SYMBOL)
+		returns   (type (NID_T))
+		external  (X_GET_CLASS_TYPE);
+	declare
+		TAG_BT		type (SHORT_T),
+		TAG_SYMBOL	type (NID_T);
+	declare
+		T		type (NID_T),
+		TP		type (POINTER_T);
+
+	call NEW_TYPE_NODE (0, T, TP);
+	TP->TYPE_NODE.DATA (0).CODE		= byte (TAG_BT);
+	TP->TYPE_NODE.DATA (0).QUALIFIERS	= NULL_TQ;
+	TP->TYPE_NODE.DATA (0).NID		= TAG_SYMBOL;
+	call HASH_TYPE (T, TP);
+	call RELEASE_TYPE_NODE (T);
+	return (T);
+
+end GET_CLASS_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_CLASS_POINTER_TYPE
+/*
+/* Return a type-node id representing a pointer to the given base type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_CLASS_POINTER_TYPE: procedure (TAG_BT, TAG_SYMBOL)
+			returns   (type (NID_T))
+			external  (X_GET_CLASS_POINTER_TYPE);
+	declare
+		TAG_BT		type (SHORT_T),
+		TAG_SYMBOL	type (NID_T);
+	declare
+		T		type (NID_T),
+		TP		type (POINTER_T);
+
+	call NEW_TYPE_NODE (1, T, TP);
+	TP->TYPE_NODE.DATA (1).CODE		= byte (POINTER_DT);
+	TP->TYPE_NODE.DATA (1).QUALIFIERS	= NULL_TQ;
+	TP->TYPE_NODE.DATA (1).NID		= NULL_NID;
+	TP->TYPE_NODE.DATA (0).CODE		= byte (TAG_BT);
+	TP->TYPE_NODE.DATA (0).QUALIFIERS	= NULL_TQ;
+	TP->TYPE_NODE.DATA (0).NID		= TAG_SYMBOL;
+	call HASH_TYPE (T, TP);
+	call RELEASE_TYPE_NODE (T);
+	return (T);
+
+end GET_CLASS_POINTER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_SCALAR_TYPE
+/*
+/* Return a type-node id representing a pointer or reference type if
+/* DT is either REFERENCE_DT or POINTER_DT, to the given base type, or
+/* simply representing the given simple base type (BT) if DT is neither
+/* REFERENCE_DT nor POINTER_DT.  The type will have the given base type
+/* qualifier (BTQ) and the given derived type qualifier (DTQ) if DT is
+/* either REFERENCE_DT or POINTER_DT.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_SCALAR_TYPE: procedure (DT, DTQ, BT, BTID, BTQ)
+		 returns   (type (NID_T))
+		 external  (X_GET_SCALAR_TYPE);
+	declare
+		DT	type (SHORT_T),
+		DTQ	type (BYTE_BITS_T),
+		BT	type (SHORT_T),
+		BTID	type (NID_T),
+		BTQ	type (BYTE_BITS_T);
+	declare
+		T	type (NID_T),
+		TP	type (POINTER_T);
+
+	if (DT = POINTER_DT) | (DT = REFERENCE_DT)  then do;
+		call NEW_TYPE_NODE (1, T, TP);
+		TP->TYPE_NODE.DATA (1).CODE		= byte (DT);
+		TP->TYPE_NODE.DATA (1).QUALIFIERS	= DTQ;
+		TP->TYPE_NODE.DATA (1).NID		= NULL_NID;
+	end;
+	else	call NEW_TYPE_NODE (0, T, TP);
+
+	TP->TYPE_NODE.DATA (0).CODE			= byte (BT);
+	TP->TYPE_NODE.DATA (0).QUALIFIERS		= BTQ;
+	TP->TYPE_NODE.DATA (0).NID			= BTID;
+
+	call HASH_TYPE (T, TP);
+	call RELEASE_TYPE_NODE (T);
+	return (T);
+
+end GET_SCALAR_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_MEMBER_POINTER_TYPE
+/*
+/* If the given (top) type code is not a function type, then return a
+/* type-node id representing a pointer-to-data-member type (i.e. "void *").
+/* Otherwise, if it (the given type code) is a function type, then return
+/* a type-node id representing a pointer-to-member-function type, i.e:
+/*
+/*	// See C++ARM, section 8.1.2c
+/*
+/*	struct ____lpi_pmf_t { 
+/*		short	       ____lpi_delta;
+/*		short	       ____lpi_index;
+/*		union ____lpi_u_tag {
+/*			void  *____lpi_address;
+/*			short  ____lpi_voffset;
+/*		}	       ____lpi_u;
+/*	};
+/*
+/* Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_MEMBER_POINTER_TYPE: procedure (TOP_TYPE)
+			 returns   (type (NID_T))
+			 external  (X_GET_MEMBER_POINTER_TYPE);
+
+	declare
+		TOP_TYPE			 type (TYPE_DATA_T);
+	declare
+		SAVE_PARSE_STATE		 type (PARSE_STATE_DATA_T);
+
+	/* See if we want a pointer-to-member for a non-function type */
+
+	if TOP_TYPE.CODE ^= byte (FUNCTION_DT) then do;
+		if DATA_MEMBER_POINTER_TYPE = NULL_NID then
+			DATA_MEMBER_POINTER_TYPE = GET_SIZET_TYPE ();
+		return (DATA_MEMBER_POINTER_TYPE);
+	end;
+
+	/* Here, we want a pointer-to-member for function type */
+
+	if MEMBER_FUNCTION_POINTER_TYPE ^= NULL_NID then
+		return (MEMBER_FUNCTION_POINTER_TYPE);
+
+	if AM_DEBUGGER then
+		return (NULL_NID);
+
+	/* Internally "parse" a pointer-to-member "typedef" */
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE), 
+				   CURRENT_GLOBAL_SCOPE);
+
+	/* Declare the tag "struct ____lpi_pmf_t" */
+
+	call CLEAR_DECLARATION ();
+
+	MATCHED_TOKEN.TYPE = KW_STRUCT_TOKEN;
+
+	call BEGIN_CLASS_DECLARATION ();
+
+	call SET_BASE_TYPE ();
+
+	CURRENT_NAME = MFP_TYPE_NAME;
+
+	/* Begin the struct body */
+
+	call BEGIN_CLASS_BODY ();
+
+	/* Declare the first member "short ____lpi_delta" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = SHORT_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME = MFP_THIS_DELTA_NAME;
+	call SET_MEMBER_DECLARATION ();
+
+	/* Declare the second member "short ___lpi_index" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = SHORT_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME = MFP_VIRTUAL_INDEX_NAME;
+	call SET_MEMBER_DECLARATION ();
+
+	/* Declare the union member tag "union ____lpi_u_tag" */
+
+	call CLEAR_DECLARATION ();
+	MATCHED_TOKEN.TYPE = KW_UNION_TOKEN;
+	call BEGIN_CLASS_DECLARATION ();
+	CURRENT_NAME = MFP_UNION_TAG_NAME;
+
+	/* Begin the union member body */
+
+	call BEGIN_CLASS_BODY ();
+
+	/* Declare the first union member "void *____lpi_address" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	call SET_POINTER_TYPE ();
+	CURRENT_NAME = MFP_ADDRESS_NAME;
+	call SET_MEMBER_DECLARATION ();
+
+	/* Declare the second union member "short voffset" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = SHORT_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME = MFP_VIRTUAL_DELTA_NAME;
+	call SET_MEMBER_DECLARATION ();
+
+	/* End the union member declaration */
+
+	call END_CLASS_BODY ();
+	call SET_CLASS_DECLARATION ();
+
+	/* Declare the third struct member "union { ... } u" */
+
+	call SET_BASE_TYPE ();
+	CURRENT_NAME = MFP_UNION_NAME;
+	call SET_MEMBER_DECLARATION ();
+
+	/* End the struct declaration */
+
+	call END_CLASS_BODY ();
+	call SET_CLASS_DECLARATION ();
+
+	/* Get the type-node id of the struct just created */
+
+	call SET_SYM_NODE (CURRENT_BASE_TYPE_ID);
+	MEMBER_FUNCTION_POINTER_TYPE = SYM_NODE.TYPE;
+
+	/* End the internal parse */
+
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+	/* Return the type-node id of the pointer-to-member struct */
+
+	return (MEMBER_FUNCTION_POINTER_TYPE);
+
+end GET_MEMBER_POINTER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_POINTER_TYPE
+/*
+/* Return the node id of the type-node representing a virtual
+/* function table pointer; return its top-type in TOP_TYPE.
+/* Preserves current-node-id.
+/*
+/*	typedef ____lpi_vft_entry_t *____lpi_vft_pointer_t;
+/*
+/* ------------------------------------------------------------------- */
+
+GET_VFT_POINTER_TYPE: procedure (TOP_TYPE)
+		      returns   (type (NID_T))
+		      external  (X_GET_VFT_POINTER_TYPE);
+	declare
+		TOP_TYPE		type (TYPE_DATA_T);
+	declare
+		TYPE			type (NID_T),
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+	declare
+		VFT_POINTER_TOP_TYPE	type (TYPE_DATA_T) static internal;
+
+	/*
+	/* See if a virtual function table
+	/* pointer type has already been made.
+	/**/
+
+	if VFT_POINTER_TYPE ^= NULL_NID then do;
+		TOP_TYPE = VFT_POINTER_TOP_TYPE;
+		return (VFT_POINTER_TYPE);
+	end;
+
+	if AM_DEBUGGER then
+		return (NULL_NID);
+
+	/* Declare the virtual function table entry "typedef" */
+
+	TYPE = GET_VFT_ENTRY_TYPE (TOP_TYPE);
+
+	/* Internally "parse" a virtual function table "typedef" */
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE),
+				   CURRENT_GLOBAL_SCOPE);
+
+	/* Declare the virtual function table "typedef" */
+
+	call CLEAR_DECLARATION ();
+
+	CURRENT_STORAGE_CLASS = TYPEDEF_ST;
+
+	/* Set the base-type "typedef" name */
+
+	CURRENT_NAME = VFT_ENTRY_TYPE_NAME;
+	call SET_TYPE_NAME ();
+
+	/* Set the declarator name and pointer declarator */
+
+	call SET_DERIVED_TYPE_QUALIFIER ();
+
+	CURRENT_NAME = VFT_POINTER_TYPE_NAME;
+
+	call SET_POINTER_TYPE ();
+
+	/* Declare the virtual function table pointer "typedef"  */
+
+	call SET_DECLARATION ();
+
+	/* Get the type of the virtual function table pointer "typedef" */
+
+	VFT_POINTER_TYPE     = CURRENT_TYPE;
+	VFT_POINTER_TOP_TYPE = CURRENT_TOP_TYPE;
+
+	/* End the internal parse */
+
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+	/* Return the type-node id of the virtual function table pointer type */
+
+	TOP_TYPE = VFT_POINTER_TOP_TYPE;
+	return (VFT_POINTER_TYPE);
+
+end GET_VFT_POINTER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_ENTRY_TYPE
+/*
+/* Return the type-node id representing the type (typedef) of a virtual
+/* function table entry, and return  in TOP_TYPE the top-type of this
+/* returned type.  Preserves current-node-id.
+/*
+/* If we are using the "thunk-method" to adjust "this" in a virtual
+/* function call (SW_ADJUST_THIS_VIA_THUNK) then the type declared is:
+/*
+/*	typedef void (*____lpi_vft_entry_t)();
+/*
+/* Otherwise, if we are using the "table-method" to adjust "this" in
+/* a virtual function call, then the type declared is:
+/*
+/*	typedef struct ____lpi_vft_entry_tag { 
+/*		void  (*____lpi_address) (...);
+/*		short   ____lpi_this_adjusment;
+/*	} ____lpi_vft_entry_t;
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VFT_ENTRY_TYPE: procedure (TOP_TYPE)
+		    returns   (type (NID_T))
+		    external  (X_GET_VFT_ENTRY_TYPE);
+	declare
+		TOP_TYPE		type (TYPE_DATA_T);
+	declare
+		TYPE			type (NID_T),
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+	declare
+		VFT_ENTRY_TOP_TYPE	type (TYPE_DATA_T) static internal;
+
+	/* See if a virtual function table entry type has already been made */
+
+	if VFT_ENTRY_TYPE ^= NULL_NID then do;
+		TOP_TYPE = VFT_ENTRY_TOP_TYPE;
+		return (VFT_ENTRY_TYPE);
+	end;
+
+	if AM_DEBUGGER then
+		return (NULL_NID);
+
+	/* Internally "parse" a virtual function table entry "typedef" */
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE),
+				   CURRENT_GLOBAL_SCOPE);
+
+	/* Declare the virtual function table entry "typedef" */
+
+	call CLEAR_DECLARATION ();
+
+	CURRENT_STORAGE_CLASS = TYPEDEF_ST;
+
+	/* -TODO- implement "thunk" method (SW_ADJUST_THIS_VIA_THUNK) */
+
+	/* Declare "struct ____lpi_vft_entry_tag" */
+
+	MATCHED_TOKEN.TYPE = KW_STRUCT_TOKEN;
+
+	call BEGIN_CLASS_DECLARATION ();
+
+	MATCHED_TOKEN.TYPE = IDENTIFIER_TOKEN;
+	MATCHED_TOKEN.SPELLING = VFT_ENTRY_TAG_NAME;
+
+	call BEGIN_TAG_NAME ();
+
+	/* Begin the struct body */
+
+	call BEGIN_CLASS_BODY ();
+
+	/* Declare the first member "void (*____lpi_faddress)()" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	CURRENT_NAME = VFT_FUNCTION_ADDRESS_NAME;
+	call SET_POINTER_TYPE ();
+	call BEGIN_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE ();
+	call SET_MEMBER_DECLARATION ();
+
+	/* Declare the second member "short ____lpi_delta" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = SHORT_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME = VFT_DELTA_NAME;
+	call SET_MEMBER_DECLARATION ();
+
+	/* End the struct declaration */
+
+	call END_CLASS_BODY ();
+	call SET_TAG_NAME ();
+	call SET_CLASS_DECLARATION ();
+
+	/* Set the declarator "typedef" name */
+
+	CURRENT_NAME = VFT_ENTRY_TYPE_NAME;
+
+	/* Declare the virtual function table "typedef" */
+
+	call SET_DECLARATION ();
+
+	/* Get the type of the virtual function table "typedef" */
+
+	VFT_ENTRY_TYPE		= CURRENT_TYPE;
+	VFT_ENTRY_TOP_TYPE	= CURRENT_TOP_TYPE;
+
+	/* End the internal parse */
+
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+	/* Return the type-node id of the virtual function table entry type */
+
+	TOP_TYPE = VFT_ENTRY_TOP_TYPE;
+	return (VFT_ENTRY_TYPE);
+
+end GET_VFT_ENTRY_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_TYPE
+/*
+/* Return the type-node id representing the type (typedef) of a virtual
+/* function table, and return in TOP_TYPE the top-type of this returned
+/* type.  Preserves current-node-id.
+/*
+/*	typedef ____lpi_vft_entry_t ____lpi_vft_t [];
+/*
+/* ------------------------------------------------------------------- */
+
+GET_VFT_TYPE: procedure (TOP_TYPE)
+	      returns   (type (NID_T))
+	      external  (X_GET_VFT_TYPE);
+
+	declare
+		TOP_TYPE		type (TYPE_DATA_T);
+	declare
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+	declare
+		VFT_TOP_TYPE		type (TYPE_DATA_T)
+					static internal initial (0);
+
+	/*
+	/* See if the virtual function table type has already been made;
+	/* note that we copy the type-node in this case (e.g. as opposed
+	/* to what GET_VFT_ENTRY_TYPE or GET_VFT_POINTER_TYPE do) since
+	/* it is an incomplete type (unspecified array dimension) which
+	/* we are not allowed to shared (see COMPLETE_ARRAY_TYPE).
+	/**/
+
+	if VFT_TYPE ^= NULL_NID then do;
+		TOP_TYPE = VFT_TOP_TYPE;
+		return (VFT_TYPE);
+	end;
+
+	if AM_DEBUGGER then
+		return (NULL_NID);
+
+	/* Declare the virtual function table entry "typedef" */
+
+	TYPE = GET_VFT_ENTRY_TYPE (TOP_TYPE);
+
+	/* Internally "parse" a virtual function table "typedef" */
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE),
+				   CURRENT_GLOBAL_SCOPE);
+
+	/* Declare the virtual function table "typedef" */
+
+	call CLEAR_DECLARATION ();
+
+	CURRENT_STORAGE_CLASS = TYPEDEF_ST;
+
+	/* Set the base-type "typedef" name */
+
+	CURRENT_NAME = VFT_ENTRY_TYPE_NAME;
+	call SET_TYPE_NAME ();
+
+	/* Set the declarator "typedef" name */
+
+	CURRENT_NAME = VFT_TYPE_NAME;
+
+	/* Set the (unspecifed dimension) array declarator */
+
+	call SET_INCOMPLETE_ARRAY_TYPE ();
+
+	/* Declare the virtual function table "typedef"  */
+
+	call SET_DECLARATION ();
+
+	/* Get the type of the virtual function table "typedef" */
+
+	VFT_TYPE     = CURRENT_TYPE;
+	VFT_TOP_TYPE = CURRENT_TOP_TYPE;
+
+	/* End the internal parse */
+
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+	/* Return the type-node id of the virtual function table type */
+
+	TOP_TYPE = VFT_TOP_TYPE;
+	return (VFT_TYPE);
+
+end GET_VFT_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_XLINK_STRUCT_TYPE
+/*
+/* Return the type-node id representing the type (typedef) of a structure
+/* that is used to link the global startup and cleanup procedures together,
+/* and return in TOP_TYPE the top-type of this returned type.
+/* Preserves current-node-id.
+/*
+/* The type declared is:
+/*
+/*	typedef struct ____lpi_xlink_tag { 
+/*		void*  ____lpi_xlink_next;
+/*		void  (*____lpi_startup) ();
+/*		void  (*____lpi_cleanup) ();
+/*	} ____lpi_xlink_t;
+/*
+/* Preserves current-node-id.
+/* Note: Cloned from GET_VFT_ENTRY_TYPE in dcltyp.pl1.
+/* ------------------------------------------------------------------- */
+
+GET_XLINK_STRUCT_TYPE: procedure (TOP_TYPE)
+		       returns   (type (NID_T))
+		       external  (X_GET_XLINK_STRUCT_TYPE);
+	declare
+		TOP_TYPE		type (TYPE_DATA_T);
+	declare
+		TYPE			type (NID_T),
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+	declare
+		XLINK_TYPE		type (NID_T)
+					static internal initial (NULL_NID),
+		XLINK_TOP_TYPE		type (TYPE_DATA_T) static internal;
+
+	/* See if the XLINK type has already been made */
+
+	if XLINK_TYPE ^= NULL_NID then do;
+		TOP_TYPE = XLINK_TOP_TYPE;
+		return (XLINK_TYPE);
+	end;
+
+	/* Internally "parse" an XLINK "typedef" */
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE),
+				   CURRENT_GLOBAL_SCOPE);
+
+	/* Declare the global startup structure "typedef" */
+
+	call CLEAR_DECLARATION ();
+
+	CURRENT_STORAGE_CLASS = TYPEDEF_ST;
+
+	/* Declare "struct ____lpi_xlink_tag" */
+
+	MATCHED_TOKEN.TYPE = KW_STRUCT_TOKEN;
+
+	call BEGIN_CLASS_DECLARATION ();
+
+	MATCHED_TOKEN.TYPE = IDENTIFIER_TOKEN;
+	MATCHED_TOKEN.SPELLING = XLINK_TAG_NAME;
+
+	call BEGIN_TAG_NAME ();
+
+	/* Begin the struct body */
+
+	call BEGIN_CLASS_BODY ();
+
+	/* Declare the first member "void* ____lpi_xlink_next" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	CURRENT_NAME = XLINK_NEXT_MEMBER_NAME;
+	call SET_POINTER_TYPE ();
+	call SET_MEMBER_DECLARATION ();
+
+	/* Declare the second member "void (*____lpi_startup)()" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	CURRENT_NAME = XLINK_STARTUP_MEMBER_NAME;
+	call SET_POINTER_TYPE ();
+	call BEGIN_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE ();
+	call SET_MEMBER_DECLARATION ();
+
+
+	/* Declare the third member "void (*____lpi_cleanup)()" */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	CURRENT_NAME = XLINK_CLEANUP_MEMBER_NAME;
+	call SET_POINTER_TYPE ();
+	call BEGIN_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE ();
+	call SET_MEMBER_DECLARATION ();
+
+	/* End the struct declaration */
+
+	call END_CLASS_BODY ();
+	call SET_TAG_NAME ();
+	call SET_CLASS_DECLARATION ();
+
+	/* Set the declarator "typedef" name "____lpi_xlink_t" */
+
+	CURRENT_NAME = XLINK_TYPE_NAME;
+
+	/* Declare the global link "typedef" */
+
+	call SET_DECLARATION ();
+
+	/* Get the type of the global link "typedef" */
+
+	XLINK_TYPE	= CURRENT_TYPE;
+	XLINK_TOP_TYPE	= CURRENT_TOP_TYPE;
+
+	/* End the internal parse */
+
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+	/* Return the type-node id of the global link entry type */
+
+	TOP_TYPE = XLINK_TOP_TYPE;
+	return (XLINK_TYPE);
+
+end GET_XLINK_STRUCT_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_NULL_FUNCTION_TYPE
+/*
+/* Returns id of a type node for "void ()".
+/* ------------------------------------------------------------------- */
+
+GET_NULL_FUNCTION_TYPE: procedure
+			returns   (type (NID_T))
+			external  (X_GET_NULL_FUNCTION_TYPE);
+
+	declare
+		SAVE_PARSE_STATE		 type (PARSE_STATE_DATA_T);
+	declare
+		NULL_FUNCTION_TYPE		 type (NID_T) static
+						 initial (NULL_NID);
+
+	if NULL_FUNCTION_TYPE ^= NULL_NID then do;
+		return (NULL_FUNCTION_TYPE);
+	end;
+
+	/* Internally "parse" a function type name. */
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE), 
+				   CURRENT_GLOBAL_SCOPE);
+
+	call CLEAR_DECLARATION ();
+
+	/* Simulate parsing "void". */
+
+	MATCHED_TOKEN.TYPE = KW_VOID_TOKEN;
+	call SET_SIMPLE_TYPE ();
+	call SET_BASE_TYPE ();
+
+	/* Simulate parsing empty abstract declarator. */
+
+	/* Simulate parsing "()". */
+
+	call BEGIN_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE ();
+	call SET_TYPE_DECLARATION ();
+
+	/* Get the type-node id just created */
+
+	NULL_FUNCTION_TYPE = CURRENT_TYPE;
+
+	/* End the internal parse */
+
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+	/* Return the type-node id of "void ()" */
+
+	return (NULL_FUNCTION_TYPE);
+
+end GET_NULL_FUNCTION_TYPE;
+

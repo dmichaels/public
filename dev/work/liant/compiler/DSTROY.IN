@@ -1,0 +1,26 @@
+/* C++ CXX_CALL_DESTRUCTOR_IN - data interface for calling destructors */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  07.31.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+ * These values extend boolean with another value which indicates
+ * that the answer to the question is unknown.
+ * ------------------------------------------------------------------- */
+
+%replace NO_NO		by 0;
+%replace YES_YES	by 1;
+%replace MAYBE		by 2;

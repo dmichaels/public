@@ -1,0 +1,24 @@
+.TH STRSAVE 3L LOCAL
+
+.SH NAME
+strsave - save a string
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+strsave(str)
+.br
+char *str;
+.ft P
+
+.SH DESCRIPTION
+Returns a new copy of the given string \fIstr\fP.  If enough
+space could not be allocated (dynamically using \fImalloc(3)\fP),
+then NULL is returned.
+
+.SH FILES
+strsave.c
+
+.SH SEE ALSO
+malloc(3), strings(3)

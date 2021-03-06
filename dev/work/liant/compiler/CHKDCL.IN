@@ -1,0 +1,38 @@
+/* C++ CXX_CHECK_DECLARATION_IN - Miscellaneous declaration checking */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  08.31.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Definitions
+/* ------------------------------------------------------------------- */
+
+/* Codes for declarator name processing */
+
+%replace VANILLA_DCL		by 1; /* global/local declaration */
+%replace FRIEND_DCL		by 2; /* friend declaration */
+%replace MEMBER_DCL		by 3; /* member declaration */
+%replace MEMBER_ACCESS_DCL	by 4; /* access declaration */
+%replace SIMPLE_DCL		by 5; /* typedef, parameter, bit-field */
+

@@ -1,0 +1,1124 @@
+/* C++ buityp.pl1 - Build and check the current type */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.30.92  DGM  027	Diagnose "enum E x;".
+ *  03.13.92  PKT  026	Updated to reuse nodes of prototype scopes.
+ *  03.26.92  DGM  025	New value-node scheme.
+ *  01.21.92  DGM  024  Support for weird cfront member-reference type.
+ *  01.13.92  DGM  023  Multi-node space fixes.
+ *  12.23.91  PKT  022  Propagate array element type qualifiers up.
+ *  11.12.91  DGM  021  Minor update and merge of 019 with 020.
+ *  10.29.91  DGM  020  Fix to allow: struct A; extern struct A x;
+ *  10.03.91  DGM  019  Allow "void &" parameter type iff SW_ALLOW_ASM.
+ *			Propagate type qualifiers up/down to array/element
+ *			type in EXPAND_TYPEDEF.
+ *  05.29.91  DGM  018  Yet another CURRENT_BASE_TYPE_UNSPECIFIED change;
+ *			fix for the sharing of signatures which can occur
+ *			via typedefs.
+ *  05.13.91  DGM  017  Don't ever clear CURRENT_BASE_TYPE_UNSPECIFIED.
+ *  05.08.91  DGM       Fix in EXPAND_TYPEDEF (typedef int T; const T x;!).
+ *  04.18.91  DGM  016  Added BUILD_CURRENT_MEMBER_TYPE.
+ *  02.11.91  DGM  015  Diagnostic for "void &" types (C++ARM,sec.8.2.2).
+ *  01.31.91  DGM  014  Minor fix.
+ *  01.10.91  DGM  013  Minor fix (clear CURRENT_TYPE_FROM_TYPEDEF).
+ *  11.15.90  DGM  012  A little rearranging.
+ *  11.06.90  DGM  011  Fix; don't set CURRENT_BASE_TYPE, CURRENT_BASE_
+ *			TYPE_QUALIFIER, and CURRENT_BASE_TYPE_ID when
+ *			the base type is a typedef; this was causing
+ *			"typedef class A T; T x, y;" to break!
+ *  10.22.90  DGM  010  Minor fixes.
+ *  10.12.90  DGM  009  Added BUILD_CURRENT_FREIND_TYPE.
+ *  10.10.90  DGM  008  Added BUILD_CURRENT_TAG_TYPE, and
+ *			BUILD_CURRENT_TYPEDEF_TYPE.
+ *  09.25.90  DGM  007  Added BUILD_CURRENT_NEW_TYPE and
+ *			BUILD_CURRENT_PARAMETER_TYPE and
+ *			fixes in SAVE_UNEXPANDED_TYPE.
+ *  09.14.90  DGM  006  Changed include file names and VOP names.
+ *  09.05.90  PKT  005  Added support for variable-sized types.
+ *  08.31.90  DGM  004  Minor updates for incomplete types.
+ *  08.29.90  DGM  003  Added type hashing.
+ *  08.15.90  DGM  002  New type-node.
+ *  05.25.90  DGM  001  Added COMPLETE_ARRAY_SYMBOL & COMPLETE_SYMBOL.
+ *  05.17.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.30.92 027 BUITYP');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_STACK_PKG;
+%include CXX_HASH_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_DUPLICATE_VALUE_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local Definitions
+/* ------------------------------------------------------------------- */
+
+/* Build type modes */
+
+%replace DO_PARAMETER_ADJUSTMENT_BTM		by '00000001'B;
+%replace ALLOW_ARRAY_OF_INCOMPLETE_BTM		by '00000010'B;
+%replace ALLOW_VOID_BTM				by '00000100'B;
+%replace ALLOW_UNDEFINED_CLASS_BTM		by '00001000'B;
+%replace ALLOW_ABSTRACT_CLASS_BTM		by '00010000'B;
+%replace ALLOW_VARIABLE_DIMENSION_BTM		by '00100000'B;
+%replace DUPLICATE_TYPEDEF_SIGNATURE_BTM	by '01000000'B;
+
+%replace DEFAULT_BTM				by '01000000'B;
+%replace PARAMETER_BTM				by '00001111'B;
+%replace TYPEDEF_BTM				by '00011110'B;
+%replace TAG_BTM				by '00011000'B;
+%replace FRIEND_BTM				by '01011000'B;
+%replace CONVERSION_FUNCTION_BTM		by '00011100'B;
+%replace STATIC_MEMBER_BTM			by '01001000'B;
+%replace NEW_CAST_SIZEOF_EXPRESSION_BTM		by '00111100'B;
+
+/* ---------------------------------------------------------------------
+/* Local Type Definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 BUILD_TYPE_MODE				based,
+  2 build_type_mode_union			union,
+    3 MODE					type (BYTE_BITS_T),
+    3 build_type_mode_bits,
+      4 available_01				type (BIT_T),
+      4 DUPLICATE_TYPEDEF_SIGNATURE		type (BIT_T),
+      4 ALLOW_VARIABLE_DIMENSION		type (BIT_T),
+      4 ALLOW_ABSTRACT_CLASS			type (BIT_T),
+      4 ALLOW_UNDEFINED_CLASS			type (BIT_T),
+      4 ALLOW_VOID				type (BIT_T),
+      4 ALLOW_ARRAY_OF_INCOMPLETE		type (BIT_T),
+      4 DO_PARAMETER_ADJUSTMENT			type (BIT_T);
+
+/* ---------------------------------------------------------------------
+/* Local Static Data
+/* ------------------------------------------------------------------- */
+
+declare
+
+BTM	type (BUILD_TYPE_MODE) static internal initial (DEFAULT_BTM);
+
+/* ---------------------------------------------------------------------
+/* BUILD_CURRENT_TYPE
+/*
+/* Build a type-node from the current type declaration data.
+/* All "typedef"s are fully expanded.  Diagnostics are emitted
+/* appropriately.  See below for global data usage.
+/* Preserves current-node-id.
+/*
+/* Global data read:
+/*
+/*     CURRENT_BASE_TYPE_QUALIFIER type (BYTE_BITS_T)       [read-only]
+/*     ---------------------------
+/*     This is set to the base type qualifier code of the type to be built;
+/*     it is one of the xxx_TQ type qualifier codes.  N.B. This is *not* set
+/*     to the expanded base type qualifier code of the built type (i.e. if
+/*     this was TYPEDEF_BT).
+/*
+/*     CURRENT_BASE_TYPE_ID type (NID_T)                    [read-only]
+/*     --------------------
+/*     If the CURRENT_BASE_TYPE is CLASS_BT, STRUCT_BT, UNION_BT, or
+/*     ENUM_BT, then this should be the sym-node id representing the
+/*     corresponding tag symbol of the base type.  If CURRENT_BASE_TYPE
+/*     is TYPEDEF_BT, then this should be the sym-node id representing
+/*     the corresponding typedef symbol.  Otherwise, this is NULL_NID.
+/*     N.B. This is *not* set to the expanded base type qualifier code
+/*     of the built type (i.e. if this was TYPEDEF_BT).
+/*
+/*     CURRENT_BASE_TYPE_UNSPECIFIED  type (BOOL_T)         [read-only]
+/*     -----------------------------
+/*     This should be set to TRUE iff no type-specifier was given.
+/*
+/* Global data read/written:
+/*
+/*     CURRENT_BASE_TYPE type (SHORT_T)                     [read/write]
+/*     -----------------
+/*     This is the base type code of the type to be built;
+/*     it is one of the xxx_BT or xxx_DT base or derived type codes.
+/*     N.B. This is *not* set to the expanded base type code of the
+/*     built type (i.e. if this was TYPEDEF_BT), *but* if CURRENT_
+/*     BASE_TYPE_UNSPECIFIED is set TRUE, then this is set to
+/*     INT_BT and CURRENT_BASE_ TYPE_UNSPECIFIED is set TRUE.
+/*
+/*     CURRENT_DERIVED_TYPE_LEVEL type (SHORT_T)            [read/write]
+/*     --------------------------
+/*     This represents the derived type level of the type to be built;
+/*     zero means it is not a derived (i.e. neither pointer, member-pointer
+/*     array, nor function) type.  This is set to zero upon return.
+/*
+/* Global data set written:
+/*
+/*     CURRENT_TYPE type (NID_T)                            [write-only]
+/*     ------------
+/*     This is set to the type-node id of the resultant type.
+/*
+/*     CURRENT_TOP_TYPE.CODE type (BYTE_T)                  [write-only]
+/*     ---------------------
+/*     This is set to the top-type code of the resultant type; it is one
+/*     of the xxx_BT or xxx_DT base or derived type codes (never TYPEDEF_BT).
+/*
+/*     CURRENT_TOP_TYPE.QUALIFIERS type (BYTE_BITS_T)       [write-only]
+/*     ---------------------------
+/*     This is set to the top-type qualifier code of the resultant type;
+/*     it is one of the xxx_TQ type qualifier codes.
+/*
+/*     CURRENT_TOP_TYPE.NID type (NID_T)                    [write-only]
+/*     --------------------
+/*     This is set to the top type id of the resultant type.
+/*     - If the top-type is FUNCTION_DT, then this is the
+/*       sig-node id respresenting the corresponding signature;
+/*       in this case it may be referenced as CURRENT_TOP_TYPE.SIGNATURE.
+/*     - If the top-type is ARRAY_DT, then this is the
+/*       dim-node id respresenting the corresponding dimension;
+/*       in this case it may be referenced as CURRENT_TOP_TYPE.DIMENSION.
+/*     - If the top-type is MEMBER_POINTER_DT, then this is the
+/*       class-node id respresenting the corresponding class;
+/*       in this case it may be referenced as CURRENT_TOP_TYPE.TAG_SYMBOL.
+/*     - If the top-type is CLASS_BT, STRUCT_BT, UNION_BT, or ENUM_BT, then
+/*       this is the sym-node id representing the corresponding tag symbol.
+/*       in this case it may be referenced as CURRENT_TOP_TYPE.TAG_SYMBOL.
+/*     - Otherwise, this is NULL_NID.
+/*
+/*     CURRENT_TYPE_FROM_TYPEDEF type (BOOL_T)              [write-only]
+/*     ------------------------
+/*     This is set TRUE iff the top type of the resultant type is from
+/*     a typedef, otherwise this is set FALSE.
+/*
+/* Of course, the stacks maintained by the following routines are modified:
+/*
+/*     POP_DERIVED_TYPE (type (TYPE_DATA_T))
+/*
+/* ------------------------------------------------------------------- */
+
+BUILD_CURRENT_TYPE: procedure external (X_BUILD_CURRENT_TYPE);
+
+	declare
+		TYPE_PTR			type (POINTER_T),
+		TYPE_NID			type (NID_T),
+		TYPEDEF_PTR			type (POINTER_T),
+		TYPEDEF_NID			type (NID_T),
+		TYPE_LEVEL			type (SHORT_T),
+		TYPEDEF_LEVEL			type (SHORT_T),
+		TOTAL_TYPE_LEVEL		type (SHORT_T);
+	declare
+		DISCARD_LEVEL			type (SHORT_T),
+		I				type (SHORT_T),
+		TQ				type (BYTE_BITS_T),
+		(DT, LAST_DT)			type (SHORT_T),
+		TD				type (TYPE_DATA_T),
+		TRY_TO_HASH_THIS_TYPE		type (BOOL_T);
+
+	/*
+	/* Compute the total derived type level of this type, including
+	/* typedef types.  If the base-type is a typedef, get a pointer
+	/* to its type-node.
+	/**/
+
+	TYPE_LEVEL = CURRENT_DERIVED_TYPE_LEVEL;
+
+	if CURRENT_BASE_TYPE = TYPEDEF_BT then do;
+		call GET_SYM_NODE_R (CURRENT_BASE_TYPE_ID, TYPEDEF_PTR);
+		TYPEDEF_NID	 = TYPEDEF_PTR->SYM_NODE.TYPE;
+		call RELEASE_SYM_NODE (CURRENT_BASE_TYPE_ID);
+		call GET_TYPE_NODE_R (TYPEDEF_NID, TYPEDEF_PTR);
+		TYPEDEF_LEVEL	 = rank (TYPEDEF_PTR->TYPE_NODE.LEVEL);
+		TOTAL_TYPE_LEVEL = TYPE_LEVEL + TYPEDEF_LEVEL;
+	end;
+	else do;
+		TYPEDEF_LEVEL	 = 0;
+		TOTAL_TYPE_LEVEL = TYPE_LEVEL;
+	end;
+
+	if TOTAL_TYPE_LEVEL > MAX_DERIVED_TYPE_LEVEL then do;
+		/*
+		/* Error; too many derived types for this type.
+		/**/
+		call SEMANTIC_ERROR (ERR_MAX_DERIVED_TYPE_LEVEL);
+		DISCARD_LEVEL = TOTAL_TYPE_LEVEL - MAX_DERIVED_TYPE_LEVEL;
+		call DISCARD_DERIVED_TYPES (DISCARD_LEVEL);
+		CURRENT_DERIVED_TYPE_LEVEL = CURRENT_DERIVED_TYPE_LEVEL -
+					     DISCARD_LEVEL;
+		TOTAL_TYPE_LEVEL = MAX_DERIVED_TYPE_LEVEL;
+		TYPE_LEVEL = TOTAL_TYPE_LEVEL - TYPEDEF_LEVEL;
+	end;
+
+	/*
+	/* Allocate a new type-node exactly large enough for the
+	/* the entire *expanded* type, and get a pointer to it.
+	/**/
+
+	call NEW_TYPE_NODE (TOTAL_TYPE_LEVEL, TYPE_NID, TYPE_PTR);
+
+	/* If the base type is a typedef, expand it */
+
+	if CURRENT_BASE_TYPE = TYPEDEF_BT then do;
+		call EXPAND_TYPEDEF ();
+		call RELEASE_TYPE_NODE (TYPEDEF_NID);
+		/*
+		/* Set the current top-most derived type (LAST_DT).
+		/* Note that (within this routine only) a negative
+		/* code indicates an incomplete array type.
+		/**/
+		LAST_DT = rank (TYPE_PTR->TYPE_NODE.DATA (TYPEDEF_LEVEL).CODE);
+		if TYPE_PTR->TYPE_NODE.DATA (TYPEDEF_LEVEL).INCOMPLETE then do;
+			if LAST_DT = ARRAY_DT then
+				LAST_DT = -ARRAY_DT;
+		end;
+		else if LAST_DT = MEMBER_REFERENCE_DT then do;
+			/*
+			/* Handle this strange cfront extension.
+			/*
+			/*   struct A *ap;
+			/*   typedef void A::T();
+			/*   T *mp; // Same as: void (A::*mp)();
+			/**/
+			if TOP_DERIVED_TYPE (1) = POINTER_DT then do;
+				call POP_DERIVED_TYPE (TD);
+				TYPE_PTR->
+				TYPE_NODE.DATA (TYPEDEF_LEVEL).CODE
+					= byte (MEMBER_POINTER_DT);
+				TYPE_PTR->
+				TYPE_NODE.DATA (TYPEDEF_LEVEL).QUALIFIERS
+					  = TD.QUALIFIERS;
+				TYPE_PTR->TYPE_NODE.LEVEL =
+					byte (rank (TYPE_PTR->
+						    TYPE_NODE.LEVEL) - 1);
+				TYPE_LEVEL = TYPE_LEVEL - 1;
+				TOTAL_TYPE_LEVEL = TOTAL_TYPE_LEVEL - 1;
+				if SW_WARN_MEMBER_FUN_REF_TYPE then do;
+					call SEMANTIC_ERROR
+					     (ERR_WARN_MEMBER_FUN_REF);
+				end;
+			end;
+			else do;
+				/*
+				/* Error; this member-function-reference
+				/* (which is a cfront extension) type may
+				/* only be used to declare a pointer type,
+				/* there by creating member-pointer type.
+				/**/
+				call SEMANTIC_ERROR_I
+				     (ERR_MEMBER_FUN_REF,
+				      QUALIFIED_SYMBOL_NAME
+				      (CURRENT_BASE_TYPE_ID));
+				TYPE_PTR->
+				TYPE_NODE.DATA (TYPEDEF_LEVEL).CODE
+					= byte (MEMBER_POINTER_DT);
+			end;
+		end;
+	end;
+
+	/* Otherwise, simply set it */
+
+	else do;
+		CURRENT_TYPE_FROM_TYPEDEF = FALSE;
+		if CURRENT_BASE_TYPE_UNSPECIFIED then
+			CURRENT_BASE_TYPE = INT_BT;
+		TYPE_PTR->TYPE_NODE.DATA (0).CODE
+			= byte (CURRENT_BASE_TYPE);
+		TYPE_PTR->TYPE_NODE.DATA (0).QUALIFIERS
+			= CURRENT_BASE_TYPE_QUALIFIER;
+		TYPE_PTR->TYPE_NODE.DATA (0).NID
+			= CURRENT_BASE_TYPE_ID;
+		LAST_DT = NULL_DT;
+	end;
+
+	/* Try to hash (share) the built type unless ... */
+
+	TRY_TO_HASH_THIS_TYPE = TRUE;
+
+	/*
+	/* Pop and process the derived type information; note that if
+	/* the base type is a typedef, then this will place the type
+	/* data into the appropriate upper levels in the type-node.
+	/*
+	/* Also, check the legality of the type; emit an appropriate
+	/* diagnostic for each of the following illegal constructs:
+	/*
+	/*	Pointer-to-reference
+	/*	Member-pointer-to-reference
+	/*	Reference-to-reference
+	/*	Function-returning-function
+	/*	Function-returning-array
+	/*	Array-of-function
+	/*      Array-of-reference
+	/*	Array-of-array-of-unspecified-dimension
+	/*      Array-of-non-constant-dimension
+	/**/
+
+	do I = TYPEDEF_LEVEL + 1 to TOTAL_TYPE_LEVEL;
+
+	call POP_DERIVED_TYPE (TYPE_PTR->TYPE_NODE.DATA (I));
+
+	DT = rank (TYPE_PTR->TYPE_NODE.CODE (I));
+
+	if DT = FUNCTION_DT then do;
+		TRY_TO_HASH_THIS_TYPE = FALSE;
+		if LAST_DT = FUNCTION_DT then
+			call SEMANTIC_ERROR (ERR_FUN_RET_FUN);
+		else if (LAST_DT = ARRAY_DT) | (LAST_DT = -ARRAY_DT) then
+			call SEMANTIC_ERROR (ERR_FUN_RET_ARRAY);
+		if TYPE_PTR->TYPE_NODE.DATA (I).INCOMPLETE then
+			TYPE_PTR->TYPE_NODE.CONTAINS_INCOMPLETE = TRUE;
+		if TYPE_PTR->TYPE_NODE.DATA (I).DEFAULT_ARGUMENT then
+			TYPE_PTR->TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT = TRUE;
+		LAST_DT = DT;
+
+		/*
+		/* Free prototype scope for all but the top function
+		/* types, because that might be involved in a function
+		/* definition.
+		/**/
+		if I ^= TOTAL_TYPE_LEVEL then
+			call FREE_PROTOTYPE_SCOPE
+			     (TYPE_PTR->TYPE_NODE.SIGNATURE (I));
+	end;
+	else if DT = ARRAY_DT then do;
+		TRY_TO_HASH_THIS_TYPE = FALSE;
+		if LAST_DT = FUNCTION_DT then
+			call SEMANTIC_ERROR (ERR_ARRAY_OF_FUN);
+		if LAST_DT = REFERENCE_DT then
+			call SEMANTIC_ERROR (ERR_ARRAY_OF_REF);
+		else if LAST_DT = -ARRAY_DT then do;
+			if ^BTM.ALLOW_ARRAY_OF_INCOMPLETE |
+			   (I < TOTAL_TYPE_LEVEL) then
+				call SEMANTIC_ERROR (ERR_ARRAY_OF_INCOMPLETE);
+		end;
+		if ^BTM.ALLOW_VARIABLE_DIMENSION | (I < TOTAL_TYPE_LEVEL) then
+			call CHECK_FOR_CONSTANT_DIMENSION
+			     (TYPE_PTR->TYPE_NODE.DIMENSION (I));
+		if TYPE_PTR->TYPE_NODE.DATA (I).INCOMPLETE then do;
+			TYPE_PTR->TYPE_NODE.CONTAINS_INCOMPLETE = TRUE;
+			LAST_DT = -DT;
+		end;
+		else	LAST_DT =  DT;
+		/*
+		/* Propagate qualifiers of array/element types up.
+		/**/
+		TYPE_PTR->TYPE_NODE.DATA (I).QUALIFIERS
+			=   TYPE_PTR->TYPE_NODE.DATA (I).QUALIFIERS
+			  | TYPE_PTR->TYPE_NODE.DATA (I-1).QUALIFIERS;
+	end;
+	else if DT = POINTER_DT then do;
+		if LAST_DT = REFERENCE_DT then
+			call SEMANTIC_ERROR (ERR_PTR_TO_REF);
+		LAST_DT = DT;
+	end;
+	else if DT = REFERENCE_DT then do;
+		if ^SW_C_PLUS_PLUS & ^SW_ALLOW_ASM then
+			call SEMANTIC_ERROR (ERR_NO_REF_TYPES_ALLOWED);
+		if LAST_DT = REFERENCE_DT then
+			call SEMANTIC_ERROR (ERR_REF_TO_REF);
+		LAST_DT = DT;
+	end;
+	else if DT = MEMBER_POINTER_DT then do;
+		if ^SW_C_PLUS_PLUS then
+			call SEMANTIC_ERROR (ERR_NO_MPTR_TYPES_ALLOWED);
+		if LAST_DT = REFERENCE_DT then
+			call SEMANTIC_ERROR (ERR_MPTR_TO_REF);
+		LAST_DT = DT;
+	end;
+
+	end;
+
+	/*
+	/* If we are compiling in debug-mode, and this type was
+	/* constructed from a typedef, then save the unexpanded
+	/* type in the TYPEDEF field of this type-node.
+	/**/
+
+	if SYMBOL_TABLE then do;
+		if CURRENT_BASE_TYPE = TYPEDEF_BT then
+			call SAVE_UNEXPANDED_TYPE ();
+	end;
+
+	/* Sanity check and adjust the final type */
+
+	call CHECK_TYPE ();
+
+	/* See if we can share the type-node (via hashing) */
+
+	if TRY_TO_HASH_THIS_TYPE then
+		call HASH_TYPE (TYPE_NID, TYPE_PTR);
+
+	/* Set/clear the global data as required */
+
+	CURRENT_TYPE_LEVEL = TOTAL_TYPE_LEVEL;
+	CURRENT_TYPE = TYPE_NID;
+	CURRENT_TOP_TYPE = TYPE_PTR->TYPE_NODE.DATA (TOTAL_TYPE_LEVEL);
+	CURRENT_DERIVED_TYPE_LEVEL = 0;
+
+	/* Release the type-node and return */
+
+	call RELEASE_TYPE_NODE (TYPE_NID);
+	return;
+
+/* ---------------------------------------------------------------------
+/* EXPAND_TYPEDEF
+/*
+/* Expand the type represented by TYPE_NID, TYPE_PTR, TYPE_LEVEL,
+/* and TOTAL_TYPE_LEVEL which is assumed to have a typedef base
+/* type (i.e. TYPEDEF_BT) represented by TYPEDEF_NID, TYPEDEF_PTR,
+/* and TYPEDEF_LEVEL in place.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+EXPAND_TYPEDEF: procedure internal;
+
+	declare I type (INT_T);
+
+	/* Copy the typedef data into the lower levels of the main type */
+
+	do I = 0 to TYPEDEF_LEVEL;
+		TYPE_PTR->TYPE_NODE.DATA (I) =
+			TYPEDEF_PTR->TYPE_NODE.DATA (I);
+	end;
+
+	/*
+	/* Now, fix up the type qualifiers where they "overlap", i.e. merge
+	/* the top type qualifier of the typedef type into the base type
+	/* qualifier of the main type. This handles tricky situations like:
+	/*
+	/*  typedef int         I;  typedef const int *PCI;
+	/*  typedef const int  CI;  typedef int *const CPI;
+	/*  typedef int       *PI;  typedef const int *const *CPCI;
+	/*
+	/*  const I   a;         // Ok; CONST-int
+	/*  const CI  b;         // Error; duplicate qualifier
+	/*  const PI  c;         // Ok; CONST-ptr to int
+	/*  const PCI d;         // Ok; CONST-ptr to const-int
+	/*  const CPI e;         // Error; duplicate qualifier
+	/*  const PI *const f;   // Ok; CONST-ptr to CONST-ptr to int
+	/*  const PCI *g;        // Ok; ptr to CONST-ptr to const-int
+	/*  PCI *const h;        // Ok; CONST-ptr to ptr to const-int
+	/*  const PCI *const i;  // Ok; CONST-ptr to CONST-ptr to const-int
+	/**/
+
+	if (CURRENT_BASE_TYPE_QUALIFIER & CONST_TQ) = CONST_TQ then do;
+		if TYPEDEF_PTR->TYPE_NODE.DATA (TYPEDEF_LEVEL).CONST then
+			call SEMANTIC_ERROR (ERR_DUP_TYPE_QUAL);
+		else	TYPE_PTR->TYPE_NODE.DATA (TYPEDEF_LEVEL).QUALIFIERS =
+			TYPE_PTR->TYPE_NODE.DATA (TYPEDEF_LEVEL).QUALIFIERS |
+			CONST_TQ;
+	end;
+
+	if (CURRENT_BASE_TYPE_QUALIFIER & VOLATILE_TQ) = VOLATILE_TQ then do;
+		if TYPEDEF_PTR->TYPE_NODE.DATA (TYPEDEF_LEVEL).VOLATILE then
+			call SEMANTIC_ERROR (ERR_DUP_TYPE_QUAL);
+		else	TYPE_PTR->TYPE_NODE.DATA (TYPEDEF_LEVEL).QUALIFIERS =
+			TYPE_PTR->TYPE_NODE.DATA (TYPEDEF_LEVEL).QUALIFIERS |
+			VOLATILE_TQ;
+	end;
+
+	/*
+	/* Propagate array qualifiers down to the element
+	/* type; see ANSI-C, sec.3.5.3.  For example:
+	/*
+	/*  typedef int A [3];
+	/*  const *A x;        // Ptr to const-array of CONST-int
+	/*  (*x)[0] = 1;       // Error; attempt to modify a const
+	/*
+	/* We keep the array qualifiers on the array even though
+	/* ANSI-C says not to; it seems to be harmless, and C++
+	/* seems to need it for initializing references to non-lvalue
+	/* arrays.  In addition, we even go the other way and propagate
+	/* array element qualifiers up to the array type (elsewhere).
+	/* For example:
+	/*
+	/*  typedef int A [3];
+	/*  struct S { int m [3]; } f ();
+	/*  const A &x = f ().m;
+	/*  const int (&y)[3] = f ().m;
+	/*
+	/* Here, the consts are necessary since f().m is not an lvalue.
+	/**/
+
+	if CURRENT_BASE_TYPE_QUALIFIER ^= NULL_TQ then do;
+		do I = TYPEDEF_LEVEL to 1 by -1;
+			if TYPEDEF_PTR->
+			   TYPE_NODE.DATA (I).CODE ^= byte (ARRAY_DT) then
+				leave;
+			TYPE_PTR->TYPE_NODE.DATA (I - 1).QUALIFIERS =
+			TYPE_PTR->TYPE_NODE.DATA (I - 1).QUALIFIERS |
+			TYPE_PTR->TYPE_NODE.DATA (I    ).QUALIFIERS;
+		end;
+	end;
+
+	/* Copy other miscellaneous type data */
+
+	if TYPEDEF_PTR->TYPE_NODE.CONTAINS_INCOMPLETE then
+		TYPE_PTR->TYPE_NODE.CONTAINS_INCOMPLETE = TRUE;
+	if TYPEDEF_PTR->TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT then
+		TYPE_PTR->TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT = TRUE;
+
+	/* Prevent signature from being shared */
+
+	if TYPEDEF_LEVEL = TOTAL_TYPE_LEVEL then do;
+		CURRENT_TYPE_FROM_TYPEDEF = TRUE;
+		if BTM.DUPLICATE_TYPEDEF_SIGNATURE &
+		   (TYPE_PTR->TYPE_NODE.DATA
+		    (TOTAL_TYPE_LEVEL).CODE = byte (FUNCTION_DT)) then
+			call DUPLICATE_SIGNATURE ();
+	end;
+	else	CURRENT_TYPE_FROM_TYPEDEF = FALSE;
+
+	/* Done expanding typedef */
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* DUPLICATE_SIGNATURE
+/* ------------------------------------------------------------------- */
+
+DUPLICATE_SIGNATURE: procedure internal;
+
+	declare
+		SIGNATURE_PTR		type (POINTER_T),
+		SCOPE_PTR		type (POINTER_T),
+		NEW_SCOPE_ID		type (NID_T),
+		NEW_SCOPE_PTR		type (POINTER_T),
+		NEW_SYMBOL_ID		type (NID_T),
+		NEW_SYMBOL_PTR		type (POINTER_T),
+		NEW_SIGNATURE_ID	type (NID_T),
+		NEW_SIGNATURE_PTR	type (POINTER_T),
+		(S, NEXT_S)		type (NID_T),
+		SP			type (POINTER_T),
+		(P, NEXT_P, NEW_P)	type (NID_T),
+		(PP, NEW_PP)		type (POINTER_T),
+		PREV_NEW_P		type (NID_T),
+		PREV_NEW_PP		type (POINTER_T);
+
+	%include CXX_SCOPE_DECLARATION_PKG;
+	%Include CXX_GLOBAL_SEMANTIC_DATA_IN;
+
+	call GET_SIG_NODE_R
+	     (TYPE_PTR->TYPE_NODE.DATA (TOTAL_TYPE_LEVEL).SIGNATURE,
+	      SIGNATURE_PTR);
+
+	call NEW_SIG_NODE (NEW_SIGNATURE_ID, NEW_SIGNATURE_PTR);
+	NEW_SIGNATURE_PTR->SIG_NODE = SIGNATURE_PTR->SIG_NODE;
+	
+	/*
+	/* The parameter scope and symbols should not be present for a typedef,
+	/* but be paranoid and make sure we don't get multiple references.
+	/**/
+	NEW_SIGNATURE_PTR->SIG_NODE.PARAMETERS = NULL_NID;
+	NEW_SIGNATURE_PTR->SIG_NODE.DEFINED_SCOPE = NULL_NID;
+	NEW_SIGNATURE_PTR->SIG_NODE.DEFINED_FUNCTION = FALSE;
+
+	/*
+	/* Copy the list of parameter types.
+	/**/
+	PREV_NEW_P = NULL_NID;
+	do P = SIGNATURE_PTR->SIG_NODE.PARAMETERS repeat (NEXT_P)
+						  while (P ^= NULL_NID);
+		call GET_SYM_NODE (P, PP);
+		call NEW_PARAMETER_NODE (NEW_P, NEW_PP);
+		NEW_PP->PARAMETER_NODE = PP->PARAMETER_NODE;
+		NEW_PP->PARAMETER_NODE.VALUE
+			= DUPLICATE_VALUE (PP->PARAMETER_NODE.VALUE, FALSE);
+		call RELEASE_PARAMETER_NODE (NEW_P);
+		NEXT_P = PP->SYM_NODE.NEXT_PARAMETER;
+		call RELEASE_SYM_NODE (P);
+
+		if PREV_NEW_P = NULL_NID then
+			NEW_SIGNATURE_PTR->SIG_NODE.PARAMETERS = NEW_P;
+		else do;
+			call GET_PARAMETER_NODE (PREV_NEW_P, PREV_NEW_PP);
+			PREV_NEW_PP->PARAMETER_NODE.NEXT = NEW_P;
+			call RELEASE_PARAMETER_NODE (PREV_NEW_P);
+		end;
+		PREV_NEW_P = NEW_P;
+	end;
+
+	/* Release the original sig-node */
+
+	call RELEASE_SIG_NODE
+	     (TYPE_PTR->TYPE_NODE.DATA (TOTAL_TYPE_LEVEL).SIGNATURE);
+
+	/* Replace the original sig-node with the new one */
+
+	TYPE_PTR->TYPE_NODE.DATA (TOTAL_TYPE_LEVEL).SIGNATURE
+		= NEW_SIGNATURE_ID;
+
+end DUPLICATE_SIGNATURE;
+
+end EXPAND_TYPEDEF;
+
+/* ---------------------------------------------------------------------
+/* SAVE_UNEXPANDED_TYPE
+/*
+/* Save the unexpanded version of the type represented by TYPE_NID,
+/* TYPE_PTR, TYPE_LEVEL, TYPEDEF_LEVEL, and TOTAL_TYPE_LEVEL and
+/* set the TYPEDEF field of the main type (TYPE_NID/TYPE_PTR) to
+/* the saved type.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SAVE_UNEXPANDED_TYPE: procedure internal;
+
+	declare
+		UNEXPANDED_TYPE_NID		type (NID_T),
+		UNEXPANDED_TYPE_PTR		type (POINTER_T),
+		START_DERIVED_TYPE_LEVEL	type (SHORT_T),
+		I				type (SHORT_T);
+
+	/* Make a type-node to hold the unexpanded version of the type */
+
+	call NEW_TYPE_NODE (TYPE_LEVEL,
+			    UNEXPANDED_TYPE_NID,
+			    UNEXPANDED_TYPE_PTR);
+	/*
+	/* Copy the derived type data of the
+	/* unexpanded type into the new type-node.
+	/**/
+
+	START_DERIVED_TYPE_LEVEL = TYPEDEF_LEVEL + 1;
+
+	do I = START_DERIVED_TYPE_LEVEL to TOTAL_TYPE_LEVEL;
+		UNEXPANDED_TYPE_PTR->TYPE_NODE.DATA
+			(I - START_DERIVED_TYPE_LEVEL + 1) =
+				TYPE_PTR->TYPE_NODE.DATA (I);
+	end;
+
+	UNEXPANDED_TYPE_PTR->
+	TYPE_NODE.CONTAINS_INCOMPLETE	    = TYPE_PTR->TYPE_NODE.
+					      CONTAINS_INCOMPLETE;
+	UNEXPANDED_TYPE_PTR->
+	TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT = TYPE_PTR->TYPE_NODE.
+					      CONTAINS_DEFAULT_ARGUMENT;
+
+	/* Copy the base data (TYPEDEF_BT) into the new type-node */
+
+	UNEXPANDED_TYPE_PTR->
+	TYPE_NODE.DATA (0).CODE		= byte (CURRENT_BASE_TYPE);
+	UNEXPANDED_TYPE_PTR->
+	TYPE_NODE.DATA (0).QUALIFIERS	= CURRENT_BASE_TYPE_QUALIFIER;
+	UNEXPANDED_TYPE_PTR->
+	TYPE_NODE.DATA (0).NID		= CURRENT_BASE_TYPE_ID;
+
+	/* See if we can share the type-node (via hashing) */
+
+	call HASH_TYPE (UNEXPANDED_TYPE_NID, UNEXPANDED_TYPE_PTR);
+
+	/* Set the expanded type-node to point to the unexpanded type-node */
+
+	TYPE_PTR->TYPE_NODE.TYPEDEF = UNEXPANDED_TYPE_NID;
+
+	/* Release the new unexpanded type-node */
+
+	call RELEASE_TYPE_NODE (UNEXPANDED_TYPE_NID);
+
+end SAVE_UNEXPANDED_TYPE;
+
+/* ---------------------------------------------------------------------
+/* CHECK_FOR_CONSTANT_DIMENSION
+/*
+/* Make sure the dimension represented by the given dim-node id was
+/* specified by a constant expression (or was unspecified).  If not,
+/* then emit an appropriate diagnostic, and set the dimension to zero,
+/* otherwise return.  A variable dimension is legal only as the top
+/* array dimension of a "new" expresion type.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_FOR_CONSTANT_DIMENSION: procedure (DIM_NODE_ID) internal;
+
+	declare
+		DIM_NODE_ID	type (NID_T);
+	declare
+		DP		type (POINTER_T);
+				  
+	if DIM_NODE_ID = NULL_NID then
+		return;
+	call GET_DIM_NODE (DIM_NODE_ID, DP);
+	if DP->DIM_NODE.INCOMPLETE &
+	   (DP->DIM_NODE.VALUE_ID ^= NULL_CXX_VID) then do;
+		call SEMANTIC_ERROR (ERR_BAD_EVAL_DIM);
+		call COUNT_DOWN_VALUE (DP->DIM_NODE.VALUE_ID);
+		DP->DIM_NODE.INCOMPLETE = FALSE;
+		DP->DIM_NODE.VALUE = 0;
+	end;
+	call RELEASE_DIM_NODE (DIM_NODE_ID);
+
+end CHECK_FOR_CONSTANT_DIMENSION;
+
+/* ---------------------------------------------------------------------
+/* CHECK_TYPE
+/* ------------------------------------------------------------------- */
+
+CHECK_TYPE: procedure internal;
+
+	declare
+		TAG		type (NID_T),
+		P		type (POINTER_T),
+		(SU, B)		type (SHORT_T);
+
+	/* If a parameter type is being built, perform adjustments */
+
+	if BTM.DO_PARAMETER_ADJUSTMENT then
+		call ADJUST_PARAMETER_TYPE ();
+
+	/*
+	/* Check for a void (top) type; a "void" type is illegal in
+	/* all contexts except for parameters, typedefs, and casts.
+	/**/
+
+	if TYPE_PTR->TYPE_NODE.DATA (0).CODE = byte (VOID_BT) then do;
+		if TOTAL_TYPE_LEVEL = 0 then do;
+			if ^BTM.ALLOW_VOID then
+				call SEMANTIC_ERROR (ERR_VOID_OBJECT);
+		end;
+		else if TYPE_PTR->TYPE_NODE.DATA (1).CODE =
+			byte (ARRAY_DT) then do;
+			call SEMANTIC_ERROR (ERR_VOID_ARRAY);
+		end;
+		else if TYPE_PTR->TYPE_NODE.DATA (1).CODE =
+			byte (REFERENCE_DT) then do;
+			if ^SW_ALLOW_ASM then
+				call SEMANTIC_ERROR (ERR_VOID_REFERENCE);
+		end;
+		return;
+	end;
+
+	/*
+	/* Check for an undefined or abstract class base type;
+	/* an abstract class type may not be specified as an
+	/* object type, member type, array element type,
+	/* a return type, a parameter type, or cast type.
+	/***/
+
+	if BTM.ALLOW_ABSTRACT_CLASS &
+	   (BTM.ALLOW_UNDEFINED_CLASS |
+	    (CURRENT_STORAGE_CLASS = EXTERN_ST)) then
+		return;
+
+	/* Here, we are disallowing abstract and/or undefined classes */
+
+	if ^IS_TAG_TYPE
+	    (rank (TYPE_PTR->TYPE_NODE.DATA (0).CODE)) then
+		return;
+
+	/* Here, we have a class type */
+
+	if (TOTAL_TYPE_LEVEL > 0) &
+	   (TYPE_PTR->TYPE_NODE.DATA (1).CODE ^= byte (ARRAY_DT)) then
+		return;
+
+	/*
+	/* Here, we have a top class type, or a type which contains a
+	/* class function return type or a class array element type.
+	/**/
+
+	TAG = TYPE_PTR->TYPE_NODE.DATA (0).TAG_SYMBOL;
+
+	call GET_SYM_NODE_R (TAG, P);
+
+	if ^P->SYM_NODE.DEFINED then do;
+		if ^BTM.ALLOW_UNDEFINED_CLASS &
+		   (CURRENT_STORAGE_CLASS ^= EXTERN_ST) then do;
+			if P->SYM_NODE.IS_ENUM_TAG then do;
+				if P->SYM_NODE.SIZE = 0 then do;
+					/*
+					/* Error; an undefined enumeration
+					/* may not be specified as the type
+					/* of an object, member, or array
+					/* element; assuming an "int"
+					/* type/size enumeration.
+					/**/
+					call SEMANTIC_ERROR_I
+					     (ERR_UNDEF_ENUM_OBJECT,
+					      QUALIFIED_SYMBOL_NAME (TAG));
+					call SIMPLE_TYPE_SIZE
+					     (INT_BT, P->SYM_NODE.SIZE, SU, B);
+					SYM_NODE.SIZE_UNITS = byte (SU);
+					SYM_NODE.BOUNDARY   = byte (B);
+				end;
+			end;
+			else do;
+				/*
+				/* Error; an undefined class may not be
+				/* specified as the type of an object,
+				/* member, or array element.
+				/**/
+				call SEMANTIC_ERROR_I
+				     (ERR_UNDEF_CLASS_OBJECT,
+				      QUALIFIED_SYMBOL_NAME (TAG));
+				P->SYM_NODE.SIZE	= 1;
+				P->SYM_NODE.SIZE_UNITS	= byte (BYTES);
+				P->SYM_NODE.BOUNDARY	= byte (BYTES);
+			end;
+		end;
+	end;
+	else if P->SYM_NODE.ABSTRACT & ^BTM.ALLOW_ABSTRACT_CLASS then do;
+		/*
+		/* Error; an abstract class may not be specified as the
+		/* type of an object, member, array element, parameter,
+		/* or function type.  It may only be used as the base
+		/* type of a pointer or reference, or as a base class.
+		/**/
+		call SEMANTIC_ERROR_I (ERR_ABSTRACT_CLASS_OBJECT,
+				       QUALIFIED_SYMBOL_NAME (TAG));
+	end;
+
+	call RELEASE_SYM_NODE (TAG);
+	return;
+
+/* ---------------------------------------------------------------------
+/* ADJUST_PARAMETER_TYPE
+/*
+/* If the type represented by TYPE_NID, TYPE_PTR, and TOTAL_TYPE_LEVEL
+/* is a function type, then change it to a pointer-to-function type,
+/* otherwise, if it's an array type, then change it to a pointer type,
+/* otherwise, do nothing.  See ANSI-C, sec.3.7.1.
+/* Preseves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ADJUST_PARAMETER_TYPE: procedure internal;
+
+	declare
+		ADJUSTED_TYPE_NID	type (NID_T),
+		ADJUSTED_TYPE_PTR	type (POINTER_T),
+		ADJUSTED_TYPE_LEVEL	type (SHORT_T),
+		I			type (SHORT_T);
+
+	if TYPE_PTR->TYPE_NODE.DATA (TOTAL_TYPE_LEVEL).CODE =
+	   byte (FUNCTION_DT) then do;
+		ADJUSTED_TYPE_LEVEL = TOTAL_TYPE_LEVEL + 1;
+		call NEW_TYPE_NODE (ADJUSTED_TYPE_LEVEL,
+				    ADJUSTED_TYPE_NID,
+				    ADJUSTED_TYPE_PTR);
+		do I = 0 to TOTAL_TYPE_LEVEL;
+			ADJUSTED_TYPE_PTR->TYPE_NODE.DATA (I) =
+				TYPE_PTR->TYPE_NODE.DATA (I);
+		end;
+		ADJUSTED_TYPE_PTR->
+		TYPE_NODE.DATA (ADJUSTED_TYPE_LEVEL).CODE = byte (POINTER_DT);
+		ADJUSTED_TYPE_PTR->
+		TYPE_NODE.DATA (ADJUSTED_TYPE_LEVEL).QUALIFIERS = NULL_TQ;
+		ADJUSTED_TYPE_PTR->
+		TYPE_NODE.DATA (ADJUSTED_TYPE_LEVEL).NID = NULL_NID;
+		ADJUSTED_TYPE_PTR->
+		TYPE_NODE.CONTAINS_INCOMPLETE =
+			TYPE_PTR->TYPE_NODE.CONTAINS_INCOMPLETE;
+		ADJUSTED_TYPE_PTR->
+		TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT =
+			TYPE_PTR->TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT;
+		call FREE_TYPE_NODE_P (TYPE_NID, TYPE_PTR);
+		TYPE_NID   = ADJUSTED_TYPE_NID;
+		TYPE_PTR   = ADJUSTED_TYPE_PTR;
+		TYPE_LEVEL = ADJUSTED_TYPE_LEVEL;
+	end;
+	else if TYPE_PTR->TYPE_NODE.DATA (TOTAL_TYPE_LEVEL).CODE =
+		byte (ARRAY_DT) then do;
+		call NEW_TYPE_NODE (TOTAL_TYPE_LEVEL,
+				    ADJUSTED_TYPE_NID, ADJUSTED_TYPE_PTR);
+		do I = 0 to TOTAL_TYPE_LEVEL - 1;
+			ADJUSTED_TYPE_PTR->TYPE_NODE.DATA (I) =
+				TYPE_PTR->TYPE_NODE.DATA (I);
+		end;
+		ADJUSTED_TYPE_PTR->
+		TYPE_NODE.DATA (TOTAL_TYPE_LEVEL).CODE =
+			byte (POINTER_DT);
+		ADJUSTED_TYPE_PTR->
+		TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT =
+			TYPE_PTR->TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT;
+		call FREE_TYPE_NODE_P (TYPE_NID, TYPE_PTR);
+		TYPE_NID = ADJUSTED_TYPE_NID;
+		TYPE_PTR = ADJUSTED_TYPE_PTR;
+	end;
+
+end ADJUST_PARAMETER_TYPE;
+
+end CHECK_TYPE;
+
+/* ---------------------------------------------------------------------
+/* DISCARD_DERIVED_TYPES
+/*
+/* Discard the NLEVELS least significant derived types (i.e. pointer,
+/* reference, array, or function types) from the current declarator
+/* data.  This is only for smoother error recovery on when the maximum
+/* level (MAX_DERIVED_TYPE_LEVEL) is exceeded.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DISCARD_DERIVED_TYPES: procedure (NLEVELS) internal;
+
+	declare
+		NLEVELS	type (SHORT_T);
+	declare
+		I	type (INT_T),
+		DT	type (TYPE_DATA_T);
+
+	do I = 1 to NLEVELS;
+		call POP_DERIVED_TYPE (DT);
+	end;
+
+end DISCARD_DERIVED_TYPES;
+
+end BUILD_CURRENT_TYPE;
+
+/* ---------------------------------------------------------------------
+/* BUILD_CURRENT_PARAMETER_TYPE
+/*
+/* Exactly the same as BUILD_CURRENT_TYPE except that it is assumed
+/* that a parameter type is being built, and we will thus implicitly
+/* map a function type to a pointer-to-function type, and an array
+/* type to a pointer type; we will also allow void and undefined class
+/* (top) types in this case (note that undefined class parameter types
+/* are checked at the function definition, as well as undefined class
+/* return types).  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BUILD_CURRENT_PARAMETER_TYPE: procedure
+			      external   (X_BUILD_CURRENT_PARAMETER_TYPE);
+
+	BTM.MODE = PARAMETER_BTM;
+	call BUILD_CURRENT_TYPE ();
+	BTM.MODE = DEFAULT_BTM;
+
+end BUILD_CURRENT_PARAMETER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* BUILD_CURRENT_TYPEDEF_TYPE
+/*
+/* Exactly the same as BUILD_CURRENT_TYPE except that it is assumed that
+/* a type is being built for a "typedef" declaration, and we will thus
+/* allow an abstract or undefined class type.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BUILD_CURRENT_TYPEDEF_TYPE: procedure
+			    external   (X_BUILD_CURRENT_TYPEDEF_TYPE);
+
+	BTM.MODE = TYPEDEF_BTM;
+	call BUILD_CURRENT_TYPE ();
+	BTM.MODE = DEFAULT_BTM;
+
+end BUILD_CURRENT_TYPEDEF_TYPE;
+
+/* ---------------------------------------------------------------------
+/* BUILD_CURRENT_TAG_TYPE
+/*
+/* Exactly the same as BUILD_CURRENT_TYPE except that it is assumed
+/* that a type is being built for a tag declaration, and we will
+/* thus obviously allow undefined classes.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BUILD_CURRENT_TAG_TYPE: procedure external (X_BUILD_CURRENT_TAG_TYPE);
+
+	BTM.MODE = TAG_BTM;
+	call BUILD_CURRENT_TYPE ();
+	BTM.MODE = DEFAULT_BTM;
+
+end BUILD_CURRENT_TAG_TYPE;
+
+/* ---------------------------------------------------------------------
+/* BUILD_CURRENT_FRIEND_TYPE
+/*
+/* Exactly the same as BUILD_CURRENT_TYPE except that it is assumed
+/* that a type is being built for a friend declaration, and we will
+/* thus allow undefined and abstract classes.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BUILD_CURRENT_FRIEND_TYPE: procedure
+			   external  (X_BUILD_CURRENT_FRIEND_TYPE);
+
+	BTM.MODE = FRIEND_BTM;
+	call BUILD_CURRENT_TYPE ();
+	BTM.MODE = DEFAULT_BTM;
+
+end BUILD_CURRENT_FRIEND_TYPE;
+
+/* ---------------------------------------------------------------------
+/* BUILD_CURRENT_CONVERSION_TYPE
+/*
+/* Exactly the same as BUILD_CURRENT_TYPE except that it is assumed
+/* that a type is being built for a conversion function declaration,
+/* and we will thus allow undefined and abstract classes, and an
+/* alternate diagnostic will be given if a void type is specified.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BUILD_CURRENT_CONVERSION_TYPE: procedure
+			       external  (X_BUILD_CURRENT_CONVERSION_TYPE);
+
+	BTM.MODE = CONVERSION_FUNCTION_BTM;
+	call BUILD_CURRENT_TYPE ();
+	BTM.MODE = DEFAULT_BTM;
+
+end BUILD_CURRENT_CONVERSION_TYPE;
+
+/* ---------------------------------------------------------------------
+/* BUILD_CURRENT_NEW_TYPE
+/*
+/* Exactly the same as BUILD_CURRENT_TYPE except that it is assumed that
+/* a type is being built for a "new" expression, and we will thus allow
+/* a non-constant array dimension to be specified for (top) array types.
+/* We also allow undefined and abstract class types since this routine
+/* is also used to build types for cast expressions and sizeof expressions;
+/* we check for illegally casting to an undefined or abstract class or
+/* taking the sizeof an undefined class later (in TYPE_VALUE).
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BUILD_CURRENT_NEW_TYPE: procedure external (X_BUILD_CURRENT_NEW_TYPE);
+
+	BTM.MODE = NEW_CAST_SIZEOF_EXPRESSION_BTM;
+	call BUILD_CURRENT_TYPE ();
+	BTM.MODE = DEFAULT_BTM;
+
+end BUILD_CURRENT_NEW_TYPE;
+
+/* ---------------------------------------------------------------------
+/* BUILD_CURRENT_MEMBER_TYPE
+/*
+/* Exactly the same as BUILD_CURRENT_TYPE except that it is assumed that
+/* a type is being built for a member.  In this case, if the current
+/* storage class is static, then we will allow undefined class types
+/* (see C++ARM, sec.9.4).  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BUILD_CURRENT_MEMBER_TYPE: procedure external (X_BUILD_CURRENT_MEMBER_TYPE);
+
+	if CURRENT_STORAGE_CLASS = STATIC_ST then do;
+		BTM.MODE = STATIC_MEMBER_BTM;
+		call BUILD_CURRENT_TYPE ();
+		BTM.MODE = DEFAULT_BTM;
+	end;
+	else	call BUILD_CURRENT_TYPE ();
+
+end BUILD_CURRENT_MEMBER_TYPE;
+

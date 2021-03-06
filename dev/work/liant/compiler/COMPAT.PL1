@@ -1,0 +1,1445 @@
+/* C++ compat.pl1 - Type compatibility utility routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.26.92  DGM  037  Minor fix in DUMP_TYPE_COMPATIBILITY_STATS.
+ *  08.19.92  DGM  036  Added COMPATIBLE_ENOUGH_RETURN_TYPES.
+ *  06.11.92  DGM  035  Pass pointers by value for efficiency.
+ *  04.17.92  PKT  034	Updated for 'this' qualifiers in SIG_NODE.
+ *  03.13.92  PKT  033	Updated for parameter nodes.
+ *  03.26.92  DGM  032	New value-node scheme.
+ *  01.28.92  DGM  031  Fix in DISTINCT_SIGNATURES which showed up when
+ *			the paged version of the symbol table was used.
+ *  01.21.92  DGM  030	Parameter link-node changes.
+ *  12.26.91  PKT  029  Change IGNORE_TOP_QUALIFIERS_TCM so that 
+ *			it ignores inner qualifiers of an array type.
+ *			Fixed COMPATIBLE_TYPE_DATA to consider STRUCT_BT
+ *			compatible with CLASS_BT.
+ *  12.03.91  PKT  028  Fix to COMPATIBLE_ANY_SPECIAL_TYPES_P.
+ *  08.01.91  DGM  025  Ignore the base type of (top) function types
+ *			iff SW_PRAGMA_WRAPPER_REDECLARATIONS.
+ *  07.24.91  DGM  024  SW_PRAGMA_WRAPPER_REDECLARATIONS enhancement in
+ *			COMPATIBLE_SIGNATURES (#pragma wrapper_redeclarations).
+ *  07.08.91  DGM  023  Minor fix in COMPAIBLE_SIGNATURES.
+ *  06.17.91  DGM  022  Removed IGNORE_ALL_QUALIFIERS_TCM
+ *			and IGNORE_POINTED_TO_QUALIFIERS_TCM;
+ *			added COMPATIBLE_PROTOTYPED_TYPES.
+ *  05.30.91  DGM  021  Fix in COMPATIBLE_SIGNATURES (non-prototyped).
+ *  05.16.91  PKT  020  Minor fix in DISTINCT_FUNCTION_TYPES.
+ *  04.30.91  DGM  019  Minor update for the new utilities.
+ *  01.31.91  DGM  018  Minor fix in COMPATIBLE_SIGNATURES.
+ *  10.22.90  DGM  017  Changed SHORT_BITS_T to TCM_T.
+ *  09.28.90  PKT  016  Fixed bug TYPE_COMPATIBILITY_STATUS not set.
+ *  09.14.90  DGM  015  Changed include file names and VOP names.
+ *  09.05.90  PKT  014  Updated.
+ *  08.29.90  DGM  011  Fixed typo in DISTINCT_PARAMETERS.
+ *  08.15.90  DGM  010  New type-node.
+ *  06.06.90  DGM  009  Updated for the new utilities.
+ *  05.15.90  DGM  008  Rearranged.
+ *  04.23.90  DGM  007  Changes to handle old-style (non-prototyped)
+ *			function compatibility checks.
+ *  03.27.90  DGM  006  Updated.
+ *  03.14.90  TLF  005  Fixed bug in COMPATIBLE_DIMENSIONS.
+ *                      Changed COMPATIBLE_DIMENSIONS and
+ *			COMPATIBLE_SIGNATURE_LISTS to external.
+ *  03.02.90  DGM  004  Updated.
+ *  02.22.90  DGM  003  Updated.
+ *  02.15.90  DGM  002  Updated for the new TYPE_NODE scheme.
+ *  02.09.90  DGM  001  Updated.
+ *  01.04.90  DGM  000  Orignal.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.26.92 037 COMPAT');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG; 
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_COMPATIBILITY_IN;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ARGUMENT_PROMOTION_PKG;
+
+/* ---------------------------------------------------------------------
+/* Static internal data
+/* ------------------------------------------------------------------- */
+
+declare
+
+ALL_SIGNATURES_ARE_PROTOTYPED	type (BOOL_T) static internal initial (FALSE),
+TRIVIAL_CHECKS			type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_SYMBOLS
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_SYMBOLS: procedure (A, B)
+		    returns   (type (BOOL_T))
+		    external  (X_COMPATIBLE_SYMBOLS);
+	declare
+		(A, B)		type (NID_T);
+	declare
+		(AP, BP)	type (POINTER_T),
+		STATUS		type (BOOL_T);
+
+	if A = B        then return (TRUE);
+	if A = NULL_NID then return (FALSE);
+	if B = NULL_NID then return (FALSE);
+
+	call GET_SYM_NODE_R (A, AP);
+	call GET_SYM_NODE_R (B, BP);
+	STATUS = COMPATIBLE_TYPES (AP->SYM_NODE.TYPE, BP->SYM_NODE.TYPE);
+	call RELEASE_SYM_NODE (A);
+	call RELEASE_SYM_NODE (B);
+	return (STATUS);
+
+end COMPATIBLE_SYMBOLS;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_TYPES
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_TYPES: procedure (LEFT_TID, RIGHT_TID)
+		  returns   (type (BOOL_T))
+		  external  (X_COMPATIBLE_TYPES);
+	declare
+		LEFT_TID	type (NID_T),
+		RIGHT_TID	type (NID_T);
+	declare
+		LEFT_TP		type (POINTER_T),
+		RIGHT_TP	type (POINTER_T),
+		STATUS		type (BOOL_T);
+
+	/* Check for trivial cases */
+
+	if LEFT_TID = RIGHT_TID then do;
+		TRIVIAL_CHECKS = TRIVIAL_CHECKS + 1;
+		return (TRUE);
+	end;
+
+	/* Check for paranoid cases */
+
+	else if (LEFT_TID = NULL_NID) | (RIGHT_TID = NULL_NID) then
+		return (TRUE);
+
+	/* Check for compatibility */
+
+	call GET_TYPE_NODE_R (LEFT_TID, LEFT_TP);
+	call GET_TYPE_NODE_R (RIGHT_TID, RIGHT_TP);
+	STATUS = COMPATIBLE_ANY_TYPES_P (LEFT_TP, 0, RIGHT_TP, 0);
+	call RELEASE_TYPE_NODE (RIGHT_TID);
+	call RELEASE_TYPE_NODE (LEFT_TID);
+	return (STATUS);
+
+end COMPATIBLE_TYPES;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_TYPES_P
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_TYPES_P: procedure (LEFT_TP, RIGHT_TP)
+		    returns   (type (BOOL_T))
+		    external  (X_COMPATIBLE_TYPES_P);
+	declare
+		LEFT_TP		type (POINTER_T) value,
+		RIGHT_TP	type (POINTER_T) value;
+	declare
+		I		type (SHORT_T);
+
+	/* Check for trivial cases */
+
+	if LEFT_TP = RIGHT_TP then do;
+		TRIVIAL_CHECKS = TRIVIAL_CHECKS + 1;
+		return (TRUE);
+	end;
+
+	/* Check for compatibility */
+
+	if rank (LEFT_TP->TYPE_NODE.LEVEL) ^=
+	   rank (RIGHT_TP->TYPE_NODE.LEVEL) then do;
+		TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_TYPES_TCS;
+		return (FALSE);
+	end;
+
+	/* DGM 025 ...
+	do I = rank (LEFT_TP->TYPE_NODE.LEVEL) to 0 by -1;
+		if ^COMPATIBLE_TYPE_DATA
+		    (LEFT_TP->TYPE_NODE.DATA (I),
+		     RIGHT_TP->TYPE_NODE.DATA (I)) then
+			return (FALSE);
+	end;
+	... DGM 025 */
+
+	do I = rank (LEFT_TP->TYPE_NODE.LEVEL) to 1 by -1;
+		if ^COMPATIBLE_TYPE_DATA
+		    (LEFT_TP->TYPE_NODE.DATA (I),
+		     RIGHT_TP->TYPE_NODE.DATA (I)) then
+			return (FALSE);
+	end;
+
+	if SW_PRAGMA_WRAPPER_REDECLARATIONS then do;
+		if LEFT_TP->TYPE_NODE.DATA
+		   (rank (LEFT_TP->TYPE_NODE.LEVEL)).CODE
+		   = byte (FUNCTION_DT) then
+			return (TRUE);
+	end;
+
+	if ^COMPATIBLE_TYPE_DATA
+	    (LEFT_TP->TYPE_NODE.DATA (0),
+	     RIGHT_TP->TYPE_NODE.DATA (0)) then
+		return (FALSE);
+
+	return (TRUE);
+
+	/* return (COMPATIBLE_ANY_TYPES_P (LEFT_TP, 0, RIGHT_TP, 0)); */
+
+end COMPATIBLE_TYPES_P;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_ANY_TYPES
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_ANY_TYPES: procedure (LEFT_TID,
+				 LEFT_SKIP_NLEVELS,
+				 RIGHT_TID,
+				 RIGHT_SKIP_NLEVELS)
+		      returns   (type (BOOL_T))
+		      external  (X_COMPATIBLE_ANY_TYPES);
+	declare
+		LEFT_TID		type (NID_T),
+		LEFT_SKIP_NLEVELS	type (SHORT_T),
+		RIGHT_TID		type (NID_T),
+		RIGHT_SKIP_NLEVELS	type (SHORT_T);
+	declare
+		LEFT_TP			type (POINTER_T),
+		RIGHT_TP		type (POINTER_T),
+		STATUS			type (BOOL_T);
+
+	/* Check for trivial cases */
+
+	if LEFT_TID = RIGHT_TID then do;
+		if LEFT_SKIP_NLEVELS = RIGHT_SKIP_NLEVELS then do;
+			TRIVIAL_CHECKS = TRIVIAL_CHECKS + 1;
+			return (TRUE);
+		end;
+	end;
+
+	/* Check for paranoid cases */
+
+	else if (LEFT_TID = NULL_NID) | (RIGHT_TID = NULL_NID) then
+		return (TRUE);
+
+	/* Check for compatibility */
+
+	call GET_TYPE_NODE_R (LEFT_TID, LEFT_TP);
+	call GET_TYPE_NODE_R (RIGHT_TID, RIGHT_TP);
+	STATUS = COMPATIBLE_ANY_TYPES_P (LEFT_TP,
+					 LEFT_SKIP_NLEVELS,
+					 RIGHT_TP,
+					 RIGHT_SKIP_NLEVELS);
+	call RELEASE_TYPE_NODE (RIGHT_TID);
+	call RELEASE_TYPE_NODE (LEFT_TID);
+	return (STATUS);
+
+end COMPATIBLE_ANY_TYPES;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_ANY_TYPES_P
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_ANY_TYPES_P: procedure (LEFT_TP,
+				   LEFT_SKIP_NLEVELS,
+				   RIGHT_TP,
+				   RIGHT_SKIP_NLEVELS)
+			returns   (type (BOOL_T))
+			external  (X_COMPATIBLE_ANY_TYPES_P);
+	declare
+		LEFT_TP			type (POINTER_T) value,
+		LEFT_SKIP_NLEVELS	type (SHORT_T),
+		RIGHT_TP		type (POINTER_T) value,
+		RIGHT_SKIP_NLEVELS	type (SHORT_T);
+	declare
+		LEFT_LEVEL		type (SHORT_T),
+		RIGHT_LEVEL		type (SHORT_T),
+		I			type (INT_T),
+		TYPE_CODE		type (SHORT_T);
+
+	/* Check for trivial cases */
+
+	if LEFT_TP = RIGHT_TP then do;
+		if LEFT_SKIP_NLEVELS = RIGHT_SKIP_NLEVELS then do;
+			TRIVIAL_CHECKS = TRIVIAL_CHECKS + 1;
+			return (TRUE);
+		end;
+	end;
+
+	/* Get the adjusted left type-node level */
+
+	LEFT_LEVEL = rank (LEFT_TP->TYPE_NODE.LEVEL) - LEFT_SKIP_NLEVELS;
+	if LEFT_LEVEL < 0 then LEFT_LEVEL = 0;
+
+	/* Get the adjusted right type-node level */
+
+	RIGHT_LEVEL = rank (RIGHT_TP->TYPE_NODE.LEVEL) - RIGHT_SKIP_NLEVELS;
+	if RIGHT_LEVEL < 0 then RIGHT_LEVEL = 0;
+
+	/* Compare the type-node levels */
+
+	if LEFT_LEVEL ^= RIGHT_LEVEL then do;
+		TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_TYPES_TCS;
+		return (FALSE);
+	end;
+
+	/* Compare the type-nodes for compatibility */
+
+	/* DGM 025 ...
+	do I = LEFT_LEVEL to 0 by -1;
+		if ^COMPATIBLE_TYPE_DATA
+		    (LEFT_TP->TYPE_NODE.DATA (I),
+		     RIGHT_TP->TYPE_NODE.DATA (I)) then
+			return (FALSE);
+	end;
+	... DGM 025 */
+
+	do I = LEFT_LEVEL to 1 by -1;
+		if ^COMPATIBLE_TYPE_DATA
+		    (LEFT_TP->TYPE_NODE.DATA (I),
+		     RIGHT_TP->TYPE_NODE.DATA (I)) then
+			return (FALSE);
+	end;
+
+	if SW_PRAGMA_WRAPPER_REDECLARATIONS then do;
+		if LEFT_TP->TYPE_NODE.DATA
+		   (LEFT_LEVEL).CODE = byte (FUNCTION_DT) then
+			return (TRUE);
+	end;
+
+	if ^COMPATIBLE_TYPE_DATA
+	    (LEFT_TP->TYPE_NODE.DATA (0),
+	     RIGHT_TP->TYPE_NODE.DATA (0)) then
+		return (FALSE);
+
+	return (TRUE);
+
+end COMPATIBLE_ANY_TYPES_P;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_SPECIAL_TYPES
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_SPECIAL_TYPES: procedure (LEFT_TID,
+				     LEFT_FLAGS,
+				     RIGHT_TID,
+				     RIGHT_FLAGS)
+			  returns   (type (BOOL_T))
+			  external  (X_COMPATIBLE_SPECIAL_TYPES);
+	declare
+		LEFT_TID	type (NID_T),
+		LEFT_FLAGS	type (TCM_T),
+		RIGHT_TID	type (NID_T),
+		RIGHT_FLAGS	type (TCM_T);
+	declare
+		LEFT_TP		type (POINTER_T),
+		RIGHT_TP	type (POINTER_T),
+		STATUS		type (BOOL_T);
+
+	/* Check for trivial cases */
+
+	if LEFT_TID = RIGHT_TID then do;
+		if LEFT_FLAGS = RIGHT_FLAGS then do;
+			TRIVIAL_CHECKS = TRIVIAL_CHECKS + 1;
+			return (TRUE);
+		end;
+	end;
+
+	/* Check for paranoid cases */
+
+	else if (LEFT_TID = NULL_NID) | (RIGHT_TID = NULL_NID) then
+		return (TRUE);
+
+	/* Check for compatibility */
+
+	call GET_TYPE_NODE_R (LEFT_TID, LEFT_TP);
+	call GET_TYPE_NODE_R (RIGHT_TID, RIGHT_TP);
+	STATUS = COMPATIBLE_ANY_SPECIAL_TYPES_P (LEFT_TP,
+						 0,
+						 LEFT_FLAGS,
+						 RIGHT_TP,
+						 0,
+						 RIGHT_FLAGS);
+	call RELEASE_TYPE_NODE (RIGHT_TID);
+	call RELEASE_TYPE_NODE (LEFT_TID);
+	return (STATUS);
+
+end COMPATIBLE_SPECIAL_TYPES;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_SPECIAL_TYPES_P
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_SPECIAL_TYPES_P: procedure (LEFT_TP,
+				       LEFT_FLAGS,
+				       RIGHT_TP,
+				       RIGHT_FLAGS)
+			    returns   (type (BOOL_T))
+			    external  (X_COMPATIBLE_SPECIAL_TYPES_P);
+	declare
+		LEFT_TP			type (POINTER_T) value,
+		LEFT_FLAGS		type (TCM_T),
+		RIGHT_TP		type (POINTER_T) value,
+		RIGHT_FLAGS		type (TCM_T);
+
+	/* Check for trivial cases */
+
+	if LEFT_TP = RIGHT_TP then do;
+		if LEFT_FLAGS = RIGHT_FLAGS then do;
+			TRIVIAL_CHECKS = TRIVIAL_CHECKS + 1;
+			return (TRUE);
+		end;
+	end;
+
+	/* Check for compatibility */
+
+	return (COMPATIBLE_ANY_SPECIAL_TYPES_P (LEFT_TP,
+						0,
+						LEFT_FLAGS,
+						RIGHT_TP,
+						0,
+						RIGHT_FLAGS));
+end COMPATIBLE_SPECIAL_TYPES_P;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_ANY_SPECIAL_TYPES
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_ANY_SPECIAL_TYPES: procedure (LEFT_TID,
+					 LEFT_SKIP_NLEVELS,
+					 LEFT_FLAGS,
+					 RIGHT_TID,
+					 RIGHT_SKIP_NLEVELS,
+					 RIGHT_FLAGS)
+			      returns   (type (BOOL_T))
+			      external  (X_COMPATIBLE_ANY_SPECIAL_TYPES);
+	declare
+		LEFT_TID		type (NID_T),
+		LEFT_SKIP_NLEVELS	type (SHORT_T),
+		LEFT_FLAGS		type (TCM_T),
+		RIGHT_TID		type (NID_T),
+		RIGHT_SKIP_NLEVELS	type (SHORT_T),
+		RIGHT_FLAGS		type (TCM_T);
+	declare
+		LEFT_TP			type (POINTER_T),
+		RIGHT_TP		type (POINTER_T),
+		STATUS			type (BOOL_T);
+
+	/* Check for trivial cases */
+
+	if LEFT_TID = RIGHT_TID then do;
+		if (LEFT_SKIP_NLEVELS = RIGHT_SKIP_NLEVELS) &
+		   (LEFT_FLAGS = RIGHT_FLAGS) then do;
+			TRIVIAL_CHECKS = TRIVIAL_CHECKS + 1;
+			return (TRUE);
+		end;
+	end;
+
+	/* Check for paranoid cases */
+
+	else if (LEFT_TID = NULL_NID) | (RIGHT_TID = NULL_NID) then
+		return (TRUE);
+
+	/* Check for compatibility */
+
+	call GET_TYPE_NODE_R (LEFT_TID, LEFT_TP);
+	call GET_TYPE_NODE_R (RIGHT_TID, RIGHT_TP);
+	STATUS = COMPATIBLE_ANY_SPECIAL_TYPES_P (LEFT_TP,
+						 LEFT_SKIP_NLEVELS,
+						 LEFT_FLAGS,
+						 RIGHT_TP,
+						 RIGHT_SKIP_NLEVELS,
+						 RIGHT_FLAGS);
+	call RELEASE_TYPE_NODE (RIGHT_TID);
+	call RELEASE_TYPE_NODE (LEFT_TID);
+	return (STATUS);
+
+end COMPATIBLE_ANY_SPECIAL_TYPES;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_ANY_SPECIAL_TYPES_P
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_ANY_SPECIAL_TYPES_P: procedure (LEFT_TP,
+					   LEFT_SKIP_NLEVELS,
+					   LEFT_FLAGS,
+					   RIGHT_TP,
+					   RIGHT_SKIP_NLEVELS,
+					   RIGHT_FLAGS)
+				returns   (type (BOOL_T))
+				external  (X_COMPATIBLE_ANY_SPECIAL_TYPES_P);
+	declare
+		LEFT_TP			type (POINTER_T) value,
+		LEFT_SKIP_NLEVELS	type (SHORT_T),
+		LEFT_FLAGS		type (TCM_T),
+		RIGHT_TP		type (POINTER_T) value,
+		RIGHT_SKIP_NLEVELS	type (SHORT_T),
+		RIGHT_FLAGS		type (TCM_T);
+	declare
+		(I, LEVEL)		type (INT_T),
+		LEFT_LEVEL		type (INT_T),
+		LEFT_VIRTUAL_LEVEL	type (INT_T),
+		RIGHT_LEVEL		type (INT_T),
+		RIGHT_VIRTUAL_LEVEL	type (INT_T),
+		LEFT_TOP_TYPE		type (TYPE_DATA_T),
+		RIGHT_TOP_TYPE		type (TYPE_DATA_T),
+		(LTC, RTC)		type (TYPE_COMPATIBILITY_MODE_T),
+		TOP_TYPE_IS_FUNCTION	type (BOOL_T);
+
+	/* If there are no flags use the simpler routines */
+
+	if (LEFT_FLAGS = DEFAULT_TCM) & (RIGHT_FLAGS = DEFAULT_TCM) then do;
+		return (COMPATIBLE_ANY_TYPES_P (LEFT_TP,
+						LEFT_SKIP_NLEVELS,
+						RIGHT_TP,
+						RIGHT_SKIP_NLEVELS));
+	end;
+
+	/* Check for trivial cases */
+
+	if LEFT_TP = RIGHT_TP then do;
+		if (LEFT_SKIP_NLEVELS = RIGHT_SKIP_NLEVELS) &
+		   (LEFT_FLAGS = RIGHT_FLAGS) then do;
+			TRIVIAL_CHECKS = TRIVIAL_CHECKS + 1;
+			return (TRUE);
+		end;
+	end;
+
+	/* Get the adjusted left type-node level */
+
+	LEFT_LEVEL = rank (LEFT_TP->TYPE_NODE.LEVEL) - LEFT_SKIP_NLEVELS;
+	if LEFT_LEVEL < 0 then LEFT_LEVEL = 0;
+
+	/* Get the adjusted right type-node level */
+
+	RIGHT_LEVEL = rank (RIGHT_TP->TYPE_NODE.LEVEL) - RIGHT_SKIP_NLEVELS;
+	if RIGHT_LEVEL < 0 then RIGHT_LEVEL = 0;
+
+	/* Get the flags */
+
+	LTC.MODE = LEFT_FLAGS;
+	RTC.MODE = RIGHT_FLAGS;
+
+	/*
+	/* See if there is *really* a top reference type to ignore; if
+	/* there is, then turn off the ignore-top-qualifier indicator
+	/* since it's already being ignored along with the top reference.
+	/* Also note that the (original) extra-pointer indicator takes
+	/* precedence over the ignore-top-reference indicator (i.e. if
+	/* set, then the top type is pointer and obviously not reference).
+	/**/
+
+	if LTC.IGNORE_TOP_REFERENCE then do;
+		if LTC.EXTRA_POINTER |
+		   (LEFT_TP->TYPE_NODE.TYPE_CODE (LEFT_LEVEL) ^=
+		    byte (REFERENCE_DT)) then
+			LTC.IGNORE_TOP_REFERENCE  = FALSE;
+		else	LTC.IGNORE_TOP_QUALIFIERS = FALSE;
+	end;
+	if RTC.IGNORE_TOP_REFERENCE then do;
+		if RTC.EXTRA_POINTER |
+		   (RIGHT_TP->TYPE_NODE.TYPE_CODE (RIGHT_LEVEL) ^=
+		    byte (REFERENCE_DT)) then
+			RTC.IGNORE_TOP_REFERENCE  = FALSE;
+		else	RTC.IGNORE_TOP_QUALIFIERS = FALSE;
+	end;
+
+	/*
+	/* Set the extra-pointer-level indicators; if they are both
+	/* set then they cancel each other out and are both cleared.
+	/**/
+
+	if LTC.EXTRA_POINTER & RTC.EXTRA_POINTER then do;
+		LTC.EXTRA_POINTER = FALSE;
+		RTC.EXTRA_POINTER = FALSE;
+	end;
+
+	/* Sanity check the levels */
+
+	if LTC.EXTRA_POINTER then
+		LEFT_VIRTUAL_LEVEL = LEFT_LEVEL + 1;
+	else if LTC.IGNORE_TOP_REFERENCE then
+		LEFT_VIRTUAL_LEVEL = LEFT_LEVEL - 1;
+	else	LEFT_VIRTUAL_LEVEL = LEFT_LEVEL;
+
+	if RTC.EXTRA_POINTER then
+		RIGHT_VIRTUAL_LEVEL = RIGHT_LEVEL + 1;
+	else if RTC.IGNORE_TOP_REFERENCE then
+		RIGHT_VIRTUAL_LEVEL = RIGHT_LEVEL - 1;
+	else	RIGHT_VIRTUAL_LEVEL = RIGHT_LEVEL;
+
+	if LEFT_VIRTUAL_LEVEL ^= RIGHT_VIRTUAL_LEVEL then do;
+		TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_TYPES_TCS;
+		return (FALSE);
+	end;
+
+	/* Get the top types to check */
+
+	/*
+	/* Handle extra pointer levels; remember that due to a previous
+	/* check, *both* left and right extra-pointer indicators will
+	/* *never* be set at the same time.  Note also that the (original)
+	/* extra-pointer indicator and the ignore-top-reference indicator
+	/* can both never be set at the same time.
+	/*
+	/* Set LEVEL to the type-node level at which compatibility checking
+	/* should begin; i.e. *not* the top type which is checked separately, 
+	/* but the next one down (if there is none then it will be negative).
+	/**/
+
+	if LTC.EXTRA_POINTER then do;
+		LEFT_TOP_TYPE.CODE	 = byte (POINTER_DT);
+		LEFT_TOP_TYPE.QUALIFIERS = NULL_TQ;
+		LEFT_TOP_TYPE.NID	 = NULL_NID;
+		LEVEL			 = LEFT_LEVEL;
+	end;
+	else if RTC.EXTRA_POINTER then do;
+		RIGHT_TOP_TYPE.CODE	  = byte (POINTER_DT);
+		RIGHT_TOP_TYPE.QUALIFIERS = NULL_TQ;
+		RIGHT_TOP_TYPE.NID	  = NULL_NID;
+		LEVEL			  = RIGHT_LEVEL;
+	end;
+	else	LEVEL = LEFT_VIRTUAL_LEVEL - 1;
+
+	/* Get the left top type (if not an extra pointer type) */
+
+	if ^LTC.EXTRA_POINTER then do;
+		LEFT_TOP_TYPE = LEFT_TP->TYPE_NODE.DATA (LEVEL + 1);
+		if LEFT_LEVEL = 0 then do;
+			if LTC.PROMOTED then do;
+				LEFT_TOP_TYPE.CODE =
+					byte (ARGUMENT_PROMOTION
+					      (rank (LEFT_TOP_TYPE.CODE)));
+			end;
+			else if LTC.TREAT_DOUBLE_AS_FLOAT then do;
+				if LEFT_TOP_TYPE.CODE = byte (DOUBLE_BT) then
+					LEFT_TOP_TYPE.CODE = byte (FLOAT_BT);
+			end;
+		end;
+		if LTC.IGNORE_TOP_QUALIFIERS then
+			LEFT_TOP_TYPE.QUALIFIERS = NULL_TQ;
+	end;
+
+	/* Get the right top type (if not an extra pointer type) */
+
+	if ^RTC.EXTRA_POINTER then do;
+		RIGHT_TOP_TYPE = RIGHT_TP->TYPE_NODE.DATA (LEVEL + 1);
+		if RIGHT_LEVEL = 0 then do;
+			if RTC.PROMOTED then do;
+				RIGHT_TOP_TYPE.CODE =
+					byte (ARGUMENT_PROMOTION
+					      (rank (RIGHT_TOP_TYPE.CODE)));
+			end;
+			else if RTC.TREAT_DOUBLE_AS_FLOAT then do;
+				if RIGHT_TOP_TYPE.CODE = byte (DOUBLE_BT) then
+					RIGHT_TOP_TYPE.CODE = byte (FLOAT_BT);
+			end;
+		end;
+		if RTC.IGNORE_TOP_QUALIFIERS then
+			RIGHT_TOP_TYPE.QUALIFIERS = NULL_TQ;
+	end;
+
+	/* Compare the top types */
+
+	if ^COMPATIBLE_TYPE_DATA (LEFT_TOP_TYPE, RIGHT_TOP_TYPE) then
+		return (FALSE);
+
+	if SW_PRAGMA_WRAPPER_REDECLARATIONS then do;
+		if LEFT_TOP_TYPE.CODE = byte (FUNCTION_DT) then
+			TOP_TYPE_IS_FUNCTION = TRUE;
+	end;
+
+	/*
+	/* Here, the top types are compatible.  Compare the next to top type
+	/* if there is one; this is to handle the ignore-pointed-to-qualifier
+	/* and ignore-top-two-qualifiers indicator.
+	/**/
+
+	if LEVEL < 0 then
+		return (TRUE);
+
+	if SW_PRAGMA_WRAPPER_REDECLARATIONS then do;
+		if TOP_TYPE_IS_FUNCTION & (LEVEL = 0) then
+			return (TRUE);
+	end;
+
+	/*
+	/* Arrays are odd, because there's no necessary difference between
+	/* a const array of T and an array of const T.  We want
+	/* to allow assignment of pointer to array of non-const
+	/* to pointer to array of const.  Therefore, IGNORE_TOP_QUALIFIERS
+	/* gets propagated along for arrays.
+	/**/
+
+	if rank (LEFT_TOP_TYPE.CODE) = ARRAY_DT then do;
+		do I = LEVEL to 0 by -1;
+			LEFT_TOP_TYPE  = LEFT_TP->TYPE_NODE.DATA (I);
+			RIGHT_TOP_TYPE = RIGHT_TP->TYPE_NODE.DATA (I);
+			if LTC.IGNORE_TOP_QUALIFIERS then
+				LEFT_TOP_TYPE.QUALIFIERS = NULL_TQ;
+			if RTC.IGNORE_TOP_QUALIFIERS then
+				RIGHT_TOP_TYPE.QUALIFIERS = NULL_TQ;
+			if ^COMPATIBLE_TYPE_DATA
+			    (LEFT_TOP_TYPE, RIGHT_TOP_TYPE) then
+				return (FALSE);
+			if rank (LEFT_TOP_TYPE.CODE) ^= ARRAY_DT then
+				leave;
+		end;
+
+		if LEVEL <= 0 then
+			return (TRUE);
+
+		LEVEL = I - 1;
+	end;
+	else do;
+		if LTC.IGNORE_TOP_TWO_QUALIFIERS then do;
+			LEFT_TOP_TYPE	 = LEFT_TP->TYPE_NODE.DATA (LEVEL);
+			LEFT_TOP_TYPE.QUALIFIERS = NULL_TQ;
+		end;
+		else 	LEFT_TOP_TYPE = LEFT_TP->TYPE_NODE.DATA (LEVEL);
+
+		if LTC.IGNORE_TOP_TWO_QUALIFIERS then do;
+			RIGHT_TOP_TYPE	  = RIGHT_TP->TYPE_NODE.DATA (LEVEL);
+			RIGHT_TOP_TYPE.QUALIFIERS = NULL_TQ;
+		end;
+		else 	RIGHT_TOP_TYPE = RIGHT_TP->TYPE_NODE.DATA (LEVEL);
+
+		if ^COMPATIBLE_TYPE_DATA (LEFT_TOP_TYPE, RIGHT_TOP_TYPE) then
+			return (FALSE);
+
+		if LEVEL <= 0 then
+			return (TRUE);
+
+		LEVEL = LEVEL - 1;
+	end;
+
+	/* Finally, compare the rest of the types if there are any */
+
+	/* ...
+	do I = LEVEL to 0 by -1;
+		LEFT_TOP_TYPE  = LEFT_TP->TYPE_NODE.DATA (I);
+		RIGHT_TOP_TYPE = RIGHT_TP->TYPE_NODE.DATA (I);
+		if ^COMPATIBLE_TYPE_DATA
+		    (LEFT_TP->TYPE_NODE.DATA (I),
+		     RIGHT_TP->TYPE_NODE.DATA (I)) then
+			return (FALSE);
+	end;
+	... */
+
+	do I = LEVEL to 1 by -1;
+		if ^COMPATIBLE_TYPE_DATA
+		    (LEFT_TP->TYPE_NODE.DATA (I),
+		     RIGHT_TP->TYPE_NODE.DATA (I)) then
+			return (FALSE);
+	end;
+
+	if SW_PRAGMA_WRAPPER_REDECLARATIONS then do;
+		if TOP_TYPE_IS_FUNCTION then
+			return (TRUE);
+	end;
+
+	if ^COMPATIBLE_TYPE_DATA
+	    (LEFT_TP->TYPE_NODE.DATA (0),
+	     RIGHT_TP->TYPE_NODE.DATA (0)) then
+		return (FALSE);
+
+	return (TRUE);
+
+end COMPATIBLE_ANY_SPECIAL_TYPES_P;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_TYPE_DATA
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_TYPE_DATA: procedure (LT, RT)
+		      returns   (type (BOOL_T))
+		      external  (X_COMPATIBLE_TYPE_DATA);
+
+	declare (LT, RT) type (TYPE_DATA_T);
+
+	/* Compare the type codes */
+
+	if LT.CODE ^= RT.CODE then do;
+		if   ( rank (LT.CODE) = CLASS_BT
+		     | rank (LT.CODE) = STRUCT_BT )
+		   & ( rank (RT.CODE) = CLASS_BT
+		     | rank (RT.CODE) = STRUCT_BT ) then
+			; /* class and struct are equivalent */
+		else do;
+			TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_TYPES_TCS;
+			return (FALSE);
+		end;
+	end;
+
+	/* Compare the type qualifiers */
+
+	if (LT.QUALIFIERS & ALL_TQ) ^= (RT.QUALIFIERS & ALL_TQ) then do;
+		TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS;
+		return (FALSE);
+	end;
+
+	/* Compare the type id */
+
+	if LT.NID = RT.NID then
+		return (TRUE);
+
+	/* Compare the signatures if this is a function type */
+
+	if LT.CODE = byte (FUNCTION_DT) then do;
+		if ^COMPATIBLE_SIGNATURES (LT.SIGNATURE, RT.SIGNATURE) then do;
+			TYPE_COMPATIBILITY_STATUS =
+				INCOMPATIBLE_SIGNATURES_TCS;
+			return (FALSE);
+		end;
+	end;
+
+	/* Compare the dimensions if this is a array type */
+
+	else if LT.CODE = byte (ARRAY_DT) then do;
+		if ^COMPATIBLE_DIMENSIONS (LT.DIMENSION, RT.DIMENSION) then do;
+			TYPE_COMPATIBILITY_STATUS =
+				INCOMPATIBLE_DIMENSIONS_TCS;
+			return (FALSE);
+		end;
+	end;
+
+	/* Compare the class tag if this is a member-pointer type */
+
+	else if LT.CODE = byte (MEMBER_POINTER_DT) then do;
+		if LT.TAG_SYMBOL ^= RT.TAG_SYMBOL then do;
+			TYPE_COMPATIBILITY_STATUS =
+				INCOMPATIBLE_MEMBER_POINTERS_TCS;
+			return (FALSE);
+		end;
+	end;
+
+	/* Compare the base type id */
+
+	else if LT.NID ^= RT.NID then do;
+		TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_TYPES_TCS;
+		return (FALSE);
+	end;
+
+	return (TRUE);
+
+end COMPATIBLE_TYPE_DATA;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_PROTOTYPED_TYPES
+/*
+/* The same as COMPATIBLE_TYPES except that any non-protyped signatures
+/* will be treated as if they were prototyped.  This is currently only
+/* used to give more specific diagnostics when for very non-obvious
+/* cases like: void f (c) char c; { } void f (char); which is illegal!
+/* See ANSI-C, 3.5.4.3.
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_PROTOTYPED_TYPES: procedure (A, B)
+			     returns   (type (BOOL_T))
+			     external  (X_COMPATIBLE_PROTOTYPED_TYPES);
+	declare
+		(A, B)		type (NID_T);
+	declare
+		(AP, BP)	type (POINTER_T),
+		STATUS		type (BOOL_T);
+
+	ALL_SIGNATURES_ARE_PROTOTYPED = TRUE;
+	STATUS = COMPATIBLE_TYPES (A, B);
+	ALL_SIGNATURES_ARE_PROTOTYPED = FALSE;
+	return (STATUS);
+
+end COMPATIBLE_PROTOTYPED_TYPES;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_DIMENSIONS
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_DIMENSIONS: procedure (A, B)
+		       returns   (type (BOOL_T))
+		       external  (X_COMPATIBLE_DIMENSIONS);
+	declare
+		(A, B)		type (NID_T);
+	declare
+		(AP, BP)	type (POINTER_T),
+		STATUS		type (BOOL_T);
+
+	if (A = NULL_NID) | (B = NULL_NID) then return (TRUE);
+
+	call GET_DIM_NODE_R (A, AP);
+	call GET_DIM_NODE_R (B, BP);
+	STATUS = (AP->DIM_NODE.VALUE = BP->DIM_NODE.VALUE) |
+		 AP->DIM_NODE.INCOMPLETE |
+		 BP->DIM_NODE.INCOMPLETE;
+	call RELEASE_DIM_NODE (B);
+	call RELEASE_DIM_NODE (A);
+	return (STATUS);
+
+end COMPATIBLE_DIMENSIONS;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_SIGNATURES
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_SIGNATURES: procedure (A, B)
+		       returns   (type (BOOL_T))
+		       external  (X_COMPATIBLE_SIGNATURES);
+	declare
+		(A, B)			type (NID_T);
+	declare
+		(AP, BP)		type (POINTER_T),
+		(APL, BPL)		type (NID_T),
+		(NEXT_APL, NEXT_BPL)	type (NID_T),
+		(APLP, BPLP)		type (POINTER_T),
+		(APN, BPN, N)		type (SHORT_T),
+		(ATCM, BTCM)		type (TCM_T);
+
+	if (A = NULL_NID) | (B = NULL_NID) then return (TRUE);
+
+	call GET_SIG_NODE_R (A, AP);
+	call GET_SIG_NODE_R (B, BP);
+
+	ATCM = DEFAULT_TCM;
+	BTCM = DEFAULT_TCM;
+
+	/* Handle old-style function declarations/definitions */
+
+	if ALL_SIGNATURES_ARE_PROTOTYPED then do;
+		if ^AP->SIG_NODE.PROTOTYPED then
+			ATCM = TREAT_DOUBLE_AS_FLOAT_TCM;
+		if ^BP->SIG_NODE.PROTOTYPED then
+			BTCM = TREAT_DOUBLE_AS_FLOAT_TCM;
+	end;
+	else if ^AP->SIG_NODE.PROTOTYPED | ^BP->SIG_NODE.PROTOTYPED then do;
+		/*
+		/* Here, one or both of the function signatures are
+		/* are non-prototyped.  See ANSI-C, 3.5.4.3 for the
+		/* byzantine rules governing these cases.
+		/**/
+		if ^AP->SIG_NODE.PROTOTYPED & ^BP->SIG_NODE.PROTOTYPED then do;
+			/*
+			/* Here, we have two non-prototyped function
+			/* declarations or definitions.
+			/**/
+			if AP->SIG_NODE.DEFINED_FUNCTION &
+			   BP->SIG_NODE.DEFINED_FUNCTION then do;
+				/*
+				/* Here, we have two non-prototyped
+				/* function *definitions*.
+				/**/
+				ATCM = PROMOTED_TCM;
+				BTCM = PROMOTED_TCM;
+			end;
+			else	goto COMPATIBLE;
+		end;
+		else if ^AP->SIG_NODE.PROTOTYPED &
+			 AP->SIG_NODE.DEFINED_FUNCTION then do;
+			/*
+			/* Here, we have one prototyped function declaration
+			/* or definition, and one non-prototyped function
+			/* *definition*.  Both must agree in the number of
+			/* parameters and ellipsis, and the type of each
+			/* prototype parameter must be compatible with the
+			/* type that results from the application of the
+			/* default argument promotions to the type of the
+			/* corresponding identifer.
+			/**/
+			ATCM = PROMOTED_TCM;
+		end;
+		else if ^BP->SIG_NODE.PROTOTYPED &
+			 BP->SIG_NODE.DEFINED_FUNCTION then do;
+			/*
+			/* Same as above.
+			/**/
+			BTCM = PROMOTED_TCM;
+		end;
+		else do;
+			/*
+			/* Here, we have one prototyped function declaration
+			/* or definition, and one non-prototyped function
+			/* *declaration*.  The prototyped signature must not
+			/* have an ellipsis, and the type of each prototype
+			/* parameter must be of promoted type.
+			/*
+			/* N.B. If SW_NON_PROTO_COMPAT_WITH_ANY is set,
+			/* then this rule will be bypassed; i.e. the
+			/* prototyped signature may contain ellipsis
+			/* and/or unpromoted parameter types.  This is an
+			/* enhanement for #pragma LPI wrapper_redeclarations.
+			/**/
+			if SW_NON_PROTO_COMPAT_WITH_ANY then
+				goto COMPATIBLE;
+			if AP->SIG_NODE.PROTOTYPED then do;
+				if AP->SIG_NODE.ELLIPSIS then
+					goto NOT_COMPATIBLE;
+				APL = AP->SIG_NODE.EXPLICIT_PARAMETERS;
+			end;
+			else if BP->SIG_NODE.ELLIPSIS then
+				goto NOT_COMPATIBLE;
+			else	APL = BP->SIG_NODE.EXPLICIT_PARAMETERS;
+			if ARE_PROMOTED_PARAMETER_TYPES (APL) then
+				goto COMPATIBLE;
+			else	goto NOT_COMPATIBLE;
+		end;
+	end;
+
+	if    AP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS 
+	   ^= BP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS then
+		goto NOT_COMPATIBLE;
+
+	if AP->SIG_NODE.ELLIPSIS ^= BP->SIG_NODE.ELLIPSIS then
+		goto NOT_COMPATIBLE;
+
+	if AP->SIG_NODE.EXPLICIT_NPARAMETERS ^=
+	   BP->SIG_NODE.EXPLICIT_NPARAMETERS then
+		goto NOT_COMPATIBLE;
+
+	if AP->SIG_NODE.ELLIPSIS ^= BP->SIG_NODE.ELLIPSIS then
+		goto NOT_COMPATIBLE;
+
+	if AP->SIG_NODE.EXPLICIT_NPARAMETERS = 0 then
+		goto COMPATIBLE;
+
+	APL = AP->SIG_NODE.EXPLICIT_PARAMETERS;
+	APN = AP->SIG_NODE.EXPLICIT_NPARAMETERS;
+	BPL = BP->SIG_NODE.EXPLICIT_PARAMETERS;
+	BPN = BP->SIG_NODE.EXPLICIT_NPARAMETERS;
+
+	do N = 1 to APN;
+		if (APL = 0) | (BPL = 0) then
+			goto NOT_COMPATIBLE;
+		if ^COMPATIBLE_PARAMETERS (APL, ATCM, BPL, BTCM) then
+			goto NOT_COMPATIBLE;
+		call GET_PARAMETER_NODE_R (APL, APLP);
+		NEXT_APL = APLP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (APL);
+		APL = NEXT_APL;
+		call GET_PARAMETER_NODE_R (BPL, BPLP);
+		NEXT_BPL = BPLP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (BPL);
+		BPL = NEXT_BPL;
+	end;
+
+	COMPATIBLE:
+	call RELEASE_SIG_NODE (A);
+	call RELEASE_SIG_NODE (B);
+	return (TRUE);
+
+	NOT_COMPATIBLE:
+	call RELEASE_SIG_NODE (A);
+	call RELEASE_SIG_NODE (B);
+	return (FALSE);
+
+/* ---------------------------------------------------------------------
+/* ARE_PROMOTED_PARAMETER_TYPES
+/*
+/* Return TRUE if all of the parameters on the parameter-node list
+/* are promoted types, otherwise return FALSE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ARE_PROMOTED_PARAMETER_TYPES: procedure (PL)
+			      returns (type (BOOL_T))
+			      internal;
+	declare
+		PL		type (NID_T);
+	declare
+		(P, NEXT_P)	type (NID_T),
+		SP		type (POINTER_T),
+		TOP_TYPE	type (SHORT_T);
+
+	do P = PL repeat (NEXT_P) while (P ^= NULL_NID);
+		call GET_PARAMETER_NODE_R (P, SP);
+		TOP_TYPE = rank (SP->PARAMETER_NODE.TOP_TYPE.CODE);
+		NEXT_P = SP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (P);
+		if ^IS_DERIVED_TYPE (TOP_TYPE) then do;
+			if ARGUMENT_PROMOTION (TOP_TYPE) ^= TOP_TYPE then
+				return (FALSE);
+		end;
+	end;
+	return (TRUE);
+
+end ARE_PROMOTED_PARAMETER_TYPES;
+
+end COMPATIBLE_SIGNATURES;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_PARAMETERS
+/*
+/* Exactly the same as COMPATIBLE_SYMBOLS except that qualified (top)
+/* types are compared as their corresponding unqualified versions, and
+/* array (top) types are compared as pointer types.  This should be used
+/* when checking the compatiblity of parameter types.
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_PARAMETERS: procedure (A, ATCM, B, BTCM)
+		       returns   (type (BOOL_T))
+		       internal;
+	declare
+		(A, B)		type (NID_T),
+		(ATCM, BTCM)	type (TCM_T);
+	declare
+		(AP, BP)	type (POINTER_T),
+		(AF, BF)	type (TCM_T),
+		STATUS		type (BOOL_T);
+
+	call GET_PARAMETER_NODE (A, AP);
+	call GET_PARAMETER_NODE (B, BP);
+	AF = ATCM | IGNORE_TOP_QUALIFIERS_TCM;
+	BF = BTCM | IGNORE_TOP_QUALIFIERS_TCM;
+	STATUS = COMPATIBLE_SPECIAL_TYPES (AP->PARAMETER_NODE.TYPE, AF,
+					   BP->PARAMETER_NODE.TYPE, BF);
+	call RELEASE_PARAMETER_NODE (A);
+	call RELEASE_PARAMETER_NODE (B);
+	return (STATUS);
+
+end COMPATIBLE_PARAMETERS;
+
+/* ---------------------------------------------------------------------
+/* DISTINCT_FUNCTION_TYPES
+/*
+/* If the given two function symbols are sufficiently distinct to
+/* be overloaded, then return TRUE, otherwise return FALSE.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DISTINCT_FUNCTION_TYPES: procedure (AT, BT, THIS_QUALIFIERS_SIGNIFICANT)
+			 returns   (type (BOOL_T))
+			 external  (X_DISTINCT_FUNCTION_TYPES);
+	declare
+		(AT, BT)			type (NID_T),
+		THIS_QUALIFIERS_SIGNIFICANT	type (BOOL_T);
+	declare
+		(ATP, BTP)			type (POINTER_T);
+
+	call GET_TYPE_NODE_R (AT, ATP);
+	call GET_TYPE_NODE_R (BT, BTP);
+
+	if ATP->TYPE_NODE.TYPE_CODE (rank (ATP->TYPE_NODE.LEVEL)) ^=
+	   byte (FUNCTION_DT) then
+		goto NOT_DISTINCT;
+
+	if BTP->TYPE_NODE.TYPE_CODE (rank (BTP->TYPE_NODE.LEVEL)) ^=
+	   byte (FUNCTION_DT) then
+		goto NOT_DISTINCT;
+
+	if DISTINCT_SIGNATURES
+	    (ATP->TYPE_NODE.TYPE_NID (rank (ATP->TYPE_NODE.LEVEL)),
+	     BTP->TYPE_NODE.TYPE_NID (rank (BTP->TYPE_NODE.LEVEL)),
+	     THIS_QUALIFIERS_SIGNIFICANT) then
+		goto DISTINCT;
+
+	NOT_DISTINCT:
+	call RELEASE_TYPE_NODE (BT);
+	call RELEASE_TYPE_NODE (AT);
+	return (FALSE);
+
+	DISTINCT:
+	call RELEASE_TYPE_NODE (BT);
+	call RELEASE_TYPE_NODE (AT);
+	return (TRUE);
+
+end DISTINCT_FUNCTION_TYPES;
+
+/* ---------------------------------------------------------------------
+/* DISTINCT_SIGNATURES
+/*
+/* If the given two function signatures are sufficiently distinct
+/* to be overloaded, then return TRUE, otherwise return FALSE.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DISTINCT_SIGNATURES: procedure (A, B, THIS_QUALIFIERS_SIGNIFICANT)
+		     returns   (type (BOOL_T))
+		     internal;
+	declare
+		(A, B)			type  (NID_T),
+		THIS_QUALIFIERS_SIGNIFICANT
+					type (BOOL_T);
+	declare
+		(AP, BP)		type (POINTER_T),
+		(APN, BPN)		type (SHORT_T),
+		(APL, BPL)		type (NID_T),
+		(NEXT_APL, NEXT_BPL)	type (NID_T),
+		(APLP, BPLP)		type (POINTER_T),
+		INITIALIZED		type (BOOL_T),
+		N			type (INT_T);
+
+	call GET_SIG_NODE_R (A, AP);
+	call GET_SIG_NODE_R (B, BP);
+
+	if THIS_QUALIFIERS_SIGNIFICANT then do;
+		if AP->SIG_NODE.THIS_QUALIFIERS.VOLATILE ^=
+		   BP->SIG_NODE.THIS_QUALIFIERS.VOLATILE then
+			goto DISTINCT;
+
+		if AP->SIG_NODE.THIS_QUALIFIERS.CONST ^=
+		   BP->SIG_NODE.THIS_QUALIFIERS.CONST then
+			goto DISTINCT;
+	end;
+
+	/* Get the number of parameters in the parameter list */
+
+	APN = AP->SIG_NODE.EXPLICIT_NPARAMETERS;
+	BPN = BP->SIG_NODE.EXPLICIT_NPARAMETERS;
+	APL = AP->SIG_NODE.EXPLICIT_PARAMETERS;
+	BPL = BP->SIG_NODE.EXPLICIT_PARAMETERS;
+
+	do N = min (APN, BPN) to 1 by -1;
+		if (APL = NULL_NID) | (BPL = NULL_NID) then
+			leave;
+		if DISTINCT_PARAMETERS (APL, BPL) then
+			goto DISTINCT;
+		call GET_PARAMETER_NODE_R (APL, APLP);
+		NEXT_APL = APLP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (APL);
+		APL = NEXT_APL;
+		call GET_PARAMETER_NODE_R (BPL, BPLP);
+		NEXT_BPL = BPLP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (BPL);
+		BPL = NEXT_BPL;
+	end;
+
+	if N ^= 1 then do;
+		/*
+		/* Here, one parameter list is shorter than the other.
+		/* If the longer one has default arguments remaining, or
+		/* the shorter one has ellipsis then they are not distinct.
+		/**/
+		if APL ^= NULL_NID then do;
+			/*
+			/* Here, B is shorter that A; its ok (i.e. they
+			/* are sufficiently distinct) if B has ellipis,
+			/* or A has (trailing) default arguments.
+			/**/
+			if ^BP->SIG_NODE.ELLIPSIS then do;
+				call GET_PARAMETER_NODE_R (APL, APLP);
+				INITIALIZED = APLP->PARAMETER_NODE.VALUE ^= NULL_CXX_VID;
+				call RELEASE_PARAMETER_NODE (APL);
+				if ^INITIALIZED then
+					goto DISTINCT;
+			end;
+			else	goto DISTINCT;
+		end;
+		else if BPL ^= NULL_NID then do;
+			/*
+			/* Here, A is shorter that B; its ok (i.e. they
+			/* are sufficiently distinct) if A has ellipis
+			/* or B has (trailing) default arguments.
+			/**/
+			if ^AP->SIG_NODE.ELLIPSIS then do;
+				call GET_PARAMETER_NODE_R (BPL, BPLP);
+				INITIALIZED = BPLP->PARAMETER_NODE.VALUE ^= NULL_CXX_VID;
+				call RELEASE_PARAMETER_NODE (BPL);
+				if ^INITIALIZED then
+					goto DISTINCT;
+			end;
+			else	goto DISTINCT;
+		end;
+	end;
+
+	NOT_DISTINCT:
+	call RELEASE_SIG_NODE (A);
+	call RELEASE_SIG_NODE (B);
+	return (FALSE);
+
+	DISTINCT:
+	call RELEASE_SIG_NODE (A);
+	call RELEASE_SIG_NODE (B);
+	return (TRUE);
+
+end DISTINCT_SIGNATURES;
+
+/* ---------------------------------------------------------------------
+/* DISTINCT_PARAMETERS
+/*
+/* Exactly the same as COMPATIBLE_PARAMETERS except that reference (top)
+/* types are disregarded and the return value is negated.  This should be
+/* used when checking the compatiblity of parameter types of possibly
+/* overloaded functions.  I.e. if this routine returns TRUE, then the
+/* parameters *are* sufficiently different to allow overloading.
+/* ------------------------------------------------------------------- */
+
+DISTINCT_PARAMETERS: procedure (A, B)
+		     returns   (type (BOOL_T))
+		     internal;
+	declare
+		(A, B)		type (NID_T);
+	declare
+		TCM		type (TCM_T),
+		STATUS		type (BOOL_T);
+
+	TCM = IGNORE_TOP_REFERENCE_TCM | IGNORE_TOP_QUALIFIERS_TCM;
+
+	return (^COMPATIBLE_PARAMETERS (A, TCM, B, TCM));
+
+end DISTINCT_PARAMETERS;
+
+/* ---------------------------------------------------------------------
+/* HAS_ALL_TYPE_QUALIFIERS_OF
+/*
+/* If the set of type qualifiers in the left type has (at least) all
+/* of the type qualifiers in the set given in the right type, then
+/* return TRUE, otherwise return FALSE.
+/* ------------------------------------------------------------------- */
+
+HAS_ALL_TYPE_QUALIFIERS_OF: procedure (LTQ, RTQ)
+			    returns   (type (BOOL_T))
+			    external  (X_HAS_ALL_TYPE_QUALIFIERS_OF);
+	declare
+		LTQ	type (BYTE_BITS_T),
+		RTQ	type (BYTE_BITS_T);
+
+	if (RTQ ^= NULL_TQ) & (RTQ ^= LTQ) then do;
+		/*
+		/* If right is const-qualified, then the left must be also.
+		/**/
+		if (RTQ & CONST_TQ) = CONST_TQ then do;
+			if (LTQ & CONST_TQ) ^= CONST_TQ then
+				return (FALSE);
+		end;
+		/*
+		/* If right is volatile-qualified, then the left must be also.
+		/**/
+		if (RTQ & VOLATILE_TQ) = VOLATILE_TQ then do;
+			if (LTQ & VOLATILE_TQ) ^= VOLATILE_TQ then
+				return (FALSE);
+		end;
+	end;
+	return (TRUE);
+
+end HAS_ALL_TYPE_QUALIFIERS_OF;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_ENOUGH_RETURN_TYPES
+/*
+/* Assuming that the signatures of the functions represented by the given
+/* sym-node pointers are compatible *and* the return types are differing,
+/* check the return types of the (base-class) function represented by
+/* the given sym-node pointer BFP and the (derived-class) function
+/* represented by the given sym-node pointer DFP to see if they are
+/* compatible enough to allow DF to (virtually) override BFP.  If
+/* they are compatible enough, then return TRUE, otherwise FALSE.
+/*
+/* The old rule for this required that the return types simply by the same.
+/* The new rule for this (as of the dpANS C++ working paper, X3J16/92-0060,
+/* June 5, 1992) allows the return types to differ if both return types are
+/* pointers or references (respectively) to classes, and the return class
+/* of the derived-class function is a publicly derived class of the return
+/* class of the base-class function.  See X3J16/92-0600, section 10.2.
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_ENOUGH_RETURN_TYPES: procedure (BFP, DFP)
+				returns   (type (BOOL_T))
+				external  (X_COMPATIBLE_ENOUGH_RETURN_TYPES);
+	declare
+		BFP			type (POINTER_T),
+		DFP			type (POINTER_T);
+	declare
+		POINTER_OR_REFERENCE	type (BYTE_T),
+		BRT			type (TYPE_DATA_T),
+		DRT			type (TYPE_DATA_T),
+		AMBIGUOUS		type (BOOL_T),
+		INACCESSIBLE		type (BOOL_T);
+
+	if ^SW_NEW_VIRTUAL_FUNCTION_OVERRIDE then
+		return (FALSE);
+
+	call GET_TOP_LEVEL_TYPE  (BFP->SYM_NODE.TYPE, 1, BRT);
+
+	POINTER_OR_REFERENCE = BRT.CODE;
+
+	if (POINTER_OR_REFERENCE ^= byte (POINTER_DT)) &
+	   (POINTER_OR_REFERENCE ^= byte (REFERENCE_DT)) then
+		return (FALSE);
+
+	call GET_TOP_LEVEL_TYPE  (BFP->SYM_NODE.TYPE, 2, BRT);
+
+	if ^IS_AGGREGATE_TAG_TYPE (rank (BRT.CODE)) then
+		return (FALSE);
+	
+	if BRT.TAG_SYMBOL = NULL_NID then
+		return (FALSE);
+
+	call GET_TOP_LEVEL_TYPE  (DFP->SYM_NODE.TYPE, 1, DRT);
+
+	if DRT.CODE ^= POINTER_OR_REFERENCE then
+		return (FALSE);
+
+	call GET_TOP_LEVEL_TYPE  (DFP->SYM_NODE.TYPE, 2, DRT);
+
+	if ^IS_AGGREGATE_TAG_TYPE (rank (DRT.CODE)) then
+		return (FALSE);
+
+	if DRT.TAG_SYMBOL = NULL_NID then
+		return (FALSE);
+
+	if ^IS_BASE_CLASS_OF (BRT.TAG_SYMBOL,
+			      DRT.TAG_SYMBOL,
+			      AMBIGUOUS,
+			      INACCESSIBLE,
+			      FALSE) then
+		return (FALSE);
+
+	if AMBIGUOUS then
+		return (FALSE);
+
+	if INACCESSIBLE then
+		return (FALSE);
+
+	return (TRUE);
+
+end COMPATIBLE_ENOUGH_RETURN_TYPES;
+
+/* ---------------------------------------------------------------------
+/* DUMP_TYPE_COMPATIBILITY_STATS
+/* ------------------------------------------------------------------- */
+
+DUMP_TYPE_COMPATIBILITY_STATS: procedure
+			       external  (X_DUMP_TYPE_COMPATIBILITY_STATS);
+	declare
+		S		character (128) varying,
+		NS		character (20) varying;
+	declare
+		SPACES		character (10) varying
+				static initial ('          ');
+
+	NS = trim (char (TRIVIAL_CHECKS));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Trivial type compatibility checks:        ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+end DUMP_TYPE_COMPATIBILITY_STATS;
+

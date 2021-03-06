@@ -1,0 +1,23 @@
+----------------------------------------------------------------------
+This directory contains the source files necessary to make
+the VALID "wirelist" program.  This program is run by the logic
+designer who, after making and compiling a logic drawing, and a
+physical layout drawing (done with the help of "layout") now wishes
+to create a wirelist file which will be suitable to input to the
+Group 72 wirewrap system, which perform the actual wiring of the
+board.  Along with the wirelist file (board_name.lst), a number of
+reference/error files are produced.
+
+This program currently supports two wirewrap board geometries,
+the AUGAT UWG12, and the AUGAT HPWG12.  To add another board
+geometry, you must write a number of geometry dependant routines,
+and put them in a file in a sub-directory of the "boards" directory.
+The simplest way to do this, is to clone the routines for one of the
+boards listed above, and modify them as necessary.  Also, an entry
+for the new board must be made in the "bgeom.c" file; again, just
+follow the example of existing geometries.
+
+		David Michaels (david@ll-sst)
+		M.I.T Lincolon Laboratory (group 24)
+		December 1984
+----------------------------------------------------------------------

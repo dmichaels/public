@@ -1,0 +1,126 @@
+/* C++ remfun.pl1 - Remove Unreferenced Functions */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.29.92  DGM  004  Added -noremfun switch.
+ *  05.19.92  DGM  003  Added -dbstat output.
+ *  03.26.92  DGM  002  New value-node scheme.
+ *  03.11.92  DGM  001  Do not do if CXX_MAY_NOT_MESS_WITH_OPS_STREAM
+ *			and OPTIMIZE; this is a hack for Sequoia; see
+ *			the cxxfe.bld for more comments on this.
+ *  02.24.92  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 09.29.92 004 REMFUN');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG; 
+%include NODE_LIST_UTILS_DCL;
+%include OPERATOR_UTILS_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+
+/* ---------------------------------------------------------------------
+/* REMOVE_UNREFERENCED_FUNCTIONS
+/*
+/* For unreferenced, internal-linkage functions, remove all operators
+/* from the operator file.  This is done after all front end
+/* processing, but before the operator file is closed.
+/*
+/* Also, mark the block node associated with each such function
+/* FINISHED, so that CXXBE can remove it from the block list.
+/* ------------------------------------------------------------------- */
+
+REMOVE_UNREFERENCED_FUNCTIONS: procedure
+			       external  (X_REMOVE_UNREFERENCED_FUNCTIONS);
+
+	declare
+		(BP, P, FBP)	type (POINTER_T),
+		(F, NEXT_F)	type (NID_T),
+		OPID		type (NODE_IDEN),
+		NEXT_OPID	type (NODE_IDEN),
+		OPCODE		type (SHORT_T),
+		OPP		type (NODE_ACCESS),
+		N		type (LONG_T);
+	declare
+		size		builtin;
+
+	if SW_NO_REMOVE_UNREF_FUNCTIONS then
+		return;
+
+	if CXX_MAY_NOT_MESS_WITH_OPS_STREAM & OPTIMIZE then
+		return;
+
+	N = 0;
+
+	call GET_BLOCK_NODE (BLOCK_LIST_ID, BP); /* The external block. */
+	do F = BP->BLOCK_NODE.DCL_LIST repeat NEXT_F while (F ^= NULL_NID);
+		/* Process this symbol F if it's the right kind of function. */
+		call GET_SYM_NODE (F, P);
+		if   P->SYM_NODE.IS_FUNCTION 
+		   & P->SYM_NODE.DEFINED
+		   & P->SYM_NODE.INTERNAL_LINKAGE
+		   & ^P->SYM_NODE.REFERENCED then do;
+			do OPID = P->SYM_NODE.FIRST_OPID
+				      repeat NEXT_OPID while (TRUE);
+				call ACCESS_NODE (OLIST, OPID, OPP);
+				NEXT_OPID = NEXT_NODE_ID (OPP);
+				OPCODE = OPP->OPERATOR.OPCODE;
+				call DELETE_NODE (OLIST, OPP,
+					  rank(OPP->OPERATOR.NUMBER)
+					 *size(OPERATOR.SIZE)
+					+size(OPERATOR.HEADER));
+				if OPCODE = BLOCK_END_OP then
+					leave;
+			end;
+
+			/*
+			/* Mark the associated block node FINISHED,
+			/* for CXXBE to remove it from the block list.
+			/**/
+			call GET_BLOCK_NODE (P->SYM_NODE.VALUE, FBP);
+			FBP->BLOCK_NODE.FINISHED = TRUE;
+			call RELEASE_BLOCK_NODE (P->SYM_NODE.VALUE);
+			N = N + 1;
+		end;
+
+		NEXT_F = P->SYM_NODE.BROTHER;
+		call RELEASE_SYM_NODE (F);
+	end;
+	call RELEASE_BLOCK_NODE (BLOCK_LIST_ID);
+
+	if SW_DEBUGGING_STATS then do;
+		call WRITE_DEBUG_LINE
+		     ('Number of functions removed:   ' || trim (char (N)));
+	end;
+
+end REMOVE_UNREFERENCED_FUNCTIONS;
+
+

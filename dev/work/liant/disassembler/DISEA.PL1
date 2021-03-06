@@ -1,0 +1,826 @@
+/* LPI-DEBUG M68 DISEA.PL1 - Disassemble an MC68020 effective address */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   2.18.92  VTF (003r) Bug fix.  The ITOABS() routine now sign-extends
+ *                       the offset value before adding it to the absolute
+ *                       address.
+ *
+ *   2.12.92  VTF (003) Enhancements and bug fixes
+ *                 * Added REGLIST() and FREGLIST(), which turn a 
+ *                   register list code into an ascii list of registers.
+ *                 * The code for #immediate, near DECODE_EA7 (4), no longer
+ *                   sign-extends byte and word immediate data.
+ *
+ *  12.03.91  VTF (002) Added ITOABS() routine, to convert an immediate
+ *                      data value (offset) to an absolute address.
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68020 User's Manual.
+ *
+ **********************************************************************/
+
+%include 'incfil';
+%include DIS_IN;
+%include DISREGDEF_IN;
+%include DISREGNAME_IN;
+%include DISEA_IN;
+
+/* --------------------------------------------------------------------
+ *  ITOABS -- Convert an offset (immediate data value) to an absolute address
+ *
+ *  In:  EADATA = points to a based structure EA_DATA representing an
+ *                immediate data value (MODE = EA_IMMED).
+ *       ABS_ADDR = absolute address from which we calculate the offset
+ *
+ * Out:  EADATA = An absolute long address (MODE = EA_ABS_LONG)
+ * --------------------------------------------------------------------*/
+ITOABS:  procedure (EADATA, ABS_ADDR);
+    declare
+/*	PRNPTR      entry (fixed binary (31)),*/
+        EADATA          pointer,
+        ABS_ADDR        fixed bin(31);
+/* %include SYSTTY_IN; */
+
+    if EADATA->EA_DATA.MODE = EA_IMMED & ABS_ADDR ^= 0 then do;
+        /* sign extend offset if it is a byte or word */
+        if (EADATA->EA_DATA.NWORDS = 1 & EADATA->EA_DATA.VALUE >= 32768)
+            then EADATA->EA_DATA.VALUE = EADATA->EA_DATA.VALUE - 65536;
+        
+        EADATA->EA_DATA.MODE = EA_ABS_LONG;
+/****
+        call PRNPTR(EADATA->EA_DATA.VALUE);
+	call WRITNC('+');
+	call PRNPTR(ABS_ADDR);
+	call WRITNC('=');
+ ****/
+        EADATA->EA_DATA.VALUE = EADATA->EA_DATA.VALUE + ABS_ADDR;
+/****
+	call PRNPTR(EADATA->EA_DATA.VALUE);
+        call WRITTT('');
+ ****/
+        EADATA->EA_DATA.VALUE_IS_EA = TRUE;
+        EADATA->EA_DATA.VALUE_IS_OPERAND = FALSE;
+    end;    
+end ITOABS;
+
+
+/* --------------------------------------------------------------------
+ * REGLIST -- Convert a register list mask to an ASCII list of registers.
+ * 
+ * For the MOVEM (move multiple) instruction, and certain others, you specify
+ * which registers to operate on in the register mask field.  Each bit in
+ * the 16-bit quantity refers to a specific register as follows:
+ *
+ *    When REVERSE = '0'b
+ *     15 14 13 12 11 10 9  8  7  6  5  4  3  2  1  0
+ *    -------------------------------------------------
+ *    |A7|A6|A5|A4|A3|A2|A1|A0|D7|D6|D5|D4|D3|D2|D1|D0|
+ *    -------------------------------------------------
+ *
+ *    When REVERSE = '1'b 
+ *     15 14 13 12 11 10 9  8  7  6  5  4  3  2  1  0
+ *    -------------------------------------------------
+ *    |D0|D1|D2|D3|D4|D5|D6|D7|A0|A1|A2|A3|A4|A5|A6|A7|
+ *    -------------------------------------------------
+ *
+ * This routine returns the select list of register names, separated by
+ * slashes.
+ */
+REGLIST:  procedure(MASK,REVERSE) returns (char(96) varying);
+    declare
+      MASK      fixed bin(15),
+      REVERSE   bit (1) aligned;
+
+    declare
+      (I,M)     fixed bin(31),
+      LIST      char(96) varying;
+
+    LIST = '';
+
+    /* assign MASK to M, without sign-extending it */
+    if MASK >= 0 then
+        M = MASK;
+    else
+        M = MASK + 65536;
+
+    if REVERSE then do;
+        I = REG_A7;
+        do while (M ^= 0 & I >= REG_A0);
+          if (mod(M,2) = 1) then
+            LIST = REG_NAME(I) || '/' || LIST;
+          M = divide(M,2,31);
+          I = I - 1;
+        end;
+        I = REG_D7;
+        do while (M ^= 0 & I >= REG_D0);
+          if (mod(M,2) = 1) then
+            LIST = REG_NAME(I) || '/' || LIST;
+          M = divide(M,2,31);
+          I = I - 1;
+        end;
+    end;
+    else do;
+        I = REG_D0;
+        do while (M ^= 0 & I <= REG_D7);
+          if (mod(M,2) = 1) then
+            LIST = LIST || REG_NAME(I) || '/';
+          M = divide(M,2,31);
+          I = I + 1;
+        end;
+        I = REG_A0;
+        do while (M ^= 0 & I <= REG_A7);
+          if (mod(M,2) = 1) then
+            LIST = LIST || REG_NAME(I) || '/';
+          M = divide(M,2,31);
+          I = I + 1;
+        end;
+    end;
+
+    /* eliminate the trailing comma */
+    LIST = substr(LIST,1,length(LIST)-1);
+    return(LIST);
+end;
+
+
+/* --------------------------------------------------------------------
+ * FREGLIST -- Convert a floating point register list mask to an ASCII
+ * list of floating point registers.
+ * 
+ * For the FMOVEM (move fp multiple) instruction,  you specify
+ * which registers to operate on in the register mask field.  The lower
+ * bits of the 16-bit quantity refer to specific fp registers as
+ * follows:
+ * 
+ *
+ *    When CONTROL = '0'b and REVERSE = '0'B
+ *
+ *       7     6     5     4     3     2     1     0
+ *    -------------------------------------------------
+ *    | fp7 | fp6 | fp5 | fp4 | fp3 | fp2 | fp1 | fp0 |   
+ *    -------------------------------------------------
+ *
+ *    When CONTROL = '0'b and REVERSE = '1'B
+ *
+ *       7     6     5     4     3     2     1     0
+ *    -------------------------------------------------
+ *    | fp0 | fp1 | fp2 | fp3 | fp4 | fp5 | fp6 | fp7 |   
+ *    -------------------------------------------------
+ *
+ *    When CONTROL = '1'b  (the value of REVERSE is ignored)
+ *
+ *       2      1       0
+ *    -----------------------
+ *    | fpcr | fpsr | fpiar |
+ *    -----------------------
+ *
+ * This routine returns the select list of register names, separated by
+ * slashes.
+ */
+FREGLIST:  procedure(MASK,REVERSE,CONTROL) returns (char(96) varying);
+    declare
+      MASK      fixed bin(15),
+      REVERSE   bit (1) aligned,
+      CONTROL   bit (1) aligned;
+
+    declare
+      (I,M)     fixed bin(31),
+      LIST      char(96) varying;
+
+    LIST = '';
+
+    M = MASK;
+
+    if CONTROL then do;
+        I = REG_FPIAR;
+        do while (M ^= 0 & I >= REG_FPCR);
+          if (mod(M,2) = 1) then
+            LIST = LIST || REG_NAME(I) || '/';
+          M = divide(M,2,31);
+          I = I - 1;
+        end;
+    end;
+    else do;
+        if REVERSE then do;
+          I = REG_FP0;
+          do while (M ^= 0 & I <= REG_FP7);
+            if (mod(M,2) = 1) then
+              LIST = LIST || REG_NAME(I) || '/';
+            M = divide(M,2,31);
+            I = I + 1;
+          end;
+        end;
+        else do;
+          I = REG_FP7;
+          do while (M ^= 0 & I >= REG_FP0);
+            if (mod(M,2) = 1) then
+              LIST = REG_NAME(I) || '/' || LIST;
+            M = divide(M,2,31);
+            I = I - 1;
+          end;
+        end;
+    end;
+
+    /* eliminate the trailing comma */
+    LIST = substr(LIST,1,length(LIST)-1);
+    return(LIST);
+end;
+
+        
+/* --------------------------------------------------------------------
+/*  DISEA -- Disassemble an MC68020 effective address.
+/*
+/*  DESCRIPTION:
+/*
+/*    This routine is used to check the validity of, determine the
+/*    size of, and disassemble an MC68020 effective address.  The
+/*    caller will generally disassemble the initial part of the
+/*    instruction to determine its type, and then call this function
+/*    with the appropriate arguments.
+/*
+/*  INPUT ARGUMENTS:
+/*
+/*    EAMODE   = The effective addressing mode (0-7).
+/*    EAREG    = The effective addressing register (0-7).
+/*    EAEXT    = A pointer to an array of (not less than) five
+/*               (16-bit) words representing the effective address
+/*               extension words.
+/*    EASIZE   = The size code of the effective address (use the
+/*               (constant SIZE_UNKNOWN if not known).  N.B. This is
+/*		 only used when for immediate address modes (EA_IMMED). 
+/*    EALEGAL  = A code (from EA_IN) indicating the catagory
+/*               of effective addressing modes to check for.
+/*
+/*  OUTPUT ARGUMENTS:
+/*
+/*    EADATA   = Points to based structure EA_DATA containing
+/*               all the information about the EA derived here.
+/*
+/*  RETURN VALUE:
+/*
+/*    If the effective address is found to be a legal format, then
+/*    return the total size in (16-bit) words of the effective address
+/*    extension (note that this may be zero if there are no extension
+/*    words).  Otherwise, if it is found to be illegal, then return -1.
+/*
+/**********************************************************************/
+
+DISEA: procedure (EAMODE, EAREG, EASIZE, EAEXT, EALEGAL, EADATA)
+       returns   (fixed binary (15));
+
+    declare
+        EAMODE	     fixed binary (15),  /* EA mode */
+        EAREG	     fixed binary (15),  /* EA register */
+        EASIZE	     fixed binary (15),  /* EA size */
+        EAEXT	     pointer,            /* EA extension word pointer */
+        EALEGAL	     fixed binary (15),  /* Legal EA addresssing mode type */
+        EADATA	     pointer;            /* Internal EA data area */
+
+    declare
+        IR	     fixed binary (31),  /* index register */
+        BR	     fixed binary (31),  /* base register */
+        BD	     fixed binary (31),  /* base displacement */
+        OD	     fixed binary (31),  /* outer displacement */
+        BD_I	     fixed binary (15),  /* base displacement index */
+        OD_I	     fixed binary (15),  /* outer displacement index */
+        EAE_I	     fixed binary (15),  /* EA extension index */
+        EAE_P	     pointer;            /* EA extension pointer */
+
+    declare
+        1 EXTENSION  based (EAEXT),
+          2 WORD     (1 : MAX_EAEXTENSION_WORDS) fixed binary (15),
+        1 ADDRESS    based,
+          2 HIGH     fixed binary (15),
+          2 LOW      fixed binary (15),
+        1 SHORT_WORD based,
+          2 HIGH     bit (8),
+          2 LOW      bit (8);
+
+    /* -------------------------------------------------------------------
+     * -- Start Processing --
+     * ---------------------------------------------------------------- */
+
+    call SET_DEFAULT_EA_DATA (EADATA);
+
+    /* -------------------------------------------------------------------
+     * -- DECODE AND CALCULATE THE EFFECTIVE ADDRESS --
+     * ---------------------------------------------------------------- */
+
+    if (EAMODE >= 0) & (EAMODE <= 7) & (EAREG >= 0) & (EAREG <= 7) then
+        goto DECODE_EA(EAMODE);
+    goto INVALID;
+
+    /* -------------------------------------------------------------------
+     * -- DATA REGISTER DIRECT -- Dn
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (0):
+
+        if (EALEGAL ^= EATYPE_ALL)        &
+           (EALEGAL ^= EATYPE_DATA)       &
+           (EALEGAL ^= EATYPE_ALTER)      &
+           (EALEGAL ^= EATYPE_DATA_ALTER) then
+            goto INVALID;
+
+        EADATA->EA_DATA.MODE = EA_DREG;
+        EADATA->EA_DATA.BASE_REGISTER = EAREG + REG_D0;
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER DIRECT -- An
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (1):
+
+        if (EALEGAL ^= EATYPE_ALL)   &
+           (EALEGAL ^= EATYPE_ALTER) then
+            goto INVALID;
+
+        EADATA->EA_DATA.MODE = EA_AREG;
+        EADATA->EA_DATA.BASE_REGISTER = EAREG + REG_A0;
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER INDIRECT -- (An)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (2):
+
+        if (EALEGAL ^= EATYPE_ALL)           &
+           (EALEGAL ^= EATYPE_DATA)          &
+           (EALEGAL ^= EATYPE_MEMORY)        &
+           (EALEGAL ^= EATYPE_CONTROL)       &
+           (EALEGAL ^= EATYPE_ALTER)         &
+           (EALEGAL ^= EATYPE_DATA_ALTER)    &
+           (EALEGAL ^= EATYPE_MEMORY_ALTER)  &
+           (EALEGAL ^= EATYPE_CONTROL_ALTER) then
+            goto INVALID;
+
+        EADATA->EA_DATA.MODE = EA_AREG_INDIR;
+        EADATA->EA_DATA.BASE_REGISTER = EAREG + REG_A0;
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER WITH POST-INCREMENT -- (An)+
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (3):
+
+        if (EALEGAL ^= EATYPE_ALL)          &
+           (EALEGAL ^= EATYPE_DATA)         &
+           (EALEGAL ^= EATYPE_MEMORY)       &
+           (EALEGAL ^= EATYPE_ALTER)        &
+           (EALEGAL ^= EATYPE_DATA_ALTER)   &
+           (EALEGAL ^= EATYPE_MEMORY_ALTER) then
+            goto INVALID;
+
+        EADATA->EA_DATA.MODE = EA_AREG_INDIR_INC;
+        EADATA->EA_DATA.BASE_REGISTER = EAREG + REG_A0;
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER WITH PRE-DECREMENT -- -(An)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (4):
+
+        if (EALEGAL ^= EATYPE_ALL)          &
+           (EALEGAL ^= EATYPE_DATA)         &
+           (EALEGAL ^= EATYPE_MEMORY)       &
+           (EALEGAL ^= EATYPE_ALTER)        &
+           (EALEGAL ^= EATYPE_DATA_ALTER)   &
+           (EALEGAL ^= EATYPE_MEMORY_ALTER) then
+            goto INVALID;
+
+        EADATA->EA_DATA.MODE = EA_AREG_INDIR_DEC;
+        EADATA->EA_DATA.BASE_REGISTER = EAREG + REG_A0;
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER INDIRECT WITH DISPLACEMENT -- (d16,An)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (5):
+
+        if (EALEGAL ^= EATYPE_ALL)           &
+           (EALEGAL ^= EATYPE_DATA)          &
+           (EALEGAL ^= EATYPE_MEMORY)        &
+           (EALEGAL ^= EATYPE_CONTROL)       &
+           (EALEGAL ^= EATYPE_ALTER)         &
+           (EALEGAL ^= EATYPE_DATA_ALTER)    &
+           (EALEGAL ^= EATYPE_MEMORY_ALTER)  &
+           (EALEGAL ^= EATYPE_CONTROL_ALTER) then
+            goto INVALID;
+
+        EADATA->EA_DATA.MODE = EA_AREG_INDIR_DISP;
+        EADATA->EA_DATA.NWORDS = 1;
+        EADATA->EA_DATA.BASE_REGISTER = EAREG + REG_A0;
+        EADATA->EA_DATA.BASE_DISP = SIGN_EXTEND_WORD(EXTENSION.WORD(1));
+        EADATA->EA_DATA.BASE_DISP_SIZE = SIZE_WORD;
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- (An) INDIRECT WITH INDEX AND 8-BIT DISPLACEMENT -- (d8,An,Xn)
+     * -- (An) INDIRECT WITH INDEX AND BASE DISPLACEMENT -- (bd,An,Xn)
+     * -- MEMORY INDIRECT POST-INDEXED -- ([bd,An],Xn,od)
+     * -- MEMORY INDIRECT PRE-INDEXED -- ([bd,An,Xn],od)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (6):
+
+        if (EALEGAL ^= EATYPE_ALL)           &
+           (EALEGAL ^= EATYPE_DATA)          &
+           (EALEGAL ^= EATYPE_MEMORY)        &
+           (EALEGAL ^= EATYPE_CONTROL)       &
+           (EALEGAL ^= EATYPE_ALTER)         &
+           (EALEGAL ^= EATYPE_DATA_ALTER)    &
+           (EALEGAL ^= EATYPE_MEMORY_ALTER)  &
+           (EALEGAL ^= EATYPE_CONTROL_ALTER) then
+            goto INVALID;
+
+        /* Get an index and a pointer to the EA extension word */
+
+        EAE_I = 1;
+        EAE_P = addr(EXTENSION.WORD(1));
+
+        /* Is the EA extension word either brief or full format ? */
+
+        if (EAE_P->BRIEF_EA.ZERO ^= '0'B) &
+           ((EAE_P->FULL_EA.ZERO ^= '0'B) | (EAE_P->FULL_EA.ONE ^= '1'B)) then
+            goto INVALID;
+
+        EADATA->EA_DATA.NWORDS = 1;    /* At least one extension word */
+
+        /* ----------------------------------------------------------
+         * Get the base register BR (same for brief and full formats)
+         * -------------------------------------------------------- */
+
+        /*
+         * If this is really EA mode 7 and register 3 (PC-relative
+	 * indirect/indexed) then it's exactly like mode 6 register N
+	 * except that the base register BR is the program counter PC.
+         */
+
+        if (EAMODE = 7) & (EAREG = 3) then
+             EADATA->EA_DATA.BASE_REGISTER = REG_PC;
+        else EADATA->EA_DATA.BASE_REGISTER = EAREG + REG_A0;
+
+        /* -----------------------------------------------------------
+         * Get the index register IR (same for brief and full formats)
+         * --------------------------------------------------------- */
+
+        if EAE_P->BRIEF_EA.IR_TYPE = IR_TYPE_ADDRESS then
+             EADATA->EA_DATA.INDEX_REGISTER =
+		 binary(EAE_P->BRIEF_EA.IR_NUM) + REG_A0;
+        else EADATA->EA_DATA.INDEX_REGISTER =
+		 binary(EAE_P->BRIEF_EA.IR_NUM) + REG_D0;
+        if EAE_P->BRIEF_EA.IR_SIZE = IR_SIZE_WORD then
+             EADATA->EA_DATA.INDEX_SIZE = SIZE_WORD;
+	else EADATA->EA_DATA.INDEX_SIZE = SIZE_LONG;
+        EADATA->EA_DATA.INDEX_SCALE =
+            GET_SCALE_FACTOR(binary(EAE_P->BRIEF_EA.IR_SCALE));
+
+        /* -----------------------------------------------------
+         * Handle the brief EA extension word format: (d8,An,Xn)
+         * --------------------------------------------------- */
+
+        if EAE_P->BRIEF_EA.ZERO = '0'B then do;
+            BD = SIGN_EXTEND_BYTE(binary(EAE_P->BRIEF_EA.DISP_8));
+	    if EADATA->EA_DATA.BASE_REGISTER = REG_PC then
+	         EADATA->EA_DATA.MODE = EA_PC_INDEX_DISP_8;
+	    else EADATA->EA_DATA.MODE = EA_AREG_INDEX_DISP_8;
+	    EADATA->EA_DATA.BASE_DISP = BD;
+	    EADATA->EA_DATA.BASE_DISP_SIZE = SIZE_BYTE;
+            goto VALID;
+        end;
+
+        /* ---------------------------------------
+         * Handle the full EA extension word format
+         * -------------------------------------- */
+
+        BD_I = EAE_I + 1;   /* BD index into instruction */
+
+        /* ----------------------------
+         * Get the base displacement BD
+         * -------------------------- */
+ 
+        if EAE_P->FULL_EA.BD_SIZE = BD_SIZE_LONG then do;
+             addr(BD)->ADDRESS.HIGH = EXTENSION.WORD(BD_I);
+             addr(BD)->ADDRESS.LOW  = EXTENSION.WORD(BD_I+1);
+	     EADATA->EA_DATA.BASE_DISP_SIZE = SIZE_LONG;
+             EADATA->EA_DATA.NWORDS = EADATA->EA_DATA.NWORDS + 2;
+             OD_I = BD_I + 2;
+        end;
+        else if EAE_P->FULL_EA.BD_SIZE = BD_SIZE_WORD then do;
+             BD = SIGN_EXTEND_WORD(EXTENSION.WORD(BD_I));
+	     EADATA->EA_DATA.BASE_DISP_SIZE = SIZE_WORD;
+             EADATA->EA_DATA.NWORDS = EADATA->EA_DATA.NWORDS + 1;
+             OD_I = BD_I + 1;
+        end;
+        else if EAE_P->FULL_EA.BD_SIZE = BD_SIZE_NULL then
+             BD = 0;
+        else goto INVALID;
+
+	if EADATA->EA_DATA.BASE_REGISTER = REG_PC then
+	     EADATA->EA_DATA.MODE = EA_PC_INDEX_BASE_DISP;
+	else EADATA->EA_DATA.MODE = EA_AREG_INDEX_BASE_DISP;
+	EADATA->EA_DATA.BASE_DISP = BD;
+
+        /* -------------------------------------------------------
+         * Get outer displacement OD and memory indirection method
+         * ----------------------------------------------------- */
+
+        if EAE_P->FULL_EA.OD_SIZE = OD_SIZE_LONG then do;
+             addr(OD)->ADDRESS.HIGH = EXTENSION.WORD(OD_I);
+             addr(OD)->ADDRESS.LOW  = EXTENSION.WORD(OD_I+1);
+	     EADATA->EA_DATA.OUTER_DISP_SIZE = SIZE_LONG;
+             EADATA->EA_DATA.NWORDS = EADATA->EA_DATA.NWORDS + 2;
+        end;
+        else if EAE_P->FULL_EA.OD_SIZE = OD_SIZE_WORD then do;
+             OD = SIGN_EXTEND_WORD(EXTENSION.WORD(OD_I));
+	     EADATA->EA_DATA.OUTER_DISP_SIZE = SIZE_WORD;
+             EADATA->EA_DATA.NWORDS = EADATA->EA_DATA.NWORDS + 1;
+        end;
+        else if EAE_P->FULL_EA.OD_SIZE = OD_SIZE_NULL then
+             OD = 0;
+        else if EAE_P->FULL_EA.OD_SIZE = OD_SIZE_RESERVED then do;
+             if EAE_P->FULL_EA.IS = '1'B then
+                  goto INVALID;
+        end;
+        else goto INVALID;
+
+	EADATA->EA_DATA.OUTER_DISP = OD;
+
+        /* --------------------------
+         * Get memory indexing method
+         * ------------------------ */
+
+        if EAE_P->FULL_EA.IR_SUP = '1'B then do;    /* suppress indexing */
+            if EAE_P->FULL_EA.IS ^= '0'B then
+                goto INVALID;
+	    EADATA->EA_DATA.INDEX_REGISTER = NO_REG;
+	    EADATA->EA_DATA.INDEX_SIZE = SIZE_NULL;
+	    EADATA->EA_DATA.INDEX_SCALE = SCALE_NULL;
+        end;
+        else if EAE_P->FULL_EA.IR_SUP = '0'B then do;  /* indexing */
+            if EAE_P->FULL_EA.IS = '0'B then do;
+	        if EADATA->EA_DATA.BASE_REGISTER = REG_PC then
+	             EADATA->EA_DATA.MODE = EA_PC_MEM_INDIR_PRE_INDEX;
+		else EADATA->EA_DATA.MODE = EA_MEM_INDIR_PRE_INDEX;
+	    end;
+            else do;
+	        if EADATA->EA_DATA.BASE_REGISTER = REG_PC then
+	             EADATA->EA_DATA.MODE = EA_PC_MEM_INDIR_POST_INDEX;
+		else EADATA->EA_DATA.MODE = EA_MEM_INDIR_POST_INDEX;
+	    end;
+        end;
+
+        /* --------------------------------------------
+         * See if the base register is to be suppressed
+         * ------------------------------------------ */
+
+        if EAE_P->FULL_EA.BR_SUP = '1'B then
+	     EADATA->EA_DATA.BASE_REGISTER = NO_REG;
+
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ABSOLUTE SHORT ADDRESS -- abs.W
+     * -- ABSOLUTE LONG ADDRESS -- abs.L
+     * -- PC INDIRECT WITH 16-BIT DISPLACEMENT -- (d16,PC)
+     * -- PC INDIRECT WITH INDEX AND 8-BIT DISPLACEMENT -- (d8,PC,Xn)
+     * -- PC INDIRECT WITH INDEX AND BASE DISPLACEMENT -- (bd,PC,Xn)
+     * -- PC MEMORY INDIRECT POST-INDEXED -- ([bd,PC,Xn],od)
+     * -- PC MEMORY INDIRECT PRE-INDEXED -- ([bd,PC],Xn,od)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (7):
+
+        goto DECODE_EA7 (EAREG);
+
+        /* ---------------------------------------------------------------
+         * -- ABSOLUTE SHORT ADDRESS --  abs.W
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (0):
+
+            if (EALEGAL ^= EATYPE_ALL)           &
+               (EALEGAL ^= EATYPE_DATA)          &
+               (EALEGAL ^= EATYPE_MEMORY)        &
+               (EALEGAL ^= EATYPE_CONTROL)       &
+               (EALEGAL ^= EATYPE_ALTER)         &
+               (EALEGAL ^= EATYPE_DATA_ALTER)    &
+               (EALEGAL ^= EATYPE_MEMORY_ALTER)  &
+               (EALEGAL ^= EATYPE_CONTROL_ALTER) then
+                goto INVALID;
+
+            EADATA->EA_DATA.MODE = EA_ABS_WORD;
+            EADATA->EA_DATA.NWORDS = 1;
+            EADATA->EA_DATA.VALUE = SIGN_EXTEND_WORD(EXTENSION.WORD(1));
+            EADATA->EA_DATA.VALUE_IS_EA = TRUE;
+            goto VALID;
+
+        /* ---------------------------------------------------------------
+         * -- ABSOLUTE LONG ADDRESS -- abs.L
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (1):
+
+            if (EALEGAL ^= EATYPE_ALL)           &
+               (EALEGAL ^= EATYPE_DATA)          &
+               (EALEGAL ^= EATYPE_MEMORY)        &
+               (EALEGAL ^= EATYPE_CONTROL)       &
+               (EALEGAL ^= EATYPE_ALTER)         &
+               (EALEGAL ^= EATYPE_DATA_ALTER)    &
+               (EALEGAL ^= EATYPE_MEMORY_ALTER)  &
+               (EALEGAL ^= EATYPE_CONTROL_ALTER) then
+                goto INVALID;
+
+            EADATA->EA_DATA.MODE = EA_ABS_LONG;
+            EADATA->EA_DATA.NWORDS = 2;
+            addr(EADATA->EA_DATA.VALUE)->ADDRESS.HIGH = EXTENSION.WORD(1);
+            addr(EADATA->EA_DATA.VALUE)->ADDRESS.LOW = EXTENSION.WORD(2);
+            EADATA->EA_DATA.VALUE_IS_EA = TRUE;
+            goto VALID;
+
+        /* ---------------------------------------------------------------
+         * -- PC INDIRECT WITH 16-BIT DISPLACEMENT -- (d16,PC)
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (2):
+
+            if (EALEGAL ^= EATYPE_ALL)     &
+               (EALEGAL ^= EATYPE_DATA)    &
+               (EALEGAL ^= EATYPE_MEMORY)  &
+               (EALEGAL ^= EATYPE_CONTROL) then
+                goto INVALID;
+
+            EADATA->EA_DATA.MODE = EA_PC_INDIR_DISP;
+            EADATA->EA_DATA.NWORDS = 1;
+            EADATA->EA_DATA.BASE_REGISTER = REG_PC;
+            EADATA->EA_DATA.BASE_DISP = SIGN_EXTEND_WORD(EXTENSION.WORD(1));
+            EADATA->EA_DATA.BASE_DISP_SIZE = SIZE_WORD;
+            goto VALID;
+
+        /* ---------------------------------------------------------------
+         * -- PC INDIRECT WITH INDEX AND 8-BIT DISPLACEMENT -- (d8,PC,Xn)
+         * -- PC INDIRECT WITH INDEX AND BASE DISPLACEMENT -- (bd,PC,Xn)
+         * -- PC MEMORY INDIRECT POST-INDEXED -- ([bd,PC,Xn],od)
+         * -- PC MEMORY INDIRECT PRE-INDEXED -- ([bd,PC],Xn,od)
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (3):
+
+            if (EALEGAL ^= EATYPE_ALL)     &
+               (EALEGAL ^= EATYPE_DATA)    &
+               (EALEGAL ^= EATYPE_MEMORY)  &
+               (EALEGAL ^= EATYPE_CONTROL) then
+                goto INVALID;
+
+            goto DECODE_EA (6);
+
+        /* ---------------------------------------------------------------
+         * -- IMMEDIATE DATA -- #immediate
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (4):
+
+            if (EALEGAL ^= EATYPE_ALL)          &
+               (EALEGAL ^= EATYPE_DATA)         &
+               (EALEGAL ^= EATYPE_MEMORY)       then
+                goto INVALID;
+
+            EADATA->EA_DATA.MODE = EA_IMMED;
+            if EASIZE = SIZE_BYTE then do;
+                 EADATA->EA_DATA.NWORDS = 1;
+                 EADATA->EA_DATA.VALUE =
+                        binary(addr(EXTENSION.WORD(1))->SHORT_WORD.LOW);
+            end;
+            else if EASIZE = SIZE_WORD then do;
+                 EADATA->EA_DATA.NWORDS = 1;
+                 if EXTENSION.WORD(1) >= 0 then
+                     EADATA->EA_DATA.VALUE = EXTENSION.WORD(1);
+                 else
+                     EADATA->EA_DATA.VALUE = 65536 + EXTENSION.WORD(1);
+            end;
+            else if EASIZE = SIZE_LONG then do;
+                 EADATA->EA_DATA.NWORDS = 2;
+                 addr(EADATA->EA_DATA.VALUE)->ADDRESS.HIGH = EXTENSION.WORD(1);
+                 addr(EADATA->EA_DATA.VALUE)->ADDRESS.LOW = EXTENSION.WORD(2);
+            end;
+            else if EASIZE = SIZE_SINGLE then do;
+                 EADATA->EA_DATA.NWORDS = 2;
+                 addr(EADATA->EA_DATA.VALUE)->ADDRESS.HIGH = EXTENSION.WORD(1);
+                 addr(EADATA->EA_DATA.VALUE)->ADDRESS.LOW = EXTENSION.WORD(2);
+            end;
+            else if EASIZE = SIZE_DOUBLE then do;
+                 EADATA->EA_DATA.NWORDS = 4;
+                 EADATA->EA_DATA.VALUE = 0;	/* TODO */
+            end;
+            else if EASIZE = SIZE_EXTENDED then do;
+                 EADATA->EA_DATA.NWORDS = 6;
+                 EADATA->EA_DATA.VALUE = 0;	/* TODO */
+            end;
+            else if (EASIZE = SIZE_PACKED) |
+		    (EASIZE = SIZE_PACKED_DYN) then do;
+                 EADATA->EA_DATA.NWORDS = 6;
+                 EADATA->EA_DATA.VALUE = 0;	/* TODO */
+            end;
+            else if EASIZE = SIZE_NULL then
+                 EADATA->EA_DATA.NWORDS = 0;
+	    else goto INVALID;
+            EADATA->EA_DATA.VALUE_IS_OPERAND = TRUE;
+            goto VALID;
+
+        DECODE_EA7 (5):;
+        DECODE_EA7 (6):;
+        DECODE_EA7 (7):;
+
+            goto INVALID;
+
+    /* -------------------------------------------------------------------
+     * --- END OF EFFECTIVE ADDRESS CALCULATIONS ---
+     * ---------------------------------------------------------------- */
+
+    VALID:
+        return (EADATA->EA_DATA.NWORDS);
+
+    INVALID:
+        return (-1);
+
+    /* ----------------------------------------------------------------
+     * SET_DEFAULT_EA_DATA
+     *
+     * Initialize the EA_DATA structure pointed to by EA.
+     */
+
+    SET_DEFAULT_EA_DATA: procedure (EA);
+
+	declare EA pointer;
+
+	EA->EA_DATA.MODE		= 0;
+	EA->EA_DATA.NWORDS		= 0;
+	EA->EA_DATA.BASE_REGISTER	= NO_REG;
+	EA->EA_DATA.INDEX_REGISTER	= NO_REG;
+	EA->EA_DATA.INDEX_SIZE		= SIZE_NULL;
+	EA->EA_DATA.INDEX_SCALE		= SCALE_NULL;
+	EA->EA_DATA.BASE_DISP		= 0;
+	EA->EA_DATA.BASE_DISP_SIZE	= SIZE_NULL;
+	EA->EA_DATA.OUTER_DISP		= 0;
+	EA->EA_DATA.OUTER_DISP_SIZE	= SIZE_NULL;
+	EA->EA_DATA.OPERAND_SIZE	= EASIZE;
+	EA->EA_DATA.VALUE_IS_EA		= FALSE;
+	EA->EA_DATA.VALUE_IS_OPERAND	= FALSE;
+	EA->EA_DATA.VALUE		= 0;
+
+    end SET_DEFAULT_EA_DATA;
+
+    /* -------------------------------------------------------------------
+     * SIGN_EXTEND_BYTE
+     *
+     * This function will sign extend and return in a long 32-bit integer,
+     * the value given by the 8 bit byte (fixed binary (7)) value B.
+     */
+
+    SIGN_EXTEND_BYTE: procedure (B) returns (fixed binary (31));
+
+	declare
+	    B    fixed binary (7),
+	    N    fixed binary (31);
+
+	N = B;
+	if N >= 128 then N = N - 256;
+        return (N);
+
+    end SIGN_EXTEND_BYTE;
+
+    /* -------------------------------------------------------------------
+     * SIGN_EXTEND_WORD
+     *
+     * This function will sign extend and return in a long 32-bit integer,
+     * the value given by the 16 bit word (fixed binary (15)) value W.
+     */
+
+    SIGN_EXTEND_WORD: procedure (W) returns (fixed binary (31));
+
+	declare
+	    W    fixed binary (15),
+	    N    fixed binary (31);
+
+	N = W;
+	if N >= 32768 then N = N - 65536;
+        return (N);
+
+    end SIGN_EXTEND_WORD;
+
+end DISEA;
+

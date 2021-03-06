@@ -1,0 +1,106 @@
+/* LPI-DEBUG M68 REGDEF.IN - MC68020/68881 register definitions */
+
+/**********************************************************************
+ * This product is the property of Language Processors, Inc.          *
+ * and is licensed pursuant to a written license agreement.           *
+ * No portion of this product may be reproduced without the written   *
+ * permission of Language Processors, Inc. except pursuant to the     *
+ * license agreement.                                                 *
+ *********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   2.12.92  VTF  (001) Added 68040 control registers (tc, itt0, itt1, dtt0,
+ *                 dtt1, mmusr, urp, srp).
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68020 User's
+ *		   Manual, and the MC68881 User's Manual.
+ *
+ *********************************************************************/
+
+/* -------------------------------------------------------------------
+ * -- Internal MC68020/MC68881 Register Code Definitions --
+ * ---------------------------------------------------------------- */
+
+%replace NO_REG		by  -1;
+%replace REG_A0		by   0;
+%replace REG_A1		by   1;
+%replace REG_A2		by   2;
+%replace REG_A3		by   3;
+%replace REG_A4		by   4;
+%replace REG_A5		by   5;
+%replace REG_A6		by   6;
+%replace REG_A7		by   7;
+%replace REG_SP		by   7;
+%replace REG_D0		by   8;
+%replace REG_D1		by   9;
+%replace REG_D2		by  10;
+%replace REG_D3		by  11;
+%replace REG_D4		by  12;
+%replace REG_D5		by  13;
+%replace REG_D6		by  14;
+%replace REG_D7		by  15;
+%replace REG_PC		by  16;
+%replace REG_SR		by  17;
+%replace REG_CCR	by  18;
+%replace REG_SFC	by  19;
+%replace REG_DFC	by  20;
+%replace REG_CACR	by  21;
+%replace REG_USP	by  22;
+%replace REG_VBR	by  23;
+%replace REG_CAAR	by  24;
+%replace REG_MSP	by  25;
+%replace REG_ISP	by  26;
+%replace REG_TC		by  27;
+%replace REG_ITT0	by  28;
+%replace REG_ITT1	by  29;
+%replace REG_DTT0	by  30;
+%replace REG_DTT1	by  31;
+%replace REG_MMUSR	by  32;
+%replace REG_URP	by  33;
+%replace REG_SRP	by  34;
+%replace REG_FP0	by  35;
+%replace REG_FP1	by  36;
+%replace REG_FP2	by  37;
+%replace REG_FP3	by  38;
+%replace REG_FP4	by  39;
+%replace REG_FP5	by  40;
+%replace REG_FP6	by  41;
+%replace REG_FP7	by  42;
+%replace REG_FPCR	by  43;
+%replace REG_FPSR	by  44;
+%replace REG_FPIAR	by  45;
+%replace MAX_REGS	by  46;
+
+%replace AREG_0		by   0;
+%replace AREG_1		by   1;
+%replace AREG_2		by   2;
+%replace AREG_3		by   3;
+%replace AREG_4		by   4;
+%replace AREG_5		by   5;
+%replace AREG_6		by   6;
+%replace AREG_7		by   7;
+%replace MAX_AREGS	by   8;
+
+%replace DREG_0		by   0;
+%replace DREG_1		by   1;
+%replace DREG_2		by   2;
+%replace DREG_3		by   3;
+%replace DREG_4		by   4;
+%replace DREG_5		by   5;
+%replace DREG_6		by   6;
+%replace DREG_7		by   7;
+%replace MAX_DREGS	by   8;
+
+%replace FREG_0		by   0;
+%replace FREG_1		by   1;
+%replace FREG_2		by   2;
+%replace FREG_3		by   3;
+%replace FREG_4		by   4;
+%replace FREG_5		by   5;
+%replace FREG_6		by   6;
+%replace FREG_7		by   7;
+%replace MAX_FREGS	by   8;
+

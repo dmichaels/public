@@ -1,0 +1,359 @@
+/* CPP pp_td.pl1 - Dump token data for debugging */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.18.91  DGM  008  Updated.
+ *  07.08.91  DGM  007  Updated.
+ *  03.20.91  DGM  006  Added #assert, #ident, #note, #once, #unassert,
+ *			and #pragmas.
+ *  03.12.91  DGM  005  Added "throw", "try", and "asm".
+ *  09.25.90  DGM  004  Include file name changes.
+ *  09.25.90  DGM  003  Minor fix.
+ *  06.14.90  DGM  002  Updated.
+ *  06.05.90  DGM  001  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  11.20.89  DGM  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.18.91 008 PPTD');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include CPP_STANDARD_DEFS_IN;
+%include CPP_EXTERNAL_NAME_MAP_IN;
+%include CPP_TOKEN_POD_IN;
+%include CPP_TOKEN_POD_SPELLING_PKG;
+%include CPP_TOKEN_POD_DEBUG_IN;
+
+/* ---------------------------------------------------------------------
+/* External declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+WRITTT		entry   (character (*) varying)
+		external,
+
+WRITNC		entry   (character (*) varying)
+		external,
+
+WRITFW		entry   (character (*) varying, fixed binary (15))
+		external,
+
+WRITNO		entry   (pointer, fixed binary (15),
+		         fixed binary (15), fixed binary (15))
+		external;
+
+/* ---------------------------------------------------------------------
+/* Type declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T	character (32767) varying based;
+
+/* ---------------------------------------------------------------------
+/* DUMP_TOKEN
+/*
+/* Dump token pod information to the standard output.
+/* ------------------------------------------------------------------- */
+
+DUMP_TOKEN: procedure (TP) external (X_DUMP_TOKEN);
+
+	declare
+		TP	pointer;
+	declare
+		T	fixed binary (15),
+		L	fixed binary (31),
+		S	character (256) varying;
+
+	declare
+		TOKEN_NAME	(LB_FE_TOKEN : HB_FE_TOKEN)
+				character (18) varying
+				static internal initial (
+
+		/* Psuedo tokens */
+
+		  'BOF'
+		, 'EOF'
+		, 'BOF_INCLUDE'
+		, 'EOF_INCLUDE'
+		, 'LINE_FILE'
+		, 'PRAGMA'
+		, 'AVAILABLE_1'
+		, 'AVAILABLE_2'
+		, 'AVAILABLE_3'
+		, 'AVAILABLE_4'
+		, 'AVAILABLE_5'
+		, 'AVAILABLE_6'
+
+		/* Unused token */
+
+		, 'NULL_TOKEN'
+
+		/* Other single character token (non-white-space) */
+
+		, 'SINGLE_CHAR'
+
+		/* Preprocessing number token */
+
+		, 'PP_NUMBER'
+
+		/* String literal and constant tokens */
+
+		, 'STRING'
+		, 'WSTRING'
+
+		, 'CHAR_CONST'
+		, 'WCHAR_CONST'
+
+		, 'DEC_CONST'
+		, 'OCT_CONST'
+		, 'HEX_CONST'
+		, 'FLOAT_CONST'
+
+		, 'COOKED_CHAR_CONST'
+		, 'COOKED_WCHAR_CONST'
+
+		, 'COOKED_STRING'
+		, 'COOKED_WSTRING'
+
+		/* Identifier token */
+
+		, 'IDENTIFIER'
+
+		/* Operator and punctuator tokens */
+
+		, 'COLON_COLON'
+		, 'COLON'
+		, 'SEMI_COLON'
+		, 'DOT'
+		, 'DOT_STAR'
+		, 'QUESTION'
+		, 'ELLIPSIS'
+		, 'LCURLY'
+		, 'RCURLY'
+		, 'RSQUARE'
+		, 'RPAREN'
+
+		, 'LSQUARE'
+		, 'LPAREN'
+		, 'COMMA'
+		, 'POINTER'
+		, 'POINTER_STAR'
+
+		, 'PLUS'
+		, 'PLUS_PLUS'
+		, 'MINUS'
+		, 'MINUS_MINUS'
+
+		, 'STAR'
+		, 'SLASH'
+		, 'MOD'
+		, 'AND'
+		, 'OR'
+		, 'XOR'
+		, 'TILDE'
+		, 'NOT'
+		, 'LSHIFT'
+		, 'RSHIFT'
+		, 'AND_AND'
+		, 'OR_OR'
+		, 'LESS_THAN'
+		, 'LESS_EQUAL'
+		, 'GREATER_THAN'
+		, 'GREATER_EQUAL'
+		, 'EQUAL_EQUAL'
+		, 'NOT_EQUAL'
+		, 'EQUAL'
+		, 'PLUS_EQUAL'
+		, 'MINUS_EQUAL'
+		, 'STAR_EQUAL'
+		, 'SLASH_EQUAL'
+		, 'MOD_EQUAL'
+		, 'AND_EQUAL'
+		, 'OR_EQUAL'
+		, 'XOR_EQUAL'
+		, 'LSHIFT_EQUAL'
+		, 'RSHIFT_EQUAL'
+
+		/* Keyword tokens */
+
+		, 'KW_NEW'
+		, 'KW_DELETE'
+
+		, 'KW_TYPEDEF'
+
+		, 'KW_STATIC'
+		, 'KW_EXTERN'
+		, 'KW_AUTO'
+		, 'KW_REGISTER'
+
+		, 'KW_VOID'
+		, 'KW_INT'
+		, 'KW_CHAR'
+		, 'KW_FLOAT'
+		, 'KW_DOUBLE'
+		, 'KW_LONG'
+		, 'KW_SHORT'
+		, 'KW_UNSIGNED'
+		, 'KW_SIGNED'
+
+		, 'KW_CLASS'
+		, 'KW_STRUCT'
+		, 'KW_UNION'
+		, 'KW_ENUM'
+
+		, 'KW_CONST'
+		, 'KW_VOLATILE'
+
+		, 'KW_PRIVATE'
+		, 'KW_PROTECTED'
+		, 'KW_PUBLIC'
+		, 'KW_VIRTUAL'
+		, 'KW_FRIEND'
+		, 'KW_INLINE'
+		, 'KW_OVERLOAD'
+		, 'KW_OPERATOR'
+		, 'KW_TEMPLATE'
+		, 'KW_THIS'
+		, 'KW_CATCH'
+		, 'KW_THROW'
+		, 'KW_TRY'
+		, 'KW_ASM'
+
+		, 'KW_SIZEOF'
+
+		, 'KW_BREAK'
+		, 'KW_CASE'
+		, 'KW_CONTINUE'
+		, 'KW_DEFAULT'
+		, 'KW_DO'
+		, 'KW_ELSE'
+		, 'KW_FOR'
+		, 'KW_GOTO'
+		, 'KW_IF'
+		, 'KW_RETURN'
+		, 'KW_SWITCH'
+		, 'KW_WHILE'
+	);
+
+	declare
+		PP_TOKEN_NAME	(LB_PP_TOKEN : HB_PP_TOKEN)
+				character (14) varying
+				static internal initial (
+
+ 		/* Tokens used ONLY within the preprocessor */
+
+		  'PP_KW_ASSERT'
+		, 'PP_KW_DEFINE'
+		, 'PP_KW_ELIF'
+		, 'PP_KW_ELSE'
+		, 'PP_KW_ELSEIF'
+		, 'PP_KW_ENDIF'
+		, 'PP_KW_ERROR'
+		, 'PP_KW_FILE'
+		, 'PP_KW_IDENT'
+		, 'PP_KW_IF'
+		, 'PP_KW_IFDEF'
+		, 'PP_KW_IFNDEF'
+		, 'PP_KW_INCLUDE'
+		, 'PP_KW_LINE'
+		, 'PP_KW_NOTE'
+		, 'PP_KW_ONCE'
+		, 'PP_KW_PRAGMA'
+		, 'PP_KW_UNDEF'
+		, 'PP_KW_UNASSERT'
+
+		, 'PP_STRINGIZE'
+		, 'PP_CHARIZE'
+		, 'PP_TOKEN_PASTE'
+		, 'PP_MACRO_PARAM'
+	);
+
+	if TP = null() then
+		return;
+
+	T = TP->TOKEN_POD.TYPE;
+
+	if (T >= LB_FE_TOKEN) & (T <= HB_FE_TOKEN) then
+		S = trim (TOKEN_NAME (TP->TOKEN_POD.TYPE));
+
+	else if (T >= LB_PP_TOKEN) & (T <= HB_PP_TOKEN) then
+		S = trim (PP_TOKEN_NAME (T));
+
+	else	S = '-unknown-';
+
+	S = S || ' [' || trim (char (T)) || ']';
+
+	L = abs (TP->TOKEN_POD.LINE);
+
+	if T = BOF_INCLUDE_TOKEN then call WRITTT ('');
+
+	call WRITNO (addr (L), 4, 10, -4);
+	call WRITNC (': ');
+	call WRITFW (S, 22);
+	call WRITNC (' {');
+	if TP->TOKEN_POD.LINE < 0 then call WRITNC (' ');
+	call WRITNC (TOKEN_SPELLING (TP));
+	call WRITNC ('}');
+
+	if (T = BOF_TOKEN) | (T = BOF_INCLUDE_TOKEN) |
+	   (T = LINE_FILE_TOKEN) then do;
+		TP->TOKEN_POD.TYPE = STRING_LITERAL_TOKEN;
+		call WRITNC (' ');
+		call WRITNC (TOKEN_SPELLING (TP));
+		TP->TOKEN_POD.TYPE = T;
+	end;
+
+	else if (T = EOF_TOKEN) | (T = EOF_INCLUDE_TOKEN) then do;
+		if TP->TOKEN_POD.SPELLING_PTR ^= null() then do;
+			/*
+			/* Sic; the spelling for the eof-tokens and
+			/* eof-include-tokens is stored the same way the
+			/* spelling for bof-tokens and bof-include-tokens.
+			/**/
+			call WRITNC (' "');
+			call WRITNC (TP->TOKEN_POD.SPELLING_PTR->STRING_T);
+			call WRITNC ('"');
+		end;
+	end;
+
+	call WRITTT ('');
+
+end DUMP_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* TLDUMP
+/* ------------------------------------------------------------------- */
+
+TLDUMP: procedure (TP);
+
+	declare TP	pointer;
+	declare P	pointer;
+
+	do P = TP repeat (P->TOKEN_POD.NEXT) while (P ^= null());
+		call DUMP_TOKEN (P);
+	end;
+
+end TLDUMP;
+

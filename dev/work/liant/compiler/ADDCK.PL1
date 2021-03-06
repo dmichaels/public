@@ -1,0 +1,266 @@
+/* C++ ADDCK, SUBCK, MULCK - Range ChecK ADD/SUB/MUL expressions */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.18.91  DGM  004  Added missing checks for SCHAR_BT.
+ *  09.14.90  DGM  003  Changed include file names and VOP names.
+ *  04.27.90  DGM  002  Changed type map names from IS_xxx to IS_xxx_TYPE.
+ *  04.19.90  DGM  001  Fixed up includes.
+ *  01.30.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.18.91 004 ADDCK');
+
+/* ---------------------------------------------------------------------
+
+Function:
+	ADDCK - Routine to check VALUE_1 + VALUE_2
+        SUBCK - Routine to check VALUE_1 - VALUE_2
+        MULCK - Routine to check VALUE_1 * VALUE_2
+
+	All routines check to see if the evaluated operations
+	result will exceed the range limitation of RESULT_DATATYPE.
+
+Requires:
+	RESULT_DATATYPE is a valid front-end data type (currently
+	found in the include file CXX_SYMBOL_TABLE_DEFS_IN) and
+	is INT_BT, UINT_BT, SHORT_BT, USHORT_BT, LONG_BT, ULONG_BT,
+	CHAR_BT, SCHAR_BT or UCHAR_BT.
+
+Effects:
+	The routine will return TRUE if the resultant value is in
+	range; otherwise the routine returns FALSE.
+        Unsigned types always return TRUE.
+        <NOTE: "... an operation involving unsigned operands can never
+               overflow ..." (Section 3.1.2.5) >
+
+Implementation:
+	There are 4 cases to worry about for overflow and sign of 
+        VALUE_1 and VALUE_2:
+		1) VALUE_1 > 0, VALUE_2 > 0
+		2) VALUE_1 > 0, VALUE_2 < 0
+		3) VALUE_1 < 0, VALUE_2 > 0
+		4) VALUE_1 < 0, VALUE_2 < 0
+
+	For INT/LONG:
+	Since VALUE_1 and VALUE_2 are already known to be in range,
+	adding a negative value to a positive value will always
+	have a result in range.  Thus cases 2 and 3 are trivial.
+	Case 1 will overflow if
+		MAX_LONG/MAX_INT - VALUE_1 - VALUE_2 < 0
+		ex: 2147483647 - 2147483640 - 10 = -3 OVERFLOW
+	Case 4 will overflow if
+		MIN_LONG/MIN_INT - VALUE_1 - VALUE_2 > 0
+		ex: -2147483648 - -2147483640 - -10 = 2 OVERFLOW
+
+Notes:
+	Floating point constant expressions are not folded by the
+	front end (currently), so doing range checking on the
+	addition of two float/double variables is a waste of time.
+	It would not be too difficult to clone the code to handle
+	floating point numbers.
+	The algorithms for computing overflow/negative overflow
+	for were empirically derived.
+
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;			/* for TRUE/FALSE !!! */
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_DEFS_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TARGET_HARDWARE_IN;
+
+/* ---------------------------------------------------------------------
+/* ADD_CHECK
+/* ------------------------------------------------------------------- */
+
+ADD_CHECK: procedure (VALUE_1, VALUE_2, RESULT_DATATYPE)
+	   returns   (type (BOOL_T))
+	   external  (X_ADD_CHECK);
+
+	declare
+		VALUE_1		type (LONG_T),
+		VALUE_2		type (LONG_T),
+		RESULT_DATATYPE	type (SHORT_T);
+
+	declare	
+		THIS_MAX	type (LONG_T),
+		THIS_MIN	type (LONG_T),
+		ARG_1_LONG	type (LONG_T),
+		ARG_2_LONG	type (LONG_T),
+		RESULT_VALUE	type (LONG_T);
+
+	/*
+	/* Unsigned types always return TRUE.
+	/* <NOTE: "... an operation involving unsigned operands can never
+	/*         overflow ..." (Section 3.1.2.5) >
+	/**/
+
+	if (RESULT_DATATYPE = UCHAR_BT) |
+	   (RESULT_DATATYPE = USHORT_BT) |
+	   (RESULT_DATATYPE = UINT_BT) |
+	   (RESULT_DATATYPE = ULONG_BT) then 
+		return (TRUE);
+
+	if IS_INTEGRAL_TYPE (RESULT_DATATYPE) then
+		goto ADD_VAL (RESULT_DATATYPE);
+
+	return (FALSE);
+
+	/* ----------------------------------------------------------- */
+
+	ADD_VAL (CHAR_BT):;
+	ADD_VAL (SCHAR_BT):
+
+	THIS_MAX = MAX_CHAR;
+	THIS_MIN = MIN_CHAR;
+	goto CHECK;
+
+	/* ----------------------------------------------------------- */
+
+	ADD_VAL (SHORT_BT):
+
+	THIS_MAX = MAX_SHORT_INT;
+	THIS_MIN = MIN_SHORT_INT;
+	goto CHECK;
+
+	/* ----------------------------------------------------------- */
+
+	ADD_VAL (INT_BT):
+
+	THIS_MAX = MAX_INT;
+	THIS_MIN = MIN_INT;
+	goto CHECK;
+
+	/* ----------------------------------------------------------- */
+
+	ADD_VAL (LONG_BT):
+
+	THIS_MAX = MAX_LONG;
+	THIS_MIN = MIN_LONG;
+	goto CHECK;
+
+	/* ----------------------------------------------------------- */
+
+	CHECK:
+
+	ARG_1_LONG = VALUE_1;
+	ARG_2_LONG = VALUE_2;
+
+	if ARG_1_LONG >= 0 then do;
+		/*
+		/* Case 1, 2
+		/**/
+		if ARG_2_LONG >= 0 then
+			/*
+			/* Case 1
+			/**/
+			return (THIS_MAX - ARG_1_LONG - ARG_2_LONG >= 0);
+	end;
+	else do;
+		/*
+		/* Case 3, 4
+		/**/
+		if ARG_2_LONG < 0 then
+			/*
+			/* Case 4
+			/**/
+			return (THIS_MIN - ARG_1_LONG - ARG_2_LONG <= 0);
+	end;
+
+	/* Cases 2, 3, and non-overflow cases */
+
+	return (TRUE);
+
+end ADD_CHECK;
+
+/* ---------------------------------------------------------------------
+/* SUBTRACT_CHECK
+/* ------------------------------------------------------------------- */
+
+SUBTRACT_CHECK: procedure (VALUE_1, VALUE_2, RESULT_DATATYPE)
+		returns   (type (BOOL_T))
+		external  (X_SUBTRACT_CHECK);
+
+	declare
+		VALUE_1		type (LONG_T),
+		VALUE_2		type (LONG_T),
+		RESULT_DATATYPE	type (SHORT_T);
+
+	return (ADD_CHECK (VALUE_1, -VALUE_2, RESULT_DATATYPE));
+
+end SUBTRACT_CHECK;
+
+/* ---------------------------------------------------------------------
+/* MULTIPLY_CHECK
+/* ------------------------------------------------------------------- */
+
+MULTIPLY_CHECK: procedure (VALUE_1, VALUE_2, RESULT_DATATYPE)
+		returns   (type (BOOL_T))
+		external  (X_MULTIPLY_CHECK);
+
+	declare
+		VALUE_1		type (LONG_T),
+		VALUE_2		type (LONG_T),
+		RESULT_DATATYPE	type (SHORT_T);
+
+	declare
+		VSIGN		type (LONG_T),
+		VSUM		type (LONG_T),
+		V1		type (LONG_T),
+		V2		type (LONG_T),
+		I		type (LONG_T);
+
+	/*
+	/* Unsigned types always return TRUE.
+	/*
+	/* <NOTE: "... an operation involving unsigned operands
+	/*         can never overflow ..." (Section 3.1.2.5)>
+	**/
+
+	if (RESULT_DATATYPE = UCHAR_BT) |
+	   (RESULT_DATATYPE = USHORT_BT) |
+	   (RESULT_DATATYPE = UINT_BT) |
+	   (RESULT_DATATYPE = ULONG_BT) then 
+		return (TRUE);
+
+	V1 = VALUE_1;
+	V2 = VALUE_2;
+
+	if V2 > V1 then do;
+		V1 = VALUE_2;
+		V2 = VALUE_1;
+	end;
+
+	VSUM = V1;
+
+	do I = 1 to (V2 - 1);
+		if ^ADD_CHECK (V1, VSUM, RESULT_DATATYPE) then
+			return( FALSE );
+		VSUM = VSUM + V1;
+	end;
+	return (TRUE);
+
+end MULTIPLY_CHECK;

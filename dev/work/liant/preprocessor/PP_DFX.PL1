@@ -1,0 +1,37 @@
+/* CPP pp_dfx.pl1 - Static external data initialization (-defext) */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.25.90  DGM  002  Include file name changes.
+ *  06.05.90  DGM  001  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)PP_DFX  002  9/25/90  (c) 1990 Language Processors, Inc.');
+
+/* ---------------------------------------------------------------------
+/* PP_DFX
+/* ------------------------------------------------------------------- */
+
+PP_DFX: procedure;
+
+	%include 'incfil';
+	%include CPP_MACRO_TABLES_IN;
+
+end PP_DFX;
+

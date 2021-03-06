@@ -1,0 +1,1932 @@
+/* C++ cpatex.pl1 - type compatibility in expressions  */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.15.92  DGM  042	Fix to COMPATIBLE_RELATIONAL_POINTERS to convert
+ *			a null pointer constant (which does not have
+ *			pointer type) to pointer type.
+ *  07.02.92  DGM  041	Fix to accept second and third operands of
+ *			a conditional of which one is a pointer to
+ *			a base class of another.
+ *  06.12.92  PKT  040	Made COMPATIBLE_INITIAL_REFERENCES check
+ *			qualifiers of referenced types.
+ *  06.08.92  DGM  039	Support for member-pointers in COMPATIBLE_
+ *			CONDITIONAL_POINTERS.
+ *  04.30.92  PKT  038	Moved handling of overloaded operands out of
+ *			COMPATIBLE_ASSIGNMENT_POINTERS.
+ *  04.03.92  PKT  038	Made COMPATIBLE_RELATIONAL_POINTERS handle
+ *			member references.
+ *  04.30.92  DGM  037  Fix for: void f (); g () { void *p = f; }.
+ *  04.18.92  PKT  036	Merged 033->034R with 033->035.
+ *  03.26.92  DGM  035  New value-node scheme.
+ *  04.01.92  DGM  034R Fix to 034.
+ *  03.30.92  DGM  034  Nicer diagnostics for incompatible types in
+ *			expressions, esp. function arguments.
+ *  11.12.91  DGM  033  Merge.
+ *  10.24.91  PKT  032  Oops, same as 031.
+ *  10.24.91  PKT  031  Made IS_TD_BASE_CLASS_OF external.
+ *  10.07.91  DGM  030L Leap-frog over 029.
+ *			Fix in COMPATIBLE_CONDITIONAL_POINTERS
+ *			to call NOTE_SYMBOL_REFERENCE.
+ *  10.03.91  DGM  029  Make "void &" compatible with anything; this is
+ *			an illegal type, but we allow it as an extension
+ *			for special "asm" functions in <asm.h>.
+ *  10.25.91  DGM  028  Fix in COMPATIBLE_CONDITIONAL_POINTERS to
+ *			set the SYM_NODE.REFERENCED for function.
+ *  07.24.91  DGM  028  Fix in COMPATIBLE_RELATIONAL_POINTERS.
+ *  07.03.91  PKT  027  Set REFERENCED for address of function symbol.
+ *  07.08.91  DGM  026  Fix for composite types.
+ *  05.22.91  PKT  025  Support for initialization of a pointer to member
+ *			function with a reference to member function.
+ *  05.14.91  PKT  024  Fix COMPATIBLE_INITIAL_REFERENCES so that
+ *			inaccessible base classes are ignored.
+ *  03.11.91  PKT  023  Gave COMPATIBLE_ASSIGNMENT_POINTERS more
+ *			support for overloaded functions.
+ *  02.22.91  PKT  022  Updated COMPATIBLE_RELATIONAL_POINTERS to
+ *			handle member pointers.
+ *  02.21.91  DGM  021  Fix in IDENTICAL_CONDITIONAL_LVALUES
+ *			and in COMPATIBLE_TYPE_INFO.
+ *  02.21.91  PKT  020  Updated COMPATIBLE_ASSIGNMENT_POINTERS to
+ *			handle member pointers.
+ *  01.31.91  DGM  019  Additions to check for overloaded function
+ *			pointer.  Hook 018 check on SW_LAX_POINTER.
+ *  01.10.91  DGM  018  Fix in COMPATIBLE_ASSIGNMENT_POINTERS to prevent
+ *			void pointer from being implicitly converted to
+ *			and non-void pointer (legal only in ANSI-C mode).
+ *  12.17.90  PKT  017  Updated for access control, improved
+ *			TRANSMUTE_WITH_TEMP, DERIVED_TO_BASE_CLASS_POINTER,
+ *			and so functional cast is considered a cast.
+ *  12.17.90  DGM  016  Fix in COMPATIBLE_SPECIAL_TYPE_INFO.
+ *  12.11.90  TLF  015  Modified COMPATIBLE_ASSIGNMENT_POINTERS to handle
+ *                      address of overloaded functions.
+ *  10.22.90  DGM  014  Changed SHORT_BITS_T to TCM_T.
+ *  10.16.90  PKT  013  Updated support for references.
+ *  09.28.90  PKT  012  Added COMPATIBLE_INITIAL_REFERENCES and
+ *			INCOMPATIBLE_REFERENCE_ERROR.
+ *  09.14.90  DGM  009  Changed include file names and VOP names.
+ *  09.12.90  DGM  008  Fix in MERGE_POINTED_TO_TYPE_QUALIFIERS.
+ *  08.21.90  TLF  007  Made IS_GENERIC_POINTER/IS_NULL_POINTER_CONSTANT
+ *			external.
+ *  08.15.90  DGM  006  New type-node.
+ *  07.03.90  DGM  005  Updated.
+ *  06.29.90  DGM  004  Updated COMPATIBLE_RELATIONAL_POINTERS
+ *  06.18.90  TLF  003  Updated.  Made COMPATIBLE_UNQUALIFIED_TYPES external.
+ *  06.14.90  PKT  002  Updated.  Added comments re missing functionality.
+ *  06.06.90  DGM  001  Updated for the new utilties.
+ *  05.17.90  PKT  000  Original, extracted from expv.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.15.92 042 CPATEX');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_CONVERT_CLASS_POINTER_PKG;
+%include CXX_MEMBER_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_OVERLOAD_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN; /* for CURRENT_ARGUMENT_NUMBER */
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T		character (512) varying based;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_ASSIGNMENT_POINTERS
+/*
+/* If the expression (rvalue) represented by the given value RV may be
+/* converted to the *pointer* type represented by the given type-info
+/* (lvalue) LTI as if by assignment (i.e. if the types are assignment
+/* compatible), then return TRUE, otherwise emit appropriate diagnostic
+/* (i.e. something about incompatible pointer types in assignment), and
+/* return FALSE.  The VOP argument indicates for which operation this
+/* assignment-like pointer compatiblity check is being done for (i.e.
+/* assignment, argument, return, or initialization).
+/* Preserves current-node-id.
+/*
+/* If LTI is a reference type, handle it the same, except for error
+/* messages.
+/*
+/* LTI and RV may both have pointer-to-member types.  It's up to the
+/* caller to ensure that this routine is called with compatible kinds
+/* of pointers.
+/*
+/* Overloading of RV must already be resolved.
+/*
+/* ---------------------------------------------------------------------
+/* Simple assignment constraints; one of the following shall hold:
+/*
+/* - Both operands are pointers to qualified or unqualified versions
+/*   of compatible types, and the type pointed to by the left has all
+/*   the qualifiers of the type pointed to by the right.
+/* - One operand is a pointer to an object or incomplete type and the
+/*   other is a pointer to a qualified or unqualified version of void,
+/*   and the type pointed to by the left has all the qualifiers of the
+/*   type pointed to by the right.
+/* - The left operand is a pointer and the right is a null pointer
+/*   constant (i.e. 0 or (void *)0).
+/*
+/* ANSI-C, section 3.3.16.1.
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_ASSIGNMENT_POINTERS: procedure (LTI, RV, VOP)
+                                returns   (type (BOOL_T))
+				external  (X_COMPATIBLE_ASSIGNMENT_POINTERS);
+	declare
+		LTI 	        	type (TYPE_INFO_T),
+		RV     		     	type (CXX_VID_T),
+		VOP			type (SHORT_T);
+	declare
+		RTI			type (TYPE_INFO_T),
+		R_IS_NULL_POINTER	type (BOOL_T),
+		(LTT, RTT)		type (TYPE_DATA_T),
+		(SLTI, SRTI)		type (TYPE_INFO_T);
+ 
+	if IS_CAST_VOP (VOP) then
+		return (TRUE);
+
+	/* Get the type of the right */
+
+	CXX_VALUE_NODE_PTR =  RV;
+	call GET_VALUE_TYPE (RTI);
+
+	/* See if the right is a null pointer (hackish) */
+
+	R_IS_NULL_POINTER = IS_INTEGRAL_TYPE (rank (RTI.TOP_TYPE.CODE)) &
+			    (RV->CXX_VALUE_NODE.OP = INTEGER_VO) &
+			    (RV->CXX_VALUE_NODE.OFFSET = 0);
+	/*
+	/* The right must either be a pointer type or an integral type
+	/* with a constant value of zero (i.e. a null pointer constant).
+	/* Note that the left is ASSUMED to be a pointer type (or that
+	/* if left a reference type it's to be handled just like a pointer).
+	/**/
+ 
+	if   RTI.TOP_TYPE.CODE ^= byte (POINTER_DT) 
+	   & RTI.TOP_TYPE.CODE ^= byte (MEMBER_POINTER_DT) then do;
+		if ^R_IS_NULL_POINTER then do;
+			TYPE_COMPATIBILITY_STATUS =
+				INCOMPATIBLE_NON_PTR_PTR_TCS;
+			if rank (RTI.TYPE_CODE) = FUNCTION_DT then
+				call SEMANTIC_ERROR (ERR_ILLEGAL_MEMBER_FUN); 
+			else if (LTI.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT)) |
+			        (LTI.TOP_TYPE.CODE = byte (POINTER_DT)) then
+				call INCOMPATIBLE_POINTER_ERROR
+				     (VOP, LTI, RTI);
+			else	call INCOMPATIBLE_REFERENCE_ERROR
+				     (VOP, LTI, RTI);
+			return (FALSE);
+		end;
+		else	return (TRUE);
+	end;
+
+	/*
+	/* Make sure that the type pointed to by the left posesses at
+	/* least all of the qualifiers of the type pointed to by the right.
+	/**/
+
+	call GET_TOP_LEVEL_TYPE_INFO (LTI, 1, LTT);
+	call GET_TOP_LEVEL_TYPE_INFO (RTI, 1, RTT);
+
+	if ^HAS_ALL_TYPE_QUALIFIERS_OF
+	    (LTT.QUALIFIERS, RTT.QUALIFIERS) then do;
+		TYPE_COMPATIBILITY_STATUS
+			= INCOMPATIBLE_PTR_QUALIFIERS_TCS;
+		if rank (LTI.TYPE_CODE) = POINTER_DT then
+			call INCOMPATIBLE_POINTER_ERROR
+			     (VOP, LTI, RTI);
+		else	call INCOMPATIBLE_REFERENCE_ERROR
+			     (VOP, LTI, RTI);
+		return (FALSE);
+	end;
+
+	/*
+	/* In C++ and ANSI-C, a pointer to a non-const non-volalite type
+	/* may be implicitly converted to a void pointer.  In ANSI-C, a
+	/* void pointer may be implicitly converted to any other pointer type.
+	/**/
+
+	if IS_GENERIC_POINTER (LTI) then
+		return (TRUE);
+	else if SW_LAX_POINTER then do;
+		if IS_GENERIC_POINTER (RTI) then
+			return (TRUE);
+	end;
+
+	/* See if this is a pointer or reference to an overloaded function */
+	SLTI = LTI;
+	call STRIP_TOP_TYPE (SLTI, FALSE);
+
+	/*
+	/* Check the left and right pointer types for compatibility.
+	/* Note that we ignore the top two qualifier levels, since
+	/* the top level qualifiers are (always) ignored, and the
+	/* pointed to qualifiers were checked above.
+	/* Also, ignore the kind of pointer, because that's checked
+	/* by the caller (e.g. ptr to member of base can be assigned
+	/* to pointer to member of derived).
+	/**/
+	SRTI = RTI;
+	call STRIP_TOP_TYPE (SRTI, FALSE);
+	if COMPATIBLE_SPECIAL_TYPE_INFO (SLTI, IGNORE_TOP_QUALIFIERS_TCM,
+					 SRTI, IGNORE_TOP_QUALIFIERS_TCM) then
+		return (TRUE);
+
+	if (LTI.TOP_TYPE.CODE = byte (POINTER_DT)) |
+	   (LTI.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT)) then
+		call INCOMPATIBLE_POINTER_ERROR
+		     (VOP, LTI, RTI);
+	else	call INCOMPATIBLE_REFERENCE_ERROR
+		     (VOP, LTI, RTI);
+	return (FALSE);
+
+end COMPATIBLE_ASSIGNMENT_POINTERS;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_INITIAL_REFERENCES
+/*
+/* If the expression with type-info RTI may be
+/* readily converted to the *reference* type represented by the given
+/* type-info (lvalue) LTI in an initializing context, then return TRUE,
+/* otherwise return FALSE.  A appropriate diagnostic is emitted when
+/* FALSE is returned.
+/*
+/* If RTI is not a reference type, the expression is assumed to be an lvalue.
+/* The left is ASSUMED to be a reference type.
+/*
+/* The VOP argument indicates for which operation this compatiblity check 
+/* s being done for (i.e. assignment, argument, return, or initialization).
+/* Preserves current-node-id.
+/* ---------------------------------------------------------------------
+/* Given that the initialized type is a reference to a qualified or
+/* unqualified version of a type LT, one of the following shall hold:
+/*
+/* - The context is cast.
+/* - The initializing expression is an lvalue of qualified
+/*   or unqualified type RT, and LT is compatible with RT.
+/* - The initializing expression is a reference to a qualified
+/*   or unqualified version of type RT, and LT is compatible with RT.
+/* - The initializing expression is an lvalue of qualified
+/*   or unqualified type RT, and LT is a base of RT (check access).
+/* - The initializing expression is a reference to a qualified
+/*   or unqualified version of type RT, and LT is a base of RT (check access).
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_INITIAL_REFERENCES: procedure (LTI, RTI, VOP)
+                               returns   (type (BOOL_T))
+			       external  (X_COMPATIBLE_INITIAL_REFERENCES);
+	declare
+		LTI 	        	type (TYPE_INFO_T),
+		RTI    		     	type (TYPE_INFO_T),
+		VOP			type (SHORT_T);
+	declare
+		LRTI			type (TYPE_INFO_T),
+		RRTI			type (TYPE_INFO_T);
+
+	/* Casts are compatible */
+
+	if IS_CAST_VOP (VOP) then
+		return (TRUE);
+
+	/*
+	/* Check the left and right types for compatibility.
+	/* Note that we ignore the top two qualifier levels, since the
+	/* top level qualifiers are (always) ignored, and the referenced
+	/* qualifiers are checked when converting pointer types.
+	/**/
+
+	LRTI = LTI;
+	call STRIP_TOP_TYPE (LRTI, FALSE);
+
+	/*
+	/* See if the left is "void &".  If so then anything (lvalue)
+	/* is compatible with it.  A "void &" is illegal in C++, but
+	/* as an extension, we allow it to be the type of a parameter
+	/* of special "asm" functions.
+	/**/
+
+	if LRTI.TOP_TYPE.CODE = byte (VOID_BT) then
+		return (TRUE);
+
+	RRTI = RTI;
+	if RTI.TOP_TYPE.CODE = byte (REFERENCE_DT) then
+		call STRIP_TOP_TYPE (RRTI, FALSE);
+
+	if ^COMPATIBLE_SPECIAL_TYPE_INFO
+	    (LRTI, IGNORE_TOP_QUALIFIERS_TCM,
+	     RRTI, IGNORE_TOP_QUALIFIERS_TCM) then do;
+		if ^IS_TD_BASE_CLASS_OF (LRTI.TOP_TYPE, RRTI.TOP_TYPE) then do;
+			call INCOMPATIBLE_REFERENCE_ERROR (VOP, LTI, RTI);
+			return (FALSE);
+		end;
+	end;
+
+	if ^HAS_ALL_TYPE_QUALIFIERS_OF (LRTI.TOP_TYPE.QUALIFIERS, 
+					RRTI.TOP_TYPE.QUALIFIERS) then do;
+		if VOP = RETURN_VO then do;
+			/*
+			/* treat it as compatible;
+			/* VIOLATION issued later in CONVERT_TO_POINTER_VALUE.
+			/**/
+		end;
+		else do;
+			/* not compatible references */
+			TYPE_COMPATIBILITY_STATUS
+				= INCOMPATIBLE_PTR_QUALIFIERS_TCS;
+			call INCOMPATIBLE_REFERENCE_ERROR (VOP, LTI, RTI);
+		end;
+	end;
+
+	return (TRUE);
+
+end COMPATIBLE_INITIAL_REFERENCES;
+
+/* -------------------------------------------------------------------------
+/* IS_TD_BASE_CLASS_OF
+/*
+/* Determines if the item described by L_INFO (assumed to be a reference,
+/* but not necessary) is a base class of the item described by R_INFO.
+/*
+/* As per ARM 8.4.3, the base class must be accessible if a temp
+/* is not to be created (and that's what this particular test is for).
+/* It says nothing about requiring the base class to be unambiguous,
+/* and indeed cfront reports an ambiguous base as an error rather than
+/* proceed to look for a possible user-defined conversion.
+/* -------------------------------------------------------------------------*/
+
+IS_TD_BASE_CLASS_OF: procedure (L_TYPE, R_TYPE)
+		     returns   (type (BOOL_T))
+		     external  (X_IS_TD_BASE_CLASS_OF);
+	declare	
+		L_TYPE		type (TYPE_DATA_T),
+		R_TYPE		type (TYPE_DATA_T);
+	declare	
+		RETCODE		type (BOOL_T),
+		IS_AMBIGUOUS	type (BOOL_T),
+		IS_INACCESSIBLE	type (BOOL_T),
+		IS_VIRTUAL	type (BOOL_T);
+ 
+	if   IS_AGGREGATE_TAG_TYPE (rank (L_TYPE.TYPE_CODE))
+	   & IS_AGGREGATE_TAG_TYPE (rank (R_TYPE.TYPE_CODE)) then do;
+		RETCODE = IS_BASE_CLASS_OF (L_TYPE.TAG_SYMBOL,
+					    R_TYPE.TAG_SYMBOL,
+					    IS_AMBIGUOUS,
+					    IS_INACCESSIBLE,
+					    IS_VIRTUAL);
+
+		return (RETCODE & ^IS_INACCESSIBLE);
+	end;
+ 
+	return (FALSE);
+
+end IS_TD_BASE_CLASS_OF;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_CLASSES
+/*
+/* If the expression (rvalue) represented by the given value RV may be
+/* converted to the class, struct, or union type represented by the given
+/* type-info (lvalue) LTI by initialization, then return TRUE, otherwise
+/* emit appropriate diagnostic (i.e. something about incompatible class,
+/* struct, or union types in an initialization), and return FALSE.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_CLASSES: procedure (LTI, RV, ERROR, VOP)
+		    returns (type (SHORT_T))
+		    external (X_COMPATIBLE_CLASSES);
+	declare
+		LTI		type (TYPE_INFO_T),
+		RV		type (CXX_VID_T),
+		ERROR		type (BOOL_T),
+		VOP		type (SHORT_T);
+	declare
+		(LC, RC)	type (NID_T);
+
+	/* See if the left is a class, struct, or union type */
+
+	if ^IS_AGGREGATE_TAG_TYPE (rank (LTI.TOP_TYPE.CODE)) then do;
+		ERROR = FALSE;
+		return (FALSE);
+	end;
+
+	/* See if the right is a class, struct, or union type */
+
+	if ^IS_AGGREGATE_TAG_TYPE
+	    (rank (RV->CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+		ERROR = FALSE;
+		return (FALSE);
+	end;
+
+	LC = LTI.TOP_TYPE.TAG_SYMBOL;
+	RC = RV->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+
+	/*
+	/* Here, both left and right are class types;
+	/* check for exact compatibility.
+	/**/
+
+	if LC = RC then
+		return (TRUE);
+
+	/*
+	/* Here, both left and right are different class types.
+	/**/
+
+	if VOP = ARG_VO then do;
+		if CURRENT_FUNCTION_BEING_CALLED = NULL_NID then
+			call SEMANTIC_ERROR_III
+			     (ERR_CLASS_ARG,
+			      trim (char (CURRENT_ARGUMENT_NUMBER)),
+			      QUALIFIED_SYMBOL_TYPE_NAME (LC),
+			      QUALIFIED_SYMBOL_TYPE_NAME (RC));
+		else	call SEMANTIC_ERROR_IIII
+			     (ERR_CLASS_FUN_ARG,
+			      trim (char (CURRENT_ARGUMENT_NUMBER)),
+			      QUALIFIED_SYMBOL_TYPE_NAME (LC),
+			      QUALIFIED_SYMBOL_TYPE_NAME (RC),
+			      COMPLETE_QUALIFIED_SYMBOL_NAME
+			      (CURRENT_FUNCTION_BEING_CALLED));
+	end;
+	else call SEMANTIC_ERROR_II
+		  (ERR_CONVERT_CLASS,
+		   QUALIFIED_SYMBOL_TYPE_NAME (LC),
+		   QUALIFIED_SYMBOL_TYPE_NAME (RC));
+
+	ERROR = TRUE;
+	return (FALSE);
+
+end COMPATIBLE_CLASSES;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_POINTERS
+/*
+/* If the types of the two given value-nodes, which are *assumed* to
+/* represent pointer types, are compatible, then TRUE will be returned,
+/* otherwise an appropriate diagnostic message will be emitted (i.e.
+/* something about incompatible pointers types in an expression), and
+/* FALSE will be returned.  Preserves current-node-id.
+/*
+/* Note that a full compatibility check will be performed, *except*
+/* that the top *two* level of type qualifiers will be ignored; i.e.
+/* type qualifiers corresponding to the pointer type itself, and type
+/* qualifiers of the type to which the pointer refers will ignored.
+/*
+/* N.B. this routine replaces COMPATIBLE_UNQUALIFIED_POINTERS.
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_POINTERS: procedure (LV, RV, VOP)
+		     returns   (type (BOOL_T))
+		     external  (X_COMPATIBLE_POINTERS);
+	declare
+		(LV, RV)	type (CXX_VID_T),
+		VOP		type (SHORT_T);
+	declare
+		(LTI, RTI)	type (TYPE_INFO_T);
+
+	CXX_VALUE_NODE_PTR = LV; call GET_VALUE_TYPE (LTI);
+	CXX_VALUE_NODE_PTR = RV; call GET_VALUE_TYPE (RTI);
+
+	if ^COMPATIBLE_SPECIAL_TYPE_INFO
+	    (LTI, IGNORE_TOP_TWO_QUALIFIERS_TCM,
+	     RTI, IGNORE_TOP_TWO_QUALIFIERS_TCM) then do;
+		call INCOMPATIBLE_POINTER_ERROR (VOP, LTI, RTI);
+		return (FALSE);
+	end;
+
+	return (TRUE);
+		
+end COMPATIBLE_POINTERS;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_RELATIONAL_POINTERS
+/*
+/* If the *pointer* expression represented by the given value LV may be
+/* compared for (in)equality with the expression represented by the given
+/* value RV, the return TRUE, otherwise emit an appropriate diagnostic &
+/* return FALSE.  If a comparison may be made but requires a conversion
+/* (i.e. derived class pointer to base class pointer), then the conversion
+/* will be performed on LV or RV appropriately.  It is assumed that the
+/* information describing operand LV of the comparison is a pointer.  If
+/* the given EQUALITY flag is TRUE then these operands are of an equality
+/* (rather than inequality) operation.  Implicit pointer conversions
+/* (i.e.  derived to base class pointers) will be done if necessary.
+/*
+/* Trashes current-node-id and current-value-node-id.
+/*
+/* ---------------------------------------------------------------------
+/* Relational operator constraints; one of the following shall hold:
+/*
+/* - both operands are pointers to qualified or unqualified
+/*   versions or compatible object types.
+/* - both operands are pointers to qualified or unqualified
+/*   versions of compatible incomplete types.
+/*
+/* Equality operator constraints; one of the following shall hold:
+/* - both operands are pointers to qualified or unqualified
+/*   versions of compatible types.
+/* - one operand is a is a pointer to an object or incomplete type and the
+/*   other is a pointer to a qualified or unqualified version of "void".
+/* - one operand is a pointer and the other is a null pointer constant.
+/*
+/* Member pointer constraints; one of the following shall hold:
+/*    - one operand is a pointer and the other is a null pointer constant.
+/*    - both operands are non-member pointers
+/*    - both operands are pointers to members of the same class
+/*    - both operands are pointers to members of different classes
+/*      and one class is a base of the other (this function will report
+/*      ambiguity and access errors, but they will not be reflected
+/*      in the true/false result)
+/*
+/* See ANSI-C, section 3.3.9.
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_RELATIONAL_POINTERS: procedure (LV, RV, VOP)
+                                returns   (type (BOOL_T))
+				external  (X_COMPATIBLE_RELATIONAL_POINTERS);
+	declare
+		(LV, RV)	type (CXX_VID_T),
+		VOP		type (SHORT_T);
+	declare
+		(LTI, RTI)	type (TYPE_INFO_T),
+		(SLTI, SRTI)	type (TYPE_INFO_T),
+		(LSYM, RSYM)	type (NID_T);
+
+	/* See if these are pointers to overloaded functions */
+
+	if IS_OVERLOADED_VALUE (LV, LSYM) |
+	   IS_OVERLOADED_VALUE (RV, RSYM) then do;
+		/*
+		/* Error;  address of overloaded function.
+		/**/
+		call SEMANTIC_ERROR (ERR_OVLD_FUN_PTR);
+		return (FALSE);
+	end;
+	else do;
+		if LSYM ^= NULL_NID then
+			call NOTE_SYMBOL_REFERENCE (LSYM);
+		if RSYM ^= NULL_NID then
+			call NOTE_SYMBOL_REFERENCE (RSYM);
+	end;
+
+	/* Resolve member references. */
+		
+	if rank (LV->CXX_VALUE_NODE.TOP_TYPE.CODE) = MEMBER_POINTER_DT then
+		call RESOLVE_MEMBER_REFERENCE (LV);
+	if rank (RV->CXX_VALUE_NODE.TOP_TYPE.CODE) = MEMBER_POINTER_DT then
+		call RESOLVE_MEMBER_REFERENCE (RV);
+
+	/* Get the type of the right value */
+
+	CXX_VALUE_NODE_PTR = RV; call GET_VALUE_TYPE (RTI);
+
+	/* See if the right is not a pointer; the left is *assumed* to be */
+
+	if (RTI.TOP_TYPE.CODE ^= byte (MEMBER_POINTER_DT)) &
+	   (RTI.TOP_TYPE.CODE ^= byte (POINTER_DT)) then do;
+		CXX_VALUE_NODE_PTR = LV;
+		call GET_VALUE_TYPE (LTI);
+		if (VOP = EQ_VO) | (VOP = NE_VO) then do;
+			if IS_NULL_POINTER_CONSTANT (RV) then do;
+				RV = GENERAL_CONVERT_VALUE (RV, LTI, VOP);
+				return (TRUE);
+			end;
+		end;
+		TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS;
+		call INCOMPATIBLE_POINTER_ERROR (VOP, LTI, RTI);
+		if IS_INTEGRAL_TYPE (rank (RV->CXX_VALUE_NODE.TOP_TYPE.CODE))
+		then	RV = GENERAL_CONVERT_VALUE (RV, LTI, VOP);
+		return (FALSE);
+	end;
+
+	/*
+	/* Here, both left and right are pointers.
+	/*
+	/* If (at least) one is a void pointer and this is an
+	/* equality operation, then the pointers are compatible.
+	/**/
+
+	CXX_VALUE_NODE_PTR = LV; call GET_VALUE_TYPE (LTI);
+
+	if (VOP = EQ_VO) | (VOP = NE_VO) then do;
+		if IS_GENERIC_POINTER (RTI) | IS_GENERIC_POINTER (LTI) then
+			goto VERIFY_MEMBERSHIP;
+	end;
+
+	/*
+	/* See if these are pointers to related classes, and
+	/* if so, perform the necessary implicit conversions.
+	/**/
+
+	if COMPATIBLE_CLASS_POINTERS () then
+		goto VERIFY_MEMBERSHIP;
+
+	/* See if these are compatible pointers */
+
+	SLTI = LTI;
+	SRTI = RTI;
+	call STRIP_TOP_TYPE (SLTI, FALSE);
+	call STRIP_TOP_TYPE (SRTI, FALSE);
+	if ^COMPATIBLE_SPECIAL_TYPE_INFO
+	    (SLTI, IGNORE_TOP_QUALIFIERS_TCM,
+	     SRTI, IGNORE_TOP_QUALIFIERS_TCM) then do;
+		call INCOMPATIBLE_POINTER_ERROR (VOP, LTI, RTI);
+		return (FALSE);
+	end;
+
+	VERIFY_MEMBERSHIP:
+
+	if   rank (RTI.TYPE_CODE) = POINTER_DT
+	   & rank (LTI.TYPE_CODE) = POINTER_DT then
+		return (TRUE);
+
+	if   rank (RTI.TYPE_CODE) = POINTER_DT
+	   | rank (LTI.TYPE_CODE) = POINTER_DT then do;
+		call SEMANTIC_ERROR (ERR_MBR_PTR_COMPARE_PTR);
+		return (FALSE);
+	end;
+	
+	/* Both operands are member pointers. */
+	if   rank (RTI.TYPE_CODE) ^= MEMBER_POINTER_DT
+	   | rank (LTI.TYPE_CODE) ^= MEMBER_POINTER_DT then do;
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		return (FALSE);
+	end;
+
+	/*
+	/* See if these are pointers to members of related classes, and
+	/* if so, perform the necessary implicit conversions.
+	/**/
+
+	if COMPATIBLE_MEMBER_POINTERS (LV, LTI, RV, RTI) then
+		return (TRUE);
+
+	call SEMANTIC_ERROR_II (ERR_MBR_PTR_COMPARE,
+		SYMBOL_NAME (LTI.TAG_SYMBOL),
+		SYMBOL_NAME (RTI.TAG_SYMBOL));
+
+	return (FALSE);
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_CLASS_POINTERS
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_CLASS_POINTERS: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		CTI		type (TYPE_INFO_T),
+		(LTT, RTT)	type (TYPE_DATA_T),
+		(LC, RC)	type (NID_T);
+
+	/* --------------------------------------------------------------
+	/* N.B. upon entry it is *assumed* that LV and RV are value-node
+	/* ids representing the left and right *pointer* expressions in
+	/* a relational expression, and LTI and RTI are their corresponding
+	/* type-info structures.
+	/* ------------------------------------------------------------ */
+
+	/* It is *assumed* that LTI and RTI both represent pointer types */
+
+	call GET_TOP_LEVEL_TYPE_INFO (LTI, 1, LTT);
+
+	if ^IS_AGGREGATE_TAG_TYPE (rank (LTT.CODE)) then
+		return (FALSE);
+
+	/* Here, LTI is a pointer to a class */
+
+	call GET_TOP_LEVEL_TYPE_INFO (RTI, 1, RTT);
+
+	if ^IS_AGGREGATE_TAG_TYPE (rank (RTT.CODE)) then
+		return (FALSE);
+
+	/*
+	/* Here, both LTI and RTI are both pointers to classes.
+	/* See if one is a base class of the other, and if
+	/* so, do the appropriate derived-to-base conversion.
+	/**/
+
+	LC = LTT.TAG_SYMBOL; RC = RTT.TAG_SYMBOL;
+
+	if LC = RC then
+		return (TRUE);
+
+	/* See if LC is a base class of RC and convert R to LTI if so */
+
+	if IS_ANY_BASE_CLASS_OF (LC, RC) then do;
+		call COMMON_TYPE_INFO (LTI, RTI, CTI);
+		RV = GENERAL_CONVERT_VALUE (RV, CTI, EQ_VO);
+		RTI = CTI;
+		return (TRUE);
+	end;
+
+	/* See if RC is a base class of LC and convert L to RTI if so */
+
+	else if IS_ANY_BASE_CLASS_OF (RC, LC) then do;
+		call COMMON_TYPE_INFO (RTI, LTI, CTI);
+		LV = GENERAL_CONVERT_VALUE (LV, CTI, EQ_VO);
+		LTI = CTI;
+		return (TRUE);
+	end;
+
+	/* Here, both are pointers to unrelated classes; not compatible */
+
+	return (FALSE);
+
+end COMPATIBLE_CLASS_POINTERS;
+
+/* ---------------------------------------------------------------------
+ * COMMON_TYPE_INFO
+ *
+ * FROM_TYPE is a pointer type to a derived type of TO_TYPE, but it
+ * points to a type with some extra qualifiers.  Find COMMON_TYPE, which
+ * points to the same as TO_TYPE, has the same qualifiers and points
+ * to member of same class (if any) as FROM_TYPE.
+ * ------------------------------------------------------------------- */
+
+COMMON_TYPE_INFO: procedure (TO_TYPE, FROM_TYPE, COMMON_TYPE)
+		  internal;
+
+	declare
+		TO_TYPE		type (TYPE_INFO_T),
+		FROM_TYPE	type (TYPE_INFO_T),
+		COMMON_TYPE	type (TYPE_INFO_T);
+	declare
+		FROM_TYPE_DATA	type (TYPE_DATA_T),
+		TO_TYPE_DATA	type (TYPE_DATA_T),
+		TYPE_ID		type (NID_T);
+
+	call GET_TOP_LEVEL_TYPE_INFO (FROM_TYPE, 1, FROM_TYPE_DATA);
+	call GET_TOP_LEVEL_TYPE_INFO (TO_TYPE, 1, TO_TYPE_DATA);
+
+	/* Check for case in which the COMMON_TYPE is same as TO_TYPE. */
+	if   ( ( rank (FROM_TYPE.TYPE_CODE) = POINTER_DT
+	       & rank (TO_TYPE.TYPE_CODE) = POINTER_DT )
+	     | ( rank (FROM_TYPE.TYPE_CODE) = MEMBER_POINTER_DT
+	       & rank (TO_TYPE.TYPE_CODE) = MEMBER_POINTER_DT
+	       & TO_TYPE.TAG_SYMBOL = FROM_TYPE.TAG_SYMBOL ) )
+           & FROM_TYPE_DATA.QUALIFIERS = TO_TYPE_DATA.QUALIFIERS then do;
+		COMMON_TYPE = TO_TYPE;
+		return;
+	end;
+
+	/* Manufacture a new type info structure for the combined type. */
+	TYPE_ID = DIRECT_TYPE_ID (FROM_TYPE);
+	TO_TYPE_DATA.QUALIFIERS = FROM_TYPE_DATA.QUALIFIERS;
+	TYPE_ID = MODIFY_TYPE_LEVEL (TYPE_ID, 1, TO_TYPE_DATA);
+	call SET_TYPE_NODE_R (TYPE_ID);
+	call GET_TYPE_NODE_TYPE (COMMON_TYPE);
+
+end COMMON_TYPE_INFO;
+
+end COMPATIBLE_RELATIONAL_POINTERS;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_CONDITIONAL_POINTERS
+/*
+/* If the expressions represented by the given values LV and RV, which
+/* are assumed to represent the left and right sides of the alternative
+/* of a conditional expression, are compatible pointer types, then set
+/* the type of the expression represented by the given value V to be the
+/* composite type of the types of LV and RV, and return TRUE.
+/*
+/* Otherwise, if they are incompatible pointer types, then emit an
+/* appropriate diagnostic (i.e. something about incompatible pointer
+/* types in a conditional expression), set the ERROR flag TRUE, and
+/* return FALSE.
+/*
+/* Otherwise, if neither of the values are pointer types, then set
+/* the ERROR flag FALSE, and return FALSE.
+/*
+/* Preserves current-node-id.
+/* ---------------------------------------------------------------------
+/* Conditional operator constraints; one of the following shall hold:
+/*
+/* - both operands are pointers to qualified or unqualified versions or
+/*   compatible types.
+/* - one operand is a pointer and the other is a null pointer constant.
+/* - one operand is a pointer to an object or incomplete type and the
+/*   other is a pointer to a qualified or unqualified version of "void".
+/*
+/* See ANSI-C, section 3.3.15.
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_CONDITIONAL_POINTERS: procedure (LV, RV, V, ERROR)
+				 returns (type (BOOL_T))
+				 external (X_COMPATIBLE_COND_POINTERS);
+	declare
+		(LV, RV, V)		type (CXX_VID_T),
+		ERROR			type (BOOL_T);
+	declare
+		L_IS_NULL_POINTER	type (BOOL_T),
+		R_IS_NULL_POINTER	type (BOOL_T),
+		(LTI, RTI)		type (TYPE_INFO_T),
+		(SLTI, SRTI)		type (TYPE_INFO_T),
+		RESULT_TI		type (TYPE_INFO_T),
+		(LSYM, RSYM)		type (NID_T);
+
+	/* See if neither are pointers (not compatible, but not an error) */
+
+	if (LV->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (POINTER_DT)) &
+	   (RV->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (POINTER_DT)) &
+	   (LV->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (MEMBER_POINTER_DT)) &
+	   (RV->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (MEMBER_POINTER_DT))
+	then do;
+		ERROR = FALSE;
+		return (FALSE);
+	end;
+	else	ERROR = TRUE;
+
+	/* See if these are pointers to overloaded functions */
+
+	if IS_OVERLOADED_VALUE (LV, LSYM) |
+	   IS_OVERLOADED_VALUE (RV, RSYM) then do;
+		/*
+		/* Error;  address of overloaded function
+		/**/
+		call SEMANTIC_ERROR (ERR_OVLD_FUN_PTR);
+		ERROR = TRUE;
+	end;
+	else do;
+		if LSYM ^= NULL_NID then
+			call NOTE_SYMBOL_REFERENCE (LSYM);
+		if RSYM ^= NULL_NID then
+			call NOTE_SYMBOL_REFERENCE (RSYM);
+	end;
+
+	/* Get the type information for the left of the alternative */
+
+	L_IS_NULL_POINTER = IS_NULL_POINTER_CONSTANT (LV);
+	CXX_VALUE_NODE_PTR = LV; call GET_VALUE_TYPE (LTI);
+
+	/* Get the type information for the right of the alternative */
+
+	R_IS_NULL_POINTER = IS_NULL_POINTER_CONSTANT (RV);
+	CXX_VALUE_NODE_PTR = RV; call GET_VALUE_TYPE (RTI);
+
+	/* Check for member-pointers */
+		
+	if LTI.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT) then do;
+		if RTI.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT) then do;
+			/*
+			/* Here, both the left and right
+			/* are member pointer types.
+			/* Resolve member references and
+			/* make sure they're compatible types.
+			/**/
+			call RESOLVE_MEMBER_REFERENCE (LV);
+			call RESOLVE_MEMBER_REFERENCE (RV);
+			if ^COMPATIBLE_MEMBER_POINTERS (LV, LTI, RV, RTI)
+			then do;
+				call SEMANTIC_ERROR_II
+				     (ERR_MEMPTR_MEMPTR_CONDITIONAL,
+				      TYPE_INFO_NAME (LTI),
+				      TYPE_INFO_NAME (RTI));
+				return (FALSE);
+			end;
+		end;
+		else if R_IS_NULL_POINTER then do;
+			/*
+			/* Here, the left is a member pointer
+			/* and the right is a null pointer constant.
+			/**/
+			RV = GENERAL_CONVERT_VALUE (RV, LTI, CONDITIONAL_VO);
+		end;
+		else do;
+			/*
+			/* Here, the left is a member
+			/* pointer and the right is not.
+			/**/
+			call SEMANTIC_ERROR_II
+			     (ERR_MEMPTR_MEMPTR_CONDITIONAL,
+			      TYPE_INFO_NAME (LTI),
+			      TYPE_INFO_NAME (RTI));
+			return (FALSE);
+		end;
+		CXX_VALUE_NODE_PTR = V;
+		call SET_VALUE_TYPE (LTI);
+		return (TRUE);
+	end;
+	else if RTI.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT) then do;
+		/*
+		/* Here, the right is a member
+		/* pointer and the left is not.
+		/**/
+		if L_IS_NULL_POINTER then do;
+			/*
+			/* Here, the right is member pointer and
+			/* the left is a null pointer constant.
+			/**/
+			LV = GENERAL_CONVERT_VALUE (LV, RTI, CONDITIONAL_VO);
+		end;
+		else do;
+			call SEMANTIC_ERROR_II
+			     (ERR_MEMPTR_MEMPTR_CONDITIONAL,
+			      TYPE_INFO_NAME (LTI),
+			      TYPE_INFO_NAME (RTI));
+			return (FALSE);
+		end;
+		CXX_VALUE_NODE_PTR = V;
+		call SET_VALUE_TYPE (RTI);
+		return (TRUE);
+	end;
+
+	/*
+	/* Here, at least one operand is a pointer.  If the
+	/* other one is not, then make sure it's an integral
+	/* constant zero (i.e. null pointer constant).
+	/**/
+
+	if LTI.TOP_TYPE.CODE ^= byte (POINTER_DT) then do;
+		if ^L_IS_NULL_POINTER then do;
+			TYPE_COMPATIBILITY_STATUS =
+				INCOMPATIBLE_NON_PTR_PTR_TCS;
+			call INCOMPATIBLE_POINTER_ERROR
+			     (CONDITIONAL_VO, LTI, RTI);
+			return (FALSE);
+		end;
+		goto COMPATIBLE_NULL_POINTER;
+	end;
+	else if RTI.TOP_TYPE.CODE ^= byte (POINTER_DT) then do;
+		if ^R_IS_NULL_POINTER then do;
+			TYPE_COMPATIBILITY_STATUS =
+				INCOMPATIBLE_NON_PTR_PTR_TCS;
+			call INCOMPATIBLE_POINTER_ERROR
+			     (CONDITIONAL_VO, LTI, RTI);
+			return (FALSE);
+		end;
+		goto COMPATIBLE_NULL_POINTER;
+	end;
+
+	/* Here, both are pointers, see if one is a void pointer */
+
+	if IS_GENERIC_POINTER (LTI) then
+		RESULT_TI = LTI;
+	else if IS_GENERIC_POINTER (RTI) then
+		RESULT_TI = RTI;
+
+	/* Here, neither pointers are to void; check for compatibiltiy */
+
+	else do;
+		if ^COMPATIBLE_SPECIAL_TYPE_INFO
+			 (LTI, IGNORE_TOP_TWO_QUALIFIERS_TCM,
+			  RTI, IGNORE_TOP_TWO_QUALIFIERS_TCM) then do;
+			SLTI = LTI;
+			call STRIP_TOP_TYPE (SLTI, FALSE);
+			if IS_AGGREGATE_TAG_TYPE (rank (SLTI.TOP_TYPE.CODE))
+			then do;
+				SRTI = RTI;
+				call STRIP_TOP_TYPE (SRTI, FALSE);
+				if IS_AGGREGATE_TAG_TYPE
+				   (rank (SRTI.TOP_TYPE.CODE))
+				then do;
+					if IS_ANY_BASE_CLASS_OF
+					   (SLTI.TOP_TYPE.TAG_SYMBOL,
+					    SRTI.TOP_TYPE.TAG_SYMBOL)
+					then do;
+						RESULT_TI = LTI;
+						goto MERGE_COMPATIBLE_POINTERS;
+					end;
+					else if IS_ANY_BASE_CLASS_OF
+						(SRTI.TOP_TYPE.TAG_SYMBOL,
+						 SLTI.TOP_TYPE.TAG_SYMBOL)
+					then do;
+						RESULT_TI = RTI;
+						goto MERGE_COMPATIBLE_POINTERS;
+					end;
+				end;
+			end;
+			call INCOMPATIBLE_POINTER_ERROR
+			     (CONDITIONAL_VO, LTI, RTI);
+			goto COMPATIBLE_NULL_POINTER;
+		end;
+		call MAKE_COMPOSITE_TYPE (LTI, RTI, RESULT_TI);
+	end;
+
+	MERGE_COMPATIBLE_POINTERS:
+
+	/*
+	/* Make sure the type pointed to by the result has the
+	/* type-qualifiers of the types pointed to by both operands.
+	/**/
+
+	call MERGE_POINTED_TO_TYPE_QUALIFIERS  (LTI, RTI, RESULT_TI);
+
+	/* Finally, set the type of V to the result type */
+
+	CXX_VALUE_NODE_PTR = V; call SET_VALUE_TYPE (RESULT_TI);
+	return (TRUE);
+
+	COMPATIBLE_NULL_POINTER:
+
+	/*
+	/* If one of the operands was a null pointer constant, then
+	/* the type qualifiers of the result are correct; done.
+	/**/
+
+	CXX_VALUE_NODE_PTR = V;
+	if L_IS_NULL_POINTER then
+		call SET_VALUE_TYPE (RTI);
+	else	call SET_VALUE_TYPE (LTI);
+	return (TRUE);
+
+end COMPATIBLE_CONDITIONAL_POINTERS;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_CONDITIONAL_CLASSES
+/*
+/* If the expressions represented by the given values LV and RV, which
+/* are assumed to represent the left and right sides of the alternative
+/* of a conditional expression, are compatible class, struct, or union
+/* types, the return TRUE.
+/*
+/* Otherwise, if they are incompatible class, struct, or union types,
+/* then emit an appropriate diagnostic (i.e. something about incompatible
+/* class types in a conditional expression), set the ERROR flag TRUE, and
+/* return FALSE.
+/*
+/* Otherwise, if neither of the values are class, struct, or union types,
+/* then set the ERROR flag FALSE, and return FALSE.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_CONDITIONAL_CLASSES: procedure (LV, RV, ERROR) 
+				returns (type (SHORT_T))
+				external (X_COMPATIBLE_CONDITIONAL_CLASSES);
+	declare
+		(LV, RV)	type (CXX_VID_T),
+		ERROR		type (BOOL_T);
+	declare
+		LTT		type (TYPE_DATA_T);
+
+	/* See if the left is a class, struct, or union type */
+
+	if ^IS_AGGREGATE_TAG_TYPE
+	    (rank (LV->CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+		ERROR = FALSE;
+		return (FALSE);
+	end;
+
+	LTT = LV->CXX_VALUE_NODE.TOP_TYPE;
+
+	/* See if the right is a class, struct, or union type */
+
+	if ^IS_AGGREGATE_TAG_TYPE
+	    (rank (RV->CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+		ERROR = FALSE;
+		return (FALSE);
+	end;
+
+	/* Check for type compatibility */
+
+	if (LTT.CODE ^= RV->CXX_VALUE_NODE.TOP_TYPE.CODE) |
+	   (LTT.TAG_SYMBOL ^= RV->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL) then do;
+		call SEMANTIC_ERROR (ERR_ILLEGAL_STRUCT_COND);
+		ERROR = TRUE;
+		return (FALSE);
+	end;
+
+	return (TRUE);
+
+end COMPATIBLE_CONDITIONAL_CLASSES;
+
+/* ---------------------------------------------------------------------
+/* IDENTICAL_CONDITIONAL_LVALUES
+/*
+/* If the expressions represented by the given value-node ids LV and RV,
+/* which are assumed to represent the left and right sides of the alternative
+/* of a conditional expression, are identical (i.e. are lvalues of the same
+/* type -- that's the description given in the C++ARM, sec.5.16; we take this
+/* to mean that the types are qualified or unqualified versions of compatible
+/* types), then return TRUE and set the type of the expression represented by
+/* the value-node id V to be the resultant type of the conditional, otherwise
+/*  return FALSE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+IDENTICAL_CONDITIONAL_LVALUES: procedure (LV, RV, V)
+			       returns (type (BOOL_T))
+			       external (X_IDENTICAL_CONDITIONAL_LVALUES);
+	declare
+		(LV, RV, V)	type (CXX_VID_T);
+	declare
+		(LTI, RTI, TI)	type (TYPE_INFO_T),
+		L_IS_REFERENCE	type (BOOL_T),
+		R_IS_REFERENCE	type (BOOL_T);
+
+	/* Get the type information for the left operand */
+
+	if LV->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (REFERENCE_DT) then
+		L_IS_REFERENCE = TRUE;
+	else if LV->CXX_VALUE_NODE.OP ^= VALUE_VO then
+		return (FALSE);
+	else if LV->CXX_VALUE_NODE.NOT_AN_LVALUE then
+		return (FALSE);
+	else	L_IS_REFERENCE = FALSE;
+
+	CXX_VALUE_NODE_PTR = LV; call GET_VALUE_TYPE (LTI);
+
+	/* Get the type information for the right operand */
+
+	if RV->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (REFERENCE_DT) then
+		R_IS_REFERENCE = TRUE;
+	else if RV->CXX_VALUE_NODE.OP ^= VALUE_VO then
+		return (FALSE);
+	else if RV->CXX_VALUE_NODE.NOT_AN_LVALUE then
+		return (FALSE);
+	else	R_IS_REFERENCE = FALSE;
+
+	/* Here, both LV and RV are lvalues */
+
+	CXX_VALUE_NODE_PTR = RV; call GET_VALUE_TYPE (RTI);
+
+	/* Get rid of the reference types */
+
+	if L_IS_REFERENCE then
+		call STRIP_TOP_TYPE (LTI, TRUE);
+	if R_IS_REFERENCE then
+		call STRIP_TOP_TYPE (RTI, TRUE);
+
+	/* Check for type compatibility ignoring the top type qualifiers */
+
+	if ^COMPATIBLE_SPECIAL_TYPE_INFO
+	    (LTI, IGNORE_TOP_QUALIFIERS_TCM,
+	     RTI, IGNORE_TOP_QUALIFIERS_TCM) then
+		  return (FALSE);
+
+	/*
+	/* Now, merge the top type qualifiers of the left and right
+	/* operands of the alternative, and set the result top type
+	/* qualifier; this is not explicitly stated in the C++ARM,
+	/* but it seems to make very good sense to PKT and DGM.
+	/**/
+
+	if (LTI.TOP_TYPE.CODE = byte (POINTER_DT)) &
+	   (RTI.TOP_TYPE.CODE = byte (POINTER_DT)) then
+		call MAKE_COMPOSITE_TYPE (LTI, RTI, TI);
+	else	TI = LTI;
+
+	call MERGE_TOP_TYPE_QUALIFIERS (LTI, RTI, TI);
+	CXX_VALUE_NODE_PTR = V; call SET_VALUE_TYPE (TI);
+
+	return (TRUE);
+
+end IDENTICAL_CONDITIONAL_LVALUES;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_MEMBER_POINTERS
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_MEMBER_POINTERS: procedure (LV, LTI, RV, RTI)
+			    returns   (type (BOOL_T))
+			    internal;
+	declare
+		LV		type (CXX_VID_T),
+		LTI		type (TYPE_INFO_T),
+		RV		type (CXX_VID_T),
+		RTI		type (TYPE_INFO_T);
+	declare
+		CTI		type (TYPE_INFO_T),
+		(LC, RC)	type (NID_T);
+
+	/* --------------------------------------------------------------
+	/* N.B. upon entry it is *assumed* that LV and RV are value-node
+	/* ids representing the left and right *member pointer* expressions in
+	/* a relational expression, and LTI and RTI are their corresponding
+	/* type-info structures.
+	/* ------------------------------------------------------------ */
+
+	/*
+	/* Here, both LTI and RTI are member pointers.  See if
+	/* the one's member pointer class is a base class of the other's, 
+	/* and if so, do the appropriate derived-to-base conversion.
+	/**/
+
+	LC = LTI.TAG_SYMBOL; RC = RTI.TAG_SYMBOL;
+
+	if LC = RC then
+		return (TRUE);
+
+	/* See if LC is a base class of RC and convert L to RTI if so */
+
+	if IS_ANY_BASE_CLASS_OF (LC, RC) then do;
+		CTI = LTI;
+		CTI.TAG_SYMBOL = RTI.TAG_SYMBOL;
+		CTI.TYPE = MODIFY_TYPE_LEVEL (CTI.TYPE, 
+			   		      CTI.DERIVED_TYPE_SKIP, 
+					      CTI.TOP_TYPE);
+		LV = GENERAL_CONVERT_VALUE (LV, CTI, EQ_VO);
+		LTI = CTI;
+		return (TRUE);
+	end;
+
+	/* See if RC is a base class of LC and convert R to LTI if so */
+
+	else if IS_ANY_BASE_CLASS_OF (RC, LC) then do;
+		CTI = RTI;
+		CTI.TAG_SYMBOL = LTI.TAG_SYMBOL;
+		CTI.TYPE = MODIFY_TYPE_LEVEL (CTI.TYPE, 
+			   		      CTI.DERIVED_TYPE_SKIP, 
+					      CTI.TOP_TYPE);
+		RV = GENERAL_CONVERT_VALUE (RV, CTI, EQ_VO);
+		RTI = CTI;
+		return (TRUE);
+	end;
+
+	/*
+	/* Here, both are pointers to members of unrelated classes; 
+	/* not compatible 
+	/**/
+
+	return (FALSE);
+
+end COMPATIBLE_MEMBER_POINTERS;
+
+/* ---------------------------------------------------------------------
+/* RESOLVE_MEMBER_REFERENCE
+/*
+/* Do the equivalent of VALUE_OF to the operand, which is a
+/* member function reference.
+/* VALUE_OF hasn't done the trick because it does nothing
+/* to member function references.
+/* Come here only if the function overloading is already resolved.
+/* ------------------------------------------------------------------- */
+
+RESOLVE_MEMBER_REFERENCE: procedure (VALUE)
+			  internal;
+
+	declare
+		VALUE		type (CXX_VID_T);
+	declare
+		(V1, V2)	type (CXX_VID_T);
+
+	call DETACH_COMMA (VALUE, V1, V2);
+	if CXX_VALUE_NODE.OP = MEMBER_REF_VO then
+		VALUE = DEREFERENCE_MEMBER (VALUE, FALSE);
+	call REATTACH_COMMA (VALUE, V1, V2);
+
+end RESOLVE_MEMBER_REFERENCE;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_TYPE_INFO
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_TYPE_INFO: procedure (LTI, RTI)
+		      returns   (type (BOOL_T))
+		      external  (X_COMPATIBLE_TYPE_INFO);
+	declare
+		(LTI, RTI)	type (TYPE_INFO_T);
+	declare
+		(LTCM, RTCM)	type (TCM_T);
+
+	if LTI.EXTRA_PTR_LEVEL then
+		LTCM = EXTRA_POINTER_TCM;
+	else	LTCM = DEFAULT_TCM;
+	if RTI.EXTRA_PTR_LEVEL then
+		RTCM = EXTRA_POINTER_TCM;
+	else	RTCM = DEFAULT_TCM;
+
+	return (COMPATIBLE_ANY_SPECIAL_TYPES (LTI.TYPE,
+					      LTI.DERIVED_TYPE_SKIP,
+					      LTCM,
+					      RTI.TYPE,
+					      RTI.DERIVED_TYPE_SKIP,
+					      RTCM));
+end COMPATIBLE_TYPE_INFO;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_SPECIAL_TYPE_INFO
+/* ------------------------------------------------------------------- */
+
+COMPATIBLE_SPECIAL_TYPE_INFO: procedure (LTI, LTI_TCM, RTI, RTI_TCM)
+			      returns   (type (BOOL_T))
+			      external  (X_COMPATIBLE_SPECIAL_TYPE_INFO);
+	declare
+		LTI		type (TYPE_INFO_T),
+		LTI_TCM		type (TCM_T),
+		RTI		type (TYPE_INFO_T),
+		RTI_TCM		type (TCM_T);
+	declare
+		(LTCM, RTCM)	type (TCM_T);
+
+	LTCM = LTI_TCM; RTCM = RTI_TCM;
+
+	if LTI.EXTRA_PTR_LEVEL then do;
+		if (LTCM & EXTRA_POINTER_TCM) = EXTRA_POINTER_TCM then do;
+			LTI.TYPE = MODIFY_TYPE (LTI.TYPE,
+						LTI.DERIVED_TYPE_SKIP,
+						TRUE);
+			LTI.EXTRA_PTR_LEVEL = FALSE;
+			LTI.DERIVED_TYPE_SKIP = 0;
+			call GET_TOP_TYPE (LTI.TYPE, LTI.TOP_TYPE);
+		end;
+		else	LTCM = LTCM | EXTRA_POINTER_TCM;
+	end;
+	if RTI.EXTRA_PTR_LEVEL then do;
+		if (RTCM & EXTRA_POINTER_TCM) = EXTRA_POINTER_TCM then do;
+			RTI.TYPE = MODIFY_TYPE (RTI.TYPE,
+						RTI.DERIVED_TYPE_SKIP,
+						TRUE);
+			RTI.EXTRA_PTR_LEVEL = FALSE;
+			RTI.DERIVED_TYPE_SKIP = 0;
+			call GET_TOP_TYPE (RTI.TYPE, RTI.TOP_TYPE);
+		end;
+		else	RTCM = RTCM | EXTRA_POINTER_TCM;
+	end;
+
+	return (COMPATIBLE_ANY_SPECIAL_TYPES (LTI.TYPE,
+					      LTI.DERIVED_TYPE_SKIP,
+					      LTCM,
+					      RTI.TYPE,
+					      RTI.DERIVED_TYPE_SKIP,
+					      RTCM));
+end COMPATIBLE_SPECIAL_TYPE_INFO;
+
+/* ---------------------------------------------------------------------
+/* IS_GENERIC_POINTER
+/*
+/* Return TRUE if the base type is VOID_BT there is only one qualifier,
+/* and its type is POINTER_DT.  Argument A is the node_id of the type-node
+/* to be checked, and A_LEVEL is the current derived type index.
+/* Otherwise, return FALSE.  For strict ANSI-C, a generic pointer type
+/* is only "void *", but for compatibility we will allow "char *"
+/* if the appropriate command-line switch is specified.
+/* Note that there are no generic member pointers (note in ARM 5.4).
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+IS_GENERIC_POINTER: procedure (TI)
+		    returns   (type (BOOL_T))
+		    external  (X_IS_GENERIC_POINTER);
+
+	declare TI	type (TYPE_INFO_T);
+	declare TT	type (TYPE_DATA_T);
+
+	if (TI.TOP_TYPE.CODE ^= byte (POINTER_DT)) &
+	   (TI.TOP_TYPE.CODE ^= byte (REFERENCE_DT)) then
+		return (FALSE);
+
+	call GET_TOP_LEVEL_TYPE_INFO (TI, 1, TT);
+
+	if TT.CODE = byte (VOID_BT) then
+		return (TRUE);
+
+	if SW_X_CHAR_POINTER & (TT.CODE = byte (CHAR_BT)) then
+		return (TRUE);
+
+	return (FALSE);
+ 
+end IS_GENERIC_POINTER;
+
+/* ---------------------------------------------------------------------
+/* IS_NULL_POINTER_CONSTANT
+/*
+/* Returns TRUE if the CXX_VALUE_NODE node denoted by A is a null pointer
+/* constant which is not actually a pointer type, otherwise return FALSE.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+IS_NULL_POINTER_CONSTANT: procedure (V)
+			  returns   (type (BOOL_T))
+			  external  (X_IS_NULL_POINTER_CONSTANT);
+	
+	declare V type (CXX_VID_T);
+
+	if IS_INTEGRAL_TYPE (rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+		if V->CXX_VALUE_NODE.OP ^= INTEGER_VO then
+			return (FALSE);
+		else if V->CXX_VALUE_NODE.OFFSET ^= 0 then
+			return (FALSE);
+		else	return (TRUE);
+	end;
+	else	return (FALSE);
+
+end IS_NULL_POINTER_CONSTANT;
+
+/* ---------------------------------------------------------------------
+/* MERGE_TOP_TYPE_QUALIFIERS
+/*
+/* Set the top type qualifiers of the type represented by RESULT_TI,
+/* to the merged top type qualifiers of of the types represented by the
+/* LEFT_TI, RIGHT_TI, and RESULT_TI types.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MERGE_TOP_TYPE_QUALIFIERS: procedure (LEFT_TI, RIGHT_TI, RESULT_TI)
+			   internal;
+	declare
+		LEFT_TI		type (TYPE_INFO_T),
+		RIGHT_TI	type (TYPE_INFO_T),
+		RESULT_TI	type (TYPE_INFO_T);
+	declare
+		(LTQ, RTQ)	type (BYTE_BITS_T);
+
+	LTQ = LEFT_TI.TOP_TYPE.QUALIFIERS & ALL_TQ;
+	RTQ = RIGHT_TI.TOP_TYPE.QUALIFIERS & ALL_TQ;
+
+	if LTQ = RTQ then
+		return;
+
+	RESULT_TI.TOP_TYPE.QUALIFIERS = LTQ | RTQ |
+					RESULT_TI.TOP_TYPE.QUALIFIERS;
+
+	if ^RESULT_TI.EXTRA_PTR_LEVEL then
+		RESULT_TI.TYPE = MODIFY_TYPE_LEVEL
+				 (RESULT_TI.TYPE, 0, RESULT_TI.TOP_TYPE);
+
+end MERGE_TOP_TYPE_QUALIFIERS;
+
+/* ---------------------------------------------------------------------
+/* MERGE_POINTED_TO_TYPE_QUALIFIERS
+/*
+/* If types represented by the given type-info records LEFT_TI, RIGHT_TI,
+/* and RESULT_TI are pointer types, then set the type qualifiers of the
+/* pointed-to type of the type represented by RESULT_TI to be the merged
+/* type qualifiers of the pointed-to types of the types represented by
+/* the left, right, and result types.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MERGE_POINTED_TO_TYPE_QUALIFIERS: procedure (LEFT_TI, RIGHT_TI, RESULT_TI)
+				  internal;
+	declare
+		LEFT_TI		type (TYPE_INFO_T),
+		RIGHT_TI	type (TYPE_INFO_T),
+		RESULT_TI	type (TYPE_INFO_T);
+	declare
+		LEFT_TD		type (TYPE_DATA_T),
+		RIGHT_TD	type (TYPE_DATA_T),
+		RESULT_TD	type (TYPE_DATA_T),
+		(LTQ, RTQ)	type (BYTE_BITS_T);
+
+	if (LEFT_TI.TOP_TYPE.CODE ^= byte (POINTER_DT)) |
+	   (RIGHT_TI.TOP_TYPE.CODE ^= byte (POINTER_DT)) |
+	   (RESULT_TI.TOP_TYPE.CODE ^= byte (POINTER_DT)) then
+		return;
+
+	call GET_TOP_LEVEL_TYPE_INFO (LEFT_TI, 1, LEFT_TD);
+	call GET_TOP_LEVEL_TYPE_INFO (RIGHT_TI, 1, RIGHT_TD);
+
+	LTQ = LEFT_TD.QUALIFIERS & ALL_TQ;
+	RTQ = RIGHT_TD.QUALIFIERS & ALL_TQ;
+
+	if LTQ = RTQ then
+		return;
+
+	call GET_TOP_LEVEL_TYPE_INFO (RESULT_TI, 1, RESULT_TD);
+
+	RESULT_TD.QUALIFIERS = LTQ | RTQ | RESULT_TD.QUALIFIERS;
+
+	if RESULT_TI.EXTRA_PTR_LEVEL then
+		RESULT_TI.TYPE = MODIFY_TYPE_LEVEL
+				 (RESULT_TI.TYPE, 0, RESULT_TD);
+	else	RESULT_TI.TYPE = MODIFY_TYPE_LEVEL
+				 (RESULT_TI.TYPE, 1, RESULT_TD);
+
+end MERGE_POINTED_TO_TYPE_QUALIFIERS;
+
+/* ---------------------------------------------------------------------
+/* MAKE_COMPOSITE_TYPE
+/*
+/* Assuming that the types represented by the type-info records LEFT_TI,
+/* RIGHT_TI, and RESULT_TI are all compatible with each other, set the
+/* type of the result to be the composite types of the left and the
+/* right.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MAKE_COMPOSITE_TYPE: procedure (LEFT_TI, RIGHT_TI, RESULT_TI)
+		     internal;
+	declare
+		LEFT_TI			type (TYPE_INFO_T),
+		RIGHT_TI		type (TYPE_INFO_T),
+		RESULT_TI		type (TYPE_INFO_T);
+	declare
+		LEFT_SKIP_NLEVELS	type (SHORT_T),
+		RIGHT_SKIP_NLEVELS	type (SHORT_T);
+
+	LEFT_SKIP_NLEVELS  = LEFT_TI.DERIVED_TYPE_SKIP;
+	RIGHT_SKIP_NLEVELS = RIGHT_TI.DERIVED_TYPE_SKIP;
+
+	if LEFT_TI.EXTRA_PTR_LEVEL then do;
+		RESULT_TI = LEFT_TI;
+		RESULT_TI.EXTRA_PTR_LEVEL = TRUE;
+		if ^RIGHT_TI.EXTRA_PTR_LEVEL then
+			RIGHT_SKIP_NLEVELS = RIGHT_SKIP_NLEVELS + 1;
+	end;
+	else if RIGHT_TI.EXTRA_PTR_LEVEL then do;
+		RESULT_TI = LEFT_TI;
+		RESULT_TI.EXTRA_PTR_LEVEL = TRUE;
+		LEFT_SKIP_NLEVELS = LEFT_SKIP_NLEVELS + 1;
+	end;
+	else	RESULT_TI = LEFT_TI;
+
+	call COMPOSITE_EXPRESSION_TYPE (LEFT_TI.TYPE,
+					LEFT_SKIP_NLEVELS,
+					RIGHT_TI.TYPE,
+					RIGHT_SKIP_NLEVELS,
+					RESULT_TI.TYPE,
+					RESULT_TI.DERIVED_TYPE_SKIP);
+
+end MAKE_COMPOSITE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* INCOMPATIBLE_POINTER_ERROR
+/* ------------------------------------------------------------------- */
+
+INCOMPATIBLE_POINTER_ERROR: procedure (VOP, LTI, RTI)
+			    external  (X_INCOMPATIBLE_POINTER_ERROR);
+
+	declare
+		VOP		type (SHORT_T),
+		LTI		type (TYPE_INFO_T),
+		RTI		type (TYPE_INFO_T);
+	declare
+		ERROR_CODE	type (SHORT_T);
+
+	/* -------------------------------------------------------------
+	/* Incompatible pointer types in assignment.
+	/* ----------------------------------------------------------- */
+
+	     if	(VOP = ASSIGN_VO) |
+		(VOP = IMPLICIT_ASSIGN_VO) |
+	        (VOP = CAST_VO)   |
+		(VOP = IMPLICIT_CAST_VO) |
+		(VOP = FUNCTIONAL_CAST_VO) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_PTR_PTR_ASSIGNMENT;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_NON_PTR_TCS
+	then	ERROR_CODE		  = ERR_PTR_NON_PTR_ASSIGNMENT;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_QUAL_ASSIGNMENT;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_TOP_QUAL_ASSIGNMENT;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_FUN_ASSIGNMENT;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_ARRAY_ASSIGNMENT;
+	else	ERROR_CODE		  = ERR_PTR_PTR_ASSIGNMENT;
+
+	/* -------------------------------------------------------------
+	/* Incompatible pointer types in initialization.
+	/* ----------------------------------------------------------- */
+
+	else if (VOP = INITIAL_VO) |
+		(VOP = MEMBER_INIT_VO) |
+		(VOP = COPY_VO) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_PTR_PTR_INITIAL;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_NON_PTR_TCS
+	then	ERROR_CODE		  = ERR_PTR_NON_PTR_INITIAL;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_QUAL_INITIAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_TOP_QUAL_INITIAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_FUN_INITIAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_ARRAY_INITIAL;
+	else	ERROR_CODE		  = ERR_PTR_PTR_INITIAL;
+
+	/* -------------------------------------------------------------
+	/* Incompatible pointer types in argument.
+	/* ----------------------------------------------------------- */
+
+	else if (VOP = ARG_VO) &
+		(CURRENT_FUNCTION_BEING_CALLED = NULL_NID) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_PTR_PTR_ARGUMENT;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_NON_PTR_TCS
+	then	ERROR_CODE		  = ERR_PTR_NON_PTR_ARGUMENT;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_QUAL_ARGUMENT;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_TOP_QUAL_ARGUMENT;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_FUN_ARGUMENT;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_ARRAY_ARGUMENT;
+	else	ERROR_CODE		  = ERR_PTR_PTR_ARGUMENT;
+
+	/* -------------------------------------------------------------
+	/* Incompatible pointer types in argument.
+	/* ----------------------------------------------------------- */
+
+	else if (VOP = ARG_VO) &
+		(CURRENT_FUNCTION_BEING_CALLED ^= NULL_NID) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_PTR_PTR_FUN_ARG;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_NON_PTR_TCS
+	then	ERROR_CODE		  = ERR_PTR_NON_PTR_FUN_ARG;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_QUAL_FUN_ARG;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_TOP_QUAL_FUN_ARG;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_FUN_FUN_ARG;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_ARRAY_FUN_ARG;
+	else	ERROR_CODE		  = ERR_PTR_PTR_FUN_ARG;
+
+	/* -------------------------------------------------------------
+	/* Incompatible pointer types in return.
+	/* ----------------------------------------------------------- */
+
+	else if (VOP = RETURN_VO) | (VOP = IMPLICIT_RETURN_VO) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_PTR_PTR_RETURN;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_NON_PTR_TCS
+	then	ERROR_CODE		  = ERR_PTR_NON_PTR_RETURN;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_QUAL_RETURN;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_TOP_QUAL_RETURN;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_FUN_RETURN;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_ARRAY_RETURN;
+	else	ERROR_CODE		  = ERR_PTR_PTR_RETURN;
+
+	/* -------------------------------------------------------------
+	/* Incompatible pointer types in relational.
+	/* ----------------------------------------------------------- */
+
+	else if (VOP = EQ_VO) | (VOP = NE_VO) |
+		(VOP = LT_VO) | (VOP = LE_VO) |
+		(VOP = GT_VO) | (VOP = GE_VO) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_PTR_PTR_RELATIONAL;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_QUAL_RELATIONAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_FUN_RELATIONAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_ARRAY_RELATIONAL;
+	else	ERROR_CODE		  = ERR_PTR_PTR_RELATIONAL;
+
+	/* -------------------------------------------------------------
+	/* Incompatible pointer types in subtraction.
+	/* ----------------------------------------------------------- */
+
+	else if VOP = SUB_VO then
+
+	     if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_QUAL_SUBTRACTION;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_FUN_SUBTRACTION;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_ARRAY_SUBTRACTION;
+	else	ERROR_CODE		  = ERR_PTR_PTR_SUBTRACTION;
+
+	/* -------------------------------------------------------------
+	/* Incompatible pointer types in conditional.
+	/* ----------------------------------------------------------- */
+
+	else if VOP = CONDITIONAL_VO then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_PTR_PTR_CONDITIONAL;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_QUAL_CONDITIONAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_FUN_CONDITIONAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_ARRAY_CONDITIONAL;
+	else	ERROR_CODE		  = ERR_PTR_PTR_CONDITIONAL;
+
+	/* -------------------------------------------------------------
+	/* Incompatible pointer types in expression.
+	/* ----------------------------------------------------------- */
+
+	else
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_PTR_PTR_EXPRESSION;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_QUAL_EXPRESSION;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_FUN_EXPRESSION;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_PTR_PTR_ARRAY_EXPRESSION;
+	else	ERROR_CODE		  = ERR_PTR_PTR_EXPRESSION;
+
+	if VOP = ARG_VO then do;
+		if CURRENT_FUNCTION_BEING_CALLED = NULL_NID then do;
+			call SEMANTIC_ERROR_III
+			     (ERROR_CODE,
+			      trim (char (CURRENT_ARGUMENT_NUMBER)),
+			      TYPE_INFO_NAME (LTI),
+			      TYPE_INFO_NAME (RTI));
+		end;
+		else do;
+			call SEMANTIC_ERROR_IIII
+			     (ERROR_CODE,
+			      trim (char (CURRENT_ARGUMENT_NUMBER)),
+			      TYPE_INFO_NAME (LTI),
+			      TYPE_INFO_NAME (RTI),
+			      COMPLETE_QUALIFIED_SYMBOL_NAME
+			      (CURRENT_FUNCTION_BEING_CALLED));
+		end;
+	end;
+	else	call SEMANTIC_ERROR_II (ERROR_CODE,
+					TYPE_INFO_NAME (LTI),
+					TYPE_INFO_NAME (RTI));
+
+end INCOMPATIBLE_POINTER_ERROR;
+
+/* ---------------------------------------------------------------------
+/* INCOMPATIBLE_REFERENCE_ERROR
+/*
+/* Messages for return context are most severe, because it's useless to
+/* initialize a temporary then return; otherwise, except for casts, a
+/* non-lvalue incompatibility produces no diagnostic at all.
+/* ------------------------------------------------------------------- */
+
+INCOMPATIBLE_REFERENCE_ERROR: procedure (VOP, LTI, RTI)
+			      external  (X_INCOMPATIBLE_REFERENCE_ERROR);
+
+	declare
+		VOP		type (SHORT_T),
+		LTI		type (TYPE_INFO_T),
+		RTI		type (TYPE_INFO_T);
+	declare
+		ERROR_CODE	type (SHORT_T);
+
+	/* -------------------------------------------------------------
+	/* Incompatible reference types in cast.
+	/* ----------------------------------------------------------- */
+
+	     if	(VOP = CAST_VO)   |
+		(VOP = IMPLICIT_CAST_VO) |
+		(VOP = FUNCTIONAL_CAST_VO) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_REF_REF_CAST;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_QUAL_CAST;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_TOP_QUAL_CAST;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_FUN_CAST;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_ARRAY_CAST;
+	else	ERROR_CODE		  = ERR_REF_REF_CAST;
+
+	/* -------------------------------------------------------------
+	/* Incompatible reference types in initialization.
+	/* ----------------------------------------------------------- */
+
+	else if (VOP = INITIAL_VO) |
+		(VOP = MEMBER_INIT_VO) |
+		(VOP = COPY_VO) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = 0;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_QUAL_INITIAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_TOP_QUAL_INITIAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_FUN_INITIAL;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_ARRAY_INITIAL;
+	else	ERROR_CODE		  = ERR_REF_REF_INITIAL;
+
+	/* -------------------------------------------------------------
+	/* Incompatible reference types in argument.
+	/* ----------------------------------------------------------- */
+
+	else if (VOP = ARG_VO) &
+		(CURRENT_FUNCTION_BEING_CALLED ^= NULL_NID) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = 0;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_QUAL_FUN_ARG;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_TOP_QUAL_FUN_ARG;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_FUN_FUN_ARG;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_ARRAY_FUN_ARG;
+	else	ERROR_CODE		  = ERR_REF_REF_FUN_ARG;
+
+	else if (VOP = ARG_VO) &
+		(CURRENT_FUNCTION_BEING_CALLED = NULL_NID) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = 0;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_QUAL_ARGUMENT;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_TOP_QUAL_ARGUMENT;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_FUN_ARGUMENT;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_ARRAY_ARGUMENT;
+	else	ERROR_CODE		  = ERR_REF_REF_ARGUMENT;
+
+	/* -------------------------------------------------------------
+	/* Incompatible reference types in return.
+	/* ----------------------------------------------------------- */
+
+	else if (VOP = RETURN_VO) | (VOP = IMPLICIT_RETURN_VO) then
+
+	     if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS
+	then	ERROR_CODE		  = ERR_NON_REF_REF_RETURN;
+	else if	TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_QUAL_RETURN;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_PTR_QUALIFIERS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_TOP_QUAL_RETURN;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_SIGNATURES_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_FUN_RETURN;
+	else if TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_DIMENSIONS_TCS
+	then	ERROR_CODE		  = ERR_REF_REF_ARRAY_RETURN;
+	else	ERROR_CODE		  = ERR_REF_REF_RETURN;
+
+	/* -------------------------------------------------------------
+	/* Incompatible reference types in unexpected context.
+	/* ----------------------------------------------------------- */
+
+	else	call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	if ERROR_CODE = 0 then
+		return;
+
+	if VOP = ARG_VO then do;
+		if CURRENT_FUNCTION_BEING_CALLED = NULL_NID then do;
+			call SEMANTIC_ERROR_III
+			     (ERROR_CODE,
+			      trim (char (CURRENT_ARGUMENT_NUMBER)),
+			      TYPE_INFO_NAME (LTI),
+			      TYPE_INFO_NAME (RTI));
+		end;
+		else do;
+			call SEMANTIC_ERROR_IIII
+			     (ERROR_CODE,
+			      trim (char (CURRENT_ARGUMENT_NUMBER)),
+			      TYPE_INFO_NAME (LTI),
+			      TYPE_INFO_NAME (RTI),
+			      COMPLETE_QUALIFIED_SYMBOL_NAME
+			      (CURRENT_FUNCTION_BEING_CALLED));
+		end;
+	end;
+	else	call SEMANTIC_ERROR_II (ERROR_CODE,
+					TYPE_INFO_NAME (LTI),
+					TYPE_INFO_NAME (RTI));
+
+end INCOMPATIBLE_REFERENCE_ERROR;
+

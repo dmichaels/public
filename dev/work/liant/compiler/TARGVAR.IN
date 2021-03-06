@@ -1,0 +1,36 @@
+/* C++ CXX_TARGET_SYSTEM_VARIANT_IN - Target system variant dependencies. */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  07.16.91  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_SYMBOL_TABLE_DEFS_IN */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Type of size_t declared in /usr/include/types.h.
+/* One of the _BT codes from symdef.in.
+/* ANSI C requires it to be unsigned, but some systems don't obey this.
+/* The -ansilib switch (or whatever it's going to be called) overrides
+/* the type given here.
+/* ------------------------------------------------------------------- */
+
+%replace SYSTEM_SIZE_T_BT          by INT_BT;

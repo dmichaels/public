@@ -1,0 +1,349 @@
+/* C++ dmpsym.pl1 - Dump a symbol table data to the standard output */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  028  New value-node scheme.
+ *  01.31.92  DGM  027  Minor fix.
+ *  10.03.91  DGM  026  Print size of class/struct/union/enum.
+ *  05.29.91  DGM  025  Updated.
+ *  11.15.90  DGM  024  Updated.
+ *  11.15.90  DGM  023  Updated.
+ *  11.06.90  DGM  022  Updated.
+ *  10.22.90  DGM  021  Updated.
+ *  10.12.90  DGM  020  Updated.
+ *  09.25.90  DGM  019  Updated.
+ *  09.14.90  DGM  018  Changed include file names and VOP names.
+ *  09.13.90  DGM  017  Changed xxx_SC names to xxx_ST.
+ *  08.31.90  DGM  016  Added support for extern "C".
+ *  08.29.90  DGM  015  Removed DUMP_TYPES.
+ *  08.08.90  DGM  014  New type-node.
+ *  07.10.90  DGM  013  Minor update.
+ *  06.06.90  DGM  012  Updated for the new utilities.
+ *  05.15.90  DGM  011  Updated to print virtual function index.
+ *  04.25.90  DGM  010  Updated.
+ *  03.27.90  DGM  009  Updated.
+ *  03.02.90  DGM  008  Updated.
+ *  02.22.90  DGM  007  Updated; new naming scheme (no op-token-node).
+ *  02.15.90  DGM  006  Updated for the new TYPE_NODE scheme.
+ *  02.09.90  DGM  005  Updated.
+ *  02.05.90  DGM  004  Updated.
+ *  01.04.90  DGM  003  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 028 SYMNAM');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T	character (512) varying based;
+
+declare
+
+NEST_LEVEL	type (INT_T) static initial (-1);
+
+/* ---------------------------------------------------------------------
+/* DUMP_CURRENT_SCOPE_SYMBOLS
+/*
+/* Dump all of the symbols in the current scope.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DUMP_CURRENT_SCOPE_SYMBOLS: procedure ()
+			    external  (X_DUMP_CURRENT_SCOPE_SYMBOLS);
+
+	call DUMP_SCOPE_SYMBOLS (CURRENT_SCOPE);
+
+end DUMP_CURRENT_SCOPE_SYMBOLS;
+
+/* ---------------------------------------------------------------------
+/* DUMP_SCOPE_SYMBOLS
+/*
+/* Dump all of the symbols in the current scope.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DUMP_SCOPE_SYMBOLS: procedure (SCOPE) internal;
+
+	declare
+		SCOPE			type (NID_T);
+	declare
+		(S, NEXT_S)		type (NID_T),
+		(OS, NEXT_OS)		type (NID_T),
+		(F, NEXT_F)		type (NID_T),
+		(M, NEXT_M)		type (NID_T),
+		(SP, OSP, CP, MP, FP)	type (POINTER_T),
+		SCOPE_PTR		type (POINTER_T),
+		STRING			type (STRING_T);
+
+	if SCOPE = NULL_NID then
+		return;
+
+	call GET_SCOPE_NODE_R (SCOPE, SCOPE_PTR);
+
+	NEST_LEVEL = NEST_LEVEL + 1; 
+
+	do S = SCOPE_PTR->SCOPE_NODE.SYMBOLS
+	repeat (NEXT_S) while (S ^= NULL_NID);
+
+		/* Get this symbol and the next */
+
+		call GET_SYM_NODE_R (S, SP);
+		NEXT_S = SP->SYM_NODE.NEXT_SYMBOL;
+
+		/*
+		/* Skip parameter symbols; they *are* in function body scope,
+		/* but they came out in the function signature already.
+		/**/
+
+		if SP->SYM_NODE.IS_PARAMETER then
+			goto CONTINUE;
+
+		/* Skip implicit label symbols */
+
+		if SP->SYM_NODE.IS_LABEL & (SP->SYM_NODE.NAME = NULL_NID) then
+			goto CONTINUE;
+
+		/* Skip nameless/typeless dummy symbols */
+
+		if SP->SYM_NODE.IS_DUMMY &
+		   ((SP->SYM_NODE.NAME = NULL_NID) |
+		    (SP->SYM_NODE.TYPE = NULL_NID)) then
+			goto CONTINUE;
+
+		/* Ok, dump this symbol */
+
+		call DUMP_SYMBOL (S, FULL_DSM);
+
+		/* Output any overloaded (function) symbols */
+
+		if SP->SYM_NODE.IS_FUNCTION &
+		   (SP->SYM_NODE.NEXT_OVERLOAD ^= NULL_NID) then do;
+			do OS = SP->SYM_NODE.NEXT_OVERLOAD
+			repeat (NEXT_OS) while (OS ^= NULL_NID);
+				call DUMP_SYMBOL (OS, FULL_DSM);
+				call GET_SYM_NODE_R (OS, OSP);
+				NEXT_OS = OSP->SYM_NODE.NEXT_OVERLOAD;
+				call RELEASE_SYM_NODE (OS);
+			end;
+		end;
+
+		CONTINUE:
+	end;
+
+	/*
+	/* If this is a class output any base member
+	/* declarations, as well as any friend symbols.
+	/**/
+
+	if SCOPE_PTR->SCOPE_NODE.TYPE = byte (CLASS_SCOPE) then do;
+
+		call GET_SYM_NODE_R (SCOPE_PTR->SCOPE_NODE.OWNER, CP);
+
+		do M = CP->SYM_NODE.BASE_MEMBERS
+		repeat (NEXT_M) while (M ^= NULL_NID);
+			call GET_BASE_MEMBER_NODE_R (M, MP);
+			NEXT_M = MP->BASE_MEMBER_NODE.NEXT;
+			call DUMP_SYMBOL (MP->BASE_MEMBER_NODE.MEMBER,
+					  DECLARATOR_NAME_DSM |
+					  QUALIFIED_DECLARATOR_NAME_DSM);
+			call RELEASE_BASE_MEMBER_NODE (M);
+		end;
+
+		do F = CP->SYM_NODE.FRIENDS
+		repeat (NEXT_F) while (F ^= NULL_NID);
+			call GET_FRIEND_NODE_R (F, FP);
+			NEXT_F = FP->FRIEND_NODE.NEXT;
+			call DUMP_SYMBOL (FP->FRIEND_NODE.SYMBOL,
+					  FULL_DSM |
+					  FRIEND_SPECIFIER_DSM);
+			call RELEASE_FRIEND_NODE (F);
+		end;
+	end;
+
+	NEST_LEVEL = NEST_LEVEL - 1; 
+
+end DUMP_SCOPE_SYMBOLS;
+
+/* ---------------------------------------------------------------------
+/* DUMP_SYMBOL
+/*
+/* Dump one symbol-node (including class members).
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DUMP_SYMBOL: procedure (SYMBOL, DSM_FLAGS) external (X_DUMP_SYMBOL);
+
+	declare
+		SYMBOL		type (NID_T),
+		DSM_FLAGS	type (LONG_BITS_T);
+	declare
+		DSM		type (DECLARATION_STRING_MODE_T),
+		(SYMBOL_PTR, P)	type (POINTER_T),
+		SIZE		type (LONG_T);
+	declare
+		STRING		type (STRING_T) static;
+
+	DSM.FLAGS = DSM_FLAGS;
+
+	/* Get this symbol */
+
+	call GET_SYM_NODE_R (SYMBOL, SYMBOL_PTR);
+
+	/* Get the output line prefix */
+
+	STRING = LINE_PREFIX ((SYMBOL_PTR->SYM_NODE.DCL_LINE_ID),
+			       SYMBOL_PTR->SYM_NODE.DCL_FILE_ID);
+
+	/*
+	/* If this is an enumerator, print the qualified enumerator name
+	/* since there can be some confusion about which scope it resides
+	/* in when nested classes (i.e. enumerations) are used.
+	/**/
+
+	if SYMBOL_PTR->SYM_NODE.IS_ENUM_MEMBER then
+		DSM.FLAGS = DSM.FLAGS | QUALIFIED_DECLARATOR_NAME_DSM;
+
+	/* Initialize the declaration string mode */
+
+	STRING = STRING || DECLARATION_STRING (SYMBOL, DSM.FLAGS);
+
+	/* Get the size of class, struct, union, or enum */
+
+	if SYMBOL_PTR->SYM_NODE.IS_TAG then do;
+		SIZE = ROUNDU (SYMBOL_PTR->SYM_NODE.SIZE,
+			       rank (SYMBOL_PTR->SYM_NODE.SIZE_UNITS),
+			       BYTES);
+		STRING = STRING || ' // ' || trim (char (SIZE)) || ' byte';
+		if SIZE ^= 1 then
+			STRING = STRING || 's';
+	end;
+
+	/* Get the virtual function index */
+
+	if SYMBOL_PTR->SYM_NODE.IS_FUNCTION &
+	   SYMBOL_PTR->SYM_NODE.VIRTUAL then do;
+		STRING = STRING || ' // #' ||
+			 trim (char (SYMBOL_PTR->SYM_NODE.
+				     VIRTUAL_FUNCTION_INDEX));
+	end;
+
+	/*
+	/* If this symbol defines a scope (i.e. class or function)
+	/* then (recursively) dump each symbol in the defined scope,
+	/* but not if it's a friend declaration.
+	/**/
+
+	if (SYMBOL_PTR->SYM_NODE.IS_FUNCTION |
+	    SYMBOL_PTR->SYM_NODE.IS_TAG) &
+	   (SYMBOL_PTR->SYM_NODE.DEFINED_SCOPE ^= NULL_NID) &
+	   ^DSM.FRIEND_SPECIFIER then do;
+		call OUTPUT_STRING_AND_RETURN (STRING);
+		call GET_SCOPE_NODE_R (SYMBOL_PTR->SYM_NODE.DEFINED_SCOPE, P);
+		STRING = LINE_PREFIX (P->SCOPE_NODE.FIRST_LINE_ID,
+				      P->SCOPE_NODE.FIRST_FILE_ID) || '{';
+		call OUTPUT_STRING_AND_RETURN (STRING);
+		call DUMP_SCOPE_SYMBOLS (SYMBOL_PTR->SYM_NODE.DEFINED_SCOPE);
+		STRING = LINE_PREFIX (P->SCOPE_NODE.LAST_LINE_ID,
+				      P->SCOPE_NODE.LAST_FILE_ID) || '}';
+		call RELEASE_SCOPE_NODE (SYMBOL_PTR->SYM_NODE.DEFINED_SCOPE);
+	end;
+
+	call OUTPUT_STRING_AND_RETURN (STRING);
+
+end DUMP_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* LINE_PREFIX
+/* ------------------------------------------------------------------- */
+
+LINE_PREFIX: procedure (LINE, FILE) returns (type (STRING_T));
+
+	declare
+		LINE	type (LONG_T),
+		FILE	type (NID_T);
+	declare
+		I	type (INT_T),
+		LS	type (STRING_T),
+		FS	type (STRING_T),
+		S	type (STRING_T);
+	declare
+		SPACES	character (8) varying
+			static initial ('        ');
+
+	if LINE > 0 then do;
+		LS = trim (char (LINE));
+		if length (LS) < 4 then do;
+			LS = substr (SPACES, 1, 4 - length (LS)) ||
+			     LS || ': ';
+		end;
+	end;
+	else	LS = '      ';
+
+	if FILE ^= NULL_NID then do;
+		FS = trim (char (FILE));
+		if length (FS) < 4 then do;
+			FS = substr (SPACES, 1, 4 - length (FS)) ||
+			     '<' || FS || '> ';
+		end;
+	end;
+	else	FS = '       ';
+
+	S = FS || LS;
+
+	do I = 1 to NEST_LEVEL;
+		S = S || '| ';
+	end;
+
+	return (S);
+
+end LINE_PREFIX;
+
+/* ---------------------------------------------------------------------
+/* OUTPUT_STRING_AND_RETURN
+/* ------------------------------------------------------------------- */
+
+OUTPUT_STRING_AND_RETURN: procedure (S);
+
+	declare S character (*) varying;
+
+	put list (S);
+	put skip;
+
+end OUTPUT_STRING_AND_RETURN;
+
+

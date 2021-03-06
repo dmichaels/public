@@ -1,0 +1,37 @@
+/* C++ C_HOST_SYSTEM_IN - Host system dependent definitions */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  06.08.90  DGM  004  Addd SYSDEF_INCLUDE_FILE.
+ *
+ *  06.09.89  DGM  003  Added IMATH_INCLUDE_FILE & ISTRING_INCLUDE_FILE.
+ *
+ *  06.08.89  DGM  002  Renamed/added DEFAULT_STD_INCLUDE_PATH
+ *			and DEFAULT_SYS_INCUDE_PATH.
+ *
+ *  12.02.86  JAK  001  Removed definition of SOURCE_NAME_SIZE.
+ *
+ *  04.18.86  JAK  000  Original.  Split out of old C_SYSTEM_IN files
+ *			for various Unix systems.
+ *
+ ***********************************************************************/
+
+/* Definitions applicable when host system is UNIX-like */
+
+%replace DEFAULT_STD_INCLUDE_PATH	by '/usr/include/LPI';
+%replace DEFAULT_SYS_INCLUDE_PATH	by '/usr/include';
+%replace IMATH_INCLUDE_FILE		by 'imath.h';
+%replace ISTRING_INCLUDE_FILE		by 'istring.h';
+%replace SYSDEF_INCLUDE_FILE		by 'sysdef.h';
+%replace HOST_DIR_DELIM			by '/';
+
+

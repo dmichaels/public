@@ -1,0 +1,498 @@
+/* LPI-DEBUG M68 OPDEF.IN - MC68020/68881 op-code definitions */
+
+/**********************************************************************
+ * This product is the property of Language Processors, Inc.          *
+ * and is licensed pursuant to a written license agreement.           *
+ * No portion of this product may be reproduced without the written   *
+ * permission of Language Processors, Inc. except pursuant to the     *
+ * license agreement.                                                 *
+ *********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   2.12.92  VTF  (002) Bug fix:  Changed definition of OP_DBRA to OP_DBF.
+ *
+ *  12.04.91  VTF  Added 68040 instructions.
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68020 User's
+ *		   Manual, and the MC68881 User's Manual.
+ *
+ *********************************************************************/
+
+/* -------------------------------------------------------------------
+ * -- Internal Opcode Codes (index into OPCODE_NAME) --
+ * ---------------------------------------------------------------- */
+
+%replace OP_ABCD        by   1;
+%replace OP_ADD         by   2;
+%replace OP_ADDA        by   3;
+%replace OP_ADDI        by   4;
+%replace OP_ADDQ        by   5;
+%replace OP_ADDX        by   6;
+%replace OP_AND         by   7;
+%replace OP_ANDI        by   8;
+%replace OP_ASL         by   9;
+%replace OP_ASR         by  10;
+
+%replace OP_BRA_COND    by  11; /* These must be ordered ! */
+%replace OP_BRA         by  11; /* OP_BRA_COND + CONDITION_T */
+%replace OP_BSR         by  12; /* OP_BRA_COND + CONDITION_F */
+%replace OP_BHI         by  13; /* OP_BRA_COND + CONDITION_HI */
+%replace OP_BLS         by  14; /* OP_BRA_COND + CONDITION_LS */
+%replace OP_BCC         by  15; /* OP_BRA_COND + CONDITION_CC */
+%replace OP_BCS         by  16; /* OP_BRA_COND + CONDITION_CS */
+%replace OP_BNE         by  17; /* OP_BRA_COND + CONDITION_NE */
+%replace OP_BEQ         by  18; /* OP_BRA_COND + CONDITION_EQ */
+%replace OP_BVC         by  19; /* OP_BRA_COND + CONDITION_VC */
+%replace OP_BVS         by  20; /* OP_BRA_COND + CONDITION_VS */
+%replace OP_BPL         by  21; /* OP_BRA_COND + CONDITION_PL */
+%replace OP_BMI         by  22; /* OP_BRA_COND + CONDITION_MI */
+%replace OP_BGE         by  23; /* OP_BRA_COND + CONDITION_GE */
+%replace OP_BLT         by  24; /* OP_BRA_COND + CONDITION_LT */
+%replace OP_BGT         by  25; /* OP_BRA_COND + CONDITION_GT */
+%replace OP_BLE         by  26; /* OP_BRA_COND + CONDITION_LE */
+
+%replace OP_BCHG        by  27;
+%replace OP_BCLR        by  28;
+%replace OP_BFCHG       by  29;
+%replace OP_BFCLR       by  30;
+%replace OP_BFEXTS      by  31;
+%replace OP_BFEXTU      by  32;
+%replace OP_BFFFO       by  33;
+%replace OP_BFINS       by  34;
+%replace OP_BFSET       by  35;
+%replace OP_BFTST       by  36;
+%replace OP_BKPT        by  37;
+%replace OP_BSET        by  38;
+%replace OP_BTST        by  39;
+
+%replace OP_CALLM       by  40;
+%replace OP_CAS         by  41;
+%replace OP_CAS2        by  42;
+%replace OP_CHK         by  43;
+%replace OP_CHK2        by  44;
+%replace OP_CINVA       by  45; /* 68040 only */
+%replace OP_CINVL       by  46; /* 68040 only */
+%replace OP_CINVP       by  47; /* 68040 only */
+%replace OP_CLR         by  48;
+%replace OP_CMP         by  49;
+%replace OP_CMPA        by  50;
+%replace OP_CMPI        by  51;
+%replace OP_CMPM        by  52;
+%replace OP_CMP2        by  53;
+%replace OP_CPUSHA      by  54; /* 68040 only */
+%replace OP_CPUSHL      by  55; /* 68040 only */
+%replace OP_CPUSHP      by  56; /* 68040 only */
+
+%replace OP_DBRA_COND   by  57; /* These must be ordered ! */
+%replace OP_DBT         by  57; /* OP_DBRA_COND + CONDITION_T */
+%replace OP_DBF         by  58; /* OP_DBRA_COND + CONDITION_F */
+%replace OP_DBHI        by  59; /* OP_DBRA_COND + CONDITION_HI */
+%replace OP_DBLS        by  60; /* OP_DBRA_COND + CONDITION_LS */
+%replace OP_DBCC        by  61; /* OP_DBRA_COND + CONDITION_CC */
+%replace OP_DBCS        by  62; /* OP_DBRA_COND + CONDITION_CS */
+%replace OP_DBNE        by  63; /* OP_DBRA_COND + CONDITION_NE */
+%replace OP_DBEQ        by  64; /* OP_DBRA_COND + CONDITION_EQ */
+%replace OP_DBVC        by  65; /* OP_DBRA_COND + CONDITION_VC */
+%replace OP_DBVS        by  66; /* OP_DBRA_COND + CONDITION_VS */
+%replace OP_DBPL        by  67; /* OP_DBRA_COND + CONDITION_PL */
+%replace OP_DBMI        by  68; /* OP_DBRA_COND + CONDITION_MI */
+%replace OP_DBGE        by  69; /* OP_DBRA_COND + CONDITION_GE */
+%replace OP_DBLT        by  70; /* OP_DBRA_COND + CONDITION_LT */
+%replace OP_DBGT        by  71; /* OP_DBRA_COND + CONDITION_GT */
+%replace OP_DBLE        by  72; /* OP_DBRA_COND + CONDITION_LE */
+
+%replace OP_DIVS        by  73;
+%replace OP_DIVSL       by  74;
+%replace OP_DIVU        by  75;
+%replace OP_DIVUL       by  76;
+
+%replace OP_EOR         by  77;
+%replace OP_EORI        by  78;
+%replace OP_EXG         by  79;
+%replace OP_EXT         by  80;
+%replace OP_EXTB        by  81;
+
+%replace OP_ILLEGAL     by  82;
+
+%replace OP_JMP         by  83;
+%replace OP_JSR         by  84;
+
+%replace OP_LEA         by  85;
+%replace OP_LINK        by  86;
+%replace OP_LSL         by  87;
+%replace OP_LSR         by  88;
+
+%replace OP_MOVE        by  89;
+%replace OP_MOVE16      by  90; /* 68040 only */
+%replace OP_MOVEA       by  91;
+%replace OP_MOVEC       by  92;
+%replace OP_MOVEM       by  93;
+%replace OP_MOVEP       by  94;
+%replace OP_MOVEQ       by  95;
+%replace OP_MOVES       by  96;
+%replace OP_MULS        by  97;
+%replace OP_MULSL       by  98;
+%replace OP_MULU        by  99;
+%replace OP_MULUL       by 100;
+
+%replace OP_NBCD        by 101;
+%replace OP_NEG         by 102;
+%replace OP_NEGX        by 103;
+%replace OP_NOP         by 104;
+%replace OP_NOT         by 105;
+
+%replace OP_OR          by 106;
+%replace OP_ORI         by 107;
+
+%replace OP_PACK        by 108;
+%replace OP_PEA         by 109;
+%replace OP_PFLUSH      by 110; /* 68030/40 */
+%replace OP_PFLUSHN     by 111; /* 68030/40 */
+%replace OP_PFLUSHA     by 112; /* 68030 only */
+%replace OP_PFLUSHAN    by 113; /* 68030 only */
+%replace OP_PLOADR      by 114; /* 68030 only */
+%replace OP_PLOADW      by 115; /* 68030 only */
+%replace OP_PMOVE       by 116; /* 68030 only */
+%replace OP_PMOVEFD     by 117; /* 68030 only */
+%replace OP_PTESTR      by 118; /* 68030/40 */
+%replace OP_PTESTW      by 119; /* 68030/40 */
+
+%replace OP_RESET       by 120;
+%replace OP_ROL         by 121;
+%replace OP_ROR         by 122;
+%replace OP_ROXL        by 123;
+%replace OP_ROXR        by 124;
+%replace OP_RTD         by 125;
+%replace OP_RTE         by 126;
+%replace OP_RTM         by 127;
+%replace OP_RTR         by 128;
+%replace OP_RTS         by 129;
+
+%replace OP_SBCD        by 130;
+
+%replace OP_SET_COND    by 131; /* These must be ordered ! */
+%replace OP_SET         by 131; /* OP_SET_COND + CONDITION_T */
+%replace OP_SF          by 132; /* OP_SET_COND + CONDITION_F */
+%replace OP_SHI         by 133; /* OP_SET_COND + CONDITION_HI */
+%replace OP_SLS         by 134; /* OP_SET_COND + CONDITION_LS */
+%replace OP_SCC         by 135; /* OP_SET_COND + CONDITION_CC */
+%replace OP_SCS         by 136; /* OP_SET_COND + CONDITION_CS */
+%replace OP_SNE         by 137; /* OP_SET_COND + CONDITION_NE */
+%replace OP_SEQ         by 138; /* OP_SET_COND + CONDITION_EQ */
+%replace OP_SVC         by 139; /* OP_SET_COND + CONDITION_VC */
+%replace OP_SVS         by 140; /* OP_SET_COND + CONDITION_VS */
+%replace OP_SPL         by 141; /* OP_SET_COND + CONDITION_PL */
+%replace OP_SMI         by 142; /* OP_SET_COND + CONDITION_MI */
+%replace OP_SGE         by 143; /* OP_SET_COND + CONDITION_GE */
+%replace OP_SLT         by 144; /* OP_SET_COND + CONDITION_LT */
+%replace OP_SGT         by 145; /* OP_SET_COND + CONDITION_GT */
+%replace OP_SLE         by 146; /* OP_SET_COND + CONDITION_LE */
+
+%replace OP_STOP        by 147;
+%replace OP_SUB         by 148;
+%replace OP_SUBA        by 149;
+%replace OP_SUBI        by 150;
+%replace OP_SUBQ        by 151;
+%replace OP_SUBX        by 152;
+%replace OP_SWAP        by 153;
+
+%replace OP_TAS         by 154;
+
+%replace OP_TRAP        by 155;
+%replace OP_TRAPV       by 156;
+
+%replace OP_TRAP_COND   by 157; /* These must be ordered ! */
+%replace OP_TRAPT       by 157; /* OP_TRAPRA_COND + CONDITION_T */
+%replace OP_TRAPF       by 158; /* OP_TRAPRA_COND + CONDITION_F */
+%replace OP_TRAPHI      by 159; /* OP_TRAPRA_COND + CONDITION_HI */
+%replace OP_TRAPLS      by 160; /* OP_TRAPRA_COND + CONDITION_LS */
+%replace OP_TRAPCC      by 161; /* OP_TRAPRA_COND + CONDITION_CC */
+%replace OP_TRAPCS      by 162; /* OP_TRAPRA_COND + CONDITION_CS */
+%replace OP_TRAPNE      by 163; /* OP_TRAPRA_COND + CONDITION_NE */
+%replace OP_TRAPEQ      by 164; /* OP_TRAPRA_COND + CONDITION_EQ */
+%replace OP_TRAPVC      by 165; /* OP_TRAPRA_COND + CONDITION_VC */
+%replace OP_TRAPVS      by 166; /* OP_TRAPRA_COND + CONDITION_VS */
+%replace OP_TRAPPL      by 167; /* OP_TRAPRA_COND + CONDITION_PL */
+%replace OP_TRAPMI      by 168; /* OP_TRAPRA_COND + CONDITION_MI */
+%replace OP_TRAPGE      by 169; /* OP_TRAPRA_COND + CONDITION_GE */
+%replace OP_TRAPLT      by 170; /* OP_TRAPRA_COND + CONDITION_LT */
+%replace OP_TRAPGT      by 171; /* OP_TRAPRA_COND + CONDITION_GT */
+%replace OP_TRAPLE      by 172; /* OP_TRAPRA_COND + CONDITION_LE */
+
+%replace OP_TST         by 173;
+
+%replace OP_UNLK        by 174;
+%replace OP_UNPK        by 175;
+
+%replace OP_FABS        by 176;
+%replace OP_FSABS       by 177; /* 68040 only */
+%replace OP_FDABS       by 178; /* 68040 only */
+%replace OP_FACOS       by 179;
+%replace OP_FADD        by 180;
+%replace OP_FSADD       by 181; /* 68040 only */
+%replace OP_FDADD       by 182; /* 68040 only */
+%replace OP_FASIN       by 183;
+%replace OP_FATAN       by 184;
+%replace OP_FATANH      by 185;
+
+%replace OP_FBRA_COND   by 186;
+%replace OP_FBF         by 186; /* OP_FBRA_COND + FCONDITION_F */
+%replace OP_FBEQ        by 187; /* OP_FBRA_COND + FCONDITION_EQ */
+%replace OP_FBOGT       by 188; /* OP_FBRA_COND + FCONDITION_OGT */
+%replace OP_FBOGE       by 189; /* OP_FBRA_COND + FCONDITION_OGE */
+%replace OP_FBOLT       by 190; /* OP_FBRA_COND + FCONDITION_OLT */
+%replace OP_FBOLE       by 191; /* OP_FBRA_COND + FCONDITION_OLE */
+%replace OP_FBOGL       by 192; /* OP_FBRA_COND + FCONDITION_OGL */
+%replace OP_FBOR        by 193; /* OP_FBRA_COND + FCONDITION_OR */
+%replace OP_FBUN        by 194; /* OP_FBRA_COND + FCONDITION_UN */
+%replace OP_FBUEQ       by 195; /* OP_FBRA_COND + FCONDITION_UEQ */
+%replace OP_FBUGT       by 196; /* OP_FBRA_COND + FCONDITION_UGT */
+%replace OP_FBUGE       by 197; /* OP_FBRA_COND + FCONDITION_UGE */
+%replace OP_FBULT       by 198; /* OP_FBRA_COND + FCONDITION_ULT */
+%replace OP_FBULE       by 199; /* OP_FBRA_COND + FCONDITION_ULE */
+%replace OP_FBNE        by 200; /* OP_FBRA_COND + FCONDITION_NE */
+%replace OP_FBRA        by 201; /* OP_FBRA_COND + FCONDITION_T */
+%replace OP_FBSF        by 202; /* OP_FBRA_COND + FCONDITION_SF */
+%replace OP_FBSEQ       by 203; /* OP_FBRA_COND + FCONDITION_SEQ */
+%replace OP_FBGT        by 204; /* OP_FBRA_COND + FCONDITION_GT */
+%replace OP_FBGE        by 205; /* OP_FBRA_COND + FCONDITION_GE */
+%replace OP_FBLT        by 206; /* OP_FBRA_COND + FCONDITION_LT */
+%replace OP_FBLE        by 207; /* OP_FBRA_COND + FCONDITION_LE */
+%replace OP_FBGL        by 208; /* OP_FBRA_COND + FCONDITION_GL */
+%replace OP_FBGLE       by 209; /* OP_FBRA_COND + FCONDITION_GLE */
+%replace OP_FBNGLE      by 210; /* OP_FBRA_COND + FCONDITION_NGLE */
+%replace OP_FBNGL       by 211; /* OP_FBRA_COND + FCONDITION_NGL */
+%replace OP_FBNLE       by 212; /* OP_FBRA_COND + FCONDITION_NLE */
+%replace OP_FBNLT       by 213; /* OP_FBRA_COND + FCONDITION_NLT */
+%replace OP_FBNGE       by 214; /* OP_FBRA_COND + FCONDITION_NGE */
+%replace OP_FBNGT       by 215; /* OP_FBRA_COND + FCONDITION_NGT */
+%replace OP_FBSNE       by 216; /* OP_FBRA_COND + FCONDITION_SNE */
+%replace OP_FBST        by 217; /* OP_FBRA_COND + FCONDITION_ST */
+
+%replace OP_FCMP        by 218;
+%replace OP_FCOS        by 219;
+%replace OP_FCOSH       by 220;
+
+%replace OP_FDBRA_COND  by 221;
+%replace OP_FDBRA       by 221; /* OP_FDBRA_COND + FCONDITION_F */
+%replace OP_FDBEQ       by 222; /* OP_FDBRA_COND + FCONDITION_EQ */
+%replace OP_FDBOGT      by 223; /* OP_FDBRA_COND + FCONDITION_OGT */
+%replace OP_FDBOGE      by 224; /* OP_FDBRA_COND + FCONDITION_OGE */
+%replace OP_FDBOLT      by 225; /* OP_FDBRA_COND + FCONDITION_OLT */
+%replace OP_FDBOLE      by 226; /* OP_FDBRA_COND + FCONDITION_OLE */
+%replace OP_FDBOGL      by 227; /* OP_FDBRA_COND + FCONDITION_OGL */
+%replace OP_FDBOR       by 228; /* OP_FDBRA_COND + FCONDITION_OR */
+%replace OP_FDBUN       by 229; /* OP_FDBRA_COND + FCONDITION_UN */
+%replace OP_FDBUEQ      by 230; /* OP_FDBRA_COND + FCONDITION_UEQ */
+%replace OP_FDBUGT      by 231; /* OP_FDBRA_COND + FCONDITION_UGT */
+%replace OP_FDBUGE      by 232; /* OP_FDBRA_COND + FCONDITION_UGE */
+%replace OP_FDBULT      by 233; /* OP_FDBRA_COND + FCONDITION_ULT */
+%replace OP_FDBULE      by 234; /* OP_FDBRA_COND + FCONDITION_ULE */
+%replace OP_FDBNE       by 235; /* OP_FDBRA_COND + FCONDITION_NE */
+%replace OP_FDBT        by 236; /* OP_FDBRA_COND + FCONDITION_T */
+%replace OP_FDBSF       by 237; /* OP_FDBRA_COND + FCONDITION_SF */
+%replace OP_FDBSEQ      by 238; /* OP_FDBRA_COND + FCONDITION_SEQ */
+%replace OP_FDBGT       by 239; /* OP_FDBRA_COND + FCONDITION_GT */
+%replace OP_FDBGE       by 240; /* OP_FDBRA_COND + FCONDITION_GE */
+%replace OP_FDBLT       by 241; /* OP_FDBRA_COND + FCONDITION_LT */
+%replace OP_FDBLE       by 242; /* OP_FDBRA_COND + FCONDITION_LE */
+%replace OP_FDBGL       by 243; /* OP_FDBRA_COND + FCONDITION_GL */
+%replace OP_FDBGLE      by 244; /* OP_FDBRA_COND + FCONDITION_GLE */
+%replace OP_FDBNGLE     by 245; /* OP_FDBRA_COND + FCONDITION_NGLE */
+%replace OP_FDBNGL      by 246; /* OP_FDBRA_COND + FCONDITION_NGL */
+%replace OP_FDBNLE      by 247; /* OP_FDBRA_COND + FCONDITION_NLE */
+%replace OP_FDBNLT      by 248; /* OP_FDBRA_COND + FCONDITION_NLT */
+%replace OP_FDBNGE      by 249; /* OP_FDBRA_COND + FCONDITION_NGE */
+%replace OP_FDBNGT      by 250; /* OP_FDBRA_COND + FCONDITION_NGT */
+%replace OP_FDBSNE      by 251; /* OP_FDBRA_COND + FCONDITION_SNE */
+%replace OP_FDBST       by 252; /* OP_FDBRA_COND + FCONDITION_ST */
+
+%replace OP_FDIV        by 253;
+%replace OP_FSDIV       by 254; /* 68040 only */
+%replace OP_FDDIV       by 255; /* 68040 only */
+
+%replace OP_FETOX       by 256;
+%replace OP_FETOXM1     by 257;
+
+%replace OP_FGETEXP     by 258;
+%replace OP_FGETMAN     by 259;
+
+%replace OP_FINT        by 260;
+%replace OP_FINTRZ      by 261;
+
+%replace OP_FLOG10      by 262;
+%replace OP_FLOG2       by 263;
+%replace OP_FLOGN       by 264;
+%replace OP_FLOGNP1     by 265;
+
+%replace OP_FMOD        by 266;
+%replace OP_FMOVE       by 267;
+%replace OP_FSMOVE      by 268; /* 68040 only */
+%replace OP_FDMOVE      by 269; /* 68040 only */
+%replace OP_FMOVECR     by 270;
+%replace OP_FMOVEM      by 271;
+%replace OP_FMUL        by 272;
+%replace OP_FSMUL       by 273; /* 68040 only */
+%replace OP_FDMUL       by 274; /* 68040 only */
+
+%replace OP_FNEG        by 275;
+%replace OP_FSNEG       by 276; /* 68040 only */
+%replace OP_FDNEG       by 277; /* 68040 only */
+%replace OP_FNOP        by 278;
+
+%replace OP_FREM        by 279;
+%replace OP_FRESTORE    by 280;
+
+%replace OP_FSAVE       by 281;
+%replace OP_FSCALE      by 282;
+
+%replace OP_FSET_COND   by 283;
+%replace OP_FSF         by 283; /* OP_FSET_COND + FCONDITION_F */
+%replace OP_FSEQ        by 284; /* OP_FSET_COND + FCONDITION_EQ */
+%replace OP_FSOGT       by 285; /* OP_FSET_COND + FCONDITION_OGT */
+%replace OP_FSOGE       by 286; /* OP_FSET_COND + FCONDITION_OGE */
+%replace OP_FSOLT       by 287; /* OP_FSET_COND + FCONDITION_OLT */
+%replace OP_FSOLE       by 288; /* OP_FSET_COND + FCONDITION_OLE */
+%replace OP_FSOGL       by 289; /* OP_FSET_COND + FCONDITION_OGL */
+%replace OP_FSOR        by 290; /* OP_FSET_COND + FCONDITION_OR */
+%replace OP_FSUN        by 291; /* OP_FSET_COND + FCONDITION_UN */
+%replace OP_FSUEQ       by 292; /* OP_FSET_COND + FCONDITION_UEQ */
+%replace OP_FSUGT       by 293; /* OP_FSET_COND + FCONDITION_UGT */
+%replace OP_FSUGE       by 294; /* OP_FSET_COND + FCONDITION_UGE */
+%replace OP_FSULT       by 295; /* OP_FSET_COND + FCONDITION_ULT */
+%replace OP_FSULE       by 296; /* OP_FSET_COND + FCONDITION_ULE */
+%replace OP_FSNE        by 297; /* OP_FSET_COND + FCONDITION_NE */
+%replace OP_FSET        by 298; /* OP_FSET_COND + FCONDITION_T */
+%replace OP_FSSF        by 299; /* OP_FSET_COND + FCONDITION_SF */
+%replace OP_FSSEQ       by 300; /* OP_FSET_COND + FCONDITION_SEQ */
+%replace OP_FSGT        by 301; /* OP_FSET_COND + FCONDITION_GT */
+%replace OP_FSGE        by 302; /* OP_FSET_COND + FCONDITION_GE */
+%replace OP_FSLT        by 303; /* OP_FSET_COND + FCONDITION_LT */
+%replace OP_FSLE        by 304; /* OP_FSET_COND + FCONDITION_LE */
+%replace OP_FSGL        by 305; /* OP_FSET_COND + FCONDITION_GL */
+%replace OP_FSGLE       by 306; /* OP_FSET_COND + FCONDITION_GLE */
+%replace OP_FSNGLE      by 307; /* OP_FSET_COND + FCONDITION_NGLE */
+%replace OP_FSNGL       by 308; /* OP_FSET_COND + FCONDITION_NGL */
+%replace OP_FSNLE       by 309; /* OP_FSET_COND + FCONDITION_NLE */
+%replace OP_FSNLT       by 310; /* OP_FSET_COND + FCONDITION_NLT */
+%replace OP_FSNGE       by 311; /* OP_FSET_COND + FCONDITION_NGE */
+%replace OP_FSNGT       by 312; /* OP_FSET_COND + FCONDITION_NGT */
+%replace OP_FSSNE       by 313; /* OP_FSET_COND + FCONDITION_SNE */
+%replace OP_FSST        by 314; /* OP_FSET_COND + FCONDITION_ST */
+
+%replace OP_FSGLDIV     by 315;
+%replace OP_FSGLMUL     by 316;
+%replace OP_FSIN        by 317;
+%replace OP_FSINCOS     by 318;
+%replace OP_FSINH       by 319;
+%replace OP_FSQRT       by 320;
+%replace OP_FSSQRT      by 321; /* 68040 only */
+%replace OP_FDSQRT      by 322; /* 68040 only */
+%replace OP_FSUB        by 323;
+%replace OP_FSSUB       by 324; /* 68040 only */
+%replace OP_FDSUB       by 325; /* 68040 only */
+
+%replace OP_FTAN        by 326;
+%replace OP_FTANH       by 327;
+%replace OP_FTENTOX     by 328;
+
+%replace OP_FTRAP_COND  by 329;
+%replace OP_FTRAPF      by 329; /* OP_FTRAP_COND + FCONDITION_F */
+%replace OP_FTRAPEQ     by 330; /* OP_FTRAP_COND + FCONDITION_EQ */
+%replace OP_FTRAPOGT    by 331; /* OP_FTRAP_COND + FCONDITION_OGT */
+%replace OP_FTRAPOGE    by 332; /* OP_FTRAP_COND + FCONDITION_OGE */
+%replace OP_FTRAPOLT    by 333; /* OP_FTRAP_COND + FCONDITION_OLT */
+%replace OP_FTRAPOLE    by 334; /* OP_FTRAP_COND + FCONDITION_OLE */
+%replace OP_FTRAPOGL    by 335; /* OP_FTRAP_COND + FCONDITION_OGL */
+%replace OP_FTRAPOR     by 336; /* OP_FTRAP_COND + FCONDITION_OR */
+%replace OP_FTRAPUN     by 337; /* OP_FTRAP_COND + FCONDITION_UN */
+%replace OP_FTRAPUEQ    by 338; /* OP_FTRAP_COND + FCONDITION_UEQ */
+%replace OP_FTRAPUGT    by 339; /* OP_FTRAP_COND + FCONDITION_UGT */
+%replace OP_FTRAPUGE    by 340; /* OP_FTRAP_COND + FCONDITION_UGE */
+%replace OP_FTRAPULT    by 341; /* OP_FTRAP_COND + FCONDITION_ULT */
+%replace OP_FTRAPULE    by 342; /* OP_FTRAP_COND + FCONDITION_ULE */
+%replace OP_FTRAPNE     by 343; /* OP_FTRAP_COND + FCONDITION_NE */
+%replace OP_FTRAPT      by 344; /* OP_FTRAP_COND + FCONDITION_T */
+%replace OP_FTRAPSF     by 345; /* OP_FTRAP_COND + FCONDITION_SF */
+%replace OP_FTRAPSEQ    by 346; /* OP_FTRAP_COND + FCONDITION_SEQ */
+%replace OP_FTRAPGT     by 347; /* OP_FTRAP_COND + FCONDITION_GT */
+%replace OP_FTRAPGE     by 348; /* OP_FTRAP_COND + FCONDITION_GE */
+%replace OP_FTRAPLT     by 349; /* OP_FTRAP_COND + FCONDITION_LT */
+%replace OP_FTRAPLE     by 350; /* OP_FTRAP_COND + FCONDITION_LE */
+%replace OP_FTRAPGL     by 351; /* OP_FTRAP_COND + FCONDITION_GL */
+%replace OP_FTRAPGLE    by 352; /* OP_FTRAP_COND + FCONDITION_GLE */
+%replace OP_FTRAPNGLE   by 353; /* OP_FTRAP_COND + FCONDITION_NGLE */
+%replace OP_FTRAPNGL    by 354; /* OP_FBRA_COND + FCONDITION_NGL */
+%replace OP_FTRAPNLE    by 355; /* OP_FTRAP_COND + FCONDITION_NLE */
+%replace OP_FTRAPNLT    by 356; /* OP_FTRAP_COND + FCONDITION_NLT */
+%replace OP_FTRAPNGE    by 357; /* OP_FTRAP_COND + FCONDITION_NGE */
+%replace OP_FTRAPNGT    by 358; /* OP_FTRAP_COND + FCONDITION_NGT */
+%replace OP_FTRAPSNE    by 359; /* OP_FTRAP_COND + FCONDITION_SNE */
+%replace OP_FTRAPST     by 360; /* OP_FTRAP_COND + FCONDITION_ST */
+
+%replace OP_FTST        by 361;
+%replace OP_FTWOTOX     by 362;
+
+%replace MAX_OPCODES	by 362;
+
+/* -------------------------------------------------------------------
+ * -- MC68020 Conditional Test Codes (0-15) --
+ * ---------------------------------------------------------------- */
+
+%replace CONDITION_T	by  0;		/* True */
+%replace CONDITION_F	by  1;		/* False */
+%replace CONDITION_HI	by  2;		/* High */
+%replace CONDITION_LS	by  3;		/* Low or Same */
+%replace CONDITION_CC	by  4;		/* Carry Clear */
+%replace CONDITION_CS	by  5;		/* Carry Set */
+%replace CONDITION_NE	by  6;		/* Not Equal */
+%replace CONDITION_EQ	by  7;		/* Equal */
+%replace CONDITION_VC	by  8;		/* Overflow Clear */
+%replace CONDITION_VS	by  9;		/* Overflow Set */
+%replace CONDITION_PL	by 10;		/* Plus */
+%replace CONDITION_MI	by 11;		/* Minus */
+%replace CONDITION_GE	by 12;		/* Greater or Equal */
+%replace CONDITION_LT	by 13;		/* Less Than */
+%replace CONDITION_GT	by 14;		/* Greater Than */
+%replace CONDITION_LE	by 15;		/* Less or Equal */
+
+/* -------------------------------------------------------------------
+ * -- MC68881 Conditional Test Codes (0-31) --
+ * ---------------------------------------------------------------- */
+
+%replace FCONDITION_F	 by  0;	/* False */
+%replace FCONDITION_EQ	 by  1;	/* Equal */
+%replace FCONDITION_OGT	 by  2;	/* Ordered Greater Than */
+%replace FCONDITION_OGE	 by  3;	/* Ordered Greater or Equal */
+%replace FCONDITION_OLT	 by  4;	/* Ordered Less Than */
+%replace FCONDITION_OLE	 by  5;	/* Ordered Less Than or Equal */
+%replace FCONDITION_OGL	 by  6;	/* Ordered Greater or Less Than */
+%replace FCONDITION_OR	 by  7;	/* Ordered */
+%replace FCONDITION_UN	 by  8;	/* Unordered */
+%replace FCONDITION_UEQ	 by  9;	/* Unordered or Equal */
+%replace FCONDITION_UGT	 by 10;	/* Unordered or Greater Than */
+%replace FCONDITION_UGE	 by 11;	/* Unordered or Greater or Equal */
+%replace FCONDITION_ULT	 by 12;	/* Unordered or Less Than */
+%replace FCONDITION_ULE	 by 13;	/* Unordered or Less or Equal */
+%replace FCONDITION_NE	 by 14;	/* Not Equal */
+%replace FCONDITION_T	 by 15;	/* True */
+%replace FCONDITION_SF	 by 16;	/* Signalling False */
+%replace FCONDITION_SEQ	 by 17;	/* Signalling Equal */
+%replace FCONDITION_GT	 by 18;	/* Greater Than */
+%replace FCONDITION_GE	 by 19;	/* Greater Than or Equal */
+%replace FCONDITION_LT	 by 20;	/* Less Than */
+%replace FCONDITION_LE	 by 21;	/* Less Than or Equal */
+%replace FCONDITION_GL	 by 22;	/* Greater or Less Than */
+%replace FCONDITION_GLE	 by 23;	/* Greater or Less or Equal */
+%replace FCONDITION_NGLE by 24;	/* Not (Greater or Less or Equal) */
+%replace FCONDITION_NGL	 by 25;	/* Not (Greater or Less Than) */
+%replace FCONDITION_NLE	 by 26;	/* Not (Less Than or Equal) */
+%replace FCONDITION_NLT	 by 27;	/* Not Less Than */
+%replace FCONDITION_NGE	 by 28;	/* Not (Greater Than or Equal) */
+%replace FCONDITION_NGT	 by 29;	/* Not Greater Than */
+%replace FCONDITION_SNE	 by 30;	/* Signalling Not Equal */
+%replace FCONDITION_ST	 by 31;	/* Signalling True */
+

@@ -1,0 +1,2843 @@
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.21.92  DGM  051R	Fix for 051.
+ *  07.15.92  DGM  051	Tentative fix in FIND_USER_CONVERSION.
+ *  07.02.92  DGM  050	Fix to make QUIET_USER_CONVERSIONS truly quiet.
+ *  06.25.92  DGM  049	Updated.
+ *  06.11.92  DGM  048	Updated to not see overloaded functions which
+ *			are effectively non-visible because of parsing
+ *			from a deferred function body.
+ *  05.11.92  PKT  047	Updated user conversions for 'this' qualifiers
+ *			in SIG_NODEs.
+ *  05.01.92  PKT  046	Fixed user conversion to void.
+ *  04.23.92  PKT  046	Updated for 'this' qualifiers in SIG_NODEs.
+ *  03.13.92  PKT  045	Updated for parameter nodes.
+ *  03.26.92  DGM  044	New value-node scheme.
+ *  02.10.92  DGM  043	Name change (x_TYPE -> x_TK) for CodeWatch clash.
+ *  01.21.92  DGM  042	Parameter link-node changes.
+ *  01.10.92  PKT  041	Fixed ORDINARY_OK for operators that require
+ *			operand to be an lvalue.
+ *  12.31.91  PKT  041	Fixed CHECK_USER_CONVERSION to deal with
+ *			expressions of type reference.
+ *  12.19.91  PKT  040	Improved compatibility of SW_*_TYPE_QUALIFIERS
+ *			with cfront.
+ *  12.17.91  PKT  039  Enhanced PREFERRED_ARG to prefer converting a
+ *			null pointer constant that's an enum to 
+ *			an integral type over a pointer type.
+ *			Made FIND_USER_CONVERSION quiet, and fixed it
+ *			to respect constness of the converted object.
+ *  11.15.91  DGM  038  Obsolete .mpl version.
+ *  11.19.91  DGM  037  Rearrange code to get rid of P$AEQB call.
+ *  11.12.91  DGM  036  Merge.
+ *  10.27.91  PKT  035  Support lvalue conversion to base in overloading.
+ *  10.21.91  PKT  034  Fix MATCH_FUNCTIONS for overloaded member reference.
+ *			Fix LVALUE_MATCH for base class match.
+ *  10.03.91  DGM  033	Support for "void &" parameter types.
+ *  09.17.91  PKT  032  Added "fine-grained" overloading resolution,
+ *			i.e. the "best-matching sequence" rule.
+ *			Bug fixes.
+ *			Conversion function matching in FIND_USER_CONVERSION.
+ *			Matching with overloaded member pointer arg.
+ *			FIND_USER_CONVERSION and USER_CONVERSIONS always
+ *			diagnosed ambiguities, but often this is not wanted.
+ *			Argument matching with ellipses.
+ *  09.12.91  PKT  031  Fixed sensitivity to constness of 'this' object.
+ *  08.03.91  PKT  030  Fixed for non-prototyped signatures.
+ *  06.17.91  PKT  029  Bug fix.
+ *  06.13.91  PKT  028  Fixed argument matching with ellipses.
+ *  05.31.91  PKT  027  Made USER_CONVERSIONS convert references better.
+ *  05.28.91  PKT  026  Added support for sensitivity to constness of
+ *			argument (and of 'this' object). Improved handling
+ *			of reference types; other minor fixes.
+ *  05.14.91  PKT  025  Combined ASSIGNMENT_COMPATIBLE with
+ *			STANDARD_CONVERSION, for the sake of minor fixes.
+ *  04.10.91  PKT  024  Added IS_OVERLOADED_VALUE.
+ *  04.08.91  DGM  023  Fixed bug in USER_CONVERSIONS.
+ *  03.25.91  TLF  022  Fixed bug in USER_CONVERSIONS.
+ *  03.20.91  TLF  021	Added code in USER_CONVERSIONS to catch ambiguity
+ *			when there is a user conversion and a constructor
+ *			which can both be used to convert the same class
+ *			object.
+ *  03.13.91  TLF  020  Bug fixes to ORDINARY_OK, MATCH_FUNCTIONS.
+ *			Added code in USER_CONVERSIONS to catch ambiguity
+ *			when there is a user conversion and a constructor
+ *			which can both be used to convert the same class
+ *			object.
+ *  03.08.91  TLF  019  Added ORDINARY_OK, bug fix to ASSIGNMENT_COMPATIBLE.
+ *  02.27.91  DGM  018  Fix for "struct X { X (int = 3); }; f () { X x; }".
+ *  02.21.91  PKT  017  Updated for member pointers.
+ *  02.06.91  TLF  016  Bug fix in FIND_USER_CONVERSION so that the same user 
+ *			conversion for a class with multiple base
+ *			classes that is found in more than one of the base
+ *			classes is not considered to be ambiguous.
+ *  01.27.91  PKT  015  Updated for member pointers.
+ *  01.11.91  TLF  014  Fixed bug in STANDARD_CONVERSIONS that was
+ *			introduced by 013.  
+ *  01.03.91  TLF  013  Fixed bug in EXACT_MATCH so that actual arg of 
+ *                      type FUNCTION_DT is convertible to a pointer to
+ *                      a function.
+ *                      Added MATCH_FUNCTIONS and call to it in MATCH_LEVEL.
+ *  12.21.90  PKT  012  Fixed so that user conversions are invoked as
+ *			member functions.
+ *  12.17.90  TLF  011  Fixed bug in STANDARD_CONVERSION so that a pointer
+ *                      to a derived is convertible to a pointer to base.
+ *                      Fixed bugs in FIND_USER_CONVERSION.
+ *  11.28.90  TLF  010  Fixed bug in EXACT_MATCH so that "const T*"
+ *                      and "T*" are found to be exact matches.
+ *			Fixed bug in FIND_OVERLOAD so that ambiguous
+ *  			overload diag is not issued twice.
+ *  11.15.90  TLF  009  Fixed FIND_OVERLOAD for the case when there are
+ *                      no more actual parameters, and there are
+ *                      default formal parameters.
+ *                      Fixed bug in EXACT_MATCH for void* type.
+ *  09.18.90  TLF  008  Fixed FIND_OVERLOAD so the two input parameters
+ *                      FUNC1_SYM and FUNC2_SYM were not changed by this
+ *                      routine.
+ *                      Fixed bug in EXACT_MATCH.
+ *  09.25.90  DGM  007  Preprocessor include file name changes.
+ *  09.14.90  DGM  006  Changed include file names and VOP names.
+ *  09.13.90  TLF  005  Fixed bugs in USER_CONVERSIONS: 
+ *                      1. order of arguments in call to FIND_OVERLOAD 
+ *                      were reversed.
+ *                      2. Added code so that user conversion checking is
+ *                      NOT done if source and target are compatible types.
+ *  08.28.90  TLF  004  Fixed bugs in FIND_USER_CONVERSION.
+ *  08.27.90  TLF  003  More support for overloading.
+ *  08.21.90  TLF  002  Updated.  DGM.
+ *  08.08.90  DGM  001  New type-node.
+ *  07.23.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.21.92 051 OVERLD');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%nolist;
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_ADD_XREF_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_PP_TOKEN_POD_IN;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_INITIALIZE_STRING_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_OPERATOR_NAME_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_FOLD_VALUE_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_PROCESS_CONSTANT_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_INTEGRAL_PROMOTION_PKG;
+%include CXX_EVALUATE_INTEGER_PKG;
+%include CXX_EVALUATE_POINTER_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_LOOKUP_BUILTIN_PKG;
+%include CXX_CHECK_ARGUMENT_LIST_PKG;
+%include CXX_EXPRESSION_COMPATIBILITY_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_TYPE_CLASS_PKG;
+%include CXX_MEMBER_VALUE_PKG;
+%include CXX_MEMBER_POINTER_PKG;
+%include CXX_OPERATOR_TOKEN_MAP_IN;
+%include CXX_TOKEN_MAP_OPERATOR_IN;
+%include CXX_DEFER_FUNCTION_PKG;
+%list;
+
+/* ---------------------------------------------------------------------
+/* The following replaces define worst-to-best matching levels for
+/* overloaded functions and their actual arguments.  An 'exact' match
+/* allows conversion to const or volatile, but the best possible match
+/* is one with no such conversion.  'M_EXACT_PLUS' is the code for this
+/* best possible match.
+/* ------------------------------------------------------------------- */
+
+%replace	NO_MATCH	by 1;
+%replace	M_ELLIP		by 2;
+%replace	M_USER		by 3;
+%replace	M_TEMP		by 4;
+%replace	M_STD		by 5;
+%replace	M_PROMO		by 6;
+%replace 	M_EXACT		by 7;
+%replace	M_EXACT_PLUS	by 8;
+
+/* ---------------------------------------------------------------------
+/* The following replaces define codes that are used in determining which
+/* of two matching overloading functions is the preferred function.
+/* ------------------------------------------------------------------- */
+
+%replace	PREFERRED_NEITHER	by 1;
+%replace 	PREFERRED_FIRST		by 2;
+%replace	PREFERRED_SECOND	by 3;
+%replace	PREFER_CONFLICT		by 4;
+
+/* ---------------------------------------------------------------------
+/* OVERLOAD
+/*
+/* Given an actual argument list ARG_LIST, search for an overloaded
+/* function in the overloaded function lists headed by FUNC1_SYM
+/* and FUNC2_SYM.  Both FUNC1_SYM and FUNC2_SYM are used ONLY if this
+/* procedure is being called to resolve an overloaded operator.  In
+/* that case, FUNC1_SYM is the sym_node id of the first of a list of
+/* global overloaded operators, and FUNC2_SYM is the sym_node id of the
+/* first of a list of class member overloaded operators.  
+/* If this procedure is called to search for an overloaded function,
+/* then FUNC1_SYM is the sym_node id of the first of a list of functions
+/* to search, and FUNC2_SYM is NULL_NID.
+/*
+/* ARG_LIST corresponds directly to the parameters of FUNC1_SYM,
+/* but has an extra "this" argument relative to  those of FUNC2_SYM.
+/* 
+/* The argument CODES is used in some strange way that I don't understand
+/* yet.
+/* ------------------------------------------------------------------- */
+
+OVERLOAD: procedure (ARG_LIST, FUNC1_SYM, FUNC2_SYM, BUILTIN_VOP)
+  	  returns   (type (NID_T))
+	  external  (X_OVERLOAD);
+ 
+	declare
+		ARG_LIST	type (CXX_VID_T),    /* Actual arg list */
+		FUNC1_SYM	type (NID_T),    /* First function list */
+		FUNC2_SYM	type (NID_T),    /* Acceptable codes */
+		BUILTIN_VOP	type (SHORT_T);
+	declare
+		THIS_FSYM	type (NID_T);
+
+	THIS_FSYM = NULL_NID;
+
+	/* Try without user or ellipsis matches */
+
+	if SW_X_OVERLOAD then do;
+		THIS_FSYM = FIND_OVERLOAD (ARG_LIST,
+					   FUNC1_SYM,
+					   FUNC2_SYM,
+					   BUILTIN_VOP,
+					   FALSE,
+					   FALSE);
+	end;
+
+	if THIS_FSYM = NULL_NID then do;
+		THIS_FSYM = FIND_OVERLOAD (ARG_LIST,
+					   FUNC1_SYM,
+					   FUNC2_SYM,
+					   BUILTIN_VOP,
+					   TRUE,
+					   FALSE);
+	end;
+ 
+	return (THIS_FSYM);
+
+end OVERLOAD;
+
+/* ---------------------------------------------------------------------
+/* FIND_OVERLOAD
+/*
+/* Do the actual search for an overloaded function.  
+/* ARG_LIST is an actual argument list, FUNC1_SYM is the sym_node id
+/* of the first of a list of global overloaded functions.
+/* FUNC2_SYM is the first of a list of member overloaded functions or 
+/* operators.
+/* ------------------------------------------------------------------- */
+
+FIND_OVERLOAD: procedure (ARG_LIST, FUNC1_SYM, FUNC2_SYM, VOP, USER_OK, QUIET)
+	       returns   (type (NID_T))
+	       external  (X_FIND_OVERLOAD);
+	declare
+		ARG_LIST	type (CXX_VID_T),   /* Actual arg list */
+		FUNC1_SYM	type (NID_T),   /* First function list */
+		FUNC2_SYM	type (NID_T),   /* Second function list */
+		VOP		type (SHORT_T),	/* Ambiguous builtin */
+		USER_OK		type (BOOL_T),  /* User conversions are ok */
+		QUIET		type (BOOL_T);  /* Be quiet? */
+	declare
+		THIS_FSYM	type (NID_T),
+		THIS_FROM_MLIST	type (BOOL_T),
+		GLIST_SYM       type (NID_T),
+		MLIST_SYM       type (NID_T),
+		SAVE_FSYM	type (NID_T),
+		SAVE_FROM_MLIST	type (BOOL_T),
+		OTHER_FSYM	type (NID_T),
+		THIS_PREF_FUNC  type (NID_T),
+		THIS_FORMAL_PARAMETER
+				type (NID_T),
+		THIS_FORMAL	type (NID_T),
+		NEXT_FORMAL	type (NID_T),
+		FOUND		type (SHORT_T),
+		WORST_MATCH	type (SHORT_T),	
+		THIS_MATCH	type (SHORT_T),	
+		BEST_FUNC_MATCH	type (SHORT_T),
+		THIS_PCOUNT	type (SHORT_T),
+		THIS_ELLIPSIS	type (BOOL_T),
+		THIS_PROTOTYPED	type (BOOL_T),
+		DOING_GLIST    	type (BOOL_T),
+		THIS_ACTUAL	type (CXX_VID_T),
+		NEXT_ACTUAL	type (CXX_VID_T),
+		OPERATOR_TOKEN	type (SHORT_T);
+
+	
+	SAVE_FSYM = NULL_NID;
+	FOUND = 0;
+	BEST_FUNC_MATCH = NO_MATCH;
+	GLIST_SYM = FUNC1_SYM;  /* Global operator list head */
+	MLIST_SYM = FUNC2_SYM;  /* Member function/operator list head */
+	
+	if GLIST_SYM = NULL_NID then do;
+		/* No global operator list, so search only the 
+		/* member list.
+		/**/
+		DOING_GLIST = FALSE;
+		THIS_FSYM = MLIST_SYM;
+		MLIST_SYM = NULL_NID;
+	end;
+	else do;
+		/* Search the global operator list first.
+		/**/
+		DOING_GLIST = TRUE;
+		THIS_FSYM = GLIST_SYM;
+	end;
+ 
+	do while (THIS_FSYM ^= NULL_NID);
+
+		call SET_SYM_NODE_R (THIS_FSYM);
+
+		if PARSING_DEFERRED_FUNCTION () then do;
+			if EFFECTIVELY_NON_VISIBLE_P (NODE_PTR) then
+				goto CONTINUE_LABEL;
+		end;
+
+		/* Search all overloaded functions in this list */
+
+		WORST_MATCH = M_EXACT_PLUS;
+
+		/* Get the information about the formal parameters */
+
+		call SET_SIG_NODE_R (SYM_NODE.TOP_TYPE.SIGNATURE);
+
+		THIS_ELLIPSIS = SIG_NODE.ELLIPSIS;
+		THIS_FORMAL_PARAMETER = SIG_NODE.EXPLICIT_PARAMETERS;
+		THIS_PCOUNT = SIG_NODE.EXPLICIT_NPARAMETERS;
+		THIS_PROTOTYPED = SIG_NODE.PROTOTYPED;
+ 
+		/* Get the next formal parameter */
+
+		NEXT_FORMAL = NULL_NID;
+		THIS_FORMAL = NULL_NID;
+		if THIS_FORMAL_PARAMETER ^= NULL_NID then do;
+			call SET_PARAMETER_NODE_R (THIS_FORMAL_PARAMETER);
+			NEXT_FORMAL = PARAMETER_NODE.NEXT;
+			THIS_FORMAL = PARAMETER_NODE.TYPE;
+		end;
+ 
+		/* Get the information about the actual arguments */
+
+		if ARG_LIST ^= NULL_CXX_VID then do;
+			THIS_ACTUAL = ARG_LIST->CXX_VALUE_NODE.LEFT;
+			NEXT_ACTUAL = ARG_LIST->CXX_VALUE_NODE.RIGHT;
+		end;
+		else do;
+			/*
+			/* There is no argument list.  The function
+			/* in the overload list with no explicit
+			/* parameters is the only match.
+			/**/
+			THIS_ACTUAL = NULL_CXX_VID;
+			NEXT_ACTUAL = NULL_CXX_VID;
+		end;
+
+		/* If we have both a global and a member list, the first
+		/* actual argument is a class object, which is needed to
+		/* check in the global list.  If we have completed the 
+		/* global list search, and are now checking the member 
+		/* list, the first actual argument must be skipped, 
+		/* because the class object is not in the 'explicit_parameters'
+		/* list for a member or member operator function.
+		/**/
+		if ^DOING_GLIST then
+			call GET_NEXT_ACTUAL (NEXT_ACTUAL, THIS_ACTUAL);
+
+		do while ((WORST_MATCH > M_ELLIP)  & (THIS_ACTUAL ^= NULL_CXX_VID ));
+
+			if (THIS_FORMAL = NULL_NID) then do;
+				if ^THIS_PROTOTYPED then do;
+				end;
+				else if THIS_ELLIPSIS then 
+					WORST_MATCH = M_ELLIP;
+				else	WORST_MATCH = NO_MATCH;
+			end;
+			else do;
+				/*
+ 				/* There is a formal to check.
+				/**/
+				THIS_MATCH = MATCH_LEVEL (THIS_FORMAL,
+							  THIS_ACTUAL,
+							  USER_OK);
+				if THIS_MATCH < WORST_MATCH then
+					WORST_MATCH = THIS_MATCH;
+			end;
+ 
+			/* Set up for the next formal and actual */
+
+			THIS_FORMAL_PARAMETER = NEXT_FORMAL;
+			if THIS_FORMAL_PARAMETER ^= NULL_NID then do;
+				call SET_PARAMETER_NODE_R (THIS_FORMAL_PARAMETER);
+				NEXT_FORMAL = PARAMETER_NODE.NEXT;
+				THIS_FORMAL = PARAMETER_NODE.TYPE;
+			end;
+			else
+				THIS_FORMAL = NULL_NID;
+ 
+			if NEXT_ACTUAL ^= NULL_CXX_VID then do;
+				THIS_ACTUAL = NEXT_ACTUAL->CXX_VALUE_NODE.LEFT;
+				NEXT_ACTUAL = NEXT_ACTUAL->CXX_VALUE_NODE.RIGHT;
+			end;
+			else	THIS_ACTUAL = NEXT_ACTUAL;
+		end;
+ 
+		/*
+		/* Here, check for the case where there are more
+		/* formals than actuals, but the formal has a default
+		/* argument value specified.
+		/**/
+
+		if (WORST_MATCH > NO_MATCH ) & (THIS_FORMAL_PARAMETER ^= NULL_NID) then do;
+			/*
+			/* Check to see if the current formal has a default
+			/* value specified.  If it does, then the match value
+			/* found is OK, otherwise, it is not a match.
+			/**/
+			call SET_PARAMETER_NODE_R (THIS_FORMAL_PARAMETER);
+			if PARAMETER_NODE.VALUE = NULL_CXX_VID then
+				WORST_MATCH = NO_MATCH;
+		end;
+ 
+		if (WORST_MATCH > NO_MATCH) then do;
+			/*
+			/* Have a match of some sort.
+			/**/
+			FOUND = FOUND + 1;
+			if SAVE_FSYM = NULL_NID then do;
+				/*
+				/* First one found.
+				/**/
+				SAVE_FSYM = THIS_FSYM;
+				SAVE_FROM_MLIST = ^DOING_GLIST;
+				BEST_FUNC_MATCH = WORST_MATCH;
+			end;
+			else do;
+				/*
+				/* More than one function that matches in some
+				/* way has been found.  Find the preferred one.
+				/**/
+				THIS_FROM_MLIST = ^DOING_GLIST;
+				THIS_PREF_FUNC = PREFERRED_FUNCTION
+						 (ARG_LIST,
+						  USER_OK,
+						  THIS_FSYM, THIS_FROM_MLIST,
+						  SAVE_FSYM, SAVE_FROM_MLIST);
+
+				if THIS_PREF_FUNC = NULL_NID then do;
+					/*
+					/* Neither was preferred.
+					/* Save the sym-node id for
+					/* use in a diagnostic later.
+					/**/
+					OTHER_FSYM = THIS_FSYM;
+				end;
+				else do;
+					/*
+					/* We have a preferred function.
+					/**/
+					FOUND = 1;
+					if THIS_PREF_FUNC = THIS_FSYM then do;
+						SAVE_FROM_MLIST
+							= THIS_FROM_MLIST;
+						SAVE_FSYM = THIS_PREF_FUNC;
+						BEST_FUNC_MATCH = WORST_MATCH;
+					end;
+				end;
+			end;
+		end;
+ 
+		/* Set up for the next function in the linked list */
+
+		CONTINUE_LABEL:
+
+		call SET_SYM_NODE_R (THIS_FSYM);
+		THIS_FSYM = SYM_NODE.NEXT_OVERLOAD;
+ 
+		if (THIS_FSYM = NULL_NID) then do;
+			/*
+			/* Try the next list.
+			/**/
+			THIS_FSYM = MLIST_SYM;
+			MLIST_SYM = NULL_NID;
+			DOING_GLIST = FALSE;
+		end;
+	end;
+ 
+	/* Check to see if more than one acceptable match was found */
+
+	if FOUND > 1 then do;
+		/*
+		/* Error; ambiguous overload resolution.
+		/**/
+		if ^QUIET then do;
+			call SEMANTIC_ERROR_II
+			     (ERR_AMBIGUOUS_OVERLOAD,
+			      SYMBOL_TYPE_NAME (SAVE_FSYM),
+			      SYMBOL_TYPE_NAME (OTHER_FSYM));
+		end;
+		/* SAVE_FSYM = NULL_NID; */
+	end;
+ 
+	if (FOUND = 1 & VOP ^= 0 & BEST_FUNC_MATCH <= M_USER) then do;
+		if ORDINARY_OK (VOP, ARG_LIST) then do;
+			/*
+			/* Error; ambiguous overload resolution.
+			/**/
+			if ^QUIET then do;
+				call SEMANTIC_ERROR_II
+				     (ERR_AMBIGUOUS_OVERLOAD_BUILTIN,
+				      FULL_SYMBOL_NAME (SAVE_FSYM),
+				      SYMBOL_NAME (SAVE_FSYM));
+			end;
+		end;
+		/* SAVE_FSYM = NULL_NID; */
+	end;
+ 
+	return (SAVE_FSYM);
+
+end FIND_OVERLOAD;
+
+/* ---------------------------------------------------------------------
+/* CHECK_USER_CONVERSION
+/*
+/* Check to see if the value denoted by ARG_VID is of class type.
+/* If not, simply return ARG_VID.  If it is, check to see if there
+/* is a user conversion for that class/struct to a type in ARG_TYPE.
+/* If so, return an expression tree which is a function call to that
+/* user conversion function.
+/*
+/* ARG_TYPE and ARG_CODES aren't both active at the same time.
+/* In fact, PKT checked on 01.09.92 and found that ARG_TYPE
+/* always happens to be null.
+/* ------------------------------------------------------------------- */
+
+CHECK_USER_CONVERSION: procedure (ARG_VID, ARG_CODES, ARG_TYPE)
+		       returns   (type (CXX_VID_T))
+		       external  (X_CHECK_USER_CONVERSION);
+	declare	
+		ARG_VID		type (CXX_VID_T),
+		ARG_CODES	type (SHORT_T),
+		ARG_TYPE	type (NID_T);
+	declare
+		THIS_LEFT	type (CXX_VID_T),
+		THIS_RIGHT	type (CXX_VID_T),
+		THIS_NID	type (NID_T),
+		THIS_VID	type (CXX_VID_T),
+		TYPE_CODE	type (SHORT_T),
+		OTHER_SYM	type (NID_T),
+		EXPR_TYPE_INFO	type (TYPE_INFO_T);
+
+	THIS_VID = ARG_VID;
+	TYPE_CODE = rank (THIS_VID->CXX_VALUE_NODE.TOP_TYPE.CODE); 
+
+	if ^( IS_AGGREGATE_TAG_TYPE (TYPE_CODE)
+	    | TYPE_CODE = REFERENCE_DT ) then
+		return (THIS_VID);
+
+	CXX_VALUE_NODE_PTR = THIS_VID;
+	call GET_VALUE_TYPE (EXPR_TYPE_INFO);
+
+	THIS_NID = FIND_USER_CONVERSION (ARG_TYPE,
+					 EXPR_TYPE_INFO,
+					 FALSE,
+					 ARG_CODES,
+					 OTHER_SYM,
+					 NULL_NID);
+
+	if OTHER_SYM ^= NULL_NID then do;
+		/*
+		/* Error; ambigous user conversion.
+		/**/
+		call SEMANTIC_ERROR_II (ERR_AMBIGUOUS_USER_CONVERSION,
+					SYMBOL_TYPE_NAME (THIS_NID),
+					SYMBOL_TYPE_NAME (OTHER_SYM));
+	end;
+	else if THIS_NID ^= NULL_NID then do;
+		/*
+		/* A valid user conversion was found.
+		/* Generate a call to the conversion routine,
+		/* passing a pointer to the input argument (the class) to it.
+		/**/
+		THIS_VID = CALL_USER_CONVERSION (THIS_NID, THIS_VID);
+		THIS_VID = VALUE_OF (THIS_VID);
+	end;
+ 
+	return (THIS_VID);
+
+end CHECK_USER_CONVERSION;
+
+/* ---------------------------------------------------------------------
+/* FIND_USER_CONVERSION
+/*
+/* Actually look for a user conversion for the class whose type-node
+/* is denoted by ARG_TYPE_INFO, to the type specified by VALID_TYPES.
+/* If a valid user conversion is found, the sym-node id representing
+/* the function is returned, otherwise NULL_NID is returned.
+/* OTHER_SYM is normally set to NULL_NID, but if more than one possible
+/* user conversion is detected then it is set to the another possible
+/* conversion function symbol, to facilitate error messages.
+/*
+/* In addition to handling conversions of const and volatile qualified 
+/* objects in the reasonable way, we go out of our way to provide
+/* a measure of compatibility with old cfronts that don't have
+/* const-qualified member functions at all.
+/*
+/* TARG_TYPE and VALID_TYPES are not both active at the same time.
+/* ------------------------------------------------------------------- */
+
+FIND_USER_CONVERSION: procedure (TARG_TYPE,
+				 ARG_TYPE_INFO,
+				 IS_CAST,
+				 VALID_TYPES,
+				 OTHER_SYM,
+				 SKIP_CONVERSION)
+	              returns   (type (NID_T))
+	              internal;
+	declare	
+		TARG_TYPE	type (NID_T),   /* Exact match type or NULL */
+		ARG_TYPE_INFO	type (TYPE_INFO_T),   /* Type of class */
+		IS_CAST 	type (BOOL_T),  /* True if called for a cast */
+		VALID_TYPES	type (SHORT_T), /* Valid base type codes */
+		OTHER_SYM	type (NID_T),	/* Ambiguous symbol */
+		SKIP_CONVERSION	type (NID_T);	/* Skip symbol */
+	declare
+		SYM		type (NID_T),
+		SYM2		type (NID_T),
+		THIS_CLASS	type (NID_T),
+		BASE_CLASS	type (NID_T),
+		NEXT_SYM	type (NID_T),
+		CLASS_TYPE	type (TYPE_INFO_T),
+		TEMP_TYPE	type (TYPE_INFO_T),
+		FRET_TYPE	type (NID_T),
+		FRET_TOP	type (SHORT_T),
+		FRET_INFO	type (TYPE_INFO_T),
+		TARG_INFO	type (TYPE_INFO_T),
+		ERRCODE 	type (SHORT_T),
+		SEARCHING	type (BOOL_T),
+		SYM_MATCH	type (SHORT_T),
+		SYM_QUALS	type (BYTE_BITS_T),
+		SIG_QUALS	type (BYTE_BITS_T),
+		SYM_EXCELS	type (BOOL_T),
+		RET_MATCH	type (SHORT_T),
+		RET_QUALS	type (BYTE_BITS_T),
+		RET_EXCELS	type (BOOL_T),
+		THIS_RET	type (NID_T),
+		CLASS_HAS_BASES	type (BOOL_T),
+		SIGP		type (POINTER_T),
+		P		type (POINTER_T);
+	declare
+		COUNT		type (SHORT_T);
+		
+	THIS_RET = NULL_NID;
+	OTHER_SYM = NULL_NID;
+
+	/* Get the type info from the target type */
+
+	if TARG_TYPE ^= NULL_NID then do;
+		call SET_TYPE_NODE_R (TARG_TYPE);
+		call GET_TYPE_NODE_TYPE (TARG_INFO);
+		if TARG_INFO.TOP_TYPE.CODE = byte (FUNCTION_DT) then
+			call STRIP_TOP_TYPE (TARG_INFO, FALSE);
+	end;
+
+	/* Get the sym-node for the class */
+
+	if rank (ARG_TYPE_INFO.TYPE_CODE) = REFERENCE_DT then do;
+		CLASS_TYPE = ARG_TYPE_INFO;
+		call STRIP_TOP_TYPE (CLASS_TYPE, FALSE);
+		if ^IS_AGGREGATE_TAG_TYPE (rank (CLASS_TYPE.CODE)) then
+			return (THIS_RET);
+	end;
+	else do;
+		if ^IS_AGGREGATE_TAG_TYPE (rank (ARG_TYPE_INFO.CODE)) then
+			return (THIS_RET);
+		CLASS_TYPE = ARG_TYPE_INFO;
+	end;
+		
+	THIS_CLASS = CLASS_TYPE.TOP_TYPE.TAG_SYMBOL;
+	call SET_SYM_NODE_R (THIS_CLASS);
+ 
+	CLASS_HAS_BASES	= ((SYM_NODE.NBASE_CLASSES > 0) &
+			   (SYM_NODE.BASE_CLASSES ^= NULL_NID));
+
+	RET_MATCH = NO_MATCH;
+	RET_QUALS = ALL_TQ;
+	COUNT = 0;
+
+	SYM = SYM_NODE.CONVERSION;  /* First conversion operator sym-node id */
+
+	SEARCHING = SYM_NODE.CONVERSION ^= NULL_NID;
+
+	/*
+	/* Note that the following searches for two levels of match.
+	/* If there is an exact match, then the search is done and there
+	/* can be no ambiguity.  Otherwise keep a count of the inexact
+	/* matches.
+	/**/
+
+	do while (SEARCHING);
+
+		SYM_MATCH = NO_MATCH;
+
+		/* Get the symbol_node of the function */
+
+		call SET_SYM_NODE_R (SYM);
+		NEXT_SYM = SYM_NODE.NEXT_OVERLOAD;
+
+		if SKIP_CONVERSION = SYM then
+			goto CONTINUE_LABEL;
+
+		if PARSING_DEFERRED_FUNCTION () then do;
+			if EFFECTIVELY_NON_VISIBLE_P (NODE_PTR) then
+				goto CONTINUE_LABEL;
+		end;
+
+		/*
+		/* Set SYM_QUALS to indicate the bits in which
+		/* the function qualifiers do not match the object.
+		/* ANY_TQ is set if the qualifiers should prevent a match.
+		/**/
+		if CLASS_TYPE.NOT_AN_LVALUE then
+			SYM_QUALS = NULL_TQ;
+		else do;
+			call GET_SIG_NODE_R (SYM_NODE.TOP_TYPE.SIGNATURE,
+					     SIGP);
+			SIG_QUALS = SIGP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS;
+			call RELEASE_SIG_NODE (SYM_NODE.TOP_TYPE.SIGNATURE);
+
+			/*
+			/* Start with the qualifier differences which
+			/* prevent a valid conversion.
+			/**/
+			SYM_QUALS =    ^ SIG_QUALS
+				     & CLASS_TYPE.QUALIFIERS
+				     & ^ ANY_TQ;
+			/*
+			/* If any are present, set ANY_TQ to prevent a match,
+			/* except in compatibility mode because cfront 2.1
+			/* still only warns about calling a non-const
+			/* member function for a const object.
+			/**/
+			if   SYM_QUALS ^= NULL_TQ
+			   & ^ SW_X_IGNORE_TYPE_QUALIFIERS then
+				SYM_QUALS = SYM_QUALS | ANY_TQ;
+
+			/* Now set bits for the valid conversions. */
+			SYM_QUALS =   SYM_QUALS
+				    | ( ^ CLASS_TYPE.QUALIFIERS
+				      & SIG_QUALS
+				      & ^ ANY_TQ );
+		end;
+
+		/* Get the base type of the function return value */
+
+		call GET_SYMBOL_TYPE (FRET_INFO);
+		call STRIP_TOP_TYPE (FRET_INFO, FALSE);
+		FRET_INFO.NOT_AN_LVALUE = TRUE;
+		if FRET_INFO.TOP_TYPE.CODE = byte  (REFERENCE_DT) then
+			call STRIP_TOP_TYPE (FRET_INFO, FALSE);
+		FRET_TOP = rank (FRET_INFO.TOP_TYPE.CODE);
+
+		if IS_CAST & TARG_TYPE ^= NULL_NID then do;
+			if COMPATIBLE_SPECIAL_TYPE_INFO
+				(TARG_INFO, IGNORE_TOP_QUALIFIERS_TCM,
+				 FRET_INFO, IGNORE_TOP_QUALIFIERS_TCM) then
+				SYM_MATCH = M_STD;
+		end;
+
+		else if VALID_TYPES ^= NULL_TK then do;
+			if TARG_TYPE ^= NULL_NID then do; 
+				if COMPATIBLE_SPECIAL_TYPE_INFO
+				   (TARG_INFO, IGNORE_TOP_QUALIFIERS_TCM,
+				    FRET_INFO, IGNORE_TOP_QUALIFIERS_TCM)
+				then
+					SYM_MATCH = M_EXACT;
+			end;
+
+			if SYM_MATCH = NO_MATCH then do;
+				if ^IS_TYPE_CLASS (FRET_TOP, VALID_TYPES) then
+					/* SYM_MATCH = NO_MATCH */ ;
+				else if TARG_TYPE = NULL_NID then do;
+					if   TYPE_HAS_RESTRICTION (VALID_TYPES,
+						       LVALUE_TYPE_RESTRICTION)
+					   & FRET_INFO.NOT_AN_LVALUE then
+						/* SYM_MATCH = NO_MATCH */ ;
+					else if   TYPE_HAS_RESTRICTION
+						  (VALID_TYPES,
+						   NON_CONST_TYPE_RESTRICTION)
+						& FRET_INFO.TOP_TYPE.CONST then
+						/* SYM_MATCH = NO_MATCH */ ;
+					else
+						SYM_MATCH = M_STD;
+				end;
+				else if STANDARD_CONVERSION (
+						   TARG_INFO,
+						   FRET_INFO,
+						   NULL_CXX_VID,
+						   TRUE,
+						   FALSE
+						   ) then
+					SYM_MATCH = M_STD;
+			end;
+		end;
+
+		else if TARG_TYPE ^= NULL_NID then do;
+			SYM_MATCH = EXACT_MATCH(TARG_INFO, FRET_INFO, FALSE);
+			if SYM_MATCH = NO_MATCH then do;
+				if STANDARD_CONVERSION (TARG_INFO,
+						  	FRET_INFO,
+						  	NULL_CXX_VID,
+						  	TRUE,
+							TRUE) then
+					SYM_MATCH = M_STD;
+			end;
+		end;
+
+		/*
+		/* Here, we determine whether the symbol just
+		/* examined is better, worse, or ties with THIS_RET.
+		/* If COUNT > 1, RET_QUALS and RET_MATCH
+		/* represent a coposite ideal to be beaten.
+		/**/
+		if SYM_MATCH = NO_MATCH | (SYM_QUALS & ANY_TQ) ^= NULL_TQ then
+			/* do nothing */ ;
+		else do;
+			/*
+			/* Set SYM_EXCELS to indicate that the current
+			/* symbol is preferred in some manner over all
+			/* previously-seen symbols.  Set RET_EXCELS to indicate
+			/* that some previously-seen symbol is preferred
+			/* in some way over the current symbol.
+			/* Note that both may be TRUE simulateously.
+			/**/
+			if SW_X_FUDGE_TYPE_QUALIFIERS then do;
+				/* Matching carries more weight than quals. */
+				SYM_EXCELS = SYM_MATCH > RET_MATCH;
+				RET_EXCELS = RET_MATCH > SYM_MATCH;
+				if ^(SYM_EXCELS | RET_EXCELS) then do;
+					SYM_EXCELS = ((^SYM_QUALS & RET_QUALS)
+						     ^= NULL_TQ);
+					RET_EXCELS = ((SYM_QUALS & ^RET_QUALS)
+						     ^= NULL_TQ);
+				end;
+			end;
+			else do;
+				/* Matching carries equal weight as quals. */
+				SYM_EXCELS = ( SYM_MATCH > RET_MATCH 
+					     | (^SYM_QUALS & RET_QUALS)
+					       ^= NULL_TQ );
+				RET_EXCELS = ( SYM_MATCH < RET_MATCH
+					     | (SYM_QUALS & ^RET_QUALS)
+					       ^= NULL_TQ );
+			end;
+
+			if SYM_EXCELS & ^RET_EXCELS then do;
+				/* Go with SYM. */
+				COUNT = 1;
+				THIS_RET = SYM;
+				OTHER_SYM = NULL_NID;
+				RET_MATCH = SYM_MATCH;
+				RET_QUALS = SYM_QUALS;
+			end;
+			else if SYM_EXCELS = RET_EXCELS then do;
+				/* SYM not better or worse than RET. */
+				COUNT = COUNT + 1;
+				OTHER_SYM = SYM;
+				if SYM_MATCH > RET_MATCH then
+					RET_MATCH = SYM_MATCH;
+				RET_QUALS = RET_QUALS & SYM_QUALS;
+			end;
+		end;
+
+		CONTINUE_LABEL:
+
+		if   RET_MATCH >= M_EXACT_PLUS
+		   & RET_QUALS = NULL_TQ then
+			SEARCHING = FALSE;	
+		else if NEXT_SYM = NULL_NID then 
+			SEARCHING = FALSE;
+		else do;
+			SYM = NEXT_SYM;
+			call SET_SYM_NODE_R (SYM);
+		end;
+	end;
+
+	/*
+	/* Here, if we haven't found a match yet, search all base
+	/* classes of the class.
+	/**/
+	
+	if COUNT = 0 then do;
+
+		/* Get the sym_node of the original class */
+
+		call SET_SYM_NODE_R (THIS_CLASS);
+		NEXT_SYM = SYM_NODE.BASE_CLASSES;
+	 
+		do while (NEXT_SYM ^= NULL_NID);
+			call SET_BASE_CLASS_NODE_R (NEXT_SYM);
+			NEXT_SYM = BASE_CLASS_NODE.NEXT;
+			call SET_SYM_NODE_R (BASE_CLASS_NODE.SYMBOL);
+			call GET_SYMBOL_TYPE (TEMP_TYPE);
+			/*
+			/* When checking base class, the same constness
+			/* and lvalueness applies as we had for the original.
+			/* -TODO- Fix this up so that TEMP_TYPE.TYPE is
+			/* consistent with the fixed-up QUALIFIERS.
+			/**/
+			TEMP_TYPE.NOT_AN_LVALUE = CLASS_TYPE.NOT_AN_LVALUE;
+			TEMP_TYPE.QUALIFIERS =   CLASS_TYPE.QUALIFIERS
+					       & ALL_TQ;
+			SYM = FIND_USER_CONVERSION (TARG_TYPE,
+					            TEMP_TYPE,
+					            IS_CAST,
+					            VALID_TYPES,
+						    SYM2,
+						    SKIP_CONVERSION);
+			/*
+			/* If this user conversion is the same
+			/* as one already found, do not consider
+			/* it to be ambiguous.
+			/**/
+			if SYM ^= NULL_NID & SYM ^= THIS_RET then
+				COUNT = COUNT + 1;
+			if COUNT = 1 then
+				THIS_RET = SYM;
+
+			/* SYM is the last distinct symbol found; track SYM2 */
+			if SYM2 ^= NULL_NID & SYM2 ^= THIS_RET then do;
+				COUNT = COUNT + 1;
+				SYM = SYM2;
+			end;
+		end;
+
+		if COUNT > 1 then
+			OTHER_SYM = SYM;
+	end;
+ 
+	if (THIS_RET ^= NULL_NID) &
+	   (OTHER_SYM = NULL_NID) &
+	   (SKIP_CONVERSION = NULL_NID) &
+	   (CLASS_HAS_BASES) then do;
+		/*
+		/* If we found an unambiguous user-defined conversion
+		/* function, then look again but this time skip the
+		/* one we just found; if we find another which is
+		/* is a member of a base class of the class in which
+		/* we found this one and it's not exactly compatible
+		/* with this one, then this is an ambiguity.
+		/*
+		/* "User-defined conversions are used implicitly only
+		/*  if they are unambiguous.  A conversion function
+		/*  in a derived class does not hide a conversion
+		/*  function in a base class unless the two functions
+		/*  convert to the same type."  dpANSI-C++, 12.3.2.
+		/**/
+		OTHER_SYM = FIND_USER_CONVERSION (TARG_TYPE,
+						  ARG_TYPE_INFO,
+						  IS_CAST,
+						  VALID_TYPES,
+						  NULL_NID,
+						  THIS_RET);
+		if OTHER_SYM ^= NULL_NID then do;
+			call GET_SYM_NODE_R (OTHER_SYM, P);
+			BASE_CLASS = P->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+			call RELEASE_SYM_NODE (OTHER_SYM);
+			if BASE_CLASS ^= THIS_CLASS then do;
+				if IS_ANY_BASE_CLASS_OF
+				   (BASE_CLASS, THIS_CLASS) then do;
+					if COMPATIBLE_SYMBOLS
+					   (OTHER_SYM, THIS_RET) then
+						OTHER_SYM = NULL_NID;
+				end;
+				else	OTHER_SYM = NULL_NID;
+			end;
+			else	OTHER_SYM = NULL_NID;
+		end;
+	end;
+
+	return (THIS_RET);
+
+end FIND_USER_CONVERSION;
+
+/* ---------------------------------------------------------------------
+/* USER_CONVERSIONS
+/*
+/* Look for a user-defined conversion or class constructor which will
+/* convert the source expression to the destination DTYPE.  If IS_CAST
+/* is true, then any conversion function found must be an exact match.
+/* If more than one possibility is found, report the error.
+/* ------------------------------------------------------------------- */
+
+USER_CONVERSIONS: procedure (DTYPE, S_VID, IS_CAST, IS_ZERO_FLAG)
+		  returns   (type (NID_T))
+		  external  (X_USER_CONVERSIONS);
+	declare
+		DTYPE		type (NID_T),	/* Type of the destination */
+		S_VID		type (CXX_VID_T),/* Id of source expression */
+		IS_CAST		type (BOOL_T),  /* Exact match if TRUE */
+		IS_ZERO_FLAG	type (BOOL_T);  /* ??? */
+	declare
+		FSYM		type (NID_T),
+		SAVE_FSYM	type (NID_T);
+ 
+	FSYM = NULL_NID;
+
+	FSYM = QUIET_USER_CONVERSIONS
+	       (DTYPE, S_VID, IS_CAST, IS_ZERO_FLAG, SAVE_FSYM);
+		
+	if (SAVE_FSYM ^= NULL_NID & FSYM ^= NULL_NID) then do;
+		/*  Ambiguous.  Both a user conversion and
+		/*  constructor exist.
+		/**/
+		/*
+		/* Error; user conversions.
+		/**/
+		call SEMANTIC_ERROR_II (ERR_AMBIGUOUS_USER_CONVERSION,
+					SYMBOL_TYPE_NAME (SAVE_FSYM),
+					SYMBOL_TYPE_NAME (FSYM));
+		FSYM = NULL_NID;
+	end;
+
+	return (FSYM);
+ 
+end USER_CONVERSIONS;
+
+/* ---------------------------------------------------------------------
+/* QUIET_USER_CONVERSIONS
+/*
+/* Look for a user-defined conversion or class constructor which will
+/* convert the source expression to the destination DTYPE.  If IS_CAST
+/* is true, then any conversion function found must be an exact match.
+/* If more than one possibility is found, return a second in OTHER_SYM.
+/* ------------------------------------------------------------------- */
+
+QUIET_USER_CONVERSIONS: procedure (DTYPE, S_VID, IS_CAST, IS_ZERO_FLAG,
+				   OTHER_SYM)
+		        returns   (type (NID_T))
+		        external  (X_QUIET_USER_CONVERSIONS);
+	declare
+		DTYPE		type (NID_T),	/* Type of the destination */
+		S_VID		type (CXX_VID_T), /* Id of source expression */
+		IS_CAST		type (BOOL_T),  /* Exact match if TRUE */
+		IS_ZERO_FLAG	type (BOOL_T),  /* ??? */
+		OTHER_SYM	type (NID_T);   /* Ambiguous symbol */
+	declare
+		FSYM		type (NID_T),
+		TID		type (NID_T),
+		OVLIST		type (NID_T),
+		ARGLST		type (CXX_VID_T),
+		S_INFO		type (TYPE_INFO_T),
+		D_INFO		type (TYPE_INFO_T);
+ 
+	FSYM = NULL_NID;
+ 
+	CXX_VALUE_NODE_PTR = S_VID;
+	call GET_VALUE_TYPE (S_INFO);
+
+	call SET_TYPE_NODE_R (DTYPE);
+	call GET_TYPE_NODE_TYPE (D_INFO);
+	if D_INFO.TOP_TYPE.CODE = byte (REFERENCE_DT) then
+		call STRIP_TOP_TYPE (D_INFO, FALSE);
+
+	/* Look for a user conversion. */
+
+	FSYM = FIND_USER_CONVERSION (DTYPE,
+			             S_INFO,
+			             IS_CAST,
+			             NULL_TK,
+				     OTHER_SYM,
+				     NULL_NID);
+
+	/* If an ambiguity is found, stop looking now. */
+	if OTHER_SYM ^= NULL_NID
+		then return (FSYM);
+ 
+	/*
+	/* If the destination is a class, look for a constructor 
+	/* for the destination, that takes one argument that is
+	/* of the type of the source.
+	/**/
+	
+	OTHER_SYM = FSYM;
+	FSYM = NULL_NID;
+
+	if IS_AGGREGATE_TAG_TYPE (rank (D_INFO.TOP_TYPE.CODE)) then do;
+		/*
+		/* Get the sym-node of the destination,
+		/* and see if there  are any constructors.
+		/**/
+		call SET_SYM_NODE_R (D_INFO.TOP_TYPE.TAG_SYMBOL);
+		
+		OVLIST = SYM_NODE.CONSTRUCTOR;
+ 
+		if OVLIST ^= NULL_NID then do;
+			/*
+			/* There are constructors.
+			/* Make an arglist using the source, and check
+			/* for  a constructor with one arg, that is
+			/* of the same type as the actual argument.
+			/**/
+			call COUNT_UP_VALUE (S_VID);
+			ARGLST = GET_VALUE_AND_EXPAND_L (ARG_VO, S_VID);
+			FSYM = FIND_OVERLOAD (ARGLST,
+					      OVLIST,
+					      NULL_NID,
+					      0,
+					      FALSE,
+					      TRUE);
+		
+			/* Get rid of the arglist */
+
+			call COUNT_DOWN_VALUE (ARGLST);
+		end;
+	end;
+		
+	if OTHER_SYM ^= NULL_NID & FSYM = NULL_NID then do;
+		FSYM = OTHER_SYM;
+		OTHER_SYM = NULL_NID;
+	end;
+
+	return (FSYM);
+ 
+end QUIET_USER_CONVERSIONS;
+
+/* ---------------------------------------------------------------------
+/* CALL_USER_CONVERSION
+/*
+/* Emit values that actually call a user conversion function, whose
+/* symbol_node is CONV_NID, passing as an argument the class whose
+/* value_id is ARG_VID.
+/*
+/* Returns with result value node paged in.
+/* ---------------------------------------------------------------------- */
+
+CALL_USER_CONVERSION: procedure (CONV_NID, ARG_VID)
+		      returns (type (CXX_VID_T))
+		      external (X_CALL_USER_CONVERSION);
+
+	declare
+		CONV_NID	type (NID_T),
+		ARG_VID		type (CXX_VID_T);
+
+	declare
+		THIS_LEFT	type (CXX_VID_T),
+		THIS_RIGHT	type (CXX_VID_T),
+		THIS_VID 	type (CXX_VID_T),
+		THIS_INFO	type (TYPE_INFO_T),
+		VICTIM		type (CXX_VID_T),
+		NARGS		type (SHORT_T),
+		CONV_VID	type (CXX_VID_T),
+		VOP		type (SHORT_T);
+
+	/* Get the function's return type, and set it into the 
+	/* CALL_FUNCTION_VO.
+	/**/
+	call SET_SYM_NODE_R (CONV_NID);
+	call GET_SYMBOL_TYPE (THIS_INFO);
+	call STRIP_TOP_TYPE (THIS_INFO, TRUE); /* Strip to return type */
+	if rank (THIS_INFO.TYPE_CODE) = VOID_BT then
+		VOP = CALL_VO;
+	else
+		VOP = CALL_FUNCTION_VO;
+
+	/*
+	/* Invoke CONV_NID as a member function.
+	/* It could be inherited, virtual, or static.
+	/**/
+	THIS_RIGHT = NULL_CXX_VID;
+	NARGS = 0;
+	VICTIM = NULL_CXX_VID;
+	CONV_VID = GET_SIMPLE_MEMBER_VALUE (CONV_NID);
+	THIS_LEFT = MEMBER_FUNCTION_CALL (CONV_VID, ARG_VID,
+					  THIS_RIGHT, NARGS, VICTIM);
+	THIS_VID = ALLOC_CXX_VALUE_NODE_LR (VOP, THIS_LEFT, THIS_RIGHT);
+	/* Argument count for WRITOP */
+
+        THIS_VID->CXX_VALUE_NODE.OFFSET = CHECK_ARG_SAVE (THIS_VID);
+        if THIS_RIGHT = NULL_CXX_VID then
+            THIS_VID->CXX_VALUE_NODE.UNARY = TRUE;
+	call SET_VALUE_TYPE (THIS_INFO);
+	THIS_VID = VALUE_BEFORE_EFFECT (THIS_VID, VICTIM);
+
+	return (THIS_VID);
+
+end CALL_USER_CONVERSION;
+
+/* ---------------------------------------------------------------------
+/* EXACT_MATCH
+/* ---------------------------------------------------------------------- */
+
+EXACT_MATCH: procedure (ARG_FORMAL, ARG_ACTUAL, IS_THIS) 
+	     returns   (type (SHORT_T))
+	     internal;
+
+	declare
+		ARG_FORMAL	type (TYPE_INFO_T),
+		ARG_ACTUAL	type (TYPE_INFO_T),
+		IS_THIS		type (BOOL_T);
+	declare 
+		FORMAL		type (TYPE_INFO_T),
+		ACTUAL		type (TYPE_INFO_T),
+		AREF		type (BOOL_T),
+		FREF		type (BOOL_T),
+		POINTER_FLAG	type (BOOL_T),
+		REFERENCE_FLAG	type (BOOL_T),
+		OK          	type (BOOL_T),
+		ERRCODE		type (SHORT_T),
+		RETCODE		type (SHORT_T),
+		IGNORE_CODE	type (TCM_T);
+ 
+	FORMAL = ARG_FORMAL;
+	ACTUAL = ARG_ACTUAL;
+	IGNORE_CODE = IGNORE_TOP_QUALIFIERS_TCM;
+	RETCODE = NO_MATCH;
+	POINTER_FLAG = FALSE;
+	REFERENCE_FLAG = FALSE;
+
+	FREF = (FORMAL.TOP_TYPE.CODE = byte (REFERENCE_DT));
+	AREF = (ACTUAL.TOP_TYPE.CODE = byte (REFERENCE_DT));
+
+	if AREF & ^FREF then
+		call STRIP_TOP_TYPE (ACTUAL, FALSE);  /* Strip 'REF' */
+	else if FREF & ^AREF then do;
+		call STRIP_TOP_TYPE (FORMAL, FALSE);  /* Strip 'REF' */
+		if FORMAL.TOP_TYPE.CODE = byte (VOID_BT) then do;
+			/*
+			/* If the formal is "void &" then this is an
+			/* exact match.  A "void &" is illegal in C++,
+			/* but as an extension, we allow it to be a
+			/* parameter type of special "asm" functions.
+			/**/
+			return (M_EXACT);
+		end;
+		REFERENCE_FLAG = TRUE;
+	end;
+	else if AREF & FREF then do;
+		call STRIP_TOP_TYPE (ACTUAL, FALSE); /* Strip 'REF' */
+		if FORMAL.TOP_TYPE.CODE = byte (VOID_BT) then do;
+			/*
+			/* If the formal is "void &" then this is an
+			/* exact match.  A "void &" is illegal in C++,
+			/* but as an extension, we allow it to be a
+			/* parameter type of special "asm" functions.
+			/**/
+			return (M_EXACT);
+		end;
+		call STRIP_TOP_TYPE (FORMAL, FALSE); /* Strip 'REF' */
+		REFERENCE_FLAG = TRUE;
+	end;
+	else if (FORMAL.TOP_TYPE.CODE = byte (POINTER_DT)) &
+		(ACTUAL.TOP_TYPE.CODE = byte (POINTER_DT))  then do;
+		/*
+		/* We cannot strip the pointer type at this point,
+		/* because the compatiblity check would fail for void * .
+		/**/
+		POINTER_FLAG = TRUE;
+		IGNORE_CODE = IGNORE_TOP_TWO_QUALIFIERS_TCM;
+	end;
+	else if (FORMAL.TOP_TYPE.CODE = byte(POINTER_DT)) &
+		(ACTUAL.TOP_TYPE.CODE = byte(FUNCTION_DT)) then
+		/*
+		/* The actual is a function type.  This is only true
+		/* if the function of the actual is overloaded.  In
+		/* this case, strip the pointer from the formal, so
+		/* that the match of the form:
+		/*
+		/* Actual           Formal
+		/* ----------------------------
+		/* T(args)    to    (*T)(args) 
+		/*
+		/* will be successful.
+		/**/
+		call STRIP_TOP_TYPE (FORMAL, FALSE); /* Strip '*' */
+
+	OK = COMPATIBLE_SPECIAL_TYPE_INFO
+	     (FORMAL, IGNORE_CODE,
+	      ACTUAL, IGNORE_CODE);
+ 
+	if OK then do;
+		if POINTER_FLAG  | REFERENCE_FLAG then do;
+			if POINTER_FLAG then do;
+				/* Strip '*', so that the qualifiers
+				/* are exposed for the checks that
+				/* follow.
+				/**/
+				call STRIP_TOP_TYPE (ACTUAL, FALSE); 
+				call STRIP_TOP_TYPE (FORMAL, FALSE);
+			end;
+			if ((FORMAL.TOP_TYPE.QUALIFIERS & ALL_TQ) =
+			    (ACTUAL.TOP_TYPE.QUALIFIERS & ALL_TQ)) then
+				/* This is the 'best' possible match. */
+				RETCODE = M_EXACT_PLUS;
+			else if HAS_ALL_TYPE_QUALIFIERS_OF
+				(FORMAL.TOP_TYPE.QUALIFIERS,
+				 ACTUAL.TOP_TYPE.QUALIFIERS) then
+				/* This is 'exact' but not the 'best'. */
+				RETCODE = M_EXACT;
+		end;
+		else	RETCODE = M_EXACT_PLUS;
+	end;
+ 
+	return (RETCODE);
+ 
+end EXACT_MATCH;
+
+/* ---------------------------------------------------------------------
+/* CAN_CONVERT_FROM_CLASS_TO_TYPE
+/*
+/* Return TRUE if there exists any conversion from the class type
+/* represented by the given sym-node id CLASS_SYMBOL to the type
+/* represented by the given type-node id TYPE, otherwise return FALSE.
+/* ------------------------------------------------------------------- */
+
+CAN_CONVERT_FROM_CLASS_TO_TYPE: procedure (CLASS_SYMBOL, TYPE)
+				returns   (type (BOOL_T))
+				external  (X_CAN_CONVERT_FROM_CLASS_TO_TYPE);
+	declare
+		CLASS_SYMBOL	type (NID_T),
+		TYPE		type (NID_T);
+	declare
+		V		type (CXX_VID_T),
+		X		type (SHORT_T);
+
+	V = GET_REF_AND_EXPAND (CLASS_SYMBOL);
+	X = MATCH_LEVEL (TYPE, V, TRUE);
+	call COUNT_DOWN_VALUE (V);
+	return (X > 1);
+
+end CAN_CONVERT_FROM_CLASS_TO_TYPE;
+
+/* ---------------------------------------------------------------------
+/* MATCH_LEVEL
+/*
+/* Given the type_node id FORMAL_ID of a type node for a formal parameter,
+/* and the value id ACTUAL_VID of an expression for an actual argument,
+/* return a matching type code.  USER_OK is TRUE if user conversions
+/* should be checked for.  If FORMAL_ID is null, returns M_ELLIP.
+/* ------------------------------------------------------------------- */
+
+MATCH_LEVEL: procedure (FORMAL_ID, ACTUAL_VID, USER_OK)
+	     returns   (type (SHORT_T))
+	     internal;
+ 
+	declare
+		FORMAL_ID	type (NID_T),
+		ACTUAL_VID	type (CXX_VID_T),
+		USER_OK		type (BOOL_T);
+	declare
+		FORMAL_INFO	type (TYPE_INFO_T),
+		ACTUAL_INFO	type (TYPE_INFO_T),
+		DUM_SYM		type (NID_T),
+		MATCH_TYPE	type (SHORT_T),
+		OTH_SYM		type (NID_T);
+
+	if FORMAL_ID = NULL_NID then
+		return (M_ELLIP);
+
+	/* Get the info about the formal parameter */
+
+	call SET_TYPE_NODE_R (FORMAL_ID);
+	call GET_TYPE_NODE_TYPE (FORMAL_INFO);
+	if SYM_NODE.NAME = THIS_PARAMETER_NAME then do;
+		call STRIP_TOP_TYPE (FORMAL_INFO, FALSE);
+		call ADD_REFERENCE_LEVEL (FORMAL_INFO);
+	end;
+ 
+	/* Get the info about the actual argument */
+
+	CXX_VALUE_NODE_PTR = ACTUAL_VID;
+	call GET_VALUE_TYPE (ACTUAL_INFO);
+ 
+	MATCH_TYPE = EXACT_MATCH (FORMAL_INFO, ACTUAL_INFO, USER_OK);
+ 
+	if MATCH_TYPE = NO_MATCH then
+		if IS_DERIVED_TYPE (rank (ACTUAL_INFO.TYPE_CODE)) then
+			MATCH_TYPE = MATCH_FUNCTIONS (FORMAL_INFO, ACTUAL_VID);
+
+	/* Check for integral promotions */
+
+	if MATCH_TYPE = NO_MATCH then  do;
+		if COMPATIBLE_PROMOTED_TYPES
+		   (rank (FORMAL_INFO.TOP_TYPE.CODE),
+		    rank (ACTUAL_INFO.TOP_TYPE.CODE)) then
+			MATCH_TYPE = M_PROMO;
+	end;
+ 
+	/* Check for standard conversions */
+
+	if MATCH_TYPE = NO_MATCH then do;
+		if STANDARD_CONVERSION
+		   (FORMAL_INFO,
+		    ACTUAL_INFO,
+		    ACTUAL_VID,
+		    FALSE /* ? */,
+		    TRUE) then
+			MATCH_TYPE = M_STD;
+	end;
+
+	/* Check for user conversions here */
+
+	if MATCH_TYPE = NO_MATCH then do;
+		if USER_OK then do;
+			DUM_SYM = QUIET_USER_CONVERSIONS 
+				  (FORMAL_INFO.TYPE, ACTUAL_VID,
+				   FALSE /* IS_CAST */, 
+				   FALSE /* IS_ZERO_FLAG */,
+				   OTH_SYM);
+			if DUM_SYM ^= NULL_NID then
+				MATCH_TYPE = M_USER;
+		end;
+	end;
+
+	return (MATCH_TYPE);
+
+end MATCH_LEVEL;
+
+/* ---------------------------------------------------------------------
+/* PREFERRED_FUNCTION
+/* 
+/* Two functions, FUNC1_SYM and FUNC2_SYM both match a given overloaded
+/* function.  This procedure determines whether one function is 'preferred'
+/* over the other.  ARG_LIST is the id of a value that is the head of the
+/* actual argument list.  USER_OK indicates whether user conversions are
+/* allowed in the matching checks.
+/*
+/* If at least one parameter in FUNC1_SYM is preferred over the
+/* corresponding parameter in FUNC2_SYM, and NO parameter in FUNC2_SYM
+/* is preferred over the corresponding parameter of FUNC1_SYM, then FUNC1_SYM
+/* is preferred over FUNC2_SYM, and vice versa.  Otherwise, neither function
+/* is preferred.
+/*
+/* When the FUNC_MBR parameter for a given FUNC_SYM is TRUE, the function
+/* is a member function and the first argument in ARG_LIST corresponds
+/* to 'this'.  Note that FUNC_MBR is not always true for member functions;
+/* it's only set when the member function needs 'this' checked.  Also note
+/* that FUNC_MBR may be true when FUNC_SYM is a static member function,
+/* in which case it IS a good match.
+/*
+/* If one of the functions is non-prototyped, there is no preference.
+/* This must differ from explicit ellipses because the following
+/* kind of call must be diagnosed.
+/*	extern "C-header" double abs ();
+/*	struct complex { double real; double imaginary; };
+/*	double foo (double d) { return abs (d); }  // which abs?
+/*	double abs (struct complex) { ... }
+/*	double abs (double) { ... }
+/*
+/* This procedure returns the sym_node id of the 'preferred' function, if
+/* one is determined to be 'preferred', otherwise it returns NULL_NID.
+/* ---------------------------------------------------------------------- */
+
+PREFERRED_FUNCTION: procedure (ARG_LIST, USER_OK, FUNC1_SYM, FUNC1_MBR,
+						  FUNC2_SYM, FUNC2_MBR)
+		    returns (type (NID_T))
+		    internal;
+	declare
+		ARG_LIST	type (CXX_VID_T),	/* Actual arg list */
+		USER_OK		type (BOOL_T),	/* User conversions OK */
+		FUNC1_SYM	type (NID_T),	/* 1st func sym_id */
+		FUNC1_MBR	type (BOOL_T),  /* 1st func arg1=this */
+		FUNC2_SYM	type (NID_T),	/* 2nd func sym_id */
+		FUNC2_MBR 	type (BOOL_T);  /* 2nd func arg1=this */
+	declare
+		RESULT		type (SHORT_T),
+		THIS_RESULT	type (SHORT_T),
+		F1_FORMAL	type (NID_T),
+		F1_NEXT		type (NID_T),
+		F2_FORMAL	type (NID_T),
+		F2_NEXT		type (NID_T),
+		RET_FSYM	type (NID_T),
+		THIS_ACTUAL	type (CXX_VID_T),
+		NEXT_ACTUAL	type (CXX_VID_T),
+		F1_THIS		type (BOOL_T),
+		F2_THIS		type (BOOL_T),
+		F1_ELLIPSIS	type (BOOL_T),
+		F2_ELLIPSIS	type (BOOL_T);
+
+	RESULT = PREFERRED_NEITHER;
+ 
+	/* Get the information about function 1 */
+
+	if ^GET_FIRST_FORMAL (FUNC1_SYM, FUNC1_MBR, 
+			      F1_THIS, F1_ELLIPSIS, F1_NEXT, F1_FORMAL) then
+		return (NULL_NID);
+
+	/* Get the information about function 2 */
+
+	if ^GET_FIRST_FORMAL (FUNC2_SYM, FUNC2_MBR, 
+			      F2_THIS, F2_ELLIPSIS, F2_NEXT, F2_FORMAL) then
+		return (NULL_NID);
+
+	/* Get the information from the argument list */
+
+	if ARG_LIST ^= NULL_CXX_VID then do;
+		/* Actual argument expression */
+		THIS_ACTUAL = ARG_LIST->CXX_VALUE_NODE.LEFT;
+		/* Next ARG_VO */
+		NEXT_ACTUAL = ARG_LIST->CXX_VALUE_NODE.RIGHT;
+	end;
+	else do;
+		THIS_ACTUAL = NULL_CXX_VID;  /* Actual argument expression */
+		NEXT_ACTUAL = NULL_CXX_VID;  /* Next ARG_VO */
+	end;
+
+	do while ((THIS_ACTUAL ^= NULL_CXX_VID) &
+		  (F1_FORMAL ^= NULL_NID | F1_THIS | F1_ELLIPSIS) &
+		  (F2_FORMAL ^= NULL_NID | F2_THIS | F2_ELLIPSIS) &
+		  (RESULT ^= PREFER_CONFLICT));
+
+		THIS_RESULT = PREFERRED_ARG (F1_FORMAL, F1_THIS,
+					     F2_FORMAL, F2_THIS,
+					     THIS_ACTUAL,
+					     USER_OK);
+ 
+		if RESULT = PREFERRED_NEITHER then
+			RESULT = THIS_RESULT;
+		else if (THIS_RESULT ^= PREFERRED_NEITHER) &
+			(THIS_RESULT ^= RESULT) then
+			RESULT = PREFER_CONFLICT;
+ 
+		IF RESULT ^= PREFER_CONFLICT then do;
+			/*
+			/* Get the next formals and actual.
+			/**/
+			call GET_NEXT_FORMAL (F1_NEXT, F1_FORMAL);
+			call GET_NEXT_FORMAL (F2_NEXT, F2_FORMAL);
+			call GET_NEXT_ACTUAL (NEXT_ACTUAL, THIS_ACTUAL);
+			F1_THIS = FALSE;
+			F2_THIS = FALSE;
+		end;
+	end;
+ 
+	if RESULT = PREFERRED_FIRST then
+		RET_FSYM = FUNC1_SYM;
+	else if RESULT = PREFERRED_SECOND then
+		RET_FSYM = FUNC2_SYM;
+	else	RET_FSYM = NULL_NID;
+ 
+	return (RET_FSYM);
+
+end PREFERRED_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* PREFERRED_ARG
+/* 
+/* If either formal parameter FORMAL1 or FORMAL2 is preferred given the
+/* actual argument ACTUAL, then return that preference, else return
+/* PREFER_NEITHER.
+/*
+/* For arguments of type pointer, if one formal points to void and the other
+/* formal points to an object, then we prefer the function having the
+/* pointer to the object, unless the actual argument is zero.
+/*
+/* For arguments of type pointer-to-class, if one formal is a pointer
+/* to a class derived from the other formal's class, we prefer the function
+/* having the pointer to the derived class.
+/*
+/* If FORMAL1 or FORMAL2 is NULL_NID, that means ACTUAL is the object
+/* involved in a call to a static member function (THIS1/THIS2 true)
+/* or ACTUAL is matching an ellipsis.
+/* ------------------------------------------------------------------- */
+
+PREFERRED_ARG: procedure (FORMAL1, THIS1, FORMAL2, THIS2, ACTUAL, USER_OK)
+	       returns   (type (NID_T))
+	       internal;
+
+	declare
+		FORMAL1  	type (NID_T),	/* type-id of func1 formal */
+		THIS1		type (BOOL_T),	/* or func1 formal is 'this' */
+		FORMAL2  	type (NID_T),	/* type-id of func2 formal */
+		THIS2		type (BOOL_T),	/* or func2 formal is 'this' */
+		ACTUAL		type (CXX_VID_T),	/* id of actual expression */
+		USER_OK		type (BOOL_T);  /* user conversions ok flag */
+	declare
+		RESULT		type (SHORT_T),
+		RES1		type (SHORT_T),
+		RES2		type (SHORT_T),
+		IS_ZERO		type (BOOL_T),
+		F1_TYPE_CODE	type (SHORT_T),
+		F2_TYPE_CODE	type (SHORT_T),
+		ACTUAL_TYPE_CODE
+				type (SHORT_T),
+		F1_MATCH	type (BOOL_T),
+		F2_MATCH	type (BOOL_T),
+		F1_INFO		type (TYPE_INFO_T),
+		F2_INFO		type (TYPE_INFO_T),
+		ACTUAL_INFO	type (TYPE_INFO_T);
+
+	RESULT = PREFERRED_NEITHER;
+ 
+	/*
+	/* Look at each formal to see how good a match the argument is,
+	/* handling 'this' for a static member function, and ellipsis formal.
+	/**/
+ 
+	if FORMAL1 = NULL_NID then
+		RES1 = M_STD;
+	else
+		RES1 = MATCH_LEVEL (FORMAL1, ACTUAL, USER_OK);
+	if FORMAL2 = NULL_NID then do;
+		if THIS2 then do;
+			if RES1 > M_STD then
+				/* 'this' counts as good as the other. */
+				RES2 = RES1;
+			else
+				RES2 = M_STD;
+		end;
+		else
+			RES2 = M_ELLIP;
+	end;
+	else
+		RES2 = MATCH_LEVEL (FORMAL2, ACTUAL, USER_OK);
+	if FORMAL1 = NULL_NID then do;
+		if THIS1 then do;
+			if RES2 > M_STD then
+				/* 'this' counts as good as the other. */
+				RES1 = RES2;
+			else
+				RES1 = M_STD;
+		end;
+		else
+			RES1 = M_ELLIP;
+	end;
+
+	/* Find a preference. */
+
+	if RES1 > RES2 then
+		RESULT = PREFERRED_FIRST;
+
+	else if RES1 < RES2 then
+		RESULT = PREFERRED_SECOND;
+
+	else if FORMAL1 = NULL_NID | FORMAL2 = NULL_NID then
+		; /* RESULT = PREFERRED_NEITHER */
+
+	else do;
+		call SET_TYPE_NODE_R (FORMAL1);
+		call GET_TYPE_NODE_TYPE (F1_INFO);
+		F1_INFO.NOT_AN_LVALUE = TRUE;
+		if rank (F1_INFO.TYPE_CODE) = REFERENCE_DT then
+			call STRIP_TOP_TYPE (F1_INFO, FALSE);
+ 
+		call SET_TYPE_NODE_R (FORMAL2);
+		call GET_TYPE_NODE_TYPE (F2_INFO);
+		F2_INFO.NOT_AN_LVALUE = TRUE;
+		if rank (F2_INFO.TYPE_CODE) = REFERENCE_DT then
+			call STRIP_TOP_TYPE (F2_INFO, FALSE);
+
+		/* F1/F2 are marked as lvalues if they are references. */
+ 
+		CXX_VALUE_NODE_PTR = ACTUAL;
+		call GET_VALUE_TYPE (ACTUAL_INFO);
+		if ACTUAL_INFO.TYPE_CODE = byte (REFERENCE_DT) then
+			call STRIP_TOP_TYPE (ACTUAL_INFO, FALSE);
+
+		/*
+		/* If actual and formals are all lvalues, and
+		/* actual is convertible to each formal by merely adding
+		/* zero or more top-level qualifiers, give preference
+		/* based on the differences in qualifiers.
+		/*
+		/* Otherwise if only one formal provides such a ready
+		/* conversion, it is preferred. (This rule is not
+		/* in the ARM, but not to have it would be untenable:
+		/*	If actual type is "const T &"
+		/*	then formal type "const T &" is preferable
+		/*	to "const volatile T &" but the standard should
+		/*	also prefer it to formal types "T" and "T &".)
+		/*
+		/* Otherwise there's no reference match.
+		/* Start by figuring out which are reference matches.
+		/**/
+
+		F1_MATCH = LVALUE_MATCH (ACTUAL_INFO, F1_INFO);
+		F2_MATCH = LVALUE_MATCH (ACTUAL_INFO, F2_INFO);
+
+		if F1_MATCH | F2_MATCH then do;
+			if F1_MATCH & F2_MATCH then
+				call ANALYZE_BASE_OR_CV ();
+			else if F1_MATCH then
+				RESULT = PREFERRED_FIRST;
+			else if F2_MATCH then
+				RESULT = PREFERRED_SECOND;
+
+			return (RESULT);
+		end;
+
+		F1_TYPE_CODE = rank (F1_INFO.TYPE_CODE);
+		F2_TYPE_CODE = rank (F2_INFO.TYPE_CODE);
+		ACTUAL_TYPE_CODE = rank (ACTUAL_INFO.TYPE_CODE);
+		IS_ZERO = IS_NULL_POINTER_CONSTANT (ACTUAL);
+
+		if   ACTUAL_TYPE_CODE = ENUM_BT
+		   & ( IS_INTEGRAL_TYPE (F1_TYPE_CODE)
+		     | IS_INTEGRAL_TYPE (F2_TYPE_CODE) ) then do;
+			/*
+			/* An enum treated as a null pointer constant
+			/* is not as good as a more ordinary conversion.
+			/**/ 
+			if F2_TYPE_CODE = POINTER_DT then
+				RESULT = PREFERRED_FIRST;
+			if F1_TYPE_CODE = POINTER_DT then
+				RESULT = PREFERRED_SECOND;
+		end;
+		else if (   F1_TYPE_CODE = POINTER_DT
+			  & F2_TYPE_CODE = POINTER_DT 
+			  & ( ACTUAL_TYPE_CODE = POINTER_DT | IS_ZERO)
+			|   F1_TYPE_CODE = MEMBER_POINTER_DT
+			  & F2_TYPE_CODE = MEMBER_POINTER_DT 
+			  & ( ACTUAL_TYPE_CODE = MEMBER_POINTER_DT | IS_ZERO)
+			  & F1_INFO.TAG_SYMBOL = ACTUAL_INFO.TAG_SYMBOL
+			  & F2_INFO.TAG_SYMBOL = ACTUAL_INFO.TAG_SYMBOL
+		   ) then do;
+			/*
+			/* For pointers there are special checks.
+			/* If no conversion is involved, 'const' may determine.
+			/* Otherwise, conversion to void* or to a
+			/* pointer to base class is avoided.
+			/**/
+			call STRIP_TOP_TYPE (F1_INFO, FALSE);
+			call STRIP_TOP_TYPE (F2_INFO, FALSE);
+			call ANALYZE_BASE_OR_CV ();
+		end;
+		else if RES1 = M_USER then do;
+			RESULT = FINE_GRAINED_USER_CONVERSIONS
+				 (F1_INFO, F2_INFO, ACTUAL);
+		end;
+	end;
+
+	return (RESULT);
+
+/* ---------------------------------------------------------------------
+/* ANALYZE_BASE_OR_CV
+/*
+/* F1_INFO and F2_INFO match the actual argument as either lvalue 
+/* objects or as pointers to objects.  Determine a preference based
+/* on one parameter being const or a base of the other.  The actual
+/* does not matter unless it's 0, in which case pointer to void is
+/* not rejected in favor of pointer to complete type.
+/* ------------------------------------------------------------------- */
+ANALYZE_BASE_OR_CV: procedure internal;
+
+	if ^COMPATIBLE_TYPE_INFO (F1_INFO, F2_INFO) then do;
+
+		if COMPATIBLE_SPECIAL_TYPE_INFO
+		   (F1_INFO, IGNORE_TOP_QUALIFIERS_TCM,
+		    F2_INFO, IGNORE_TOP_QUALIFIERS_TCM) then do;
+			RESULT = PREFERRED_CV
+					(F1_INFO.TOP_TYPE,
+					 F2_INFO.TOP_TYPE);
+		end;
+		else do;
+			if (F1_INFO.TOP_TYPE.CODE =
+			    byte (VOID_BT)) & 
+			   (F2_INFO.TOP_TYPE.CODE ^=
+			    byte (VOID_BT)) &
+			   ^IS_ZERO then
+				RESULT = PREFERRED_SECOND;
+			else if (F2_INFO.TOP_TYPE.CODE =
+				 byte (VOID_BT)) &
+				(F1_INFO.TOP_TYPE.CODE ^=
+				 byte (VOID_BT)) &
+				^IS_ZERO then
+				RESULT = PREFERRED_FIRST;
+			else if IS_BASE_CLASS_TYPE_INFO
+				(F1_INFO, F2_INFO) then 
+				RESULT = PREFERRED_SECOND;
+			else if IS_BASE_CLASS_TYPE_INFO
+				(F2_INFO, F1_INFO) then
+				RESULT = PREFERRED_FIRST;
+		end;
+	end;
+end ANALYZE_BASE_OR_CV;
+
+/* ---------------------------------------------------------------------
+/* LVALUE_MATCH
+/*
+/* Whether the value matches the initializee as an lvalue.
+/* ------------------------------------------------------------------- */
+
+LVALUE_MATCH: procedure (VALUE, INITIALIZEE)
+	      returns   (type (BOOL_T));
+
+	declare
+		VALUE		type (TYPE_INFO_T),
+		INITIALIZEE	type (TYPE_INFO_T);
+
+	if VALUE.NOT_AN_LVALUE then
+		return (FALSE);
+
+	else if INITIALIZEE.NOT_AN_LVALUE then
+		return (FALSE);
+
+	else if (VALUE.QUALIFIERS &
+		 ^INITIALIZEE.QUALIFIERS & ALL_TQ) ^= NULL_TQ then
+		return (FALSE);
+
+	if COMPATIBLE_SPECIAL_TYPE_INFO
+	   (VALUE,
+	    IGNORE_TOP_QUALIFIERS_TCM,
+	    INITIALIZEE,
+	    IGNORE_TOP_QUALIFIERS_TCM) then
+		return (TRUE);
+
+	else if IS_TD_BASE_CLASS_OF
+		(INITIALIZEE.TOP_TYPE, VALUE.TOP_TYPE) then
+		return (TRUE);
+
+	else	return (FALSE);
+
+	/*
+
+	return (   ^VALUE.NOT_AN_LVALUE
+		 & ^INITIALIZEE.NOT_AN_LVALUE
+		 & ( VALUE.QUALIFIERS 
+		   & ^INITIALIZEE.QUALIFIERS & ALL_TQ )
+		   = NULL_TQ
+		 & ( COMPATIBLE_SPECIAL_TYPE_INFO 
+			(VALUE, IGNORE_TOP_QUALIFIERS_TCM,
+			 INITIALIZEE, IGNORE_TOP_QUALIFIERS_TCM)
+		   | IS_TD_BASE_CLASS_OF (INITIALIZEE.TOP_TYPE, VALUE.TOP_TYPE)
+		   )
+		);
+	*/
+
+end LVALUE_MATCH;
+
+/* ---------------------------------------------------------------------
+/* PREFERRED_CV
+/*
+/* Based on the qualifiers for an actual argument and two formal arguments
+/* select a preferred formal, if possible.
+/* ------------------------------------------------------------------- */
+PREFERRED_CV: procedure (FORMAL1, FORMAL2)
+	      returns (type (SHORT_T));
+
+	declare
+		FORMAL1		type (TYPE_DATA_T),
+		FORMAL2		type (TYPE_DATA_T);
+
+	declare
+		F1		type (BYTE_BITS_T),
+		F2		type (BYTE_BITS_T);
+
+	F1 = (FORMAL1.QUALIFIERS & ALL_TQ);
+	F2 = (FORMAL2.QUALIFIERS & ALL_TQ);
+
+	if F1 = F2 then
+		return (PREFERRED_NEITHER);
+
+	/*
+	/* If the qualifiers of the first are a proper subset of the
+	/* qualifiers of the second, prefer the first.
+	/**/
+	if (F1 & ^F2) = NULL_TQ then
+		return (PREFERRED_FIRST);
+
+	/*
+	/* If the qualifiers of the second are a proper subset of the
+	/* qualifiers of the first, prefer the second.
+	/**/
+	if (F2 & ^F1) = NULL_TQ then
+		return (PREFERRED_SECOND);
+
+	return (PREFERRED_NEITHER);
+
+end PREFERRED_CV;
+
+/* ---------------------------------------------------------------------
+/* FINE_GRAINED_USER_CONVERSIONS
+/*
+/* The actual argument is convertible to either formal type by
+/* means of user conversions.  If one of the two formal types
+/* is preferred on the basis of the fine-grained rule, i.e. the
+/* best-matching rule of the ARM, return the appropriate preference.
+/*
+/* Handle the example on pp. 317-318 of the ARM,
+/* even if the rule given for it is confused and on the surface 
+/* terribly inefficient to impelment.
+/*
+/* The rule implemented here:
+/*	If a conversion function converts directly to the type of
+/*	the formal, then any indirect use of that conversion function
+/*	is eliminated from consideration.
+/*
+/*	If one of the alternatives is ambiguous among conversion
+/*	functions, then none can be exact, and this alternative
+/*	can't eliminate the other.  More obscurely, neither can
+/*	the other eliminate the ambiguous alternative, because
+/*	if it's exact it can eliminate only 1 of the 2 conversions.
+/* ------------------------------------------------------------------- */
+FINE_GRAINED_USER_CONVERSIONS: procedure (F1_TYPE, F2_TYPE, ACTUAL_VID)
+			       returns (type (SHORT_T));
+
+	declare
+		F1_TYPE		type (TYPE_INFO_T),
+		F2_TYPE 	type (TYPE_INFO_T),
+		ACTUAL_VID	type (CXX_VID_T);
+	declare
+		F1_CONVERSION	type (NID_T),
+		F2_CONVERSION	type (NID_T),
+		SYM		type (NID_T),
+		FRET_INFO	type (TYPE_INFO_T),
+		F1_EXACT	type (BOOL_T),
+		F2_EXACT	type (BOOL_T);
+
+	/*
+	/* It seems pretty safe here to assume that F1_TYPE.TYPE
+	/* represents the same type as the TYPE_INFO, because it
+	/* originates from a symbol node.
+	/**/
+
+	F1_CONVERSION = QUIET_USER_CONVERSIONS 
+			(F1_TYPE.TYPE, ACTUAL_VID,
+			 FALSE /* IS_CAST */, 
+			 FALSE /* IS_ZERO_FLAG */,
+			 SYM);
+	if SYM ^= NULL_NID then
+		return (PREFERRED_NEITHER);
+
+	F2_CONVERSION = QUIET_USER_CONVERSIONS 
+			(F2_TYPE.TYPE, ACTUAL_VID,
+			 FALSE /* IS_CAST */, 
+			 FALSE /* IS_ZERO_FLAG */,
+			 SYM);
+	if SYM ^= NULL_NID then
+		return (PREFERRED_NEITHER);
+
+	if F1_CONVERSION ^= F2_CONVERSION then
+		return (PREFERRED_NEITHER);
+
+	/* Get the symbol_node of the function */
+
+	call SET_SYM_NODE_R (F1_CONVERSION);
+
+	/* No constructors, please. */
+
+	if ^SYM_NODE.IS_CONVERSION_FUNCTION then
+		return (PREFERRED_NEITHER);
+
+	/* Get the base type of the function return value */
+
+	call GET_SYMBOL_TYPE (FRET_INFO);
+	call STRIP_TOP_TYPE (FRET_INFO, FALSE);
+	if rank (FRET_INFO.TOP_TYPE.CODE) = REFERENCE_DT then
+		call STRIP_TOP_TYPE (FRET_INFO, FALSE);
+
+	F1_EXACT = (EXACT_MATCH (F1_INFO, FRET_INFO, FALSE) ^= NO_MATCH);
+	F2_EXACT = (EXACT_MATCH (F2_INFO, FRET_INFO, FALSE) ^= NO_MATCH);
+
+	if F1_EXACT = F2_EXACT then
+		return (PREFERRED_NEITHER);
+	else if F1_EXACT then
+		return (PREFERRED_FIRST);
+	else
+		return (PREFERRED_SECOND);
+
+end FINE_GRAINED_USER_CONVERSIONS;
+
+end PREFERRED_ARG;
+
+/* ---------------------------------------------------------------------
+/* GET_NEXT_ACTUAL
+/*
+/* Given ARG_NEXT, the id of an ARG_VO value, return the id of the 
+/* expression tree that is the next actual argument in ARG_THIS, and the
+/* id of the next ARG_VO in ARG_NEXT.
+/* ---------------------------------------------------------------------- */
+
+GET_NEXT_ACTUAL : procedure (ARG_NEXT, ARG_THIS) internal;
+
+	declare
+		ARG_NEXT	type (CXX_VID_T),
+		ARG_THIS	type (CXX_VID_T);
+ 
+	if ARG_NEXT ^= NULL_CXX_VID then do;
+		/* Actual argument */
+		ARG_THIS = ARG_NEXT->CXX_VALUE_NODE.LEFT;
+		/* Next ARG_VO */
+		ARG_NEXT = ARG_NEXT->CXX_VALUE_NODE.RIGHT;
+	end;
+	else	ARG_THIS = ARG_NEXT;
+
+end GET_NEXT_ACTUAL;
+ 
+/* ---------------------------------------------------------------------
+/* GET_NEXT_FORMAL
+/*
+/* Given ARG_NEXT, the parameter-node of the next parameter, return the type-node
+/* id of the next formal parameter in ARG_THIS, and the parameter-node id of the
+/* parameter following the next in ARG_NEXT.
+/* ---------------------------------------------------------------------- */
+
+GET_NEXT_FORMAL: procedure (ARG_NEXT, ARG_THIS) internal;
+ 
+	declare
+		ARG_NEXT	type (NID_T), 	/* node_id of PARAMETER_NODE */
+		ARG_THIS	type (NID_T); 	/* node_id of formal param type node */
+ 
+	if ARG_NEXT ^= NULL_NID then do;
+		call SET_PARAMETER_NODE_R (ARG_NEXT);
+		ARG_THIS = PARAMETER_NODE.TYPE;
+		ARG_NEXT = PARAMETER_NODE.NEXT;
+	end;
+	else	ARG_THIS = NULL_NID;
+
+end GET_NEXT_FORMAL;
+ 
+/* ---------------------------------------------------------------------
+/* GET_FIRST_FORMAL
+/*
+/* Given FUNC_SYM, the node id of a function symbol, return the type-node
+/* id of the first formal parameter in ARG_THIS, and the parameter-node 
+/* id of the second parameter in ARG_NEXT.
+/* Set them to NULL_NID if the parameter does not exist.
+/*
+/* Sets THIS to indicate whether the first parameter is 'this' of a
+/* member function, and ELLIPSIS to indicate whether the function signature
+/* includes ellipses anywhere (not just at the first parameter
+/* position).
+/*
+/* MEMBER indicates that the function is a member function and that
+/* the parameters should be set up to reflect the implicit 'this'
+/* parameter (but as a reference type not a pointer).  It is always
+/* false for non-member functions, and may be false for member functions.
+/* If MEMBER is true and FUNC1_SYM is a static member, then 'this'
+/* is set to true and FORMAL to NULL_NID.
+/*
+/* Returns false if the function is not prototyped.
+/* ---------------------------------------------------------------------- */
+
+GET_FIRST_FORMAL: procedure (FUNC_SYM, MEMBER, THIS, ELLIPSIS, NEXT, FORMAL) 
+		  internal
+		  returns (type (BOOL_T));
+ 
+	declare
+		FUNC_SYM	type (NID_T),
+		MEMBER		type (BOOL_T),
+		THIS		type (BOOL_T),
+		ELLIPSIS	type (BOOL_T),
+		NEXT		type (NID_T), 	/* node_id of PARAMETER_NODE */
+		FORMAL		type (NID_T); 	/* node_id of formal param type node */
+
+	declare
+		IS_STATIC	type (BOOL_T),
+		PRM		type (NID_T),
+		CLASS_SYM	type (NID_T),
+		QUALIFIERS	type (BYTE_BITS_T),
+		CLASS_CODE	type (SHORT_T);
+
+	/* Get the information about function 1 */
+
+	call SET_SYM_NODE_R (FUNC_SYM);
+	CLASS_SYM = SYM_NODE.ENCLOSING_SCOPE_OWNER;
+	IS_STATIC = (rank (SYM_NODE.STORAGE_CLASS) = STATIC_ST);
+	call SET_SIG_NODE_R (SYM_NODE.TOP_TYPE.SIGNATURE);
+	if ^SIG_NODE.PROTOTYPED then
+		return (FALSE);
+	THIS = MEMBER;
+	ELLIPSIS = SIG_NODE.ELLIPSIS;
+	FORMAL = NULL_NID;
+	NEXT = NULL_NID;
+	if MEMBER then do;
+		NEXT = SIG_NODE.EXPLICIT_PARAMETERS;
+		QUALIFIERS = SIG_NODE.THIS_QUALIFIERS.QUALIFIERS;
+		if ^IS_STATIC then do;
+			call SET_SYM_NODE_R (CLASS_SYM);
+			CLASS_CODE = rank (SYM_NODE.TOP_TYPE.CODE);
+			FORMAL = GET_SCALAR_TYPE
+				 (REFERENCE_DT, NULL_TQ, 
+				  CLASS_CODE, CLASS_SYM, QUALIFIERS);
+		end;
+	end;
+	else if SIG_NODE.EXPLICIT_PARAMETERS ^= NULL_NID then do;
+		PRM = SIG_NODE.EXPLICIT_PARAMETERS;
+		call SET_PARAMETER_NODE_R (PRM);
+		FORMAL = PARAMETER_NODE.TYPE;
+		NEXT = PARAMETER_NODE.NEXT;
+	end;
+
+	return (TRUE);
+
+end GET_FIRST_FORMAL;
+
+/* ---------------------------------------------------------------------
+/* IS_BASE_CLASS_TYPE_INFO
+/*
+/* Returns TRUE if the (possible) base class denoted by B_INFO is an 
+/* accessible, non-ambiguous base class of the (possible) derived class
+/* denoted by D_INFO.
+/* ------------------------------------------------------------------- */
+
+IS_BASE_CLASS_TYPE_INFO: procedure (B_INFO, D_INFO)
+			 returns   (type (BOOL_T))
+			 internal;
+	declare	
+		B_INFO		type (TYPE_INFO_T),
+		D_INFO		type (TYPE_INFO_T);
+	declare
+		RETCODE		type (BOOL_T),
+		IS_AMBIGUOUS	type (BOOL_T),
+		IS_INACCESSIBLE	type (BOOL_T),
+		IS_VIRTUAL	type (BOOL_T);
+ 
+	RETCODE = FALSE;
+ 
+	if IS_AGGREGATE_TAG_TYPE (rank (B_INFO.TOP_TYPE.CODE)) &
+	   IS_AGGREGATE_TAG_TYPE (rank (D_INFO.TOP_TYPE.CODE)) then do;
+
+		RETCODE = IS_BASE_CLASS_OF (B_INFO.TOP_TYPE.TAG_SYMBOL,
+					    D_INFO.TOP_TYPE.TAG_SYMBOL,
+					    IS_AMBIGUOUS,
+					    IS_INACCESSIBLE,
+					    IS_VIRTUAL);
+		if RETCODE then
+			RETCODE = RETCODE & ^IS_AMBIGUOUS & ^IS_INACCESSIBLE;
+	end;
+ 
+	return (RETCODE);
+
+end IS_BASE_CLASS_TYPE_INFO;
+
+/* ---------------------------------------------------------------------
+/* MEMBERS_OF_RELATED_CLASSES
+/*
+/* The two types are member pointer types.
+/* Returns TRUE if they are pointers to members of the same class
+/* or related classes.
+/* ------------------------------------------------------------------- */
+
+MEMBERS_OF_RELATED_CLASSES: procedure (B_INFO, D_INFO)
+			    returns   (type (BOOL_T))
+			    internal;
+	declare	
+		B_INFO		type (TYPE_INFO_T),
+		D_INFO		type (TYPE_INFO_T);
+	declare
+		RETCODE		type (BOOL_T),
+		IS_AMBIGUOUS	type (BOOL_T),
+		IS_INACCESSIBLE	type (BOOL_T),
+		IS_VIRTUAL	type (BOOL_T);
+ 
+	if B_INFO.TOP_TYPE.TAG_SYMBOL = D_INFO.TOP_TYPE.TAG_SYMBOL then
+		return (TRUE);
+
+	RETCODE = IS_BASE_CLASS_OF (B_INFO.TOP_TYPE.TAG_SYMBOL,
+				    D_INFO.TOP_TYPE.TAG_SYMBOL,
+				    IS_AMBIGUOUS,
+				    IS_INACCESSIBLE,
+				    IS_VIRTUAL);
+	if RETCODE then
+		return (^IS_AMBIGUOUS & ^IS_INACCESSIBLE);
+
+	RETCODE = IS_BASE_CLASS_OF (D_INFO.TOP_TYPE.TAG_SYMBOL,
+				    B_INFO.TOP_TYPE.TAG_SYMBOL,
+				    IS_AMBIGUOUS,
+				    IS_INACCESSIBLE,
+				    IS_VIRTUAL);
+	return (RETCODE & ^IS_AMBIGUOUS & ^IS_INACCESSIBLE);
+
+end MEMBERS_OF_RELATED_CLASSES;
+
+/* ---------------------------------------------------------------------
+/* STANDARD_CONVERSION
+/*
+/* Returns TRUE if the destination denoted by D_INFO can be
+/* initialized to the source denoted by S_INFO via standard promotions.
+/* Note that S_INFO.NOT_AN_LVALUE must be set appropriately.
+/* Arithmetic types are handled simply, but there are some special
+/* checks for pointer and reference types.
+/* If it is necessary to check the source expression for null pointer,
+/* pass the expression as SRC_VID; otherwise a NULL_CXX_VID argument is OK.
+/* If ASSUME_NOT_COMPATIBLE, then it is assumed that the 'compatible'
+/* routine has already failed for this destination and this source.
+/* IS_THIS_FLAG is a mysterious artifact of Taumetric code.
+/* ------------------------------------------------------------------- */
+
+STANDARD_CONVERSION: procedure (D_INFO, S_INFO, SRC_VID, IS_THIS_FLAG,
+				ASSUME_NOT_COMPATIBLE)
+		     returns   (type (BOOL_T))
+		     internal;
+	declare	
+		D_INFO		type (TYPE_INFO_T),
+		S_INFO		type (TYPE_INFO_T),
+		SRC_VID		type (CXX_VID_T),
+		IS_THIS_FLAG	type (BOOL_T),
+		ASSUME_NOT_COMPATIBLE
+				type (BOOL_T);
+	declare
+		RETCODE		type (BOOL_T),
+		T_D_INFO	type (TYPE_INFO_T),
+		T_S_INFO	type (TYPE_INFO_T),
+		P_D_INFO	type (TYPE_INFO_T),
+		P_S_INFO	type (TYPE_INFO_T),
+		S_QUALIFIERS	type (BYTE_BITS_T),
+		D_QUALIFIERS	type (BYTE_BITS_T),
+		ASSUME		type (BOOL_T);
+
+	ASSUME = ASSUME_NOT_COMPATIBLE;
+
+	T_D_INFO = D_INFO;
+	if rank (D_INFO.TOP_TYPE.CODE) = REFERENCE_DT then do;
+		call STRIP_TOP_TYPE (T_D_INFO, FALSE);
+		ASSUME = FALSE;
+	end;
+
+	T_S_INFO = S_INFO;
+	if rank (S_INFO.TOP_TYPE.CODE) = REFERENCE_DT then do;
+		call STRIP_TOP_TYPE (T_S_INFO, FALSE);
+		ASSUME = FALSE;
+	end;
+
+	/*
+	/* Henceforth it's irrelevant whether source or destination
+	/* was a reference type.
+	/* Use T_S_INFO and T_D_INFO.
+	/**/
+
+	if ASSUME then do;
+		/* Don't bother to check for plain compatibility. */
+	end;
+	else do;
+		/* May be just plain compatible. */
+		if COMPATIBLE_SPECIAL_TYPE_INFO (
+				T_D_INFO, IGNORE_TOP_QUALIFIERS_TCM,
+				T_S_INFO, IGNORE_TOP_QUALIFIERS_TCM) then
+			return (TRUE);
+	end;
+	/*
+	/* If the destination is an accessible, unambiguous
+	/* base class of the source, then it it ok.
+	/**/
+	if IS_BASE_CLASS_TYPE_INFO (T_D_INFO, T_S_INFO) then
+		return (TRUE);
+
+	if IS_TYPE_CLASS (rank (T_D_INFO.TOP_TYPE.CODE), ARITHMETIC_TK) &
+	   IS_TYPE_CLASS (rank (T_S_INFO.TOP_TYPE.CODE), ARITHMETIC_TK) then
+		return (TRUE);
+
+	if SRC_VID ^= NULL_CXX_VID then do;
+		if IS_NULL_POINTER_CONSTANT (SRC_VID) &
+		   ( IS_TYPE_CLASS
+		     (rank (T_D_INFO.TOP_TYPE.CODE), POINTER_TK)
+		   | rank (T_D_INFO.TYPE_CODE) = MEMBER_POINTER_DT ) then
+			return (TRUE);
+	end;
+
+	if   ( T_D_INFO.TOP_TYPE.CODE = byte (POINTER_DT)
+	     & T_S_INFO.TOP_TYPE.CODE = byte (POINTER_DT) )
+	   | ( T_D_INFO.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT)
+	     & T_S_INFO.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT) ) then do;
+		/* Both are pointers or both are member pointers. */
+
+		P_D_INFO = T_D_INFO;
+		call STRIP_TOP_TYPE (P_D_INFO, FALSE);
+		P_S_INFO = T_S_INFO;
+		call STRIP_TOP_TYPE (P_S_INFO, FALSE);
+		S_QUALIFIERS = P_S_INFO.QUALIFIERS & ALL_TQ;
+		D_QUALIFIERS = P_D_INFO.QUALIFIERS & ALL_TQ;
+		if   (S_QUALIFIERS & ^D_QUALIFIERS) ^= NULL_TQ
+		   & ^SW_X_IGNORE_TYPE_QUALIFIERS then
+			/*
+			/* Destination has not all qualifiers of source.
+			/* PKT thinks the X3J16 working paper would
+			/* consider this a non-match.  But cfront,
+			/* Turbo, and Zortech all match.
+			/**/
+			return (FALSE);
+
+		/* If the destination points to void, then it is ok. */
+		if P_D_INFO.TOP_TYPE.CODE = byte (VOID_BT) then 
+			/* wait for check of classes */;
+
+		/*
+		/* If pointed-to types are compatible, then it is ok.
+		/* Note: if qualifiers are the same, then this is
+		/* handled above.  Different qualifiers done here.
+		/**/
+		else if COMPATIBLE_SPECIAL_TYPE_INFO (
+				P_D_INFO, IGNORE_TOP_QUALIFIERS_TCM,
+				P_S_INFO, IGNORE_TOP_QUALIFIERS_TCM) then
+			/* wait for check of classes */;
+
+		/*
+		/* If the destination is an accessible, unambiguous
+		/* base class of the source, then it it ok.
+		/**/
+		else if IS_BASE_CLASS_TYPE_INFO (P_D_INFO, P_S_INFO) then
+			/* wait for check of classes */;
+
+		else
+			/* Pointed-to types don't match. */
+			return (FALSE);
+
+		/* If regular, not member pointers, ok. */
+		if rank (T_D_INFO.TYPE_CODE) ^= MEMBER_POINTER_DT then
+			return (TRUE);
+
+		/* Check that members are of related classes. */
+		if MEMBERS_OF_RELATED_CLASSES (T_D_INFO, T_S_INFO) then
+			return (TRUE);
+	end;
+
+	return (FALSE);
+
+end STANDARD_CONVERSION;
+
+/* ---------------------------------------------------------------------
+/* COMPATIBLE_PROMOTED_TYPES
+/*
+/* Determine if the base type STYPE is promotable to type DTYPE using
+/* integral promotions, or by a conversion from float to double.
+/*
+/* Note from TLF (08/07/90):  The algorithm for integral promotions
+/*                            doesn't make sense to me, but
+/*                            that is the way TM did it.
+/* ---------------------------------------------------------------------- */
+
+COMPATIBLE_PROMOTED_TYPES: procedure (DTYPE, STYPE)
+			   returns   (type (BOOL_T))
+			   internal;
+	declare
+		DTYPE		type (SHORT_T),  /* Base type of destination */
+		STYPE		type (SHORT_T);	 /* Base type of source */
+	declare
+		TD		type (SHORT_T),
+		TS		type (SHORT_T),
+		SU		type (SHORT_T),
+		BDRY		type (SHORT_T),
+		SZ_D		type (LONG_T),
+		SZ_S		type (LONG_T),
+		RETCODE		type (BOOL_T);
+
+	RETCODE = FALSE;
+	TD = DTYPE;
+ 
+	if STYPE = ENUM_BT then
+		TS = INT_BT;
+	else	TS = STYPE;
+	
+	if IS_INTEGRAL_TYPE (TD) & IS_INTEGRAL_TYPE (TS) then do;
+		call SIMPLE_TYPE_SIZE (TD, SZ_D, SU, BDRY);
+		SZ_D = ROUNDU (SZ_D, BDRY, BYTES);
+		call SIMPLE_TYPE_SIZE (TS, SZ_S, SU, BDRY);
+		SZ_S = ROUNDU (SZ_S, BDRY, BYTES);
+
+		if (TD = INT_BT) & (SZ_S < SZ_D) then
+			RETCODE = TRUE;
+		else if (IS_SIGNED_INTEGRAL_TYPE (TD) &
+			 IS_SIGNED_INTEGRAL_TYPE (TS)) &
+			(SZ_D = SZ_S) then
+			RETCODE = TRUE;
+	end;
+	else if TD = DOUBLE_BT & TS = FLOAT_BT then do;
+		/*
+		/* This silly stuff is done just in case in SOME
+		/* implementation, a float is longer than a double.
+		/**/
+		call SIMPLE_TYPE_SIZE (TD, SZ_D, SU, BDRY);
+		SZ_D = ROUNDU (SZ_D, BDRY, BYTES);
+		call SIMPLE_TYPE_SIZE (TS, SZ_S, SU, BDRY);
+		SZ_S = ROUNDU (SZ_S, BDRY, BYTES);
+		RETCODE = (SZ_D >= SZ_S);
+	end;
+ 
+	return (RETCODE);
+
+end COMPATIBLE_PROMOTED_TYPES;
+
+/* ---------------------------------------------------------------------
+/* MATCH_FUNCTIONS
+/*
+/* If the expression in the value node RV is a pointer to function
+/* or member pointer to function which can initialize the type denoted by LTI,
+/* return the match status M_EXACT or M_EXACT_PLUS.  Otherwise return
+/* NO_MATCH.  RV may be overloaded.
+/*
+/* LTI may be a reference type in which case it is handled the same as a
+/* pointer type.
+/* ------------------------------------------------------------------- */
+
+MATCH_FUNCTIONS: procedure (LTI, RV)
+                 returns   (type (SHORT_T))
+		 internal;
+	declare
+		LTI 	        	type (TYPE_INFO_T),
+		RV     		     	type (CXX_VID_T);
+	declare
+		RETURN_MATCH		type (SHORT_T),
+		RTI			type (TYPE_INFO_T),
+		(L_CODE, R_CODE)	type (SHORT_T),
+		(SLTI, SRTI)		type (TYPE_INFO_T),
+		OVERLOAD_LIST		type (NID_T),
+		OVERLOADED		type (BOOL_T),
+		NEW_RIGHT		type (NID_T),
+		OLD_RIGHT		type (NID_T),
+		FOUND			type (BOOL_T),
+		CONTINUE		type (BOOL_T),
+		(LTT, RTT)		type (TYPE_DATA_T),
+		SP			type (POINTER_T),
+		SNID			type (SNID_T),
+		V			type (CXX_VID_T),
+		IS_MEMBER_POINTER	type (BOOL_T),
+		IS_NON_STATIC_MEMBER	type (BOOL_T);
+
+	/*
+	/* The left must be a pointer type (or
+	/* if left a reference type it's to be handled just like a pointer).
+	/**/
+
+	L_CODE = rank (LTI.TYPE_CODE);
+ 	if   L_CODE ^= POINTER_DT
+	   & L_CODE ^= MEMBER_POINTER_DT
+	   & L_CODE ^= REFERENCE_DT then
+		return (NO_MATCH);
+
+	/* Get the type of the right */
+
+	CXX_VALUE_NODE_PTR = RV;
+	call GET_VALUE_TYPE (RTI);
+
+	/* The right must be a pointer type, and must match the left. */
+ 
+	R_CODE = rank (RTI.TYPE_CODE);
+	if R_CODE = POINTER_DT then do;
+		if L_CODE = MEMBER_POINTER_DT then
+			return (NO_MATCH);
+	end;
+	else if R_CODE = MEMBER_POINTER_DT then do;
+		if L_CODE = POINTER_DT then
+			/*
+			/* Actual may be an overloaded member reference,
+			/* which may turn out to be a static member.
+			/**/
+			;
+		else if L_CODE ^= MEMBER_POINTER_DT then
+			return (NO_MATCH);
+		else if LTI.TOP_TYPE.TAG_SYMBOL ^= RTI.TOP_TYPE.TAG_SYMBOL then
+			return (NO_MATCH);
+	end;
+	else
+		return (NO_MATCH);
+
+	/*
+	/* Make sure that the type pointed to by the left posesses at
+	/* least all of the qualifiers of the type pointed to by the right.
+	/**/
+
+	call GET_TOP_LEVEL_TYPE_INFO (LTI, 1, LTT);
+	call GET_TOP_LEVEL_TYPE_INFO (RTI, 1, RTT);
+
+	if ^HAS_ALL_TYPE_QUALIFIERS_OF
+	    (LTT.QUALIFIERS, RTT.QUALIFIERS) then
+		return (NO_MATCH);
+
+	if ((LTT.QUALIFIERS & ALL_TQ) = (RTT.QUALIFIERS & ALL_TQ)) then
+		RETURN_MATCH = M_EXACT_PLUS;
+	else
+		RETURN_MATCH = M_EXACT;
+
+	/*
+	/* If LTI is not a pointer to function, reference to function,
+	/* or member pointer to function, return false.
+	/**/
+	
+	if rank (LTT.TYPE_CODE) ^= FUNCTION_DT then
+		return (NO_MATCH);
+
+	/* See if this is a pointer or reference to an overloaded function */
+
+	OVERLOADED = IS_OVERLOADED_VALUE (RV, OLD_RIGHT);
+	if OVERLOADED then do;
+		call GET_SYM_NODE_R (OLD_RIGHT, SP);
+		OVERLOAD_LIST = SP->SYM_NODE.NEXT_OVERLOAD;
+		call RELEASE_SYM_NODE (OLD_RIGHT);
+	end;
+	else
+		OVERLOAD_LIST = NULL_NID;
+
+	NEW_RIGHT = OLD_RIGHT;
+	FOUND = FALSE;
+	SLTI = LTI;
+	call STRIP_TOP_TYPE (SLTI, FALSE);
+
+	call SAVE_NODE (SNID);
+
+	do CONTINUE = TRUE while (CONTINUE);
+		/*
+		/* Check the left and right pointer types for compatibility.
+		/* Note that we ignore the top two qualifier levels, since
+		/* the top level qualifiers are (always) ignored, and the
+		/* pointed to qualifiers were checked above.
+		/* Also, ignore the kind of pointer, because that's checked
+		/* by the caller (e.g. ptr to member of base can be assigned
+		/* to pointer to member of derived).
+		/**/
+		SRTI = RTI;
+		call STRIP_TOP_TYPE (SRTI, FALSE);
+		FOUND = COMPATIBLE_SPECIAL_TYPE_INFO
+	    		(SLTI, IGNORE_TOP_QUALIFIERS_TCM,
+	     		 SRTI, IGNORE_TOP_QUALIFIERS_TCM);
+		if ^FOUND & (OVERLOAD_LIST ^= NULL_NID) then do;
+			call SET_SYM_NODE_R (OVERLOAD_LIST);
+			if PARSING_DEFERRED_FUNCTION () then do;
+				if EFFECTIVELY_NON_VISIBLE_P (NODE_PTR) then
+					goto CONTINUE_LABEL;
+			end;
+			call GET_SYMBOL_TYPE (RTI);
+			call ADD_POINTER_LEVEL (RTI);
+			NEW_RIGHT = OVERLOAD_LIST;
+			CONTINUE_LABEL:
+			OVERLOAD_LIST = SYM_NODE.NEXT_OVERLOAD;
+		end;
+		else	CONTINUE = FALSE;
+	end;
+	call RESTORE_NODE (SNID);
+
+	if ^FOUND then
+		return (NO_MATCH);
+
+	/*
+	/* If RV had &Class::overloaded_member 
+	/* or even Class::overloaded_member, then the resolved
+	/* symbol must be non-static iff LTI is pointer to member.
+	/**/
+	if NEW_RIGHT ^= NULL_NID then do;
+		call GET_SYM_NODE_R (NEW_RIGHT, SP);
+		IS_NON_STATIC_MEMBER
+			=   (rank (SP->SYM_NODE.STORAGE_CLASS) ^= STATIC_ST)
+			  & SP->SYM_NODE.IS_AGGREGATE_MEMBER;
+		call RELEASE_SYM_NODE (NEW_RIGHT);
+	end;
+	else
+		IS_NON_STATIC_MEMBER = (R_CODE = MEMBER_POINTER_DT);
+	IS_MEMBER_POINTER = (L_CODE = MEMBER_POINTER_DT);
+	if IS_MEMBER_POINTER ^= IS_NON_STATIC_MEMBER then
+		return (NO_MATCH);
+
+	return (RETURN_MATCH);
+
+end MATCH_FUNCTIONS;
+
+/* ------------------------------------------------------------------------
+/* ORDINARY_OK
+/*
+/* This procedure is called when exactly one overloaded operator is matched.
+/* If this overloaded operator is matched with any of the actual arguments
+/* because of a user conversion, then an additional check must 
+/* be made for uniqueness.  If the actual arguments also have conversions
+/* to the acceptable types for the overloaded operator, then an ambiguity
+/* exists:  an overloaded operator has been found, but the operation
+/* could also be done on operands converted to the acceptable types.
+/*
+/* If the ambiguity is detected, returns TRUE.  If every argument
+/* matches CODES with no user conversions, there's some problem
+/* and overload resolution should not be going on.  If some argument
+/* does not match at all, returns FALSE.
+/*
+/* The example from the ARM, sec. 13.2 is:
+/*
+/*  struct X {
+/*  public:
+/*	operator int();
+/*  };
+/*
+/*  struct Y {
+/*  public:
+/*	Y(X);
+/*  };
+/*
+/* Y operator+(Y,Y);
+/* 
+/* void f(X a, X b) 
+/* {
+/*	a + b;		// Error, ambiguous
+/*			//      operator+(Y(a), Y(b)) or
+/*			//      a.operator int() + b.operator int()
+/* }
+/*
+/*  Note:  Based very vaguely on TM's operator_ok.
+/*	   I think that their algorithm is wrong.  So does PKT.
+/*
+/* -------------------------------------------------------------------------- */
+ 
+ORDINARY_OK: procedure (BUILTIN_VOP, ARG_LIST)
+	     returns   (type (BOOL_T))
+	     internal;
+ 
+	declare
+		BUILTIN_VOP	type (SHORT_T),	/* builtin op */
+		ARG_LIST	type (CXX_VID_T);  	/* actual arg list */
+
+	declare
+		CODES		type (SHORT_T),	/* Acceptable type codes for 
+					           the overloaded operator's
+						   operands. */
+		UNARY_CODES	type (SHORT_T),
+		BINARY_CODES	type (SHORT_T),
+		THIS_ACTUAL	type (CXX_VID_T),
+		NEXT_ACTUAL	type (CXX_VID_T),
+		CONV_NID   	type (NID_T),
+		CONV_NID_2   	type (NID_T),
+		AMBIG		type (BOOL_T),
+		TYPE_CODE	type (SHORT_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		ARG_COUNT	type (SHORT_T);
+ 
+
+	if BUILTIN_VOP = 0 then
+		return (FALSE);
+
+	CODES = VOP_OPERAND_TYPE (BUILTIN_VOP);
+	if CODES = NULL_TK then
+		return (FALSE);
+	
+	NEXT_ACTUAL = ARG_LIST;
+	AMBIG = TRUE;
+	ARG_COUNT = 0;
+
+	call GET_NEXT_ACTUAL (NEXT_ACTUAL, THIS_ACTUAL);
+ 
+	/*  Loop through the arg list, checking to see if an
+	/*  argument fails to convert to the allowable
+	/*  types of the operator.  If so, then we have no ambiguity.
+	/**/
+ 
+	do while (THIS_ACTUAL ^= NULL_CXX_VID & AMBIG = TRUE);
+
+		ARG_COUNT = ARG_COUNT + 1;
+
+		/* Find the type of the actual, ignoring reference. */
+		CXX_VALUE_NODE_PTR = THIS_ACTUAL;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		if TYPE_INFO.TYPE_CODE = byte (REFERENCE_DT) then
+			call STRIP_TOP_TYPE (TYPE_INFO, FALSE);
+		TYPE_CODE = rank (TYPE_INFO.TYPE_CODE);
+
+		if ^IS_AGGREGATE_TAG_TYPE (TYPE_CODE) then do;
+			AMBIG = IS_TYPE_CLASS (TYPE_CODE, CODES);
+			if ARG_COUNT > 1 then
+				/* Restriction does not apply. */ ;
+			else if   TYPE_INFO.NOT_AN_LVALUE
+			        & TYPE_HAS_RESTRICTION
+				  (CODES, LVALUE_TYPE_RESTRICTION) then
+				AMBIG = FALSE;
+			else if   TYPE_INFO.TOP_TYPE.CONST
+				& TYPE_HAS_RESTRICTION
+				  (CODES, NON_CONST_TYPE_RESTRICTION) then
+				AMBIG = FALSE;
+		end;
+		else do;
+			/*
+			/*  Check to see if there is a user conversion
+			/*  for this actual arg to one of the acceptable
+			/*  types.
+			/**/
+			CONV_NID = FIND_USER_CONVERSION 
+				   (NULL_NID,
+				    TYPE_INFO,
+				    FALSE,
+				    CODES,
+				    CONV_NID_2,
+				    NULL_NID);
+			AMBIG =  (CONV_NID ^= NULL_NID);
+		end;
+
+		call GET_NEXT_ACTUAL (NEXT_ACTUAL, THIS_ACTUAL);
+	end;
+ 
+	return (AMBIG);
+
+end ORDINARY_OK;
+
+
+/* ---------------------------------------------------------------------
+ * IS_OVERLOADED_VALUE
+ *
+ * Assuming the given expression V has not had overloading resolution
+ * done to it, returns whether V needs overloading resolution, i.e.
+ * contains an overloaded function or member function symbol in a
+ * position where overloading resolution would act on it.
+ *
+ * V can be any expression.  This procedure deals with expressions
+ * of type function, pointer to function, and pointer to member function.
+ *
+ * The trickiest case handled here occurs for an expression like
+ * &obj.mf or &(obj.*mfp).  If the function is overloaded, these
+ * get deferred and the operand of ADDR_VO is not REF!
+ *
+ * We don't support all of the above, in the compiler, but it won't
+ * hurt anything to leave them in this routine.
+ *
+ * The parameter SYM is set to the symbol node that determines the
+ * overloading of the expression.  It will be set to NULL_NID for such cases
+ * as VALUE(REF(pointer-to-function symbol)) and 
+ * CALL_FUNCTION(function returning pointer-to-function).
+ *
+ * Preserves current-node-id.  Trashes current-value-node-id.
+ * ------------------------------------------------------------------- */
+
+IS_OVERLOADED_VALUE: procedure (V, SYM)
+		     returns   (type (BOOL_T))
+		     external  (X_IS_OVERLOADED_VALUE);
+
+	declare
+		V		type (CXX_VID_T),
+		SYM		type (NID_T);
+	declare
+		TYPE_CODE	type (SHORT_T),
+		VALUE		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		VOP		type (SHORT_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		P		type (POINTER_T),
+		RESULT		type (BOOL_T);
+
+	SYM = NULL_NID;
+
+	if V = NULL_CXX_VID then
+		return (FALSE);
+
+	TYPE_CODE = rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE);
+	if ^( TYPE_CODE = POINTER_DT
+	    | TYPE_CODE = MEMBER_POINTER_DT
+	    | TYPE_CODE = FUNCTION_DT ) then
+		return (FALSE);
+
+	if TYPE_CODE ^= FUNCTION_DT then do;
+		CXX_VALUE_NODE_PTR = V;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		call GET_TOP_LEVEL_TYPE_INFO (TYPE_INFO, 1, TYPE_DATA);
+		if TYPE_DATA.CODE ^= byte (FUNCTION_DT) then
+			return (FALSE);
+	end;
+
+	CXX_VALUE_NODE_PTR = V;
+	VALUE = V;
+	SYM = NULL_NID;
+	do while (SYM = NULL_NID);
+		/* VALUE is paged in */
+		VOP = CXX_VALUE_NODE.OP;
+		if VOP = COMMA_VO then do;
+			VALUE = CXX_VALUE_NODE.RIGHT;
+			CXX_VALUE_NODE_PTR = VALUE;
+		end;
+		else if VOP = LEFT_VALUE_VO then do;
+			VALUE = CXX_VALUE_NODE.LEFT;
+			CXX_VALUE_NODE_PTR = VALUE;
+		end;
+		else if VOP = REF_VO then
+			SYM = CXX_VALUE_NODE.LEFT_NID;
+		else if TYPE_CODE = FUNCTION_DT then do;
+			if VOP = VALUE_VO then do;
+				VALUE = CXX_VALUE_NODE.LEFT;
+				CXX_VALUE_NODE_PTR = VALUE;  /* REF */
+			end;
+			else if VOP = DOT_STAR_VO then do;
+				VALUE = CXX_VALUE_NODE.RIGHT;
+				CXX_VALUE_NODE_PTR = VALUE;
+				/*
+				/* Overloaded .* can arise only from
+				/* an occurrence of plain ".", because
+				/* .* of overloaded is illegal.
+				/**/
+				if CXX_VALUE_NODE.OP = MEMBER_PTR_VO then
+					SYM = CXX_VALUE_NODE.LEFT_NID;
+				else	return (FALSE);
+			end;
+			else 	return (FALSE);
+		end;
+		else do;
+			/* type is pointer */
+			if (VOP = ADDR_VO) &
+			   ^CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+			   (CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then do;
+				VALUE = CXX_VALUE_NODE.LEFT;
+				CXX_VALUE_NODE_PTR = VALUE;
+				/* maybe DOT_STAR_VO */
+				TYPE_CODE = FUNCTION_DT;
+			end;
+			else if   VOP = MEMBER_PTR_VO
+				| VOP = MEMBER_REF_VO then do;
+				SYM = CXX_VALUE_NODE.LEFT_NID;
+			end;
+			else	return (FALSE);
+		end;
+	end;
+
+	call GET_SYM_NODE_R (SYM, P);
+	/*
+	/* Conversion functions are not overloaded in
+	/* the sense which we handle here. 
+	/**/
+	RESULT =   P->SYM_NODE.IS_FUNCTION 
+	         & P->SYM_NODE.OVERLOAD 
+		 & ^P->SYM_NODE.IS_CONVERSION_FUNCTION;
+	call RELEASE_SYM_NODE (SYM);
+	return (RESULT);
+
+end IS_OVERLOADED_VALUE;
+
+

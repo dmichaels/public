@@ -1,0 +1,81 @@
+/* C++ CXX_INTERNAL_PARSE_IN - Internal (by-hand) parse data */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  04.23.91  DGM  003  Added.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  09.12.90  DGM  001  Name consistency change.
+ *  09.05.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;           */
+/* %include CXX_EXTERNAL_NAME_MAP_IN;       */
+/* %include CXX_SYMBOL_TABLE_IN;            */
+/* %include CXX_GLOBAL_SEMANTIC_DATA_IN;    */
+/* %include CXX_GLOBAL_DECLARATION_DATA_IN; */
+/* %include CXX_GLOBAL_TYPE_DATA_IN;        */
+/* %include CXX_LEXER_TOKENS_PKG;           */
+
+/* ---------------------------------------------------------------------
+/* Builtin function declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+size			builtin;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+/*
+/* TODO: We really want to use the following declaration
+/* of PARSE_STATE_DATA_T, but a compiler PL/I bug prevents us!
+/*
+/*  1 PARSE_STATE_DATA_T	based,
+/*    2 DECLARATION_DATA	type (GLOBAL_DECLARATION_DATA),
+/*    2 TYPE_DATA		type (GLOBAL_TYPE_DATA),
+/*    2 SEMANTIC_DATA		type (GLOBAL_SEMANTIC_DATA),
+/*    2 MATCHED_TOKEN_DATA	type (TOKEN_POD),
+/*    2 NODE_DATA		type (SNID_T);
+/**/
+
+declare
+
+DECLARATION_STATE_DATA_T (size (GLOBAL_DECLARATION_DATA)) character based,
+TYPE_STATE_DATA_T	 (size (GLOBAL_TYPE_DATA))        character based,
+SEMANTIC_STATE_DATA_T	 (size (GLOBAL_SEMANTIC_DATA))    character based,
+
+1 PARSE_STATE_DATA_T	 based,
+  2 DECLARATION_DATA	 type (DECLARATION_STATE_DATA_T),
+  2 TYPE_DATA		 type (TYPE_STATE_DATA_T),
+  2 SEMANTIC_DATA	 type (SEMANTIC_STATE_DATA_T),
+  2 MATCHED_TOKEN_DATA	 type (TOKEN_POD),
+  2 NODE_DATA		 type (SNID_T),
+  2 GLOBAL_CURRENT_BLOCK type (NID_T),
+  2 reserved		 type (LONG_T);
+
+/* ---------------------------------------------------------------------
+/* Data
+/* ------------------------------------------------------------------- */
+
+declare
+
+CURRENTLY_DOING_INTERNAL_PARSE	type (BOOL_T)
+		 		static initial (FALSE)
+				external (X_CURRENTLY_DOING_INTERNAL_PARSE);
+

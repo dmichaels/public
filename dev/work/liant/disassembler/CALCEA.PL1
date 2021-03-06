@@ -1,0 +1,644 @@
+/* CodeWatch M68 CALCEA.PL1 - Calculate an M68020 effective address */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.06.91  DGM  (001) Removed SIGNEX and calls; added SIGN_EXTEND_BYTE.
+ *  04.30.87  DGM  Original.
+ *
+ **********************************************************************/
+
+/* --------------------------------------------------------------------
+/*  CALCEA - Validate/size/calculate an M68020 effective address.
+/*
+/*  DESCRIPTION:
+/*
+/*    This routine is used to check the validity of, determine the
+/*    size of, and (optionally) calculate the target value (either
+/*    the address of the operand or the operand itself) of an M68020
+/*    effective address.  The caller will generally disassemble
+/*    the initial part of the instruction to determine its type,
+/*    and then call this function with the appropriate arguments.
+/*
+/*  INPUT ARGUMENTS:
+/*
+/*    EAMODE   = The effective addressing mode (0-7).
+/*    EAREG    = The effective addressing register (0-7).
+/*    EAEXT    = A pointer to an array of (not less than) five
+/*               (16-bit) words representing the effective address
+/*               extension words.
+/*    EASIZE   = The size code of the effective address (use the
+/*               (constant $EASIZE_UNKNOWN if not known).
+/*    EALEGAL  = A code (from CALCEA_IN) indicating the catagory
+/*               of effective addressing modes to check for.
+/*    REGAREA  = A pointer to the user program register area.
+/*               If this is NULL, then we will assume that the user
+/*               program is not active and the target EA will only
+/*               be computed if it does not involve any reference
+/*               to registers or memory (i.e. only register direct,
+/*               immediate or absolute modes).
+/*
+/*  OUTPUT ARGUMENTS:
+/*
+/*    TARGET   = The effective address (i.e. the address of target
+/*               operand), or the actual (32-bit) operand specified
+/*               by the effective address if the addressing mode is
+/*               register direct or immediate.
+/*    EATARGET = TRUE if an effective address is returned in TARGET,
+/*               FALSE if a (32-bit) operand is returned in TARGET.
+/*
+/*  RETURN VALUE:
+/*
+/*    If the effective address is found to be a legal format,
+/*    then return the total size in bytes of the effective extension
+/*    (note that this may be zero if there are not extension words).
+/*    Otherwise, if it is found to be illegal, then return -1.
+/*
+/**********************************************************************/
+
+
+CALCEA: procedure (EAMODE,
+                   EAREG,
+                   EASIZE,
+                   EAEXT,
+                   EALEGAL,
+                   REGAREA,
+                   TARGET,
+                   EATARGET)
+        returns   (fixed binary (15));
+
+
+    %include 'incfil';
+    %include GLOBAL_IN;
+    %include DBGGLOBAL_IN;
+    %include EADEF_IN;
+    %include SYSREADUSER_IN;
+    %include TARGET_IN;
+
+    declare
+        EAMODE      fixed binary (15),  /* EA mode */
+        EAREG       fixed binary (15),  /* EA register */
+        EASIZE      fixed binary (15),  /* EA size */
+        EAEXT       pointer,            /* EA extension word pointer */
+        EALEGAL     fixed binary (31),  /* Legal EA addresssing mode type */
+        REGAREA     pointer,            /* Pointer to register save area */
+        TARGET      fixed binary (31),  /* EA target */
+        EATARGET    bit (1);            /* Target is and EA (else operand) */
+    declare
+        DUMMY       fixed binary (31),
+        NOT_ACTIVE  bit (1),
+        MEMORY      fixed binary (31),
+        RET         fixed binary (15),
+        NWORDS      fixed binary (15),  /* number of extension words */
+        IR          fixed binary (31),  /* index register */
+        BR          fixed binary (31),  /* base register */
+        BD          fixed binary (31),  /* base displacement */
+        OD          fixed binary (31),  /* outer displacement */
+        BD_I        fixed binary (15),  /* base displacement index */
+        OD_I        fixed binary (15),  /* outer displacement index */
+        EAE_I       fixed binary (15),  /* EA extension index */
+        EAE_P       pointer;            /* EA extension pointer */
+    declare
+        NO_MEM_INDIRECTION  bit (1),    /* no memory indirection */
+        BR_SUPPRESSED       bit (1),    /* suppress base register */
+        IR_SUPPRESSED       bit (1),    /* suppress index register */
+        PRE_INDEXED         bit (1),    /* pre-indexed */
+        POST_INDEXED        bit (1);    /* post-indexed */
+    declare
+        1 INSTRUCTION       based (EAEXT),
+          2 WORD (1:5)      fixed binary (15);
+    declare
+        1 ADDRESS           based,
+          2 HIGH            fixed binary (15),
+          2 LOW             fixed binary (15),
+        1 LONG_WORD         based,
+          2 HIGH            fixed binary (15),
+          2 LOW             fixed binary (15),
+        1 SHORT_WORD        based,
+          2 HIGH            bit (8),
+          2 LOW             bit (8);
+
+
+    /* -------------------------------------------------------------------
+     * -- Start Processing --
+     * ---------------------------------------------------------------- */
+
+    /* Determine whether or not the user process is assumed active */
+
+    if REGAREA = NULL then
+         NOT_ACTIVE = TRUE;
+    else NOT_ACTIVE = FALSE;
+
+    /* -------------------------------------------------------------------
+     * -- DECODE AND CALCULATE THE EFFECTIVE ADDRESS --
+     * ---------------------------------------------------------------- */
+
+    if (EAMODE >= 0) & (EAMODE <= 7) & (EAREG >= 0) & (EAREG <= 7) then
+        goto DECODE_EA(EAMODE);
+    goto INVALID;
+
+    /* -------------------------------------------------------------------
+     * -- DATA REGISTER DIRECT -- Dn
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (0):
+
+        if (EALEGAL ^= $EATYPE_ALL)        &
+           (EALEGAL ^= $EATYPE_DATA)       &
+           (EALEGAL ^= $EATYPE_ALTER)      &
+           (EALEGAL ^= $EATYPE_DATA_ALTER) then
+            goto INVALID;
+
+        EATARGET = FALSE;
+        NWORDS = 0;
+
+        if NOT_ACTIVE then
+             TARGET = 0;
+        else TARGET = REGAREA->REGS_ARRAY.D(EAREG);
+
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER DIRECT -- An
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (1):
+
+        if (EALEGAL ^= $EATYPE_ALL)   &
+           (EALEGAL ^= $EATYPE_ALTER) then
+            goto INVALID;
+
+        EATARGET = FALSE;
+        NWORDS = 0;
+
+        if NOT_ACTIVE then
+             TARGET = 0;
+        else TARGET = REGAREA->REGS_ARRAY.A(EAREG);
+
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER INDIRECT -- (An)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (2):
+
+        if (EALEGAL ^= $EATYPE_ALL)          &
+           (EALEGAL ^= $EATYPE_DATA)         &
+           (EALEGAL ^= $EATYPE_MEMORY)       &
+           (EALEGAL ^= $EATYPE_CONTROL)      &
+           (EALEGAL ^= $EATYPE_ALTER)        &
+           (EALEGAL ^= $EATYPE_DATA_ALTER)   &
+           (EALEGAL ^= $EATYPE_MEMORY_ALTER) then
+            goto INVALID;
+
+        EATARGET = TRUE;
+        NWORDS = 0;
+
+        if NOT_ACTIVE then
+             TARGET = 0;
+        else TARGET = REGAREA->REGS_ARRAY.A(EAREG);
+
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER WITH POST-INCREMENT -- (An)+
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (3):
+
+        if (EALEGAL ^= $EATYPE_ALL)          &
+           (EALEGAL ^= $EATYPE_DATA)         &
+           (EALEGAL ^= $EATYPE_MEMORY)       &
+           (EALEGAL ^= $EATYPE_ALTER)        &
+           (EALEGAL ^= $EATYPE_DATA_ALTER)   &
+           (EALEGAL ^= $EATYPE_MEMORY_ALTER) then
+            goto INVALID;
+
+        EATARGET = TRUE;
+        NWORDS = 0;
+
+        if NOT_ACTIVE then
+             TARGET = 0;
+        else TARGET = REGAREA->REGS_ARRAY.A(EAREG);
+
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER WITH PRE-DECREMENT -- -(An)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (4):
+
+        if (EALEGAL ^= $EATYPE_ALL)          &
+           (EALEGAL ^= $EATYPE_DATA)         &
+           (EALEGAL ^= $EATYPE_MEMORY)       &
+           (EALEGAL ^= $EATYPE_ALTER)        &
+           (EALEGAL ^= $EATYPE_DATA_ALTER)   &
+           (EALEGAL ^= $EATYPE_MEMORY_ALTER) then
+            goto INVALID;
+
+        EATARGET = TRUE;
+        NWORDS = 0;
+
+        if NOT_ACTIVE then
+             TARGET = 0;
+        else do;
+            TARGET = REGAREA->REGS_ARRAY.A(EAREG);
+            if EASIZE = $EASIZE_BYTE then
+                 TARGET = TARGET - 1;
+            else if EASIZE = $EASIZE_WORD then
+                 TARGET = TARGET - 2;
+            else if EASIZE = $EASIZE_LONG then
+                 TARGET = TARGET - 4;
+            else goto INVALID;
+        end;
+
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- ADDRESS REGISTER INDIRECT WITH DISPLACEMENT -- (d16,An)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (5):
+
+        if (EALEGAL ^= $EATYPE_ALL)          &
+           (EALEGAL ^= $EATYPE_DATA)         &
+           (EALEGAL ^= $EATYPE_MEMORY)       &
+           (EALEGAL ^= $EATYPE_CONTROL)      &
+           (EALEGAL ^= $EATYPE_ALTER)        &
+           (EALEGAL ^= $EATYPE_DATA_ALTER)   &
+           (EALEGAL ^= $EATYPE_MEMORY_ALTER) then
+            goto INVALID;
+
+        EATARGET = TRUE;
+        NWORDS = 1;
+
+        if NOT_ACTIVE then
+              TARGET = 0;
+         else TARGET = REGAREA->REGS_ARRAY.A(EAREG) + INSTRUCTION.WORD(1);
+
+        goto VALID;
+
+    /* -------------------------------------------------------------------
+     * -- (An) INDIRECT WITH INDEX AND 8-BIT DISPLACEMENT -- (d8,An,Xn)
+     * -- (An) INDIRECT WITH INDEX AND BASE DISPLACEMENT -- (bd,An,Xn)
+     * -- MEMORY INDIRECT POST-INDEXED -- ([bd,An],Xn,od)
+     * -- MEMORY INDIRECT PRE-INDEXED -- ([bd,An,Xn],od)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (6):
+
+        if (EALEGAL ^= $EATYPE_ALL)          &
+           (EALEGAL ^= $EATYPE_DATA)         &
+           (EALEGAL ^= $EATYPE_MEMORY)       &
+           (EALEGAL ^= $EATYPE_CONTROL)      &
+           (EALEGAL ^= $EATYPE_ALTER)        &
+           (EALEGAL ^= $EATYPE_DATA_ALTER)   &
+           (EALEGAL ^= $EATYPE_MEMORY_ALTER) then
+            goto INVALID;
+
+        EATARGET = TRUE;
+
+        if NOT_ACTIVE then
+             TARGET = 0;
+
+        /* Get a pointer to the EA extension word */
+
+        EAE_I = 1;                          /* EA extension index and ... */
+        EAE_P = addr(INSTRUCTION.WORD(1));  /*   pointer into instruction */
+
+        /* Is the EA extension word either brief or full format ? */
+
+        if (EAE_P->BRIEF_EA.ZERO ^= '0'B) &
+           ((EAE_P->FULL_EA.ZERO ^= '0'B) | (EAE_P->FULL_EA.ONE ^= '1'B)) then
+            goto INVALID;
+
+        NWORDS = 1;    /* At least one extension word */
+
+        /* ----------------------------------------------------------
+         * Get the base register BR (same for brief and full formats)
+         * -------------------------------------------------------- */
+
+        /*
+         * If this is really EA addressing mode 7 and register 3
+         * (PC-relative indirect/indexed) then it's exactly like
+         * mode 6 register N except that the base register BR is
+         * the program counter PC.
+         */
+
+        if ^NOT_ACTIVE then do;
+            if (EAMODE = 7) & (EAREG = 3) then
+                 BR = REGAREA->REGS.PC + 2;
+            else BR = REGAREA->REGS_ARRAY.A(EAREG);
+        end;
+
+        /* -----------------------------------------------------------
+         * Get the index register IR (same for brief and full formats)
+         * --------------------------------------------------------- */
+
+        if ^NOT_ACTIVE then do;
+            if EAE_P->BRIEF_EA.IR_TYPE = $ADDRESS_REGISTER then
+                  IR = REGAREA->REGS_ARRAY.A(EAREG);
+            else  IR = REGAREA->REGS_ARRAY.D(EAREG);
+            if EAE_P->BRIEF_EA.IR_SIZE = $WORD_INDEX then
+                IR = addr(IR)->ADDRESS.LOW;
+            IR = (IR * SCALE_FACTOR(binary(EAE_P->BRIEF_EA.IR_SCALE)));
+        end;
+
+        /* -----------------------------------------------------
+         * Handle the brief EA extension word format: (d8,An,Xn)
+         * --------------------------------------------------- */
+
+        if EAE_P->BRIEF_EA.ZERO = '0'B then do;
+            BD = SIGN_EXTEND_BYTE (EAE_P->BRIEF_EA.DISP_8);
+            if ^NOT_ACTIVE then
+                TARGET = BR + BD + IR;
+            goto VALID;
+        end;
+
+        /* ---------------------------------------
+         * Handle the full EA extension word format
+         * -------------------------------------- */
+
+        BD_I = EAE_I + 1;   /* BD index into instruction */
+
+        /* ----------------------------
+         * Get the base displacement BD
+         * -------------------------- */
+ 
+        if EAE_P->FULL_EA.BD_SIZE = $LONG_DISP then do;
+             addr(BD)->ADDRESS.HIGH = INSTRUCTION.WORD(BD_I);
+             addr(BD)->ADDRESS.LOW  = INSTRUCTION.WORD(BD_I+1);
+             NWORDS = NWORDS + 2;
+             OD_I = BD_I + 2;
+        end;
+        else if EAE_P->FULL_EA.BD_SIZE = $WORD_DISP then do;
+             BD = INSTRUCTION.WORD(BD_I);
+             NWORDS = NWORDS + 1;
+             OD_I = BD_I + 1;
+        end;
+        else if EAE_P->FULL_EA.BD_SIZE = $NULL_DISP then
+             BD = 0;
+        else goto INVALID;
+
+        /* -------------------------------------------------------
+         * Get outer displacement OD and memory indirection method
+         * ----------------------------------------------------- */
+
+        NO_MEM_INDIRECTION = FALSE;
+
+        if EAE_P->FULL_EA.OD_SIZE = $LONG_DISP then do;
+             addr(OD)->ADDRESS.HIGH = INSTRUCTION.WORD(OD_I);
+             addr(OD)->ADDRESS.LOW  = INSTRUCTION.WORD(OD_I+1);
+             NWORDS = NWORDS + 2;
+        end;
+        else if EAE_P->FULL_EA.OD_SIZE = $WORD_DISP then do;
+             OD = INSTRUCTION.WORD(OD_I);
+             NWORDS = NWORDS + 1;
+        end;
+        else if EAE_P->FULL_EA.OD_SIZE = $NULL_DISP then
+             OD = 0;
+        else if EAE_P->FULL_EA.OD_SIZE = $RESERVED_DISP then do;
+             if EAE_P->FULL_EA.IS = '1'B then
+                  goto INVALID;
+             else NO_MEM_INDIRECTION = TRUE;
+        end;
+        else goto INVALID;
+
+        /* --------------------------
+         * Get memory indexing method
+         * ------------------------ */
+
+        if EAE_P->FULL_EA.IR_SUP = '1'B then do;    /* suppress indexing */
+            if EAE_P->FULL_EA.IS ^= '0'B then
+                goto INVALID;
+            IR_SUPPRESSED = TRUE;
+        end;
+        else if EAE_P->FULL_EA.IR_SUP = '0'B then do;  /* indexing */
+            IR_SUPPRESSED = FALSE;
+            PRE_INDEXED   = FALSE;
+            POST_INDEXED  = FALSE;
+            if EAE_P->FULL_EA.IS = '0'B then
+                 PRE_INDEXED  = TRUE;
+            else POST_INDEXED = TRUE;
+        end;
+
+        /* --------------------------------------------
+         * See if the base register is to be suppressed
+         * ------------------------------------------ */
+
+        if EAE_P->FULL_EA.BR_SUP = '1'B then
+             BR_SUPPRESSED = TRUE;
+        else BR_SUPPRESSED = FALSE;
+
+        /* ---------------------------------------------------------------
+         * Ok, we've got all the information, now let's get the address
+         * ------------------------------------------------------------ */
+
+        if NOT_ACTIVE then
+            goto VALID;
+
+        /* Not Memory Indirect: (BD,BR,IR) */
+
+        if NO_MEM_INDIRECTION then do;
+            if IR_SUPPRESSED then
+                 TARGET = BR + BD; 
+            else TARGET = BR + IR + BD;
+            goto VALID;
+        end;
+
+        /* Memory Indirect: ([BD,BR],IR,OD) ([BD],IR,OD) ([BD,BR],OD)
+         *                  ([BD,BR,IR],OD) ([BD,IR],OD) ([BD],OD)
+         */
+
+        else do;
+            MEMORY = BD;
+            if ^BR_SUPPRESSED then
+                MEMORY = MEMORY + BR;
+            if PRE_INDEXED & ^IR_SUPPRESSED then
+            MEMORY = MEMORY + IR;
+            if MEMORY ^= 0 then do;
+                call REAUSR (PROCESS_ID, DUMMY, MEMORY, 4, addr(TARGET), RET);
+                if RET ^= 0 then
+                    goto INVALID;
+            end;
+            TARGET = TARGET + OD;
+            if POST_INDEXED & ^IR_SUPPRESSED then
+                TARGET = TARGET + IR;
+            goto VALID;
+        end;
+
+    /* -------------------------------------------------------------------
+     * -- ABSOLUTE SHORT ADDRESS -- abs.W
+     * -- ABSOLUTE LONG ADDRESS -- abs.L
+     * -- PC INDIRECT WITH 16-BIT DISPLACEMENT -- (d16,PC)
+     * -- PC INDIRECT WITH INDEX AND 8-BIT DISPLACEMENT -- (d8,PC,Xn)
+     * -- PC INDIRECT WITH INDEX AND BASE DISPLACEMENT -- (bd,PC,Xn)
+     * -- PC MEMORY INDIRECT POST-INDEXED -- ([bd,PC,Xn],od)
+     * -- PC MEMORY INDIRECT PRE-INDEXED -- ([bd,PC],Xn,od)
+     * ---------------------------------------------------------------- */
+
+    DECODE_EA (7):
+
+        goto DECODE_EA7 (EAREG);
+        goto INVALID;
+
+        /* ---------------------------------------------------------------
+         * -- ABSOLUTE SHORT ADDRESS --  abs.W
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (0):
+
+            if (EALEGAL ^= $EATYPE_ALL)          &
+               (EALEGAL ^= $EATYPE_DATA)         &
+               (EALEGAL ^= $EATYPE_MEMORY)       &
+               (EALEGAL ^= $EATYPE_CONTROL)      &
+               (EALEGAL ^= $EATYPE_ALTER)        &
+               (EALEGAL ^= $EATYPE_DATA_ALTER)   &
+               (EALEGAL ^= $EATYPE_MEMORY_ALTER) then
+                goto INVALID;
+
+            EATARGET = TRUE;
+            NWORDS = 1;
+
+            TARGET = INSTRUCTION.WORD(1);
+
+            goto VALID;
+
+        /* ---------------------------------------------------------------
+         * -- ABSOLUTE LONG ADDRESS -- abs.L
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (1):
+
+            if (EALEGAL ^= $EATYPE_ALL)          &
+               (EALEGAL ^= $EATYPE_DATA)         &
+               (EALEGAL ^= $EATYPE_MEMORY)       &
+               (EALEGAL ^= $EATYPE_CONTROL)      &
+               (EALEGAL ^= $EATYPE_ALTER)        &
+               (EALEGAL ^= $EATYPE_DATA_ALTER)   &
+               (EALEGAL ^= $EATYPE_MEMORY_ALTER) then
+                goto INVALID;
+
+            EATARGET = TRUE;
+            NWORDS = 2;
+
+            addr(TARGET)->ADDRESS.HIGH = INSTRUCTION.WORD(1);
+            addr(TARGET)->ADDRESS.LOW  = INSTRUCTION.WORD(2);
+
+            goto VALID;
+
+        /* ---------------------------------------------------------------
+         * -- PC INDIRECT WITH 16-BIT DISPLACEMENT -- (d16,PC)
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (2):
+
+            if (EALEGAL ^= $EATYPE_ALL)     &
+               (EALEGAL ^= $EATYPE_DATA)    &
+               (EALEGAL ^= $EATYPE_MEMORY)  &
+               (EALEGAL ^= $EATYPE_CONTROL) then
+                goto INVALID;
+
+            EATARGET = TRUE;
+            NWORDS = 1;
+
+            if NOT_ACTIVE then
+                 TARGET = 0;
+            else TARGET = (REGAREA->REGS.PC + 2) + INSTRUCTION.WORD(1);
+            goto VALID;
+
+        /* ---------------------------------------------------------------
+         * -- PC INDIRECT WITH INDEX AND 8-BIT DISPLACEMENT -- (d8,PC,Xn)
+         * -- PC INDIRECT WITH INDEX AND BASE DISPLACEMENT -- (bd,PC,Xn)
+         * -- PC MEMORY INDIRECT POST-INDEXED -- ([bd,PC,Xn],od)
+         * -- PC MEMORY INDIRECT PRE-INDEXED -- ([bd,PC],Xn,od)
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (3):
+
+            if (EALEGAL ^= $EATYPE_ALL)     &
+               (EALEGAL ^= $EATYPE_DATA)    &
+               (EALEGAL ^= $EATYPE_MEMORY)  &
+               (EALEGAL ^= $EATYPE_CONTROL) then
+                goto INVALID;
+
+            goto DECODE_EA (6);
+            goto VALID;
+
+        /* ---------------------------------------------------------------
+         * -- IMMEDIATE DATA -- #immediate
+         * ------------------------------------------------------------ */
+
+        DECODE_EA7 (4):
+
+            if (EALEGAL ^= $EATYPE_ALL)          &
+               (EALEGAL ^= $EATYPE_DATA)         &
+               (EALEGAL ^= $EATYPE_MEMORY)       &
+               (EALEGAL ^= $EATYPE_CONTROL)      &
+               (EALEGAL ^= $EATYPE_ALTER)        &
+               (EALEGAL ^= $EATYPE_DATA_ALTER)   &
+               (EALEGAL ^= $EATYPE_MEMORY_ALTER) then
+                goto INVALID;
+
+            EATARGET = FALSE;
+
+            if (EASIZE = $EASIZE_BYTE) then do;
+                 NWORDS = 1;
+                 TARGET = binary(addr(INSTRUCTION.WORD(1))->SHORT_WORD.LOW);
+            end;
+            else if (EASIZE = $EASIZE_WORD) then do;
+                 NWORDS = 1;
+                 TARGET = INSTRUCTION.WORD(1);
+            end;
+            else if (EASIZE = $EASIZE_LONG) then do;
+                 NWORDS = 2;
+                 addr(TARGET)->ADDRESS.HIGH = INSTRUCTION.WORD(1);
+                 addr(TARGET)->ADDRESS.LOW  = INSTRUCTION.WORD(2);
+            end;
+            else goto INVALID;
+
+            goto VALID;
+
+    /* -------------------------------------------------------------------
+     * --- END OF EFFECTIVE ADDRESS CALCULATIONS ---
+     * ---------------------------------------------------------------- */
+
+    VALID:
+        return (NWORDS * 2);
+
+    INVALID:
+        return (-1);
+
+/* --------------------------------------------------------------------
+/* SIGN_EXTEND_BYTE
+/* ------------------------------------------------------------------ */
+
+SIGN_EXTEND_BYTE: procedure (B) returns (fixed binary (31)) internal;
+
+	declare
+		B	bit (8) aligned;
+	declare
+		C	character (1),
+		L	fixed binary (31);
+
+	unspec (C) = unspec (B);
+	L = rank (C);
+	if L > 127 then
+		L = L - 256;
+	return (L);
+
+end SIGN_EXTEND_BYTE;
+
+end CALCEA;
+

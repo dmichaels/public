@@ -1,0 +1,9 @@
+SET_DECLARATION:
+
+	if PREV_SYMBOL ^= NULL_ID then do;
+
+		if PREV_STORAGE_CLASS
+
+	end;
+
+end SET_DECLARATION;

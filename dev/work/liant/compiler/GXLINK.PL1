@@ -1,0 +1,813 @@
+/* C++ gxlink.pl1 - */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.06.92  DGM  012	New interface to WRITE_RELOCATION_DATA to
+ *			accomodate the relocation symbol reordering
+ *			required by the deficient UNIX-V output-editor.
+ *  03.13.92  PKT  011	Updated for parameter nodes.
+ *  03.26.92  DGM  010	New value-node scheme.
+ *  12.10.91  DGM  009  Additional .init/.fini work; the system does
+ *			NOT execute the .fini code for each module in
+ *			the reverse order from the order in which the
+ *			.init code is executed in.
+ *  11.25.91  DGM  008R Make the .init/.fini names external.
+ *  11.12.91  DGM  008  Updated for .init/.fini.
+ *  09.06.91  DGM  007  Updated MAKE_SYMBOL (obsolete) to MAKE_SYM_NODE.
+ *  07.30.91  TLF  006  Modified to support local static destructors.
+ *  07.24.91  DGM  005  Added GENERATE_INIT_FINI_PROCEDURES.
+ *  05.29.91  DGM  004  Call SET_BASE_TYPE appropriately.
+ *  03.12.91  DGM  003  Updated WRITE_RELOCATION_DATA call.
+ *  02.01.91  DGM  002  Updated to new global names scheme.
+ *  11.15.90  TLF  001  Updated to handle declaring and emitting the
+ *			global startup and cleanup procedures.
+ *  10.25.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.06.92 012 GXLINK');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_PROCESS_INITIALIZER_PKG;
+%include CXX_SCOPE_DECLARATION_PKG;
+%include CXX_INTERNAL_PARSE_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_EMIT_DESTRUCTOR_CODE_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_DATA_INITIAL_FILE_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_PROCESS_BASE_MBR_INIT_PKG;
+%include CXX_PSECT_PKG;
+%include CXX_FIXUP_DESTRUCTOR_LIST_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_DUMP_VALUE_TREE_PKG;
+
+declare	INIT_FUNCTION_ID	type (NID_T) static initial (NULL_NID);
+declare	FINI_FUNCTION_ID	type (NID_T) static initial (NULL_NID);
+declare	XLINK_XROOT_ID		type (NID_T) static initial (NULL_NID);
+
+/* ---------------------------------------------------------------------
+/* GENERATE_INIT_FINI_PROCEDURES
+/* ------------------------------------------------------------------- */
+
+GENERATE_INIT_FINI_PROCEDURES: procedure (GLOBAL_SCOPE_PTR)
+			       external  (X_GENERATE_INIT_FINI_PROCEDURES);
+
+	declare
+		GLOBAL_SCOPE_PTR	type (POINTER_T);
+
+	/* Emit the global initialization function */
+
+	call EMIT_INIT_FUNCTION ();
+	call EMIT_FINI_FUNCTION ();
+
+	if ^SW_SYSTEM_HAS_INIT_FINI_SECTIONS then do;
+		/*
+		/* Declare and initialize the global
+		/* initialization/finalization structure.
+		/**/
+		call DECLARE_XLINK_STRUCT ();
+		/*
+		/* Declare the global variable used as the
+		/* root of the global external link table.
+		/**/
+		call DECLARE_XROOT_VARIABLE ();
+	end;
+
+/* ----------------------------------------------------------------------
+/* EMIT_INIT_FUNCTION
+/*
+/* Declare and emit the global startup procedure.  
+/* This procedure is declared as:
+/*  	 void ____lpi_START_<base>(),
+/* where <base> is the 'base' of the source file name, i.e., the name
+/* after any directory prefix and suffix are stripped.
+/* The body of the procedure is the code to do initializations of
+/* file-scope variables that have non-constant initializers.
+/* This code is emitted from a tree that is built up as the
+/* entire source program is parsed.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+EMIT_INIT_FUNCTION: procedure () internal;
+
+	declare
+		SYMBOL			type (NID_T),
+		(V, INITV)		type (CXX_VID_T),
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	/* Get the non-constant initialization expression value tree */
+
+	INITV = GET_STARTUP_INIT_VID ();
+
+	if INITV = NULL_CXX_VID then do;
+		/*
+		/* If there is no non-constant initialization to perform,
+		/* then don't do anything (i.e. return), *except* if:
+		/*
+		/* 1. this system has .init/.fini sections *and* we are
+		/*    compiling in -ansiclib mode *and* this module
+		/*    contains "main"; in this case we will emit the
+		/*    global/static initialization routine even if there
+		/*    is nothing to initialize since we will call the
+		/*    routine to initialize our ANSI C library from here,
+		/*    i.e. ____lpi_cxx_entry (see below).
+		/* 2. this system has .init/.fini sections and
+		/*    there is finalization code to emit.
+		/*
+		/**/
+		if SW_SYSTEM_HAS_INIT_FINI_SECTIONS &
+		   (GLOBAL_SCOPE_PTR->SCOPE_NODE.DESTRUCTORS ^= NULL_CXX_VID)
+		then
+			;
+		else if  SW_SYSTEM_HAS_INIT_FINI_SECTIONS &
+			^SW_FAVOR_SYSTEM_HEADER_DIR &
+			 SW_MAIN_MODULE then
+			;
+		else	return;
+	end;
+
+	/* Declare the global startup procedure */
+
+	call DECLARE_INIT_FUNCTION ();
+
+	/* Regenerate the prototype scope of the function. */
+
+	call REMAKE_PROTOTYPE_SCOPE (INIT_FUNCTION_ID, NULL_NID, FALSE);
+
+	/* Actually generate the startup function */
+
+	CURRENT_SYMBOL = INIT_FUNCTION_ID;
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE), NULL_NID);
+
+	call BEGIN_FUNCTION_BODY ();
+	call BEGIN_MEMBER_INITIAL_LIST ();
+	call EMIT_FUNCTION_BEGIN ();
+
+	/*
+	/* Emit the tree that has been built up as
+	/* the entire source file has been parsed.
+	/**/
+
+	if SW_SYSTEM_HAS_INIT_FINI_SECTIONS then do;
+		if ^SW_FAVOR_SYSTEM_HEADER_DIR then do;
+			/*
+			/* If the system has .init/.fini sections, and we are
+			/* in -ansiclib mode (i.e. using our ANSI C libraries
+			/* rather than the system C libraries, then emit a call
+			/* first to ____lpi_cxx_entry (to initialize the our
+			/* ANSI C libraries) in ____lpi_cxx_init_FILENAME.
+			/* We call this routine from *every* ____lpi_cxx_init,
+			/* not just the in the module containing "main" so
+			/* that our ANSI C libraries get initialized before
+			/* any other global static initialization takes place,
+			/* i.e. in case any of these initializations use our
+			/* ANSI C library.
+			/**/
+			SYMBOL = DECLARE_MAIN_ENTRY_FUNCTION ();
+			V = GET_VALUE_REF_AND_EXPAND (SYMBOL);
+			V = GET_VALUE_AND_EXPAND_L (ADDR_VO, V);
+			V = GET_VALUE_AND_EXPAND_L (CALL_VO, V);
+			INITV  = CONCATENATE_STATEMENTS (V, INITV);
+		end;
+		V = DECLARE_INITIALIZE_FINI_NODE ();
+		INITV = CONCATENATE_STATEMENTS (INITV, V);
+	end;
+
+	call EMIT_STATEMENT (INITV);
+
+	call END_FUNCTION_BODY ();
+
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+end EMIT_INIT_FUNCTION;
+
+/* ----------------------------------------------------------------------
+/* EMIT_FINI_FUNCTION
+/*
+/* Declare and emit the global cleanup procedure.  
+/* This procedure is declared as:
+/*  	 void ____lpi_CLEAN_<base>(),
+/* where <base> is the 'base' of the source file name, i.e., the name
+/* after any directory prefix and suffix are stripped.
+/* The body of the procedure consists of the destructor calls
+/* for all of the global class objects.
+/*
+/* The argument DTOR_VID is the value-id of the destructor expression 
+/* list to be generated.  This destructor list was generated as the
+/* global scope was parsed, and now must be made the destructor list
+/* for the procedure being emitted by this procedure.
+/* Also, in the destructor list, there are node_ids of labels that 
+/* are declared in the global block.  These node_ids must be replaced
+/* with node_ids of labels that are local to the procedure that is
+/* being emitted.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+EMIT_FINI_FUNCTION: procedure () internal;
+
+	declare
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	if GLOBAL_SCOPE_PTR->SCOPE_NODE.DESTRUCTORS = NULL_CXX_VID then
+		return;
+
+	/* Declare the global cleanup procedure */
+
+	call DECLARE_FINI_FUNCTION ();
+
+	/* Regenerate the prototype scope of the function. */
+
+	call REMAKE_PROTOTYPE_SCOPE (FINI_FUNCTION_ID, NULL_NID, FALSE);
+
+	/* Actually generate the cleanup function */
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE), NULL_NID);
+
+	CURRENT_SYMBOL = FINI_FUNCTION_ID;
+	call BEGIN_FUNCTION_BODY ();
+	call BEGIN_MEMBER_INITIAL_LIST ();
+	call EMIT_FUNCTION_BEGIN ();
+
+	/*
+	/* Fixup the current function scope to have the
+	/* correct destructor list for the global objects
+	/* to be destroyed by this procedure being emitted.
+	/**/
+
+	call FIXUP_DESTRUCTOR_LIST (CURRENT_FUNCTION_SCOPE);
+
+	call END_FUNCTION_BODY ();
+
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+end EMIT_FINI_FUNCTION;
+
+/*----------------------------------------------------------------------
+/* DECLARE_INIT_FUNCTION
+/*
+/* Declare and emit the global startup procedure.  
+/*  This procedure is declared as:
+/*  	 void ____lpi_START_<base>(),
+/* where <base> is the 'base' of the source file name, i.e., the name
+/* after any directory prefix and suffix are stripped.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_INIT_FUNCTION: procedure internal;
+
+	declare
+		P			type (POINTER_T),
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	if INIT_FUNCTION_ID ^= NULL_NID then
+		return;
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE),
+				   CURRENT_GLOBAL_SCOPE);
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME = XLINK_STARTUP_PROC_NAME;
+	call BEGIN_FUNCTION_TYPE ();
+	call CLEAR_DECLARATION ();
+	call SET_FUNCTION_TYPE ();
+	call SET_DECLARATION ();
+	INIT_FUNCTION_ID = CURRENT_SYMBOL;
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+	/* Mark the symbol node of this function as compiler-generated */
+
+	call GET_SYM_NODE (INIT_FUNCTION_ID, P);
+	P->SYM_NODE.REFERENCED = TRUE;
+	if SW_SYSTEM_HAS_INIT_FINI_SECTIONS then do;
+		P->SYM_NODE.LINKAGE_KIND = byte (C_LINKAGE);
+		GBL_INIT_FUNCTION_ID = INIT_FUNCTION_ID;
+	end;
+	call RELEASE_SYM_NODE (INIT_FUNCTION_ID);
+
+end DECLARE_INIT_FUNCTION;
+
+/*----------------------------------------------------------------------
+/* DECLARE_FINI_FUNCTION
+/*
+/* Declare the global cleanup procedure.  
+/* This procedure is declared as:
+/*  	 void ____lpi_CLEAN_<base>(),
+/* where <base> is the 'base' of the source file name, i.e., the name
+/* after any directory prefix and suffix are stripped.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_FINI_FUNCTION: procedure internal;
+
+	declare
+		P			type (POINTER_T),
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	if FINI_FUNCTION_ID ^= NULL_NID then
+		return;
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE),
+				   CURRENT_GLOBAL_SCOPE);
+	call CLEAR_DECLARATION ();
+	if SW_SYSTEM_HAS_INIT_FINI_SECTIONS then
+		CURRENT_STORAGE_CLASS = STATIC_ST;
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME = XLINK_CLEANUP_PROC_NAME;
+	call BEGIN_FUNCTION_TYPE ();
+	call CLEAR_DECLARATION ();
+	call SET_FUNCTION_TYPE ();
+	call SET_DECLARATION ();
+	FINI_FUNCTION_ID = CURRENT_SYMBOL;
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+	call GET_SYM_NODE (FINI_FUNCTION_ID, P);
+	P->SYM_NODE.REFERENCED = TRUE;
+	call RELEASE_SYM_NODE (FINI_FUNCTION_ID);
+
+	if SW_SYSTEM_HAS_INIT_FINI_SECTIONS then do;
+		call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE),
+					   CURRENT_GLOBAL_SCOPE);
+		call CLEAR_DECLARATION ();
+		CURRENT_STORAGE_CLASS = EXTERN_ST;
+		CURRENT_BASE_TYPE = VOID_BT;
+		call SET_BASE_TYPE ();
+		CURRENT_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_cxx_fini');
+		call BEGIN_FUNCTION_TYPE ();
+		call CLEAR_DECLARATION ();
+		call SET_FUNCTION_TYPE ();
+		call SET_DECLARATION ();
+		GBL_FINI_FUNCTION_ID = CURRENT_SYMBOL;
+		call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+		call GET_SYM_NODE (GBL_FINI_FUNCTION_ID, P);
+		P->SYM_NODE.LINKAGE_KIND = byte (C_LINKAGE);
+		P->SYM_NODE.REFERENCED = TRUE;
+		call RELEASE_SYM_NODE (GBL_FINI_FUNCTION_ID);
+	end;
+
+end DECLARE_FINI_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_XLINK_STRUCT
+/*
+/* Declare the global link structure, and initializes it.
+/* Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_XLINK_STRUCT: procedure internal;
+
+	declare
+		SYMBOL_KIND		type (LONG_BITS_T),
+		XLINK_SYMBOL		type (NID_T),
+		P			type (POINTER_T),
+		XLINK_TYPE		type (NID_T),
+		XLINK_TOP_TYPE		type (TYPE_DATA_T) static internal;
+	declare
+		XLINK_NAME		type (NID_T)
+					static internal initial (NULL_NID),
+		XLINK_SIZE		type (LONG_T)
+					static internal initial (0),
+		XLINK_SIZE_UNITS	type (SHORT_T)
+					static internal initial (0),
+		XLINK_BOUNDARY		type (SHORT_T)
+					static internal initial (0);
+
+	/*
+	/* If no global startup routine has been declared,
+	/* then it is not necessary to declare this structure.
+	/**/
+
+	if (INIT_FUNCTION_ID = NULL_NID) & (FINI_FUNCTION_ID = NULL_NID)  then
+		return;
+
+	/* Get the global xlink structure type, size, and name */
+
+	XLINK_TYPE = GET_XLINK_STRUCT_TYPE (XLINK_TOP_TYPE);
+	XLINK_NAME = XLINK_STRUCT_NAME;
+
+	call TYPE_SIZE (XLINK_TYPE,
+			XLINK_SIZE,
+			XLINK_SIZE_UNITS,
+			XLINK_BOUNDARY);
+
+	/* Create the global xlink structure symbol */
+
+	SYMBOL_KIND = DATA_SK | DUMMY_SK;
+
+	call MAKE_SYM_NODE_P (SYMBOL_KIND, XLINK_SYMBOL, P);
+
+	P->SYM_NODE.NAME		= XLINK_NAME;
+	P->SYM_NODE.TYPE		= XLINK_TYPE;
+	P->SYM_NODE.TOP_TYPE		= XLINK_TOP_TYPE;
+	P->SYM_NODE.SIZE		= XLINK_SIZE;
+	P->SYM_NODE.SIZE_UNITS		= byte (XLINK_SIZE_UNITS);
+	P->SYM_NODE.BOUNDARY		= byte (XLINK_BOUNDARY);
+	P->SYM_NODE.ACCESS		= byte (NULL_ACCESS);
+	P->SYM_NODE.STORAGE_CLASS	= byte (STATIC_ST);
+	P->SYM_NODE.EXTERNAL_LINKAGE	= TRUE;
+	P->SYM_NODE.REFERENCED		= TRUE;
+	P->SYM_NODE.DEFINED		= TRUE;
+
+	/* Install the symbol in the global scope */
+
+	call INSTALL_SYMBOL (XLINK_SYMBOL, CURRENT_GLOBAL_SCOPE);
+
+	/* Initialize the structure */
+
+	call INITIALIZE_XLINK_STRUCT (XLINK_SYMBOL);
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_XLINK_STRUCT
+/*
+/* Initialize the global link structure whose symbol node id is SYMBOL.
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_XLINK_STRUCT: procedure (SYMBOL) internal;
+ 
+	declare
+		SYMBOL		type (NID_T);
+	declare 
+		DIF		type (DIFILE_T),
+		DIN		type (NID_T),
+		P		type (POINTER_T),
+		WORK_SIZE	type (LONG_T),
+		BYTE_SIZE	type (LONG_T),
+		WORK_SIZE_UNITS type (SHORT_T),
+		WORK_BOUNDARY 	type (SHORT_T);
+	declare 
+		NULL_POINTER 		(4) type (LONG_T) 
+					static internal initial (0, 0, 0, 0);
+
+	call GET_SYM_NODE (SYMBOL, P);
+ 
+	call TYPE_SIZE (P->SYM_NODE.TYPE, WORK_SIZE, 
+			WORK_SIZE_UNITS, WORK_BOUNDARY);
+
+	call OPEN_DATA_INITIAL_FILE (DIF);
+	call ALIGN_DATA_INITIAL_FILE (DIF, WORK_BOUNDARY);
+ 
+	DIN = MAKE_DATA_INITIAL_NODE (DIF);
+ 
+	P-> SYM_NODE.VALUE 	= DIN;
+	P-> SYM_NODE.INITIAL_AT	= TRUE;
+	P-> SYM_NODE.DEFINED 	= TRUE;
+ 
+	call RELEASE_SYM_NODE (SYMBOL);
+ 
+	call SIMPLE_TYPE_SIZE (POINTER_DT, WORK_SIZE,
+			       WORK_SIZE_UNITS, WORK_BOUNDARY);
+ 
+	/* Initialize the 'next' pointer to zeroes */
+
+	BYTE_SIZE = ROUNDU (WORK_SIZE, WORK_SIZE_UNITS ,BYTES);
+	call APPEND_DATA_INITIAL_FILE (DIF, addr (NULL_POINTER), BYTE_SIZE);
+ 
+	/* Initialize the pointer to the startup function */
+
+	call SET_RELOCATION_DATA (INIT_FUNCTION_ID, 0, DIF);
+	call APPEND_DATA_INITIAL_FILE (DIF, addr (NULL_POINTER), BYTE_SIZE);
+ 
+	/* Initialize the pointer to the cleanup function */
+
+	if FINI_FUNCTION_ID ^= NULL_NID then
+		call SET_RELOCATION_DATA (FINI_FUNCTION_ID, 0, DIF);
+ 
+	call APPEND_DATA_INITIAL_FILE (DIF, addr (NULL_POINTER), BYTE_SIZE);
+ 
+	call SET_DATA_INITIAL_FILE (DIF);
+	call CLOSE_DATA_INITIAL_FILE (DIF);
+	call WRITE_RELOCATION_DATA (DIN, SYMBOL);
+
+end INITIALIZE_XLINK_STRUCT;
+
+end DECLARE_XLINK_STRUCT;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_XROOT_VARIABLE
+/*
+/* Declare the variable used as the root of the list of linked
+/* external link structures.
+/* This varible is declared as: extern void * ____lpi_XROOT_ 
+/* ------------------------------------------------------------------- */
+
+DECLARE_XROOT_VARIABLE: procedure internal;
+
+	declare
+		SYMBOL		type (NID_T),
+		THIS_SIZE	type (LONG_T),
+		THIS_SU		type (SHORT_T),
+		THIS_BDRY	type (SHORT_T);
+
+	if XLINK_XROOT_ID ^= NULL_NID then
+		return;
+
+	/*
+	/* If no global startup routine has been declared,
+	/* then it is not necessary to declare this structure.
+	/**/
+
+	if INIT_FUNCTION_ID = NULL_NID  & FINI_FUNCTION_ID = NULL_NID then
+		return;
+
+	/* Make a sym-node for the global xlink root variable */
+
+	SYMBOL = MAKE_SYM_NODE (DUMMY_SK);
+
+	SYM_NODE.TYPE = GET_VOID_POINTER_TYPE ();
+	call TYPE_SIZE (SYM_NODE.TYPE, THIS_SIZE, THIS_SU, THIS_BDRY);
+
+	call GET_TOP_TYPE (SYM_NODE.TYPE, SYM_NODE.TOP_TYPE);
+
+	SYM_NODE.NAME		  = XROOT_VARIABLE_NAME;
+	SYM_NODE.SIZE		  = THIS_SIZE;
+	SYM_NODE.SIZE_UNITS	  = byte (THIS_SU);
+	SYM_NODE.BOUNDARY	  = byte (THIS_BDRY);
+	/* SYM_NODE.INITIAL_AT	  = TRUE; */
+	/* SYM_NODE.DEFINED	  = TRUE; */
+	SYM_NODE.REFERENCED	  = TRUE;
+	SYM_NODE.STORAGE_CLASS	  = byte (STATIC_ST);
+	SYM_NODE.EXTERNAL_LINKAGE = TRUE;
+	call INSTALL_SYMBOL (SYMBOL, CURRENT_GLOBAL_SCOPE);
+
+end DECLARE_XROOT_VARIABLE;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_INITIALIZE_FINI_NODE
+/*
+/* struct ____lpi_cxx_fini_node_tag {
+/*        struct ____lpi_cxx_fini_node_tag  *next;
+/*        void                             (*fini)(void);
+/* };
+/*
+/* extern struct ____lpi_cxx_fini_node_tag *____lpi_cxx_finilist
+/* static struct ____lpi_cxx_fini_node_tag  ____lpi_cxx_fini_node_object;
+/*
+/* ____lpi_cxx_fini_node_object.fini =  ____lpi_cxx_fini_FILENAME;
+/* ____lpi_cxx_fini_node_object.next =  ____lpi_cxx_finilist;
+/* ____lpi_cxx_finilist              = &____lpi_cxx_fini_node_object;
+/*
+/* ------------------------------------------------------------------- */
+
+DECLARE_INITIALIZE_FINI_NODE: procedure returns (type (CXX_VID_T)) internal;
+
+	declare
+		FINI_NODE_TAG_NAME		type (NID_T),
+		FINI_NODE_OBJECT_NAME		type (NID_T),
+		FINI_NODE_NEXT_MEMBER_NAME	type (NID_T),
+		FINI_NODE_FINI_MEMBER_NAME	type (NID_T),
+		FINI_NODE_LIST_NAME		type (NID_T),
+		FINI_NODE_TAG			type (NID_T),
+		FINI_NODE_OBJECT		type (NID_T),
+		FINI_NODE_LIST			type (NID_T);
+	declare
+		V				type (CXX_VID_T),
+		LV				type (CXX_VID_T),
+		RV				type (CXX_VID_T),
+		RESULTV				type (CXX_VID_T);
+
+	if GLOBAL_SCOPE_PTR->SCOPE_NODE.DESTRUCTORS = NULL_NID then
+		return (NULL_CXX_VID);
+
+	/* Initialize the names */
+
+	FINI_NODE_TAG_NAME =
+		FORM_IDENTIFIER_TOKEN ('____lpi_cxx_fini_node_tag');
+	FINI_NODE_OBJECT_NAME =
+		FORM_IDENTIFIER_TOKEN ('____lpi_cxx_fini_node_object');
+	FINI_NODE_NEXT_MEMBER_NAME =
+		FORM_IDENTIFIER_TOKEN ('next');
+	FINI_NODE_FINI_MEMBER_NAME =
+		FORM_IDENTIFIER_TOKEN ('fini');
+	FINI_NODE_LIST_NAME =
+		FORM_IDENTIFIER_TOKEN ('____lpi_cxx_finilist');
+
+	/* Make the declarations/definitions */
+
+	FINI_NODE_TAG		= DECLARE_FINI_NODE_STRUCT ();
+	FINI_NODE_LIST		= DECLARE_FINI_NODE_LIST ();
+	FINI_NODE_OBJECT	= DEFINE_FINI_NODE_OBJECT ();
+
+	/* Make the assignments */
+
+	call DECLARE_FINI_FUNCTION ();
+
+	/* ____lpi_cxx_fini_node.fini =  ____lpi_cxx_fini_FILENAME */
+
+	LV = GET_VALUE_REF_AND_EXPAND (FINI_NODE_OBJECT);
+	LV = GET_DOT_AND_EXPAND (LV, FINI_NODE_FINI_MEMBER_NAME);
+	RV = GET_VALUE_REF_AND_EXPAND (FINI_FUNCTION_ID);
+	RV = GET_VALUE_AND_EXPAND_L (ADDR_VO,  RV);
+	V  = GET_VALUE_AND_EXPAND_LR (COPY_VO,  LV, RV);
+
+	RESULTV = V;
+
+	/* ____lpi_cxx_fini_node.next =  ____lpi_cxx_finilist */
+
+	LV = GET_VALUE_REF_AND_EXPAND (FINI_NODE_OBJECT);
+	LV = GET_DOT_AND_EXPAND (LV, FINI_NODE_NEXT_MEMBER_NAME);
+	RV = GET_VALUE_REF_AND_EXPAND (FINI_NODE_LIST);
+	V  = GET_VALUE_AND_EXPAND_LR (COPY_VO,  LV, RV);
+
+	RESULTV = CONCATENATE_STATEMENTS (RESULTV, V);
+
+	/* ____lpi_cxx_finilist = &____lpi_cxx_fini_node */
+
+	LV = GET_VALUE_REF_AND_EXPAND (FINI_NODE_LIST);
+	RV = GET_VALUE_REF_AND_EXPAND (FINI_NODE_OBJECT);
+	RV = GET_VALUE_AND_EXPAND_L (ADDR_VO,  RV);
+	V  = GET_VALUE_AND_EXPAND_LR (COPY_VO,  LV, RV);
+
+	RESULTV = CONCATENATE_STATEMENTS (RESULTV, V);
+
+	return (RESULTV);
+
+/* ---------------------------------------------------------------------
+/* DECLARE_FINI_NODE_STRUCT
+/*
+/* struct ____lpi_cxx_fini_node {
+/*        struct ____lpi_cxx_fini_node *next;
+/*        void                         (*fini)(void);
+/* };
+/* ------------------------------------------------------------------- */
+
+DECLARE_FINI_NODE_STRUCT: procedure returns (type (NID_T)) internal;
+
+	declare
+		SYMBOL			type (NID_T),
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	/* Internally "parse" an FINI_NODE struct */
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE), NULL_NID);
+
+	/* Declare: struct ____lpi_fini_node { ... } */
+
+	call CLEAR_DECLARATION ();
+	MATCHED_TOKEN.TYPE = KW_STRUCT_TOKEN;
+	call BEGIN_CLASS_DECLARATION ();
+	call SET_SIMPLE_NAME ();
+	CURRENT_NAME = FINI_NODE_TAG_NAME;
+
+	/* Begin the struct body */
+
+	call BEGIN_CLASS_BODY ();
+	call SET_SIMPLE_NAME ();
+	call SET_TAG_NAME ();
+
+	/* Declare the first member: struct ____lpi_cxx_fini_node *next */
+
+	call CLEAR_DECLARATION ();
+	MATCHED_TOKEN.TYPE = KW_STRUCT_TOKEN;
+	call BEGIN_CLASS_DECLARATION ();
+	call SET_SIMPLE_NAME ();
+	CURRENT_NAME = FINI_NODE_TAG_NAME;
+	call SET_TAG_NAME ();
+	call SET_CLASS_DECLARATION ();
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	call SET_SIMPLE_NAME ();
+	CURRENT_NAME = FINI_NODE_NEXT_MEMBER_NAME;
+	call SET_POINTER_TYPE ();
+	call SET_MEMBER_DECLARATION ();
+
+	/* Declare the second member: void (*fini)(void) */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	call SET_SIMPLE_NAME ();
+	CURRENT_NAME = FINI_NODE_FINI_MEMBER_NAME;
+	call SET_POINTER_TYPE ();
+	call BEGIN_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE ();
+	call SET_MEMBER_DECLARATION ();
+
+	/* End the struct declaration */
+
+	call END_CLASS_BODY ();
+	call SET_TAG_NAME ();
+	call SET_CLASS_DECLARATION ();
+	SYMBOL = CURRENT_BASE_TYPE_ID;
+
+	/* End the internal parse */
+
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+
+	/* Return the sym-node id of the struct */
+
+	return (SYMBOL);
+
+end DECLARE_FINI_NODE_STRUCT;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_FINI_NODE_LIST
+/*
+/* extern struct ____lpi_cxx_fini_node *____lpi_cxx_finilist;
+/* ------------------------------------------------------------------- */
+
+DECLARE_FINI_NODE_LIST: procedure returns (type (NID_T)) internal;
+
+	declare
+		SYMBOL			type (NID_T),
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE), NULL_NID);
+	call CLEAR_DECLARATION ();
+	CURRENT_STORAGE_CLASS = EXTERN_ST;
+	CURRENT_BASE_TYPE = STRUCT_BT;
+	CURRENT_BASE_TYPE_ID = FINI_NODE_TAG;
+	call SET_BASE_TYPE ();
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	call SET_SIMPLE_NAME ();
+	CURRENT_NAME = FINI_NODE_LIST_NAME;
+	call SET_POINTER_TYPE ();
+	call SET_DECLARATION ();
+	SYMBOL = CURRENT_SYMBOL;
+	call SET_NULL_INITIALIZER ();
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+	return (SYMBOL);
+
+end DECLARE_FINI_NODE_LIST;
+
+/* ---------------------------------------------------------------------
+/* DEFINE_FINI_NODE_OBJECT
+/*
+/* static struct ____lpi_cxx_fini_node ____lpi_cxx_fini_node_object;
+/* ------------------------------------------------------------------- */
+
+DEFINE_FINI_NODE_OBJECT: procedure returns (type (NID_T)) internal;
+
+	declare
+		SYMBOL			type (NID_T),
+		SAVE_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVE_PARSE_STATE), NULL_NID);
+	call CLEAR_DECLARATION ();
+	CURRENT_STORAGE_CLASS = STATIC_ST;
+	CURRENT_BASE_TYPE = STRUCT_BT;
+	CURRENT_BASE_TYPE_ID = FINI_NODE_TAG;
+	call SET_BASE_TYPE ();
+	call SET_SIMPLE_NAME ();
+	CURRENT_NAME = FINI_NODE_OBJECT_NAME;
+	call SET_DECLARATION ();
+	SYMBOL = CURRENT_SYMBOL;
+	call SET_NULL_INITIALIZER ();
+	call END_INTERNAL_PARSE (addr (SAVE_PARSE_STATE));
+	return (SYMBOL);
+
+end DEFINE_FINI_NODE_OBJECT;
+
+end DECLARE_INITIALIZE_FINI_NODE;
+
+end GENERATE_INIT_FINI_PROCEDURES;
+

@@ -1,0 +1,30 @@
+.TH SQUISH 3L LOCAL
+
+.SH NAME
+squish - squish identical consecutive characters into one
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+squish(str,multchar,onechar)
+.br
+char *str;
+.br
+char *multchar;
+.br
+char onechar;
+.ft P
+
+.SH DESCRIPTION
+Converts multiple consecutive occurences
+of characters given in the \fImultchar\fP string
+in the target string \fIstr\fP,
+into one \fIonechar\fP character.
+If the \fImultchar\fP string is NULL or empty,
+then it will be assumed to represent all white space characters
+(.i.e. blanks, tabs, & newlines).
+Returns the string.
+
+.SH FILES
+squish.c

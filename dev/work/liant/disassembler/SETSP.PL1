@@ -1,0 +1,30 @@
+/* LPI-DEBUG M68 SETSP.PL1 - Set the stack pointer */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/* --------------------------------------------------------------------
+/* SETSP - Set the top of stack pointer to the given value
+/*
+/* In:  REGISTER_SAVE_AREA -> Save area with user SP
+/*      NEW_ADDRESS = New stack pointer value
+/* Out: SP modified
+/**********************************************************************/
+
+SETSP: procedure (REGISTER_SAVE_AREA, NEW_SP);
+
+%include 'incfil';
+%include TARGET_IN;
+
+    declare REGISTER_SAVE_AREA  pointer,
+            NEW_SP              fixed binary (ADDRESS_LENGTH);
+
+    REGISTER_SAVE_AREA->REGS.A7 = NEW_SP;
+
+end SETSP;
+

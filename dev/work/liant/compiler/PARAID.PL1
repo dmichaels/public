@@ -1,0 +1,288 @@
+/* C++ paraid.pl1 - Parser helper routines; to aid and guide the parse */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.22.90  DGM  013  Added IS_CURRENT_CLASS_NAME.
+ *  10.12.90  DGM  012  Changed names IS_ALSO_TYPE/IS_ALSO_NON_TYPE
+ *			to IS_ALSO_TAG/IS_ALSO_NON_TAG.
+ *  09.25.90  DGM  011  Preprocessor include file name changes.
+ *  09.14.90  DGM  010  Changed include file names and VOP names.
+ *  09.13.90  DGM  009  Changed NULL_ST to NULL_SIMPLE_TYPES.
+ *  08.08.90  DGM  008  New type-node.
+ *  06.29.90  DGM  007  Added TYPE_NAME_HIDDEN_BY_NON_TYPE
+ *			and TYPE_NAME_HIDES_NON_TYPE.
+ *  06.05.90  DGM  006  Updated for the new utilities.
+ *  05.31.90  PKT  005  Updated.
+ *  05.04.90  DGM  004  Fix in IS_TYPE_NAME and IS_CLASS_NAME.
+ *  03.27.90  DGM  003  Updated.
+ *  03.02.90  DGM  002  Updated.
+ *  02.22.90  DGM  001  Updated for new name scheme.
+ *  02.15.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)PARAID  013  10/22/90  (c) 1990 Language Processors, Inc.');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_PP_TOKEN_POD_SPELLING_PKG;
+
+/* ---------------------------------------------------------------------
+/* CLEAR_BASE_TYPE
+/* ------------------------------------------------------------------- */
+
+CLEAR_BASE_TYPE: procedure
+		 returns   (type (BOOL_T))
+		 external  (X_CLEAR_BASE_TYPE);
+
+	CURRENT_BASE_TYPE    = NULL_BT;
+	CURRENT_SIMPLE_TYPES = NULL_SIMPLE_TYPES;
+
+end CLEAR_BASE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* SET_CLASS_BASE_TYPE
+/* ------------------------------------------------------------------- */
+
+SET_CLASS_BASE_TYPE: procedure
+		     returns   (type (BOOL_T))
+		     external  (X_SET_CLASS_BASE_TYPE);
+
+	CURRENT_BASE_TYPE = CLASS_BT;
+
+end SET_CLASS_BASE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* HAVE_BASE_TYPE
+/* ------------------------------------------------------------------- */
+
+HAVE_BASE_TYPE: procedure
+	        returns   (type (BOOL_T))
+	        external  (X_HAVE_BASE_TYPE);
+
+	return ((CURRENT_BASE_TYPE ^= NULL_BT) |
+		(CURRENT_SIMPLE_TYPES ^= NULL_SIMPLE_TYPES));
+
+end HAVE_BASE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* HAVE_BIT_FIELD_BASE_TYPE
+/* ------------------------------------------------------------------- */
+
+HAVE_BIT_FIELD_BASE_TYPE: procedure
+			  returns   (type (BOOL_T))
+			  external  (X_HAVE_BIT_FIELD_BASE_TYPE);
+
+	return (CURRENT_DERIVED_TYPE_LEVEL <= 0);
+
+end HAVE_BIT_FIELD_BASE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* HAVE_CLASS_BASE_TYPE
+/* ------------------------------------------------------------------- */
+
+HAVE_CLASS_BASE_TYPE: procedure
+		      returns   (type (BOOL_T))
+		      external  (X_HAVE_CLASS_BASE_TYPE);
+
+	return ((CURRENT_BASE_TYPE = CLASS_BT) |
+		(CURRENT_BASE_TYPE = STRUCT_BT) |
+		(CURRENT_BASE_TYPE = UNION_BT));
+
+end HAVE_CLASS_BASE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* HAVE_OLD_FUNCTION_TYPE
+/* ------------------------------------------------------------------- */
+
+HAVE_OLD_FUNCTION_TYPE: procedure
+			returns   (type (BOOL_T))
+			external  (X_HAVE_OLD_FUNCTION_TYPE);
+
+	if CURRENT_PROTOTYPED | (CURRENT_SYMBOL = NULL_ID) then
+		return (FALSE);
+
+	call SET_SYM_NODE_R (CURRENT_SYMBOL);
+
+	if  SYM_NODE.TOP_TYPE.CODE ^= byte (FUNCTION_DT) then
+		return (FALSE);
+
+	return (TRUE);
+
+end HAVE_OLD_FUNCTION_TYPE;
+
+/* ---------------------------------------------------------------------
+/* IS_TYPE_NAME
+/* ------------------------------------------------------------------- */
+
+IS_TYPE_NAME: procedure (NAME)
+	      returns   (type (BOOL_T))
+	      external  (X_IS_TYPE_NAME);
+
+	declare NAME type (NID_T);
+
+	/*
+	/* Note that in the following example, line 4 should give an
+	/* error since the type-name "s" is hidden by the declaration
+	/* of line 3; it can be accessed however by using "struct s".
+	/*
+	/*       1: struct s;
+	/*       2: f () {
+	/*       3:         int s;
+	/*       4:         s x;
+	/*       5: }
+	/**/
+
+	if LOOKUP_NAME (NAME, ANY_SK, CURRENT_SCOPE) ^= NULL_ID then do;
+		if SYM_NODE.IS_TYPE then
+			return (TRUE);
+	end;
+	return (FALSE);
+	
+end IS_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* IS_CLASS_NAME
+/* ------------------------------------------------------------------- */
+
+IS_CLASS_NAME: procedure (NAME)
+	       returns   (type (BOOL_T))
+	       external  (X_IS_CLASS_NAME);
+
+	declare NAME type (NID_T);
+
+	if LOOKUP_NAME (NAME, AGGREGATE_TAG_SK, CURRENT_SCOPE) ^= NULL_ID then
+		return (TRUE);
+	else	return (FALSE);
+
+end IS_CLASS_NAME;
+
+/* ---------------------------------------------------------------------
+/* IS_CURRENT_CLASS_NAME
+/* ------------------------------------------------------------------- */
+
+IS_CURRENT_CLASS_NAME: procedure (NAME)
+		       returns   (type (BOOL_T))
+		       external  (X_IS_CURRENT_CLASS_NAME);
+
+	declare NAME type (NID_T);
+
+	return (NAME = CURRENT_CLASS_NAME);
+
+end IS_CURRENT_CLASS_NAME;
+
+/* ---------------------------------------------------------------------
+/* TYPE_NAME_HIDDEN_BY_NON_TYPE
+/* ------------------------------------------------------------------- */
+
+TYPE_NAME_HIDDEN_BY_NON_TYPE: procedure (NAME)
+			      returns   (type (BOOL_T))
+			      external  (X_TYPE_NAME_HIDDEN_BY_NON_TYPE);
+
+	declare NAME type (NID_T);
+
+	/*
+	/* If a name represents both a non-type and a non-type in the
+	/* same scope, the symbol which is visable (via the lookup
+	/* routines) is the non-type.  In this case the type symbol
+	/* has been bumped off of the (next-of-name list of the) symbol
+	/* table and has been hung off of the (OTHER_SYMBOL field of the)
+	/* non-type symbol; IS_ALSO_TAG in the non-type sym-node will
+	/* be TRUE and IS_ALSO_NON_TAG in the type sym-node will be TRUE.
+	/**/
+
+	if LOOKUP_NAME (NAME, ANY_SK, CURRENT_SCOPE) ^= NULL_ID then do;
+		if ^SYM_NODE.IS_TYPE & SYM_NODE.IS_ALSO_TAG then
+			return (TRUE);
+	end;
+	return (FALSE);
+
+end TYPE_NAME_HIDDEN_BY_NON_TYPE;
+
+/* ---------------------------------------------------------------------
+/* TYPE_NAME_HIDES_NON_TYPE
+/* ------------------------------------------------------------------- */
+
+TYPE_NAME_HIDES_NON_TYPE: procedure (NAME)
+			  returns   (type (BOOL_T))
+			  external  (X_TYPE_NAME_HIDES_NON_TYPE);
+
+	declare NAME type (NID_T);
+
+	/*
+	/* If a name represents both a non-type and a non-type in the
+	/* same scope, the symbol which is visable (via the lookup
+	/* routines) is the non-type.  In this case the type symbol
+	/* has been bumped off of the (next-of-name list of the) symbol
+	/* table and has been hung off of the (OTHER_SYMBOL field of the)
+	/* non-type symbol; IS_ALSO_TAG in the non-type sym-node will
+	/* be TRUE and IS_ALSO_NON_TAG in the type sym-node will be TRUE.
+	/**/
+
+	if LOOKUP_NAME (NAME, TYPE_SK, CURRENT_SCOPE) ^= NULL_ID then do;
+		call SET_SCOPE_NODE_R (SYM_NODE.ENCLOSING_SCOPE);
+		if LOOKUP_NAME
+		   (NAME,
+		    ANY_SK,
+		    SCOPE_NODE.ENCLOSING_SCOPE) ^= NULL_ID then do;
+			if ^SYM_NODE.IS_TYPE then
+				return (TRUE);
+		end;
+	end;
+	return (FALSE);
+
+end TYPE_NAME_HIDES_NON_TYPE;
+
+/* ---------------------------------------------------------------------
+/* IS_MEMBER_FUNCTION
+/*
+/* Returns TRUE if we are looking at a the beginning of a class-scope
+/* function body; *assuming* we are looking at the opening brace of
+/* a function body or the colon introducing a base-and-member initializer,
+/* and *assuming* that CURRENT_SYMBOL represents the corresponding
+/* function declaration.
+/* ------------------------------------------------------------------- */
+
+IS_MEMBER_FUNCTION: procedure
+		    returns  (type (BOOL_T))
+		    external (X_IS_MEMBER_FUNCTION);
+
+	/*
+	/* If this function body is within a class declaration, then we
+	/* must collect up the tokens forming the body without really
+	/* parsing it, and parse it at the end of the class declaration.
+	/* This is necessary since class entities not yet declared may
+	/* be referenced within the member function body.
+	/**/
+
+	if CURRENT_SCOPE_TYPE = CLASS_SCOPE then
+		return (TRUE);
+	else	return (FALSE);
+
+end IS_MEMBER_FUNCTION;
+

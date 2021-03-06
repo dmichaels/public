@@ -1,0 +1,223 @@
+/* C++ dupv.pl1 - Duplicate a value tree */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  003  New value-node scheme.
+ *  09.12.91  PKT  002  Belated support for list 126 revision of
+ *			floating point constant handling.
+ *  06.28.91  PKT  001  Eliminated STRING_VO.
+ *  11.01.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 003 DUPV');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_ERROR_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* DUPLICATE_VALUE
+/*
+/* Make an independent copy of an expression (value node) tree.
+/* The tree shall not have had INITIALIZE_OBJECT done to it yet.
+/*
+/* If the argument TREE contains any DECLARE_TEMP_VOs, SHARE_TEMPS
+/* says to share them with the copied tree.
+/*
+/* We use CPLUS_VAL.ID for this.  Although EXPAND(DOT_VO) may set
+/* CPLUS_VAL.ID, this is not a problem, because a member function
+/* reference never remains so in a context where it could be
+/* duplicated.  CPLUS_VAL.ID is cleared when done.
+/*
+/* The reason this routine is necessary is partly that, if the
+/* expression tree attached to the argument symbol itself were used
+/* then it would be counted down when emitted, and would go away.
+/* But it wouldn't be feasible to just mark the value node as
+/* non-freeable to keep it around, because it could have two uses
+/* in the same expression, and each use must be emitted independently
+/* (for the sake of independent side-effects) and have its own emitted
+/* operator ids in CPLUS_VAL.ID.
+/* ------------------------------------------------------------------- */
+
+DUPLICATE_VALUE: procedure (TREE, SHARE_TEMPS) 
+                 returns   (type (CXX_VID_T)) 
+	         external  (X_DUPLICATE_VALUE);
+
+	declare
+		TREE		type (CXX_VID_T),
+		SHARE_TEMPS	type (BOOL_T);
+	declare
+		RESULT		type (CXX_VID_T);
+
+	if TREE = NULL_CXX_VID then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	/*
+	/* PKT had this inefficient check
+	/* here just to validate the design.
+	/*
+	/* call CHECK_SUBTREE (TREE);
+	/**/
+
+	RESULT = DUPLICATE_SUBTREE (TREE);
+	call CLEAR_SUBTREE (TREE);
+	return (RESULT);
+
+/* ---------------------------------------------------------------------
+/* DUPLICATE_SUBTREE
+/*
+/* Returns id of new subtree corresponding to the given existing subtree.
+/* Counts up the new subtree once, on behalf of the caller.
+/*
+/* For a particular existing subtree, the first time DUPLICATE_SUBTREE
+/* is called, a new value node is created for that subtree.  Subsequent
+/* calls will return the id of the same (new) value node.
+/* ------------------------------------------------------------------- */
+
+DUPLICATE_SUBTREE: procedure (TREE) 
+                   returns   (type (CXX_VID_T)) 
+	           recursive
+		   internal;
+	declare
+		TREE			type (CXX_VID_T);
+	declare
+		VOP			type (SHORT_T),
+		R			type (CXX_VID_T),
+		(OLDP, NEWP)		type (POINTER_T),
+		SZ			type (SHORT_T),
+		TVP			type (POINTER_T);
+	declare
+		CXX_VALUE_NODE_DATA	type (CXX_VALUE_NODE);
+
+	if TREE->CXX_VALUE_NODE.ID ^= NULL_OID then do;
+		/*
+		/* Already did this.
+		/**/
+		R = TREE->CXX_VALUE_NODE.ID_VID;
+		call COUNT_UP_VALUE (R);
+		return (R);
+	end;
+	else if TREE->CXX_VALUE_NODE.OP = DECLARE_TEMP_VO then do;
+		if SHARE_TEMPS then do;
+			/*
+			/* Re-use, don't duplicate.
+			/**/
+			call COUNT_UP_VALUE (TREE);
+			return (TREE);
+		end;
+		else do;
+			R = DUPLICATE_TEMP (TREE);
+			TREE->CXX_VALUE_NODE.ID_VID = R;
+			return (R);
+		end;
+	end;
+
+	CXX_VALUE_NODE_DATA = TREE->CXX_VALUE_NODE;
+	CXX_VALUE_NODE_DATA.COUNT = 1;
+
+	if ^CXX_VALUE_NODE_DATA.LEFT_IS_NOT_VID &
+	   (CXX_VALUE_NODE_DATA.LEFT ^= NULL_CXX_VID) then
+		CXX_VALUE_NODE_DATA.LEFT =
+			DUPLICATE_SUBTREE (CXX_VALUE_NODE_DATA.LEFT);
+
+	if ^CXX_VALUE_NODE_DATA.RIGHT_IS_NOT_VID &
+	   (CXX_VALUE_NODE_DATA.RIGHT ^= NULL_CXX_VID) then
+		CXX_VALUE_NODE_DATA.RIGHT =
+			DUPLICATE_SUBTREE (CXX_VALUE_NODE_DATA.RIGHT);
+
+	if ^CXX_VALUE_NODE_DATA.THIRD_IS_NOT_VID &
+	   (CXX_VALUE_NODE_DATA.THIRD ^= NULL_CXX_VID) then
+		CXX_VALUE_NODE_DATA.THIRD =
+			DUPLICATE_SUBTREE (CXX_VALUE_NODE_DATA.THIRD);
+
+	if (CXX_VALUE_NODE_DATA.VOP = CONSTANT_VO) &
+	   ^CXX_VALUE_NODE_DATA.LEFT_IS_NOT_VID &
+	   (CXX_VALUE_NODE_DATA.LEFT ^= NULL_CXX_VID) &
+	   (CXX_VALUE_NODE_DATA.TYPE_CODE = byte (NULL_BT)) then do;
+		OLDP = CXX_VALUE_NODE_DATA.LEFT->CXX_VALUE_NODE.SPTR;
+		SZ = OLDP->TOKEN_SPELLING_POD.SIZE;
+		NEWP = SALLOC (SZ);
+		substr (NEWP->TOKEN_SPELLING_POD.SPELLING, 1, SZ) =
+			substr (OLDP->TOKEN_SPELLING_POD.SPELLING, 1, SZ);
+		CXX_VALUE_NODE_DATA.LEFT->CXX_VALUE_NODE.SPTR = NEWP;
+	end;
+	else if CXX_VALUE_NODE_DATA.OP = LEFT_VALUE_VO then
+		call COUNT_UP_VALUE (CXX_VALUE_NODE_DATA.LEFT);
+
+	R = ALLOC_AND_COPY_CXX_VALUE_NODE (addr (CXX_VALUE_NODE_DATA));
+	
+	TREE->CXX_VALUE_NODE.ID_VID = R;
+
+	return (R);
+
+end DUPLICATE_SUBTREE;
+
+/* ---------------------------------------------------------------------
+/* CLEAR_SUBTREE
+/* ------------------------------------------------------------------- */
+
+CLEAR_SUBTREE: procedure (TREE)
+	       recursive
+	       internal;
+
+	declare
+		TREE			type (CXX_VID_T);
+	declare
+		(LEFT, RIGHT, THIRD)	type (CXX_VID_T);
+
+	if TREE->CXX_VALUE_NODE.ID = NULL_OID then
+		return;
+
+	if ^TREE->CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+	   (TREE->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then
+		call CLEAR_SUBTREE (TREE->CXX_VALUE_NODE.LEFT);
+
+	if ^TREE->CXX_VALUE_NODE.RIGHT_IS_NOT_VID &
+	   (TREE->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID) then
+		call CLEAR_SUBTREE (TREE->CXX_VALUE_NODE.RIGHT);
+
+	if ^TREE->CXX_VALUE_NODE.THIRD_IS_NOT_VID &
+	   (TREE->CXX_VALUE_NODE.THIRD ^= NULL_CXX_VID) then
+		call CLEAR_SUBTREE (TREE->CXX_VALUE_NODE.THIRD);
+
+	TREE->CXX_VALUE_NODE.ID = NULL_OID;
+
+end CLEAR_SUBTREE;
+
+end DUPLICATE_VALUE;

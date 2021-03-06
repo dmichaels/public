@@ -1,0 +1,139 @@
+/* LPI-DEBUG M68 PRVFRM.PL1 - Return previous frame pointer */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *  11.11.91  VTF  Fixed a problem where PRVFRM was not returning the correct
+ *                 address when the execution point was inside a non-debug 
+ *                 routine.
+ *
+ *  08.17.88  DGM  Removed the bogus frame pointer check which checked
+ *		   for a negative (i.e. huge) value.  On some
+ *		   machines (e.g. hp), the stack/frame pointers are
+ *		   in fact very huge (i.e. larger tha 2^31).
+ *
+ *  06.12.87  DGM  Added some debugging print-outs for when DBG_FLAG
+ *		   or DBG_SYM_FLAG is set.
+ *
+ *  04.03.87  DGM  Removed reference to STACK_BASE (obsolete since
+ *                 a zero is placed at the stack base at start-up).
+ *
+ *  02.19.87  DGM  Added support for stopping at the entry point of a
+ *                 non-debug routine (i.e. before frame pointer set up).
+ *                 FYI: PRVFRM is called in DACT, NDACT, DSTACK, DMAIN,
+ *                 DONBRK, and DSTEP.
+ *
+ *  03.10.86  PLB  Moved STACK_BASE to SYSHW.IN to make this module
+ *                 hardware dependent rather than machine dependent
+ *
+ *  01.21.85  PLB  Added check for frame pointer validity -
+ *                 required for LAN_C since no P$INIT... 
+ *
+ **********************************************************************/
+
+/* --------------------------------------------------------------------
+ * PRVFRM - Get address of dynamic parent of stack frame
+ *
+ * In:     FRAME = Frame pointer
+ * Return: Pointer to dynamic father
+ **********************************************************************/
+
+PRVFRM: procedure (FRAME) returns (fixed binary (31));
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include DBGDEBUG_IN;
+%include SYSREADUSER_IN;
+%include TARGET_IN;
+%include SYSTTY_IN;
+
+    declare
+        FRAME                 fixed binary (31);
+
+    declare
+        LOC             fixed binary (ADDRESS_LENGTH),
+        PREV_FP         fixed binary (ADDRESS_LENGTH),
+        DUMMY           fixed binary (31),
+        STATUS          fixed binary (15);
+
+    declare
+        PRNPTR          entry (fixed binary (31)) external;
+    
+    if DBG_FLAG then do;
+        call WRITNC ('**PRVFRM** ');
+        if FRAME = $FP_BREAK then
+             call WRITNC ('BREAK-FP');
+        else call PRNPTR (FRAME);
+        call WRITNC (' --> ');
+    end;
+
+    if FRAME = 0 then do;
+        PREV_FP = 0;        /* 0 frame pointer setup by P$INIT */
+        goto DONE;
+    end;
+
+    /*
+     * If we are at a break-point at the entry point of a non-debug
+     * routine (i.e. before any stack set up has been done), then we
+     * will fudge the previous FP to be what it would be when the initial
+     * portion of the stack set up has occurred (i.e. just after the save
+     * of FP).  Note that this fudged FP value should be used by the caller
+     * only to get the next previous FP and to get the return address.
+     */
+
+    if FRAME = $FP_BREAK then do;
+        if EXEC_POINT.NON_DEBUG_FLAG & (EXEC_POINT.NDPC = EXEC_POINT.ENTRY_PT)
+        then do;
+            PREV_FP = PROGRAM_REGISTER_AREA->REGS.A7 - $PC_OFF;
+            goto DONE;
+        end;
+        else do;
+            PREV_FP = PROGRAM_REGISTER_AREA->REGS.A6;
+            goto DONE;
+        end;
+    end;
+
+    if FRAME = (PROGRAM_REGISTER_AREA->REGS.A7 - $PC_OFF) then do;
+        PREV_FP = PROGRAM_REGISTER_AREA->REGS.A6;
+        goto DONE;
+    end;
+
+    LOC = FRAME;
+
+    call REAUSR (PROCESS_ID, DUMMY, LOC, 4, addr(PREV_FP), STATUS);
+
+    /*
+     * For languages which use P$INIT, a zero has been stored at the bottom
+     * of the stack to indicate no more outstanding frames.  For C (no
+     * P$INIT setup), we must check the validity of the stack address.
+     */
+
+    if /* DGM - (PREV_FP < 0) |  /* A very big fixed binary (31) */
+       (PREV_FP <= FRAME)     |  /* Previous frame must be > current frame */
+       (mod(PREV_FP, 2) ^= 0)    /* Must be even */
+    then do;
+        PREV_FP = 0;             /* ==> Impossible frame pointer */
+        goto DONE;
+    end;
+    else do;
+        goto DONE;
+    end;
+
+  DONE:
+    if DBG_FLAG then do;
+        call PRNPTR (PREV_FP);
+        call WRITTT ('');
+    end;
+    return (PREV_FP);
+
+end PRVFRM;
+

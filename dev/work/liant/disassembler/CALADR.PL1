@@ -1,0 +1,130 @@
+/* CodeWatch M68 CALADR.PL1 - Determine target of entry variable call */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI Edit History
+ *
+ *  10.04.91  VTF  (002) Modified this routine to return TRUE for subroutine
+ *                       calls ONLY (previously it would return TRUE for
+ *                       any jump or call).
+ *                       
+ *  02.21.90  MJF  (001) Added include of SYSCALLJUMP_IN.
+ *
+ *  02.08.90  MJF  (000) Original version.  Just a through-call to
+ *                 JMPADR.
+ *
+ **********************************************************************/
+
+CALADR: procedure (REGAREA, LOCATION, REPLACED, TARGET) returns (bit (1));
+
+    %include 'incfil';
+    %include GLOBAL_IN;
+    %include DBGGLOBAL_IN;
+    %include SYSREADUSER_IN;
+    %include SYSCALLJUMP_IN;
+    %include EADEF_IN;
+    %include CALCEA_IN;
+    %include TARGET_IN;
+
+    declare
+        REGAREA     pointer,
+        LOCATION    fixed binary (31),
+        REPLACED    pointer,
+        TARGET      fixed binary (31);
+
+    /* -------------------------------------------------------------------
+     * -- M68000/68010/68020 Branch/Jump Instruction Formats --
+     * ---------------------------------------------------------------- */
+
+    /*
+     * This represents the size in bytes of the largest possible
+     * jump or branch instruction (note that the largest possible
+     * M68020 instruction in general is 22 bytes (11 words)).
+     */
+
+    %replace SIZE_INSTRUCTION   by 12;
+
+    declare
+        1 INSTRUCTION,
+          2 WORD (1:6)          fixed binary (15);
+
+    /* -------------------------------------------------------------------
+     * -- Jump Instruction Formats --
+     * ---------------------------------------------------------------- */
+
+    declare
+        1 JUMP_INSTRUCTION      based (addr(INSTRUCTION)),
+          2 OPCODE              bit (10),
+          2 MODE                bit (3),
+          2 REG                 bit (3),
+          2 WORD (2:6)          fixed binary (15);
+
+    %replace $JMP_OPCODE        by '0100111011'B;    /* JMP */
+    %replace $JSR_OPCODE        by '0100111010'B;    /* JSR */
+
+    /* -------------------------------------------------------------------
+     * -- Branch Instruction Formats --
+     * ---------------------------------------------------------------- */
+
+    declare
+        1 BRANCH_INSTRUCTION    based (addr(INSTRUCTION)),
+          2 OPCODE              bit (4),
+          2 COND                bit (4),
+          2 DISP_8              bit (8) aligned,
+          2 DISP_16             fixed binary (15),
+          2 DISP_32             fixed binary (31);
+
+    %replace $BRANCH_OPCODE       by '0110'B;     /* BSR, BRA, Bcc */
+    %replace $BRANCH_COND_SUBR    by '0001'B;
+    %replace $BRANCH_COND_ALWAYS  by '0000'B;
+
+    declare
+        DUMMY       fixed binary (31),
+        MEMORY      fixed binary (31),
+        STATUS      fixed binary (15);
+
+    /* -------------------------------------------------------------------
+     * -- Start Processing --
+     * ---------------------------------------------------------------- */
+
+    if REPLACED ^= NULL then      /* Should we handle this ? */
+        return(FALSE);
+
+    /* Determine whether or not the user process is assumed active */
+
+    if REGAREA = NULL then
+         MEMORY = LOCATION;
+    else MEMORY = REGAREA->REGS.PC;
+
+    /* Read two bytes of the instruction */
+
+    call REAUSR (PROCESS_ID, DUMMY,
+                 MEMORY, 2,
+                 addr(INSTRUCTION), STATUS);
+
+    /* -------------------------------------------------------------------
+     * -- Determine whether or not we have a subroutine call
+     * ---------------------------------------------------------------- */
+
+    if (  (BRANCH_INSTRUCTION.OPCODE = $BRANCH_OPCODE 
+               & BRANCH_INSTRUCTION.COND = $BRANCH_COND_SUBR)
+        | (JUMP_INSTRUCTION.OPCODE = $JSR_OPCODE)  ) then do;
+
+        if JMPADR (REGAREA, LOCATION, REPLACED, TARGET) then
+            return (TRUE);
+        else 
+            return (FALSE);
+    end;
+    else /* some other kind of instruction...don't bother to decode */
+        return (FALSE);
+
+
+end CALADR;

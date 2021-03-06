@@ -1,0 +1,32 @@
+.TH FINDLINE 3L LOCAL
+
+.SH NAME
+findline - find a line in a file containing a search pattern
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+findline(pat, line, maxline, f)
+.br
+char *pat, *line;
+.br
+int maxline;
+.br
+FILE *f;
+.ft P
+
+.SH DESCRIPTION
+Reads into the character buffer \fIline\fP, the next line in the
+file \fIf\fP which contains an occurrence of the pattern \fIpat\fP.
+The line will contain only \fImaxline\fP - 1 characters, or all
+characters up to a newline (whichever comes first).  The
+newline (if present) is kept (ala \fIfgets(3S)\fP).
+Returns a pointer to the string if the pattern is found,
+otherwise returns NULL.
+
+.SH FILES
+findline.c
+
+.SH SEE ALSO
+sindex(3L), fseek_pat(3L), ftell_pat(3L), fgets(3S), grep(1)

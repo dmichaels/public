@@ -1,0 +1,33 @@
+.TH SINDEX 3L LOCAL
+
+.SH NAME
+sindex - index to a pattern string within a string
+
+.SH SYNOPSIS
+.ft P
+char *
+.br
+sindex(str, pat, flag)
+.br
+char *str, *pat;
+.br
+int  flag;
+.ft P
+
+.SH DESCRIPTION
+Returns a pointer to the first occurrence of the pattern string \fIpat\fP
+in the given string \fIstr\fP.
+.PP
+If \fIflag\fP = 0,
+then the returned pointer points to the the first character of the string.
+.PP
+If \fIflag\fP != 0,
+then the returned pointer points to the the last character of the string.
+.PP
+If the pattern does not occur in the string, then NULL is returned.
+
+.SH FILES
+sindex.c
+
+.SH SEE ALSO
+findline(3L), fseek_pat(3L), fseek_npat(3L), ftell_pat(3L), cindex(3L)

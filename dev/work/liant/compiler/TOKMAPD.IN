@@ -1,0 +1,101 @@
+/* C++ CXX_TOKEN_MAP_DECLARATION_IN - Token type to declaration maps */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  05.23.91  PKT  006  Added MAP_SIMPLE_TYPE_TOKEN.
+ *  09.25.90  DGM  005  Preprocessor include file name changes.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  09.13.90  DGM  003  Changed xxx_SC names to xxx_ST.
+ *  02.05.90  DGM  002  Updated.
+ *  09.06.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_PP_TOKEN_TYPE_CODES_IN;	*/
+/* %include CXX_SYMBOL_TABLE_DEFS_IN;	*/
+
+/* ---------------------------------------------------------------------
+/* TOKMAPD
+/*
+/* Keep this in sync with CXX_PP_TOKEN_TYPE_CODES_IN !
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 TOKMAPD			static external,
+
+  2 CONSISTENT_SIMPLE_TYPES	(LB_KW_TYPE_TOKEN : HB_KW_TYPE_TOKEN)
+				bit (16) aligned initial (
+
+		/* ***************************************** */
+		/* [See ANSI C Standard (X3.159-1989) 3.5.2] */
+		/* ***************************************** */
+		/* signed ---------------------------------+ */
+		/* unsigned ------------------------------+| */
+		/* short --------------------------------+|| */
+		/* long --------------------------------+||| */
+		/* double -----------------------------+|||| */
+		/* float -----------------------------+||||| */
+		/* char -----------------------------+|||||| */
+		/* int -----------------------------+||||||| */
+		/* void ---------------------------+|||||||| */
+		/*                                 VVVVVVVVV */
+		/*                                 vicfdlsug */
+		/* ***************************************** */
+		/* KW_VOID_TOKEN        */        '000000000'B
+		/* KW_INT_TOKEN         */      , '000001111'B
+		/* KW_CHAR_TOKEN        */      , '000000011'B
+		/* KW_FLOAT_TOKEN       */      , '000000000'B
+		/* KW_DOUBLE_TOKEN      */      , '000001000'B
+		/* KW_LONG_TOKEN        */      , '010010011'B
+		/* KW_SHORT_TOKEN       */      , '010000011'B
+		/* KW_UNSIGNED_TOKEN    */      , '011001100'B
+		/* KW_SIGNED_TOKEN      */      , '011001100'B
+    ),
+
+  2 MAP_SIMPLE_TYPE_TOKEN	(LB_KW_TYPE_TOKEN : HB_KW_TYPE_TOKEN)
+				type (SHORT_T) initial (
+
+		/* KW_VOID_TOKEN        */        VOID_BT
+		/* KW_INT_TOKEN         */      , INT_BT
+		/* KW_CHAR_TOKEN        */      , CHAR_BT
+		/* KW_FLOAT_TOKEN       */      , FLOAT_BT
+		/* KW_DOUBLE_TOKEN      */      , DOUBLE_BT
+		/* KW_LONG_TOKEN        */      , LONG_BT
+		/* KW_SHORT_TOKEN       */      , SHORT_BT
+		/* KW_UNSIGNED_TOKEN    */      , UINT_BT
+		/* KW_SIGNED_TOKEN      */      , INT_BT
+    ),
+
+  2 MAP_STORAGE_CLASS_TOKEN	(LB_KW_STORAGE_TOKEN : HB_KW_STORAGE_TOKEN)
+				type (SHORT_T) initial (
+
+		/* KW_TYPEDEF_TOKEN	*/	  TYPEDEF_ST
+		/* KW_STATIC_TOKEN	*/	, STATIC_ST
+		/* KW_EXTERN_TOKEN	*/	, EXTERN_ST
+		/* KW_AUTO_TOKEN	*/	, AUTO_ST
+		/* KW_REGISTER_TOKEN	*/	, REGISTER_ST
+    ),
+
+  2 MAP_TAG_TOKEN		(LB_KW_TAG_TOKEN : HB_KW_TAG_TOKEN)
+				type (SHORT_T) initial (
+
+		/* KW_CLASS_TOKEN	*/	  CLASS_BT
+		/* KW_STRUCT_TOKEN	*/	, STRUCT_BT
+		/* KW_UNION_TOKEN	*/	, UNION_BT
+		/* KW_ENUM_TOKEN	*/	, ENUM_BT
+    );
+

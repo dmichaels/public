@@ -1,0 +1,332 @@
+/* C++ egetv.pl1 - Get a new value and expand it */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  08.10.92  DGM  005  Handle #line correctly.
+ *  03.26.92  DGM  004  New value-node scheme.
+ *  10.04.91  DGM  003  Added GLOBAL_IN.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  04.19.90  DGM  001  Fixed up includes.
+ *  01.18.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 08.10.92 005 EGETV');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_SOURCE_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* GET_VALUE_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_VALUE_AND_EXPAND: procedure (OP, LEFT)
+		      returns   (type (CXX_VID_T))
+		      external  (X_GET_VALUE_AND_EXPAND);
+
+	declare
+		OP		type (SHORT_T),
+		LEFT		type (CXX_VID_T);
+
+	return (EXPAND_VALUE (ALLOC_CXX_VALUE_NODE (OP)));
+
+end GET_VALUE_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_VALUE_AND_EXPAND_L
+/* ------------------------------------------------------------------- */
+
+GET_VALUE_AND_EXPAND_L: procedure (OP, LEFT)
+			returns   (type (CXX_VID_T))
+			external  (X_GET_VALUE_AND_EXPAND_L);
+
+	declare
+		OP		type (SHORT_T),
+		LEFT		type (CXX_VID_T);
+
+	return (EXPAND_VALUE (ALLOC_CXX_VALUE_NODE_L (OP, LEFT)));
+
+end GET_VALUE_AND_EXPAND_L; 
+
+/* ---------------------------------------------------------------------
+/* GET_VALUE_AND_EXPAND_LR
+/* ------------------------------------------------------------------- */
+
+GET_VALUE_AND_EXPAND_LR: procedure (OP, LEFT, RIGHT)
+			 returns   (type (CXX_VID_T))
+			 external  (X_GET_VALUE_AND_EXPAND_LR);
+
+	declare
+		OP		type (SHORT_T),
+		LEFT		type (CXX_VID_T),
+		RIGHT		type (CXX_VID_T);
+
+	return (EXPAND_VALUE (ALLOC_CXX_VALUE_NODE_LR (OP, LEFT, RIGHT)));
+
+end GET_VALUE_AND_EXPAND_LR; 
+
+/* ---------------------------------------------------------------------
+/* GET_VALUE_AND_EXPAND_LRT
+/* ------------------------------------------------------------------- */
+
+GET_VALUE_AND_EXPAND_LRT: procedure (OP, LEFT, RIGHT, THIRD)
+			  returns   (type (CXX_VID_T))
+			  external  (X_GET_VALUE_AND_EXPAND_LRT);
+
+	declare
+		OP		type (SHORT_T),
+		LEFT		type (CXX_VID_T),
+		RIGHT		type (CXX_VID_T),
+		THIRD		type (CXX_VID_T);
+
+	return (EXPAND_VALUE (ALLOC_CXX_VALUE_NODE_LRT
+			      (OP, LEFT, RIGHT, THIRD)));
+
+end GET_VALUE_AND_EXPAND_LRT; 
+
+/* ---------------------------------------------------------------------
+/* GET_REF_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_REF_AND_EXPAND: procedure (SYMBOL)
+		    returns   (type (CXX_VID_T))
+		    external  (X_GET_REF_AND_EXPAND);
+
+	declare
+		SYMBOL		type (NID_T);
+
+	return (EXPAND_VALUE (ALLOC_REF_CXX_VALUE_NODE (SYMBOL)));
+
+end GET_REF_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_VALUE_REF_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_VALUE_REF_AND_EXPAND: procedure (SYMBOL)
+			  returns   (type (CXX_VID_T))
+			  external  (X_GET_VALUE_REF_AND_EXPAND);
+
+	declare
+		SYMBOL		type (NID_T);
+
+	return (EXPAND_VALUE
+		(ALLOC_CXX_VALUE_NODE_L
+		 (VALUE_VO,
+		  EXPAND_VALUE
+		  (ALLOC_REF_CXX_VALUE_NODE (SYMBOL)))));
+		  
+end GET_VALUE_REF_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_LABEL_REF_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_LABEL_REF_AND_EXPAND: procedure (SYMBOL)
+			  returns   (type (CXX_VID_T))
+			  external  (X_GET_LABEL_REF_AND_EXPAND);
+
+	declare
+		SYMBOL		type (NID_T);
+
+	return (EXPAND_VALUE (ALLOC_LABEL_REF_CXX_VALUE_NODE (SYMBOL)));
+		  
+end GET_LABEL_REF_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_BRANCH_REF_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_BRANCH_REF_AND_EXPAND: procedure (SYMBOL)
+			   returns   (type (CXX_VID_T))
+			   external  (X_GET_BRANCH_REF_AND_EXPAND);
+
+	declare
+		SYMBOL		type (NID_T);
+
+	return (EXPAND_VALUE
+		(ALLOC_SYMBOL_CXX_VALUE_NODE (BRANCH_VO, SYMBOL)));
+		  
+end GET_BRANCH_REF_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_BRANCH_SAVE_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_BRANCH_SAVE_AND_EXPAND: procedure (SYMBOL)
+			    returns   (type (CXX_VID_T))
+			    external  (X_GET_BRANCH_SAVE_AND_EXPAND);
+
+	declare
+		SYMBOL		type (NID_T);
+
+	return (EXPAND_VALUE
+		(ALLOC_SYMBOL_CXX_VALUE_NODE (BRANCH_SAVE_VO, SYMBOL)));
+		  
+end GET_BRANCH_SAVE_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_DOT_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_DOT_AND_EXPAND: procedure (LEFT, MEMBER_NAME)
+		    returns   (type (CXX_VID_T))
+		    external  (X_GET_DOT_AND_EXPAND);
+
+	declare
+		LEFT			type (CXX_VID_T),
+		MEMBER_NAME		type (NID_T);
+
+	return (EXPAND_VALUE
+		(ALLOC_DOT_CXX_VALUE_NODE (LEFT, MEMBER_NAME)));
+		  
+end GET_DOT_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_ENTRY_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_ENTRY_AND_EXPAND: procedure (FUNCTION_SYMBOL)
+		      returns   (type (CXX_VID_T))
+		      external  (X_GET_ENTRY_AND_EXPAND);
+
+	declare
+		FUNCTION_SYMBOL		type (NID_T);
+
+	return (EXPAND_VALUE
+		(ALLOC_SYMBOL_CXX_VALUE_NODE (ENTRY_VO, FUNCTION_SYMBOL)));
+		  
+end GET_ENTRY_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_PROCEDURE_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_PROCEDURE_AND_EXPAND: procedure (FUNCTION_SYMBOL)
+			  returns   (type (CXX_VID_T))
+			  external  (X_GET_PROCEDURE_AND_EXPAND);
+
+	declare
+		FUNCTION_SYMBOL		type (NID_T);
+	declare
+		V			type (CXX_VID_T);
+
+	V = ALLOC_SYMBOL_CXX_VALUE_NODE (PROCEDURE_VO, FUNCTION_SYMBOL);
+	V->CXX_VALUE_NODE.UNARY = TRUE;
+	call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+	return (V);
+		  
+end GET_PROCEDURE_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_INIT_REF_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_INIT_REF_AND_EXPAND: procedure (SYMBOL, VALUE)
+			 returns   (type (CXX_VID_T))
+			 external  (X_GET_INIT_REF_AND_EXPAND);
+	declare
+		SYMBOL		type (NID_T),
+		VALUE		type (NID_T);
+
+	return (EXPAND_VALUE
+		(ALLOC_INIT_REF_CXX_VALUE_NODE (SYMBOL, VALUE)));
+		  
+end GET_INIT_REF_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_INIT_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_INIT_AND_EXPAND: procedure (SYMBOL, VALUE)
+		     returns   (type (CXX_VID_T))
+		     external  (X_GET_INIT_AND_EXPAND);
+	declare
+		SYMBOL		type (NID_T),
+		VALUE		type (CXX_VID_T);
+
+	return (EXPAND_VALUE
+		(ALLOC_INIT_CXX_VALUE_NODE (SYMBOL, VALUE)));
+		  
+end GET_INIT_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_CONSTANT_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_CONSTANT_AND_EXPAND: procedure (LEFT, RIGHT_SHORT)
+			 returns   (type (CXX_VID_T))
+			 external  (X_GET_CONSTANT_AND_EXPAND);
+
+	declare
+		LEFT		type (CXX_VID_T),
+		RIGHT_SHORT	type (SHORT_T);
+
+	return (EXPAND_VALUE (ALLOC_CONSTANT_CXX_VALUE_NODE
+			      (LEFT, RIGHT_SHORT)));
+
+end GET_CONSTANT_AND_EXPAND; 
+
+/* ---------------------------------------------------------------------
+/* GET_STATEMENT_ID_AND_EXPAND
+/* ------------------------------------------------------------------- */
+
+GET_STATMENT_ID_AND_EXPAND: procedure ()
+			    returns   (type (CXX_VID_T))
+			    external  (X_GET_STATEMENT_ID_AND_EXPAND);
+
+	declare V type (CXX_VID_T);
+
+        V = ALLOC_CXX_VALUE_NODE (STMNT_ID_VO);
+	if SW_REAL_LOCATION_IN_ERRORS then do;
+	        V->CXX_VALUE_NODE.OFFSET    = CURRENT_SOURCE.LINE;
+        	V->CXX_VALUE_NODE.RIGHT_NID = CURRENT_SOURCE.FILE;
+	end;
+	else do;
+		if CURRENT_SOURCE.ASSUMED_FILE ^= NULL_NID then
+			V->CXX_VALUE_NODE.RIGHT_NID
+				= CURRENT_SOURCE.ASSUMED_FILE;
+        	else	V->CXX_VALUE_NODE.RIGHT_NID
+				= CURRENT_SOURCE.FILE;
+	        V->CXX_VALUE_NODE.OFFSET
+			= CURRENT_SOURCE.LINE +
+			  CURRENT_SOURCE.LINE_ADJUSTMENT;
+	end;
+        V->CXX_VALUE_NODE.RIGHT_IS_NID = TRUE;
+        V->CXX_VALUE_NODE.RIGHT_IS_NOT_VID = TRUE;
+	call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+	return (V);
+
+end GET_STATMENT_ID_AND_EXPAND; 
+

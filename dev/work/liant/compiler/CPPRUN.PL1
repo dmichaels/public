@@ -1,0 +1,719 @@
+/* C++ cpprun.pl1 - Run preprocessor and/or emit related data */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.15.92  DGM  015  Break up very long lines.
+ *  06.29.92  DGM  014R Minor fix.
+ *  06.25.92  DGM  014  Minor fix.
+ *  06.23.92  DGM  013  Dump in more traditional mannar.
+ *  06.18.92  DGM  012  #pragma data_section.
+ *  06.11.92  DGM  011  Print #pragma's.
+ *  03.26.92  DGM  010  New value-node scheme.
+ *  02.10.92  DGM  009  Added SW_PREPROCESSOR_ONLY.
+ *  02.05.92  DGM  008  Added SW_DUMP_MAKE_DEPEND.
+ *  01.13.92  DGM  007  Added SW_TERSE_MACRO_EXPANSION.
+ *  06.17.91  DGM  006  Minor updates.
+ *  03.08.91  DGM  005  Call DUMP_SOURCE_MAP.
+ *  09.25.90  DGM  004  Preprocessor include file name changes.
+ *  09.25.90  DGM  003  Minor fix.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  06.11.90  DGM  000  Set PP_MAX_TOKENS before BEGIN_LEXER.
+ *  06.08.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.15.92 015 CPPRUN');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_COMPILATION_DATA_IN;
+%include CXX_LEXER_PKG;
+%include CXX_PP_TOKEN_POD_SPELLING_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_SYMBOL_TABLE_DEBUG_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_DUMP_SOURCE_MAP_PKG;
+%include CXX_PP_DUMP_MACRO_PKG;
+
+/* ---------------------------------------------------------------------
+/* External declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+WRITTT		entry    (character (*) varying)
+		external,
+WRITNC		entry    (character (*) varying)
+		external,
+WRITNO		entry    (type (POINTER_T),
+			  type (SHORT_T),
+			  type (SHORT_T),
+			  type (SHORT_T))
+		external;
+
+/* ---------------------------------------------------------------------
+/* Type declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T	character (32767) varying based;
+
+/* ---------------------------------------------------------------------
+/* RUN_PP_ONLY
+/*
+/* Determine (via compiler switches) if only the preprocessor is to
+/* be run, if so, run it, output any desired data, and return TRUE.
+/* Otherwise return FALSE.
+/* ------------------------------------------------------------------- */
+
+RUN_PP_ONLY: procedure returns (type (BOOL_T)) external (X_RUN_PP_ONLY);
+
+	if SW_DUMP_PREDEF_MACROS then
+		PP_MAX_TOKENS = 1;
+        else if SW_MACRO_EXPANSION |
+        	SW_TERSE_MACRO_EXPANSION |
+        	SW_TRADITIONAL_MACRO_EXPANSION |
+		SW_DUMP_MACROS |
+		SW_DUMP_MAKE_DEPEND |
+		SW_DUMP_INCLUDES |
+		SW_PREPROCESSOR_ONLY then
+		PP_MAX_TOKENS = -1;
+	else	return (FALSE);
+
+	if ( SW_MACRO_EXPANSION &
+	    ^SW_TERSE_MACRO_EXPANSION &
+	    ^SW_TRADITIONAL_MACRO_EXPANSION) |
+	    SW_DUMP_PREDEF_MACROS |
+	    SW_DUMP_INCLUDES |
+	    SW_DUMP_MACROS then
+		call DUMP_PP_HEADER ('');
+
+	call BEGIN_LEXER ();
+
+	if SW_MACRO_EXPANSION |
+	   SW_DUMP_PREDEF_MACROS |
+	   SW_DUMP_MACROS |
+	   SW_DUMP_INCLUDES |
+	   SW_DUMP_MAKE_DEPEND then do;
+		call DUMP_PP_OUTPUT ();
+		call DUMP_PP_DATA ();
+	end;
+	else	call JUST_RUN_THE_PREPROCESSOR ();
+
+	call END_LEXER ();
+
+	return (TRUE);
+
+end RUN_PP_ONLY;
+
+/* ---------------------------------------------------------------------
+/* JUST_RUN_THE_PREPROCESSOR
+/*
+/* Dump (print) a preprocessed expanded listing to the standard output.
+/* ------------------------------------------------------------------- */
+
+JUST_RUN_THE_PREPROCESSOR: procedure internal;
+
+	do while (CURRENT_TOKEN.TYPE ^= EOF_TOKEN);
+		call ADVANCE_TOKEN ();
+	end;
+
+end JUST_RUN_THE_PREPROCESSOR;
+
+/* ---------------------------------------------------------------------
+/* DUMP_PP_OUTPUT
+/*
+/* Dump (print) a preprocessed expanded listing to the standard output.
+/* ------------------------------------------------------------------- */
+
+DUMP_PP_OUTPUT: procedure internal;
+
+        if ^SW_MACRO_EXPANSION then
+		return;
+
+	if ^SW_TERSE_MACRO_EXPANSION & ^SW_TRADITIONAL_MACRO_EXPANSION then
+		call DUMP_PP_HEADER ('Expanded Output');
+
+	do while (TRUE);
+		call DUMP_CURRENT_TOKEN ();
+		if CURRENT_TOKEN.TYPE = EOF_TOKEN then
+			leave;
+		call ADVANCE_TOKEN ();
+	end;
+
+	call WRITTT ('');
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* DUMP_CURRENT_TOKEN
+/* ------------------------------------------------------------------- */
+
+DUMP_CURRENT_TOKEN: procedure internal;
+
+	declare
+		CURRENT_INCLUDE_LEVEL	type (SHORT_T)
+					static internal initial (0),
+		MAIN_FILE_NAME_ID	type (NID_T)
+					static internal initial (NULL_NID),
+		TOKEN_COUNT		type (LONG_T) static internal
+					initial (0),
+		LINE_COUNT		type (LONG_T) static internal
+					initial (0),
+		FILE_COUNT		type (LONG_T) static internal
+					initial (0),
+		LAST_LINE		type (LONG_T)
+					static internal initial (0);
+	declare
+		S			character (512) varying,
+		P			type (POINTER_T);
+
+	if SW_TRADITIONAL_MACRO_EXPANSION then do;
+		call DUMP_TRADITIONAL_CURRENT_TOKEN ();
+		return;
+	end;
+
+       	if SW_TERSE_MACRO_EXPANSION then do;
+		if (CURRENT_TOKEN.TYPE < LB_PSEUDO_TOKEN) |
+		   (CURRENT_TOKEN.TYPE > HB_PSEUDO_TOKEN) then
+			call WRITE_CONSOLE_LINE
+			     (TOKEN_SPELLING (CURRENT_TOKEN_PTR));
+		return;
+	end;
+
+	/*
+	 * Print out a normal token; if the line number has
+	 * changed then start a new line indicating its number.
+	 */
+
+	if (CURRENT_TOKEN.TYPE < LB_PSEUDO_TOKEN) |
+	   (CURRENT_TOKEN.TYPE > HB_PSEUDO_TOKEN) then do;
+		if LAST_LINE ^= CURRENT_TOKEN.LINE then do;
+			call WRITTT ('');
+			call DUMP_CURRENT_TOKEN_LINE_NUMBER ();
+		end;
+		call WRITNC (' ');
+		call WRITNC (TOKEN_SPELLING (CURRENT_TOKEN_PTR));
+		LAST_LINE = CURRENT_TOKEN.LINE;
+		TOKEN_COUNT = TOKEN_COUNT + 1;
+	end;
+
+	/* Indicate the beginning of an include (or the main) file */
+
+	else if CURRENT_TOKEN.TYPE = BOF_INCLUDE_TOKEN then do;
+		call WRITTT ('');
+		if LAST_LINE > 0 then call WRITTT ('');
+		if LAST_LINE = 0 then do;
+			call WRITTT ('');
+			call WRITNC ('           /* Main File');
+		end;
+		else do;
+			call DUMP_CURRENT_TOKEN_LINE_NUMBER ();
+			call WRITNC (' /* Include File');
+			CURRENT_INCLUDE_LEVEL = CURRENT_INCLUDE_LEVEL + 1;
+		end;
+		call WRITNC (': ');
+		call WRITNC (CURRENT_TOKEN.SPELLING_PTR->
+			     TOKEN_SPELLING_POD.SPELLING);
+		call WRITTT (' */');
+		LAST_LINE = -1;
+	end;
+
+	/* Indicate the ending an include file */
+
+	else if (CURRENT_TOKEN.TYPE = EOF_INCLUDE_TOKEN) then do;
+		call WRITTT ('');
+		if LAST_LINE > 0 then call WRITTT ('');
+		call DUMP_CURRENT_TOKEN_LINE_NUMBER ();
+		call WRITNC (' /* End Include File');
+		if CURRENT_TOKEN.SPELLING_PTR ^= null () then do;
+			/*
+			/* Sic; the spelling for the eof-tokens
+			/* and eof-include-tokens are not stored
+			/* the same way as the spelling for
+			/* bof-tokens and bof-include-tokens.
+			/**/
+			call WRITNC (': ');
+			call WRITNC (CURRENT_TOKEN.SPELLING_PTR->STRING_T);
+		end;
+		call WRITTT (' */');
+		LAST_LINE = -1;
+		FILE_COUNT = FILE_COUNT + 1;
+		LINE_COUNT = LINE_COUNT + CURRENT_TOKEN.LINE;
+		CURRENT_INCLUDE_LEVEL = CURRENT_INCLUDE_LEVEL - 1;
+	end;
+
+	/* Indicate the ending of the main file */
+
+	else if CURRENT_TOKEN.TYPE = EOF_TOKEN then do;
+		call WRITTT ('');
+		if LAST_LINE > 0 then call WRITTT ('');
+		call DUMP_CURRENT_TOKEN_LINE_NUMBER ();
+		call WRITNC (' /* End Main File');
+		if CURRENT_TOKEN.SPELLING_PTR ^= null() then do;
+			/*
+			/* Sic; the spelling for the eof-tokens
+			/* and eof-include-tokens are not stored
+			/* the same way as the spelling for
+			/* bof-tokens and bof-include-tokens.
+			/**/
+			call WRITNC (': ');
+			call WRITNC (CURRENT_TOKEN.SPELLING_PTR->STRING_T);
+		end;
+		call WRITTT (' */');
+		LAST_LINE = 0;
+		FILE_COUNT = FILE_COUNT + 1;
+		LINE_COUNT = LINE_COUNT + CURRENT_TOKEN.LINE;
+
+		/* Print a tally of the total file, line, and token count */
+
+		call WRITTT ('');
+		call WRITNC ('/* ');
+		call WRITNO (addr (FILE_COUNT), 4, 10, 0);
+		call WRITNC (' file');
+		if FILE_COUNT ^= 1 then call WRITNC ('s');
+		call WRITNC (', ');
+		call WRITNO (addr (LINE_COUNT), 4, 10, 0);
+		call WRITNC (' line');
+		if LINE_COUNT ^= 1 then call WRITNC ('s');
+		call WRITNC (', ');
+		call WRITNO (addr (TOKEN_COUNT), 4, 10, 0);
+		call WRITTT (' tokens */');
+	end;
+
+	/* #pragma */
+
+	else if CURRENT_TOKEN.TYPE = PRAGMA_TOKEN then do;
+
+		call DUMP_CURRENT_PRAGMA_TOKEN ();
+	end;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* DUMP_CURRENT_TOKEN_LINE_NUMBER
+/* ------------------------------------------------------------------- */
+	
+DUMP_CURRENT_TOKEN_LINE_NUMBER: procedure internal;
+
+	call WRITNC ('/* ');
+	if CURRENT_INCLUDE_LEVEL > 0 then do;
+		call WRITNC ('[');
+		call WRITNO (addr (CURRENT_INCLUDE_LEVEL), 2, 10, 0);
+		call WRITNC ('] ');
+	end;
+	call WRITNO (addr (CURRENT_TOKEN.LINE), 4, 10, -4);
+	call WRITNC (' */');
+		
+end DUMP_CURRENT_TOKEN_LINE_NUMBER;
+
+/* ---------------------------------------------------------------------
+/* DUMP_LINE_ID
+/* ------------------------------------------------------------------- */
+	
+DUMP_LINE_ID: procedure (LINE_NUMBER, INCLUDE_LEVEL) internal;
+
+	declare
+		LINE_NUMBER	type (LONG_T),
+		INCLUDE_LEVEL	type (SHORT_T);
+
+	call WRITNC ('/* ');
+	if INCLUDE_LEVEL > 0 then do;
+		call WRITNC ('[');
+		call WRITNO (addr (INCLUDE_LEVEL), 2, 10, 0);
+		call WRITNC ('] ');
+	end;
+	else	call WRITNC ('     ');
+	call WRITNO (addr (LINE_NUMBER), 4, 10, -4);
+	call WRITNC (' */');
+		
+end DUMP_LINE_ID;
+
+/* ---------------------------------------------------------------------
+/* DUMP_CURRENT_PRAGMA_TOKEN
+/* ------------------------------------------------------------------- */
+
+DUMP_CURRENT_PRAGMA_TOKEN: procedure internal;
+
+	/* #pragma LPI C-header ( on | off ) */
+
+	if CURRENT_TOKEN.VALUE_ONE =
+	   byte (PRAGMA_C_HEADER_PK) then do;
+		S = '#pragma LPI C-header (';
+		if CURRENT_TOKEN.VALUE_TWO = byte (0) then
+			S = S || 'off';
+		else	S = S || 'on';
+		S = S || ')';
+	end;
+
+	/* #pragma LPI wrapper_redeclarations ( on | off ) */
+
+	else if CURRENT_TOKEN.VALUE_ONE =
+		byte (PRAGMA_WRAPPER_REDECLARATIONS_PK) then do;
+		S = '#pragma LPI wrapper_redeclarations (';
+		if CURRENT_TOKEN.VALUE_TWO = byte (0) then
+			S = S || 'off';
+		else	S = S || 'on';
+		S = S || ')';
+	end;
+
+	/* #pragma LPI allow_asm ( on | off ) */
+
+	else if CURRENT_TOKEN.VALUE_ONE =
+		byte (PRAGMA_ALLOW_ASM_PK) then do;
+		S = '#pragma LPI allow_asm (';
+		if CURRENT_TOKEN.VALUE_TWO = byte (0) then
+			S = S || 'off';
+		else	S = S || 'on';
+		S = S || ')';
+	end;
+
+	/* #pragma pack ( [ 1 | 2 | 4 ] ) */
+
+	else if CURRENT_TOKEN.VALUE_ONE =
+		byte (PRAGMA_PACK_PK) then do;
+		S = '#pragma pack (';
+		if rank (CURRENT_TOKEN.VALUE_TWO) = 0 then
+			S = S || ')';
+		else	S = S ||
+			    trim (char (rank
+					(CURRENT_TOKEN.VALUE_TWO))) ||
+			    ')';
+	end;
+
+	/* #pragma LPI varargs_used -- internal only */
+
+	else if CURRENT_TOKEN.VALUE_ONE =
+		byte (PRAGMA_VARARGS_USED_PK) then do;
+		S = '#pragma LPI varargs_used';
+	end;
+
+	/* #pragma weak identifier1 [ = identifier2 ] */
+
+	else if CURRENT_TOKEN.VALUE_ONE =
+		byte (PRAGMA_WEAK_PK) then do;
+		S = '#pragma weak ' ||
+		    TOKEN_NAME (CURRENT_TOKEN.VALUE_FIVE);
+		if CURRENT_TOKEN.VALUE_SIX ^= NULL_NID then
+			S = S || ' = ' ||
+			    TOKEN_NAME (CURRENT_TOKEN.VALUE_SIX);
+	end;
+
+	/*
+	/* #pragma LPI data_section
+	/*             (name,attributes,alignment,address)
+	/**/
+
+	else if CURRENT_TOKEN.VALUE_ONE =
+		byte (PRAGMA_DATA_SECTION_PK) then do;
+		S = '#pragma LPI data_section ("';
+		P = CURRENT_TOKEN.VALUE_SEVEN;
+		if P->DATA_SECTION_NODE.NAME = NULL_NID then
+			S = S || '.data"';
+		else	S = S || TOKEN_NAME (P->DATA_SECTION_NODE.NAME) || '"';
+		S = S ||
+		    ', ' ||
+		    trim (char
+			  (P->DATA_SECTION_NODE.ATTRIBUTES)) ||
+		    ', ' ||
+		    trim (char
+			  (P->DATA_SECTION_NODE.ALIGNMENT)) ||
+		    ', ' ||
+		    trim (char
+			  (P->DATA_SECTION_NODE.ADDRESS)) ||
+		    ')';
+	end;
+
+	call WRITTT ('');
+	call WRITTT (S);
+
+end DUMP_CURRENT_PRAGMA_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* DUMP_TRADITIONAL_CURRENT_TOKEN
+/* ------------------------------------------------------------------- */
+
+DUMP_TRADITIONAL_CURRENT_TOKEN: procedure internal;
+
+	declare
+		N		type (LONG_T),
+		S_LENGTH	type (SHORT_T);
+	declare
+		LAST_LINE	type (LONG_T) static internal initial (0),
+		LAST_TYPE	type (SHORT_T) static internal initial (0),
+		LINE_LENGTH	type (SHORT_T) static internal initial (0);
+
+	if (CURRENT_TOKEN.TYPE < LB_PSEUDO_TOKEN) |
+	   (CURRENT_TOKEN.TYPE > HB_PSEUDO_TOKEN) then do;
+		/*
+		/* Normal token.
+		/**/
+		S = TOKEN_SPELLING (CURRENT_TOKEN_PTR);
+		S_LENGTH = length (S);
+		if LAST_LINE ^= CURRENT_TOKEN.LINE then do;
+			if (LAST_LINE > 0) &
+			   (LAST_LINE < CURRENT_TOKEN.LINE) then do;
+				do N = CURRENT_TOKEN.LINE - LAST_LINE
+				       to 1 by -1;
+					call WRITTT ('');
+				end;
+			end;
+			else do;
+				if CURRENT_TOKEN.LINE > 0 then do;
+					call WRITTT ('');
+					call WRITNC ('#line ');
+					call WRITNO (addr (CURRENT_TOKEN.LINE),
+						     4, 10, 0);
+				end;
+				call WRITTT ('');
+			end;
+			call WRITNC (S);
+			LINE_LENGTH = 0;
+		end;
+		else do;
+			if (LINE_LENGTH + S_LENGTH) >= 79 then do;
+				call WRITTT ('');
+				call WRITNC ('#line ');
+				call WRITNO (addr (LAST_LINE), 4, 10, 0);
+				call WRITTT ('');
+				LINE_LENGTH = 0;
+			end;
+			if TOKEN_CANNOT_FOLLOW_TOKEN
+			   (LAST_TYPE, CURRENT_TOKEN.TYPE) then do;
+				LINE_LENGTH = LINE_LENGTH + 1;
+				call WRITNC (' ');
+			end;
+			LINE_LENGTH = LINE_LENGTH + S_LENGTH;
+			call WRITNC (S);
+		end;
+		LAST_LINE = CURRENT_TOKEN.LINE;
+	end;
+	else if CURRENT_TOKEN.TYPE = BOF_INCLUDE_TOKEN then do;
+		call WRITTT ('');
+		call WRITNC ('#line 1 "');
+		call WRITNC (CURRENT_TOKEN.SPELLING_PTR->
+			     TOKEN_SPELLING_POD.SPELLING);
+		call WRITTT ('"');
+		LAST_LINE = -1;
+		LINE_LENGTH = 0;
+	end;
+	else if CURRENT_TOKEN.TYPE = EOF_INCLUDE_TOKEN then do;
+		call WRITTT ('');
+		call WRITNC ('#line ');
+		N = CURRENT_SOURCE.LINE + CURRENT_SOURCE.LINE_ADJUSTMENT;
+		if N <= 0 then N = 1;
+		call WRITNO (addr (N), 4, 10, 0);
+		if CURRENT_TOKEN.SPELLING_PTR ^= null () then do;
+			call WRITNC (' "');
+			call WRITNC (CURRENT_TOKEN.SPELLING_PTR->STRING_T);
+			call WRITNC ('"');
+		end;
+		call WRITTT ('');
+		call WRITNC ('#line 1 "');
+		if CURRENT_SOURCE.ASSUMED_FILE ^= NULL_NID then
+			call WRITNC (TOKEN_NAME (CURRENT_SOURCE.ASSUMED_FILE));
+		else	call WRITNC (TOKEN_NAME (CURRENT_SOURCE.FILE));
+		call WRITTT ('"');
+		LAST_LINE = -1;
+		LINE_LENGTH = 0;
+	end;
+	else if CURRENT_TOKEN.TYPE = LINE_FILE_TOKEN then do;
+		call WRITTT ('');
+		call WRITNC ('#line ');
+		N = CURRENT_SOURCE.LINE + CURRENT_SOURCE.LINE_ADJUSTMENT;
+		if N <= 0 then N = 1;
+		call WRITNO (addr (N), 4, 10, 0);
+		if CURRENT_TOKEN.SPELLING_PTR ^= null() then do;
+			call WRITNC ('"');
+			if CURRENT_SOURCE.ASSUMED_FILE ^= NULL_NID then
+				call WRITNC (TOKEN_NAME
+					     (CURRENT_SOURCE.ASSUMED_FILE));
+			else	call WRITNC (TOKEN_NAME
+					     (CURRENT_SOURCE.FILE));
+			call WRITTT ('"');
+		end;
+		else	call WRITTT ('');
+		LINE_LENGTH = 0;
+	end;
+	else if CURRENT_TOKEN.TYPE = PRAGMA_TOKEN then do;
+		call DUMP_CURRENT_PRAGMA_TOKEN ();
+		LINE_LENGTH = 0;
+	end;
+
+	LAST_TYPE = CURRENT_TOKEN.TYPE;
+	return;
+
+/* ---------------------------------------------------------------------
+/* TOKEN_CANNOT_FOLLOW_TOKEN
+/* ------------------------------------------------------------------- */
+
+TOKEN_CANNOT_FOLLOW_TOKEN: procedure (A, B)
+			   returns   (type (BOOL_T)) internal;
+	declare
+		A	type (SHORT_T),
+		B	type (SHORT_T);
+
+	if (A = IDENTIFIER_TOKEN) |
+	   ((A >= LB_KW_TOKEN) & (A <= HB_KW_TOKEN)) then do;
+		return ((B = IDENTIFIER_TOKEN) |
+			((B >= LB_KW_TOKEN) & (B <= HB_KW_TOKEN)) |
+			(B = DECIMAL_CONSTANT_TOKEN) |
+			(B = OCTAL_CONSTANT_TOKEN) |
+			(B = HEX_CONSTANT_TOKEN) |
+			(B = FLOAT_CONSTANT_TOKEN));
+	end;
+	else if (A = DECIMAL_CONSTANT_TOKEN) |
+		(A = OCTAL_CONSTANT_TOKEN) |
+		(A = HEX_CONSTANT_TOKEN) |
+		(A = FLOAT_CONSTANT_TOKEN) then do;
+		return ((B = DECIMAL_CONSTANT_TOKEN) |
+			(B = OCTAL_CONSTANT_TOKEN) |
+			(B = HEX_CONSTANT_TOKEN) |
+			(B = FLOAT_CONSTANT_TOKEN));
+	end;
+	else if (A = NOT_TOKEN) |
+		(A = MOD_TOKEN) |
+		(A = XOR_TOKEN) |
+		(A = STAR_TOKEN) |
+		(A = EQUAL_TOKEN) |
+		(A = LSHIFT_EQUAL_TOKEN) |
+		(A = RSHIFT_EQUAL_TOKEN) then do;
+		return ((B = EQUAL_TOKEN) |
+			(B = EQUAL_EQUAL_TOKEN));
+	end;
+	else if A = AND_TOKEN then do;
+		return ((B = EQUAL_TOKEN) |
+			(B = EQUAL_EQUAL_TOKEN) |
+			(B = AND_TOKEN) |
+			(B = AND_AND_TOKEN) |
+			(B = AND_EQUAL_TOKEN));
+	end;
+	else if A = OR_TOKEN then do;
+		return ((B = EQUAL_TOKEN) |
+			(B = EQUAL_EQUAL_TOKEN) |
+			(B = OR_TOKEN) |
+			(B = OR_OR_TOKEN) |
+			(B = OR_EQUAL_TOKEN));
+	end;
+	else if A = LESS_THAN_TOKEN then do;
+		return ((B = LESS_THAN_TOKEN) |
+			(B = LESS_EQUAL_TOKEN) |
+			(B = LSHIFT_TOKEN) |
+			(B = LSHIFT_EQUAL_TOKEN) |
+			(B = EQUAL_TOKEN) |
+			(B = EQUAL_EQUAL_TOKEN));
+	end;
+	else if A = GREATER_THAN_TOKEN then do;
+		return ((B = GREATER_THAN_TOKEN) |
+			(B = GREATER_EQUAL_TOKEN) |
+			(B = RSHIFT_TOKEN) |
+			(B = RSHIFT_EQUAL_TOKEN) |
+			(B = EQUAL_TOKEN) |
+			(B = EQUAL_EQUAL_TOKEN));
+	end;
+	else if A = MINUS_TOKEN then do;
+		return ((B = MINUS_TOKEN) |
+			(B = MINUS_MINUS_TOKEN) |
+			(B = MINUS_EQUAL_TOKEN) |
+			(B = POINTER_TOKEN) |
+			(B = POINTER_STAR_TOKEN) |
+			(B = EQUAL_TOKEN) |
+			(B = EQUAL_EQUAL_TOKEN));
+	end;
+	else if A = PLUS_TOKEN then do;
+		return ((B = PLUS_TOKEN) |
+			(B = PLUS_PLUS_TOKEN) |
+			(B = PLUS_EQUAL_TOKEN));
+	end;
+	else if A = POINTER_TOKEN then do;
+		return ((B = STAR_TOKEN) |
+			(B = STAR_EQUAL_TOKEN));
+	end;
+	else if A = DOT_TOKEN then do;
+		return ((B = DOT_TOKEN) |
+			(B = ELLIPSIS_TOKEN));
+	end;
+	else if A = COLON_TOKEN then do;
+		return ((B = COLON_TOKEN) |
+			(B = COLON_COLON_TOKEN));
+	end;
+	else	return (FALSE);
+
+end TOKEN_CANNOT_FOLLOW_TOKEN;
+
+end DUMP_TRADITIONAL_CURRENT_TOKEN;
+
+end DUMP_CURRENT_TOKEN;
+
+end DUMP_PP_OUTPUT;
+
+/* ---------------------------------------------------------------------
+/* DUMP_PP_DATA
+/*
+/* Dump various preprocessor data based on the flags: SW_DUMP_MACROS,
+/* SW_DUMP_PREDEF_MACROS, SW_DUMP_INCLUDES, and SW_DUMP_MAKE_DEPEND.
+/* ------------------------------------------------------------------- */
+
+DUMP_PP_DATA: procedure internal;
+
+	if SW_DUMP_PREDEF_MACROS then do;
+		PP_MAX_TOKENS = 1;
+		do while (TRUE);
+			call ADVANCE_TOKEN ();
+			if (CURRENT_SOURCE.INCLUDED_BY = null ()) |
+			   (CURRENT_TOKEN.TYPE = EOF_TOKEN) then
+				leave;
+		end;
+	end;
+
+	if SW_DUMP_MACROS |
+	   SW_DUMP_INCLUDES |
+	   SW_DUMP_MAKE_DEPEND then do;
+		do while (TRUE);
+			call ADVANCE_TOKEN ();
+			if CURRENT_TOKEN.TYPE = EOF_TOKEN then
+				leave;
+		end;
+	end;
+	
+	if SW_DUMP_INCLUDES then do;
+		call DUMP_PP_HEADER ('Source File Map');
+		call WRITTT ('');
+		call DUMP_SOURCE_MAP ();
+	end;
+	if SW_DUMP_MAKE_DEPEND then
+		call DUMP_MAKE_DEPEND ();
+
+	if SW_DUMP_MACROS | SW_DUMP_PREDEF_MACROS then
+		call DUMP_PP_MACROS ();
+
+end DUMP_PP_DATA;
+

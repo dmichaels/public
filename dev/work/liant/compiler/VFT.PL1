@@ -1,0 +1,1084 @@
+/* C++ vft.pl1 - Virtual function table routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.06.92  DGM  023	New interface to WRITE_RELOCATION_DATA to
+ *			accomodate the relocation symbol reordering
+ *			required by the deficient UNIX-V output-editor.
+ *  09.29.92  DGM  022	Hack/fix -- the scheme whereby we put a VFT
+ *			identification string at the beginning of the
+ *			VFT in debug mode seems to break the VFT if it
+ *			is external linkage -- I haven't got time to
+ *			track this down at the moment -- it only effects
+ *			CodeWatch functionality (TYPE /VIRTUAL).
+ *  03.26.92  DGM  021	New value-node scheme.
+ *  03.25.92  PKT  020	Fixed uninitialization in AMBIGUOUS_VBC_VFO_ERROR.
+ *  01.13.92  DGM  019	Multi-node space fixes.
+ *  11.12.91  DGM  018	Minor change for new MAKE_INITIALIZED_STRING.
+ *  07.31.91  DGM  017	Added DELETE_VFT_QUEUE.
+ *  07.24.91  DGM  016R	Renamed EMIT_VFTS to GENERATE_VFTS (now called
+ *  07.24.91  DGM  016R	Renamed EMIT_VFTS to GENERATE_VFTS (now called
+ *  07.24.91  DGM  016	Renamed EMIT_VFTS to GENERATE_VFTS (now called
+ *			iteratively from END_GLOBAL_SCOPE along with
+ *			calls to GENERATE_DEFAULT_PROCEDURES.  Call
+ *			NOTE_SYMBOL_REFERENCE rather than set SYM_NODE.
+ *			REFERNCED directly for a virtual function
+ *			referenced in a virtual function table.
+ *  06.17.91  PKT  015  Fixed ADJUST_VBC_VFT.
+ *  03.12.91  DGM  014  Write out the VFT id string for debugger if -deb.
+ *  03.11.91  TLF  013  Added call to ALIGN_DATA_INITIAL_FILE in
+ *			EMIT_VFT.
+ *  03.08.91  PKT  012  Fixed FILL_VFT for more than one level of
+ *			derivation, when function definition is
+ *			inherited not overridden.
+ *  03.08.91  DGM  011  Added SW_NO_DEFINE_EXTERNAL_VFT, SW_DEFINE_
+ *			INTERNAL_VFT, & SW_DEFINE_EXTERNAL_VFT switches.
+ *  02.27.91  DGM  010  Fix in SHOULD_GENERATE_VFT.
+ *  12.12.90  DGM  009  Updated to use the vbc-node list instead of
+ *			calling GET/DELETE_VIRTUAL_BASE_CLASS_LIST.
+ *  11.15.90  DGM  008  Linkage fixes.
+ *  11.06.90  DGM  007  Added check for overriding a virtual base class
+ *			virtual function more than once.  Use node list
+ *			package to chain the derived classes.  General
+ *			clean-up now that I understand this.
+ *  10.10.90  DGM  006  Added safe support for pure virtual functions.
+ *  09.14.90  DGM  005  Changed include file names and VOP names.
+ *  08.08.90  DGM  004  New type-node.
+ *  07.26.90  DGM  003  Fixes (typos) in MAKE_VBC_VFT
+ *			and in ADJUST_VBC_VFT.
+ *  07.12.90  DGM  002  Fix in QUEUE_VFT and CHECK_VFT_GENERATION.
+ *  05.25.90  DGM  001  Updated for the new utilities.
+ *  05.17.90  DGM  000  Original; transcribed blindly from TauMetric.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.06.92 023 VFT');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_PROCESS_VIRTUAL_FUNCTION_PKG;
+%include CXX_BUILD_TYPE_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_CLASS_SIZE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_DATA_INITIAL_FILE_PKG;
+%include CXX_INITIALIZE_STRING_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_NODE_LIST_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+
+/* ---------------------------------------------------------------------
+/* Description  (derived from TauMetric)
+/* ------------------------------------------------------------------- */
+
+/*
+/* Generate the virtual vector for a class.
+/*
+/* Building the virtual table is a complicated process in the presence
+/* of multiple inheritance.  The virtual table for the class itself may
+/* be shared with some non-virtual base class.  Such base classes are
+/* marked by setting HAS_VFT_POINTER in the base_list entry for that class.
+/* This distinguished base class contains a virtual pointer to this shared
+/* virtual table, and this table alone will contain virtual functions
+/* added by the derived class.  Other base classes will have their own
+/* virtual tables containing only those entries defined in that base class.
+/*
+/* All of these tables will be concatenated into one long table and the
+/* various virtual pointers are initialized to point into the middle of
+/* the table as appropriate.  The order of the table is:
+/*
+/* 1. The shared table for the derived class.
+/*
+/* 2. The unshared table for each base class in the order
+/*    of declaration.  The table for this class is allocateds
+/*    by the same rule applied recursively.
+/*
+/* The virtual table for a class is built up in an array, indexed by virtual
+/* index.  This places a limit on the number of virtual functions, but
+/* simplifies the implementation considerably.  So far, we've had no complaints.
+/*
+/* The strategy for filling this table is as follows:
+/*
+/* - Fill the table with entries from the current class, then
+/*   scan down the base classes which share a vector and fill
+/*   in any empty slots.
+/*
+/* - Scan the path through the inheritance graph and replace
+/*   any entries which were redefined in later classes.  This
+/*   has to be done by searching the class for a match, since
+/*   virtual indices are unrelated.
+/*
+/* The strategy for virtual base classes is quite different.  Such virtual
+/* classes are allocated once at the highest level, and can have functions
+/* re-defined along more than one level of the inheritance graph.  They are
+/* handled by a separate process after the rest of the class is complete.
+/**/
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+/* This is the maximum number virtual functions within a class */
+
+%replace MAX_VFT_ENTRIES	by 512;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T		character (1024) varying based;
+
+/* This is the virtual function table itself */
+
+declare
+
+1 VFT_DATA_T		based,
+  2 DELTA		type (LONG_T),
+  2 FUNCTION_ID		type (NID_T),
+  2 OVERRIDDEN		type (BOOL_T);
+
+declare
+
+1 VFT_T				based,
+  2 SYMBOL_PTR			type (POINTER_T),
+  2 CLASS_PTR			type (POINTER_T),
+  2 SYMBOL			type (NID_T),
+  2 CLASS			type (NID_T),
+  2 ENTRY_SIZE			type (LONG_T),
+  2 DELTA_SIZE			type (LONG_T),
+  2 VOID_POINTER_SIZE		type (LONG_T),
+  2 VOID_POINTER_DATA		type (LONG_T),
+  2 SIZE			type (SHORT_T),
+  2 TOTAL_SIZE			type (SHORT_T),
+  2 ENTRY_ALIGNMENT		type (SHORT_T),
+  2 DELTA_ALIGNMENT		type (SHORT_T),
+  2 DELTA_DATA			type (SHORT_T),
+  2 VOID_POINTER_ALIGNMENT	type (SHORT_T),
+  2 INTERNAL_LINKAGE		type (BOOL_T),
+  2 available_1			type (BOOL_T),
+  2 available_2			type (BOOL_T),
+  2 available_3			type (BOOL_T),
+  2 ENTRY			(MAX_VFT_ENTRIES) type (VFT_DATA_T);
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+/* This is the list of classes which need virtual function tables */
+
+VFT_CLASS_LIST	type (POINTER_T) static internal initial (null ()),
+VFT_ENTRY_SIZE	type (SHORT_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* GENERATE_VFTS
+/*
+/* Scan the list of virtual vectors, emitting any which are referenced
+/* but not yet initialized.  The list is a list of class names, so we have
+/* to do a bit of list tracing to get at the virtual vectors themselves.
+/*
+/* N.B. fashioned after the TauMetric routine "emit_vectors".
+/* ------------------------------------------------------------------- */
+
+GENERATE_VFTS: procedure external (X_GENERATE_VFTS);
+
+	declare
+		(VCLP, NEXT_VCLP, VFTP)	type (POINTER_T);
+	declare
+		VFT			type (VFT_T),
+		DIF			type (DIFILE_T);
+
+	if VFT_CLASS_LIST = null () then
+		return;
+
+	/* Set the pertinent data type sizes */
+
+	call SET_VFT_DATA_TYPE_SIZES ();
+
+	/* Initialize the virtual function table for each class */
+
+	do VCLP = VFT_CLASS_LIST repeat (NEXT_VCLP) while (VCLP ^= null ());
+		NEXT_VCLP = VCLP->NODE_DATA.NEXT;
+		VFT.CLASS = VCLP->NODE_DATA.ID;
+		call GET_SYM_NODE_R (VFT.CLASS, VFT.CLASS_PTR);
+		VFT.SYMBOL = VFT.CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_TABLE;
+		call GET_SYM_NODE_R (VFT.SYMBOL, VFT.SYMBOL_PTR);
+		if SHOULD_GENERATE_VFT () then
+			call INITIALIZE_VFT ();
+		call RELEASE_SYM_NODE (VFT.SYMBOL);
+		call RELEASE_SYM_NODE (VFT.CLASS);
+	end;
+
+	if SW_DUMP_VFT then
+		call DUMP_VFT_SYMBOLS ();
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* SHOULD_GENERATE_VFT
+/*
+/* Scan a class represented by the sym-node pointer VFT.CLASS_PTR and
+/* decide whether we should emit its virtual vector represented by the
+/* sym-node pointer VFT.SYMBOL_PTR.  If the class has a non-inline
+/* virtual function, the module which defines that function will also
+/* define the virtual function table.  Otherwise, it will have to
+/* define the virtual function table as static in the current class.
+/* Return TRUE iff the virtual function table should be generated,
+/* otherwise return FALSE.  Preserves current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "check_virt_gen".
+/* ------------------------------------------------------------------- */
+
+SHOULD_GENERATE_VFT: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		HAS_EXTERNAL_VFT	type (BOOL_T),
+		CREATE_EXTERNAL_VFT	type (BOOL_T),
+		(M, NEXT_M)		type (NID_T),
+		(F, NEXT_F)		type (NID_T),
+		(SP, MP, FP)		type (POINTER_T);
+
+	if VFT.SYMBOL_PTR->SYM_NODE.INITIAL_AT then
+		return (FALSE);
+	else if SW_NO_DEFINE_EXTERNAL_VFT then
+		return (FALSE);
+
+	else if SW_DEFINE_INTERNAL_VFT then do;
+		VFT.SYMBOL_PTR->SYM_NODE.EXTERNAL_LINKAGE = FALSE;
+		VFT.SYMBOL_PTR->SYM_NODE.INTERNAL_LINKAGE = TRUE;
+		VFT.INTERNAL_LINKAGE = TRUE;
+		return (TRUE);
+	end;
+	else if SW_DEFINE_EXTERNAL_VFT then do;
+		VFT.SYMBOL_PTR->SYM_NODE.EXTERNAL_LINKAGE = TRUE;
+		VFT.SYMBOL_PTR->SYM_NODE.INTERNAL_LINKAGE = FALSE;
+		VFT.INTERNAL_LINKAGE = FALSE;
+		return (TRUE);
+	end;
+
+	/*
+	/* HAS_EXTERNAL_VFT will be TRUE if there
+	/* is at least one non-inline virtual function.
+	/*
+	/* CREATE_EXTERNAL_VFT will be TRUE if that
+	/* function is defined in the current module.
+	/**/
+
+	HAS_EXTERNAL_VFT    = FALSE;
+	CREATE_EXTERNAL_VFT = FALSE;
+
+	call GET_SCOPE_NODE_R (VFT.CLASS_PTR->SYM_NODE.DEFINED_SCOPE, SP);
+
+	do M = SP->SCOPE_NODE.SYMBOLS repeat (NEXT_M)
+	while ((M ^= NULL_NID) & (^HAS_EXTERNAL_VFT));
+		call GET_SYM_NODE_R (M, MP);
+		if MP->SYM_NODE.IS_FUNCTION then do;
+			do F = M repeat (NEXT_F)
+			while ((F ^= NULL_NID) & (^HAS_EXTERNAL_VFT));
+				call GET_SYM_NODE_R (F, FP);
+				if (FP->SYM_NODE.VIRTUAL_FUNCTION_INDEX > 0) &
+				   (^FP->SYM_NODE.INLINE) &
+				   (^FP->SYM_NODE.PURE) then do;
+					HAS_EXTERNAL_VFT = TRUE;
+					CREATE_EXTERNAL_VFT =
+						FP->SYM_NODE.DEFINED;
+				end;
+				NEXT_F = FP->SYM_NODE.NEXT_OVERLOAD;
+				call RELEASE_SYM_NODE (F);
+			end;
+		end;
+		NEXT_M = MP->SYM_NODE.NEXT_SYMBOL;
+		call RELEASE_SYM_NODE (M);
+	end;
+
+	call RELEASE_SCOPE_NODE (VFT.CLASS_PTR->SYM_NODE.DEFINED_SCOPE);
+
+	if CREATE_EXTERNAL_VFT then do;
+		/*
+		/* This class has a non-inline non-pure virtual
+		/* function which is defined; we will generate
+		/* an *external* virtual funtion table for it.
+		/**/
+		VFT.SYMBOL_PTR->SYM_NODE.EXTERNAL_LINKAGE = TRUE;
+		VFT.SYMBOL_PTR->SYM_NODE.INTERNAL_LINKAGE = FALSE;
+		VFT.INTERNAL_LINKAGE = FALSE;
+		return (TRUE);
+	end;
+
+	if ^HAS_EXTERNAL_VFT then do;
+		/*
+		/* This class has either *no* virtual functions, or it
+		/* has virtual functions but *all* of them are either
+		/* inline virtual functions or pure virtual functions;
+		/* we will generate an *internal* virtual function
+		/* table for it (if it has been referenced).
+		/**/
+		if VFT.SYMBOL_PTR->SYM_NODE.REFERENCED then do;
+			VFT.SYMBOL_PTR->SYM_NODE.EXTERNAL_LINKAGE = FALSE;
+			VFT.SYMBOL_PTR->SYM_NODE.INTERNAL_LINKAGE = TRUE;
+			VFT.INTERNAL_LINKAGE = TRUE;
+			return (TRUE);
+		end;
+	end;
+
+	return (FALSE);
+
+end SHOULD_GENERATE_VFT;
+
+/* ---------------------------------------------------------------------
+/* SET_VFT_DATA_TYPE_SIZES  (-TODO- do this a differently!)
+/*
+/* Get the size of one virtual function table entry,
+/* as well as the size (in bytes) of a pointer to function.
+/* ------------------------------------------------------------------- */
+
+SET_VFT_DATA_TYPE_SIZES: procedure;
+
+	declare
+		T		type (TYPE_DATA_T),
+		SZ		type (LONG_T),
+		SZU		type (SHORT_T);
+	declare
+		FIRST_TIME	type (BOOL_T)
+				static internal initial (TRUE);
+	if ^FIRST_TIME then
+		return;
+	FIRST_TIME = TRUE;
+	call TYPE_SIZE (GET_VFT_ENTRY_TYPE (T), SZ, SZU, VFT.ENTRY_ALIGNMENT);
+	VFT.ENTRY_SIZE = ROUNDU (SZ, SZU, BYTES);
+	VFT_ENTRY_SIZE = VFT.ENTRY_SIZE;
+	call SIMPLE_TYPE_SIZE (POINTER_DT, SZ, SZU, VFT.VOID_POINTER_ALIGNMENT);
+	VFT.VOID_POINTER_SIZE = ROUNDU (SZ, SZU, BYTES);
+	VFT.VOID_POINTER_DATA = 0;
+	call SIMPLE_TYPE_SIZE (SHORT_BT, SZ, SZU, VFT.DELTA_ALIGNMENT);
+	VFT.DELTA_SIZE = ROUNDU (SZ, SZU, BYTES);
+
+end SET_VFT_DATA_TYPE_SIZES;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_VFT
+/*
+/* Create the actual virtual vector for a class.  This just sets up
+/* the data access and calls the recursive generation routines to
+/* generate the data.
+/*
+/* N.B. fashioned after the TauMetric routine "init_virtual_vector".
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_VFT: procedure internal;
+
+	declare
+		VFT_ID_STRING	type (NID_T);
+
+	if SW_DUMP_VFT then
+		call DUMP_VFT_HEADER (CLASS);
+
+	/* Make a string (the class name) for this VFT if desired */
+
+	if SYMBOL_TABLE & VFT.INTERNAL_LINKAGE then do;
+		VFT_ID_STRING = MAKE_INITIALIZED_STRING
+				(QUALIFIED_SYMBOL_NAME (CLASS));
+	end;
+
+	/* Open/initialize the data-initial-file */
+
+	call OPEN_DATA_INITIAL_FILE (DIF);
+
+	/* Get a data-initial-node for the VFT symbol */
+
+	VFT.SYMBOL_PTR->SYM_NODE.VALUE = MAKE_DATA_INITIAL_NODE (DIF);
+
+	/* Emit the VFT identifier string if desired */
+
+	if SYMBOL_TABLE & VFT.INTERNAL_LINKAGE then do;
+		/*
+		/* Emit a special VFT entry in front of this VFT containing
+		/* the address of a string literal which contains the name
+		/* of the class to which this VFT belongs.  This is so the
+		/* debugger can determine the actual run-time type of a
+		/* pointer or reference to a base class object (which has
+		/* virtual functions).  For example if D is derived from B,
+		/* Dx is an object of type D, and Bp is a pointer to B which
+		/* is assigned the value &Dx, then while static type of Bp
+		/* is pointer to B, its actual run-time type is pointer to D.
+		/* The way the debugger actually get a hold of this string is
+		/* to lookup the VFT pointer member of B, and access thru it
+		/* thru Bp, which will give the address of the particular VFT
+		/* which Bp happens to be pointing at, then index into the
+		/* -1th element of the VFT, the address field of that element
+		/* is the address of the string literal containing the owner
+		/* of the VFT thus identifying the run-time type of Bp. I.e.:
+		/* Bp->____lpi_vftp[-1].____lpi_faddress.
+		/**/
+		call EMIT_VFT_ENTRY (VFT_ID_STRING, 0);
+		call QUEUE_VFT_FOR_FUDGING (VFT.SYMBOL);
+		VFT.TOTAL_SIZE = 1;
+	end;
+	else	VFT.TOTAL_SIZE = 0;
+
+	/* Do the VFT initialization */
+
+	call MAKE_VFTS (CLASS, 0, null (), FALSE);
+	call MAKE_VBC_VFTS (CLASS);
+
+	/* Complete the type (i.e. size) of the VFT array symbol */
+
+	call COMPLETE_ARRAY_SYMBOL (VFT.SYMBOL, (VFT.TOTAL_SIZE));
+
+	/* Finish up and close the data-initial-file */
+
+	call SET_DATA_INITIAL_FILE (DIF);
+	call CLOSE_DATA_INITIAL_FILE (DIF);
+	call WRITE_RELOCATION_DATA (VFT.SYMBOL_PTR->SYM_NODE.VALUE,
+				    VFT.SYMBOL);
+
+	/* Mark the VFT symbol as begin initialized and defined */
+
+	VFT.SYMBOL_PTR->SYM_NODE.INITIAL_AT	= TRUE;
+	VFT.SYMBOL_PTR->SYM_NODE.DEFINED	= TRUE;
+	return;
+
+/* ---------------------------------------------------------------------
+/* MAKE_VFTS
+/*
+/* Recursive procedure to make the virtual table for CLASS and its
+/* non-virtual bases, possibly as a subobject of a class derived from CLASS.
+/* DCL gives the derivation path of the most-derived class from CLASS;
+/* it is an empty list if CLASS itself is the most-derived class.
+/* OFFSET is the offset of CLASS within the most-derived class.
+/*
+/* We start by filling the virtual
+/* table with functions from CLASS and those which do not share
+/* a virtual vector.  Then we fill with functions along the "shared"
+/* path.  Finally, we go through the table and replace any functions
+/* which were re-defined by a derived class.  This gives the vector
+/* for this class and any which share its vector.
+/*
+/* Following the local vector, we scan through the list of base
+/* classes and generate vectors for them.
+/*
+/* N.B. fashioned after the TauMetric routine "make_vsection".
+/* ------------------------------------------------------------------- */
+
+MAKE_VFTS: procedure (CLASS, OFFSET, DCL, SKIP_THIS_CLASS) internal;
+
+	declare
+		CLASS		type (NID_T),      /* Class of VFT */
+		OFFSET		type (LONG_T),     /* Offset for class */
+		DCL		type (POINTER_T),  /* Derived class list */
+		SKIP_THIS_CLASS	type (BIT_T);      /* This one is finished */
+	declare
+		(CP, BCP)	type (POINTER_T),
+		(BC, NEXT_BC)	type (NID_T);
+
+	if ^SKIP_THIS_CLASS then do;
+		call FILL_VFT (CLASS);
+		call ADJUST_VFT (DCL, OFFSET, CLASS);
+		call EMIT_VFT ();
+	end;
+
+	call GET_SYM_NODE_R (CLASS, CP);
+
+	if CP->SYM_NODE.BASE_CLASSES = NULL_NID then
+		goto DONE_MAKE_VFTS;
+
+	call APPEND_TO_NODE_LIST_WITH_VALUE (DCL, CLASS, OFFSET);
+
+	do BC = CP->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		if ^BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			call MAKE_VFTS
+			     (BCP->BASE_CLASS_NODE.SYMBOL,
+			      BCP->BASE_CLASS_NODE.OFFSET + OFFSET,
+			      DCL,
+			      BCP->BASE_CLASS_NODE.HAS_VFT_POINTER);
+		end;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (CP->SYM_NODE.BASE_CLASSES);
+	end;
+
+	call REMOVE_LAST_FROM_NODE_LIST (DCL);
+
+	DONE_MAKE_VFTS:
+	call RELEASE_SYM_NODE (CLASS);
+	return;
+
+end MAKE_VFTS;
+
+/* ---------------------------------------------------------------------
+/* MAKE_VBC_VFTS
+/*
+/* Generate the virtual vectors for the virtual base classess
+/* allocated with this derived class CLASS.  These are for an object
+/* with run-time type CLASS.  For each virtual base class of CLASS,
+/* part of CLASS's vft is set aside for the virtual member functions
+/* explicitly declared in that base class and its non-virtual bases.
+/*
+/* N.B. fashioned after the TauMetric routine "virt_virts".
+/* ------------------------------------------------------------------- */
+
+MAKE_VBC_VFTS: procedure (CLASS) internal;
+
+	declare
+		CLASS				type (NID_T);
+	declare
+		(CP, VBCP)			type (POINTER_T),
+		(VBC, NEXT_VBC)			type (NID_T);
+	declare
+		VIRTUAL_BASE_CLASS		type (NID_T),	
+		VIRTUAL_BASE_CLASS_OFFSET	type (LONG_T),
+		VIRTUAL_BASE_CLASS_LIST		type (NID_T);
+
+	call GET_SYM_NODE_R (CLASS, CP);
+	VIRTUAL_BASE_CLASS_LIST = CP->SYM_NODE.VIRTUAL_BASE_CLASSES;
+	call RELEASE_SYM_NODE (CLASS);
+
+	do VBC = VIRTUAL_BASE_CLASS_LIST
+	repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		VIRTUAL_BASE_CLASS = VBCP->VBC_NODE.SYMBOL;
+		VIRTUAL_BASE_CLASS_OFFSET = VBCP->VBC_NODE.OFFSET;
+		NEXT_VBC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+		call FILL_VFT (VIRTUAL_BASE_CLASS);
+		call ADJUST_VBC_VFT (CLASS, 0, null ());
+		call EMIT_VFT ();
+	end;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* ADJUST_VBC_VFT
+/*
+/* Recursive procedure to modify the virtual table for some of the 
+/* derivation paths from VIRTUAL_BASE_CLASS.  The paths treated are
+/* all those by which CLASS is derived from VIRTUAL_BASE_CLASS, and
+/* then the classes in DCL are further derived from CLASS.
+/*
+/* If CLASS has VIRTUAL_BASE_CLASS as an immediate virtual base we adjust the
+/* result on the path from VIRTUAL_BASE_CLASS to CLASS then through
+/* all of the classes in DCL.  We repeat the check for all of the base
+/* classes of CLASS, since they may have VIRTUAL_BASE_CLASS as a virtual
+/* base as well.  DCL may be an empty list coming into
+/* this procedure.
+/*
+/* OFFSET is the offset of CLASS within the most-derived class.
+/* VIRTUAL_BASE_CLASS_OFFSET is the offset of VIRTUAL_BASE_CLASS
+/* within the most-derived class.
+/*
+/* N.B. fashioned after the TauMetric routine "search_and_adjust".
+/* ------------------------------------------------------------------- */
+
+ADJUST_VBC_VFT: procedure (CLASS, OFFSET, DCL) internal;
+
+	declare
+		CLASS		type (NID_T),
+		OFFSET		type (LONG_T),
+		DCL		type (POINTER_T);
+	declare
+		(BC, NEXT_BC)	type (NID_T),
+		BC_SYMBOL	type (NID_T),
+		(CP, BCP)	type (POINTER_T),
+		THIS_OFFSET	type (LONG_T);
+
+	call GET_SYM_NODE_R (CLASS, CP);
+
+	if CP->SYM_NODE.BASE_CLASSES = NULL_NID then
+		goto DONE_ADJUST_VBC_VFT;
+
+	call APPEND_TO_NODE_LIST_WITH_VALUE (DCL, CLASS, OFFSET);
+
+	do BC = CP->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		BC_SYMBOL = BCP->BASE_CLASS_NODE.SYMBOL;
+		if BCP->BASE_CLASS_NODE.VIRTUAL &
+		   (BC_SYMBOL = VIRTUAL_BASE_CLASS) then do;
+			call ADJUST_VFT (DCL,
+					 VIRTUAL_BASE_CLASS_OFFSET,
+					 VIRTUAL_BASE_CLASS);
+			goto CONTINUE;
+		end;
+		if BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			THIS_OFFSET = SEARCH_VIRTUAL_BASE_CLASS_LIST
+				      (VIRTUAL_BASE_CLASS_LIST,
+				       BC_SYMBOL);
+			if THIS_OFFSET < 0 then do;
+				/*
+				/* Compiler error.
+				/**/
+				call COMPILER_ERROR (ERR_ASSERT_FAIL);
+			end;
+		end;
+		else	THIS_OFFSET = BCP->BASE_CLASS_NODE.OFFSET
+				    + OFFSET;
+		call ADJUST_VBC_VFT (BC_SYMBOL, THIS_OFFSET, DCL);
+		CONTINUE:
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	call REMOVE_LAST_FROM_NODE_LIST (DCL);
+
+	DONE_ADJUST_VBC_VFT:
+	call RELEASE_SYM_NODE (CLASS);
+	return;
+
+end ADJUST_VBC_VFT;
+
+end MAKE_VBC_VFTS;
+
+/* ---------------------------------------------------------------------
+/* FILL_VFT
+/*
+/* Call FILL_VFT_LEVEL on base classes with shared virtual tables.
+/* This chains down the list of base classes along the set which has
+/* HAS_VFT_POINTER set.  By definition, the shared virtual tables all have
+/* offset zero relative to the start of the derived class.  After
+/* all, that's why they can be shared.
+/*
+/* N.B. fashioned after the TauMetric routine "fill_table".
+/* ------------------------------------------------------------------- */
+
+FILL_VFT: procedure (CLASS) internal;
+
+	declare
+		CLASS		type (NID_T);
+	declare
+		(C, NEXT_C, BC)	type (NID_T),
+		(BCP, CP)	type (POINTER_T),
+		I		type (SHORT_T);
+
+	do I = 1 to MAX_VFT_ENTRIES;
+		VFT.ENTRY (I).FUNCTION_ID = NULL_NID;
+	end;
+
+	VFT.SIZE = 0;
+
+	do C = CLASS repeat (NEXT_C) while (C ^= NULL_NID);
+		NEXT_C = NULL_NID;
+		call GET_SYM_NODE_R (C, CP);
+		if CP->SYM_NODE.VIRTUAL_FUNCTION_COUNT ^= 0 then do;
+			/*
+			/* Fill the VFT for this class and
+			/* its shared base classes if any.
+			/**/
+			call FILL_VFT_LEVEL (CP);
+			if CP->SYM_NODE.BASE_CLASSES ^= NULL_NID then do;
+				BC = CP->SYM_NODE.BASE_CLASSES;
+				call GET_BASE_CLASS_NODE_R (BC, BCP);
+				if BCP->BASE_CLASS_NODE.HAS_VFT_POINTER then
+					NEXT_C = BCP->BASE_CLASS_NODE.SYMBOL;
+				call RELEASE_BASE_CLASS_NODE (BC);
+			end;
+		end;
+		call RELEASE_SYM_NODE (C);
+	end;
+	return;
+
+/* ---------------------------------------------------------------------
+/* FILL_VFT_LEVEL
+/*
+/* Fill in all of the virtual table entries which are defined
+/* in this level of the hierarchy.  The offset is always zero
+/* since this is called only for the shared virtual table.
+/*
+/* N.B. fashioned after the TauMetric routine "fill_level".
+/* ------------------------------------------------------------------- */
+
+FILL_VFT_LEVEL: procedure (CLASS_PTR) internal;
+
+	declare
+		CLASS_PTR		type (POINTER_T);
+	declare
+		CLASS_SCOPE_SYMBOLS	type (NID_T),
+		(M, NEXT_M)		type (NID_T),
+		(FM, NEXT_FM)		type (NID_T),
+		(MP, FMP, SP)		type (POINTER_T),
+		I			type (SHORT_T);
+	
+	call GET_SCOPE_NODE_R (CLASS_PTR->SYM_NODE.DEFINED_SCOPE, SP);
+	CLASS_SCOPE_SYMBOLS = SP->SCOPE_NODE.SYMBOLS;
+	call RELEASE_SCOPE_NODE (CLASS_PTR->SYM_NODE.DEFINED_SCOPE);
+
+	do M = CLASS_SCOPE_SYMBOLS repeat (NEXT_M) while (M ^= NULL_NID);
+		call GET_SYM_NODE_R (M, MP);
+		if ^MP->SYM_NODE.IS_FUNCTION then
+			goto DO_NEXT_MEMBER;
+		do FM = M repeat (NEXT_FM) while (FM ^= NULL_NID);
+			call GET_SYM_NODE_R (FM, FMP);
+			if FMP->SYM_NODE.VIRTUAL_FUNCTION_INDEX = 0 then
+				goto DO_NEXT_FUNCTION_MEMBER;
+			if FMP->SYM_NODE.VIRTUAL_FUNCTION_INDEX > VFT.SIZE then
+				VFT.SIZE = FMP->SYM_NODE.VIRTUAL_FUNCTION_INDEX;
+			I = FMP->SYM_NODE.VIRTUAL_FUNCTION_INDEX;
+			if VFT.ENTRY (I).FUNCTION_ID = NULL_NID then do;
+				VFT.ENTRY (I).FUNCTION_ID = FM;
+				VFT.ENTRY (I).DELTA	  = 0;
+				VFT.ENTRY (I).OVERRIDDEN  = FALSE;
+			end;
+			DO_NEXT_FUNCTION_MEMBER:
+			NEXT_FM = FMP->SYM_NODE.NEXT_OVERLOAD;
+			call RELEASE_SYM_NODE (FM);
+		end;
+		DO_NEXT_MEMBER:
+		NEXT_M = MP->SYM_NODE.NEXT_SYMBOL;
+		call RELEASE_SYM_NODE (M);
+	end;
+
+end FILL_VFT_LEVEL;
+
+end FILL_VFT;
+
+/* ---------------------------------------------------------------------
+/* ADJUST_VFT
+/*
+/* Check through each entry in the virtual table and see if there are
+/* any functions in the derived classes to substitute.  We can't go by
+/* virtual index, since the functions have a different virtual index
+/* in this class than they do in the outer class.
+/*
+/* We search the derived class from the most-derived toward the base,
+/* using the first one we find, since that will be the one which applies.
+/* DERIVED_CLASS_LIST indicates a chain of classes derived from
+/* BASE_CLASS.  The first in the list is the most derived
+/* class for the object.  OFFSET is the offset, within the most derived
+/* class, of BASE_CLASS.  (The BASE_CLASS parameter is only used when it's
+/* a virtual base, in case of overriding error.)
+/*
+/* N.B. fashioned after the TauMetric routine "adjust_table".
+/* ------------------------------------------------------------------- */
+
+ADJUST_VFT: procedure (DERIVED_CLASS_LIST, OFFSET, BASE_CLASS)
+	    internal;
+
+	declare
+		DERIVED_CLASS_LIST	type (POINTER_T),
+		OFFSET			type (LONG_T),
+		BASE_CLASS		type (NID_T);
+	declare
+		I			type (SHORT_T),
+		OVF			type (NID_T),
+		(FP, CP, P)		type (POINTER_T);
+
+	if DERIVED_CLASS_LIST = null () then
+		return;
+
+	do I = 1 to VFT.SIZE;
+		call GET_SYM_NODE_R (VFT.ENTRY (I).FUNCTION_ID, FP);
+		do P = DERIVED_CLASS_LIST
+		repeat (P->NODE_DATA.NEXT) while (P ^= null ());
+			call GET_SYM_NODE_R (P->NODE_DATA.ID, CP);
+			OVF = OVERRIDING_VIRTUAL_FUNCTION (CP, FP);
+			call RELEASE_SYM_NODE (P->NODE_DATA.ID);
+			if OVF = NULL_NID then
+				goto CONTINUE;
+			else if VFT.ENTRY (I).FUNCTION_ID = OVF then
+				leave;
+			else if VFT.ENTRY (I).FUNCTION_ID ^= NULL_NID then do;
+				if VFT.ENTRY (I).OVERRIDDEN then do;
+					call AMBIGUOUS_VBC_VFO_ERROR ();
+					leave;
+				end;
+				VFT.ENTRY (I).OVERRIDDEN = TRUE;
+			end;
+			VFT.ENTRY (I).FUNCTION_ID = OVF;
+			VFT.ENTRY (I).DELTA = P->NODE_DATA.VALUE - OFFSET;
+			leave;
+		CONTINUE:
+		end;
+		call RELEASE_SYM_NODE (VFT.ENTRY (I).FUNCTION_ID);
+	end;
+	return;
+
+/* ---------------------------------------------------------------------
+/* AMBIGUOUS_VBC_VFO_ERROR
+/* ------------------------------------------------------------------- */
+
+AMBIGUOUS_VBC_VFO_ERROR: procedure internal;
+
+	declare
+		LINE	type (LONG_T),
+		FILE	type (NID_T),
+		(A, B)	character (512) varying;
+
+	A = QUALIFIED_SYMBOL_NAME (VFT.ENTRY (I).FUNCTION_ID) ||
+	    '" & "' ||
+	    QUALIFIED_SYMBOL_NAME (OVF);
+
+	B = QUALIFIED_SYMBOL_NAME (BASE_CLASS) || '::' ||
+	    TOKEN_NAME (FP->SYM_NODE.NAME);
+	B = TYPE_NAME (FP->SYM_NODE.TYPE, B);
+
+	LINE = FP->SYM_NODE.DCL_LINE_ID;
+	FILE = FP->SYM_NODE.DCL_FILE_ID;
+
+	/*
+	/* Ambiguous overriding of a virtual function in a virtual base
+	/* class; VFT(I).FUNCTION_SYMBOL/FP & OVF both override the same
+	/* virtual base class virtual function BASE_CLASS.
+	/**/
+
+	call SEMANTIC_ERROR_AT_II (ERR_AMBIG_VBC_VFO, LINE, FILE, A, B);
+
+end AMBIGUOUS_VBC_VFO_ERROR;
+
+end ADJUST_VFT;
+
+/* ---------------------------------------------------------------------
+/* EMIT_VFT
+/*
+/* Emit the contents of the filled virtual table.
+/*
+/* N.B. fashioned after the TauMetric routine "emit_vtable".
+/* ------------------------------------------------------------------- */
+
+EMIT_VFT: procedure internal;
+
+	declare
+		I		type (SHORT_T),
+		FP		type (POINTER_T),
+		FUN_SYMBOL	type (NID_T);
+
+	VFT.TOTAL_SIZE = VFT.TOTAL_SIZE + VFT.SIZE;
+
+	do I = 1 to VFT.SIZE;
+		call GET_SYM_NODE_R (VFT.ENTRY (I).FUNCTION_ID, FP);
+		if FP->SYM_NODE.PURE then do;
+			/*
+			/* Use a run-time error routine in case
+			/* this pure virtual funtion is called!
+			/**/
+			FUN_SYMBOL = DECLARE_PURE_VIRTUAL_FUNCTION ();
+		end;
+		else do;
+			/*
+			/* I think this is necessary; when this isn't here
+			/* the following generates an external entry in the
+			/* object for (the implicitly declared) B::~B().
+			/*
+			/*     struct A { virtual ~A(); };
+			/*     struct B : public A { B() { } };
+			/**/
+			/* FP->SYM_NODE.REFERENCED = TRUE; */
+			FUN_SYMBOL = VFT.ENTRY (I).FUNCTION_ID;
+			call NOTE_SYMBOL_REFERENCE (FUN_SYMBOL);
+		end;
+		call RELEASE_SYM_NODE (VFT.ENTRY (I).FUNCTION_ID);
+		/*
+		/* Emit the  data for the virtual function address.
+		/**/
+		call EMIT_VFT_ENTRY (FUN_SYMBOL, VFT.ENTRY (I).DELTA);
+	end;
+
+end EMIT_VFT;
+
+/* ---------------------------------------------------------------------
+/* EMIT_VFT_ENTRY
+/* ------------------------------------------------------------------- */
+
+EMIT_VFT_ENTRY: procedure (SYMBOL, DELTA) internal;
+
+	declare
+		SYMBOL	type (NID_T),
+		DELTA	type (LONG_T);
+
+	VFT.DELTA_DATA = DELTA;
+	call ALIGN_DATA_INITIAL_FILE (DIF, VFT.ENTRY_ALIGNMENT);
+	call SET_RELOCATION_DATA (SYMBOL, 0, DIF);
+	call APPEND_DATA_INITIAL_FILE
+	     (DIF, addr (VFT.VOID_POINTER_DATA), VFT.VOID_POINTER_SIZE);
+	call APPEND_DATA_INITIAL_FILE
+	     (DIF, addr (VFT.DELTA_DATA), VFT.DELTA_SIZE);
+
+	if SW_DUMP_VFT then
+		call DUMP_VFT_ENTRY ();
+	return;
+
+/* ---------------------------------------------------------------------
+/* DUMP_VFT_ENTRY
+/* ------------------------------------------------------------------- */
+
+DUMP_VFT_ENTRY: procedure internal;
+
+	declare
+		P	type (POINTER_T),
+		S	type (STRING_T),
+		SPACES	character (5) varying static initial ('     ');
+
+	call GET_SYM_NODE_R (SYMBOL, P);
+	if ^P->SYM_NODE.IS_FUNCTION then do;
+		call RELEASE_SYM_NODE (SYMBOL);
+		return;
+	end;
+	call RELEASE_SYM_NODE (SYMBOL);
+
+	S = trim (char (DELTA));
+	S = 'Delta: ' ||
+	    substr (SPACES, 5 - length (S)) || S ||
+	    '  Function: ' ||
+	    FULL_QUALIFIED_SYMBOL_NAME (SYMBOL);
+	call WRITE_DEBUG_LINE (S);
+
+end DUMP_VFT_ENTRY;
+
+end EMIT_VFT_ENTRY;
+
+end INITIALIZE_VFT;
+
+/* ---------------------------------------------------------------------
+/* DUMP_VFT_HEADER
+/* ------------------------------------------------------------------- */
+
+DUMP_VFT_HEADER: procedure (CLASS) internal;
+
+	declare
+		CLASS	type (NID_T);
+	declare
+		CP	type (POINTER_T),
+		S	type (STRING_T);
+
+	call WRITE_DEBUG_LINE ('');
+	call GET_SYM_NODE_R (CLASS, CP);
+	S = 'VIRTUAL FUNCTION TABLE: ' ||
+	    QUALIFIED_SYMBOL_TYPE_NAME
+	    (CP->SYM_NODE.VIRTUAL_FUNCTION_TABLE);
+	call RELEASE_SYM_NODE (CLASS);
+	call WRITE_DEBUG_LINE (S);
+	call WRITE_DEBUG_LINE ('----------------------');
+
+end DUMP_VFT_HEADER;
+
+/* ---------------------------------------------------------------------
+/* DUMP_VFT_SYMBOLS
+/* ------------------------------------------------------------------- */
+
+DUMP_VFT_SYMBOLS: procedure () internal;
+
+	declare VFTP type (POINTER_T);
+
+	call WRITE_DEBUG_LINE ('');
+	call WRITE_DEBUG_LINE ('DEFINED VIRTUAL FUNCTION TABLES:');
+	call WRITE_DEBUG_LINE ('-------------------------------');
+	do VFTP = VFT_CLASS_LIST
+	repeat (VFTP->NODE_DATA.NEXT) while (VFTP ^= null());
+		call DUMP_VFT_SYMBOL (VFTP->NODE_DATA.ID);
+	end;
+
+/* ---------------------------------------------------------------------
+/* DUMP_VFT_SYMBOL
+/* ------------------------------------------------------------------- */
+
+DUMP_VFT_SYMBOL: procedure (CLASS) internal;
+
+	declare
+		CLASS	type (NID_T);
+	declare
+		CP	type (POINTER_T),
+		S	type (STRING_T);
+
+	call GET_SYM_NODE_R (CLASS, CP);
+	S = QUALIFIED_SYMBOL_TYPE_NAME (CP->SYM_NODE.VIRTUAL_FUNCTION_TABLE);
+	call RELEASE_SYM_NODE (CLASS);
+	call WRITE_DEBUG_LINE (S);
+
+end DUMP_VFT_SYMBOL;
+
+end DUMP_VFT_SYMBOLS;
+
+end GENERATE_VFTS;
+
+/* ---------------------------------------------------------------------
+/* QUEUE_VFT
+/* ------------------------------------------------------------------- */
+
+QUEUE_VFT: procedure (CLASS) external  (X_QUEUE_VFT);
+
+	declare CLASS type (NID_T);
+
+	call APPEND_TO_NODE_LIST (VFT_CLASS_LIST, CLASS);
+
+end QUEUE_VFT;
+
+/* ---------------------------------------------------------------------
+/* DELETE_VFT_QUEUE
+/* ------------------------------------------------------------------- */
+
+DELETE_VFT_QUEUE: procedure () external (X_DELETE_VFT_QUEUE);
+
+	call DELETE_NODE_LIST (VFT_CLASS_LIST);
+
+end DELETE_VFT_QUEUE;
+
+/* ---------------------------------------------------------------------
+/* QUEUE_VFT_FOR_FUDGING
+/* ------------------------------------------------------------------- */
+
+declare
+
+FUDGE_VFT_LIST	type (POINTER_T) static internal initial (null ());
+
+QUEUE_VFT_FOR_FUDGING: procedure (VFT_SYMBOL) internal;
+
+	declare
+		VFT_SYMBOL	type (NID_T);
+
+	call APPEND_TO_NODE_LIST (FUDGE_VFT_LIST, VFT_SYMBOL);
+
+end QUEUE_VFT_FOR_FUDGING;
+
+/* ---------------------------------------------------------------------
+/* FUDGE_VFTS
+/* ------------------------------------------------------------------- */
+
+FUDGE_VFTS: procedure external (X_FUDGE_VFTS);
+
+	declare
+		(P, Q)	type (POINTER_T);
+
+	do P = FUDGE_VFT_LIST repeat (P->NODE_DATA.NEXT) while (P ^= null ());
+		call GET_SYM_NODE (P->NODE_DATA.ID, Q);
+		Q->SYM_NODE.LOCATION = Q->SYM_NODE.LOCATION + VFT_ENTRY_SIZE;
+		call RELEASE_SYM_NODE (P->NODE_DATA.ID);
+	end;
+
+	call DELETE_NODE_LIST (FUDGE_VFT_LIST);
+
+end FUDGE_VFTS;
+

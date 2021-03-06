@@ -1,0 +1,542 @@
+/* C++ weak.pl1 - #pragma weak handling implementation */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.11.92  DGM  002 	Reinstated the original implementation (with
+ *			minor fixes) which was correct in the first
+ *			place!  Don Burn said it was backwards but
+ *			later admitted we were originally right.
+ *  06.08.92  DGM  001R	Initialize STRONG_SYMBOL_LOOKED_UP.
+ *  06.04.92  DGM  001	Changed around to do what AT&T *meant* and
+ *			not what the *said* (in the documentation).
+ *  05.19.92  DGM  000	Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.11.92 002 WEAK');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 PRAGMA_WEAK_NODE			based,
+  2 WEAK_NAME				type (NID_T),
+  2 WEAK_SYMBOL				type (NID_T),
+  2 WEAK_SYMBOL_DECLARED		type (BIT_T),
+  2 WEAK_SYMBOL_DEFINED			type (BIT_T),
+  2 STRONG_NAME				type (NID_T),
+  2 STRONG_SYMBOL			type (NID_T),
+  2 STRONG_SYMBOL_DECLARED		type (BIT_T),
+  2 STRONG_SYMBOL_DEFINED		type (BIT_T),
+  2 STRONG_NAME_SPECIFIED		type (BIT_T),
+  2 STRONG_NAME_LOOKED_UP		type (BIT_T),
+  2 LINE_ID				type (LONG_T),
+  2 FILE_ID				type (NID_T),
+  2 NEXT				type (POINTER_T);
+
+declare
+
+STRING_T			character (512) varying based;
+
+/* ---------------------------------------------------------------------
+/* Local data definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+PRAGMA_WEAK_NODE_LIST	type (POINTER_T) static internal initial (null ());
+
+/* ---------------------------------------------------------------------
+/* REGISTER_PRAGMA_WEAK_NAME
+/*
+/* Register the given weak name and strong name (if not null).
+/* Below is a brief outline of the constraints and semantics
+/* concerning the two #pragma weak formats supported.
+/*
+/*    #pragma weak A
+/*    --------------
+/*    o "A" must be declared (with "C" linkage)
+/*    o "A" may be defined or undefined
+/*
+/*    * Set SYM_NODE("A").WEAK_AT = TRUE
+/*
+/*    #pragma weak A = B
+/*    ------------------
+/*    o "A" may be declared (with "C" linkage) or undeclared
+/*    o "A" must not be defined
+/*    o "B" must be declared (with "C" linkage)
+/*    o "B" may be defined or undefined
+/*
+/*    * If "A" is declared then
+/*      : Set SYM_NODE("A").WEAK_AT = TRUE
+/*      : Set SYM_NODE("A").STRONG_SYMBOL = SYM_NODE("B")
+/*    * Elseif "A" is not declared then
+/*      : Set SYM_NODE("B").WEAK_SYNONYMS =
+/*                          ADD_TO_LINK_NODE_LIST(TOKEN_NODE("A"))
+/*
+/* ------------------------------------------------------------------- */
+
+REGISTER_PRAGMA_WEAK_NAME: procedure (WEAK_NAME, STRONG_NAME)
+			   external  (X_REGISTER_PRAGMA_WEAK_NAME);
+	declare
+		WEAK_NAME	type (NID_T),
+		STRONG_NAME	type (NID_T);
+	declare
+		(P, Q)		type (POINTER_T);
+
+	/* #pragma weak */
+
+	if WEAK_NAME = NULL_NID then
+		return;
+
+	/* #pragma weak WEAK_NAME [ = STRONG_NAME ] */
+
+	if WEAK_NAME = STRONG_NAME then do;
+		/*
+		/* This pragma-weak name is being
+		/* defined to refer to itself.
+		/*
+		/*   #pragma weak A = A
+		/**/
+		STRONG_NAME = NULL_NID;
+		call SEMANTIC_ERROR_I (ERR_PRAGMA_WEAK_SELF_REF,
+				       TOKEN_NAME (WEAK_NAME));
+		goto REGISTER_WEAK_NAME;
+	end;
+
+	/* Check for duplicates and cycles */
+
+	do P = PRAGMA_WEAK_NODE_LIST
+	repeat (P->PRAGMA_WEAK_NODE.NEXT) while (P ^= null ());
+		if P->PRAGMA_WEAK_NODE.WEAK_NAME = WEAK_NAME then do;
+			/*
+			/* Here, we found a previous #pragma weak which
+			/* has the same weak name as this #pragma weak.
+			/**/
+			if P->PRAGMA_WEAK_NODE.STRONG_NAME_SPECIFIED then do;
+				/*
+				/* Here, we found a previous #pragma weak
+				/* with a strong name which has the same
+				/* weak name as this #pragma weak.
+				/**/
+				if P->PRAGMA_WEAK_NODE.
+				      STRONG_NAME ^= STRONG_NAME then do;
+					/*
+					/* Pragma-weak redefinition (ignore).
+					/*
+					/*   #pragma weak A = B
+					/*   #pragma weak A = C
+					/**/
+					;
+					call SEMANTIC_ERROR_II
+					     (ERR_PRAGMA_WEAK_REDEF,
+					      TOKEN_NAME (WEAK_NAME),
+					      PRAGMA_WEAK_LOCATION (P));
+					return;
+				end;
+				else if STRONG_NAME ^= NULL_NID then do;
+					/*
+					/* Duplicate pragma-weak (ok).
+					/*
+					/*   #pragma weak A = B
+					/*   #pragma weak A = B
+					/* 
+					/**/
+					call SEMANTIC_ERROR_II
+					     (ERR_PRAGMA_WEAK_DUP,
+					      TOKEN_NAME (WEAK_NAME),
+					      PRAGMA_WEAK_LOCATION (P));
+					return;
+				end;
+				else do;
+					/*
+					/* Pragma-weak redefinition (ignore).
+					/*
+					/*   #pragma weak A = B
+					/*   #pragma weak A
+					/**/
+					call SEMANTIC_ERROR_II
+					     (ERR_PRAGMA_WEAK_REDEF,
+					      TOKEN_NAME (WEAK_NAME),
+					      PRAGMA_WEAK_LOCATION (P));
+					return;
+				end;
+			end;
+			else if STRONG_NAME = NULL_NID then do;
+				/*
+				/* Duplicate pragma (ok).
+				/*
+				/*   #pragma weak A
+				/*   #pragma weak A
+				/**/
+				call SEMANTIC_ERROR_II
+				     (ERR_PRAGMA_WEAK_DUP,
+				      TOKEN_NAME (WEAK_NAME),
+				      PRAGMA_WEAK_LOCATION (P));
+				return;
+			end;
+			else do;
+				/*
+				/* Pragma-weak redefinition (ignore).
+				/*
+				/* #pragma weak A
+				/* #pragma weak A = B
+				/**/
+				call SEMANTIC_ERROR_II
+				     (ERR_PRAGMA_WEAK_REDEF,
+				      TOKEN_NAME (WEAK_NAME),
+				      PRAGMA_WEAK_LOCATION (P));
+				return;
+			end;
+		end;
+		else if STRONG_NAME ^= NULL_NID then do;
+			do Q = LOOKUP_WEAK_NAME (STRONG_NAME)
+			while (Q ^= null ());
+				if Q->PRAGMA_WEAK_NODE.
+				      STRONG_NAME = WEAK_NAME then do;
+					/*
+					/* Cyclical pragma-weak.
+					/*
+					/*   #pragma weak A = B
+					/*   #pragma weak B = C
+					/*   #pragma weak C = A
+					/**/
+					call SEMANTIC_ERROR_I
+					     (ERR_PRAGMA_WEAK_CYCLE,
+					      TOKEN_NAME (WEAK_NAME));
+					return;
+				end;
+				else if Q->PRAGMA_WEAK_NODE.
+					   STRONG_NAME_SPECIFIED then do;
+					Q = LOOKUP_WEAK_NAME
+					    (Q->PRAGMA_WEAK_NODE.STRONG_NAME);
+				end;
+				else	Q = null ();
+			end;
+		end;
+	end;
+
+	REGISTER_WEAK_NAME:
+
+	allocate PRAGMA_WEAK_NODE set (P);
+
+	P->PRAGMA_WEAK_NODE.WEAK_NAME		   = WEAK_NAME;
+	P->PRAGMA_WEAK_NODE.WEAK_SYMBOL		   = NULL_NID;
+	P->PRAGMA_WEAK_NODE.WEAK_SYMBOL_DECLARED   = FALSE;
+	P->PRAGMA_WEAK_NODE.WEAK_SYMBOL_DEFINED	   = FALSE;
+	P->PRAGMA_WEAK_NODE.STRONG_NAME		   = STRONG_NAME;
+	P->PRAGMA_WEAK_NODE.STRONG_SYMBOL	   = NULL_NID;
+	P->PRAGMA_WEAK_NODE.STRONG_SYMBOL_DECLARED = FALSE;
+	P->PRAGMA_WEAK_NODE.STRONG_SYMBOL_DEFINED  = FALSE;
+	P->PRAGMA_WEAK_NODE.STRONG_NAME_LOOKED_UP  = FALSE;
+	P->PRAGMA_WEAK_NODE.STRONG_NAME_SPECIFIED  = (STRONG_NAME ^= NULL_NID);
+	P->PRAGMA_WEAK_NODE.FILE_ID		   = CURRENT_SOURCE.FILE;
+	P->PRAGMA_WEAK_NODE.LINE_ID		   = CURRENT_SOURCE.LINE;
+
+	P->PRAGMA_WEAK_NODE.NEXT	= PRAGMA_WEAK_NODE_LIST;
+	PRAGMA_WEAK_NODE_LIST		= P;
+
+end REGISTER_PRAGMA_WEAK_NAME;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_WEAK_NAME
+/* ------------------------------------------------------------------- */
+
+LOOKUP_WEAK_NAME: procedure (NAME)
+		  returns   (type (POINTER_T))
+		  internal;
+	declare
+		NAME	type (NID_T);
+	declare
+		P	type (POINTER_T);
+
+	do P = PRAGMA_WEAK_NODE_LIST
+	repeat (P->PRAGMA_WEAK_NODE.NEXT) while (P ^= null ());
+		if P->PRAGMA_WEAK_NODE.WEAK_NAME = NAME then
+			return (P);
+	end;
+	return (null ());
+
+end LOOKUP_WEAK_NAME;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_STRONG_NAME
+/* ------------------------------------------------------------------- */
+
+LOOKUP_STRONG_NAME: procedure (NAME)
+		  returns   (type (POINTER_T))
+		  internal;
+	declare
+		NAME	type (NID_T);
+	declare
+		P	type (POINTER_T);
+
+	do P = PRAGMA_WEAK_NODE_LIST
+	repeat (P->PRAGMA_WEAK_NODE.NEXT) while (P ^= null ());
+		if (P->PRAGMA_WEAK_NODE.STRONG_NAME = NAME) &
+		   ^P->PRAGMA_WEAK_NODE.STRONG_NAME_LOOKED_UP then
+			return (P);
+	end;
+	return (null ());
+
+end LOOKUP_STRONG_NAME;
+
+/* ---------------------------------------------------------------------
+/* DELETE_PRAGMA_WEAK_NODE_LIST
+/* ------------------------------------------------------------------- */
+
+DELETE_PRAGMA_WEAK_NODE_LIST: procedure internal;
+
+	declare
+		(P, Q) type (POINTER_T);
+
+	do P = PRAGMA_WEAK_NODE_LIST
+	repeat (P->PRAGMA_WEAK_NODE.NEXT) while (P ^= null ());
+		Q = P->PRAGMA_WEAK_NODE.NEXT;
+		free P->PRAGMA_WEAK_NODE;
+	end;
+	PRAGMA_WEAK_NODE_LIST = null ();
+
+end DELETE_PRAGMA_WEAK_NODE_LIST;
+
+/* ---------------------------------------------------------------------
+/* PRAGMA_WEAK_LOCATION
+/* ------------------------------------------------------------------- */
+
+PRAGMA_WEAK_LOCATION: procedure (PWNP) returns (type (STRING_T)) internal;
+
+	declare
+		PWNP	type (POINTER_T);
+	declare
+		S	type (STRING_T);
+
+	if PWNP = null () then
+		return ('');
+
+	S = trim (char (PWNP->PRAGMA_WEAK_NODE.LINE_ID));
+	if (((CURRENT_SOURCE.ASSUMED_FILE ^= NULL_NID) &
+	     (CURRENT_SOURCE.ASSUMED_FILE ^= PWNP->PRAGMA_WEAK_NODE.FILE_ID)) |
+	    ((CURRENT_SOURCE.ASSUMED_FILE = NULL_NID) &
+	     (CURRENT_SOURCE.FILE ^= PWNP->PRAGMA_WEAK_NODE.FILE_ID))) then
+		S = S || ', "' ||
+		    TOKEN_NAME (PWNP->PRAGMA_WEAK_NODE.FILE_ID) || '"';
+	return (S);
+
+end PRAGMA_WEAK_LOCATION;
+
+/* ---------------------------------------------------------------------
+/* LINK_NAME_ONTO_LIST
+/* ------------------------------------------------------------------- */
+
+LINK_NAME_ONTO_LIST: procedure (NAME, LIST) internal;
+
+	declare
+		NAME	type (NID_T),
+		LIST	type (NID_T);
+	declare
+		L	type (NID_T),
+		LP	type (POINTER_T);
+
+	call NEW_LINK_NODE (L, LP);
+	LP->LINK_NODE.VALUE = NAME;
+	LP->LINK_NODE.NEXT = LIST;
+	call RELEASE_LINK_NODE (L);
+	LIST = L;
+
+end LINK_NAME_ONTO_LIST;
+
+/* ---------------------------------------------------------------------
+/* PROCESS_PRAGMA_WEAK_NAMES
+/* ------------------------------------------------------------------- */
+
+PROCESS_PRAGMA_WEAK_NAMES: procedure
+			   external (X_PROCESS_PRAGMA_WEAK_NAMES);
+	declare
+		(S, NEXT_S, SYMBOLS)	type (NID_T),
+		(SP, P)			type (POINTER_T);
+
+	if PRAGMA_WEAK_NODE_LIST = null () then
+		return;
+
+	if BLOCK_LIST_ID = NULL_NID then
+		return;
+
+	call GET_BLOCK_NODE_R (BLOCK_LIST_ID, P);
+	SYMBOLS = P->BLOCK_NODE.DCL_LIST;
+	call RELEASE_BLOCK_NODE (BLOCK_LIST_ID);
+
+	do S = SYMBOLS repeat (NEXT_S) while (S ^= NULL_NID);
+
+		call GET_SYM_NODE_R (S, SP);
+
+		if (^SP->SYM_NODE.IS_VANILLA_FUNCTION |
+		    ^SP->SYM_NODE.IS_DATA) &
+		     SP->SYM_NODE.IS_MEMBER |
+		     SP->SYM_NODE.IS_DUMMY |
+		    ^SP->SYM_NODE.EXTERNAL_LINKAGE then
+			goto NEXT_SYMBOL;
+
+		P = LOOKUP_WEAK_NAME (SP->SYM_NODE.NAME);
+
+		if P ^= null () then do;
+			if SP->SYM_NODE.LINKAGE_KIND ^= byte (C_LINKAGE)
+			then do;
+				if SP->SYM_NODE.C_OVERLOAD ^= NULL_NID then do;
+					call RELEASE_SYM_NODE (S);
+					S = SP->SYM_NODE.C_OVERLOAD;
+					call GET_SYM_NODE (S, SP);
+				end;
+				else	goto NEXT_SYMBOL;
+			end;
+			P->PRAGMA_WEAK_NODE.WEAK_SYMBOL = S;
+			P->PRAGMA_WEAK_NODE.WEAK_SYMBOL_DECLARED = TRUE;
+			P->PRAGMA_WEAK_NODE.WEAK_SYMBOL_DEFINED =
+				SP->SYM_NODE.DEFINED;
+		end;
+
+		LOOKUP_STRONG_NAME_LABEL:
+
+		P = LOOKUP_STRONG_NAME (SP->SYM_NODE.NAME);
+
+		if P ^= null () then do;
+			if SP->SYM_NODE.LINKAGE_KIND ^= byte (C_LINKAGE)
+			then do;
+				if SP->SYM_NODE.C_OVERLOAD ^= NULL_NID then do;
+					call RELEASE_SYM_NODE (S);
+					S = SP->SYM_NODE.C_OVERLOAD;
+					call GET_SYM_NODE (S, SP);
+				end;
+				else	goto NEXT_SYMBOL;
+			end;
+			P->PRAGMA_WEAK_NODE.STRONG_SYMBOL = S;
+			P->PRAGMA_WEAK_NODE.STRONG_SYMBOL_DECLARED = TRUE;
+			P->PRAGMA_WEAK_NODE.STRONG_SYMBOL_DEFINED =
+				SP->SYM_NODE.DEFINED;
+			P->PRAGMA_WEAK_NODE.STRONG_NAME_LOOKED_UP = TRUE;
+			goto LOOKUP_STRONG_NAME_LABEL;
+		end;
+
+		NEXT_SYMBOL:
+
+		NEXT_S = SP->SYM_NODE.BROTHER;
+		call RELEASE_SYM_NODE (S);
+	end;
+
+	do P = PRAGMA_WEAK_NODE_LIST
+	repeat (P->PRAGMA_WEAK_NODE.NEXT) while (P ^= null ());
+
+		if P->PRAGMA_WEAK_NODE.STRONG_NAME_SPECIFIED then do;
+			/*
+			/* #pragma weak A = B
+			/**/
+			if ^P->PRAGMA_WEAK_NODE.STRONG_SYMBOL_DECLARED
+			then do;
+				/*
+				/* Error; this #pragma weak (strong)
+				/* name has not been declared.
+				/**/
+				call SEMANTIC_ERROR_AT_I
+				     (ERR_PRAGMA_WEAK_UNDCL_STRONG,
+				      P->PRAGMA_WEAK_NODE.LINE_ID,
+				      P->PRAGMA_WEAK_NODE.FILE_ID,
+				      TOKEN_NAME
+				      (P->PRAGMA_WEAK_NODE.STRONG_NAME));
+			end;
+			else if P->PRAGMA_WEAK_NODE.WEAK_SYMBOL_DEFINED
+			then do;
+				/*
+				/* Error; this #pragma weak (weak)
+				/* name has already been defined.
+				/**/
+				call SEMANTIC_ERROR_AT_II
+				     (ERR_PRAGMA_WEAK_DEFINED_WEAK,
+				      P->PRAGMA_WEAK_NODE.LINE_ID,
+				      P->PRAGMA_WEAK_NODE.FILE_ID,
+				      TOKEN_NAME
+				      (P->PRAGMA_WEAK_NODE.WEAK_NAME),
+				      SYMBOL_LOCATION_NAME
+				      (P->PRAGMA_WEAK_NODE.WEAK_SYMBOL));
+			end;
+			else if P->PRAGMA_WEAK_NODE.WEAK_SYMBOL_DECLARED
+			then do;
+				call GET_SYM_NODE_R
+				     (P->PRAGMA_WEAK_NODE.WEAK_SYMBOL, SP);
+				SP->SYM_NODE.WEAK_AT = TRUE;
+				SP->SYM_NODE.STRONG_SYMBOL =
+					P->PRAGMA_WEAK_NODE.STRONG_SYMBOL;
+				call RELEASE_SYM_NODE
+				     (P->PRAGMA_WEAK_NODE.WEAK_SYMBOL);
+			end;
+			else do;
+				call GET_SYM_NODE_R
+				     (P->PRAGMA_WEAK_NODE.STRONG_SYMBOL, SP);
+				call LINK_NAME_ONTO_LIST
+				     (P->PRAGMA_WEAK_NODE.WEAK_NAME,
+				      SP->SYM_NODE.WEAK_SYNONYMS);
+				call RELEASE_SYM_NODE
+				     (P->PRAGMA_WEAK_NODE.STRONG_SYMBOL);
+			end;
+		end;
+		else do;
+			/*
+			/* #pragma weak A
+			/**/
+			if ^P->PRAGMA_WEAK_NODE.WEAK_SYMBOL_DECLARED
+			then do;
+				/*
+				/* Error; this simple #pragma weak
+				/* name has not been declared.
+				/**/
+				call SEMANTIC_ERROR_AT_I
+				     (ERR_PRAGMA_WEAK_UNDCL_WEAK,
+				      P->PRAGMA_WEAK_NODE.LINE_ID,
+				      P->PRAGMA_WEAK_NODE.FILE_ID,
+				      TOKEN_NAME
+				      (P->PRAGMA_WEAK_NODE.WEAK_NAME));
+			end;
+			else do;
+				call GET_SYM_NODE_R
+				     (P->PRAGMA_WEAK_NODE.WEAK_SYMBOL, SP);
+				SP->SYM_NODE.WEAK_AT = TRUE;
+				call RELEASE_SYM_NODE
+				     (P->PRAGMA_WEAK_NODE.WEAK_SYMBOL);
+				
+			end;
+		end;
+	end;
+
+	call DELETE_PRAGMA_WEAK_NODE_LIST ();
+
+end PROCESS_PRAGMA_WEAK_NAMES;
+

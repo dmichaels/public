@@ -1,0 +1,759 @@
+/* C++ ctor.pl1 - Emit startup constructor code (e.g. set VFTPs & VBCPs */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.14.92  PKT  018	Fixed member initializers for unions.
+ *  03.26.92  DGM  017  New value-node scheme.
+ *  03.27.91  PKT  016  Updated.
+ *  03.22.91  PKT  015  Fixed SET_VFT_POINTERS to prevent ambiguous reference.
+ *  02.21.91  PKT  014  Updated for member pointers.
+ *  02.01.91  DGM  013  Updated to new global names scheme.
+ *  01.27.91  PKT  012  Updated for member pointers.
+ *  01.03.91  PKT  011  Fixed to use correct offset of ambiguous virtual
+ *			base class.
+ *  12.17.90  PKT  010  Fixed bug finding list of non-static data members.
+ *			Updated for revised DERIVED_TO_BASE_CLASS_POINTER.
+ *  12.12.90  DGM  009  Updated to use the vbc-node list instead of
+ *			calling GET/DELETE_VIRTUAL_BASE_CLASS_LIST.
+ *  11.01.90  PKT  008  Updated for strict INITIALIZE_OBJECT.
+ *			Fixed bug in SET_VBC_POINTERS.
+ *			Removed CONCATENATE_EXPRESSIONS.
+ *  10.16.90  PKT  007  Added support for base/member initialization.
+ *  09.14.90  DGM  006  Changed include file names and VOP names.
+ *  08.28.90  PKT  005  Made INITIALIZE_VFT_POINTERS external.
+ *  07.26.90  DGM  002  Check the "not-most-derived" flag & fixes.
+ *  07.23.90  DGM  002  Set virtual base class pointers.
+ *  07.19.90  DGM  001  Typo.
+ *  07.13.90  DGM  000  Original
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.14.92 018 CTOR');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_CLASS_SIZE_PKG;
+%include CXX_CONVERT_CLASS_POINTER_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_NODE_LIST_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_PROCESS_BASE_MBR_INIT_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_MEMBER_VALUE_PKG;
+%include CXX_MEMBER_POINTER_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+
+/* ---------------------------------------------------------------------
+/* EMIT_CONSTRUCTOR_STARTUP_CODE
+/*
+/* 1. If this is a most-derived class which has virtual base classes,
+/*    then initialize each and every virtual base class (by calling
+/*    each virtual base class constructor).
+/* 2. If this is a most-derived class which has virtual base classes,
+/*    then set up the virtual base class pointers.
+/* 3. Initialize each direct non-virtual base class (by calling each
+/*    direct non-virtual base class constructor).
+/* 4. Initialize each member.
+/* 5. Initialize all virtual function table pointers.
+/* ------------------------------------------------------------------- */
+
+EMIT_CONSTRUCTOR_STARTUP_CODE: procedure (F)
+			       external  (X_EMIT_CONSTRUCTOR_STARTUP_CODE);
+
+	declare
+		F		type (NID_T);
+	declare
+		FP		type (POINTER_T),
+		THIS_SYMBOL	type (NID_T),
+		V		type (CXX_VID_T),
+		(P, CP)		type (POINTER_T),
+		CLASS_SYM	type (NID_T),
+		SYM		type (NID_T),
+		NEXT		type (NID_T),
+		BASE_CLASS	type (NID_T),
+		BP		type (POINTER_T),
+		SCP		type (POINTER_T);
+
+	call GET_SYM_NODE_R (F, FP);
+
+	if ^FP->SYM_NODE.IS_CONSTRUCTOR_FUNCTION then
+		goto DONE_CONSTRUCTOR_STARTUP_CODE;
+
+	/* Get the "this" symbol for the constructor */
+
+	THIS_SYMBOL = LOOKUP_THIS_PARAMETER (F);
+
+	if THIS_SYMBOL = NULL_NID then do;
+		/*
+		/* Compiler error; can't find the "this"
+		/* parameter symbol for a constructor.
+		/**/
+		goto DONE_CONSTRUCTOR_STARTUP_CODE;
+	end;
+
+	CLASS_SYM = FP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+
+	/*
+	/* Initialize the virtual base classes and
+	/* set the virtual base class pointers.
+	/**/
+
+	call INITIALIZE_VIRTUAL_BASE_CLASSES (CLASS_SYM, THIS_SYMBOL);
+
+	/* Initialize the non-virtual immediate base classes */
+
+	call GET_SYM_NODE_R (CLASS_SYM, P);
+	NEXT = P->SYM_NODE.BASE_CLASSES;
+	call RELEASE_SYM_NODE (CLASS_SYM);
+	do BASE_CLASS = NEXT repeat (NEXT) while (BASE_CLASS ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BASE_CLASS, BP);
+		SYM = BP->BASE_CLASS_NODE.SYMBOL;
+		NEXT = BP->BASE_CLASS_NODE.NEXT;
+
+		if ^BP->BASE_CLASS_NODE.VIRTUAL then do;
+			V = GET_BASE_MEMBER_INIT (SYM, 
+						  BP->BASE_CLASS_NODE.OFFSET,
+						  BYTES,
+						  CLASS_SYM);
+			call EMIT_STATEMENT (V);
+			end;
+
+		call RELEASE_BASE_CLASS_NODE (BASE_CLASS);
+	end;
+
+	/* Initialize the members */
+
+	call GET_SYM_NODE_R (CLASS_SYM, CP);
+	if P->SYM_NODE.IS_UNION_TAG then do;
+		V = GET_UNION_INIT (CLASS_SYM);
+		call EMIT_STATEMENT (V); 
+	end;
+	else do;
+		call GET_SCOPE_NODE_R (CP->SYM_NODE.DEFINED_SCOPE, SCP);
+		NEXT = SCP->SCOPE_NODE.SYMBOLS; /* first member */
+		call RELEASE_SCOPE_NODE (CP->SYM_NODE.DEFINED_SCOPE);
+		do SYM = NEXT repeat NEXT while (SYM ^= NULL_NID);
+			call GET_SYM_NODE (SYM, P);
+			NEXT = P->SYM_NODE.NEXT_SYMBOL;
+
+			if P->SYM_NODE.IS_NON_STATIC_DATA_MEMBER then do;
+				V = GET_BASE_MEMBER_INIT
+				    (SYM, P->SYM_NODE.LOCATION,
+					  rank (P->SYM_NODE.OFFSET_UNITS),
+					  NULL_NID);
+				call EMIT_STATEMENT (V);
+			end;
+			else if P->SYM_NODE.IS_ANON_UNION_TAG then do;
+				V = GET_UNION_INIT (SYM);
+				call EMIT_STATEMENT (V);
+			end;
+
+			call RELEASE_SYM_NODE (SYM);
+		end;
+	end;
+	call RELEASE_SYM_NODE (CLASS_SYM);
+
+	/* Set the virtual function table pointers */
+
+	call INITIALIZE_VFT_POINTERS
+		(FP->SYM_NODE.ENCLOSING_SCOPE_OWNER, THIS_SYMBOL);
+
+	/* Done (ready to perform any user constructor code) */
+
+	DONE_CONSTRUCTOR_STARTUP_CODE:
+	call RELEASE_SYM_NODE (F);
+	return;
+
+end EMIT_CONSTRUCTOR_STARTUP_CODE;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_VFT_POINTERS
+/*
+/* Set up the assignments to the virtual function table pointers for an
+/* object of the class type represented by the give class sym-node id
+/* CLASS_SYMBOL; THIS_SYMBOL is the sym-node id representing the "this"
+/* parameter symbol of a member function of the specified class type.
+/* Trashes currrent-node-id and current-value-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "set_virtvect".
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_VFT_POINTERS: procedure (CLASS_SYMBOL, THIS_SYMBOL)
+			 external (X_INITIALIZE_VFT_POINTERS);
+
+	declare
+		CLASS_SYMBOL		type (NID_T),
+		THIS_SYMBOL		type (NID_T);
+	declare
+		(V, TMP_V, VV, THIS_V)	type (CXX_VID_T),
+		THIS_POINTER		type (CXX_VID_T),
+		(CP, TP, VBCP)		type (POINTER_T),
+		(VBC, NEXT_VBC)		type (NID_T),
+		VFT_SYMBOL		type (NID_T);
+	declare
+		VFT_VALUE		type (CXX_VID_T),
+		VFT_OFFSET		type (LONG_T);
+
+	/* Get the virtual function table symbol for this class */
+
+	call GET_SYM_NODE_R (CLASS_SYMBOL, CP);
+
+	VFT_SYMBOL = CP->SYM_NODE.VIRTUAL_FUNCTION_TABLE;
+
+	if VFT_SYMBOL = NULL_NID then do;
+		call RELEASE_SYM_NODE (CLASS_SYMBOL);
+		return;
+	end;
+
+	/* Initialize the virtual function offset */
+
+	VFT_OFFSET = 0;
+
+	/* Get a VALUE-REF to the virtual function table for this class */
+
+	VFT_VALUE = GET_VALUE_REF_AND_EXPAND (VFT_SYMBOL);
+
+	/* Get a VALUE-REF to "this" */
+
+	call GET_SYM_NODE_R (THIS_SYMBOL, TP);
+
+	THIS_POINTER = GET_VALUE_REF_AND_EXPAND (THIS_SYMBOL);
+
+	/*
+	/* Get the virtual function table pointer assignment
+	/* expressions for this class and any non-virtual base classes.
+	/**/
+
+	V = SET_VFT_POINTERS (CLASS_SYMBOL, THIS_POINTER, 0, FALSE);
+
+	/*
+	/* Get the virtual function table pointer assignment expressions
+	/* for this class and any virtual base classes iff the current
+	/* (constructor) function is for a class which has virtual base
+	/* classes, i.e. if the constructor has a "not-most-derived" flag
+	/* parameter.  In this case, the resultant assignment expressions
+	/* will be hooked on a test of the "not-most-derived" flag.
+	/**/
+
+	if ^CP->SYM_NODE.HAS_VIRTUAL_BASES then
+		goto DONE_INIT_VFT_POINTERS;
+
+	VV = NULL_CXX_VID;
+
+	do VBC = CP->SYM_NODE.VIRTUAL_BASE_CLASSES
+	repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+
+		call GET_VBC_NODE_R (VBC, VBCP);
+
+		THIS_V = THIS_POINTER;
+
+		call COUNT_UP_VALUE (THIS_V);
+
+		TMP_V = SET_VFT_POINTERS
+			(VBCP->VBC_NODE.SYMBOL, THIS_V, 
+			 VBCP->VBC_NODE.OFFSET, FALSE);
+
+		call COUNT_DOWN_VALUE (THIS_V);  /* tricky */
+
+		VV = CONCATENATE_STATEMENTS (VV, TMP_V);
+
+		NEXT_VBC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+
+	/*
+	/* Now, put these virtual base class virtual function pointer
+	/* assignments inside a check for a "most-derived" class.
+	/**/
+
+	VV = IF_MOST_DERIVED (VV, TP->SYM_NODE.ENCLOSING_SCOPE_OWNER);
+
+	/*
+	/* Concatenate the non-virtual base class virtual function
+	/* table pointer assignments with the virtual base class
+	/* virtual funtion table pointer assigments.
+	/**/
+
+	V = CONCATENATE_STATEMENTS (V, VV);
+
+	/* Done */
+
+	DONE_INIT_VFT_POINTERS:
+
+	call COUNT_DOWN_VALUE (THIS_POINTER);
+	call COUNT_DOWN_VALUE (VFT_VALUE);
+	call RELEASE_SYM_NODE (CLASS_SYMBOL);
+	call RELEASE_SYM_NODE (THIS_SYMBOL);
+
+	call EMIT_STATEMENT (V);
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* SET_VFT_POINTERS
+/*
+/* Return an expression tree representing all of the necessary virtual
+/* function table pointer assignments for the class represented by the
+/* given class sym-node id and "this" parameter sym-node id.  For the
+/* outer-most caller, BASE_CLASS_OFFSET should be 0, and SKIP_THIS_CLASS
+/* should be FALSE.  The following data are assumed to be defined and
+/* set up correctly by the enclosing scope:
+/*
+/* VFT_VALUE  CXX_VID_T  VALUE-REF to the virtual function table.
+/* VFT_OFFSET LONG_T     Zero.
+/* 
+/* N.B. fashioned after the TauMetric routine "virtvect".
+/* ------------------------------------------------------------------- */
+
+SET_VFT_POINTERS: procedure (CLASS_SYMBOL,
+			     THIS_POINTER,
+			     BASE_CLASS_OFFSET,
+			     SKIP_THIS_CLASS)
+		  returns    (type (CXX_VID_T))
+		  recursive
+		  internal;
+	declare
+		CLASS_SYMBOL		type (NID_T),
+		THIS_POINTER		type (CXX_VID_T),
+		BASE_CLASS_OFFSET	type (LONG_T),
+		SKIP_THIS_CLASS		type (BOOL_T);
+	declare
+		(BC, NEXT_BC)		type (NID_T),
+		VFTP_SYMBOL		type (NID_T),
+		VFTP_CLASS_SYMBOL	type (NID_T),
+		(CP, BCP, SP)		type (POINTER_T),
+		(V, VFTP, VFT, VBC)	type (CXX_VID_T);
+
+	V = NULL_CXX_VID;
+
+	call GET_SYM_NODE_R (CLASS_SYMBOL, CP);
+
+	if CP->SYM_NODE.VIRTUAL_FUNCTION_COUNT = 0 then
+		goto DONE_SET_VFT_POINTERS;
+
+	if ^SKIP_THIS_CLASS then do;
+		
+		/*
+		/* Get a reference to the virtual function table pointer.
+		/* Because a derived class shares a vft pointer only
+		/* with a leftmost base class, 'this' for CLASS_SYMBOL
+		/* also is 'this' for the class containing the vft pointer.
+		/**/
+
+		call COUNT_UP_VALUE (THIS_POINTER);
+
+		VFTP_SYMBOL = LOOKUP_VFT_POINTER (CLASS_SYMBOL);
+		call GET_SYM_NODE_R (VFTP_SYMBOL, SP);
+		VFTP_CLASS_SYMBOL = SP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+		call RELEASE_SYM_NODE (VFTP_SYMBOL);
+
+		VBC  = BASE_CLASS_REFERENCE
+		       (THIS_POINTER, BASE_CLASS_OFFSET, VFTP_CLASS_SYMBOL);
+		VBC  = GET_VALUE_AND_EXPAND_L (STAR_VO, VBC);
+		VFTP = GET_SIMPLE_MEMBER_VALUE (VFTP_SYMBOL);
+		VFTP = MEMBER_OF_OBJECT (VBC, VFTP);
+
+		/* Get a pointer to the correct entry in the table */
+
+		call COUNT_UP_VALUE (VFT_VALUE);
+
+		if VFT_OFFSET ^= 0 then do;
+			VFT = GET_VALUE_AND_EXPAND_LR
+			      (ADD_VO,
+			       VFT_VALUE,
+			       INTEGER_VALUE (VFT_OFFSET, INT_BT));
+		end;
+		else	VFT = VFT_VALUE;
+
+		/* Do the assignment of VFT to VFTP */
+
+		V = GET_VALUE_AND_EXPAND_LR (COPY_VO, VFTP, VFT);
+
+		/* Increment the offset for next time */
+
+		VFT_OFFSET = VFT_OFFSET + CP->SYM_NODE.VIRTUAL_FUNCTION_COUNT;
+	end;
+		
+	/* Do each base class */
+
+	do BC = CP->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		if ^BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			VFTP = SET_VFT_POINTERS
+			       (BCP->BASE_CLASS_NODE.SYMBOL,
+			        THIS_POINTER,
+				BCP->BASE_CLASS_NODE.OFFSET + BASE_CLASS_OFFSET,
+				BCP->BASE_CLASS_NODE.HAS_VFT_POINTER = TRUE);
+			V = CONCATENATE_STATEMENTS (V, VFTP);
+		end;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	DONE_SET_VFT_POINTERS:
+	call RELEASE_SYM_NODE (CLASS_SYMBOL);
+	return (V);
+
+end SET_VFT_POINTERS;
+
+end INITIALIZE_VFT_POINTERS;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_VIRTUAL_BASE_CLASSES
+/*
+/* N.B. fashioned after the TauMetric routine "make_vbase_init".
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_VIRTUAL_BASE_CLASSES: procedure (CLASS_SYMBOL, THIS_SYMBOL)
+				 internal;
+	declare
+		CLASS_SYMBOL		type (NID_T),
+		THIS_SYMBOL		type (NID_T);
+	declare
+		(CP, TP)		type (POINTER_T),
+		(V, VBCP, INIT, INITS)	type (CXX_VID_T),
+		(VBC, NEXT_VBC)		type (NID_T);
+	declare
+		THIS_POINTER		type (CXX_VID_T),
+		VBC_LIST		type (NID_T),
+		CURRENT_VBCP		type (POINTER_T),
+		VISITED_VBC_LIST	type (POINTER_T);
+
+	/* Get pointers to the class and "this" sym-nodes */
+
+	call GET_SYM_NODE_R (CLASS_SYMBOL, CP);
+
+	if ^CP->SYM_NODE.HAS_VIRTUAL_BASES then do;
+		call RELEASE_SYM_NODE (CLASS_SYMBOL);
+		return;
+	end;
+
+	call GET_SYM_NODE_R (THIS_SYMBOL, TP);
+
+	/* Get a VALUE-REF to "this" */
+
+	THIS_POINTER = GET_VALUE_REF_AND_EXPAND (THIS_SYMBOL);
+
+	/* Initialize each virtual base class */
+
+	V = NULL_CXX_VID; INITS = NULL_CXX_VID;
+
+	VBC_LIST = CP->SYM_NODE.VIRTUAL_BASE_CLASSES;
+
+	do VBC = VBC_LIST repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+
+		call GET_VBC_NODE_R (VBC, CURRENT_VBCP);
+
+		/* Initialize this virtual base class */
+
+		INIT  = GET_BASE_MEMBER_INIT
+			(CURRENT_VBCP->VBC_NODE.SYMBOL,
+			 CURRENT_VBCP->VBC_NODE.OFFSET,
+			 BYTES, CLASS_SYMBOL);
+		INITS = CONCATENATE_STATEMENTS (INITS, INIT);
+
+		/* Set the virtual base class pointers */
+	
+		VISITED_VBC_LIST = null ();
+
+		VBCP = SET_VBC_POINTERS (CP, 0);
+
+		call DELETE_NODE_LIST (VISITED_VBC_LIST);
+
+		/* Hook up these VBCP assignments (if any) to any others */
+
+		V = CONCATENATE_STATEMENTS (V, VBCP);
+
+		NEXT_VBC = CURRENT_VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+
+	call COUNT_DOWN_VALUE (THIS_POINTER);
+
+	/*
+	/* Now, put these virtual base initializations
+	/* and virtual base class pointer assignments
+	/* inside a check for a "most-derived" class.
+	/**/
+
+	V = CONCATENATE_STATEMENTS (V, INITS);
+	V = IF_MOST_DERIVED (V, TP->SYM_NODE.ENCLOSING_SCOPE_OWNER);
+
+	/* Done */
+
+	DONE_INIT_VIRTUAL_BASE_CLASSES:
+
+	call RELEASE_SYM_NODE (THIS_SYMBOL);
+	call RELEASE_SYM_NODE (CLASS_SYMBOL);
+
+	call EMIT_STATEMENT (V);
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* SET_VBC_POINTERS
+/*
+/* Return an expression tree representing all of the necessary virtual
+/* base class pointer assignments for the class represented by the
+/* given class sym-node pointer CLASS_PTR, at the given base class
+/* offset.  The following are assumed to be defined and set up
+/* correctly by the enclosing scope:
+/*
+/* THIS_POINTER     CXX_VID_T     VALUE-REF to the "this" parameter.
+/* VBC_LIST         NID_T     Vbc-node list of virtual base classes.
+/* CURRENT_VBCP     POINTER_T Current virtual base class in VBC_LIST.
+/* VISITED_VBC_LIST POINTER_T List of "visited" virtual base clases.
+/*
+/* N.B. fashioned after the TauMetric routine "set_vbptrs".
+/* ------------------------------------------------------------------- */
+
+SET_VBC_POINTERS: procedure (CLASS_PTR, BASE_CLASS_OFFSET)
+		  returns   (type (CXX_VID_T))
+		  internal;
+	declare
+		CLASS_PTR		type (POINTER_T),
+		BASE_CLASS_OFFSET	type (LONG_T);
+	declare
+		(CP, BCP, VBC)		type (POINTER_T),
+		(BC, NEXT_BC)		type (NID_T),
+		OFFSET			type (LONG_T),
+		(V, DV, SV, VBCP)	type (CXX_VID_T),
+		ALREADY_DONE		type (BOOL_T);
+
+	V = NULL_CXX_VID;
+
+	do BC = CLASS_PTR->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+
+		if BCP->BASE_CLASS_NODE.VIRTUAL &
+		   (BCP->BASE_CLASS_NODE.SYMBOL =
+		    CURRENT_VBCP->VBC_NODE.SYMBOL) then do;
+
+			call COUNT_UP_VALUE (THIS_POINTER);
+
+			DV = VIRTUAL_BASE_CLASS_REFERENCE
+				(THIS_POINTER,
+				 BASE_CLASS_OFFSET +
+				 BCP->BASE_CLASS_NODE.OFFSET,
+				 BCP->BASE_CLASS_NODE.SYMBOL);
+
+			call COUNT_UP_VALUE (THIS_POINTER);
+
+			SV = BASE_CLASS_REFERENCE
+				(THIS_POINTER,
+				 CURRENT_VBCP->VBC_NODE.OFFSET,
+				 CURRENT_VBCP->VBC_NODE.SYMBOL);
+
+			V = CONCATENATE_STATEMENTS (V, 
+				GET_VALUE_AND_EXPAND_LR (COPY_VO, DV, SV));
+		end;
+
+		if BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			OFFSET = SEARCH_VIRTUAL_BASE_CLASS_LIST
+				 (VBC_LIST, BCP->BASE_CLASS_NODE.SYMBOL);
+			if OFFSET < 0 then do;
+				/*
+				/* Compiler error.
+				/**/
+				OFFSET = 0;
+			end;
+		end;
+		else do;
+			OFFSET =
+			BASE_CLASS_OFFSET + BCP->BASE_CLASS_NODE.OFFSET;
+		end;
+
+		if BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			if ^ALREADY_ON_NODE_LIST
+			    (VISITED_VBC_LIST,
+			     BCP->BASE_CLASS_NODE.SYMBOL) then do;
+				call APPEND_TO_NODE_LIST
+				     (VISITED_VBC_LIST,
+				      BCP->BASE_CLASS_NODE.SYMBOL);
+				ALREADY_DONE = FALSE;
+			end;
+			else	ALREADY_DONE = TRUE;
+		end;
+		else	ALREADY_DONE = FALSE;
+
+		if ^ALREADY_DONE then do;
+			call GET_SYM_NODE_R (BCP->BASE_CLASS_NODE.SYMBOL, CP);
+			VBCP = SET_VBC_POINTERS (CP, OFFSET);
+			call RELEASE_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL);
+			V = CONCATENATE_STATEMENTS (V, VBCP);
+		end;
+
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	call RELEASE_SYM_NODE (CLASS_SYMBOL);
+	return (V);
+
+end SET_VBC_POINTERS;
+
+end INITIALIZE_VIRTUAL_BASE_CLASSES;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_BASE_CLASSES
+/*
+/* N.B. fashioned after the TauMetric routine "make_base_init".
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_BASE_CLASSES: procedure (CLASS_SYMBOL)
+			 returns   (type (CXX_VID_T))
+			 internal;
+
+	declare
+		CLASS_SYMBOL	type (NID_T);
+
+	/* -TODO- */
+
+end INITIALIZE_BASE_CLASSES;
+
+/* ---------------------------------------------------------------------
+/* BASE_CLASS_REFERENCE
+/*
+/* N.B. fashioned after the TauMetric routine "base_ref".
+/* ------------------------------------------------------------------- */
+
+BASE_CLASS_REFERENCE: procedure (THIS_V, OFFSET, CLASS)
+		      returns   (type (CXX_VID_T))
+		      internal;
+	declare
+		THIS_V		type (CXX_VID_T),
+		OFFSET		type (LONG_T),
+		CLASS		type (NID_T);
+	declare
+		V		type (CXX_VID_T);
+
+	if OFFSET ^= 0 then do;
+		V = CAST_TO_SIMPLE_POINTER (THIS_V, CHAR_BT);
+		V = GET_VALUE_AND_EXPAND_LR
+			(ADD_VO, V, INTEGER_VALUE (OFFSET, INT_BT));
+	end;
+	else	V = THIS_V;
+	V = CAST_TO_CLASS_POINTER (V, CLASS);
+	return (V);
+
+end BASE_CLASS_REFERENCE;
+
+/* ---------------------------------------------------------------------
+/* VIRTUAL_BASE_CLASS_REFERENCE
+/*
+/* N.B. fashioned after the TauMetric routine "vbase_ref".
+/* ------------------------------------------------------------------- */
+
+VIRTUAL_BASE_CLASS_REFERENCE: procedure (THIS_V, OFFSET, CLASS)
+			      returns   (type (CXX_VID_T))
+			      internal;
+	declare
+		THIS_V		type (CXX_VID_T),
+		OFFSET		type (LONG_T),
+		CLASS		type (NID_T);
+	declare
+		V		type (CXX_VID_T);
+
+	if OFFSET ^= 0 then do;
+		V = CAST_TO_SIMPLE_POINTER (THIS_V, CHAR_BT);
+		V = GET_VALUE_AND_EXPAND_LR
+			(ADD_VO, V, INTEGER_VALUE (OFFSET, INT_BT));
+		V = CAST_TO_CLASS_POINTER_POINTER (V, CLASS);
+	end;
+	else	V = CAST_TO_CLASS_POINTER_POINTER (THIS_V, CLASS);
+	V = GET_VALUE_AND_EXPAND_L (STAR_VO, V);
+	return (V);
+
+end VIRTUAL_BASE_CLASS_REFERENCE;
+
+/* ---------------------------------------------------------------------
+/* IF_MOST_DERIVED
+/* ------------------------------------------------------------------- */
+
+IF_MOST_DERIVED: procedure (V, FUNCTION_SYMBOL)
+		 returns   (type (CXX_VID_T))
+		 internal;
+	declare
+		V			type (CXX_VID_T),
+		FUNCTION_SYMBOL		type (NID_T);
+	declare
+		CTOR_FLAG_SYMBOL	type (NID_T),
+		NEW_V			type (CXX_VID_T),
+		MOST_DERIVED		type (CXX_VID_T),
+		VOID_VAL		type (CXX_VID_T);
+
+	if V = NULL_CXX_VID then
+		return (NULL_CXX_VID);
+
+	CTOR_FLAG_SYMBOL = LOOKUP_CTOR_FLAG_PARAMETER (FUNCTION_SYMBOL);
+
+	if CTOR_FLAG_SYMBOL = NULL_NID then
+		return (V);
+
+	MOST_DERIVED = GET_VALUE_AND_EXPAND_LR
+			(EQ_VO,
+			 GET_VALUE_REF_AND_EXPAND (CTOR_FLAG_SYMBOL),
+			 INTEGER_VALUE_ZERO ());
+
+	VOID_VAL = GET_CONSTRUCTOR_VALUE (GET_VOID_TYPE (),
+					  NULL_CXX_VID,
+					  NULL_NID,
+					  IMPLICIT_CAST_VO);
+
+	NEW_V = CONVERT_TO_VOID (V);
+
+	NEW_V = GET_VALUE_AND_EXPAND_LR
+		(CONDITIONAL_VO, 
+		 MOST_DERIVED,
+		 GET_VALUE_AND_EXPAND_LR (COLON_VO, NEW_V, VOID_VAL));
+
+	NEW_V = INITIALIZE_OBJECT (NULL_CXX_VID, NEW_V);
+
+	return (NEW_V);
+
+end IF_MOST_DERIVED;
+

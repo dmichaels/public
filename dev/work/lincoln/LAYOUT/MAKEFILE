@@ -1,0 +1,124 @@
+########################################################################
+# PROGRAM:	VALID Graphics Editor Layout Program
+# FILE:		Makefile
+# AUTHOR:	David Michaels (david@ll-sst)
+# DATE:		December 1984
+########################################################################
+
+########################################################################
+#		Directories
+########################################################################
+
+CLIB_DIR =		../../libc
+
+CLIB_HDIR =		$(CLIB_DIR)/h
+
+VALIDLIB_DIR =		../validlib
+
+VALIDLIB_HDIR =		$(VALIDLIB_DIR)/h
+
+########################################################################
+#		Libraries
+########################################################################
+
+CLIB =			$(CLIB_DIR)/lib.a
+
+VALIDLIB =		$(VALIDLIB_DIR)/validlib.a
+
+ALL_LIBS =		$(CLIB) $(VALIDLIB)
+
+########################################################################
+#		Header Files
+########################################################################
+
+CLIB_HEADS =	 	$(CLIB_HDIR)/cdef.h
+
+VALIDLIB_HEADS = 	$(VALIDLIB_HDIR)/valid.h
+
+MAIN_HEADS =		main.h
+
+ALL_HEADS =		$(LIB_HEADS) $(VALIDLIB_HEADS) $(MAIN_HEADS)
+
+########################################################################
+#		Source Files
+########################################################################
+
+CFILES =	main.c bgeom.c xprt_parse.c map_parse.c ged_make.c \
+		package.c device.c output.c plunk.c
+
+OFILES =	main.o bgeom.o xprt_parse.o map_parse.o ged_make.o \
+		package.o device.o output.o plunk.o
+
+ALL_CFILES =	$(CFILES)
+
+ALL_OFILES =	$(OFILES)
+
+########################################################################
+#		Flags
+########################################################################
+
+INCLUDES =	-I$(CLIB_HDIR) -I$(VALIDLIB_HDIR)
+
+CFLAGS =	-O $(INCLUDES)
+
+########################################################################
+#		Make Dependencies
+########################################################################
+
+layout:		$(ALL_LIBS) $(ALL_OFILES) 
+		$(CC) $(CFLAGS) -o layout $(ALL_OFILES) $(ALL_LIBS)
+		@size layout
+		@echo Done.
+
+$(CLIB):
+		cd $(CLIB_DIR) ; make
+
+$(VALIDLIB):
+		cd $(VALIDLIB_DIR) ; make
+
+$(ALL_OFILES):	$(MAIN_HEADS)
+
+bgeom.o:	bgeom.c
+		$(CC) $(CFLAGS) -c bgeom.c
+	
+device.o:	device.c
+		$(CC) $(CFLAGS) -c device.c
+
+ged_make.o:	ged_make.c
+		$(CC) $(CFLAGS) -c ged_make.c
+
+main.o:		main.c $(VALID_HEADS)
+		$(CC) $(CFLAGS) -c main.c
+
+map_parse.o:	map_parse.c $(VALID_HEADS)
+		$(CC) $(CFLAGS) -c map_parse.c
+
+output.o:	output.c
+		$(CC) $(CFLAGS) -c output.c
+
+package.o:	package.c $(VALID_HEADS)
+		$(CC) $(CFLAGS) -c package.c
+
+plunk.o:	plunk.c
+		$(CC) $(CFLAGS) -c plunk.c
+
+xprt_parse.o:	xprt_parse.c
+		$(CC) $(CFLAGS) -c xprt_parse.c
+
+########################################################################
+#		Utilities
+########################################################################
+
+install:
+		mv /usr/local/layout /usr/local/layout.BAK
+		cp layout /usr/local/layout
+list:
+		ipf -2 $(ALL_CFILES) $(MAIN_HEADS) Makefile
+tape:
+		tar cv $(ALL_CFILES) $(MAIN_HEADS) Makefile
+
+man:
+		tbl Manual | nroff -man | colcrt | more -s
+
+printman:
+		tbl Manual | itroff -man

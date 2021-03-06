@@ -1,0 +1,33 @@
+#
+#	Makefile to print local library manual pages
+#
+
+all:
+	itroff -man\
+		bitmap.3l\
+		cfill.3l\
+		cindex.3l\
+		creplace.3l\
+		fcopy.3l\
+		findline.3l\
+		fseek_npat.3l\
+		fseek_pat.3l\
+		fskip.3l\
+		ftell_pat.3l\
+		getline.3l\
+		getstring.3l\
+		isint.3l\
+		rmchar.3l\
+		sdelim.3l\
+		sindex.3l\
+		squish.3l\
+		sreverse.3l\
+		strlower.3l\
+		strsave.3l\
+		strupper.3l\
+		tab.3l\
+		wordvec.3l
+		@make intro
+
+intro:
+		tbl intro.3l | itroff -man

@@ -1,0 +1,346 @@
+/* C++ dtor.pl1 - Emit startup & finishup destructor code */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  010  New value-node scheme.
+ *  03.05.91  PKT  009  Fixed access to base class destructor.
+ *  02.01.91  DGM  008  Updated to new global names scheme.
+ *  12.17.90  PKT  007  Fixed bug finding list of non-static data mbrs.
+ *  12.12.90  DGM  006  Updated to use the vbc-node list instead of
+ *			calling GET/DELETE_VIRTUAL_BASE_CLASS_LIST.
+ *  10.16.90  PKT  005  Added support for base/member destruction.
+ *  09.28.90  PKT  004  Bug fixes.
+ *  09.25.90  DGM  003  Preprocessor include file name changes.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  09.05.90  PKT  001  Added support for operator delete.
+ *  07.13.90  DGM  000  Original
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 010 DTOR');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_EMIT_CONSTRUCTOR_CODE_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_PROCESS_BASE_MBR_INIT_PKG;
+
+/* ---------------------------------------------------------------------
+/* For the destructor X::~X()  the emitted body is:
+/*
+/* void <mangled_dtor_X> (X* this, int dflag) {
+/*     < set virtual function table pointers >
+/*     < user code with "return" replaced with "goto return_label" >
+/* return_label:
+/*     < call member destructors >
+/*     < call non-virtual base destructors >
+/*     if (dflag & 2)
+/*         < call virtual base destructors >
+/*     if (dflag & 1)
+/*         operator delete (this);
+/*     }
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* EMIT_DESTRUCTOR_STARTUP_CODE
+/* ------------------------------------------------------------------- */
+
+EMIT_DESTRUCTOR_STARTUP_CODE: procedure (F)
+			      external  (X_EMIT_DESTRUCTOR_STARTUP_CODE);
+	declare
+		F		type (NID_T);
+	declare
+		FP		type (POINTER_T),
+		LAB_SYM		type (NID_T),
+		THIS_SYMBOL	type (NID_T);
+
+	call GET_SYM_NODE_R (F, FP);
+
+	/* Get the "this" symbol for the destructor */
+
+	THIS_SYMBOL = LOOKUP_THIS_PARAMETER (F);
+
+	/* Set the virtual function table pointers */
+
+	call INITIALIZE_VFT_POINTERS
+		(FP->SYM_NODE.ENCLOSING_SCOPE_OWNER, THIS_SYMBOL);
+
+	LAB_SYM = DECLARE_LABEL (DTOR_RETURN_LABEL_NAME);
+
+	call RELEASE_SYM_NODE (F);
+	return;
+
+end EMIT_DESTRUCTOR_STARTUP_CODE;
+
+/* ---------------------------------------------------------------------
+/* EMIT_DESTRUCTOR_FINISHUP_CODE
+/* ------------------------------------------------------------------- */
+
+EMIT_DESTRUCTOR_FINISHUP_CODE: procedure (F)
+			       external  (X_EMIT_DESTRUCTOR_FINISHUP_CODE);
+	declare
+		F		type (NID_T);
+	declare
+		FP		type (POINTER_T),
+		LAB_SYM		type (NID_T),
+		FLAG_SYM	type (NID_T),
+		TEST		type (CXX_VID_T),
+		FWD_LABEL	type (CXX_VID_T),
+		GO_AROUND	type (CXX_VID_T),
+		DELETE_NAME	type (NID_T),
+		DELETE_SYM	type (NID_T),
+		THIS_SYMBOL	type (NID_T),
+		SP		type (POINTER_T),
+		SIG_P		type (POINTER_T),
+		TSP		type (POINTER_T),
+		TP		type (POINTER_T),
+		SIZE		type (LONG_T),
+		UNITS		type (SHORT_T),
+		BOUNDARY	type (SHORT_T),
+		ARG		type (CXX_VID_T),
+		ARGS		type (CXX_VID_T),
+		DEL		type (CXX_VID_T),
+		DEFINE_LAB_EXPR	type (CXX_VID_T),
+		CLASS_SYM	type (NID_T),
+		VBC_LIST	type (NID_T);
+
+	call GET_SYM_NODE_R (F, FP);
+
+	/* Get the "this" symbol for the destructor */
+
+	THIS_SYMBOL = LOOKUP_THIS_PARAMETER (F);
+
+	/* Get the class for the destructor. */
+
+	CLASS_SYM = FP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+
+	/* Define the label which any "return" will use. */
+
+	LAB_SYM = LOOKUP_LABEL (DTOR_RETURN_LABEL_NAME, 
+				CURRENT_FUNCTION_SCOPE);
+	DEFINE_LAB_EXPR = GET_LABEL_REF_AND_EXPAND (LAB_SYM);
+	call EMIT_STATEMENT (DEFINE_LAB_EXPR);
+
+	/* Destroy the members */
+
+	call GET_SYM_NODE_R (CLASS_SYM, SP);
+	call DESTROY_MEMBER_LIST (SP->SYM_NODE.FIELD1);	/* non-stat data mbr */
+
+	/* Destroy the non-virtual base classes */
+
+	call DESTROY_BASE_LIST (SP->SYM_NODE.BASE_CLASSES);
+
+	/*
+	/* Destroy the virtual base classes if the appropriate
+	/* flag is set, i.e. the 2 bit is set if it's not the most
+	/* derived subobject, and the virtual bases should not be
+	/* destroyed.
+	/**/
+
+	FLAG_SYM = LOOKUP_DTOR_FLAG_PARAMETER (F);
+	TEST = GET_VALUE_AND_EXPAND_LR
+	       (AND_VO,
+		GET_VALUE_REF_AND_EXPAND (FLAG_SYM),
+		INTEGER_VALUE (2, 0));
+	FWD_LABEL = DECLARE_LABEL_VALUE (2);
+	GO_AROUND = GET_VALUE_AND_EXPAND_LR (BRANCH_TRUE_VO, FWD_LABEL, TEST);
+	call EMIT_STATEMENT (GO_AROUND);
+
+	VBC_LIST = SP->SYM_NODE.VIRTUAL_BASE_CLASSES;
+	call DESTROY_VBC_LIST (VBC_LIST);
+	call RELEASE_SYM_NODE (CLASS_SYM);
+
+	call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L (LABEL_VO, FWD_LABEL));
+
+	/* Delete this object's storage if the appropriate flag is set. */
+
+	TEST = GET_VALUE_AND_EXPAND_LR
+	       (AND_VO,
+		GET_VALUE_REF_AND_EXPAND (FLAG_SYM),
+		INTEGER_VALUE_ONE ());
+	FWD_LABEL = DECLARE_LABEL_VALUE (2);
+	GO_AROUND = GET_VALUE_AND_EXPAND_LR (BRANCH_FALSE_VO, FWD_LABEL, TEST);
+	call EMIT_STATEMENT (GO_AROUND);
+
+	DELETE_NAME = OPERATOR_DELETE_NAME;
+	DELETE_SYM = LOOKUP_NAME (DELETE_NAME, VANILLA_SK, 
+				  CURRENT_FUNCTION_SCOPE);
+
+	/* Form the second (size) argument, if needed by this 'delete'. */
+	call GET_SYM_NODE_R (DELETE_SYM, SP);
+	call GET_SIG_NODE_R (SP->SYM_NODE.TOP_TYPE.SIGNATURE, SIG_P);
+	if SIG_P->SIG_NODE.NPARAMETERS > 1 then do;
+		/* Form the second (size) arg. */
+		call GET_SYM_NODE_R (THIS_SYMBOL, TSP);
+		call GET_TYPE_NODE_R (TSP->SYM_NODE.TYPE, TP);
+		call ANY_TYPE_SIZE (TP, 1, SIZE, UNITS, BOUNDARY);
+		call RELEASE_TYPE_NODE (TSP->SYM_NODE.TYPE);
+		call RELEASE_SYM_NODE (THIS_SYMBOL);
+		SIZE = ROUNDU (SIZE, UNITS, ADDRESS_UNITS);
+		ARG = INTEGER_VALUE (SIZE, 0);
+		ARGS = GET_VALUE_AND_EXPAND_L (ARG_VO, ARG);
+	end;
+	else
+		ARGS = NULL_CXX_VID;
+	call RELEASE_SIG_NODE (SP->SYM_NODE.TOP_TYPE.SIGNATURE);
+	call RELEASE_SYM_NODE (DELETE_SYM);
+
+	/* Form an argument that's the address of the object.*/
+	ARG = GET_VALUE_REF_AND_EXPAND (THIS_SYMBOL);
+	call SET_VALUE_SIMPLE_POINTER_TYPE (VOID_BT);
+	ARGS = GET_VALUE_AND_EXPAND_LR (ARG_VO, ARG, ARGS);
+
+	/* Call the function delete. */
+	DEL = GET_VALUE_AND_EXPAND_LR
+	      (CALL_FUNCTION_VO,
+	       GET_VALUE_REF_AND_EXPAND (DELETE_SYM),
+	       ARGS);
+	call EMIT_STATEMENT (DEL);
+
+	call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L (LABEL_VO, FWD_LABEL));
+
+	call RELEASE_SYM_NODE (F);
+	return;
+
+/* ---------------------------------------------------------------------
+/* DESTROY_VBC_LIST
+/* Destroy the listed virtual bases in reverse order.
+/* ------------------------------------------------------------------- */
+
+DESTROY_VBC_LIST: procedure (VBC_LIST) recursive internal;
+
+	declare
+		VBC_LIST			type (NID_T);
+	declare
+		(VBC, PREV_VBC, LAST_VBC)	type (NID_T),
+		VBCP				type (POINTER_T);
+
+	if VBC_LIST = NULL_NID then
+		return;
+
+	call GET_VBC_NODE_R (VBC_LIST, VBCP);
+	LAST_VBC = VBCP->VBC_NODE.PREV;
+	call RELEASE_VBC_NODE (VBC_LIST);
+
+	do VBC = LAST_VBC repeat (PREV_VBC)
+	while (VBC ^= NULL_NID) until (VBC = VBC_LIST);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		call EMIT_STATEMENT
+		     (GET_BASE_MEMBER_FINI
+		      (VBCP->VBC_NODE.SYMBOL,
+		       VBCP->VBC_NODE.OFFSET,
+		       BYTES,
+		       SP->SYM_NODE.TOP_TYPE));
+		PREV_VBC = VBCP->VBC_NODE.PREV;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+
+end DESTROY_VBC_LIST;
+
+/* ---------------------------------------------------------------------
+/* DESTROY_BASE_LIST
+/* Destroy the listed non-virtual bases in reverse order.
+/* ------------------------------------------------------------------- */
+DESTROY_BASE_LIST: procedure (BC_ID)
+		   internal recursive;
+	declare
+		BC_ID		type (NID_T);
+
+	declare
+		NEXT		type (NID_T),
+		BP		type (POINTER_T),
+		SYM		type (NID_T),
+		IS_VIRTUAL	type (BOOL_T),
+		OFF		type (LONG_T);
+
+	if BC_ID = NULL_NID then
+		return;
+
+	call GET_BASE_CLASS_NODE_R (BC_ID, BP);
+	NEXT = BP->BASE_CLASS_NODE.NEXT;
+	SYM = BP->BASE_CLASS_NODE.SYMBOL;
+	OFF = BP->BASE_CLASS_NODE.OFFSET;
+	IS_VIRTUAL = BP->BASE_CLASS_NODE.VIRTUAL;
+	call RELEASE_SYM_NODE (BC_ID);
+
+	call DESTROY_BASE_LIST (NEXT);
+
+	if ^IS_VIRTUAL then
+		call EMIT_STATEMENT 
+		     (GET_BASE_MEMBER_FINI 
+		      (SYM, OFF, BYTES, SP->SYM_NODE.TOP_TYPE));
+
+end DESTROY_BASE_LIST;
+
+/* ---------------------------------------------------------------------
+/* DESTROY_MEMBER_LIST
+/* Destroy the listed non-static data members in reverse order.
+/* ------------------------------------------------------------------- */
+DESTROY_MEMBER_LIST: procedure (SYM_ID)
+		     internal recursive;
+	declare
+		SYM_ID		type (NID_T);
+
+	declare
+		NEXT		type (NID_T),
+		P		type (POINTER_T),
+		OFF		type (LONG_T),
+		OFFU		type (SHORT_T),
+		TYPE		type (TYPE_DATA_T);
+
+	if SYM_ID = NULL_NID then
+		return;
+
+	call GET_SYM_NODE_R (SYM_ID, P);
+	NEXT = P->SYM_NODE.BROTHER;
+	OFF = P->SYM_NODE.LOCATION;
+	OFFU = rank (P->SYM_NODE.OFFSET_UNITS);
+	TYPE = P->SYM_NODE.TOP_TYPE;
+	call RELEASE_SYM_NODE (SYM_ID);
+
+	call DESTROY_MEMBER_LIST (NEXT);
+
+	call EMIT_STATEMENT (GET_BASE_MEMBER_FINI (SYM_ID, OFF, OFFU, TYPE));
+
+end DESTROY_MEMBER_LIST;
+
+end EMIT_DESTRUCTOR_FINISHUP_CODE;
+

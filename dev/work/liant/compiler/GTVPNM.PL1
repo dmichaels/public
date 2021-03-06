@@ -1,0 +1,238 @@
+/* C++ gtvpnm.pl1 - Return the name of a VOP code */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.08.91  PKT  019  Added VA_ARG_VO and VA_START_VO.
+ *  10.04.91  DGM  018  Added GLOBAL_IN.
+ *  07.12.91  PKT  017  Added DBG_RANGE_VO and DBG_SUBSCRIPT_VO.
+ *  06.02.91  PKT  016  Added DESTRUCTOR_VO.
+ *  05.02.91  DGM  015  Added VaStack.
+ *  02.21.91  DGM  014  Shortened names.
+ *  01.27.91  PKT  013  Updated for member pointers.
+ *  12.28.90  PKT  012  Updated for added CAST_TO_BASE_VO.
+ *  11.09.90  PKT  011  Added IMPLICIT_STAR_VO and DECLARE_TEMP_VO.
+ *  09.17.90  PKT  010  Added EXPLICIT_COMMA_VO.
+ *  09.14.90  DGM  009  Changed include file names and VOP names.
+ *  08.31.90  TLF  008  Updated for UNARY_AND.
+ *  08.27.90  TLF  007  Updated for SSAD and PTR_STAR.
+ *  08.07.90  PKT  006  Updated.
+ *  07.20.90  PKT  005  Updated for SAVE, EXIT, and BRANCH_SAVE.
+ *  07.05.90  PKT  004  Updated for DESTROY_VO.
+ *  06.05.90  DGM  003  Updated for the new utilities.
+ *  05.31.90  PKT  002  Updated for vops that initialize.
+ *  04.17.90  PKT  001  Updated for varargs vops.
+ *  02.22.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.08.91 019 GTVPNM');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_OPERATOR_CODES_IN;
+
+/* ---------------------------------------------------------------------
+/* GET_VOP_NAME
+/* ------------------------------------------------------------------- */
+
+GET_VOP_NAME: procedure (VOP)
+	      returns   (character (10) varying)
+	      external  (X_GET_VOP_NAME);
+
+	declare
+		VOP		type (SHORT_T);
+	declare
+		S		character (10) varying;
+	declare
+		VOP_NAME	(LB_OPERATOR_CODES : HB_OPERATOR_CODES)
+				character (8) varying static initial (
+		'Assign',
+		'ImpAssgn',
+		'Copy',
+		'Integer',
+		'Constant',
+		'<bad>',
+		'Ref',
+		'ParamRef',
+		'MembRef',
+		'MembPtr',
+		'Value',
+		'Addr',
+		'ImpAddr',
+		'Dot',
+		'BaseCast',
+		'Cast',
+		'FunCast',
+		'ImpCast',
+		'Type',
+		'Star',
+		'ImpStar',
+		'Arrow',
+		'ArrwStar',
+		'DotStar',
+		'Sizeof',
+		'ExpComma',
+		'Comma',
+		'LeftVal',
+		'Plus',
+		'Minus',
+		'Complmnt',
+		'Add',
+		'AddAssgn',
+		'Sub',
+		'SubAssgn',
+		'Mul',
+		'MulAssgn',
+		'Div',
+		'DivAssgn',
+		'Mod',
+		'ModAssgn',
+		'Lshift',
+		'LshAssgn',
+		'Rshift',
+		'RshAssgn',
+		'And',
+		'AndAssgn',
+		'Or',
+		'OrAssgn',
+		'Xor',
+		'XorAssgn',
+		'AndAnd',
+		'OrOr',
+		'Not',
+		'UnaryAND',
+		'EQ',
+		'GE',
+		'LE',
+		'NE',
+		'LT',
+		'GT',
+		'Br',
+		'BrEQ',
+		'BrGE',
+		'BrLE',
+		'BrNE',
+		'BrLT',
+		'BrGT',
+		'BrT',
+		'BrF',
+		'BrComp',
+		'BrSw',
+		'BrSave',
+		'Inc',
+		'PostInc',
+		'Dec',
+		'PostDec',
+		'DefLabel',
+		'Label',
+		'Cond',
+		'CondRef',
+		'CondVal',
+		'Alt',
+		'AltValue',
+		'Colon',
+		'UnInit',
+		'Call',
+		'CallFun',
+		'ArgImm',
+		'ArgRef',
+		'Sref',
+		'Return',
+		'ImpRet',
+		'Convert',
+		'ConvUnit',
+		'Byte',
+		'Rank',
+		'Srank',
+		'Field',
+		'StmntId',
+		'Proc',
+		'Entry',
+		'Nop',
+		'BlockEnd',
+		'Ptr',
+		'Initial',
+		'SSAdd',
+		'Abs',
+		'Sqrt',
+		'Exp',
+		'Log',
+		'Log10',
+		'Sin',
+		'Cos',
+		'Tan',
+		'Asin',
+		'Acos',
+		'Atan',
+		'Atan2',
+		'Sinh',
+		'Cosh',
+		'Tanh',
+		'Fmod',
+		'Pow',
+		'Ceil',
+		'Floor',
+		'Fabs',
+		'Strcmp',
+		'Strcpy',
+		'Strlen',
+		'Strncmp',
+		'Strncpy',
+		'Strcat',
+		'Strncat',
+		'Memcpy',
+		'Memcmp',
+		'Switch',
+		'MembInit',
+		'VecInit',
+		'New',
+		'Delete',
+		'Destroy',
+		'LoopTop',
+		'LoopBody',
+		'LoopExit',
+		'VaReg',
+		'VaMem',
+		'VaOffset',
+		'VaRegtyp',
+		'VaAlign',
+		'Save',
+		'Exit',
+		'DclTmp',
+		'VaStack',
+		'Dtor',
+		'DbgRange',
+		'DbgSScpt',
+		'VaArg',
+		'VaStart'
+	);
+
+	if (VOP < LB_OPERATOR_CODES) | (VOP > HB_OPERATOR_CODES) then do;
+		S = '<Vop=' || trim (char (VOP)) ||  '>';
+		return (S);
+	end;
+	else	return (VOP_NAME (VOP));
+
+end GET_VOP_NAME;
+

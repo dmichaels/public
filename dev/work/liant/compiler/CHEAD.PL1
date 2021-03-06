@@ -1,0 +1,182 @@
+/* C++ chead.pl1 - C header mode set/unset utilities */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.29.92  DGM  005  Added SW_ALLOW_EXTRANEOUS_SEMICOLON.
+ *  08.06.91  DGM  004  Added SW_NO_PROTO_SCOPE_TAG_NAMES.
+ *  07.31.91  DGM  003  Updated.
+ *  05.29.91  DGM  002  Updated.
+ *  03.21.91  DGM  001  Updated.
+ *  03.20.91  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (31) varying static internal initial
+
+('@(#)LPI 10.29.92 005 CHEAD');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+C_HEADER_MODE_LEVEL			type (SHORT_T)
+					static internal initial (0);
+declare
+
+1 SAVE_SW				static internal,
+  2 X_OLD_STYLE_FUNCTIONS		type (BOOL_T) initial (FALSE),
+  2 TENTATIVE_DEFN			type (BOOL_T) initial (FALSE),
+  2 X_UNINITIALIZED_CONST		type (BOOL_T) initial (FALSE),
+  2 NO_NESTED_TYPE_NAMES		type (BOOL_T) initial (FALSE),
+  2 NO_NESTED_ENUMERATOR_NAMES		type (BOOL_T) initial (FALSE),
+  2 NON_PROTO_COMPAT_WITH_ANY		type (BOOL_T) initial (FALSE),
+  2 NO_PROTO_SCOPE_TAG_NAMES		type (BOOL_T) initial (FALSE),
+  2 ALLOW_EXTRANEOUS_SEMICOLON		type (BOOL_T) initial (FALSE);
+
+/* ---------------------------------------------------------------------
+/* SET_C_HEADER_MODE
+/*
+/* Set the compiler in "C-header" mode (only if we are compiling in C++
+/* mode, and we're not already in "C-header" mode).  This is to handle
+/* the extern "C-header" linkage specifier as well as #pragma LPI C-header.
+/* When in "C-header" mode, the compiler will behave as follows:
+/*
+/*  1. All function declaration will implicitly be "C" linkage. Type-safe
+/*     linkage will not be applied to function names; i.e. function names
+/*     with external linkage will not be mangled.  However, overloading
+/*     a set of *internal* linkage (e.g. inline) functions will still
+/*     be allowed; this last bit of functionality is handled in pardcl.
+/*  2. A function declarator with an empty parameter list (i.e. of the
+/*     form "()") will be interpreted as a function taking an unknown
+/*     number/type of arguments rather than a function taking no arguments.
+/*     Also, such a function declarator will be compatible with any
+/*     corresponding prototyped function declarator, even if it has
+/*     an ellipsis or an unpromoted type.
+/*  3. Tentative definitions will be allowed; i.e. multiple declarations
+/*     without and "extern" specifier of a variable name will be allowed.
+/*  4. Declarations of uninitialized "const" variable names will be allowed.
+/*  5. The default linkage of a "const" variable name will not be internal.
+/*  6. Classes, structs, unions, enumerations, and enumerators nested within
+/*     a class, struct, or union declaration will reside in the same scope as
+/*     the enclosing class, struct, or union, rather than in the scope of
+/*     the class, struct, or union itself.
+/*  7. Classes, structs, unions, enumerations, and enumerators declared
+/*     for the first time within prototype scope will reside in the
+/*     outer (global or local (not class due to #6)) scope rather than
+/*     in the prototype scope.  Note that this is in defiance of ANSI-C.
+/*  8. The macro __STDC__ will be defined; this is done by CPP and only
+/*     if C-header mode is entered via the #pragma LPI C-header, not if
+/*     C-header mode is entered via extern "C-header" { ... }.  Note that
+/*     there are other preprocessor related things done in C-header mode
+/*     which only take effect when C-header mode is entered via #pragma
+/*     LPI C-header; see CPP for details.
+/*  9. Extraneous semi-colons will be ignored.
+/* ------------------------------------------------------------------- */
+
+SET_C_HEADER_MODE: procedure external (X_SET_C_HEADER_MODE);
+
+	if ^SW_C_PLUS_PLUS then
+		return;
+
+	if C_HEADER_MODE_LEVEL = 0 then do;
+
+		SAVE_SW.X_OLD_STYLE_FUNCTIONS
+			= SW_X_OLD_STYLE_FUNCTIONS;
+		SAVE_SW.TENTATIVE_DEFN
+			= SW_TENTATIVE_DEFN;
+		SAVE_SW.X_UNINITIALIZED_CONST
+			= SW_X_UNINITIALIZED_CONST;
+		SAVE_SW.NO_NESTED_TYPE_NAMES
+			= SW_NO_NESTED_TYPE_NAMES;
+		SAVE_SW.NO_NESTED_ENUMERATOR_NAMES
+			= SW_NO_NESTED_ENUMERATOR_NAMES;
+		SAVE_SW.NON_PROTO_COMPAT_WITH_ANY
+			= SW_NON_PROTO_COMPAT_WITH_ANY;
+		SAVE_SW.NO_PROTO_SCOPE_TAG_NAMES
+			= SW_NO_PROTO_SCOPE_TAG_NAMES;
+		SAVE_SW.ALLOW_EXTRANEOUS_SEMICOLON
+			= SW_ALLOW_EXTRANEOUS_SEMICOLON;
+
+		SW_X_OLD_STYLE_FUNCTIONS	= TRUE;
+		SW_TENTATIVE_DEFN		= TRUE;
+		SW_X_UNINITIALIZED_CONST	= TRUE;
+		SW_NO_NESTED_TYPE_NAMES		= TRUE;
+		SW_NO_NESTED_ENUMERATOR_NAMES	= TRUE;
+		SW_NON_PROTO_COMPAT_WITH_ANY	= TRUE;
+		SW_NO_PROTO_SCOPE_TAG_NAMES	= TRUE;
+		SW_ALLOW_EXTRANEOUS_SEMICOLON	= TRUE;
+	end;
+
+	C_HEADER_MODE_LEVEL = C_HEADER_MODE_LEVEL + 1;
+
+end SET_C_HEADER_MODE;
+
+/* ---------------------------------------------------------------------
+/* UNSET_C_HEADER_MODE
+/* ------------------------------------------------------------------- */
+
+UNSET_C_HEADER_MODE: procedure external (X_UNSET_C_HEADER_MODE);
+
+	if ^SW_C_PLUS_PLUS | (C_HEADER_MODE_LEVEL = 0) then
+		return;
+
+	C_HEADER_MODE_LEVEL = C_HEADER_MODE_LEVEL - 1;
+
+	if C_HEADER_MODE_LEVEL = 0 then do;
+		SW_X_OLD_STYLE_FUNCTIONS
+			= SAVE_SW.X_OLD_STYLE_FUNCTIONS;
+		SW_TENTATIVE_DEFN
+			= SAVE_SW.TENTATIVE_DEFN;
+		SW_X_UNINITIALIZED_CONST
+			= SAVE_SW.X_UNINITIALIZED_CONST;
+		SW_NO_NESTED_TYPE_NAMES
+			= SAVE_SW.NO_NESTED_TYPE_NAMES;
+		SW_NO_NESTED_ENUMERATOR_NAMES
+			= SAVE_SW.NO_NESTED_ENUMERATOR_NAMES;
+		SW_NON_PROTO_COMPAT_WITH_ANY
+			= SAVE_SW.NON_PROTO_COMPAT_WITH_ANY;
+		SW_NO_PROTO_SCOPE_TAG_NAMES
+			= SAVE_SW.NO_PROTO_SCOPE_TAG_NAMES;
+		SW_ALLOW_EXTRANEOUS_SEMICOLON
+			= SAVE_SW.ALLOW_EXTRANEOUS_SEMICOLON;
+	end;
+
+end UNSET_C_HEADER_MODE;
+
+/* ---------------------------------------------------------------------
+/* IN_C_HEADER_MODE
+/* ------------------------------------------------------------------- */
+
+IN_C_HEADER_MODE: procedure
+		  returns   (type (BOOL_T))
+		  external  (X_IN_C_HEADER_MODE);
+
+	return (C_HEADER_MODE_LEVEL > 0);
+
+end IN_C_HEADER_MODE;
+

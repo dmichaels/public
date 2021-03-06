@@ -1,0 +1,25 @@
+/* C++ CXX_RUN_TIME_CALL_IN - Set up call to a run-time library routine. */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  09.05.90  PKT  001  Eliminated VEC_CONSTRUCT_RT and VEC_DESTOY_RT.
+ *  06.29.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* NO_RUN_TIME_ARGS
+/* Pass this to RUN_TIME_CALL or RUN_TIME_ARGS to indicate an empty
+/* argument list, or no arguments after the current argument.
+/* ------------------------------------------------------------------- */
+%replace NO_RUN_TIME_ARGS	by 0;

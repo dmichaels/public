@@ -1,0 +1,170 @@
+/* C++ CXX_PARSER_TERMINAL_CODES_IN - Grammar terminals */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  02.05.92  DGM  003  Removed "else" from statement keyword range.
+ *  03.12.91  DGM  002  Added "throw", "try", and "asm" keywords.
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  08.29.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* This is the list of C++ language terminals is used by the parser;
+/* this list is duplicated in the %TERMINALS section of the grammar file
+/* & must correspond exactly.  Tokens gotten from the lexer/preprocessor
+/* are mapped to one of these terminal codes via the TOKEN_TERMINAL array
+/* defined in C_PAR_GLOBAL_IN (parglo.in).  Note the use of ranges for
+/* statements, postix operators, unary operators, and binary operators;
+/* these are used in the parser driver (see builtins in pardri.pl1) only
+/* as parser accelerators.
+/* ------------------------------------------------------------------- */
+
+%replace NULL_TERMINAL		    by  0;
+
+%replace IDENTIFIER_TERMINAL	    by  1; /* identifer */
+%replace CONSTANT_TERMINAL	    by  2; /* dec/oct/hex/float constant */
+%replace STRING_TERMINAL	    by  3; /* string literal */
+
+%replace LB_DCL_TYPE_SPEC_TERMINAL  by  4; /* ----------------------TYPE_SPEC-*/
+%replace TYPE_TERMINAL		    by  4; /* void      **          type_spec */
+					   /* char      **          type_spec */
+					   /* short     **          type_spec */
+					   /* int       **          type_spec */
+					   /* long      **          type_spec */
+					   /* unsigned  **          type_spec */
+					   /* float     **          type_spec */
+					   /* double    **          type_spec */
+%replace LB_DCL_SPEC_TERMINAL	    by  5; /* -------------DCL_SPEC-type_spec-*/
+%replace TYPE_QUALIFIER_TERMINAL    by  5; /* const     ** dcl_spec-type_spec */
+					   /* volatile  ** dcl_spec-type_spec */
+					   /* noalias   ** dcl_spec-type_spec */
+%replace STORAGE_CLASS_TERMINAL	    by  6; /* auto      ** dcl_spec-type_spec */
+					   /* extern    ** dcl_spec-type_spec */
+					   /* register  ** dcl_spec-type_spec */
+					   /* static    ** dcl_spec-type_spec */
+					   /* typedef   ** dcl_spec-type_spec */
+%replace CLASS_TERMINAL		    by  7; /* class     ** dcl_spec-type_spec */
+					   /* struct    ** dcl_spec-type_spec */
+					   /* union     ** dcl_spec-type_spec */
+%replace KW_ENUM_TERMINAL	    by  8; /* enum      ** dcl_spec-type_spec */
+%replace KW_FRIEND_TERMINAL	    by  9; /* friend    ** dcl_spec-type_spec */
+%replace KW_INLINE_TERMINAL	    by 10; /* inline    ** dcl_spec-type_spec */
+%replace KW_OVERLOAD_TERMINAL	    by 11; /* overload  ** dcl_spec-type_spec */
+%replace KW_VIRTUAL_TERMINAL	    by 12; /* virtual   ** dcl_spec-type_spec */
+%replace HB_DCL_SPEC_TERMINAL       by 12; /* -------------DCL_SPEC-----------*/
+%replace HB_DCL_TYPE_SPEC_TERMINAL  by 12; /* ----------------------TYPE_SPEC-*/
+
+%replace KW_PRIVATE_TERMINAL	    by 13; /* private   */
+%replace KW_PROTECTED_TERMINAL	    by 14; /* protected */
+%replace KW_PUBLIC_TERMINAL	    by 15; /* public    */
+%replace KW_OPERATOR_TERMINAL	    by 16; /* operator  */
+%replace KW_TEMPLATE_TERMINAL	    by 17; /* template  */
+%replace KW_THIS_TERMINAL	    by 18; /* this      */
+%replace KW_CATCH_TERMINAL	    by 19; /* catch     */
+%replace KW_THROW_TERMINAL	    by 20; /* throw     */
+%replace KW_TRY_TERMINAL	    by 21; /* try       */
+%replace KW_ASM_TERMINAL	    by 22; /* asm       */
+
+%replace KW_NEW_TERMINAL	    by 23; /* new       */
+%replace KW_DELETE_TERMINAL	    by 24; /* delete    */
+%replace KW_SIZEOF_TERMINAL	    by 25; /* sizeof    */
+
+%replace KW_ELSE_TERMINAL	    by 26; /* else      */
+
+%replace LB_STATEMENT_TERMINAL	    by 27; /* -------------STATEMENT-*/
+%replace KW_BREAK_TERMINAL	    by 27; /* break     ** statement */
+%replace KW_CASE_TERMINAL	    by 28; /* case      ** statement */
+%replace KW_CONTINUE_TERMINAL	    by 29; /* continue  ** statement */
+%replace KW_DEFAULT_TERMINAL	    by 30; /* default   ** statement */
+%replace KW_DO_TERMINAL		    by 31; /* do        ** statement */
+%replace KW_FOR_TERMINAL	    by 32; /* for       ** statement */
+%replace KW_GOTO_TERMINAL	    by 33; /* goto      ** statement */
+%replace KW_IF_TERMINAL		    by 34; /* if        ** statement */
+%replace KW_RETURN_TERMINAL	    by 35; /* return    ** statement */
+%replace KW_SWITCH_TERMINAL	    by 36; /* switch    ** statement */
+%replace KW_WHILE_TERMINAL	    by 37; /* while     ** statement */
+					   /*           ** statement */
+%replace SEMI_COLON_TERMINAL	    by 38; /* ;   	** statement */
+%replace LEFT_BRACE_TERMINAL	    by 39; /* {   	** statement */
+%replace HB_STATEMENT_TERMINAL	    by 39; /* -------------STATEMENT-*/
+
+%replace RIGHT_BRACE_TERMINAL	    by 40; /* }   */
+%replace COMMA_TERMINAL		    by 41; /* ,   */
+%replace COLON_TERMINAL		    by 42; /* :   */
+%replace COLON_COLON_TERMINAL	    by 43; /* ::  */
+%replace ELLIPSIS_TERMINAL	    by 44; /* ... */
+%replace RIGHT_BRACKET_TERMINAL	    by 45; /* ]   */
+%replace RIGHT_PAREN_TERMINAL	    by 46; /* )   */
+
+%replace LB_POSTFIX_OP_TERMINAL	    by 47; /* ----------------------POSTFIX-*/
+%replace LEFT_BRACKET_TERMINAL	    by 47; /* [   **                postfix */
+%replace LEFT_PAREN_TERMINAL	    by 48; /* (   **                postfix */
+%replace DOT_TERMINAL		    by 49; /* .   **                postfix */
+					   /*     **                postfix */
+%replace LB_OVERLOAD_OP_TERMINAL    by 50; /* -------OVERLOAD-------postfix-*/
+%replace ARROW_TERMINAL		    by 50; /* ->  ** overload       postfix */
+					   /*     ** overload       postfix */
+%replace LB_UNARY_OP_TERMINAL	    by 51; /*--------overload-UNARY-postfix */
+%replace PLUS_PLUS_TERMINAL	    by 51; /* ++  ** overload-unary-postfix */
+%replace MINUS_MINUS_TERMINAL	    by 52; /* --  ** overload-unary-postfix */
+%replace HB_POSTFIX_OP_TERMINAL	    by 52; /* ----** overload-unary-POSTFIX-*/
+					   /*     ** overload-unary         */
+%replace NOT_TERMINAL		    by 53; /* !   ** overload-unary         */
+%replace TILDE_TERMINAL		    by 54; /* ~   ** overload-unary         */
+					   /*     ** overload-unary         */
+%replace LB_BINARY_OP_TERMINAL	    by 55; /*--------overload-unary--BINARY-*/
+%replace PLUS_TERMINAL		    by 55; /* +   ** overload-unary--binary */
+%replace MINUS_TERMINAL		    by 56; /* -   ** overload-unary--binary */
+%replace STAR_TERMINAL		    by 57; /* *   ** overload-unary--binary */
+%replace AND_TERMINAL		    by 58; /* &   ** overload-unary--binary */
+%replace HB_UNARY_OP_TERMINAL	    by 58; /*--------overload-UNARY--binary */
+					   /*     ** overload        binary */
+%replace SLASH_TERMINAL		    by 59; /* /   ** overload        binary */
+%replace PERCENT_TERMINAL	    by 60; /* %   ** overload        binary */
+%replace LEFT_SHIFT_TERMINAL	    by 61; /* <<  ** overload        binary */
+%replace RIGHT_SHIFT_TERMINAL	    by 62; /* >>  ** overload        binary */
+%replace AND_AND_TERMINAL	    by 63; /* &&  ** overload        binary */
+%replace OR_OR_TERMINAL		    by 64; /* ||  ** overload        binary */
+%replace OR_TERMINAL		    by 65; /* |   ** overload        binary */
+%replace XOR_TERMINAL		    by 66; /* ^   ** overload        binary */
+%replace LESS_THAN_TERMINAL	    by 67; /* <   ** overload        binary */
+%replace LESS_EQUAL_TERMINAL	    by 68; /* <=  ** overload        binary */
+%replace GREATER_THAN_TERMINAL	    by 69; /* >   ** overload        binary */
+%replace GREATER_EQUAL_TERMINAL	    by 70; /* >=  ** overload        binary */
+%replace EQUAL_EQUAL_TERMINAL	    by 71; /* ==  ** overload        binary */
+%replace NOT_EQUAL_TERMINAL	    by 72; /* !=  ** overload        binary */
+%replace ARROW_STAR_TERMINAL	    by 73; /* ->* ** overload        binary */
+					   /*     ** overload        binary */
+%replace LB_ASSIGN_OP_TERMINAL	    by 74; /* -------overload-ASSIGN-binary */
+%replace EQUAL_TERMINAL		    by 74; /* =   ** overload-assign-binary */
+%replace PLUS_EQUAL_TERMINAL	    by 75; /* +=  ** overload-assign-binary */
+%replace MINUS_EQUAL_TERMINAL	    by 76; /* -=  ** overload-assign-binary */
+%replace STAR_EQUAL_TERMINAL	    by 77; /* *=  ** overload-assign-binary */
+%replace SLASH_EQUAL_TERMINAL	    by 78; /* /=  ** overload-assign-binary */
+%replace PERCENT_EQUAL_TERMINAL	    by 79; /* %=  ** overload-assign-binary */
+%replace AND_EQUAL_TERMINAL	    by 80; /* &=  ** overload-assign-binary */
+%replace OR_EQUAL_TERMINAL	    by 81; /* |=  ** overload-assign-binary */
+%replace XOR_EQUAL_TERMINAL	    by 82; /* ^=  ** overload-assign-binary */
+%replace LEFT_SHIFT_EQUAL_TERMINAL  by 83; /* <<= ** overload-assign-binary */
+%replace RIGHT_SHIFT_EQUAL_TERMINAL by 84; /* >>= ** overload-assign-binary */
+%replace HB_ASSIGN_OP_TERMINAL	    by 84; /* -------overload-ASSIGN-binary */
+%replace HB_OVERLOAD_OP_TERMINAL    by 84; /* -------OVERLOAD--------binary */
+%replace DOT_STAR_TERMINAL	    by 85; /* .*  **                 binary */
+%replace QUESTION_TERMINAL	    by 86; /* ?   **                 binary */
+%replace HB_BINARY_OP_TERMINAL	    by 86; /* -----------------------BINARY-*/
+
+/* Pseudo token terminals */
+
+%replace BOF_TERMINAL		    by 87; /* Beginning-of-file */
+%replace EOF_TERMINAL		    by 88; /* End-of-file       */
+

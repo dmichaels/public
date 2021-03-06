@@ -1,0 +1,102 @@
+.TH VALIDLIB 3V "LOCAL VALID"
+
+.SH NAME
+vf_\fIXXX\fP - return VALID file names
+
+.SH SYNOPSIS
+.ft B
+vf_brdlsthdr(board_name)
+.br
+char *board_name;
+
+vf_ged(board_name)
+.br
+char *board_name;
+
+vf_lsthdr()
+
+vf_pgnd()
+
+vf_pkgdesc()
+
+vf_pkgfile(package_name)
+.br
+char *package_name;
+
+vf_pkgmap()
+
+vf_prtmap()
+
+vf_sysdir()
+
+vf_xnet()
+
+vf_xprt()
+.ft P
+
+.SH DESCRIPTION
+
+These functions return (in static storage),
+various VALID data file and directory names.
+.pp
+It is much preferable to use these routines to
+get file and directory names,
+since VALID may change these names with any release.
+Having these functions will merely necessitate changing
+the names in this library and recompiling software that
+uses them here rather than changing all the software.
+
+\fIvf_brdlsthdr\fP
+returns the wirelist header file name of the given board name
+(currently \fIvf_pkgdir(board_name)/vf_lsthdr()\fP).
+
+\fIvf_ged\fP
+returns the graphics editor file name of the given board name
+(currently \fIboard_name\fP/\fBlogic.1.1\fP).
+
+\fIvf_lsthdr\fP
+returns the stub of the per-board wirelist header file name
+(currently \fBheader\fP).
+
+\fIvf_pgnd\fP
+returns the VALID post-processor power/ground list file name
+(currently \fBpstpgnd.dat\fP).
+
+\fIvf_pkgdesc\fP
+returns the stub of the per-package description file name
+(currently \fBpkg_desc\fP).
+
+\fIvf_pkgdir\fP
+returns the per-package directory file name of the given package name
+(currently \fIvf_sysdir()/PACKAGE_DESCRIPTION_DIRECTORY_NAME\fP).
+
+\fIvf_pkgfile\fP
+returns the per-package description file name of the given package name
+(currently \fIvf_pkgdir()/pkg_desc()\fP).
+
+\fIvf_pkgmap\fP
+returns the package-name to description-directory-name mappping file name
+(currently \fIvf_sysdir()\fP/\fBlayout.lib\fP).
+
+\fIvf_prtmap\fP
+returns the part-name to package-name mapping file name
+(currently \fIvf_sysdir()\fP/\fBpart_map\fP).
+
+\fIvf_sysdir\fP
+returns the \fILincoln\fP system directory name
+(currently \fB/u0/lincoln/layout\fP).
+
+\fIvf_xnet\fP
+returns the VALID post-processor expanded net list name
+(currently \fBpstxnet.dat\fP).
+
+\fIvf_xprt\fP
+returns the VALID post-processor expanded parts list name
+(currently \fBpstxprt.dat\fP).
+
+.SH NOTES
+These functions return pointers to static storage which
+(depending on the nature of the function) may be overwritten
+upon each call.
+At any rate, this storage space should not be written into;
+rather, the caller should copy the contents to their own buffer.

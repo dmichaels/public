@@ -1,0 +1,159 @@
+/* CPP CPP_MACRO_DEFS_IN - Preprocessor macro related declartions */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  07.08.91  DGM  003  Updated.
+ *  09.25.90  DGM  002  Include file name changes.
+ *  07.19.90  DGM  001  Added MACRO_NODE.COUNT.
+ *  06.05.90  DGM  000  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  09.08.88  DGM  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+ * HB_MACRO_STACK represents the maximum number of nested macro (either
+ * object-like or function-like) invocations allowed.
+ * ---------------------------------------------------------------------
+ * MAX_MACRO_PARAMETERS represents the maximum number of parameters
+ * allowed in a function-like macro definition.
+ * ---------------------------------------------------------------------
+ * MAX_MACRO_ARGUMENTS represents the maximum total number of function-
+ * like macro arguments allowed in one macro invocation (including the
+ * arguments of nested function-like macro invocations).
+ * ------------------------------------------------------------------- */
+
+%replace HB_MACRO_STACK		by 256;
+%replace MAX_MACRO_PARAMETERS	by 256;
+%replace MAX_MACRO_ARGUMENTS	by 256;
+
+%replace OBJECT_LIKE_MACRO_MK	by  -1; /* MACRO_NODE.VALUE: negative! */
+%replace DYNAMIC_MACRO_MK	by  -2; /* MACRO_NODE.VALUE: negative! */
+%replace ASSERTION_MACRO_MK	by  -3; /* MACRO_NODE.VALUE: negative! */
+
+/* ---------------------------------------------------------------------
+ * Macro node definitions
+ *
+ * NEXT
+ *
+ * This points to the next MACRO_NODE which hashed to this hash table
+ * slot.  Thus, each hash table slot could possibly contain a linked
+ * list of arbitrary length of MACRO_NODE's.  The last link is null.
+ *
+ * NAME
+ *
+ * This contains the standard LPI global symbol table TOKEN_NODE
+ * identifer of the macro name.
+ *
+ * VALUE
+ *
+ * If this is an object-like macro definition, then this field is the
+ * negative constant OBJECT_LIKE_MACRO.  If this is one of the predefined
+ * macros (__LINE__, __FILE__, __DATE__, __TIME__, or __STDC__), then
+ * this field will be the negative constant PRE_DEFINED_MACRO. Otherwise,
+ * if this is a function-like macro, this field will contain the number
+ * of parameters associated with the macro (this could be zero).
+ *
+ * REPLACEMENT
+ *
+ * If this is a dynamic macro, then this field is not used. Otherwise,
+ * this points to a linked list of token-pods (i.e BASED_TOKEN's) which
+ * represent the tokenized replacement-list associated with the macro
+ * definition.  The token-pods are linked through their NEXT fields,
+ * the last of which is null.  For each token-pod, if it is preceded by
+ * white-space, then the LINE field of the token-pod will be negative.
+ * If this is a function-ilke macro, then for each token in the replace-
+ * ment-list which represents a reference to a parameter of the macro
+ * function, its TYPE field will be PP_MACRO_PARAMETER_TOKEN, and its
+ * VALUE field will be the (one indexed) position of the parameter in
+ * the parameter list declaration.
+ *
+ * PARAMETER
+ *
+ * If this is an object-like macro, then this field is null.  If this is
+ * a predefined macro, then this field is not used.  Otherwise, if this
+ * is a function-like macro, then this field will contain a pointer to
+ * a simple (one indexed) array whose size is specified by the VALUE
+ * field (except if VALUE is zero, in which case this field is null),
+ * and which contains the list of standard LPI global symbol table
+ * TOKEN_NODE identifiers which refer to the name of each parameter in
+ * order (from left to right) in the parameter declaration list.  This
+ * array can be easily accessed through the use of the based array
+ * MACRO_PARAMETER_LIST and its size variable MACRO_PARAMETER_COUNT.
+ * There must be no duplicate identifers in this list.
+ *
+ * PRE_DEFINED
+ *
+ * If this is not a dynamic macro, then this field is not used.
+ * Otherwise, if this is a dynamic macro, then this field is a
+ * pointer to a function which when called will create and return
+ * a (pointer to a) token-pod representing the appropriate single
+ * token replacement-list for the macro.
+ *
+ * INVOCATION_COUNT
+ *
+ * This is zero iff this macro is not the macro invocation stack (i.e. it
+ * is not in the process of being expanded).  Otherwise, if this is non-zero
+ * then this macro *is* on the macro invocation stack (i.e. it *is* in the
+ * process of being expanded), and the value of this field indicates the
+ * number of times it appears on the macro invocation stack.
+ *
+ * FILE
+ *
+ * This is a pointer to the character varying string representing
+ * the physical name of the file which last defined this macro.
+ *
+ * LINE
+ *
+ * This is the physical line number within FILE on which this
+ * macro was last defined.
+ *
+ * ------------------------------------------------------------------- */
+
+declare
+
+1 MACRO_NODE			based,
+  2 NAME			fixed binary (15),
+  2 macro_kind_or_nparameters	union,
+    3 KIND			fixed binary (15),
+    3 NPARAMETERS		fixed binary (15),
+  2 static_or_dynamic_macro	union,
+    3 static_macro,
+      4 REPLACEMENT		pointer,
+      4 PARAMETER		pointer,
+    3 dynamic_macro,
+      4 GET_TOKEN		entry returns (pointer) variable,
+  2 INVOCATION_COUNT		fixed binary (15),
+  2 FILE			pointer,
+  2 LINE			fixed binary (31),
+  2 NEXT			pointer;
+
+declare
+
+1 ASSERT_MACRO_NODE		based,
+  2 NAME			fixed binary (15),
+  2 REPLACEMENT			pointer,
+  2 FILE			pointer,
+  2 LINE			fixed binary (31),
+  2 NEXT			pointer;
+
+/* ---------------------------------------------------------------------
+ * Macro parameter list definitions
+ * ------------------------------------------------------------------- */
+
+declare	
+	MACRO_PARAMETER_LIST	(MACRO_PARAMETER_COUNT)
+				fixed binary (15) based;
+declare	
+	MACRO_PARAMETER_COUNT	fixed binary (15)
+				static internal;
+

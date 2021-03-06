@@ -1,0 +1,113 @@
+/* C++ CXX_GLOBAL_NAMES_IN - Global name data */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.09.92  DGM  007  Added BUILTIN_ALLOCA_NAME.
+ *  04.18.92  PKT  006  Oops, same as 005.
+ *  03.30.92  DGM  005  Added PROFILE_MARK_NAME.
+ *  07.17.91  DGM  004  Added EXIT_NAME, ALLOCA_NAME, and SETJMP_NAME.
+ *  05.29.91  DGM  003  Name change.
+ *  05.14.91  PKT  002  Added ARRAY_CONSTRUCTOR_NAME and
+ *			MFP_UNION_TAG_NAME.
+ *  02.01.91  DGM  001  Trivial fixes.
+ *  02.01.91  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;       */
+/* %include CXX_EXTERNAL_NAME_MAP_IN;   */
+/* %include CXX_PP_TOKEN_TYPE_CODES_IN; */
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 GLOBAL_NAMES				external (X_GLOBAL_NAMES),
+
+  2 MAIN_NAME				type (NID_T),
+  2 RETURN_PARAMETER_NAME		type (NID_T),
+  2 THIS_PARAMETER_NAME			type (NID_T),
+  2 EXIT_NAME				type (NID_T),
+  2 ALLOCA_NAME				type (NID_T),
+  2 BUILTIN_ALLOCA_NAME			type (NID_T),
+  2 SETJMP_NAME				type (NID_T),
+  2 VFT_NAME				type (NID_T),
+  2 VFT_POINTER_NAME			type (NID_T),
+  2 VFT_ENTRY_TAG_NAME			type (NID_T),
+  2 VFT_ENTRY_TYPE_NAME			type (NID_T),
+  2 VFT_TYPE_NAME			type (NID_T),
+  2 VFT_POINTER_TYPE_NAME		type (NID_T),
+  2 VFT_FUNCTION_ADDRESS_NAME		type (NID_T),
+  2 VFT_DELTA_NAME			type (NID_T),
+  2 NOT_MOST_DERIVED_FLAG_NAME		type (NID_T),
+  2 PURE_VIRTUAL_FUNCTION_NAME		type (NID_T),
+  2 ARRAY_INIT_NAME			type (NID_T),
+  2 ARRAY_FINI_NAME			type (NID_T),
+  2 ARRAY_CONSTRUCTOR_NAME		type (NID_T),
+  2 ARRAY_APPLY_NAME			type (NID_T),
+  2 DTOR_RETURN_LABEL_NAME		type (NID_T),
+  2 COPY_PARAM_NAME			type (NID_T),
+  2 ASSIGN_PARAM_NAME			type (NID_T),
+  2 MFP_TYPE_NAME			type (NID_T),
+  2 MFP_THIS_DELTA_NAME			type (NID_T),
+  2 MFP_VIRTUAL_INDEX_NAME		type (NID_T),
+  2 MFP_ADDRESS_NAME			type (NID_T),
+  2 MFP_VIRTUAL_DELTA_NAME		type (NID_T),
+  2 MFP_UNION_NAME			type (NID_T),
+  2 MFP_UNION_TAG_NAME			type (NID_T),
+  2 XROOT_VARIABLE_NAME			type (NID_T),
+  2 XLINK_TAG_NAME			type (NID_T),
+  2 XLINK_TYPE_NAME			type (NID_T),
+  2 XLINK_NEXT_MEMBER_NAME		type (NID_T),
+  2 XLINK_STARTUP_MEMBER_NAME		type (NID_T),
+  2 XLINK_STARTUP_PROC_NAME		type (NID_T),
+  2 XLINK_CLEANUP_MEMBER_NAME		type (NID_T),
+  2 XLINK_CLEANUP_PROC_NAME		type (NID_T),
+  2 XLINK_STRUCT_NAME			type (NID_T),
+
+  2 CONSTRUCTOR_NAME			type (NID_T),
+  2 DESTRUCTOR_NAME			type (NID_T),
+  2 CONVERSION_NAME			type (NID_T),
+
+  2 OPERATOR_NAME			(LB_OVERLOAD_OP_TOKEN :
+					 HB_OVERLOAD_OP_TOKEN) type (NID_T);
+
+declare
+
+OPERATOR_NEW_NAME		type (NID_T)
+				defined (OPERATOR_NAME (KW_NEW_TOKEN)),
+OPERATOR_DELETE_NAME		type (NID_T)
+				defined (OPERATOR_NAME (KW_DELETE_TOKEN)),
+OPERATOR_ASSIGNMENT_NAME	type (NID_T)
+				defined (OPERATOR_NAME (EQUAL_TOKEN)),
+OPERATOR_CALL_NAME		type (NID_T)
+				defined (OPERATOR_NAME (LPAREN_TOKEN)),
+OPERATOR_SUBSCRIPT_NAME		type (NID_T)
+				defined (OPERATOR_NAME (LSQUARE_TOKEN)),
+OPERATOR_ARROW_NAME		type (NID_T)
+				defined (OPERATOR_NAME (POINTER_TOKEN)),
+OPERATOR_INCREMENT_NAME		type (NID_T)
+				defined (OPERATOR_NAME (PLUS_PLUS_TOKEN)),
+OPERATOR_DECREMENT_NAME		type (NID_T)
+				defined (OPERATOR_NAME (MINUS_MINUS_TOKEN));
+
+declare
+
+PROFILE_MARK_NAME			type (NID_T) external;
+
+

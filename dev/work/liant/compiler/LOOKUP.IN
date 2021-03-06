@@ -1,0 +1,70 @@
+/* C++ CXX_SYMBOL_TABLE_LOOKUP_IN - Symbol table look-up definitions */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  08.13.91  DGM  002  Updated.
+ *  08.06.91  DGM  001  Updated.
+ *  07.31.91  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* None */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* None */
+
+/* ---------------------------------------------------------------------
+/* Definitions
+/* ------------------------------------------------------------------- */
+
+/* Overloading compatibility mode codes -- type (OCM_T) */
+
+%replace DEFAULT_OCM				by '00000000'B;
+%replace TOP_QUALIFIERS_SIGNIFICANT_OCM		by '00000001'B;
+%replace NO_OLD_STYLE_UNDEFINED_OCM		by '00000010'B;
+%replace ONLY_C_LINKAGE_OCM			by '00000100'B;
+%replace available_01_OCM			by '00001000'B;
+%replace available_02_OCM			by '00010000'B;
+%replace available_03_OCM			by '00100000'B;
+%replace available_04_OCM			by '01000000'B;
+%replace available_05_OCM			by '10000000'B;
+
+/* ---------------------------------------------------------------------
+/* Type Definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+OCM_T					bit (8) aligned based;
+
+declare
+
+1 OVERLOAD_COMPATIBILITY_MODE_T		based,
+  2 overload_compatibility_mode_u	union,
+    3 MODE				type (OCM_T),
+    3 type_compatibility_mode_b,
+      4 available_05			type (BIT_T),
+      4 available_04			type (BIT_T),
+      4 available_03			type (BIT_T),
+      4 available_02			type (BIT_T),
+      4 available_01			type (BIT_T),
+      4 ONLY_C_LINKAGE			type (BIT_T),
+      4 NO_OLD_STYLE_UNDEFINED		type (BIT_T),
+      4 TOP_QUALIFIERS_SIGNIFICANT	type (BIT_T);
+

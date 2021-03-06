@@ -1,0 +1,25 @@
+/* CodeWatch M68 CALCEA.IN - Declare EA calculation entry */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.06.91  DGM  (001) Removed SIGNEX.
+ *  05.06.87  DGM  Original.
+ *
+ **********************************************************************/
+
+declare
+    CALCEA      entry   (fixed binary (15), fixed binary (15),
+                         fixed binary (15), pointer,
+                         fixed binary (31), pointer,
+                         fixed binary (31), bit (1))
+                returns (fixed binary (15));

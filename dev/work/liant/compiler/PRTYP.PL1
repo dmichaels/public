@@ -1,0 +1,1063 @@
+/* C++ prtyp.pl1 - Print a C++ type from a value-node or a sym-node */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.09.92  DGM  011  PRINT_CLASS_CATALOGUE.
+ *  03.26.92  DGM  010  New value-node scheme.
+ *  08.21.91  VTF  009  Changed SHOULD_PRINT_MEMBER to return FALSE when
+ *                      the member is only a tag, not a variable.  This only
+ *                      affects AM_DEBUGGER.
+ *  05.29.91  DGM  008  Changed PRINT_CLASS_LATTICE to print
+ *			the derived class lattice as well.
+ *  03.08.91  DGM  007  Updated.
+ *  12.12.90  DGM  006  Updated.
+ *  11.29.90  DGM  005  Updated.
+ *  11.15.90  DGM  004  Updated.
+ *  11.06.90  DGM  003  Updated.
+ *  10.22.90  DGM  002  Updated.
+ *  10.12.90  DGM  001  Updated.
+ *  09.25.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 09.09.92 011 PRTYP');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_VALUE_NAMES_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_PRINT_TYPE_IN;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+SHORT_STRING_T	character (64) varying based,
+LONG_STRING_T	character (512) varying based;
+
+/* ---------------------------------------------------------------------
+/* PRINT_VALUE_TYPE
+/*
+/* Print the type of the value represented by the given value-node id.
+/* Trashes current-value-node-id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+PRINT_VALUE_TYPE: procedure (VALUE, DSM_FLAGS, MSM_FLAGS)
+		  external  (X_PRINT_VALUE_TYPE);
+	declare
+		VALUE		type (CXX_VID_T),
+		DSM_FLAGS	type (DSM_T),
+		MSM_FLAGS	type (MSM_T);
+	declare
+		SYMBOL		type (NID_T);
+
+	/* See if this value is a simple reference to a symbol */
+
+	SYMBOL = VALUE_SYMBOL (VALUE);
+
+	if SYMBOL ^= NULL_NID then do;
+		/*
+		/* Here, the value is a simple reference
+		/* to a symbol; print the symbol.
+		/**/
+		call PRINT_SYMBOL_TYPE (SYMBOL, DSM_FLAGS, MSM_FLAGS);
+		return;
+	end;
+
+	/*
+	/* Here, the value is not a simple reference to a symbol;
+	/* we'll have to settle for just the type data in the value-node.
+	/**/
+
+	call OUTPUT_STRING_AND_RETURN (ANY_VALUE_TYPE_NAME (VALUE, DSM_FLAGS));
+
+end PRINT_VALUE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* PRINT_SYMBOL_TYPE
+/* ------------------------------------------------------------------- */
+
+PRINT_SYMBOL_TYPE: procedure (SYMBOL, DSM_FLAGS, MSM_FLAGS)
+		   external  (X_PRINT_SYMBOL_TYPE);
+
+	declare
+		SYMBOL			type (NID_T),
+		DSM_FLAGS		type (DSM_T),
+		MSM_FLAGS		type (MSM_T);
+	declare
+		DSM			type (DECLARATION_STRING_MODE_T),
+		MSM			type (MEMBER_SELECTION_MODE_T),
+		(SP, FP, P)		type (POINTER_T),
+		(F, NEXT_F)		type (NID_T),
+		PRINT_CLASS_BODY	type (BOOL_T),
+		TAG			type (NID_T),
+		(PREFIX, LS, FS)	type (SHORT_STRING_T),
+		S			type (LONG_STRING_T),
+		I			type (SHORT_T);
+	declare
+		NEST_LEVEL		type (SHORT_T)
+					static internal initial (-1);
+
+	/* Check for trivial cases */
+
+	if SYMBOL = NULL_NID then
+		return;
+
+	/* Increment the nesting level */
+
+	NEST_LEVEL = NEST_LEVEL + 1; 
+
+	/*
+	/* Print line/file data for this symbol if we are the front-end
+	/* (i.e. for diagnostic output), and figure out how much to indent
+	/* (i.e. if this is a member symbol).
+	/**/
+
+	if ^AM_DEBUGGER then do;
+		if SP->SYM_NODE.DCL_LINE_ID > 0 then do;
+			LS = trim (char (SP->SYM_NODE.DCL_LINE_ID));
+			if length (LS) < 4 then
+				LS = substr ('    ', 1, 4 - length (LS)) ||
+				     LS || ': ';
+		end;
+		else	LS = '      ';
+		if SP->SYM_NODE.DCL_FILE_ID ^= NULL_NID then do;
+			FS = trim (char (SP->SYM_NODE.DCL_FILE_ID));
+			if length (FS) < 6 then
+				FS = substr ('      ', 1, 6 - length (FS)) ||
+				     '<' || FS || '> ';
+		end;
+		else	FS = '         ';
+		PREFIX = FS || LS;
+	end;
+	else	PREFIX = '';
+
+	do I = 1 to NEST_LEVEL;
+		PREFIX = PREFIX || '  ';
+	end;
+
+	/* Initialize the declaration string mode & member selection mode */
+
+	DSM.FLAGS = DSM_FLAGS;
+	MSM.FLAGS = MSM_FLAGS;
+
+	/* Print the symbol, name, type, and other declaration data */
+
+	call GET_SYM_NODE_R (SYMBOL, SP);
+
+	/* See if we don't have a tag symbol */
+
+	if ^SP->SYM_NODE.IS_TAG then do;
+		S = PREFIX || DECLARATION_STRING (SYMBOL, DSM_FLAGS);
+		goto DO_PRINT_SYMBOL_TYPE;
+	end;
+
+	/*
+	/* Here, we have a tag symbol; print the class
+	/* name (with keyword) and any derivation list.
+	/**/
+
+	S = PREFIX || DECLARATION_STRING (SYMBOL, DSM.FLAGS | TAG_DATA_DSM);
+	if ^SP->SYM_NODE.DEFINED then
+		goto DO_PRINT_SYMBOL_TYPE;
+	if (NEST_LEVEL > 0) & ^MSM.NESTED_MEMBERS then
+		goto DO_PRINT_SYMBOL_TYPE;
+	if (MSM_FLAGS & ALL_MEMBERS_MSM) = NULL_MSM then
+		goto DO_PRINT_SYMBOL_TYPE;
+
+	/* Here, we want to  print the class body (i.e. members, etc.) */
+
+	call OUTPUT_STRING_AND_RETURN (S || ' {');
+	TAG = SP->SYM_NODE.TOP_TYPE.TAG_SYMBOL;
+	call GET_SYM_NODE_R (TAG, P);
+	call PRINT_MEMBERS (P, DSM_FLAGS, MSM_FLAGS, 0);
+	call RELEASE_SYM_NODE (TAG);
+	S = PREFIX || '}';
+
+	/* Ok, print this symbol type */
+
+	DO_PRINT_SYMBOL_TYPE:
+	call OUTPUT_STRING_AND_RETURN (S);
+
+	/* Print any overloaded function (non-friend) symbols */
+
+	/*
+	/* TODO: the list of overloaded function is in reverse order!
+	/* Change the front-end to maintain it in declaration order.
+	/**/
+
+	if ^DSM.FRIEND_SPECIFIER &
+	   ^MSM.NO_OVERLOADED_FUNCTIONS &
+	   SP->SYM_NODE.IS_FUNCTION &
+	   (SP->SYM_NODE.NEXT_OVERLOAD ^= NULL_NID) then do;
+		do F = SP->SYM_NODE.NEXT_OVERLOAD
+		repeat (NEXT_F) while (F ^= NULL_NID);
+			call GET_SYM_NODE_R (F, FP);
+			S = PREFIX || DECLARATION_STRING (F, DSM_FLAGS);
+			call OUTPUT_STRING_AND_RETURN (S);
+			NEXT_F = FP->SYM_NODE.NEXT_OVERLOAD;
+			call RELEASE_SYM_NODE (F);
+		end;
+	end;
+
+	/* Release the sym-node, decrement the nesting level & return */
+
+	call RELEASE_SYM_NODE (SYMBOL);
+	NEST_LEVEL = NEST_LEVEL - 1; 
+	return;
+
+end PRINT_SYMBOL_TYPE;
+
+/* ---------------------------------------------------------------------
+/* PRINT_MEMBERS
+/* ------------------------------------------------------------------- */
+
+PRINT_MEMBERS: procedure (CLASS_PTR, DSM_FLAGS, MSM_FLAGS, OFFSET) internal;
+
+	declare
+		CLASS_PTR		type (POINTER_T),
+		DSM_FLAGS		type (DSM_T),
+		MSM_FLAGS		type (MSM_T),
+		OFFSET			type (LONG_T);
+	declare
+		DSM			type (DECLARATION_STRING_MODE_T),
+		MSM			type (MEMBER_SELECTION_MODE_T),
+		(CP, BCP, SP, P, VBCP)	type (POINTER_T),
+		(BC, NEXT_BC)		type (NID_T),
+		(VBC, NEXT_VBC)		type (NID_T),
+		S			type (LONG_STRING_T),
+		SAVE_CLASS_PTR		type (POINTER_T),
+		SAVE_DSM_FLAGS		type (DSM_T),
+		SAVE_MSM_FLAGS		type (MSM_T),
+		SAVE_OFFSET		type (LONG_T);
+	declare
+		MOST_DERIVED_CLASS	type (NID_T)
+					static internal initial (NULL_NID),
+		NEST_LEVEL		type (SHORT_T)
+					static internal initial (-1);
+
+	if ^CLASS_PTR->SYM_NODE.IS_TAG |
+	   (CLASS_PTR->SYM_NODE.DEFINED_SCOPE = NULL_NID) |
+	   (CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL = NULL_NID) then
+		return;
+
+	NEST_LEVEL = NEST_LEVEL + 1;
+
+	SAVE_CLASS_PTR = CLASS_PTR;
+	SAVE_OFFSET    = OFFSET;
+
+	DSM.FLAGS = DSM_FLAGS;
+	MSM.FLAGS = MSM_FLAGS;
+	DSM.ACCESS_SPECIFIER = TRUE;
+
+	if NEST_LEVEL = 0 then do;
+		if MSM.INHERITED then
+			DSM.QUALIFIED_DECLARATOR_NAME = TRUE;
+		MOST_DERIVED_CLASS = CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL;
+	end;
+	else	DSM.QUALIFIED_DECLARATOR_NAME = TRUE;
+
+	if ^MSM.INHERITED then do;
+		call PRINT_CLASS_MEMBERS ();
+		goto DONE_PRINT_MEMBERS;
+	end;
+
+	/* Print the members of each (non-virtual) base class of this class */
+
+	do BC = CLASS_PTR->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		if BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			/*
+			/* TODO: do this with /INTERNAL.
+			/* ...
+			S = QUALIFIED_SYMBOL_NAME
+			    (BCP->BASE_CLASS_NODE.SYMBOL) || ' *' ||
+			    QUALIFIED_SYMBOL_NAME
+			    (CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL) ||
+			    '::' || '____lpi_vbcp';
+			... */
+			goto NEXT_BASE_CLASS;
+		end;
+		call GET_SYM_NODE_R (BCP->BASE_CLASS_NODE.SYMBOL, CP);
+		call PRINT_MEMBERS (CP, DSM.FLAGS, MSM.FLAGS,
+				    BCP->BASE_CLASS_NODE.OFFSET);
+		call RELEASE_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL);
+		NEXT_BASE_CLASS:
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	/* Print the members of this class */
+
+	call PRINT_CLASS_MEMBERS ();
+
+	if NEST_LEVEL ^= 0 then
+		goto DONE_PRINT_MEMBERS;
+
+	/* Print the members of the virtual base classes */
+
+	do VBC = CLASS_PTR->SYM_NODE.VIRTUAL_BASE_CLASSES
+	repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		call GET_SYM_NODE_R (VBCP->VBC_NODE.SYMBOL, CP);
+		call PRINT_MEMBERS (CP, DSM.FLAGS, MSM.FLAGS,
+				    VBCP->VBC_NODE.OFFSET);
+		call RELEASE_SYM_NODE (VBCP->VBC_NODE.SYMBOL);
+		NEXT_VBC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+
+	DONE_PRINT_MEMBERS:
+	CLASS_PTR = SAVE_CLASS_PTR;
+	OFFSET = SAVE_OFFSET;
+	NEST_LEVEL = NEST_LEVEL - 1;
+	return;
+
+/* ---------------------------------------------------------------------
+/* PRINT_CLASS_MEMBERS
+/*
+/* Print all the members of the class, struct, union, or enum (yes, enum)
+/* represented by the given sym-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+PRINT_CLASS_MEMBERS: procedure internal;
+
+	declare
+		(MP, FP, BMP, P)	type (POINTER_T),
+		(F, NEXT_F)		type (NID_T),
+		(M, NEXT_M)		type (NID_T),
+		(BM, NEXT_BM)		type (NID_T),
+		MEMBERS			type (NID_T);
+
+	/* Print the member symbols */
+
+	call GET_SCOPE_NODE_R (CLASS_PTR->SYM_NODE.DEFINED_SCOPE, P);
+	MEMBERS = P->SCOPE_NODE.SYMBOLS;
+	call RELEASE_SCOPE_NODE (CLASS_PTR->SYM_NODE.DEFINED_SCOPE);
+
+	do M = MEMBERS repeat (NEXT_M) while (M ^= NULL_NID);
+		call GET_SYM_NODE_R (M, MP);
+		if SHOULD_PRINT_MEMBER (M, MP) then do;
+			call PRINT_SYMBOL_TYPE
+			     (M, DSM.FLAGS, NO_OVERLOADED_FUNCTIONS_MSM);
+		end;
+		if MP->SYM_NODE.IS_FUNCTION &
+		   (MP->SYM_NODE.NEXT_OVERLOAD ^= NULL_NID) then do;
+			do F = MP->SYM_NODE.NEXT_OVERLOAD
+			repeat (NEXT_F) while (F ^= NULL_NID);
+				call GET_SYM_NODE_R (F, FP);
+				if SHOULD_PRINT_MEMBER (F, FP) then do;
+					call PRINT_SYMBOL_TYPE
+					     (F,
+					      DSM.FLAGS,
+					      NO_OVERLOADED_FUNCTIONS_MSM);
+				end;
+				NEXT_F = FP->SYM_NODE.NEXT_OVERLOAD;
+				call RELEASE_SYM_NODE (F);
+			end;
+		end;
+		NEXT_M = MP->SYM_NODE.NEXT_SYMBOL;
+		call RELEASE_SYM_NODE (M);
+	end;
+
+	/* Print any access declarations */
+
+	if MSM.ACCESS_DECLARATIONS &
+	   (^MSM.INHERITED | NEST_LEVEL <= 0) then do;
+		do BM = CLASS_PTR->SYM_NODE.BASE_MEMBERS
+		repeat (NEXT_BM) while (BM ^= NULL_NID);
+			call GET_BASE_MEMBER_NODE_R (BM, BMP);
+			if SHOULD_PRINT_BASE_MEMBER (BM, BMP) then do;
+				call PRINT_SYMBOL_TYPE
+				     (BMP->BASE_MEMBER_NODE.MEMBER,
+				      ACCESS_DECLARATION_DSM,
+				      NO_OVERLOADED_FUNCTIONS_MSM);
+			end;
+			NEXT_BM = BMP->BASE_MEMBER_NODE.NEXT;
+			call RELEASE_BASE_MEMBER_NODE (BM);
+		end;
+	end;
+
+	/* Print any friends */
+
+	if MSM.FRIENDS &
+	   (^MSM.INHERITED | NEST_LEVEL <= 0) then do;
+		do F = CLASS_PTR->SYM_NODE.FRIENDS
+		repeat (NEXT_F) while (F ^= NULL_NID);
+			call GET_FRIEND_NODE_R (F, FP);
+			call PRINT_SYMBOL_TYPE
+			     (FP->FRIEND_NODE.SYMBOL,
+			      DSM.FLAGS |
+			      FRIEND_SPECIFIER_DSM |
+			      QUALIFIED_DECLARATOR_NAME_DSM,
+			      NULL_MSM);
+			NEXT_F = FP->FRIEND_NODE.NEXT;
+			call RELEASE_FRIEND_NODE (F);
+		end;
+	end;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* SHOULD_PRINT_MEMBER
+/* ------------------------------------------------------------------- */
+
+SHOULD_PRINT_MEMBER: procedure (M, MP) returns (type (BOOL_T))
+		     internal;
+	declare
+		M	type (NID_T),
+		MP	type (POINTER_T);
+
+	if MP->SYM_NODE.IS_DUMMY then do;
+		/*
+		/* TODO: if /INTERNAL was given, then ignore
+		/* the fact that SYM_NODE.IS_DUMMY is TRUE.
+		/**/
+		return (FALSE);
+	end;
+
+	if MP->SYM_NODE.IS_ENUM_MEMBER then
+		return (TRUE);
+
+	else if MP->SYM_NODE.IS_TYPE then do;
+		if ^MSM.NESTED_TYPES | AM_DEBUGGER then
+			return (FALSE);
+	end;
+	else if MP->SYM_NODE.IS_DATA then do;
+		if MP->SYM_NODE.STORAGE_CLASS = byte (STATIC_ST) then do;
+			if ^MSM.STATIC_DATA_MEMBERS then
+				return (FALSE);
+		end;
+		else if ^MSM.NON_STATIC_DATA_MEMBERS then
+			return (FALSE);
+	end;
+	else if MP->SYM_NODE.IS_FUNCTION then do;
+		if MP->SYM_NODE.STORAGE_CLASS = byte (STATIC_ST) then do;
+			if ^MSM.STATIC_MEMBER_FUNCTIONS then
+				return (FALSE);
+		end;
+		else if ^MSM.NON_STATIC_MEMBER_FUNCTIONS then
+			return (FALSE);
+	end;
+
+	if ((MP->SYM_NODE.ACCESS = byte (PUBLIC_ACCESS)) & MSM.PUBLIC) |
+	   ((MP->SYM_NODE.ACCESS = byte (PROTECTED_ACCESS)) & MSM.PROTECTED) |
+	   ((MP->SYM_NODE.ACCESS = byte (PRIVATE_ACCESS)) & MSM.PRIVATE) then
+		return (TRUE);
+
+	else if MSM.ACCESSIBLE then do;
+		if IS_ACCESSIBLE (M, MOST_DERIVED_CLASS) then
+			return (TRUE);
+	end;
+
+	return (FALSE);
+
+end SHOULD_PRINT_MEMBER;
+
+/* ---------------------------------------------------------------------
+/* SHOULD_PRINT_BASE_MEMBER
+/* ------------------------------------------------------------------- */
+
+SHOULD_PRINT_BASE_MEMBER: procedure (BM, BMP) returns (type (BOOL_T))
+			  internal;
+	declare
+		BM	type (NID_T),
+		BMP	type (POINTER_T);
+
+	if ((BMP->BASE_MEMBER_NODE.ACCESS = byte (PUBLIC_ACCESS)) &
+	     MSM.PUBLIC) |
+	   ((BMP->BASE_MEMBER_NODE.ACCESS = byte (PROTECTED_ACCESS)) &
+	     MSM.PROTECTED) |
+	   ((BMP->BASE_MEMBER_NODE.ACCESS = byte (PRIVATE_ACCESS)) &
+	     MSM.PRIVATE) then
+		return (TRUE);
+
+	else if MSM.ACCESSIBLE then do;
+		if IS_ACCESSIBLE
+		   (BMP->BASE_MEMBER_NODE.MEMBER, MOST_DERIVED_CLASS) then
+			return (TRUE);
+	end;
+
+	return (FALSE);
+
+end SHOULD_PRINT_BASE_MEMBER;
+
+end PRINT_CLASS_MEMBERS;
+
+end PRINT_MEMBERS;
+
+/* ---------------------------------------------------------------------
+/* PRINT_CLASS_LATTICE
+/*
+/* Print the class lattice of the class represented by the given sym-node
+/* id.  If the flag DERIVED is FALSE, then the lattice of base classes
+/* from which the given class was derived is printed.  If the flag DERIVED
+/* is TRUE, then the lattice of derived classes which were derived from
+/* the given class is printed.   Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+PRINT_CLASS_LATTICE: procedure (CLASS_OR_BASE_CLASS, DERIVED)
+		     external  (X_PRINT_CLASS_LATTICE);
+
+	declare
+		CLASS_OR_BASE_CLASS	type (NID_T),
+		DERIVED			type (BOOL_T);
+
+	call DO_PRINT_CLASS_LATTICE (CLASS_OR_BASE_CLASS, '');
+	return;
+
+DO_PRINT_CLASS_LATTICE: procedure (CLASS_OR_BASE_CLASS, GIVEN_PREFIX) internal;
+
+	declare
+		CLASS_OR_BASE_CLASS	type (NID_T),
+		GIVEN_PREFIX		type (LONG_STRING_T);
+	declare
+		(CLASS, CLASS_LIST)	type (NID_T),
+		(CP, BCP)		type (POINTER_T),
+		(BC, NEXT_BC)		type (NID_T),
+		ACCESS			type (SHORT_T),
+		VIRTUAL			type (BOOL_T),
+		I			type (SHORT_T),
+		C			character (1),
+		(S, PREFIX)		type (LONG_STRING_T);
+	declare
+		NEST_LEVEL		type (SHORT_T)
+					static internal initial (-1);
+
+	if CLASS_OR_BASE_CLASS = NULL_NID then
+		return;
+
+	NEST_LEVEL = NEST_LEVEL + 1; 
+
+	PREFIX = '';
+
+	/* For the first call, CLASS_OR_BASE_CLASS is a class sym-node id */
+
+	if NEST_LEVEL <= 0 then
+		CLASS = CLASS_OR_BASE_CLASS;
+
+	/*
+	/* For nested calls, CLASS_OR_BASE_CLASS is a base-class-node
+	/* id (or a derived-class-node id if DERIVED = TRUE)
+	/**/
+
+	else do;
+		if DERIVED then do;
+			call GET_DERIVED_CLASS_NODE_R
+			     (CLASS_OR_BASE_CLASS, BCP);
+			CLASS   = BCP->DERIVED_CLASS_NODE.SYMBOL;
+			ACCESS  = rank (BCP->DERIVED_CLASS_NODE.ACCESS);
+			VIRTUAL = BCP->DERIVED_CLASS_NODE.VIRTUAL;
+			call RELEASE_DERIVED_CLASS_NODE (CLASS_OR_BASE_CLASS);
+		end;
+		else do;
+			call GET_BASE_CLASS_NODE_R (CLASS_OR_BASE_CLASS, BCP);
+			CLASS   = BCP->BASE_CLASS_NODE.SYMBOL;
+			ACCESS  = rank (BCP->BASE_CLASS_NODE.ACCESS);
+			VIRTUAL = BCP->BASE_CLASS_NODE.VIRTUAL;
+			call RELEASE_BASE_CLASS_NODE (CLASS_OR_BASE_CLASS);
+		end;
+		if length (GIVEN_PREFIX) > 0 then do;
+			C = substr (GIVEN_PREFIX, length (GIVEN_PREFIX), 1);
+			if DERIVED then do;
+				substr (GIVEN_PREFIX, length (GIVEN_PREFIX), 1)
+					= '^';
+			end;
+			else do;
+				substr (GIVEN_PREFIX, length (GIVEN_PREFIX), 1)
+					= '|';
+			end;
+			call OUTPUT_STRING_AND_RETURN (GIVEN_PREFIX);
+			substr (GIVEN_PREFIX, length (GIVEN_PREFIX), 1) = '+';
+		end;
+		if DERIVED then do;
+			if VIRTUAL then do;
+				if ACCESS = PRIVATE_ACCESS then
+					PREFIX = GIVEN_PREFIX || '======Pri==';
+				else if ACCESS = PROTECTED_ACCESS then
+					PREFIX = GIVEN_PREFIX || '======Pro==';
+				else	PREFIX = GIVEN_PREFIX || '======Pub==';
+			end;
+			else do;
+				if ACCESS = PRIVATE_ACCESS then
+					PREFIX = GIVEN_PREFIX || '------Pri--';
+				else if ACCESS = PROTECTED_ACCESS then
+					PREFIX = GIVEN_PREFIX || '------Pro--';
+				else	PREFIX = GIVEN_PREFIX || '------Pub--';
+			end;
+		end;
+		else do;
+			if VIRTUAL then do;
+				if ACCESS = PRIVATE_ACCESS then
+					PREFIX = GIVEN_PREFIX || '======Pri=>';
+				else if ACCESS = PROTECTED_ACCESS then
+					PREFIX = GIVEN_PREFIX || '======Pro=>';
+				else	PREFIX = GIVEN_PREFIX || '======Pub=>';
+			end;
+			else do;
+				if ACCESS = PRIVATE_ACCESS then
+					PREFIX = GIVEN_PREFIX || '------Pri->';
+				else if ACCESS = PROTECTED_ACCESS then
+					PREFIX = GIVEN_PREFIX || '------Pro->';
+				else	PREFIX = GIVEN_PREFIX || '------Pub->';
+			end;
+		end;
+		if length (GIVEN_PREFIX) > 0 then
+			substr (GIVEN_PREFIX, length (GIVEN_PREFIX), 1) = C;
+	end;
+
+	call GET_SYM_NODE_R (CLASS, CP);
+
+	S = PREFIX || TOKEN_NAME (CP->SYM_NODE.NAME);
+
+	call OUTPUT_STRING_AND_RETURN (S);
+
+	if DERIVED then do;
+		if CP->SYM_NODE.DERIVED_CLASSES = NULL_NID then
+			goto DONE_PRINT_CLASS_LATTICE;
+		else	CLASS_LIST = CP->SYM_NODE.DERIVED_CLASSES;
+	end;
+	else if CP->SYM_NODE.BASE_CLASSES = NULL_NID then
+		goto DONE_PRINT_CLASS_LATTICE;
+	else	CLASS_LIST = CP->SYM_NODE.BASE_CLASSES;
+
+	do BC = CLASS_LIST
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		if DERIVED then do;
+			call GET_DERIVED_CLASS_NODE_R (BC, BCP);
+			NEXT_BC = BCP->DERIVED_CLASS_NODE.NEXT;
+			call RELEASE_DERIVED_CLASS_NODE (BC);
+		end;
+		else do;
+			call GET_BASE_CLASS_NODE_R (BC, BCP);
+			NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+			call RELEASE_BASE_CLASS_NODE (BC);
+		end;
+		if NEXT_BC = NULL_NID then do;
+			if NEST_LEVEL > 0 then
+				PREFIX = GIVEN_PREFIX || '            ';
+			else	PREFIX = GIVEN_PREFIX || ' ';
+		end;
+		else do;
+			if NEST_LEVEL > 0 then
+				PREFIX = GIVEN_PREFIX || '           |';
+			else	PREFIX = GIVEN_PREFIX || '|';
+		end;
+		call DO_PRINT_CLASS_LATTICE (BC, PREFIX);
+	end;
+
+	DONE_PRINT_CLASS_LATTICE:
+	call RELEASE_SYM_NODE (CLASS);
+	NEST_LEVEL = NEST_LEVEL - 1;
+
+end DO_PRINT_CLASS_LATTICE;
+
+end PRINT_CLASS_LATTICE;
+
+/* ---------------------------------------------------------------------
+/* OUTPUT_STRING_AND_RETURN
+/* ------------------------------------------------------------------- */
+
+OUTPUT_STRING_AND_RETURN: procedure (S) internal;
+
+	declare
+		S	character (*) varying;
+	declare
+		WRITTT	entry (character (*) varying) external;
+
+	if AM_DEBUGGER then
+		call WRITTT (S);
+	else	call WRITE_DEBUG_LINE (S);
+
+end OUTPUT_STRING_AND_RETURN;
+
+/* ---------------------------------------------------------------------
+/* PRINT_CLASS_CATALOGUE
+/*
+/* Print a class catalogue, suitable for use in the creation of
+/* documentation describing an overview of a class library.
+/* ------------------------------------------------------------------- */
+
+PRINT_CLASS_CATALOGUE: procedure ()
+		       external  (X_PRINT_CLASS_CATALOGUE);
+
+	declare
+		GLOBAL_SCOPE_PTR	type (POINTER_T),
+		GLOBAL_SYMBOLS		type (NID_T),
+		(S, NEXT_S)		type (NID_T),
+		SP			type (POINTER_T),
+		I			type (LONG_T);
+	declare
+		NCLASSES		type (LONG_T),
+		NUMBER_OF_CLASSES	type (LONG_T),
+		CLASS_TABLE_PTR		type (POINTER_T),
+		CLASS_TABLE		(NUMBER_OF_CLASSES)
+					type (NID_T)
+					based (CLASS_TABLE_PTR);
+
+
+	if CURRENT_GLOBAL_SCOPE = NULL_NID then
+		return;
+
+	call GET_SCOPE_NODE_R (CURRENT_GLOBAL_SCOPE, GLOBAL_SCOPE_PTR);
+
+	GLOBAL_SYMBOLS = GLOBAL_SCOPE_PTR->SCOPE_NODE.SYMBOLS;
+
+	if GLOBAL_SYMBOLS = NULL_NID then
+		return;
+
+	/* Get the list of class to print in an array */
+
+	NUMBER_OF_CLASSES = GLOBAL_SCOPE_PTR->SCOPE_NODE.NSYMBOLS;
+
+	allocate CLASS_TABLE;
+
+	NCLASSES = 0;
+
+	do S = GLOBAL_SYMBOLS repeat (NEXT_S) while (S ^= NULL_NID);
+		call GET_SYM_NODE_R (S, SP);
+		if SHOULD_PRINT_CLASS (SP) then do;
+			NCLASSES = NCLASSES + 1;
+			CLASS_TABLE (NCLASSES) = S;
+		end;
+		NEXT_S = SP->SYM_NODE.NEXT_SYMBOL;
+		call RELEASE_SYM_NODE (S);
+	end;
+
+	/* Alphabetize the table of classes */
+
+	call ALPHABETIZE_SYMBOL_TABLE (CLASS_TABLE_PTR, NCLASSES);
+
+	/* Print the alphabetized list of classes */
+
+	do I = 1 to NCLASSES;
+		call PRINT_CLASS (CLASS_TABLE (I), TRUE);
+	end;
+
+	free CLASS_TABLE;
+
+	call RELEASE_SCOPE_NODE (CURRENT_GLOBAL_SCOPE);
+	return;
+
+/* ---------------------------------------------------------------------
+/* SHOULD_PRINT_CLASS
+/* ------------------------------------------------------------------- */
+
+SHOULD_PRINT_CLASS: procedure (SYMBOL_PTR)
+		    returns   (type (BOOL_T))
+		    internal;
+
+	declare
+		SYMBOL_PTR	type (POINTER_T);
+	declare
+		S		character (512) varying;
+
+	if ^SYMBOL_PTR->SYM_NODE.IS_AGGREGATE_TAG then
+		return (FALSE);
+
+	if ^SW_PRINT_VIEWS_CLASS_CATALOGUE then
+		return (TRUE);
+
+	S = SYMBOL_NAME (SYMBOL_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL);
+
+	if length (S) <= 1 then
+		return (FALSE);
+
+	if substr (S, 1, 1) ^= 'V' then
+		return (FALSE);
+
+	if (rank (substr (S, 2, 1)) < rank ('A')) |
+	   (rank (substr (S, 2, 1)) > rank ('Z')) then
+		return (FALSE);
+
+	return (TRUE);
+
+end SHOULD_PRINT_CLASS;
+
+/* ---------------------------------------------------------------------
+/* PRINT_CLASS
+/* ------------------------------------------------------------------- */
+
+PRINT_CLASS: procedure (CLASS, IS_TOP_LEVEL) internal;
+
+	declare
+		CLASS			type (NID_T),
+		IS_TOP_LEVEL		type (BOOL_T);
+	declare
+		CLASS_PTR		type (POINTER_T),
+		MEMBERS			type (NID_T),
+		BASE_CLASSES		type (NID_T),
+		(M, NEXT_M)		type (NID_T),
+		(BC, NEXT_BC)		type (NID_T),
+		(MP, BCP, CP, P)	type (POINTER_T),
+		I			type (LONG_T);
+	declare
+		NMEMBERS		type (LONG_T),
+		NUMBER_OF_MEMBERS	type (LONG_T),
+		MEMBER_TABLE_PTR	type (POINTER_T),
+		MEMBER_TABLE		(NUMBER_OF_MEMBERS)
+					type (NID_T)
+					based (MEMBER_TABLE_PTR);
+
+	if CLASS = NULL_NID then
+		return;
+
+	call GET_SYM_NODE_R (CLASS, CLASS_PTR);
+
+	/* Make sure this class has been defined */
+
+	if ^CLASS_PTR->SYM_NODE.IS_AGGREGATE_TAG |
+	   (CLASS_PTR->SYM_NODE.DEFINED_SCOPE = NULL_NID) then do;
+		call RELEASE_SYM_NODE (CLASS);
+		return;
+	end;
+
+	/* Print a header */
+
+	if IS_TOP_LEVEL then do;
+		call OUTPUT_STRING_AND_RETURN
+			('------------------------------------------------------------------------------');
+		if CLASS_PTR->SYM_NODE.ABSTRACT then
+			call OUTPUT_STRING_AND_RETURn
+			     (QUALIFIED_SYMBOL_NAME (CLASS) ||
+			      BASE_CLASS_NAMES (CLASS_PTR) ||
+			      '  // Abstract');
+		else	call OUTPUT_STRING_AND_RETURN
+			     (QUALIFIED_SYMBOL_NAME (CLASS) ||
+			      BASE_CLASS_NAMES (CLASS_PTR));
+		call OUTPUT_STRING_AND_RETURN ('');
+		call OUTPUT_STRING_AND_RETURN
+		     ('Member                   Class                    Acc Kind Attributes');
+		call OUTPUT_STRING_AND_RETURN
+		     ('------                   -----                    --- ---- ----------');
+	end;
+
+	/* Get the members of this class alphabetically into an array */
+
+	call GET_SCOPE_NODE_R (CLASS_PTR->SYM_NODE.DEFINED_SCOPE, P);
+	MEMBERS = P->SCOPE_NODE.SYMBOLS;
+	NUMBER_OF_MEMBERS = P->SCOPE_NODE.NSYMBOLS;
+	call RELEASE_SCOPE_NODE (CLASS_PTR->SYM_NODE.DEFINED_SCOPE);
+
+	allocate MEMBER_TABLE;
+
+	NMEMBERS = 0;
+
+	do M = MEMBERS repeat (NEXT_M) while (M ^= NULL_NID);
+		call GET_SYM_NODE_R (M, MP);
+		if SHOULD_PRINT_MEMBER (MP) then do;
+			NMEMBERS = NMEMBERS + 1;
+			MEMBER_TABLE (NMEMBERS) = M;
+		end;
+		NEXT_M = MP->SYM_NODE.NEXT_SYMBOL;
+		call RELEASE_SYM_NODE (M);
+	end;
+
+	/* Alphabetize the members in the table (bubble sort) */
+
+	call ALPHABETIZE_SYMBOL_TABLE (MEMBER_TABLE_PTR, NMEMBERS);
+
+	/* Print the alphabetized members */
+
+	do I = 1 to NMEMBERS;
+		call PRINT_MEMBERS (MEMBER_TABLE (I));
+	end;
+
+	/* Free the member table */
+
+	free MEMBER_TABLE;
+
+	/* Print the members of base classes (nearest first) */
+
+	BASE_CLASSES = CLASS_PTR->SYM_NODE.BASE_CLASSES;
+
+	do BC = BASE_CLASSES repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		if BCP->BASE_CLASS_NODE.ACCESS = byte (PRIVATE_ACCESS) then
+			goto NEXT_BASE_CLASS;
+		if BCP->BASE_CLASS_NODE.VIRTUAL then
+			goto NEXT_BASE_CLASS;
+		call PRINT_CLASS (BCP->BASE_CLASS_NODE.SYMBOL, FALSE);
+		NEXT_BASE_CLASS:
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	if IS_TOP_LEVEL then
+		call OUTPUT_STRING_AND_RETURN ('');
+
+	call RELEASE_SYM_NODE (CLASS);
+	return;
+
+/* ---------------------------------------------------------------------
+/* SHOULD_PRINT_MEMBER
+/* ------------------------------------------------------------------- */
+
+SHOULD_PRINT_MEMBER: procedure (MEMBER_PTR)
+		     returns   (type (BOOL_T))
+		     internal;
+	declare
+		MEMBER_PTR	type (POINTER_T);
+
+	if MEMBER_PTR->SYM_NODE.IS_DUMMY then
+		return (FALSE);
+	else if MP->SYM_NODE.ACCESS = byte (PRIVATE_ACCESS) then
+		return (FALSE);
+	else	return (TRUE);
+
+end SHOULD_PRINT_MEMBER;
+
+/* ---------------------------------------------------------------------
+/* PRINT_MEMBERS
+/* ------------------------------------------------------------------- */
+
+PRINT_MEMBERS: procedure (MEMBER) internal;
+
+	declare
+		MEMBER		type (NID_T);
+	declare
+		MEMBER_PTR	type (POINTER_T),
+		S		character (512) varying,
+		LINE		character (1024) varying;
+	declare
+		SPACES		character (32) varying
+				static internal initial ('                ');
+
+	if MEMBER = NULL_NID then
+		return;
+
+	call GET_SYM_NODE_R (MEMBER, MEMBER_PTR);
+
+	/* Get the member name */
+
+	LINE = SYMBOL_NAME (MEMBER);
+	if length (LINE) < 24 then
+		LINE = LINE || substr (SPACES, 1, 24 - length (LINE));
+
+	/* Get the parent class name */
+
+	S = QUALIFIED_SYMBOL_NAME
+	    (MEMBER_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER);
+	if length (S) < 24 then
+		S = S || substr (SPACES, 1, 24 - length (S));
+	LINE = LINE || ' ' || S;
+
+	/* Access --> Pub, Pro, Prv */
+
+	LINE = LINE || ' ';
+	if MEMBER_PTR->SYM_NODE.ACCESS = byte (PUBLIC_ACCESS) then
+		LINE = LINE || 'Pub';
+	else if MEMBER_PTR->SYM_NODE.ACCESS = byte (PROTECTED_ACCESS) then
+		LINE = LINE || 'Pro';
+	else if MEMBER_PTR->SYM_NODE.ACCESS = byte (PRIVATE_ACCESS) then
+		LINE = LINE || 'Prv';
+	else	LINE = LINE || '?  ';
+
+	/* Kind --> Function, Data, Type */
+
+	LINE = LINE || ' ';
+	if MEMBER_PTR->SYM_NODE.IS_FUNCTION then
+		LINE = LINE || 'Func';
+	else if MEMBER_PTR->SYM_NODE.IS_DATA then
+		LINE = LINE || 'Data';
+	else if MEMBER_PTR->SYM_NODE.IS_TYPE then
+		LINE = LINE || 'Type';
+	else	LINE = LINE || '?   ';
+
+	/* Attributes --> Virtual, Virtual Pure, Static */
+
+	LINE = LINE || ' ';
+	if MEMBER_PTR->SYM_NODE.IS_FUNCTION then do;
+		if MEMBER_PTR->SYM_NODE.VIRTUAL then do;
+			if MEMBER_PTR->SYM_NODE.PURE then
+				LINE = LINE || 'Virtual Pure';
+			else	LINE = LINE || 'Virtual';
+		end;
+		else if MEMBER_PTR->SYM_NODE.STORAGE_CLASS =
+			byte (STATIC_ST) then
+			LINE = LINE || 'Static';
+		else	LINE = LINE || '-';
+	end;
+	else if MEMBER_PTR->SYM_NODE.STORAGE_CLASS = byte (STATIC_ST) then
+		LINE = LINE || 'Static';
+	else	LINE = LINE || '-';
+
+	call OUTPUT_STRING_AND_RETURN (LINE);
+
+	call RELEASE_SYM_NODE (MEMBER);
+
+end PRINT_MEMBERS;
+
+end PRINT_CLASS;
+
+/* ---------------------------------------------------------------------
+/* ALPHABETIZE_SYMBOL_TABLE
+/* ------------------------------------------------------------------- */
+
+ALPHABETIZE_SYMBOL_TABLE: procedure (SYMBOL_TABLE_PTR, NSYMBOLS) internal;
+
+	declare
+		SYMBOL_TABLE_PTR	type (POINTER_T),
+		NSYMBOLS		type (LONG_T);
+	declare
+		SYMBOL_TABLE		(NSYMBOLS)
+					type (NID_T)
+					based (SYMBOL_TABLE_PTR);
+	declare
+		I		type (SHORT_T),
+		J		type (SHORT_T),
+		X		type (NID_T),
+		SA		character (512) varying,
+		SB		character (512) varying;
+
+	do I = 2 to NSYMBOLS;
+		do J = NSYMBOLS to I by -1;
+			SA = SYMBOL_NAME (SYMBOL_TABLE (J - 1));
+			SB = SYMBOL_NAME (SYMBOL_TABLE (J));
+			if SA > SB then do;
+				X = SYMBOL_TABLE (J - 1);
+				SYMBOL_TABLE (J - 1) = SYMBOL_TABLE (J);
+				SYMBOL_TABLE (J) = X;
+			end;
+		end;
+	end;
+
+end ALPHABETIZE_SYMBOL_TABLE;
+
+end PRINT_CLASS_CATALOGUE;
+

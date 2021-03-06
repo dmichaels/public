@@ -1,0 +1,105 @@
+/* C++ putxer.pl1 - Write information line to error file */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  02.05.90  DGM  001  Updated.
+ *  11.21.89  DGM  000  Original; cloned & modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* =====================================================================
+** PUTXER
+**
+** Emit an error message appropriate for the given ERROR_CODE with the
+** given additional MESSAGE.  The current file/line number information
+** is gotten from CURRENT_SOURCE.  Currently, a message looks like:
+**
+**  ** SYNTAX ERROR-2 (123): line 45, "file.c"
+**     Incompatible pointer types in comparison.  The number and types of
+**     parameters of any functions pointed to, must have compatible types;
+**     try explicit casting to the appropriate type or to a void pointer.
+**
+** =================================================================== */
+
+PUTXER: procedure (PHASE, CURSOR, SEVERITY, ERROR, LINE_ID, FILE_ID);
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include C_STANDARD_DEFS_IN;
+%include C_EXTERNAL_NAME_MAP_IN;
+%include C_ERROR_PKG;
+%include C_NODE_MGR_PKG;
+
+	declare
+		PHASE		type (SHORT_T), /* phase code */
+		CURSOR		type (SHORT_T), /* position of token ^ */
+		SEVERITY	type (SHORT_T), /* error severity */
+		ERROR		type (LONG_T),  /* error code */
+		LINE_ID		type (LONG_T),  /* line number */
+		FILE_ID		type (NID_T);   /* file name token id */
+	declare
+		J		type (INT_T),
+		P		pointer,
+		THIS_PHASE	type (SHORT_T),
+		FILE_NAME	character (LINE_SIZE) varying,
+		LINE		character (LINE_SIZE) varying,
+		BLANKS		character (LINE_SIZE);
+	declare
+		SEVERITY_NAME	(0 : 4) character (8) varying
+				static internal initial ( 'NOTE '
+							, 'WARNING '
+							, 'ERROR-2 '
+							, 'ERROR-3 '
+							, 'ABORT ' );
+
+	if SILENT & (SEVERITY <= 1) then
+		return;
+
+	if CURSOR >= 0 then do;
+		J = max (1, CURSOR);
+		BLANKS = ' ';
+		LINE = substr (BLANKS, 1, J);
+		substr (LINE, J, 1) = '^';
+		call PUTERR (LINE);
+	end;
+
+	if PHASE < 0 then
+		THIS_PHASE = -PHASE;
+	else	THIS_PHASE =  PHASE;
+
+	if      THIS_PHASE = 1 then LINE = '** LEXICAL ';
+	else if THIS_PHASE = 2 then LINE = '** SYNTAX ';
+	else if THIS_PHASE = 3 then LINE = '** SEMANTIC ';
+	else			    LINE = '** ';
+
+	call GET_TOKEN_NODE_R (FILE_ID, P);
+
+	FILE_NAME = substr (P->TOKEN_NODE.SPELLING, 1, P->TOKEN_NODE.SIZE);
+
+	call RELEASE_TOKEN_NODE (FILE_ID);
+
+	LINE = LINE ||
+	       SEVERITY_NAME (SEVERITY) ||
+	       '(' ||
+	       trim (char (ERROR)) ||
+	       '): line ' ||
+	       trim (char (LINE_ID)) || ', "' ||
+	       FILE_NAME || '"';
+
+	call PUTERR (LINE);
+
+	TOTAL_MESSAGES = TOTAL_MESSAGES + 1;
+	MAX_SEVERITY = max (MAX_SEVERITY, SEVERITY);
+
+end PUTXER;
+
+

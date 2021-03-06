@@ -1,0 +1,179 @@
+/* C++ intv.pl1 - Make an INTEGER value */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  008  New value-node scheme.
+ *  02.21.91  DGM  007  Handle null type in INTEGER_VALUE.
+ *  01.18.91  DGM  006  Added GET_INTEGER_VALUE.
+ *  09.14.90  DGM  005  Changed include file names and VOP names.
+ *  08.08.90  DGM  004  New type-node.
+ *  06.29.90  DGM  003  Added NULL_SIMPLE_POINTER_VALUE.
+ *  06.05.90  DGM  002  Updated for the new utilities.
+ *  02.22.90  TLF  001  Updated.
+ *  01.17.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 008 INTV');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_FOLD_VALUE_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_TARGET_HARDWARE_IN;
+
+/* ---------------------------------------------------------------------
+/* INTEGER_VALUE
+/*
+/* Returns a value-node id representing the constant integral expression
+/* with a value represented by the given VALUE, and a simple type
+/* represented by the given TYPE (xxx_BT).  Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+INTEGER_VALUE: procedure (VALUE, TYPE)
+	       returns   (type (CXX_VID_T))
+	       external  (X_INTEGER_VALUE);
+
+	declare
+		VALUE	type (LONG_T),
+		TYPE	type (SHORT_T);
+	declare
+		V	type (CXX_VID_T);
+
+	if TYPE = 0 then do;
+		if (VALUE <= MAX_INTEGER) & (VALUE >= (-MAX_INTEGER) - 1) then
+			TYPE = INT_BT;
+		else	TYPE = LONG_BT;
+	end;
+
+	V = ALLOC_CXX_VALUE_NODE (INTEGER_VO);
+	V->CXX_VALUE_NODE.OFFSET = VALUE;
+	V->CXX_VALUE_NODE.UNARY = TRUE;
+	call SET_VALUE_SIMPLE_TYPE (TYPE);
+	return (FOLD_VALUE (V));
+
+end INTEGER_VALUE;
+
+/* ---------------------------------------------------------------------
+/* INTEGER_VALUE_ZERO
+/*
+/* Returns a value-node id representing the integral constant expression
+/* with the value of zero and the type INT_BT.  Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+INTEGER_VALUE_ZERO: procedure ()
+	            returns   (type (CXX_VID_T))
+	            external  (X_INTEGER_VALUE_ZERO);
+
+	declare V type (CXX_VID_T);
+
+	V = ALLOC_CXX_VALUE_NODE (INTEGER_VO);
+	V->CXX_VALUE_NODE.UNARY = TRUE;
+	call SET_VALUE_SIMPLE_TYPE (INT_BT);
+	return (V);
+
+end INTEGER_VALUE_ZERO;
+
+/* ---------------------------------------------------------------------
+/* INTEGER_VALUE_ONE
+/*
+/* Returns a value-node id representing the integral constant expression
+/* with the value of zero and the type INT_BT.  Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+INTEGER_VALUE_ONE: procedure ()
+		   returns   (type (CXX_VID_T))
+		   external  (X_INTEGER_VALUE_ONE);
+
+	declare V type (CXX_VID_T);
+
+	V = ALLOC_CXX_VALUE_NODE (INTEGER_VO);
+	V->CXX_VALUE_NODE.OFFSET = 1;
+	V->CXX_VALUE_NODE.UNARY = TRUE;
+	call SET_VALUE_SIMPLE_TYPE (INT_BT);
+	return (V);
+
+end INTEGER_VALUE_ONE;
+
+/* ---------------------------------------------------------------------
+/* GET_INTEGER_VALUE
+/*
+/* Returns a value-node id representing the constant integral expression
+/* with a value represented by the given VALUE, and a type represented
+/* by the given type-data record TYPE.  Trashes current-node-id.
+/*
+/* N.B. This is necessary to make enumerator constants since we want
+/* to retain more type information than just ENUM_BT (i.e. the sym-node
+/* id of the enumeration symbol).
+/* ------------------------------------------------------------------- */
+
+GET_INTEGER_VALUE: procedure (VALUE, TYPE)
+		   returns   (type (CXX_VID_T))
+		   external  (X_GET_INTEGER_VALUE);
+	declare
+		VALUE	type (LONG_T),
+		TYPE	type (TYPE_DATA_T);
+	declare
+		V	type (CXX_VID_T);
+
+	V = ALLOC_CXX_VALUE_NODE (INTEGER_VO);
+	V->CXX_VALUE_NODE.OFFSET = VALUE;
+	call SET_VALUE_SIMPLE_TYPE_DATA (TYPE);
+	return (EXPAND_VALUE (V));
+
+end GET_INTEGER_VALUE;
+
+/* ---------------------------------------------------------------------
+/* NULL_SIMPLE_POINTER_VALUE
+/*
+/* Returns a value-node tree representing a null pointer of the given
+/* simple type (xxx_BT).
+/* ------------------------------------------------------------------ */
+
+NULL_SIMPLE_POINTER_VALUE: procedure (T)
+			   returns   (type (CXX_VID_T))
+			   external  (X_NULL_SIMPLE_POINTER_VALUE);
+	declare
+		T	type (SHORT_T);
+	declare
+		V	type (CXX_VID_T);
+
+	V = ALLOC_CXX_VALUE_NODE (INTEGER_VO);
+	V->CXX_VALUE_NODE.OFFSET = 0;
+	V->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (INT_BT);
+	V = ALLOC_CXX_VALUE_NODE_L (CAST_VO, EXPAND_VALUE (V));
+	call SET_VALUE_SIMPLE_POINTER_TYPE (T);
+	V->CXX_VALUE_NODE.UNARY = TRUE;
+	return (V);
+
+end NULL_SIMPLE_POINTER_VALUE;
+

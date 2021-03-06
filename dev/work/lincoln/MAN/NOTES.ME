@@ -1,0 +1,306 @@
+.sz +1
+.ce 5
+\fBVALID Logic System Design Notes\fP
+.sp 1
+\fIDavid Michaels\fP
+.sp 1
+M.I.T Lincoln Laboratory
+.br
+Group 24
+.sp 1
+December 19, 1984
+.sp 3
+\fBLAYOUT\fP
+.pp
+The \fIlayout\fP program is run by the logic designer who,
+after making and compiling a logic drawing,
+now wishes to graphically place the devices
+(\fIDIP\fPs, \fISIP\fPs etc.) on a wirewrap board (e.g augat uwg12a).
+This program will produce
+a graphics editor file which will
+(when the graphics editor \fIged\fP is invoked)
+place all of the devices used by the designer
+around the perimeter of the board so
+that (s)he merely needs to use the mouse to place them on the board.
+.pp
+The other way to do this of course,
+is to simply call up each device by hand
+(by typing for example \fIadd dip14\fP),
+and going to the mouse to plunk it down on the board.
+This however is time consuming and error
+(i.e. forgetting to add devices)
+and thus the impetus for the \fIlayout\fP program.
+.sp 1
+.sz -1
+.ft B
+Modifications
+.ft P
+.sz +1
+.pp
+\fILayout\fP currently supports two wirewrap board geometries,
+the \fIAUGAT UWG12\fP (referred to as \fIuwg12a\fP),
+and the \fIAUGAT HPWG12\fP (referred to as \fIhpwg1a\fP).
+.pp
+The only board dependant information needed by \fIlayout\fP
+is the physical length and width of the board,
+and the physical \fIx/y\fP offset from the lower left corner
+of the board to pin one of the board (all in 1000\fIths\fP of an inch).
+To add a new board geometry,
+this information (along with the name of the board)
+must be entered into the \fIbgeomtbl\fP in the file \fIbgeom.c\fP
+(currently in the directory \fI/u0/lincoln/src/layout\fP).
+The simplest way to do this, is to clone one of the existing entries
+and change the numbers appropriatly.
+.pp
+Remakeing the layout program simply requires typing \fImake\fP.
+Then of course, the new version should be tested appropriatly
+before installing with the command \fImake install\fP,
+which moves the old version to \fIlayout.BAK\fP,
+and installs the new version in \fI/usr/local\fP.
+.sp 2
+\fBWIRELIST\fP
+.pp
+The \fIwirelist\fP program is run by the logic designer who,
+after making and compiling a logic drawing,
+and a physical layout drawing
+(done with the help of \fIlayout\fP)
+now wishes to create a wirelist file
+which will be suitable to input to the Group 72 wirewrap service
+which perform the actual wiring of the board.
+Along with this wirelist file which is put in board_name.\fIlst\fP),
+two reference files and an error file are produced.
+.sp 1
+.sz -1
+.ft B
+Modifications
+.ft P
+.sz +1
+.pp
+\fIWirelist\fP currently supports two wirewrap board geometries,
+the \fIAUGAT UWG12\fP (referred to as \fIuwg12a\fP),
+and the \fIAUGAT HPWG12\fP (referred to as \fIhpwg1a\fP).
+.pp
+To add another board geometry,
+you must write six well defined of geometry dependant routines,
+dealing with such things as the translation between VALID coordinates and board
+pin addresses, and finding the nearest power or ground pin
+to a board pin or a board connector.
+In addition, you must construct one table
+containing information concerning the board connectors.
+This data and code is to be put in a file (\fIboard.c\fP),
+in a sub-directory (e.g. \fIuwg12a\fP) of the directory \fIboards\fP
+which resides in the main \fIwirelist\fP directory.
+For example, the full path name of the board geometry dependant
+routines for the \fIuwg12a\fP board is
+\fI/u0/lincoln/src/wirelist/boards/uwg12a\fP.
+This table and the functions are the only access the main code
+has to the board geometry dependancies.
+The main code can reference these geometry dependant code and data
+through the use of a switch table
+called \fIbgeomsw\fP which resides in \fIbgeom.c\fP.
+A new entry for the added board must be appended to this table.
+The simplest way to do all of this (as with \fIlayout\fP) is
+by cloning existing routines and table entries,
+and making changes as appropriate.
+.pp
+Remakeing the \fIwirelist\fP program simply requires typing \fImake\fP.
+The new version should be tested appropriatly
+before installing with the command \fImake install\fP,
+which moves the old version to \fIlayout.BAK\fP,
+and installs the new version in \fI/usr/local\fP.
+.sp 2
+\fBPACKAGE DESCRIPTION FILES\fP
+.pp
+For each package (body drawing),
+there is a description file
+\fIpkg_desc\fP
+which must be kept in the package's body drawing directory
+\fI/u0/lincoln/layout/\fPpackage_name.
+These package description files contain various
+physical and logical data about the packages
+needed by programs such as \fIlayout\fP and \fIwirelist\fP.
+These files need to contain the following items in the following format.
+The ordering of this file \fIis\fP significant.
+All measurments are in units of 1000\fIths\fP of an inch.
+.sp 1
+.in +5
+.sz -1
+.TS
+l l .
+#
+#	Comments may be placed in this file after a '#',
+#	(the whole rest of the line will be ignored).
+#
+#	Each entry must consist of one line.
+#
+.TE
+.TS
+l l l .
+TYPE	\fI<device type>\fP
+NPINS	\fI<nr. of pins>\fP
+PIN1	\fI<relative x offset>	<relative y offset>\fP
+PIN2	\fI<relative x offset>	<relative y offset>\fP
+PIN3	\fI<relative x offset>	<relative y offset>\fP
+\...	...	...
+\...	...	...
+\...	...	...
+PIN\fI\fPn	\fI<relative x offset>	<relative y offset>\fP
+.TE
+.TS
+l l .
+#	The below information pertains to the physical dimensions
+#	of the package, and used by the "layout" program.
+.TE
+.TS
+l l l l l .
+LENGTH	\fI<physical length>\fP
+WIDTH	\fI<physical width>\fP
+PROP	\fI<property name>\fP	<relative x offset>	<relative y offset>	<DISPLAY nr.>\fP
+...	...	...	...	...
+.TE
+.sz +1
+.in -5
+.sp 1
+.pp
+The \fBTYPE\fP is the name of the device package type,
+for example \fISIP\fP (single inline package),
+\fIDIP\fP (dual inline package),
+or \fIBABY\fP (baby board).
+\fBNPINS\fP is the number of pins on the package.
+\fBPIN\fP\fI1\fP through \fBPIN\fP\fIn\fP specifies
+the \fI(x, y)\fP coordinates (in 1000\fIths\fP of an inch)
+relative to pin 1 of the package of each pin on the package.
+The \fBLENGTH\fP and \fBWIDTH\fP entries give the overall physical
+length and width of the package (in 1000\fIths\fP of an inch).
+The \fBPROP\fP entry specifies the 
+\fI(x, y)\fP coordinates (in 1000\fIths\fP of an inch)
+relative to pin 1 of the package, of the property name,
+and also gives the \fIDISPLAY\fP value for that property which determines
+the size of the property name as it will appear on the screen
+when the graphics editor \fIged\fP is invoked.
+.sp 2
+.sz -1
+.ft B
+Examples
+.ft P
+.sz +1
+.pp
+For example, for a typical device such as an 8 pin DIP,
+the body drawing directory is \fI/u0/lincoln/layout/dip8\fP.
+The package description file \fIpkg_desc\fP resides in this directory,
+and has the following format:
+.sp 1
+.in +5
+.sz -1
+.TS
+l l .
+#
+#	DIP-8 VALID package description file
+#
+#	File:   /u0/lincoln/layout/dip8/pkg_desc
+#	Date:   October 1984
+#	Author: David Michaels
+#
+.TE
+.TS
+l l l l l .
+TYPE	DIP
+NPINS	8
+PIN1	0	0
+PIN2	100	0
+PIN3	200	0
+PIN4	300	0
+PIN5	300	300
+PIN6	200	300
+PIN7	100	300
+PIN8	0	300
+
+LENGTH	400	# 0.4 in.
+WIDTH	300	# 0.3 in.
+
+PROP	REFDES	50	50	1.902
+PROP	CHIP	50	100	1.902
+.TE
+.sz +1
+.in -5
+.sp 1
+.pp
+To make a package description file for a new package,
+just copy one of the existing files and make the necessary changes. 
+.pp
+The \fIwirelist\fP program does not need most of the information relating
+to actual physical sizes of device packages since here we only deal
+with the logical pin locations.
+Specifically, \fIwirelist\fP needs the following:
+.(b C
+\fBTYPE\fP, \fBNPINS\fP, \fBNROWS\fP, \fBNCOLS\fP, and \fBPIN\fP\fI[1..n]\fP.
+.)b
+.pp
+The \fIlayout\fP program does not need the pin related information,
+but only items relating to the actual physical sizes and layout
+of device packages.
+Specifically, \fIlayout\fP needs the following:
+.(b C
+\fBTYPE\fP, \fBLENGTH\fP, \fBWIDTH\fP, and \fBPROP\fP values.
+.)b
+.sp 1
+\fBMAPPING FILE\fP
+.pp
+The file \fIpart_map\fP
+which resides in the system directory \fI/u0/lincoln/layout\fP
+maps device names into package names.
+Each entry (line) simply consists of a device name,
+followed by one or more spaces (or tabs),
+followed be a package name.
+Below is an example (order is not important):
+.sp 1
+.in +5
+.sz -1
+.TS
+l l .
+74LS00	DIP8
+74LS04	DIP14
+74LS11	DIP14
+74LS14	DIP14
+74LS153	DIP14
+74LS138	DIP16
+74LS373	DIP20
+74LS393	DIP20
+2716-1	DIP24
+8085	DIP40
+8755	DIP40
+8155	DIP40
+\...	...
+\... 	...
+.TE
+.sz +1
+.in -5
+.sp 1
+.pp
+This file is used by \fIlayout\fP and \fIwirelist\fP
+to find the package name (e.g. \fIDIP14\fP)
+of a particular device (e.g. \fI74LS04\fP),
+which will in turn be used to find the package description file
+(e.g. \fI/u0/lincoln/layout/dip14/pkg_desc\fP;
+the mapping of \fIDIP14\fP to \fIdip14\fP is done
+by reading the file \fI/u0/lincoln/layout/layout.lib\fP).
+.pp
+Additions to this file may be done be hand,
+or perhaps preferably, by using Don Malpass's
+program \fIsizedip\fP.
+.sp 2
+\fBFILES\fP
+.pp
+Below is summary of where and what things are.
+.TS
+l l .
+\fI/u0/lincoln/src\fP	- local source programs.
+\fI/u0/lincoln/src/layout\fP	- \fIlayout\fP source code
+\fI/u0/lincoln/src/wirelist\fP	- \fIwirelist\fP source code
+\fI/u0/lincoln/src/wirelist/boards\fP	- board geometry dependant routines for \fIwirelist\fP
+\fI/u0/lincoln/src/libc\fP	- misc. library routines
+\fI/u0/lincoln/src/validlib\fP	- VALID related library routines
+\fI/u0/lincoln/src/validlist\fP	- VALID file listing routines
+\fI/u0/lincoln/man\fP	- all of the documentation (including this document)
+\fI/u0/lincoln/layout/part_map\fP	- device to package mapping file
+\fI/u0/lincoln/layout\fP/\fBpackage_name\fP/\fIpkg_desc\fP	- package description file for \fBpackage_name\fP

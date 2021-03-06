@@ -1,0 +1,168 @@
+/* LPI-DEBUG M68 USRWRT.PL1 - Interlude to call user program routine */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  08.10.89  DCZ  005  Added NLS support;
+ *			derror replaces writtt calls.
+ *			Added DERROR_IN.
+ *
+ *  06.17.87  DGM  Updated call to DOCALL.  Added include of DBGRTS_IN.
+ *
+ *  04.16.87  DGM  Totally redone to use the DOCALL routine recently
+ *                 implemented.
+ *
+ *  03/18/86  PLB  Change entry point name.  Do not static
+ *                 initial BREAKPT to avoid machine dependency.
+ *
+ *  04/16/86  PLB  <recheckout> BREAKPT fix again.
+ *
+ *  06/21/85  PLB  Original code.
+ *
+ *  -------------------------------------------------------------------
+ *
+ *  This routine was written to handle the LET command on string vars
+ *  for BASIC. This is the first instance where it was required to call
+ *  a routine in the user's address space to accompish a goal. Some
+ *  attempt has been made here to put in the "hooks" for future calls
+ *  of this sort, but some modification is to be expected.
+ *
+ *  It is also possible that this routine could eventually be enhanced
+ *  to handle calls to user program functions.
+ *
+ **********************************************************************/
+
+USRWRT: procedure (ENTRYCODE, NARGS);
+
+%NOLIST;
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include DBGRTS_IN;
+%include UNXDBG_IN;
+%include SYSDOCALL_IN;
+%include SYSTEMP_IN;
+%include SYSTTY_IN;
+%include DERROR_IN;
+%LIST;
+
+    declare 
+        ENTRYCODE fixed binary (15),  /* User routine code (RTSENT_xxx_) */
+        NARGS     fixed binary (15);  /* Number of arguments on debug stack */
+
+    declare 
+        DUMMY     fixed binary (31),
+        EVAR      entry variable,
+        ARGLIST   (MAX_ARGUMENTS) pointer,
+        I         fixed binary (15),
+        P         pointer,
+        STATUS    fixed binary (15),
+        TMPADDR   fixed binary (ADDRESS_LENGTH),
+        EADDR     fixed binary (ADDRESS_LENGTH),
+        ADDRESS_B fixed binary (ADDRESS_LENGTH) based;
+
+
+    /* -------------------------------------------------------------------
+     *  P$MOVEBA (TARGET_STRING, SOURCE_STRING, LENGTH_OF_SOURCE_STRING)
+     * ----------------------------------------------------------------- */
+
+    if ENTRYCODE = RTSENT_BASMOVSTR_ then do;
+
+        if RTS_ENTRY(ENTRYCODE).ADDRESS = 0 then do;
+	    call derror ( 192 + MSG_OFFSET, 
+					STRIP(RTS_ENTRY(ENTRYCODE).NAME, ''));
+            return;
+        end;
+
+        addr(EVAR)->ADDRESS_B = RTS_ENTRY(ENTRYCODE).ADDRESS;
+    
+        /* Mark the user temporary space */
+
+        call MRKTMP (TMPADDR);
+
+        /* Pop the source string data */
+
+        P = POP_VAL();
+
+        /*
+         * Allocate user temporary space for the source string
+         * and set up the second argument to point to this.
+         */
+
+        call ALCTMP ((P->V_P), addr(P->V_DATA), EADDR, DUMMY, STATUS);
+        if STATUS ^= 0 then goto ERROR_BASMOVSTR;
+        addr(ARGLIST(2))->ADDRESS_B = EADDR;
+
+        /*
+         * Allocate user temporary space for the source string length
+         * and set up the third argument to point to this.
+         */
+
+        call ALCTMP (2, addr(P->V_P), EADDR, DUMMY, STATUS);
+        if STATUS ^= 0 then goto ERROR_BASMOVSTR;
+        addr(ARGLIST(3))->ADDRESS_B = EADDR;
+
+        /* Free this debugger value area */
+
+        call FREE_AREA (P);
+
+        /* Pop the target string data */
+
+        P = POP_VAL();
+
+        /*
+         * Set up the target string address
+         * (in user memory) as the first argument.
+         */
+
+        addr(ARGLIST(1))->ADDRESS_B = P->VAL_REF_LOCATION;
+
+        /* Free this debugger value area */
+
+        call FREE_AREA (P);
+
+        /*
+         * Make the call
+         *
+         * -- TODO -- Something should be done to insure that
+         * any breakpoints taken within a user routine called
+         * internally by the debugger, is ignored.
+         */
+
+        call DOCALL (EVAR, 3, NULL, 0, 0, 0, 0, ARGLIST);
+
+        /* Free user temporary space */
+
+        call FRETMP (TMPADDR);
+
+        END_BASMOVSTR:
+
+        return;
+
+        ERROR_BASMOVSTR:
+
+	call derror ( 193 + MSG_OFFSET, '', '');
+        return;
+
+    end;
+
+    /* -------------------------------------------------------------------
+     *  UNKNOWN USER RTS CALL !!!
+     * ----------------------------------------------------------------- */
+
+    else do;
+	call derror ( 194 + MSG_OFFSET, TRIM((ENTRYCODE)), '');
+        return;
+    end;
+
+end USRWRT;
+

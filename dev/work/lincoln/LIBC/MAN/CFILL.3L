@@ -1,0 +1,26 @@
+.TH CFILL 3L LOCAL
+
+.SH NAME
+cfill - fill a string with a character
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+cfill(str, n, c)
+.br
+char *str, c;
+.br
+int n;
+.ft P
+
+.SH DESCRIPTION
+Floods the given string \fIstr\fP with exactly \fIn\fP occurrences of
+\fIc\fP characters.
+Returns the string.
+
+.SH FILES
+cfill.c
+
+.SH SEE ALSO
+string(3)

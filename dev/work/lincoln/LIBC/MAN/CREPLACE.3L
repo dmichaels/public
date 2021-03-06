@@ -1,0 +1,24 @@
+.TH CREPLACE 3L LOCAL
+
+.SH NAME
+creplace - replace a character in a string
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+creplace(str, old, new)
+.br
+char *str, old, new;
+.ft P
+
+.SH DESCRIPTION
+Replaces every occurrence of the old character \fIold\fP with
+the new character \fInew\fP in the string \fIstr\fP.
+Returns \fIstr\fP.
+
+.SH FILES
+creplace.c
+
+.SH SEE ALSO
+squish(3L)

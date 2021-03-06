@@ -1,0 +1,3096 @@
+/* C++ nodmgr.pl1 - Node manager interface implementation */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.27.92  DGM  044R	Remove SYM_NODE.RELOCATION_ORDERING_DATA.
+ *  10.26.92  DGM  044	Minor fix in DUMP_NODE_STATS.
+ *  10.06.92  DGM  043	Initialize SYM_NODE.RELOCATION_ORDERING_DATA.
+ *  08.10.92  DGM  042	Put XXREF_NODEs and DATA_INITIAL_NODEs
+ *			into TOKEN_NODE space.
+ *  06.25.92  DGM  041	Prepare to enable a separate TOKEN_NODE space.
+ *  06.18.92  DGM  040	DATA_SECTION_NODE routines.
+ *  06.11.92  DGM  039	Set SYM_NODE.SEQUENCE_NUMBER.
+ *  06.01.92  DGM  038	Re-enabled the second front-end node space; put
+ *			parameter-nodes, sig-nodes, and dim-nodes in
+ *			this new node space (OTHER_B).
+ *  03.08.92  PKT  037	Added PARAMETER_NODE utilities.
+ *  03.26.92  DGM  036	New value-node scheme.
+ *  01.21.92  DGM  035  Updated for multi-space node ids.
+ *			Added LIST_NODE utilities.
+ *  05.29.91  DGM  034  Set SYM_NODE.IS_DUMMY if doing internal parse;
+ *			added DERIVED_CLASS_NODE utilities, etc.
+ *  04.01.91  DGM  033  Fix in NEW_BLOCK_NODE.
+ *  02.01.91  DGM  032  Updated to the new global names scheme.
+ *  12.07.90  DGM  031  Added VBC_NODE utilities.
+ *  11.06.90  DGM  030  Minor updates for sym-node field initializations.
+ *  10.22.90  DGM  029  Updated.
+ *  10.12.90  DGM  028  Updates in INITIALIZE_SYM_NODE.
+ *  09.25.90  DGM  027  Preprocessor include file name changes.
+ *  09.14.90  DGM  026  Changed include file names and VOP names.
+ *  09.13.90  DGM  025  Changed xxx_SC names to xxx_ST.
+ *  08.31.90  DGM  024  Added COPY_TYPE_NODE.
+ *  08.29.90  DGM  023  Added FREE_TYPE_NODE & DUMP_TYPE_NODE_STATS.
+ *  08.15.90  DGM  022  New type-node.
+ *  07.19.90  DGM  021  Updated for SYM_NODE.ENCLOSING_SCOPE_OWNER.
+ *  06.26.90  DGM  020  Updated for the new SYM_NODE.CONVERSION field.
+ *  06.05.90  DGM  019  Updated for the new utilities. Added FORM_TOKEN.
+ *  05.31.90  PKT  018  Removed SYM_NODE.IN_INITIALIZER.
+ *  05.25.90  DGM  018  Added MAKE_SYM_NODE_P, MAKE_SYM_NODE (renames
+ *			MAKE_SYMBOL), and COPY_TYPE_NODE_P.
+ *  05.17.90  DGM  017  Added COPY_DIM_NODE_LIST & COPY_SIG_NODE_LIST.
+ *  05.15.90  DGM  016  Updated.
+ *  05.02.90  DGM  015  Set SYM_NODE.{IN_INITIALIZER,HAS_CONST_MEMBER)
+ *			in MAKE_SYMBOL.
+ *  04.25.90  DGM  014  Updated.
+ *  04.19.90  DGM  013  Updated.
+ *  04.04.90  DGM  012  Updated.
+ *  03.27.90  DGM  011  Updated.
+ *  03.14.90  PKT  010  Updated.
+ *  03.02.90  DGM  009  Updated.
+ *  02.21.90  DGM  008  Updated.
+ *  02.20.90  PKT  007  Added MAKE_SYMBOL.
+ *  02.15.90  DGM  006  Updated for new TYPE_NODE scheme.
+ *  02.05.90  DGM  005  Updated.
+ *  12.12.89  DGM  003  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.27.92 044 NODMGR');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN; 
+%include CXX_UTL_SYMBOL_TABLE_PKG; 
+%include CXX_UTL_STORE_TOKEN_PKG; 
+%include CXX_UTL_WRITE_PKG; 
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_INTERNAL_PARSE_PKG;
+%include CXX_ERROR_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+/* C++ specific node types */
+
+%replace TYPE_NODE_CODE			by 101;  /* space: A */
+%replace DIM_NODE_CODE			by 102;  /* space: B */
+%replace SIG_NODE_CODE			by 103;  /* space: B */
+%replace SCOPE_NODE_CODE		by 104;  /* space: B */
+%replace FRIEND_NODE_CODE		by 105;  /* space: A */
+%replace VBC_NODE_CODE			by 106;  /* space: A */
+%replace BASE_CLASS_NODE_CODE		by 107;  /* space: A */
+%replace DERIVED_CLASS_NODE_CODE	by 108;  /* space: A */
+%replace BASE_MEMBER_NODE_CODE		by 109;  /* space: A */
+%replace SOURCE_NODE_CODE		by 110;  /* space: A */
+%replace LIST_NODE_CODE			by 111;  /* space: A */
+%replace PARAMETER_NODE_CODE		by 112;  /* space: A */
+
+/* Generic node types */
+
+%replace SYM_NODE_CODE			by 0;  /* space: common */
+%replace LINK_NODE_CODE			by 0;  /* space: common */
+%replace TOKEN_NODE_CODE		by 0;  /* space: common */
+%replace BLOCK_NODE_CODE		by 0;  /* space: common */
+%replace ARRAY_NODE_CODE		by 0;  /* space: common */
+%replace DATA_INITIAL_NODE_CODE		by 0;  /* space: common */
+%replace DATA_SECTION_NODE_CODE		by 0;  /* space: common */
+%replace XXREF_NODE_CODE		by 0;  /* space: common */
+
+/* =====================================================================
+/* General
+/* =================================================================== */
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_NODE_MGR
+/* ------------------------------------------------------------------- */
+
+declare
+
+SYM_NODE_WORD_SIZE	type (SHORT_T),
+SCOPE_NODE_WORD_SIZE	type (SHORT_T);
+
+
+INITIALIZE_NODE_MGR: procedure
+		     external (X_INITIALIZE_NODE_MGR);
+
+	declare
+		P 		pointer;
+	/*
+	/* Later on, we assume that each of these types maps to
+	/* an array of LONG_T.
+	/**/
+
+        SYM_NODE_WORD_SIZE = ROUNDU (size (SYM_NODE), BYTES, WORDS);
+	if SYM_NODE_WORD_SIZE * (size (P->LONG_T)) ^= size (SYM_NODE) then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+        SCOPE_NODE_WORD_SIZE = ROUNDU (size (SCOPE_NODE), BYTES, WORDS);
+	if SCOPE_NODE_WORD_SIZE * (size (P->LONG_T)) ^= size (SCOPE_NODE) then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	
+
+end INITIALIZE_NODE_MGR;
+
+
+/* =====================================================================
+/* TYPE_NODE utilities
+/* =================================================================== */
+
+declare
+
+FREE_TYPE_NODE_LIST	(0 : MAX_DERIVED_TYPE_LEVEL) type (NID_T)
+			static internal
+			initial ((MAX_TYPE_LEVEL) (NULL_NID)),
+
+TYPE_NODE_COUNT		type (LONG_T) static internal initial (0),
+TYPE_NODE_FREE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_TYPE_NODE
+/*
+/* Allocate a new type-node, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_TYPE_NODE: procedure (LEVEL) external (X_ALLOC_TYPE_NODE);
+
+	declare
+		LEVEL		type (SHORT_T);
+	declare
+		TYPE_NODE_LEVEL	type (SHORT_T),
+		TYPE_NODE_SIZE	type (SHORT_T),
+		ID		type (NID_T);
+	declare
+		TYPE_DATA	type (TYPE_DATA_T);
+
+	/* Calculate the size of the type-node */
+
+	if LEVEL <= 0 then
+		TYPE_NODE_LEVEL = 0;
+	else if LEVEL > MAX_DERIVED_TYPE_LEVEL then
+		TYPE_NODE_LEVEL = MAX_DERIVED_TYPE_LEVEL;
+	else	TYPE_NODE_LEVEL = LEVEL;
+
+	TYPE_NODE_SIZE = size (TYPE_NODE_HEADER_T) +
+			 (size (TYPE_DATA) * (TYPE_NODE_LEVEL + 1));
+
+	/* Allocate the type-node */
+
+	if FREE_TYPE_NODE_LIST (LEVEL) ^= NULL_NID then do;
+		ID = FREE_TYPE_NODE_LIST (LEVEL);
+		call SET_TYPE_NODE (ID);
+		FREE_TYPE_NODE_LIST (LEVEL) = TYPE_NODE.NEXT;
+		TYPE_NODE_FREE_COUNT = TYPE_NODE_FREE_COUNT - 1;
+	end;
+	else do;
+		call ALLOC_OTHER_A (TYPE_NODE_SIZE, TYPE_NODE_CODE);
+		TYPE_NODE_COUNT = TYPE_NODE_COUNT + 1;
+	end;
+
+	/* Initialize the type-node */
+
+	TYPE_NODE.LEVEL				= byte (LEVEL);
+	TYPE_NODE.TYPEDEF			= NULL_NID;
+	TYPE_NODE.NEXT				= NULL_NID;
+	TYPE_NODE.SHARED			= FALSE;
+	TYPE_NODE.CONTAINS_INCOMPLETE		= FALSE;
+	TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT	= FALSE;
+
+end ALLOC_TYPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_TYPE_NODE
+/*
+/* Allocate a new type-node, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_TYPE_NODE: procedure (LEVEL, ID, P) external (X_NEW_TYPE_NODE);
+
+	declare
+		LEVEL		type (SHORT_T),
+		ID		type (NID_T),
+		P		type (POINTER_T);
+	declare
+		TYPE_NODE_LEVEL	type (SHORT_T),
+		TYPE_NODE_SIZE	type (SHORT_T);
+	declare
+		TYPE_DATA	type (TYPE_DATA_T);
+
+	/* Calculate the size of the type-node */
+
+	if LEVEL <= 0 then
+		TYPE_NODE_LEVEL = 0;
+	else if LEVEL > MAX_DERIVED_TYPE_LEVEL then
+		TYPE_NODE_LEVEL = MAX_DERIVED_TYPE_LEVEL;
+	else	TYPE_NODE_LEVEL = LEVEL;
+
+	TYPE_NODE_SIZE = size (TYPE_NODE_HEADER_T) +
+			 (size (TYPE_DATA) * (TYPE_NODE_LEVEL + 1));
+
+	/* Allocate the type-node */
+
+	if FREE_TYPE_NODE_LIST (LEVEL) ^= NULL_NID then do;
+		ID = FREE_TYPE_NODE_LIST (LEVEL);
+		call GET_TYPE_NODE (ID, P);
+		FREE_TYPE_NODE_LIST (LEVEL) = P->TYPE_NODE.NEXT;
+		TYPE_NODE_FREE_COUNT = TYPE_NODE_FREE_COUNT - 1;
+	end;
+	else do;
+		call NEW_OTHER_A (TYPE_NODE_SIZE, TYPE_NODE_CODE, ID, P);
+		TYPE_NODE_COUNT = TYPE_NODE_COUNT + 1;
+	end;
+
+	/* Initialize the type-node */
+
+	P->TYPE_NODE.LEVEL			= byte (LEVEL);
+	P->TYPE_NODE.TYPEDEF			= NULL_NID;
+	P->TYPE_NODE.NEXT			= NULL_NID;
+	P->TYPE_NODE.SHARED			= FALSE;
+	P->TYPE_NODE.CONTAINS_INCOMPLETE	= FALSE;
+	P->TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT	= FALSE;
+
+end NEW_TYPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* FREE_TYPE_NODE
+/*
+/* Free the given type-node so it can be subsequently reused.
+/* ------------------------------------------------------------------- */
+
+FREE_TYPE_NODE: procedure (ID) external (X_FREE_TYPE_NODE);
+
+	declare ID	type (NID_T);
+	declare P	type (POINTER_T);
+
+	if AM_DEBUGGER then
+		return;
+
+	call GET_TYPE_NODE_R (ID, P);
+
+	if P->TYPE_NODE.SHARED then do;
+		call RELEASE_TYPE_NODE (ID);
+		return;
+	end;
+
+	P->TYPE_NODE.NEXT = FREE_TYPE_NODE_LIST (rank (P->TYPE_NODE.LEVEL));
+	FREE_TYPE_NODE_LIST (rank (P->TYPE_NODE.LEVEL)) = ID;
+
+	call RELEASE_TYPE_NODE (ID);
+
+	TYPE_NODE_FREE_COUNT = TYPE_NODE_FREE_COUNT + 1;
+
+end FREE_TYPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* FREE_TYPE_NODE_P
+/*
+/* Free the given type-node so it can be subsequently reused.
+/* ------------------------------------------------------------------- */
+
+FREE_TYPE_NODE_P: procedure (ID, P) external (X_FREE_TYPE_NODE_P);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);	
+
+	if AM_DEBUGGER then
+		return;
+
+	if P->TYPE_NODE.SHARED then do;
+		call RELEASE_TYPE_NODE (ID);
+		return;
+	end;
+
+	P->TYPE_NODE.NEXT = FREE_TYPE_NODE_LIST (rank (P->TYPE_NODE.LEVEL));
+	FREE_TYPE_NODE_LIST (rank (P->TYPE_NODE.LEVEL)) = ID;
+
+	call RELEASE_TYPE_NODE (ID);
+
+	TYPE_NODE_FREE_COUNT = TYPE_NODE_FREE_COUNT + 1;
+
+end FREE_TYPE_NODE_P;
+
+/* ---------------------------------------------------------------------
+/* SET_TYPE_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_TYPE_NODE: procedure (ID) external (X_SET_TYPE_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A (ID);
+
+end SET_TYPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_TYPE_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_TYPE_NODE_R: procedure (ID) external (X_SET_TYPE_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A_R (ID);
+
+end SET_TYPE_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_TYPE_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_TYPE_NODE: procedure (ID, P) external (X_GET_TYPE_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A (ID, P);
+
+end GET_TYPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_TYPE_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_TYPE_NODE_R: procedure (ID, P) external (X_GET_TYPE_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A_R (ID, P);
+
+end GET_TYPE_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_TYPE_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_TYPE_NODE: procedure (ID) external (X_RELEASE_TYPE_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_A (ID);
+
+end RELEASE_TYPE_NODE;
+
+/* =====================================================================
+/* SYM_NODE utilities
+/* =================================================================== */
+
+declare
+
+FREE_SYM_NODE_LIST	type (NID_T) static internal initial (NULL_NID),
+
+SYM_NODE_COUNT		type (LONG_T) static internal initial (0),
+SYM_NODE_FREE_COUNT	type (LONG_T) static internal initial (0),
+LABEL_SYM_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_SYM_NODE
+/*
+/* Allocate a new SYM_NODE, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_SYM_NODE: procedure external (X_ALLOC_SYM_NODE);
+
+	if FREE_SYM_NODE_LIST ^= NULL_NID then do;
+		call SET_SYM_NODE (FREE_SYM_NODE_LIST);
+		FREE_SYM_NODE_LIST = SYM_NODE.NEXT_SYMBOL;
+		SYM_NODE_FREE_COUNT = SYM_NODE_FREE_COUNT - 1;
+		call CLEAR_SYM_NODE (SYM_NODE);
+	end;
+	else do;
+		call ALLOC_NODE (size (SYM_NODE), SYM_NODE_CODE);
+		SYM_NODE_COUNT = SYM_NODE_COUNT + 1;
+	end;
+	SYM_NODE.SEQUENCE_NUMBER = SYM_NODE_COUNT;
+
+end ALLOC_SYM_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_SYM_NODE
+/*
+/* Allocate a new SYM_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_SYM_NODE: procedure (ID, P) external (X_NEW_SYM_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	if FREE_SYM_NODE_LIST ^= NULL_NID then do;
+		ID = FREE_SYM_NODE_LIST;
+		call GET_SYM_NODE (ID, P);
+		FREE_SYM_NODE_LIST = P->SYM_NODE.NEXT_SYMBOL;
+		SYM_NODE_FREE_COUNT = SYM_NODE_FREE_COUNT - 1;
+		call CLEAR_SYM_NODE (P->SYM_NODE);
+	end;
+	else do;
+		call NEW_NODE (size (SYM_NODE), SYM_NODE_CODE, ID, P);
+		SYM_NODE_COUNT = SYM_NODE_COUNT + 1;
+	end;
+	P->SYM_NODE.SEQUENCE_NUMBER = SYM_NODE_COUNT;
+
+end NEW_SYM_NODE;
+
+/* ---------------------------------------------------------------------
+/* CLEAR_SYM_NODE
+/* ------------------------------------------------------------------- */
+
+CLEAR_SYM_NODE: procedure (S)
+		internal;
+
+	declare
+		S		type (SYM_NODE);
+
+	declare AREA (SYM_NODE_WORD_SIZE) type (LONG_T) based;
+
+        addr(S)->AREA = 0;
+
+end CLEAR_SYM_NODE;
+
+/* ---------------------------------------------------------------------
+/* FREE_SYM_NODE
+/*
+/* Free the given SYM_NODE so it can be subsequently reused.
+/* ------------------------------------------------------------------- */
+
+FREE_SYM_NODE: procedure (ID) external (X_FREE_SYM_NODE);
+
+	declare ID	type (NID_T);
+	declare P	type (POINTER_T);
+
+	if AM_DEBUGGER then
+		return;
+
+	call GET_SYM_NODE_R (ID, P);
+
+	P->SYM_NODE.NEXT_SYMBOL = FREE_SYM_NODE_LIST;
+	FREE_SYM_NODE_LIST = ID;
+
+	call RELEASE_SYM_NODE (ID);
+
+	SYM_NODE_FREE_COUNT = SYM_NODE_FREE_COUNT + 1;
+
+end FREE_SYM_NODE;
+
+/* ---------------------------------------------------------------------
+/* FREE_SYM_NODE_P
+/*
+/* Free the given SYM_NODE so it can be subsequently reused.
+/* ------------------------------------------------------------------- */
+
+FREE_SYM_NODE_P: procedure (ID, P) external (X_FREE_SYM_NODE_P);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);	
+
+	if AM_DEBUGGER then
+		return;
+
+	P->SYM_NODE.NEXT_SYMBOL = FREE_SYM_NODE_LIST;
+	FREE_SYM_NODE_LIST = ID;
+
+	call RELEASE_SYM_NODE (ID);
+
+	SYM_NODE_FREE_COUNT = SYM_NODE_FREE_COUNT + 1;
+
+end FREE_SYM_NODE_P;
+
+/* ---------------------------------------------------------------------
+/* SET_SYM_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_SYM_NODE: procedure (ID) external (X_SET_SYM_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_NODE (ID);
+
+end SET_SYM_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_SYM_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_SYM_NODE_R: procedure (ID) external (X_SET_SYM_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_NODE_R (ID);
+
+end SET_SYM_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_SYM_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_SYM_NODE: procedure (ID, P) external (X_GET_SYM_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE (ID, P);
+
+end GET_SYM_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_SYM_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_SYM_NODE_R: procedure (ID, P) external (X_GET_SYM_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE_R (ID, P);
+
+end GET_SYM_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_SYM_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_SYM_NODE: procedure (ID) external (X_RELEASE_SYM_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_NODE (ID);
+
+end RELEASE_SYM_NODE;
+
+/* ---------------------------------------------------------------------
+/* MAKE_SYM_NODE
+/*
+/* Allocate a new sym-node of this given kind.  Intializes line/file
+/* data according to the current (global); all other data is initialized
+/* to the appropriate null values.  Return the new sym-node id and with
+/* it paged in.
+/* ------------------------------------------------------------------- */
+
+MAKE_SYM_NODE: procedure (KIND)
+	       returns   (type (NID_T))
+	       external  (X_MAKE_SYM_NODE);
+
+	declare KIND	type (LONG_BITS_T);
+
+	if FREE_SYM_NODE_LIST ^= NULL_NID then do;
+		call SET_SYM_NODE (FREE_SYM_NODE_LIST);
+		FREE_SYM_NODE_LIST = SYM_NODE.NEXT_SYMBOL;
+		SYM_NODE_FREE_COUNT = SYM_NODE_FREE_COUNT - 1;
+		call CLEAR_SYM_NODE (SYM_NODE);
+	end;
+	else do;
+		call ALLOC_NODE (size (SYM_NODE), SYM_NODE_CODE);
+		SYM_NODE_COUNT = SYM_NODE_COUNT + 1;
+	end;
+	call INITIALIZE_SYM_NODE (NODE_PTR, KIND);
+	if SYM_NODE.IS_LABEL then
+		LABEL_SYM_NODE_COUNT = LABEL_SYM_NODE_COUNT + 1;
+	SYM_NODE.SEQUENCE_NUMBER = SYM_NODE_COUNT;
+
+	return (CURRENT_NODE_ID);
+
+end MAKE_SYM_NODE;
+
+/* ---------------------------------------------------------------------
+/* MAKE_SYM_NODE_P
+/*
+/* Allocate a new sym-node of the given kind.  Intializes line/file
+/* data according to the current (global); all other data is initialized
+/* to the appropriate null values.  Return the new sym-node id in the
+/* given ID argument and a pointer to it in the given P argument.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MAKE_SYM_NODE_P: procedure (KIND, ID, P)
+		 returns   (type (NID_T))
+		 external  (X_MAKE_SYM_NODE_P);
+
+	declare
+		KIND	type (LONG_BITS_T),
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	if FREE_SYM_NODE_LIST ^= NULL_NID then do;
+		ID = FREE_SYM_NODE_LIST;
+		call GET_SYM_NODE (ID, P);
+		FREE_SYM_NODE_LIST = P->SYM_NODE.NEXT_SYMBOL;
+		SYM_NODE_FREE_COUNT = SYM_NODE_FREE_COUNT - 1;
+		call CLEAR_SYM_NODE (P->SYM_NODE);
+	end;
+	else do;
+		call NEW_NODE (size (SYM_NODE), SYM_NODE_CODE, ID, P);
+		SYM_NODE_COUNT = SYM_NODE_COUNT + 1;
+	end;
+	call INITIALIZE_SYM_NODE (P, KIND);
+	if P->SYM_NODE.IS_LABEL then
+		LABEL_SYM_NODE_COUNT = LABEL_SYM_NODE_COUNT + 1;
+	P->SYM_NODE.SEQUENCE_NUMBER = SYM_NODE_COUNT;
+
+end MAKE_SYM_NODE_P;
+
+/* ---------------------------------------------------------------------
+/* MAKE_SYMBOL
+/*
+/* Same as MAKE_SYM_NODE -- name change -- keep this for compatibility.
+/* ------------------------------------------------------------------- */
+
+MAKE_SYMBOL: procedure (KIND)
+	     returns   (type (NID_T))
+	     external  (X_MAKE_SYMBOL);
+
+	declare KIND	type (LONG_BITS_T);
+
+	return (MAKE_SYM_NODE (KIND));
+
+end MAKE_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* SYMBOL_SEQUENCE_NUMBER
+/* ------------------------------------------------------------------- */
+
+SYMBOL_SEQUENCE_NUMBER: procedure ()
+			returns   (type (LONG_T))
+			external  (X_SYMBOL_SEQUENCE_NUMBER);
+
+	return (SYM_NODE_COUNT);
+
+end SYMBOL_SEQUENCE_NUMBER;
+
+/* ---------------------------------------------------------------------
+/* UPDATE_SYMBOL_SEQUENCE_NUMBER
+/* ------------------------------------------------------------------- */
+
+UPDATE_SYMBOL_SEQUENCE_NUMBER: procedure ()
+			       returns   (type (LONG_T))
+			       external  (X_UPDATE_SYMBOL_SEQUENCE_NUMBER);
+
+	SYM_NODE_COUNT = SYM_NODE_COUNT + 1;
+	return (SYM_NODE_COUNT);
+
+end UPDATE_SYMBOL_SEQUENCE_NUMBER;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_SYM_NODE
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_SYM_NODE: procedure (P, KIND) internal;
+
+	declare
+		P	type (POINTER_T),
+		KIND	type (LONG_BITS_T);
+
+	/* Initialization */
+
+	P->SYM_NODE.KIND	= KIND;
+	P->SYM_NODE.DCL_FILE_ID	= CURRENT_SOURCE.FILE;
+	P->SYM_NODE.DCL_LINE_ID	= CURRENT_SOURCE.LINE;
+
+	if CURRENTLY_DOING_INTERNAL_PARSE then
+		P->SYM_NODE.IS_DUMMY = TRUE;
+
+	if (KIND & FUNCTION_SK) = FUNCTION_SK then do;
+
+		/* Must initialize these since null () is -1 ! */
+
+		P->SYM_NODE.SAVED_FUNCTION_BODY.FIRST_TOKEN  = null ();
+		P->SYM_NODE.SAVED_FUNCTION_BODY.LAST_TOKEN   = null ();
+		P->SYM_NODE.SAVED_FUNCTION_BODY.SOURCE_STATE = null ();
+
+		/* The should be initialized only if paranoid */
+
+		/*
+		/* P->SYM_NODE.SAVED_FUNCTION_BODY.NEXT	     = NULL_NID;
+		/* P->SYM_NODE.SAVED_FUNCTION_BODY.PREV	     = NULL_NID;
+		/* P->SYM_NODE.NEXT_OVERLOAD		     = NULL_NID;
+		/* P->SYM_NODE.VIRTUAL_FUNCTION_INDEX	     = 0;
+		/* P->SYM_NODE.INLINE			     = FALSE;
+		/* P->SYM_NODE.VIRTUAL			     = FALSE;
+		/* P->SYM_NODE.OVERLOAD			     = FALSE;
+		/* P->SYM_NODE.PURE			     = FALSE;
+		/* P->SYM_NODE.NEXT_VIRTUAL_FUNCTION	     = NULL_NID;
+		/* P->SYM_NODE.C_LINKAGE_OVERLOAD	     = NULL_NID;
+		/**/
+	end;
+
+	/* The should be initialized only if paranoid */
+
+	/*
+	/* else if P->SYM_NODE.IS_AGGREGATE_TAG then do;
+	/*	P->SYM_NODE.SAVED_FUNCTION_BODIES  = NULL_NID;
+	/*	P->SYM_NODE.CONSTRUCTOR		   = NULL_NID;
+	/*	P->SYM_NODE.COPY_CONSTRUCTOR	   = NULL_NID;
+	/*	P->SYM_NODE.DESTRUCTOR		   = NULL_NID;
+	/*	P->SYM_NODE.CONVERSION		   = NULL_NID;
+	/*	P->SYM_NODE.ASSIGNMENT		   = NULL_NID;
+	/*	P->SYM_NODE.FRIENDS		   = NULL_NID;
+	/*	P->SYM_NODE.BASE_MEMBERS	   = NULL_NID;
+	/*	P->SYM_NODE.BASE_CLASSES	   = NULL_NID;
+	/*	P->SYM_NODE.NBASE_CLASSES	   = 0;
+	/*	P->SYM_NODE.DERIVED_CLASSES	   = NULL_NID;
+	/*	P->SYM_NODE.NON_VIRTUAL_SIZE	   = 0;
+	/*	P->SYM_NODE.VIRTUAL_FUNCTION_COUNT = 0;
+	/*	P->SYM_NODE.VIRTUAL_FUNCTION_TABLE = NULL_NID;
+	/*	P->SYM_NODE.HAS_VIRTUAL_BASES	   = FALSE;
+	/*	P->SYM_NODE.ABSTRACT		   = FALSE;
+	/*	P->SYM_NODE.HAS_CONST_MEMBER	   = FALSE;
+	/*	P->SYM_NODE.HAS_NON_PUBLIC_MEMBER  = FALSE;
+	/*	P->SYM_NODE.NEEDS_INIT		   = FALSE;
+	/*	P->SYM_NODE.NEEDS_COPY		   = FALSE;
+	/*	P->SYM_NODE.NEEDS_DESTRUCTION	   = FALSE;
+	/*	P->SYM_NODE.NEEDS_ASSIGN	   = FALSE;
+	/* end;
+	/**/
+
+	/* The should be initialized only if paranoid */
+
+	/*
+	/* else if P->SYM_NODE.IS_LABEL then do;
+	/*	P->SYM_NODE.DESTRUCTORS		= NULL_CXX_VID;
+	/*	P->SYM_NODE.NEXT_LABEL		= NULL_NID;
+	/*	P->SYM_NODE.BYPASSED_SYMBOL	= NULL_NID;
+	/*	P->SYM_NODE.LABEL_TO_USE	= NULL_NID;
+	/*	P->SYM_NODE.BLOCK_LEVEL		= 0;
+	/*	P->SYM_NODE.OK_TO_REACH		= FALSE;
+	/* end;
+	/*
+	/* else do;
+	/*	P->SYM_NODE.NEXT_PARAMETER	= NULL_NID;
+	/* end;
+	/**/
+
+	/* The should be initialized only if paranoid */
+
+	/*
+	/* P->SYM_NODE.TYPE			= NULL_NID;
+	/* P->SYM_NODE.ENCLOSING_SCOPE		= NULL_NID;
+	/* P->SYM_NODE.ENCLOSING_SCOPE_OWNER	= NULL_NID;
+	/* P->SYM_NODE.DEFINED_SCOPE		= NULL_NID;
+	/* P->SYM_NODE.NEXT_SYMBOL		= NULL_NID;
+	/* P->SYM_NODE.BEFRIENDS		= NULL_NID;
+	/* P->SYM_NODE.OTHER_SYMBOL		= NULL_NID;
+	/* P->SYM_NODE.STORAGE_CLASS		= byte (NULL_ST);
+	/* P->SYM_NODE.TOP_TYPE.CODE		= byte (NULL_BT);
+	/* P->SYM_NODE.TOP_TYPE.QUALIFIERS	= NULL_TQ;
+	/* P->SYM_NODE.TOP_TYPE.NID		= NULL_NID;
+	/* P->SYM_NODE.ENCLOSING_SCOPE_TYPE	= byte (NULL_SCOPE);
+	/* P->SYM_NODE.ACCESS			= byte (NULL_ACCESS);
+	/* P->SYM_NODE.LINKAGE_KIND		= byte (DEFAULT_LINKAGE);
+	/* P->SYM_NODE.DEFINED			= FALSE;
+	/* P->SYM_NODE.INTERNAL_LINKAGE		= FALSE;
+	/* P->SYM_NODE.EXTERNAL_LINKAGE		= FALSE;
+	/* P->SYM_NODE.IS_ALSO_TAG		= FALSE;
+	/* P->SYM_NODE.IS_ALSO_NON_TAG		= FALSE;
+	/* P->SYM_NODE.SHOULD_INLINE		= FALSE;
+	/* P->SYM_NODE.SIGNED_BIT_FIELD		= FALSE;
+	/*
+	/* P->SYM_NODE.COMMON.TYPE		= NULL_NID;
+	/* P->SYM_NODE.NAME			= NULL_NID;
+	/* P->SYM_NODE.BROTHER			= NULL_NID;
+	/* P->SYM_NODE.FATHER			= NULL_NID;
+	/* P->SYM_NODE.VALUE			= NULL_NID;
+	/* P->SYM_NODE.LOCATION			= NULL_NID;
+	/* P->SYM_NODE.FIELD1			= NULL_NID;
+	/* P->SYM_NODE.FIELD2			= NULL_NID;
+	/* P->SYM_NODE.X_REF			= NULL_NID;
+	/* P->SYM_NODE.NEXT_OF_NAME		= NULL_NID;
+	/* P->SYM_NODE.BLOCK			= NULL_NID;
+	/* P->SYM_NODE.ARRAY_ID			= NULL_NID;
+	/* P->SYM_NODE.SIZE			= 0;
+	/* P->SYM_NODE.SIZE_UNITS		= byte (0);
+	/* P->SYM_NODE.BOUNDARY			= byte (0);
+	/* P->SYM_NODE.OFFSET_UNITS		= byte (0);
+	/* P->SYM_NODE.STORAGE			= byte (0);
+	/* P->SYM_NODE.REFERENCED		= FALSE;
+	/* P->SYM_NODE.CONSTANT_OFFSET		= FALSE;
+	/* P->SYM_NODE.CONSTANT_SIZE		= FALSE;
+	/* P->SYM_NODE.CONSTANT_LENGTH		= FALSE;
+	/* P->SYM_NODE.INITIAL_AT		= FALSE;
+	/* P->SYM_NODE.EXTERNAL_AT		= FALSE;
+	/* P->SYM_NODE.REGISTER_AT		= FALSE;
+	/*
+	/* P->SYM_NODE.IS_FIRST_EXTERNAL_LINKAGE_SYMBOL	= FALSE;
+	/* P->SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL    = NULL_NID;
+	/**/
+
+end INITIALIZE_SYM_NODE;
+
+/* ---------------------------------------------------------------------
+/* COPY_SYM_NODE
+/*
+/* Create a new sym-node from the given one.
+/* Return the new sym-node id, and with it paged in.
+/* ------------------------------------------------------------------- */
+
+COPY_SYM_NODE: procedure (THIS_SYM_NODE)
+	       returns   (type (NID_T))
+	       external  (X_COPY_SYM_NODE);
+
+	declare
+		THIS_SYM_NODE	type (NID_T);
+	declare
+		P		type (POINTER_T);
+
+	call ALLOC_SYM_NODE ();
+
+	call GET_NODE_R (THIS_SYM_NODE, P);
+
+	SYM_NODE = P->SYM_NODE;
+
+	SYM_NODE.SEQUENCE_NUMBER = SYM_NODE_COUNT;
+
+	call RELEASE_NODE (THIS_SYM_NODE);
+
+	return (CURRENT_NODE_ID);
+
+end COPY_SYM_NODE;
+
+/* =====================================================================
+/* DIM_NODE utilities
+/* =================================================================== */
+
+declare
+
+DIM_NODE_COUNT		type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_DIM_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_DIM_NODE: procedure external (X_ALLOC_DIM_NODE);
+
+	call ALLOC_OTHER_B (size (DIM_NODE), DIM_NODE_CODE);
+	DIM_NODE_COUNT = DIM_NODE_COUNT + 1;
+
+end ALLOC_DIM_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_DIM_NODE
+/*
+/* Allocate a new DIM_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_DIM_NODE: procedure (ID, P) external (X_NEW_DIM_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_B (size (DIM_NODE), DIM_NODE_CODE, ID, P);
+	DIM_NODE_COUNT = DIM_NODE_COUNT + 1;
+
+end NEW_DIM_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_DIM_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_DIM_NODE: procedure (ID) external (X_SET_DIM_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_B (ID);
+
+end SET_DIM_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_DIM_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_DIM_NODE_R: procedure (ID) external (X_SET_DIM_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_B_R (ID);
+
+end SET_DIM_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_DIM_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_DIM_NODE: procedure (ID, P) external (X_GET_DIM_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_B (ID, P);
+
+end GET_DIM_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_DIM_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_DIM_NODE_R: procedure (ID, P) external (X_GET_DIM_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_B_R (ID, P);
+
+end GET_DIM_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_DIM_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_DIM_NODE: procedure (ID) external (X_RELEASE_DIM_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_B (ID);
+
+end RELEASE_DIM_NODE;
+
+/* =====================================================================
+/* SIG_NODE utilities
+/* =================================================================== */
+
+declare
+
+SIG_NODE_COUNT		type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_SIG_NODE
+/*
+/* Allocate a new SIG_NODE, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_SIG_NODE: procedure external (X_ALLOC_SIG_NODE);
+
+	call ALLOC_OTHER_B (size (SIG_NODE), SIG_NODE_CODE);
+	SIG_NODE_COUNT = SIG_NODE_COUNT + 1;
+
+end ALLOC_SIG_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_SIG_NODE
+/*
+/* Allocate a new SIG_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_SIG_NODE: procedure (ID, P) external (X_NEW_SIG_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_B (size (SIG_NODE), SIG_NODE_CODE, ID, P);
+	SIG_NODE_COUNT = SIG_NODE_COUNT + 1;
+
+end NEW_SIG_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_SIG_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_SIG_NODE: procedure (ID) external (X_SET_SIG_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_B (ID);
+
+end SET_SIG_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_SIG_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_SIG_NODE_R: procedure (ID) external (X_SET_SIG_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_B_R (ID);
+
+end SET_SIG_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_SIG_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_SIG_NODE: procedure (ID, P) external (X_GET_SIG_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_B (ID, P);
+
+end GET_SIG_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_SIG_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_SIG_NODE_R: procedure (ID, P) external (X_GET_SIG_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_B_R (ID, P);
+
+end GET_SIG_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_SIG_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_SIG_NODE: procedure (ID) external (X_RELEASE_SIG_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_B (ID);
+
+end RELEASE_SIG_NODE;
+
+/* =====================================================================
+/* PARAMETER_NODE utilities
+/* =================================================================== */
+
+declare
+
+PARAMETER_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_PARAMETER_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_PARAMETER_NODE: procedure external (X_ALLOC_PARAMETER_NODE);
+
+	call ALLOC_OTHER_B (size (PARAMETER_NODE), PARAMETER_NODE_CODE);
+	PARAMETER_NODE_COUNT = PARAMETER_NODE_COUNT + 1;
+
+end ALLOC_PARAMETER_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_PARAMETER_NODE
+/*
+/* Allocate a new PARAMETER_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_PARAMETER_NODE: procedure (ID, P) external (X_NEW_PARAMETER_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_B (size (PARAMETER_NODE), PARAMETER_NODE_CODE, ID, P);
+	PARAMETER_NODE_COUNT = PARAMETER_NODE_COUNT + 1;
+
+end NEW_PARAMETER_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_PARAMETER_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_PARAMETER_NODE: procedure (ID) external (X_SET_PARAMETER_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_B (ID);
+
+end SET_PARAMETER_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_PARAMETER_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_PARAMETER_NODE_R: procedure (ID) external (X_SET_PARAMETER_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_B_R (ID);
+
+end SET_PARAMETER_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_PARAMETER_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_PARAMETER_NODE: procedure (ID, P) external (X_GET_PARAMETER_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_B (ID, P);
+
+end GET_PARAMETER_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_PARAMETER_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_PARAMETER_NODE_R: procedure (ID, P) external (X_GET_PARAMETER_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_B_R (ID, P);
+
+end GET_PARAMETER_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_PARAMETER_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_PARAMETER_NODE: procedure (ID) external (X_RELEASE_PARAMETER_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_B (ID);
+
+end RELEASE_PARAMETER_NODE;
+
+/* =====================================================================
+/* LINK_NODE utilities
+/* =================================================================== */
+
+declare
+
+LINK_NODE_COUNT		type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_LINK_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_LINK_NODE: procedure external (X_ALLOC_LINK_NODE);
+
+	call ALLOC_NODE (size (LINK_NODE), LINK_NODE_CODE);
+	LINK_NODE_COUNT = LINK_NODE_COUNT + 1;
+
+end ALLOC_LINK_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_LINK_NODE
+/*
+/* Allocate a new LINK_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_LINK_NODE: procedure (ID, P) external (X_NEW_LINK_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_NODE (size (LINK_NODE), LINK_NODE_CODE, ID, P);
+	LINK_NODE_COUNT = LINK_NODE_COUNT + 1;
+
+end NEW_LINK_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_LINK_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_LINK_NODE: procedure (ID) external (X_SET_LINK_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_NODE (ID);
+
+end SET_LINK_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_LINK_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_LINK_NODE_R: procedure (ID) external (X_SET_LINK_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_NODE_R (ID);
+
+end SET_LINK_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_LINK_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_LINK_NODE: procedure (ID, P) external (X_GET_LINK_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE (ID, P);
+
+end GET_LINK_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_LINK_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_LINK_NODE_R: procedure (ID, P) external (X_GET_LINK_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE_R (ID, P);
+
+end GET_LINK_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_LINK_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_LINK_NODE: procedure (ID) external (X_RELEASE_LINK_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_NODE (ID);
+
+end RELEASE_LINK_NODE;
+
+/* =====================================================================
+/* SCOPE_NODE utilities
+/* =================================================================== */
+
+declare
+
+FREE_SCOPE_NODE_LIST	type (NID_T) static internal initial (NULL_NID),
+
+SCOPE_NODE_COUNT	type (LONG_T) static internal initial (0),
+SCOPE_NODE_FREE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_SCOPE_NODE
+/*
+/* Allocate a new SCOPE_NODE, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_SCOPE_NODE: procedure external (X_ALLOC_SCOPE_NODE);
+
+	if FREE_SCOPE_NODE_LIST ^= NULL_NID then do;
+		call SET_SCOPE_NODE (FREE_SCOPE_NODE_LIST);
+		FREE_SCOPE_NODE_LIST = SCOPE_NODE.NEXT_SCOPE;
+		SCOPE_NODE_FREE_COUNT = SCOPE_NODE_FREE_COUNT - 1;
+		call CLEAR_SCOPE_NODE (SCOPE_NODE);
+	end;
+	else do;
+		call ALLOC_OTHER_A (size (SCOPE_NODE), SCOPE_NODE_CODE);
+		SCOPE_NODE_COUNT = SCOPE_NODE_COUNT + 1;
+	end;
+
+end ALLOC_SCOPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_SCOPE_NODE
+/*
+/* Allocate a new SCOPE_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_SCOPE_NODE: procedure (ID, P) external (X_NEW_SCOPE_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+
+	if FREE_SCOPE_NODE_LIST ^= NULL_NID then do;
+		ID = FREE_SCOPE_NODE_LIST;
+		call GET_SCOPE_NODE (ID, P);
+		FREE_SCOPE_NODE_LIST = P->SCOPE_NODE.NEXT_SCOPE;
+		SCOPE_NODE_FREE_COUNT = SCOPE_NODE_FREE_COUNT - 1;
+		call CLEAR_SCOPE_NODE (P->SCOPE_NODE);
+	end;
+	else do;
+		call NEW_OTHER_A (size (SCOPE_NODE), SCOPE_NODE_CODE, ID, P);
+		SCOPE_NODE_COUNT = SCOPE_NODE_COUNT + 1;
+	end;
+
+end NEW_SCOPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* CLEAR_SCOPE_NODE
+/* ------------------------------------------------------------------- */
+
+CLEAR_SCOPE_NODE: procedure (S)
+		  internal;
+
+	declare
+		S		type (SCOPE_NODE);
+
+	declare AREA (SCOPE_NODE_WORD_SIZE) type (LONG_T) based;
+
+        addr(S)->AREA = 0;
+
+end CLEAR_SCOPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* FREE_SCOPE_NODE
+/*
+/* Free the given SCOPE_NODE so it can be subsequently reused.
+/* ------------------------------------------------------------------- */
+
+FREE_SCOPE_NODE: procedure (ID) external (X_FREE_SCOPE_NODE);
+
+	declare ID	type (NID_T);
+	declare P	type (POINTER_T);
+
+	if AM_DEBUGGER then
+		return;
+
+	call GET_SCOPE_NODE_R (ID, P);
+
+	P->SCOPE_NODE.NEXT_SCOPE = FREE_SCOPE_NODE_LIST;
+	FREE_SCOPE_NODE_LIST = ID;
+
+	call RELEASE_SCOPE_NODE (ID);
+
+	SCOPE_NODE_FREE_COUNT = SCOPE_NODE_FREE_COUNT + 1;
+
+end FREE_SCOPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* FREE_SCOPE_NODE_P
+/*
+/* Free the given SCOPE_NODE so it can be subsequently reused.
+/* ------------------------------------------------------------------- */
+
+FREE_SCOPE_NODE_P: procedure (ID, P) external (X_FREE_SCOPE_NODE_P);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);	
+
+	if AM_DEBUGGER then
+		return;
+
+	P->SCOPE_NODE.NEXT_SCOPE = FREE_SCOPE_NODE_LIST;
+	FREE_SCOPE_NODE_LIST = ID;
+
+	call RELEASE_SCOPE_NODE (ID);
+
+	SCOPE_NODE_FREE_COUNT = SCOPE_NODE_FREE_COUNT + 1;
+
+end FREE_SCOPE_NODE_P;
+
+/* ---------------------------------------------------------------------
+/* SET_SCOPE_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_SCOPE_NODE: procedure (ID) external (X_SET_SCOPE_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A (ID);
+
+end SET_SCOPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_SCOPE_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_SCOPE_NODE_R: procedure (ID) external (X_SET_SCOPE_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A_R (ID);
+
+end SET_SCOPE_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_SCOPE_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_SCOPE_NODE: procedure (ID, P) external (X_GET_SCOPE_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A (ID, P);
+
+end GET_SCOPE_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_SCOPE_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_SCOPE_NODE_R: procedure (ID, P) external (X_GET_SCOPE_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A_R (ID, P);
+
+end GET_SCOPE_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_SCOPE_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_SCOPE_NODE: procedure (ID) external (X_RELEASE_SCOPE_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_A (ID);
+
+end RELEASE_SCOPE_NODE;
+
+/* =====================================================================
+/* FRIEND_NODE utilities
+/* =================================================================== */
+
+declare
+
+FRIEND_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_FRIEND_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_FRIEND_NODE: procedure external (X_ALLOC_FRIEND_NODE);
+
+	call ALLOC_OTHER_A (size (FRIEND_NODE), FRIEND_NODE_CODE);
+	FRIEND_NODE_COUNT = FRIEND_NODE_COUNT + 1;
+
+end ALLOC_FRIEND_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_FRIEND_NODE
+/*
+/* Allocate a new FRIEND_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_FRIEND_NODE: procedure (ID, P) external (X_NEW_FRIEND_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_A (size (FRIEND_NODE), FRIEND_NODE_CODE, ID, P);
+	FRIEND_NODE_COUNT = FRIEND_NODE_COUNT + 1;
+
+end NEW_FRIEND_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_FRIEND_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_FRIEND_NODE: procedure (ID) external (X_SET_FRIEND_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A (ID);
+
+end SET_FRIEND_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_FRIEND_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_FRIEND_NODE_R: procedure (ID) external (X_SET_FRIEND_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A_R (ID);
+
+end SET_FRIEND_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_FRIEND_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_FRIEND_NODE: procedure (ID, P) external (X_GET_FRIEND_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A (ID, P);
+
+end GET_FRIEND_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_FRIEND_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_FRIEND_NODE_R: procedure (ID, P) external (X_GET_FRIEND_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A_R (ID, P);
+
+end GET_FRIEND_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_FRIEND_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_FRIEND_NODE: procedure (ID) external (X_RELEASE_FRIEND_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_A (ID);
+
+end RELEASE_FRIEND_NODE;
+
+/* =====================================================================
+/* VBC_NODE utilities
+/* =================================================================== */
+
+declare
+
+VBC_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_VBC_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_VBC_NODE: procedure external (X_ALLOC_VBC_NODE);
+
+	call ALLOC_OTHER_A (size (VBC_NODE), VBC_NODE_CODE);
+	VBC_NODE_COUNT = VBC_NODE_COUNT + 1;
+
+end ALLOC_VBC_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_VBC_NODE
+/*
+/* Allocate a new VBC_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_VBC_NODE: procedure (ID, P) external (X_NEW_VBC_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_A (size (VBC_NODE), VBC_NODE_CODE, ID, P);
+	VBC_NODE_COUNT = VBC_NODE_COUNT + 1;
+
+end NEW_VBC_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_VBC_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_VBC_NODE: procedure (ID) external (X_SET_VBC_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A (ID);
+
+end SET_VBC_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_VBC_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_VBC_NODE_R: procedure (ID) external (X_SET_VBC_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A_R (ID);
+
+end SET_VBC_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_VBC_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_VBC_NODE: procedure (ID, P) external (X_GET_VBC_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A (ID, P);
+
+end GET_VBC_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_VBC_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_VBC_NODE_R: procedure (ID, P) external (X_GET_VBC_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A_R (ID, P);
+
+end GET_VBC_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_VBC_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_VBC_NODE: procedure (ID) external (X_RELEASE_VBC_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_A (ID);
+
+end RELEASE_VBC_NODE;
+
+/* =====================================================================
+/* BASE_CLASS_NODE utilities
+/* =================================================================== */
+
+declare
+
+BASE_CLASS_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_BASE_CLASS_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_BASE_CLASS_NODE: procedure external (X_ALLOC_BASE_CLASS_NODE);
+
+	call ALLOC_OTHER_A (size (BASE_CLASS_NODE), BASE_CLASS_NODE_CODE);
+	BASE_CLASS_NODE_COUNT = BASE_CLASS_NODE_COUNT + 1;
+
+end ALLOC_BASE_CLASS_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_BASE_CLASS_NODE
+/*
+/* Allocate a new BASE_CLASS_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_BASE_CLASS_NODE: procedure (ID, P) external (X_NEW_BASE_CLASS_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_A (size (BASE_CLASS_NODE), BASE_CLASS_NODE_CODE, ID, P);
+	BASE_CLASS_NODE_COUNT = BASE_CLASS_NODE_COUNT + 1;
+
+end NEW_BASE_CLASS_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_BASE_CLASS_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_BASE_CLASS_NODE: procedure (ID) external (X_SET_BASE_CLASS_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A (ID);
+
+end SET_BASE_CLASS_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_BASE_CLASS_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_BASE_CLASS_NODE_R: procedure (ID) external (X_SET_BASE_CLASS_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A_R (ID);
+
+end SET_BASE_CLASS_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_BASE_CLASS_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_BASE_CLASS_NODE: procedure (ID, P) external (X_GET_BASE_CLASS_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A (ID, P);
+
+end GET_BASE_CLASS_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_BASE_CLASS_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_BASE_CLASS_NODE_R: procedure (ID, P) external (X_GET_BASE_CLASS_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A_R (ID, P);
+
+end GET_BASE_CLASS_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_BASE_CLASS_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_BASE_CLASS_NODE: procedure (ID) external (X_RELEASE_BASE_CLASS_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_A (ID);
+
+end RELEASE_BASE_CLASS_NODE;
+
+/* =====================================================================
+/* DERIVED_CLASS_NODE utilities
+/* =================================================================== */
+
+declare
+
+DERIVED_CLASS_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_DERIVED_CLASS_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_DERIVED_CLASS_NODE: procedure external (X_ALLOC_DERIVED_CLASS_NODE);
+
+	call ALLOC_OTHER_A (size (DERIVED_CLASS_NODE), DERIVED_CLASS_NODE_CODE);
+	DERIVED_CLASS_NODE_COUNT = DERIVED_CLASS_NODE_COUNT + 1;
+
+end ALLOC_DERIVED_CLASS_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_DERIVED_CLASS_NODE
+/*
+/* Allocate a new DERIVED_CLASS_NODE, return its node id and a pointer
+/* to it.
+/* ------------------------------------------------------------------- */
+
+NEW_DERIVED_CLASS_NODE: procedure (ID, P)
+			external  (X_NEW_DERIVED_CLASS_NODE);
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_A (size (DERIVED_CLASS_NODE), 
+		       DERIVED_CLASS_NODE_CODE, ID, P);
+	DERIVED_CLASS_NODE_COUNT = DERIVED_CLASS_NODE_COUNT + 1;
+
+end NEW_DERIVED_CLASS_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_DERIVED_CLASS_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_DERIVED_CLASS_NODE: procedure (ID)
+			external  (X_SET_DERIVED_CLASS_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A (ID);
+
+end SET_DERIVED_CLASS_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_DERIVED_CLASS_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_DERIVED_CLASS_NODE_R: procedure (ID)
+			  external  (X_SET_DERIVED_CLASS_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A_R (ID);
+
+end SET_DERIVED_CLASS_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_DERIVED_CLASS_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_DERIVED_CLASS_NODE: procedure (ID, P)
+			external   (X_GET_DERIVED_CLASS_NODE);
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A (ID, P);
+
+end GET_DERIVED_CLASS_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_DERIVED_CLASS_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_DERIVED_CLASS_NODE_R: procedure (ID, P)
+			  external  (X_GET_DERIVED_CLASS_NODE_R);
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A_R (ID, P);
+
+end GET_DERIVED_CLASS_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_DERIVED_CLASS_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_DERIVED_CLASS_NODE: procedure (ID)
+			    external  (X_RELEASE_DERIVED_CLASS_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_A (ID);
+
+end RELEASE_DERIVED_CLASS_NODE;
+
+/* =====================================================================
+/* BASE_MEMBER_NODE utilities
+/* =================================================================== */
+
+declare
+
+BASE_MEMBER_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_BASE_MEMBER_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_BASE_MEMBER_NODE: procedure external (X_ALLOC_BASE_MEMBER_NODE);
+
+	call ALLOC_OTHER_A (size (BASE_MEMBER_NODE), BASE_MEMBER_NODE_CODE);
+	BASE_MEMBER_NODE_COUNT = BASE_MEMBER_NODE_COUNT + 1;
+
+end ALLOC_BASE_MEMBER_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_BASE_MEMBER_NODE
+/*
+/* Allocate a new BASE_MEMBER_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_BASE_MEMBER_NODE: procedure (ID, P) external (X_NEW_BASE_MEMBER_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_A (size (BASE_MEMBER_NODE), BASE_MEMBER_NODE_CODE, ID, P);
+	BASE_MEMBER_NODE_COUNT = BASE_MEMBER_NODE_COUNT + 1;
+
+end NEW_BASE_MEMBER_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_BASE_MEMBER_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_BASE_MEMBER_NODE: procedure (ID) external (X_SET_BASE_MEMBER_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A (ID);
+
+end SET_BASE_MEMBER_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_BASE_MEMBER_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_BASE_MEMBER_NODE_R: procedure (ID) external (X_SET_BASE_MEMBER_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A_R (ID);
+
+end SET_BASE_MEMBER_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_BASE_MEMBER_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_BASE_MEMBER_NODE: procedure (ID, P) external (X_GET_BASE_MEMBER_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A (ID, P);
+
+end GET_BASE_MEMBER_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_BASE_MEMBER_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_BASE_MEMBER_NODE_R: procedure (ID, P) external (X_GET_BASE_MEMBER_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A_R (ID, P);
+
+end GET_BASE_MEMBER_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_BASE_MEMBER_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_BASE_MEMBER_NODE: procedure (ID)
+			  external  (X_RELEASE_BASE_MEMBER_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_A (ID);
+
+end RELEASE_BASE_MEMBER_NODE;
+
+/* =====================================================================
+/* SOURCE_NODE utilities
+/* =================================================================== */
+
+declare
+
+SOURCE_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_SOURCE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_SOURCE_NODE: procedure external (X_ALLOC_SOURCE_NODE);
+
+	call ALLOC_OTHER_A (size (SOURCE_NODE), SOURCE_NODE_CODE);
+	SOURCE_NODE_COUNT = SOURCE_NODE_COUNT + 1;
+
+end ALLOC_SOURCE_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_SOURCE_NODE
+/*
+/* Allocate a new SOURCE_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_SOURCE_NODE: procedure (ID, P) external (X_NEW_SOURCE_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_A (size (SOURCE_NODE), SOURCE_NODE_CODE, ID, P);
+	SOURCE_NODE_COUNT = SOURCE_NODE_COUNT + 1;
+
+end NEW_SOURCE_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_SOURCE_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_SOURCE_NODE: procedure (ID) external (X_SET_SOURCE_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A (ID);
+
+end SET_SOURCE_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_SOURCE_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_SOURCE_NODE_R: procedure (ID) external (X_SET_SOURCE_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A_R (ID);
+
+end SET_SOURCE_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_SOURCE_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_SOURCE_NODE: procedure (ID, P) external (X_GET_SOURCE_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A (ID, P);
+
+end GET_SOURCE_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_SOURCE_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_SOURCE_NODE_R: procedure (ID, P) external (X_GET_SOURCE_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A_R (ID, P);
+
+end GET_SOURCE_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_SOURCE_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_SOURCE_NODE: procedure (ID) external (X_RELEASE_SOURCE_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_A (ID);
+
+end RELEASE_SOURCE_NODE;
+
+/* =====================================================================
+/* LIST_NODE utilities
+/* =================================================================== */
+
+declare
+
+LIST_NODE_COUNT		type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_LIST_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_LIST_NODE: procedure external (X_ALLOC_LIST_NODE);
+
+	call ALLOC_OTHER_A (size (LIST_NODE), LIST_NODE_CODE);
+	LIST_NODE_COUNT = LIST_NODE_COUNT + 1;
+
+end ALLOC_LIST_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_LIST_NODE
+/*
+/* Allocate a new LIST_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_LIST_NODE: procedure (ID, P) external (X_NEW_LIST_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_OTHER_A (size (LIST_NODE), LIST_NODE_CODE, ID, P);
+	LIST_NODE_COUNT = LIST_NODE_COUNT + 1;
+
+end NEW_LIST_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_LIST_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_LIST_NODE: procedure (ID) external (X_SET_LIST_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A (ID);
+
+end SET_LIST_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_LIST_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_LIST_NODE_R: procedure (ID) external (X_SET_LIST_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_OTHER_A_R (ID);
+
+end SET_LIST_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_LIST_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_LIST_NODE: procedure (ID, P) external (X_GET_LIST_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A (ID, P);
+
+end GET_LIST_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_LIST_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_LIST_NODE_R: procedure (ID, P) external (X_GET_LIST_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_OTHER_A_R (ID, P);
+
+end GET_LIST_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_LIST_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_LIST_NODE: procedure (ID) external (X_RELEASE_LIST_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_OTHER_A (ID);
+
+end RELEASE_LIST_NODE;
+
+/* =====================================================================
+/* TOKEN_NODE utilities
+/* =================================================================== */
+
+/* ---------------------------------------------------------------------
+/* FORM_IDENTIFIER_TOKEN
+/*
+/* Find OR Make a TOKEN_NODE representing the given identifier.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+FORM_IDENTIFIER_TOKEN: procedure (SPELLING)
+		       returns   (type (NID_T))
+		       external  (X_FORM_IDENTIFIER_TOKEN);
+	declare
+		SPELLING	character (*) varying;
+	declare
+		ID		type (NID_T),
+		SNID		type (SNID_T);
+
+	call SAVE_NODE (SNID);
+	ID = STORE_TOKEN (IDENTIFIER_, SPELLING);
+	call RESTORE_NODE (SNID);
+	return (ID);
+
+end FORM_IDENTIFIER_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* FORM_TOKEN  (should be macro)
+/*
+/* Find OR Make a TOKEN_NODE representing the given string of the given
+/* type.  Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+FORM_TOKEN: procedure (SPELLING, TYPE)
+	    returns   (type (NID_T))
+	    external  (X_FORM_TOKEN);
+
+	declare
+		SPELLING	character (*) varying,
+		TYPE		type (SHORT_T);
+
+	return (STORE_TOKEN (TYPE, SPELLING));
+
+end FORM_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_TOKEN_NODE
+/*
+/* Allocate a new TOKEN_NODE, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_TOKEN_NODE: procedure external (X_ALLOC_TOKEN_NODE);
+
+	call ALLOC_TOKEN (size (TOKEN_NODE), TOKEN_NODE_CODE);
+
+end ALLOC_TOKEN_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_TOKEN_NODE
+/*
+/* Allocate a new TOKEN_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_TOKEN_NODE: procedure (ID, P) external (X_NEW_TOKEN_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_TOKEN (size (TOKEN_NODE), TOKEN_NODE_CODE, ID, P);
+
+end NEW_TOKEN_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_TOKEN_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_TOKEN_NODE: procedure (ID) external (X_SET_TOKEN_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_TOKEN (ID);
+
+end SET_TOKEN_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_TOKEN_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_TOKEN_NODE_R: procedure (ID) external (X_SET_TOKEN_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_TOKEN_R (ID);
+
+end SET_TOKEN_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_TOKEN_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_TOKEN_NODE: procedure (ID, P) external (X_GET_TOKEN_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_TOKEN (ID, P);
+
+end GET_TOKEN_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_TOKEN_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_TOKEN_NODE_R: procedure (ID, P) external (X_GET_TOKEN_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_TOKEN_R (ID, P);
+
+end GET_TOKEN_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_TOKEN_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_TOKEN_NODE: procedure (ID) external (X_RELEASE_TOKEN_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_TOKEN (ID);
+
+end RELEASE_TOKEN_NODE;
+
+/* =====================================================================
+/* BLOCK_NODE utilities
+/* =================================================================== */
+
+declare
+
+BLOCK_NODE_LIST		type (NID_T) static internal initial (NULL_NID),
+END_BLOCK_NODE_LIST	type (NID_T) static internal initial (NULL_NID);
+
+declare
+
+BLOCK_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_BLOCK_NODE
+/*
+/* Allocate a new BLOCK_NODE, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_BLOCK_NODE: procedure external (X_ALLOC_BLOCK_NODE);
+
+	call ALLOC_NODE (size (BLOCK_NODE), BLOCK_NODE_CODE);
+	BLOCK_NODE_COUNT = BLOCK_NODE_COUNT + 1;
+	call LINK_NEW_BLOCK_NODE ();
+
+end ALLOC_BLOCK_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_BLOCK_NODE
+/*
+/* Allocate a new BLOCK_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_BLOCK_NODE: procedure (ID, P) external (X_NEW_BLOCK_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+	declare
+		SNID	type (SNID_T);
+
+	call NEW_NODE (size (BLOCK_NODE), BLOCK_NODE_CODE, ID, P);
+	BLOCK_NODE_COUNT = BLOCK_NODE_COUNT + 1;
+	call SAVE_NODE (SNID);
+	call SET_BLOCK_NODE (ID);
+	call LINK_NEW_BLOCK_NODE ();
+	call RESTORE_NODE (SNID);
+
+end NEW_BLOCK_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_BLOCK_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_BLOCK_NODE: procedure (ID) external (X_SET_BLOCK_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_NODE (ID);
+
+end SET_BLOCK_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_BLOCK_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_BLOCK_NODE_R: procedure (ID) external (X_SET_BLOCK_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_NODE_R (ID);
+
+end SET_BLOCK_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_BLOCK_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_BLOCK_NODE: procedure (ID, P) external (X_GET_BLOCK_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE (ID, P);
+
+end GET_BLOCK_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_BLOCK_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_BLOCK_NODE_R: procedure (ID, P) external (X_GET_BLOCK_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE_R (ID, P);
+
+end GET_BLOCK_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_BLOCK_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_BLOCK_NODE: procedure (ID) external (X_RELEASE_BLOCK_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_NODE (ID);
+
+end RELEASE_BLOCK_NODE;
+
+/* ---------------------------------------------------------------------
+/* LINK_NEW_BLOCK_NODE
+/*
+/* Chain the currently paged in BLOCK_NODE onto a the end of
+/* the BLOCK_NODE_LIST list.  Preserves the current-node-id.
+/* ------------------------------------------------------------------- */
+
+LINK_NEW_BLOCK_NODE: procedure internal;
+
+	declare
+		NEW_BLOCK_NODE	type (NID_T),
+		P		type (POINTER_T);
+
+	NEW_BLOCK_NODE = CURRENT_NODE_ID;
+	BLOCK_NODE.NEXT = NULL_NID;
+	if END_BLOCK_NODE_LIST ^= NULL_NID then do;
+		call GET_BLOCK_NODE (END_BLOCK_NODE_LIST, P);
+		P->BLOCK_NODE.NEXT = NEW_BLOCK_NODE;
+		call RELEASE_BLOCK_NODE (END_BLOCK_NODE_LIST);
+	end;
+	else	BLOCK_NODE_LIST = NEW_BLOCK_NODE;
+	END_BLOCK_NODE_LIST = NEW_BLOCK_NODE;
+
+end LINK_NEW_BLOCK_NODE;
+
+/* =====================================================================
+/* ARRAY_NODE utilities
+/* =================================================================== */
+
+declare
+
+ARRAY_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_ARRAY_NODE
+/*
+/* Allocate a new ARRAY_NODE, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_ARRAY_NODE: procedure external (X_ALLOC_ARRAY_NODE);
+
+	call ALLOC_NODE (size (ARRAY_NODE), ARRAY_NODE_CODE);
+	ARRAY_NODE_COUNT = ARRAY_NODE_COUNT + 1;
+
+end ALLOC_ARRAY_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_ARRAY_NODE
+/*
+/* Allocate a new ARRAY_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_ARRAY_NODE: procedure (ID, P) external (X_NEW_ARRAY_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_NODE (size (ARRAY_NODE), ARRAY_NODE_CODE, ID, P);
+	ARRAY_NODE_COUNT = ARRAY_NODE_COUNT + 1;
+
+end NEW_ARRAY_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_ARRAY_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_ARRAY_NODE: procedure (ID) external (X_SET_ARRAY_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_NODE (ID);
+
+end SET_ARRAY_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_ARRAY_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_ARRAY_NODE_R: procedure (ID) external (X_SET_ARRAY_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_NODE_R (ID);
+
+end SET_ARRAY_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_ARRAY_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_ARRAY_NODE: procedure (ID, P) external (X_GET_ARRAY_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE (ID, P);
+
+end GET_ARRAY_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_ARRAY_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_ARRAY_NODE_R: procedure (ID, P) external (X_GET_ARRAY_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE_R (ID, P);
+
+end GET_ARRAY_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_ARRAY_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_ARRAY_NODE: procedure (ID) external (X_RELEASE_ARRAY_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_NODE (ID);
+
+end RELEASE_ARRAY_NODE;
+
+/* =====================================================================
+/* DATA_INITIAL_NODE utilities
+/* =================================================================== */
+
+declare
+
+DATA_INITIAL_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_DATA_INITIAL_NODE
+/*
+/* Allocate a new DATA_INITIAL_NODE, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_DATA_INITIAL_NODE: procedure
+			 external  (X_ALLOC_DATA_INITIAL_NODE);
+
+	call ALLOC_TOKEN (size (DATA_INITIAL_NODE), DATA_INITIAL_NODE_CODE);
+	DATA_INITIAL_NODE_COUNT = DATA_INITIAL_NODE_COUNT + 1;
+
+end ALLOC_DATA_INITIAL_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_DATA_INITIAL_NODE
+/*
+/* Allocate a new DATA_INITIAL_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_DATA_INITIAL_NODE: procedure (ID, P)
+		       external  (X_NEW_DATA_INITIAL_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_TOKEN (size (DATA_INITIAL_NODE),
+		       DATA_INITIAL_NODE_CODE, ID, P);
+	DATA_INITIAL_NODE_COUNT = DATA_INITIAL_NODE_COUNT + 1;
+
+end NEW_DATA_INITIAL_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_DATA_INITIAL_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_DATA_INITIAL_NODE: procedure (ID)
+		       external  (X_SET_DATA_INITIAL_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_TOKEN (ID);
+
+end SET_DATA_INITIAL_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_DATA_INITIAL_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_DATA_INITIAL_NODE_R: procedure (ID)
+			 external  (X_SET_DATA_INITIAL_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_TOKEN_R (ID);
+
+end SET_DATA_INITIAL_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_DATA_INITIAL_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_DATA_INITIAL_NODE: procedure (ID, P)
+		       external  (X_GET_DATA_INITIAL_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_TOKEN (ID, P);
+
+end GET_DATA_INITIAL_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_DATA_INITIAL_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_DATA_INITIAL_NODE_R: procedure (ID, P)
+			 external  (X_GET_DATA_INITIAL_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_TOKEN_R (ID, P);
+
+end GET_DATA_INITIAL_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_DATA_INITIAL_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_DATA_INITIAL_NODE: procedure (ID)
+			   external  (X_RELEASE_DATA_INITIAL_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_TOKEN (ID);
+
+end RELEASE_DATA_INITIAL_NODE;
+
+/* =====================================================================
+/* DATA_SECTION_NODE utilities
+/* =================================================================== */
+
+declare
+
+DATA_SECTION_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_DATA_SECTION_NODE
+/*
+/* Allocate a new DATA_SECTION_NODE, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_DATA_SECTION_NODE: procedure
+			 external  (X_ALLOC_DATA_SECTION_NODE);
+
+	call ALLOC_NODE (size (DATA_SECTION_NODE), DATA_SECTION_NODE_CODE);
+	DATA_SECTION_NODE_COUNT = DATA_SECTION_NODE_COUNT + 1;
+
+end ALLOC_DATA_SECTION_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_DATA_SECTION_NODE
+/*
+/* Allocate a new DATA_SECTION_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_DATA_SECTION_NODE: procedure (ID, P)
+		       external  (X_NEW_DATA_SECTION_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_NODE (size (DATA_SECTION_NODE),
+		       DATA_SECTION_NODE_CODE, ID, P);
+	DATA_SECTION_NODE_COUNT = DATA_SECTION_NODE_COUNT + 1;
+
+end NEW_DATA_SECTION_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_DATA_SECTION_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_DATA_SECTION_NODE: procedure (ID)
+		       external  (X_SET_DATA_SECTION_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_NODE (ID);
+
+end SET_DATA_SECTION_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_DATA_SECTION_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_DATA_SECTION_NODE_R: procedure (ID)
+			 external  (X_SET_DATA_SECTION_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_NODE_R (ID);
+
+end SET_DATA_SECTION_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_DATA_SECTION_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_DATA_SECTION_NODE: procedure (ID, P)
+		       external  (X_GET_DATA_SECTION_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE (ID, P);
+
+end GET_DATA_SECTION_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_DATA_SECTION_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_DATA_SECTION_NODE_R: procedure (ID, P)
+			 external  (X_GET_DATA_SECTION_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_NODE_R (ID, P);
+
+end GET_DATA_SECTION_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_DATA_SECTION_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_DATA_SECTION_NODE: procedure (ID)
+			   external  (X_RELEASE_DATA_SECTION_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_NODE (ID);
+
+end RELEASE_DATA_SECTION_NODE;
+
+/* =====================================================================
+/* XXREF_NODE utilities
+/* =================================================================== */
+
+declare
+
+XXREF_NODE_COUNT	type (LONG_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* ALLOC_XXREF_NODE
+/*
+/* Allocate a new XXREF_NODE, return with this new node paged in.
+/* ------------------------------------------------------------------- */
+
+ALLOC_XXREF_NODE: procedure external (X_ALLOC_XXREF_NODE);
+
+	call ALLOC_TOKEN (size (XXREF_NODE), XXREF_NODE_CODE);
+	XXREF_NODE_COUNT = XXREF_NODE_COUNT + 1;
+
+end ALLOC_XXREF_NODE;
+
+/* ---------------------------------------------------------------------
+/* NEW_XXREF_NODE
+/*
+/* Allocate a new XXREF_NODE, return its node id and a pointer to it.
+/* ------------------------------------------------------------------- */
+
+NEW_XXREF_NODE: procedure (ID, P) external (X_NEW_XXREF_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_TOKEN (size (XXREF_NODE), XXREF_NODE_CODE, ID, P);
+	XXREF_NODE_COUNT = XXREF_NODE_COUNT + 1;
+
+end NEW_XXREF_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_XXREF_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_XXREF_NODE: procedure (ID) external (X_SET_XXREF_NODE);
+
+	declare ID type (NID_T);
+
+	call SET_TOKEN (ID);
+
+end SET_XXREF_NODE;
+
+/* ---------------------------------------------------------------------
+/* SET_XXREF_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+SET_XXREF_NODE_R: procedure (ID) external (X_SET_XXREF_NODE_R);
+
+	declare ID type (NID_T);
+
+	call SET_TOKEN_R (ID);
+
+end SET_XXREF_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* GET_XXREF_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_XXREF_NODE: procedure (ID, P) external (X_GET_XXREF_NODE);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_TOKEN (ID, P);
+
+end GET_XXREF_NODE;
+
+/* ---------------------------------------------------------------------
+/* GET_XXREF_NODE_R  (should be macro)
+/* ------------------------------------------------------------------- */
+
+GET_XXREF_NODE_R: procedure (ID, P) external (X_GET_XXREF_NODE_R);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_TOKEN_R (ID, P);
+
+end GET_XXREF_NODE_R;
+
+/* ---------------------------------------------------------------------
+/* RELEASE_XXREF_NODE  (should be macro)
+/* ------------------------------------------------------------------- */
+
+RELEASE_XXREF_NODE: procedure (ID) external (X_RELEASE_XXREF_NODE);
+
+	declare ID type (NID_T);
+
+	call RELEASE_TOKEN (ID);
+
+end RELEASE_XXREF_NODE;
+
+/* =====================================================================
+/* DUMP_NODE_STATS
+/* =================================================================== */
+
+DUMP_NODE_STATS: procedure external (X_DUMP_NODE_STATS);
+
+	declare
+		S	character (128) varying,
+		NS	character (20) varying,
+		BS	character (20) varying,
+		SPACES	character (10) varying
+			static initial ('          ');
+
+	NS = trim (char (SYM_NODE_COUNT +
+			 LABEL_SYM_NODE_COUNT +
+			 SIG_NODE_COUNT +
+			 LINK_NODE_COUNT +
+			 DIM_NODE_COUNT +
+			 SCOPE_NODE_COUNT +
+			 FRIEND_NODE_COUNT +
+			 LIST_NODE_COUNT +
+			 BASE_CLASS_NODE_COUNT +
+			 DERIVED_CLASS_NODE_COUNT +
+			 BASE_MEMBER_NODE_COUNT +
+			 VBC_NODE_COUNT +
+			 SOURCE_NODE_COUNT +
+			 BLOCK_NODE_COUNT +
+			 ARRAY_NODE_COUNT +
+			 DATA_INITIAL_NODE_COUNT +
+			 DATA_SECTION_NODE_COUNT +
+			 XXREF_NODE_COUNT +
+			 TYPE_NODE_COUNT));
+
+	BS = trim (char (
+
+	    ((size (SYM_NODE) + 4) * (SYM_NODE_COUNT)) +
+	    ((size (SIG_NODE) + 4) * SIG_NODE_COUNT) +
+	    ((size (LINK_NODE) + 4) * LINK_NODE_COUNT) +
+	    ((size (DIM_NODE) + 4) * DIM_NODE_COUNT) +
+	    ((size (SCOPE_NODE) + 4) * SCOPE_NODE_COUNT) +
+	    ((size (FRIEND_NODE) + 4) * FRIEND_NODE_COUNT) +
+	    ((size (LIST_NODE) + 4) * LIST_NODE_COUNT) +
+	    ((size (BASE_CLASS_NODE) + 4) * BASE_CLASS_NODE_COUNT) +
+	    ((size (DERIVED_CLASS_NODE) + 4) * DERIVED_CLASS_NODE_COUNT) +
+	    ((size (BASE_MEMBER_NODE) + 4) * BASE_MEMBER_NODE_COUNT) +
+	    ((size (VBC_NODE) + 4) * VBC_NODE_COUNT) +
+	    ((size (SOURCE_NODE) + 4) * SOURCE_NODE_COUNT) +
+	    ((size (BLOCK_NODE) + 4) * BLOCK_NODE_COUNT) +
+	    ((size (ARRAY_NODE) + 4) * ARRAY_NODE_COUNT) +
+	    ((size (DATA_INITIAL_NODE) + 4) * DATA_INITIAL_NODE_COUNT) +
+	    ((size (DATA_SECTION_NODE) + 4) * DATA_SECTION_NODE_COUNT) +
+	    ((size (XXREF_NODE) + 4) * XXREF_NODE_COUNT) +
+	    ((size (TYPE_NODE) + 4) * TYPE_NODE_COUNT)));
+
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S = 'Total front end nodes:          ' || NS ||
+	    '  (' || BS || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+	call WRITE_DEBUG_LINE ('');
+
+	NS = trim (char (SYM_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Symbol-nodes:                   ' || NS ||
+	     '  (' || trim (char ((size (SYM_NODE) + 4) *
+				   SYM_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (LABEL_SYM_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Label-symbol-nodes:             ' || NS ||
+	     '  (' || trim (char ((size (SYM_NODE) + 4) *
+				   LABEL_SYM_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (BLOCK_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Block-nodes:                    ' || NS ||
+	     '  (' || trim (char ((size (BLOCK_NODE) + 4) *
+				   BLOCK_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (LINK_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Link-nodes:                     ' || NS ||
+	     '  (' || trim (char ((size (LINK_NODE) + 4) *
+				   LINK_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (ARRAY_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Array-nodes:                    ' || NS ||
+	     '  (' || trim (char ((size (ARRAY_NODE) + 4) *
+				   ARRAY_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (DATA_INITIAL_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Data-initial-nodes:             ' || NS ||
+	     '  (' || trim (char ((size (DATA_INITIAL_NODE) + 4) *
+				   DATA_INITIAL_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (DATA_SECTION_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Data-section-nodes:             ' || NS ||
+	     '  (' || trim (char ((size (DATA_SECTION_NODE) + 4) *
+				   DATA_SECTION_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (XXREF_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Xxref-nodes:                    ' || NS ||
+	     '  (' || trim (char ((size (XXREF_NODE) + 4) *
+				   XXREF_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+	call WRITE_DEBUG_LINE ('');
+
+	NS = trim (char (SIG_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Sig-nodes:                      ' || NS ||
+	     '  (' || trim (char ((size (SIG_NODE) + 4) *
+				   SIG_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (PARAMETER_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Parameter-nodes:                ' || NS ||
+	     '  (' || trim (char ((size (PARAMETER_NODE) + 4) *
+				   PARAMETER_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (DIM_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Dim-nodes:                      ' || NS ||
+	     '  (' || trim (char ((size (DIM_NODE) + 4) *
+				   DIM_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (SCOPE_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Scope-nodes:                    ' || NS ||
+	     '  (' || trim (char ((size (SCOPE_NODE) + 4) *
+				   SCOPE_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (FRIEND_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Friend-nodes:                   ' || NS ||
+	     '  (' || trim (char ((size (FRIEND_NODE) + 4) *
+				   FRIEND_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (LIST_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'List-nodes:                     ' || NS ||
+	     '  (' || trim (char ((size (LIST_NODE) + 4) *
+				   LIST_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (VBC_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Virtual-base-class-nodes:       ' || NS ||
+	     '  (' || trim (char ((size (VBC_NODE) + 4) *
+				   VBC_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (BASE_CLASS_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Base-class-nodes:               ' || NS ||
+	     '  (' || trim (char ((size (BASE_CLASS_NODE) + 4) *
+				   BASE_CLASS_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (DERIVED_CLASS_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Derived-class-nodes:            ' || NS ||
+	     '  (' || trim (char ((size (DERIVED_CLASS_NODE) + 4) *
+				   DERIVED_CLASS_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (BASE_MEMBER_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Base-member-nodes:              ' || NS ||
+	     '  (' || trim (char ((size (BASE_MEMBER_NODE) + 4) *
+				   BASE_MEMBER_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (SOURCE_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Source-nodes:                   ' || NS ||
+	     '  (' || trim (char ((size (SOURCE_NODE) + 4) *
+				   SOURCE_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (TYPE_NODE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Type-nodes:                     ' || NS ||
+	     '  (' || trim (char ((size (TYPE_NODE) + 4) *
+				   TYPE_NODE_COUNT)) || ' bytes)';
+	call WRITE_DEBUG_LINE (S);
+	call WRITE_DEBUG_LINE ('');
+
+	NS = trim (char (SYM_NODE_FREE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Symbol-nodes on free-list:                ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (SCOPE_NODE_FREE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Scope-nodes on free-list:                 ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+	NS = trim (char (TYPE_NODE_FREE_COUNT));
+	NS = substr (SPACES, 1, 6 - length (NS))  || NS;
+	S  = 'Type-nodes on free-list:                  ' || NS;
+	call WRITE_DEBUG_LINE (S);
+
+end DUMP_NODE_STATS;
+

@@ -1,0 +1,165 @@
+/* CPP pp_char.in - Source character set definitions */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.25.90  DGM  001  Include file name changes.
+ *  06.05.90  DGM  000  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  04.25.89  DGM  Added END_BUFFER_TOKEN.
+ *  08.10.88  DGM  Original.
+ *
+ ***********************************************************************/
+
+/* --------------------------------------------------------
+ * Definitions for both source and execution character sets
+ * ------------------------------------------------------ */
+
+/* Lower case English alphabet characters */
+
+%replace LOWER_A_CHAR		by  97;		/* a */
+%replace LOWER_B_CHAR		by  98;		/* b */
+%replace LOWER_C_CHAR		by  99;		/* c */
+%replace LOWER_D_CHAR		by 100;		/* d */
+%replace LOWER_E_CHAR		by 101;		/* e */
+%replace LOWER_F_CHAR		by 102;		/* f */
+%replace LOWER_G_CHAR		by 103;		/* g */
+%replace LOWER_H_CHAR		by 104;		/* h */
+%replace LOWER_I_CHAR		by 105;		/* i */
+%replace LOWER_J_CHAR		by 106;		/* j */
+%replace LOWER_K_CHAR		by 107;		/* k */
+%replace LOWER_L_CHAR		by 108;		/* l */
+%replace LOWER_M_CHAR		by 109;		/* m */
+%replace LOWER_N_CHAR		by 110;		/* n */
+%replace LOWER_O_CHAR		by 111;		/* o */
+%replace LOWER_P_CHAR		by 112;		/* p */
+%replace LOWER_Q_CHAR		by 113;		/* q */
+%replace LOWER_R_CHAR		by 114;		/* r */
+%replace LOWER_S_CHAR		by 115;		/* s */
+%replace LOWER_T_CHAR		by 116;		/* t */
+%replace LOWER_U_CHAR		by 117;		/* u */
+%replace LOWER_V_CHAR		by 118;		/* v */
+%replace LOWER_W_CHAR		by 119;		/* w */
+%replace LOWER_X_CHAR		by 120;		/* x */
+%replace LOWER_Y_CHAR		by 121;		/* y */
+%replace LOWER_Z_CHAR		by 122;		/* z */
+
+/* Upper case English alphabet characters */
+
+%replace UPPER_A_CHAR		by  65;		/* A */
+%replace UPPER_B_CHAR		by  66;		/* B */
+%replace UPPER_C_CHAR		by  67;		/* C */
+%replace UPPER_D_CHAR		by  68;		/* D */
+%replace UPPER_E_CHAR		by  69;		/* E */
+%replace UPPER_F_CHAR		by  70;		/* F */
+%replace UPPER_G_CHAR		by  71;		/* G */
+%replace UPPER_H_CHAR		by  72;		/* H */
+%replace UPPER_I_CHAR		by  73;		/* I */
+%replace UPPER_J_CHAR		by  74;		/* J */
+%replace UPPER_K_CHAR		by  75;		/* K */
+%replace UPPER_L_CHAR		by  76;		/* L */
+%replace UPPER_M_CHAR		by  77;		/* M */
+%replace UPPER_N_CHAR		by  78;		/* N */
+%replace UPPER_O_CHAR		by  79;		/* O */
+%replace UPPER_P_CHAR		by  80;		/* P */
+%replace UPPER_Q_CHAR		by  81;		/* Q */
+%replace UPPER_R_CHAR		by  82;		/* R */
+%replace UPPER_S_CHAR		by  83;		/* S */
+%replace UPPER_T_CHAR		by  84;		/* T */
+%replace UPPER_U_CHAR		by  85;		/* U */
+%replace UPPER_V_CHAR		by  86;		/* V */
+%replace UPPER_W_CHAR		by  87;		/* W */
+%replace UPPER_X_CHAR		by  88;		/* X */
+%replace UPPER_Y_CHAR		by  89;		/* Y */
+%replace UPPER_Z_CHAR		by  90;		/* Z */
+
+
+/* Decimal digits */
+
+%replace ZERO_CHAR		by  48;		/* 0 */
+%replace ONE_CHAR		by  49;		/* 1 */
+%replace TWO_CHAR		by  50;		/* 2 */
+%replace THREE_CHAR		by  51;		/* 3 */
+%replace FOUR_CHAR		by  52;		/* 4 */
+%replace FIVE_CHAR		by  53;		/* 5 */
+%replace SIX_CHAR		by  54;		/* 6 */
+%replace SEVEN_CHAR		by  55;		/* 7 */
+%replace EIGHT_CHAR		by  56;		/* 8 */
+%replace NINE_CHAR		by  57;		/* 9 */
+
+/* Other graphic characters */
+
+%replace BANG_CHAR		by  33;		/* ! */
+%replace DQUOTE_CHAR		by  34;		/* " */
+%replace POUND_CHAR		by  35;		/* # */
+%replace DOLLAR_CHAR		by  36;		/* $ */
+%replace PERCENT_CHAR		by  37;		/* % */
+%replace AMPERSAND_CHAR		by  38;		/* & */
+%replace SQUOTE_CHAR		by  39;		/* ' */
+%replace LPAREN_CHAR		by  40;		/* ( */
+%replace RPAREN_CHAR		by  41;		/* ) */
+%replace STAR_CHAR		by  42;		/* * */
+%replace PLUS_CHAR		by  43;		/* + */
+%replace COMMA_CHAR		by  44;		/* , */
+%replace MINUS_CHAR		by  45;		/* - */
+%replace DOT_CHAR		by  46;		/* . */
+%replace SLASH_CHAR		by  47;		/* / */
+%replace COLON_CHAR		by  58;		/* : */
+%replace SEMICOLON_CHAR		by  59;		/* ; */
+%replace LANGLE_CHAR		by  60;		/* < */
+%replace EQUAL_CHAR		by  61;		/* = */
+%replace RANGLE_CHAR		by  62;		/* > */
+%replace QUESTION_CHAR		by  63;		/* ? */
+%replace LSQUARE_CHAR		by  91;		/* [ */
+%replace BACKSLASH_CHAR		by  92;		/* \ */
+%replace RSQUARE_CHAR		by  93;		/* ] */
+%replace CARAT_CHAR		by  94;		/* ^ */
+%replace UNDERSCORE_CHAR	by  95;		/* _ */
+%replace LCURLY_CHAR		by 123;		/* { */
+%replace PIPE_CHAR		by 124;		/* | */
+%replace RCURLY_CHAR		by 125;		/* } */
+%replace TILDE_CHAR		by 126;		/* ~ */
+
+/* Non-graphic characters */
+
+%replace NEWLINE_CHAR		by  10;
+%replace SPACE_CHAR		by  32;
+%replace HORIZONTAL_TAB_CHAR	by   9;
+%replace VERTICAL_TAB_CHAR	by  11;
+%replace FORMFEED_CHAR		by  12;
+
+/* --------------------------------------------------------
+ * Other execution character set only character definitions
+ * ------------------------------------------------------ */
+
+%replace ALERT_CHAR		by   7;
+%replace BACKSPACE_CHAR		by   8;
+%replace RETURN_CHAR		by  13;
+%replace NULL_CHAR		by   0;
+
+/* --------------------------------
+ * Special (pseudo) character codes
+ * ------------------------------ */
+
+%replace BEGIN_PP_DIRECTIVE_CHAR by   -1; /* Begin preprocessing directive */
+%replace END_PP_DIRECTIVE_CHAR	 by   -2; /* End preprocessing directive */
+%replace WHITE_SPACE_CHAR	 by   -3; /* White-space indicator */
+%replace GRAY_SPACE_CHAR	 by   -4; /* Gray-space indicator */
+%replace END_BUFFER_CHAR	 by   -5; /* End of internal buffer */
+
+%replace EOF_CHAR		 by -101; /* End-of-file (kosher) */
+%replace EOF_IN_LINE_CHAR	 by -102; /* EOF in logical line */
+%replace EOF_IN_COMMENT_CHAR	 by -103; /* EOF in comment */
+%replace EOF_IN_DIRECTIVE_CHAR	 by -104; /* EOF in directive line */
+%replace EOF_IN_ARGUMENT_CHAR	 by -105; /* EOF in macro function argument */
+%replace EOF_IN_SKIP_GROUP_CHAR	 by -106; /* EOF in excluded group */
+%replace ERROR_CHAR		 by -107; /* Read error */
+

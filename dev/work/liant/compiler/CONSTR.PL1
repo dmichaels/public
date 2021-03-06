@@ -1,0 +1,114 @@
+/* C++ constr.pl1 - Convert integer, float, string, or character */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  11.12.91  DGM  010  Reworked; unified common preprocessor
+ *			and front-end code into cnvcon.pl1.
+ *  10.04.91  DGM  009  Updated for new CXX_TYPE_SIZE_PKG.
+ *  08.19.91  DGM  008  Give multi-byte warning iff -lint.
+ *  01.03.91  PKT  007  Support for -xpch (SW_X_PROMOTE_CHAR).
+ *  11.15.90  DGM  006  Changed called to CERROR.
+ *  09.25.90  DGM  006  Preprocessor include file name changes.
+ *  09.14.90  DGM  005  Changed include file names and VOP names.
+ *  04.19.90  DGM  004  Fixed up includes.
+ *  04.04.90  TLF  003  Uncommented the calls to CERROR.
+ *  02.15.90  TLF  002  Changed CHAR constant replace references
+ *                      to 'COOKED' replace references.
+ *  02.06.90  TLF  001  Fixed include file references.
+ *  01.19.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 11.12.91 010 CONSTR');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_CONVERT_CONSTANT_PKG;
+
+/* ---------------------------------------------------------------------
+/* PROCESS_CONSTANT
+/* ------------------------------------------------------------------- */
+
+PROCESS_CONSTANT: procedure (S, RESULT, TYPE, RESULT_TYPE)
+		  external  (X_PROCESS_CONSTANT); 
+
+	declare
+		S		character (*) varying,
+		RESULT		type (LONG_T),
+		TYPE		type (SHORT_T), 
+		RESULT_TYPE	type (SHORT_T);
+	declare
+		I		type (SHORT_T);
+
+	if (TYPE = DECIMAL_CONSTANT_TOKEN) |
+	   (TYPE = OCTAL_CONSTANT_TOKEN) |
+	   (TYPE = HEX_CONSTANT_TOKEN) then do;
+
+		call CONVERT_INTEGER_CONSTANT
+		     (S,
+		      1,
+		      length (S),
+		      TYPE,
+		      FALSE,
+		      RESULT,
+		      RESULT_TYPE);
+	end;
+
+	else if TYPE = FLOAT_CONSTANT_TOKEN then do;
+
+        	I = length (S);
+        	if (substr (S, I, 1) = 'F') |
+		   (substr (S, I, 1) = 'f') then do;
+            		RESULT_TYPE = FLOAT_BT;
+            		I = I - 1;
+        	end;
+        	else if (substr (S, I, 1) = 'L') |
+			(substr (S, I, 1) = 'l') then do;
+            		RESULT_TYPE = LDOUBLE_BT;
+            		I = I - 1;
+        	end;
+        	else	RESULT_TYPE = DOUBLE_BT;
+
+        	RESULT = I;  /* return string length (without suffix) */
+	end;
+
+	else if (TYPE = COOKED_CHAR_CONSTANT_TOKEN) |
+		(TYPE = COOKED_WCHAR_CONSTANT_TOKEN) |
+		(TYPE = CHAR_CONSTANT_TOKEN) |
+		(TYPE = WCHAR_CONSTANT_TOKEN) then do;
+
+		call CONVERT_CHARACTER_CONSTANT
+		     (S,
+		      TYPE,
+		      FALSE,
+		      RESULT,
+		      RESULT_TYPE);
+	end;
+
+end PROCESS_CONSTANT;
+

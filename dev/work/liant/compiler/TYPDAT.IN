@@ -1,0 +1,71 @@
+/* C++ CXX_GLOBAL_TYPE_DATA_IN - Global type data */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.26.92  DGM  004  New value-node scheme.
+ *  05.29.91  DGM  003  Added GLOBAL_TYPES.
+ *  11.06.90  DGM  002  Added CURENT_TYPE_FROM_TYPEDEF (only for checking
+ *			that a function definition doesn't use a typedef
+ *			as its (top) type!
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  07.30.90  DGM  000  Original; yanked out of CXX_GLOBAL_SEMANTIC_DATA_IN.
+ *
+ ***********************************************************************/
+
+/***********************************************************************
+/* This header contains the data which may need to be shared among
+/* the different modules which need access to global type data
+/* which is constructed by the declaration processor.  N.B. The
+/* data maintained here should be kept to a minimum; localize this
+/* kind of semantic data as much as possible within the modules
+/* responsible for the more specific semantic actions.
+/***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include GLOBAL_IN;                */
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+/* %include CXX_SYMBOL_TABLE_IN;      */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 GLOBAL_TYPE_DATA			external (X_GLOBAL_TYPE_DATA),
+
+  2 CURRENT_TYPE_DATA,
+    3 CURRENT_TYPE			type (NID_T),
+    3 CURRENT_TOP_TYPE			type (TYPE_DATA_T),
+    3 CURRENT_TYPE_LEVEL		type (SHORT_T),
+    3 CURRENT_TYPE_FROM_TYPEDEF		type (BOOL_T),
+
+  2 END_GLOBAL_TYPE_DATA		 type (SHORT_T);
+
+declare
+
+1 GLOBAL_TYPES				external (X_GLOBAL_TYPES),
+  2 VFT_TYPE				type (NID_T) initial (NULL_NID),
+  2 VFT_ENTRY_TYPE			type (NID_T) initial (NULL_NID),
+  2 VFT_POINTER_TYPE			type (NID_T) initial (NULL_NID),
+  2 DATA_MEMBER_POINTER_TYPE		type (NID_T) initial (NULL_NID),
+  2 MEMBER_FUNCTION_POINTER_TYPE	type (NID_T) initial (NULL_NID);
+
+

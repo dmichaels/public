@@ -1,0 +1,16 @@
+/* SYS SYSPTRBUILD.IN - Declare PTRBLD entry */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+declare PTRBLD entry (
+            fixed binary (15),  /* IN:  Variable type */
+            fixed binary (31),  /* IN:  Location of item in user memory */
+            fixed binary (15),  /* IN:  Bit offset of item in memory */
+            fixed binary (31)   /* IN:  Other */
+        ) returns ( pointer ) external;

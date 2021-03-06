@@ -1,0 +1,393 @@
+/* CPP pp_tm.pl1 - Token pod manager (calls the preprocessor) */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.04.91  DGM  004  Added GLOBAL_IN.
+ *  04.08.91  DGM  002  Simplified SALLOC/SFREE implementation to work
+ *			around i386 PL/I X-compiler bug.
+ *  09.25.90  DGM  001  Include file name changes.
+ *  06.05.90  DGM  000  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  01.04.90  DGM  002  Orignal for C++; cloned & modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.04.91 004 PPTM');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CPP_STANDARD_DEFS_IN;
+%include CPP_EXTERNAL_NAME_MAP_IN;
+%include CPP_COMPILATION_SWITCHES_IN;
+%include CPP_TOKEN_POD_IN;
+%include CPP_TOKEN_POD_MGR_IN;
+%include CPP_TOKEN_POD_DEBUG_PKG;
+
+/* ---------------------------------------------------------------------
+/* External procedures
+/* ------------------------------------------------------------------- */
+
+declare
+	CPP	entry external,
+	CPPEND	entry external;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+%replace TOKENS_PER_BLOCK	by 256;
+
+declare
+
+1 TOKEN_BLOCK		based,
+  2 NEXT		pointer,
+  2 PP_TOKENB		(TOKENS_PER_BLOCK) type (TOKEN_POD),
+
+CURR_BLKP		pointer internal initial (null()),
+HEAD_BLKP		pointer internal initial (null()),
+FREE_TOKENP		pointer internal initial (null());
+
+declare
+
+LAST_TOKEN_IN		pointer internal initial (null()),
+NEXT_TOKEN_OUT		pointer internal initial (null()),
+PEEK_TOKEN_PTR		pointer internal initial (null()),
+DUMMY_TOKEN_PTR		pointer internal initial (null());
+
+/* ---------------------------------------------------------------------
+/* OPEN_TOKEN_POD_STREAM
+/* ------------------------------------------------------------------- */
+
+OPEN_TOKEN_POD_STREAM: procedure external (X_OPEN_TOKEN_POD_STREAM);
+
+	if DUMMY_TOKEN_PTR ^= null() then
+		return;
+
+	DUMMY_TOKEN_PTR = TALLOC ();
+	LAST_TOKEN_IN = DUMMY_TOKEN_PTR;
+
+	call CPP ();
+	NEXT_TOKEN_OUT = DUMMY_TOKEN_PTR->TOKEN_POD.NEXT;
+	PEEK_TOKEN_PTR = NEXT_TOKEN_OUT;
+
+end OPEN_TOKEN_POD_STREAM;
+
+/* ---------------------------------------------------------------------
+/* CLOSE_TOKEN_POD_STREAM
+/* ------------------------------------------------------------------- */
+
+CLOSE_TOKEN_POD_STREAM: procedure external (X_CLOSE_TOKEN_POD_STREAM);
+
+	call CPPEND ();
+	call TFREEB ();
+
+end CLOSE_TOKEN_POD_STREAM;
+
+/* ---------------------------------------------------------------------
+/* TPUT
+/*
+/* Places the token pod, pointed to by the given pointer, onto the end
+/* of the token pod stream.  This routine is the *only* mechanism
+/* by which token pods should placed on the token pod stream, and
+/* should be called *only* from the preprocessor.
+/* ------------------------------------------------------------------- */
+
+TPUT: procedure (P) external (X_TPUT);
+
+	declare P pointer;
+
+	if SW_DUMP_TOKENS then
+		call DUMP_TOKEN (P);
+
+	LAST_TOKEN_IN->TOKEN_POD.NEXT = P;
+	LAST_TOKEN_IN = P;
+	P->TOKEN_POD.NEXT = null();
+
+end TPUT;
+
+/* ---------------------------------------------------------------------
+/* TGET
+/*
+/* Removes the next token pod from the front of the token pod stream
+/* and returns a pointer to it.  This routine is the *only* mechanism
+/* by which token pods should removed from the token pod stream, and
+/* should be called *only* from the front-end proper.
+/* ------------------------------------------------------------------- */
+
+TGET: procedure returns (pointer) external (X_TGET);
+
+	declare P pointer;
+
+	P = NEXT_TOKEN_OUT;
+	NEXT_TOKEN_OUT = NEXT_TOKEN_OUT->TOKEN_POD.NEXT;
+	if NEXT_TOKEN_OUT = null () then do;
+		LAST_TOKEN_IN = P;
+		call CPP ();
+		NEXT_TOKEN_OUT = P->TOKEN_POD.NEXT;
+	end;
+	PEEK_TOKEN_PTR = NEXT_TOKEN_OUT;
+	return (P);
+
+end TGET;
+
+/* ---------------------------------------------------------------------
+/* TPEEK
+/*
+/* Return a pointer to the next token pod in the token pod stream
+/* starting with the token pod following the one returned by the last
+/* TGET(), TPEEK(), or TSPEEK() call.  Note that the peek-token pointer
+/* is initialized to NEXT_TOKEN_OUT in TGET(), TSPEEK(), & TUNGET().
+/* ------------------------------------------------------------------- */
+
+TPEEK: procedure returns (pointer) external (X_TPEEK);
+
+	declare P pointer;
+
+	P = PEEK_TOKEN_PTR;
+	PEEK_TOKEN_PTR = PEEK_TOKEN_PTR->TOKEN_POD.NEXT;
+	if PEEK_TOKEN_PTR = null() then do;
+		LAST_TOKEN_IN = P;
+		call CPP ();
+		PEEK_TOKEN_PTR = P->TOKEN_POD.NEXT;
+	end;
+
+	return (P);
+
+end TPEEK;
+
+/* ---------------------------------------------------------------------
+/* TSPEEK
+/*
+/* (Re)Sets the peek-token to the NEXT_TOKEN_OUT.
+/* ------------------------------------------------------------------- */
+
+TSPEEK: procedure external (X_TSPEEK);
+
+	PEEK_TOKEN_PTR = NEXT_TOKEN_OUT;
+
+end TSPEEK;
+
+/* ---------------------------------------------------------------------
+/* TUNGET
+/*
+/* Push the list of token pods pointed to by FIRST and LAST onto the
+/* beginning of the token pod stream.
+/* ------------------------------------------------------------------- */
+
+TUNGET: procedure (FIRST, LAST) external (X_TUNGET);
+
+	declare (FIRST, LAST) pointer;
+
+	/* Empty token-pod list */
+
+	if NEXT_TOKEN_OUT = null() then do;
+		LAST->TOKEN_POD.NEXT = null();
+		LAST_TOKEN_IN = LAST;
+	end;
+
+	/* Non-empty token-pod list */
+
+	else	LAST->TOKEN_POD.NEXT = NEXT_TOKEN_OUT;
+
+	NEXT_TOKEN_OUT = FIRST;
+	PEEK_TOKEN_PTR = NEXT_TOKEN_OUT;
+
+end TUNGET;
+
+/* ---------------------------------------------------------------------
+/* TALLOC
+/*
+/* Allocates a new token pod, initializes it (to zeros and nulls),
+/* and returns a pointer to it.
+/* ------------------------------------------------------------------- */
+
+TALLOC: procedure returns (pointer) external (X_TALLOC);
+
+	declare
+		(P, Q)	pointer,
+		I	fixed binary (15);
+
+	/* Free list empty ? */
+
+	if FREE_TOKENP = null() then do;
+
+		/* Allocate a block */
+
+		allocate TOKEN_BLOCK set (P);
+		P->TOKEN_BLOCK.NEXT = CURR_BLKP;
+		if CURR_BLKP = null() then
+			HEAD_BLKP = P;
+		CURR_BLKP = P;
+
+		/* Set head of free list and pre-thread string block */
+
+		P = addr(CURR_BLKP->PP_TOKENB(1));
+		FREE_TOKENP = P;
+		do I = 2 to TOKENS_PER_BLOCK;
+			Q = addr(CURR_BLKP->PP_TOKENB(I));
+			P->TOKEN_POD.NEXT = Q;
+			P = Q;
+		end;
+		P->TOKEN_POD.NEXT = null();  /* Last in block */
+	end;
+
+	/* Return next free node */
+
+	P = FREE_TOKENP;
+	FREE_TOKENP = FREE_TOKENP->TOKEN_POD.NEXT;
+	P->TOKEN_POD.NEXT = null();
+	P->TOKEN_POD.SPELLING_PTR = null();
+	return (P);
+
+end TALLOC;
+
+/* ---------------------------------------------------------------------
+/* TFREEB
+/* 
+/* Deallocates *all* of the token allocated token pods.
+/* ------------------------------------------------------------------- */
+
+TFREEB: procedure external (X_TFREEB);
+
+	declare (P, Q) pointer;
+
+	P = HEAD_BLKP;
+	do while (P ^= null());
+		Q = P->TOKEN_BLOCK.NEXT;
+		free P->TOKEN_BLOCK;
+		P = Q;
+	end;
+
+end TFREEB;
+
+/* ---------------------------------------------------------------------
+/* TFREE
+/*
+/* Deallocates the token pod pointed to by the given pointer.
+/* ------------------------------------------------------------------- */
+
+TFREE: procedure (P) external (X_TFREE);
+
+	declare P pointer;
+
+	P->TOKEN_POD.NEXT = FREE_TOKENP;
+	FREE_TOKENP = P;
+
+end TFREE;
+
+/* ---------------------------------------------------------------------
+/* TFREET
+/*
+/* Deallocate all of token data associated with the token pod
+/* (i.e. the token pod itself in addition to any spelling and
+/* whatever else) pointed to by the given argument.  This is
+/* typically called when the type of the token pod is not known to
+/* be a simple type (i.e. the lazy caller doesn't want to check it).
+/* ------------------------------------------------------------------- */
+
+TFREET: procedure (TP) external (X_TFREET);
+
+	declare TP	pointer;
+	declare SFREE	entry (pointer) external;
+
+	if (TP->TOKEN_POD.TYPE >= LB_SPELLING_TOKEN) &
+	   (TP->TOKEN_POD.TYPE <= HB_SPELLING_TOKEN) &
+	   (TP->TOKEN_POD.TYPE ^= IDENTIFIER_TOKEN) then
+		call SFREE (TP->TOKEN_POD.SPELLING_PTR);
+	call TFREE (TP);
+
+end TFREET;
+
+/* ---------------------------------------------------------------------
+/* TFREEL
+/*
+/* Deallocate all of token data associated with each of the token
+/* pods on the given list pointed to by the given argument; sets
+/* the given pointer to null.
+/* ------------------------------------------------------------------- */
+
+TFREEL: procedure (TP) external (X_TFREEL);
+
+	declare TP	pointer;
+	declare NEXTP	pointer;
+
+	do while (TP ^= null());
+		NEXTP = TP;
+		TP = TP->TOKEN_POD.NEXT;
+		call TFREET (NEXTP);
+	end;
+
+end TFREEL;
+
+/* ---------------------------------------------------------------------
+/* String Pool Manager
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 SPELLING_POD		based,
+  2 SIZE		type (SHORT_T),
+  2 NEXT		type (POINTER_T),
+  2 SPELLING		character (SPELLING_POD_SIZE) varying,
+
+SPELLING_POD_SIZE	type (SHORT_T) static internal;
+
+/* ---------------------------------------------------------------------
+/* SALLOC
+/* ------------------------------------------------------------------- */
+
+SALLOC: procedure (N) returns (pointer) external (X_SALLOC);
+
+	declare
+		N	type (SHORT_T);
+	declare
+		P	type (POINTER_T);
+
+	SPELLING_POD_SIZE = N;
+	allocate SPELLING_POD set (P);
+	P->SPELLING_POD.SIZE = N;
+	P->SPELLING_POD.NEXT = null ();
+	return (P);
+
+end SALLOC;
+
+/* ---------------------------------------------------------------------
+/* SFREE
+/* ------------------------------------------------------------------- */
+
+SFREE: procedure (P) external (X_SFREE);
+
+	declare P type (POINTER_T);
+
+	SPELLING_POD_SIZE = P->SPELLING_POD.SIZE;
+	free P->SPELLING_POD;
+
+end SFREE;
+
+/* ---------------------------------------------------------------------
+/* SFREEB
+/* ------------------------------------------------------------------- */
+
+SFREEB: procedure external (X_SFREEB);
+
+end SFREEB;
+

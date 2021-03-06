@@ -1,0 +1,73 @@
+/* CPP pp_glob.pl1 - Preprocessor globals */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  07.08.91  DGM  005  Updated.
+ *  09.25.90  DGM  004  Include file name changes.
+ *  07.18.90  DGM  003  Added GET_NEXT_UNEXPANDED_TOKEN.
+ *  06.13.90  DGM  002  Updated.
+ *  06.05.90  DGM  001  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  11.21.89  DGM  005  Changes for C++ (INITKW declaration).
+ *  10.17.89  PLB  004  Changes for New Globals/Utilities.
+ *  --------------------------------------------------------------------
+ *  08.01.89  DGM  003  Added MAKE_DEBUGGER_MACROS.
+ *  06.09.89  DGM  002  Added PPWARN.
+ *  04.13.89  DGM  001  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Defined in CPP (pp.pl1)
+/* ------------------------------------------------------------------- */
+
+declare
+
+GET_NEXT_LEXICAL_TOKEN		entry   ()
+				returns  (pointer)
+				variable
+				external (X_GET_NEXT_LEXICAL_TOKEN),
+GET_NEXT_EXPANDED_TOKEN		entry    ()
+				returns  (pointer)
+				variable
+				external (X_GET_NEXT_EXPANDED_TOKEN),
+GET_NEXT_UNEXPANDED_TOKEN	entry    ()
+				returns  (pointer)
+				variable
+				external (X_GET_NEXT_UNEXPANDED_TOKEN);
+
+declare
+
+END_MACRO_ARGUMENT_TOKEN	pointer
+				external (X_END_MACRO_ARGUMENT_TOKEN),
+END_MACRO_EXPANSION_TOKEN	pointer
+				external (X_END_MACRO_EXPANSION_TOKEN),
+END_PP_DIRECTIVE_TOKEN		pointer
+				external (X_END_PP_DIRECTIVE_TOKEN),
+END_BUFFER_TOKEN		pointer
+				external (X_END_BUFFER_TOKEN),
+WHITE_SPACE_TOKEN		pointer
+				external (X_WHITE_SPACE_TOKEN);
+
+declare
+
+GET_NEXT_CHAR			entry returns (fixed binary (15))
+				variable external (X_GET_NEXT_CHAR),
+SCAN_NEXT_CHAR			entry returns (fixed binary (15))
+				variable external (X_SCAN_NEXT_CHAR),
+SCAND_NEXT_CHAR			entry returns (fixed binary (15))
+				variable external (X_SCAND_NEXT_CHAR),
+SCANP_NEXT_CHAR			entry returns (fixed binary (15))
+				variable external (X_SCANP_NEXT_CHAR),
+PUSH_BACK_CHAR			entry (fixed binary (15))
+				variable external (X_PUSH_BACK_CHAR);
+

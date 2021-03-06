@@ -1,0 +1,1201 @@
+
+/*-------------- Lex Tables ----------------*/
+
+/* ---- Descriptions ---- **
+-- CPP pp_lex.lex - Lexical analyzer (FSM); LEXTABLE input file --
+
+------------------------------------------------------------------------
+-- This product is the property of Language Processors, Inc. and is    -
+-- licensed pursuant to a written license agreement.  No portion of    -
+-- this product may be reproduced without the written permission of    -
+-- Language Processors, Inc. except pursuant to the license agreement. -
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+--
+--  LPI EDIT HISTORY
+--
+--  01.28.91  DGM  001  Minor fix for ".*".
+--  06.05.90  DGM  000  First CPP component version.
+--  --------------------------------------------------------------------
+--  11.21.89  DGM  Added proper support for the C++ pointer-to-member
+--                 operators ".*" and "->*".
+--
+--  08.29.89  DGM  Added C++ support.  Just needed to add the the scope
+--                 operator token "::".  Each of the class member
+--                 operators ".*" and "->*" are each handled as separate
+--                 tokens; although I can't find any any documentation,
+--                 they each seem to be simply two operators which can
+--                 be used together, rather than a new operator.
+--                 Q: Why is "question" a class & not a "simple_token"?
+--
+--  03.10.89  DGM  Fixed bug which caused "1E++" to be lexed as "1E+"
+--                 (FLOAT_CONSTANT -- wrong) and "+"; it should be
+--                 lexed as "1E+" (PP_NUMBER) and "+".
+--
+--  01.16.89  DGM  Fixed bug (typo) in "maybe_identifier" state which.
+--                 caused an identifer beginning with an "L" followed
+--                 by a digit to be lexed as separate tokens.
+--
+--  08.18.88  DGM  Totally redone for ANSI-C.
+--                 Also, to improve speed efficiency, modified the
+--                 LEXTABLE utility to produce a (larger) direct access
+--                 table (NEXT_STATE) when the #DIRECT_ACCESS_TABLE
+--                 directive is specified in this input file.
+--
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+#DIRECT_ACCESS_TABLE
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+#STATES
+------------------------------------------------------------------------
+
+------------------------------------------------------------
+-- The initial state (must be fully specified!)
+------------------------------------------------------------
+
+initial:
+                @@              error
+                @backslash      error
+
+                @newline        *
+
+                @other_letter   +identifier
+                @hex_letter     +identifier
+                @e_letter       +identifier
+                @f_letter       +identifier
+                @l_up_letter    +maybe_identifier
+                @l_lo_letter    +identifier
+                @u_letter       +identifier
+                @x_letter       +identifier
+                @dollar_letter  +check_dollar
+
+                @dec_digit      +decimal_constant
+                @oct_digit      +decimal_constant
+                @zero_digit     +octal_constant
+                @dot            +dot
+
+                @squote         +char_constant
+                @dquote         +string_literal
+
+                @simple_token   simple_token
+                @question       simple_token
+
+                @plus           plus
+                @minus          minus
+                @star           star
+                @slash          slash
+                @mod            mod
+                @and            and
+                @or             or
+                @xor            xor
+                @greater        greater
+                @less           less
+                @equal          equal
+                @not            not
+                @colon          colon
+
+                @pp_stringize   pp_stringize
+
+------------------------------------------------------------
+-- Identifiers
+--
+-- The "maybe" state is necessary because when an "L" is
+-- found, it could be a wide-string-literal or an identifier.
+------------------------------------------------------------
+
+identifier:                     (IDENTIFIER)
+                @other_letter   +*
+                @hex_letter     +*
+                @e_letter       +*
+                @f_letter       +*
+                @l_lo_letter    +*
+                @l_up_letter    +*
+                @u_letter       +*
+                @x_letter       +*
+                @dec_digit      +*
+                @oct_digit      +*
+                @zero_digit     +*
+                @dollar_letter  +check_dollar
+                @@              past_end_of_identifier
+
+maybe_identifier:               (IDENTIFIER)
+                @other_letter   +identifier
+                @hex_letter     +identifier
+                @e_letter       +identifier
+                @f_letter       +identifier
+                @l_lo_letter    +identifier
+                @l_up_letter    +identifier
+                @u_letter       +identifier
+                @x_letter       +identifier
+                @dec_digit      +identifier
+                @oct_digit      +identifier
+                @zero_digit     +identifier
+                @dollar_letter  +check_dollar
+                @dquote         +string_literal
+                @squote         +char_constant
+                @@              past_end_of_identifier
+
+------------------------------------------------------------
+-- Octal integer constants
+--
+-- Note that 0 is lexed as an OCTAL_CONSTANT_TOKEN.
+------------------------------------------------------------
+
+octal_constant:                 (OCTAL_CONSTANT)
+                @x_letter       +hex_prefix
+                @oct_digit      +*
+                @dec_digit      +pp_number_or_float
+                @zero_digit     +*
+                @dot            +float_fraction
+                @e_letter       +float_e
+                @l_up_letter    +octal_long_suffix
+                @l_lo_letter    +octal_long_suffix
+                @u_letter       +octal_unsigned_suffix
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @f_letter       +pp_number
+                @@              past_end_of_token
+
+octal_long_suffix:              (OCTAL_CONSTANT)
+                @u_letter       +octal_unsigned_suffix
+                @oct_digit      +pp_number
+                @dec_digit      +pp_number
+                @zero_digit     +pp_number
+                @hex_letter     +pp_number
+                @e_letter       +pp_number_e
+                @f_letter       +pp_number
+                @x_letter       +pp_number
+                @l_up_letter    +pp_number
+                @l_lo_letter    +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+octal_unsigned_suffix:          (OCTAL_CONSTANT)
+                @l_up_letter    +octal_long_suffix
+                @l_lo_letter    +octal_long_suffix
+                @oct_digit      +pp_number
+                @dec_digit      +pp_number
+                @zero_digit     +pp_number
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @e_letter       +pp_number_e
+                @f_letter       +pp_number
+                @u_letter       +pp_number
+                @x_letter       +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+pp_number_or_float:             (PP_NUMBER)
+                @oct_digit      +*
+                @dec_digit      +*
+                @zero_digit     +*
+                @e_letter       +float_fraction
+                @dot            +float_fraction
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @f_letter       +pp_number
+                @u_letter       +pp_number
+                @x_letter       +pp_number
+                @l_up_letter    +pp_number
+                @l_lo_letter    +pp_number
+                @@              past_end_of_token
+
+------------------------------------------------------------
+-- Decimal integer constants
+------------------------------------------------------------
+
+decimal_constant:               (DECIMAL_CONSTANT)
+                @oct_digit      +*
+                @dec_digit      +*
+                @zero_digit     +*
+                @dot            +float_fraction
+                @e_letter       +float_e
+                @l_up_letter    +decimal_long_suffix
+                @l_lo_letter    +decimal_long_suffix
+                @u_letter       +decimal_unsigned_suffix
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @f_letter       +pp_number
+                @x_letter       +pp_number
+                @@              past_end_of_token
+
+decimal_long_suffix:            (DECIMAL_CONSTANT)
+                @u_letter       +decimal_unsigned_suffix
+                @oct_digit      +pp_number
+                @dec_digit      +pp_number
+                @zero_digit     +pp_number
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @e_letter       +pp_number_e
+                @f_letter       +pp_number
+                @x_letter       +pp_number
+                @l_up_letter    +pp_number
+                @l_lo_letter    +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+decimal_unsigned_suffix:         (DECIMAL_CONSTANT)
+                @l_up_letter    +decimal_long_suffix
+                @l_lo_letter    +decimal_long_suffix
+                @oct_digit      +pp_number
+                @dec_digit      +pp_number
+                @zero_digit     +pp_number
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @e_letter       +pp_number_e
+                @f_letter       +pp_number
+                @u_letter       +pp_number
+                @x_letter       +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+------------------------------------------------------------
+-- Hex integer constants
+------------------------------------------------------------
+
+hex_prefix:                     (PP_NUMBER)
+                @oct_digit      +hex_constant
+                @dec_digit      +hex_constant
+                @zero_digit     +hex_constant
+                @hex_letter     +hex_constant
+                @e_letter       +hex_constant_e
+                @f_letter       +hex_constant
+                @other_letter   +pp_number
+                @u_letter       +pp_number
+                @x_letter       +pp_number
+                @l_up_letter    +pp_number
+                @l_lo_letter    +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+hex_constant:                   (HEX_CONSTANT)
+                @oct_digit      +*
+                @dec_digit      +*
+                @zero_digit     +*
+                @hex_letter     +*
+                @e_letter       +hex_constant_e
+                @f_letter       +*
+                @l_up_letter    +hex_long_suffix
+                @l_lo_letter    +hex_long_suffix
+                @u_letter       +hex_unsigned_suffix
+                @other_letter   +pp_number
+                @x_letter       +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+hex_constant_e:                 (HEX_CONSTANT)
+                @oct_digit      +hex_constant
+                @dec_digit      +hex_constant
+                @zero_digit     +hex_constant
+                @hex_letter     +hex_constant
+                @e_letter       +hex_constant
+                @f_letter       +hex_constant
+                @l_up_letter    +hex_long_suffix
+                @l_lo_letter    +hex_long_suffix
+                @u_letter       +hex_unsigned_suffix
+                @other_letter   +pp_number
+                @x_letter       +pp_number
+                @dot            +pp_number
+                @plus           +pp_number
+                @minus          +pp_number
+                @@              past_end_of_token
+        
+hex_long_suffix:                (HEX_CONSTANT)
+                @u_letter       +hex_unsigned_suffix
+                @oct_digit      +pp_number
+                @dec_digit      +pp_number
+                @zero_digit     +pp_number
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @e_letter       +pp_number_e
+                @f_letter       +pp_number
+                @x_letter       +pp_number
+                @l_up_letter    +pp_number
+                @l_lo_letter    +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+hex_unsigned_suffix:            (HEX_CONSTANT)
+                @l_up_letter    +hex_long_suffix
+                @l_lo_letter    +hex_long_suffix
+                @oct_digit      +pp_number
+                @dec_digit      +pp_number
+                @zero_digit     +pp_number
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @e_letter       +pp_number_e
+                @f_letter       +pp_number
+                @u_letter       +pp_number
+                @x_letter       +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+------------------------------------------------------------
+-- Floating constants
+------------------------------------------------------------
+
+float_fraction:                 (FLOAT_CONSTANT)
+                @oct_digit      +*
+                @dec_digit      +*
+                @zero_digit     +*
+                @e_letter       +float_e
+                @f_letter       +float_suffix
+                @l_up_letter    +float_suffix
+                @l_lo_letter    +float_suffix
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @u_letter       +pp_number
+                @x_letter       +pp_number
+                @@              past_end_of_token
+
+float_sign:                     (PP_NUMBER)
+                @oct_digit      +float_exponent
+                @dec_digit      +float_exponent
+                @zero_digit     +float_exponent
+                @@              past_end_of_token
+
+float_e:
+                @plus           +float_sign
+                @minus          +float_sign
+
+float_exponent:                 (FLOAT_CONSTANT)
+                @oct_digit      +*
+                @dec_digit      +*
+                @zero_digit     +*
+                @f_letter       +float_suffix
+                @l_up_letter    +float_suffix
+                @l_lo_letter    +float_suffix
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @e_letter       +pp_number
+                @u_letter       +pp_number
+                @x_letter       +pp_number
+                @@              past_end_of_token
+
+float_suffix:                   (FLOAT_CONSTANT)
+                @oct_digit      +pp_number
+                @dec_digit      +pp_number
+                @zero_digit     +pp_number
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @e_letter       +pp_number_e
+                @u_letter       +pp_number
+                @x_letter       +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+------------------------------------------------------------
+-- Preprocessing numbers
+------------------------------------------------------------
+
+pp_number:                      (PP_NUMBER)
+                @oct_digit      +*
+                @dec_digit      +*
+                @zero_digit     +*
+                @other_letter   +*
+                @hex_letter     +*
+                @e_letter       +pp_number_e
+                @f_letter       +*
+                @u_letter       +*
+                @x_letter       +*
+                @l_up_letter    +*
+                @l_lo_letter    +*
+                @dot            +*
+                @@              past_end_of_token
+
+pp_number_e:                    (PP_NUMBER)
+                @plus           +pp_number
+                @minus          +pp_number
+                @oct_digit      +pp_number
+                @dec_digit      +pp_number
+                @zero_digit     +pp_number
+                @other_letter   +pp_number
+                @hex_letter     +pp_number
+                @e_letter       +pp_number
+                @f_letter       +pp_number
+                @u_letter       +pp_number
+                @x_letter       +pp_number
+                @l_up_letter    +pp_number
+                @l_lo_letter    +pp_number
+                @dot            +pp_number
+                @@              past_end_of_token
+
+------------------------------------------------------------
+-- Puncuator and operators
+------------------------------------------------------------
+
+dot:                            (DOT)
+                @dot            dot_dot
+                @star           dot_star (DOT_STAR)
+                @oct_digit      +float_fraction
+                @dec_digit      +float_fraction
+                @zero_digit     +float_fraction
+                @@              past_end_of_token
+
+dot_dot:
+                @dot            ellipsis (ELLIPSIS)
+                @@              double_dot
+
+plus:                           (PLUS)
+                @plus           plus_plus (PLUS_PLUS)
+                @equal          plus_equal (PLUS_EQUAL)
+                @@              past_end_of_token
+
+minus:                          (MINUS)
+                @minus          minus_minus (MINUS_MINUS)
+                @equal          minus_equal (MINUS_EQUAL)
+                @greater        pointer
+                @@              past_end_of_token
+
+pointer:                        (POINTER)
+                @star           pointer_star (POINTER_STAR)
+                @@              past_end_of_token
+
+star:                           (STAR)
+                @equal          star_equal (STAR_EQUAL)
+                @@              past_end_of_token
+
+slash:                          (SLASH)
+                @equal          slash_equal (SLASH_EQUAL)
+                @@              past_end_of_token
+
+mod:                            (MOD)
+                @equal          mod_equal (MOD_EQUAL)
+                @@              past_end_of_token
+
+and:                            (AND)
+                @and            and_and (AND_AND)
+                @equal          and_equal (AND_EQUAL)
+                @@              past_end_of_token
+
+or:                             (OR)
+                @or             or_or (OR_OR)
+                @equal          or_equal (OR_EQUAL)
+                @@              past_end_of_token
+
+xor:                            (XOR)
+                @equal          xor_equal (XOR_EQUAL)
+                @@              past_end_of_token
+
+less:                           (LESS_THAN)
+                @equal          less_equal (LESS_EQUAL)
+                @less           less_less
+                @@              past_end_of_token
+
+less_less:                      (LSHIFT)
+                @equal          lshift_equal (LSHIFT_EQUAL)
+                @@              past_end_of_token
+
+greater:                        (GREATER_THAN)
+                @equal          greater_equal (GREATER_EQUAL)
+                @greater        greater_greater
+                @@              past_end_of_token
+
+greater_greater:                (RSHIFT)
+                @equal          rshift_equal (RSHIFT_EQUAL)
+                @@              past_end_of_token
+
+equal:                          (EQUAL)
+                @equal          equal_equal (EQUAL_EQUAL)
+                @@              past_end_of_token
+
+not:                            (NOT)
+                @equal          not_equal (NOT_EQUAL)
+                @@              past_end_of_token
+
+pp_stringize:                   (PP_STRINGIZE)
+                @pp_stringize   pp_token_paste (PP_TOKEN_PASTE)
+                @@              past_end_of_token
+
+colon:                          (COLON)
+                @colon          colon_colon (COLON_COLON)
+                @@              past_end_of_token
+
+------------------------------------------------------------
+-- String literal
+------------------------------------------------------------
+
+string_literal:                 (STRING_LITERAL)
+                @backslash      +string_literal_escape
+                @newline        +illegal_string_literal
+                @dquote         +end_of_string_literal
+                @@              +*
+
+string_literal_escape:
+                @dquote         +string_literal
+                @@              +string_literal
+
+------------------------------------------------------------
+-- Character constant
+------------------------------------------------------------
+
+char_constant:                  (CHAR_CONSTANT)
+                @backslash      +char_constant_escape
+                @newline        +illegal_char_constant
+                @squote         +end_of_char_constant
+                @@              +*
+
+char_constant_escape:
+                @squote         +char_constant
+                @@              +char_constant
+
+------------------------------------------------------------------------
+#CLASSES
+------------------------------------------------------------------------
+
+newline:
+                012             -- newline
+
+other_letter:
+                g h i j k m n o p q r s t v w y z
+                G H I J K M N O P Q R S T V W Y Z
+                _
+hex_letter:
+                a b c d
+                A B C D
+e_letter:
+                e E
+f_letter:
+                f F
+u_letter:
+                u U
+x_letter:
+                x X
+l_up_letter:
+                L
+l_lo_letter:
+                l
+dollar_letter:
+                $               -- A letter when "-dollar" specified
+
+zero_digit:
+                0
+
+oct_digit:
+                1 2 3 4 5 6 7
+
+dec_digit:
+                8 9
+
+simple_token:                   -- These are always single-byte tokens
+
+                (  )            -- parentheses
+                [  ]            -- square brackets
+                {  }            -- curly brackets
+                ~               -- tilde
+                ,               -- comma
+                ;               -- semicolon
+
+pp_stringize:
+                043             -- # (preprocessor directive)
+
+plus:
+                +
+minus:
+                -
+star:
+                *
+slash:
+                /
+mod:
+                %
+and:
+                &
+or:
+                |
+xor:
+                ^
+greater:
+                >
+less:
+                <
+equal:
+                =
+not:
+                !
+dot:
+                .
+squote:
+                '
+dquote:
+                "
+question:
+                ?
+colon:
+                :
+backslash:
+                \
+
+------------------------------------------------------------------------
+#BYTES
+------------------------------------------------------------------------
+
+        .       = dot
+        ,       = comma
+        :       = colon
+        ;       = semicolon
+        ?       = question
+        (       = lparen
+        )       = rparen
+        [       = lsquare
+        ]       = rsquare
+        {       = lcurly
+        }       = rcurly
+        %       = mod
+        *       = star
+        /       = slash
+        !       = not
+        ~       = tilde
+        +       = plus
+        -       = minus
+        <       = less_than
+        >       = greater_than
+        =       = equal
+        &       = and
+        |       = or
+        ^       = xor
+        043     = pp_stringize      -- # (preprocessing directive)
+
+
+** ---- end Descriptions ----*/
+
+/* State names: */
+%replace FIRST_TERMINAL_STATE by  45;
+%replace HB_STATE             by  77;
+
+%replace INITIAL_STATE                    by   0;
+%replace IDENTIFIER_STATE                 by   1;
+%replace MAYBE_IDENTIFIER_STATE           by   2;
+%replace DECIMAL_CONSTANT_STATE           by   3;
+%replace OCTAL_CONSTANT_STATE             by   4;
+%replace DOT_STATE                        by   5;
+%replace CHAR_CONSTANT_STATE              by   6;
+%replace STRING_LITERAL_STATE             by   7;
+%replace PLUS_STATE                       by   8;
+%replace MINUS_STATE                      by   9;
+%replace STAR_STATE                       by  10;
+%replace SLASH_STATE                      by  11;
+%replace MOD_STATE                        by  12;
+%replace AND_STATE                        by  13;
+%replace OR_STATE                         by  14;
+%replace XOR_STATE                        by  15;
+%replace GREATER_STATE                    by  16;
+%replace LESS_STATE                       by  17;
+%replace EQUAL_STATE                      by  18;
+%replace NOT_STATE                        by  19;
+%replace COLON_STATE                      by  20;
+%replace PP_STRINGIZE_STATE               by  21;
+%replace HEX_PREFIX_STATE                 by  22;
+%replace PP_NUMBER_OR_FLOAT_STATE         by  23;
+%replace FLOAT_FRACTION_STATE             by  24;
+%replace FLOAT_E_STATE                    by  25;
+%replace OCTAL_LONG_SUFFIX_STATE          by  26;
+%replace OCTAL_UNSIGNED_SUFFIX_STATE      by  27;
+%replace PP_NUMBER_STATE                  by  28;
+%replace PP_NUMBER_E_STATE                by  29;
+%replace DECIMAL_LONG_SUFFIX_STATE        by  30;
+%replace DECIMAL_UNSIGNED_SUFFIX_STATE    by  31;
+%replace HEX_CONSTANT_STATE               by  32;
+%replace HEX_CONSTANT_E_STATE             by  33;
+%replace HEX_LONG_SUFFIX_STATE            by  34;
+%replace HEX_UNSIGNED_SUFFIX_STATE        by  35;
+%replace FLOAT_SUFFIX_STATE               by  36;
+%replace FLOAT_SIGN_STATE                 by  37;
+%replace FLOAT_EXPONENT_STATE             by  38;
+%replace DOT_DOT_STATE                    by  39;
+%replace POINTER_STATE                    by  40;
+%replace LESS_LESS_STATE                  by  41;
+%replace GREATER_GREATER_STATE            by  42;
+%replace STRING_LITERAL_ESCAPE_STATE      by  43;
+%replace CHAR_CONSTANT_ESCAPE_STATE       by  44;
+%replace ERROR_STATE                      by  45;
+%replace CHECK_DOLLAR_STATE               by  46;
+%replace SIMPLE_TOKEN_STATE               by  47;
+%replace PAST_END_OF_IDENTIFIER_STATE     by  48;
+%replace PAST_END_OF_TOKEN_STATE          by  49;
+%replace DOT_STAR_STATE                   by  50;
+%replace ELLIPSIS_STATE                   by  51;
+%replace DOUBLE_DOT_STATE                 by  52;
+%replace PLUS_PLUS_STATE                  by  53;
+%replace PLUS_EQUAL_STATE                 by  54;
+%replace MINUS_MINUS_STATE                by  55;
+%replace MINUS_EQUAL_STATE                by  56;
+%replace POINTER_STAR_STATE               by  57;
+%replace STAR_EQUAL_STATE                 by  58;
+%replace SLASH_EQUAL_STATE                by  59;
+%replace MOD_EQUAL_STATE                  by  60;
+%replace AND_AND_STATE                    by  61;
+%replace AND_EQUAL_STATE                  by  62;
+%replace OR_OR_STATE                      by  63;
+%replace OR_EQUAL_STATE                   by  64;
+%replace XOR_EQUAL_STATE                  by  65;
+%replace LESS_EQUAL_STATE                 by  66;
+%replace LSHIFT_EQUAL_STATE               by  67;
+%replace GREATER_EQUAL_STATE              by  68;
+%replace RSHIFT_EQUAL_STATE               by  69;
+%replace EQUAL_EQUAL_STATE                by  70;
+%replace NOT_EQUAL_STATE                  by  71;
+%replace PP_TOKEN_PASTE_STATE             by  72;
+%replace COLON_COLON_STATE                by  73;
+%replace ILLEGAL_STRING_LITERAL_STATE     by  74;
+%replace END_OF_STRING_LITERAL_STATE      by  75;
+%replace ILLEGAL_CHAR_CONSTANT_STATE      by  76;
+%replace END_OF_CHAR_CONSTANT_STATE       by  77;
+
+
+declare NEXT_STATE (   0 :  44 , 0 :  33 ) fixed binary (15) static initial (
+
+ /* INITIAL_STATE (33 explicit transition(s)) */
+
+   45   , 45   , 0    , -1   , -1   , -1   , -1   , -2   , -1   , -1  
+ , -1   , -46  , -3   , -3   , -4   , -5   , -6   , -7   , 47   , 47  
+ , 8    , 9    , 10   , 11   , 12   , 13   , 14   , 15   , 16   , 17  
+ , 18   , 19   , 20   , 21  
+
+ /* IDENTIFIER_STATE (12 explicit transition(s)) */
+
+ , 48   , 48   , 48   , -1   , -1   , -1   , -1   , -1   , -1   , -1  
+ , -1   , -46  , -1   , -1   , -1   , 48   , 48   , 48   , 48   , 48  
+ , 48   , 48   , 48   , 48   , 48   , 48   , 48   , 48   , 48   , 48  
+ , 48   , 48   , 48   , 48  
+
+ /* MAYBE_IDENTIFIER_STATE (14 explicit transition(s)) */
+
+ , 48   , 48   , 48   , -1   , -1   , -1   , -1   , -1   , -1   , -1  
+ , -1   , -46  , -1   , -1   , -1   , 48   , -6   , -7   , 48   , 48  
+ , 48   , 48   , 48   , 48   , 48   , 48   , 48   , 48   , 48   , 48  
+ , 48   , 48   , 48   , 48  
+
+ /* DECIMAL_CONSTANT_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -25  , -28  , -30  , -30  , -31 
+ , -28  , 49   , -3   , -3   , -3   , -24  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* OCTAL_CONSTANT_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -25  , -28  , -26  , -26  , -27 
+ , -22  , 49   , -23  , -4   , -4   , -24  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* DOT_STATE (5 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , -24  , -24  , -24  , 39   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 50   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* CHAR_CONSTANT_STATE (3 explicit transition(s)) */
+
+ , -6   , -44  , -76  , -6   , -6   , -6   , -6   , -6   , -6   , -6  
+ , -6   , -6   , -6   , -6   , -6   , -6   , -77  , -6   , -6   , -6  
+ , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6  
+ , -6   , -6   , -6   , -6  
+
+ /* STRING_LITERAL_STATE (3 explicit transition(s)) */
+
+ , -7   , -43  , -74  , -7   , -7   , -7   , -7   , -7   , -7   , -7  
+ , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -75  , -7   , -7  
+ , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7  
+ , -7   , -7   , -7   , -7  
+
+ /* PLUS_STATE (2 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 53   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 54   , 49   , 49   , 49  
+
+ /* MINUS_STATE (3 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 55   , 49   , 49   , 49   , 49   , 49   , 49   , 40   , 49  
+ , 56   , 49   , 49   , 49  
+
+ /* STAR_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 58   , 49   , 49   , 49  
+
+ /* SLASH_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 59   , 49   , 49   , 49  
+
+ /* MOD_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 60   , 49   , 49   , 49  
+
+ /* AND_STATE (2 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 61   , 49   , 49   , 49   , 49  
+ , 62   , 49   , 49   , 49  
+
+ /* OR_STATE (2 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 63   , 49   , 49   , 49  
+ , 64   , 49   , 49   , 49  
+
+ /* XOR_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 65   , 49   , 49   , 49  
+
+ /* GREATER_STATE (2 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 42   , 49  
+ , 68   , 49   , 49   , 49  
+
+ /* LESS_STATE (2 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 41  
+ , 66   , 49   , 49   , 49  
+
+ /* EQUAL_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 70   , 49   , 49   , 49  
+
+ /* NOT_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 71   , 49   , 49   , 49  
+
+ /* COLON_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 73   , 49  
+
+ /* PP_STRINGIZE_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 72  
+
+ /* HEX_PREFIX_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -32  , -33  , -32  , -28  , -28  , -28 
+ , -28  , 49   , -32  , -32  , -32  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* PP_NUMBER_OR_FLOAT_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -24  , -28  , -28  , -28  , -28 
+ , -28  , 49   , -23  , -23  , -23  , -24  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* FLOAT_FRACTION_STATE (11 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -25  , -36  , -36  , -36  , -28 
+ , -28  , 49   , -24  , -24  , -24  , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* FLOAT_E_STATE (13 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -28  , -36  , -36  , -36  , -28 
+ , -28  , 49   , -38  , -38  , -38  , 49   , 49   , 49   , 49   , 49  
+ , -37  , -37  , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* OCTAL_LONG_SUFFIX_STATE (11 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , -28  , -29  , -28  , -28  , -28  , -27 
+ , -28  , 49   , -28  , -28  , -28  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* OCTAL_UNSIGNED_SUFFIX_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -29  , -28  , -26  , -26  , -28 
+ , -28  , 49   , -28  , -28  , -28  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* PP_NUMBER_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -29  , -28  , -28  , -28  , -28 
+ , -28  , 49   , -28  , -28  , -28  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* PP_NUMBER_E_STATE (14 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -28  , -28  , -28  , -28  , -28 
+ , -28  , 49   , -28  , -28  , -28  , -28  , 49   , 49   , 49   , 49  
+ , -28  , -28  , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* DECIMAL_LONG_SUFFIX_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -29  , -28  , -28  , -28  , -31 
+ , -28  , 49   , -28  , -28  , -28  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* DECIMAL_UNSIGNED_SUFFIX_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -29  , -28  , -30  , -30  , -28 
+ , -28  , 49   , -28  , -28  , -28  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* HEX_CONSTANT_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -32  , -33  , -32  , -34  , -34  , -35 
+ , -28  , 49   , -32  , -32  , -32  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* HEX_CONSTANT_E_STATE (14 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -32  , -32  , -32  , -34  , -34  , -35 
+ , -28  , 49   , -32  , -32  , -32  , -28  , 49   , 49   , 49   , 49  
+ , -28  , -28  , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* HEX_LONG_SUFFIX_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -29  , -28  , -28  , -28  , -35 
+ , -28  , 49   , -28  , -28  , -28  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* HEX_UNSIGNED_SUFFIX_STATE (12 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -29  , -28  , -34  , -34  , -28 
+ , -28  , 49   , -28  , -28  , -28  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* FLOAT_SUFFIX_STATE (9 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -29  , 49   , 49   , 49   , -28 
+ , -28  , 49   , -28  , -28  , -28  , -28  , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* FLOAT_SIGN_STATE (3 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , -38  , -38  , -38  , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* FLOAT_EXPONENT_STATE (11 explicit transition(s)) */
+
+ , 49   , 49   , 49   , -28  , -28  , -28  , -36  , -36  , -36  , -28 
+ , -28  , 49   , -38  , -38  , -38  , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* DOT_DOT_STATE (1 explicit transition(s)) */
+
+ , 52   , 52   , 52   , 52   , 52   , 52   , 52   , 52   , 52   , 52  
+ , 52   , 52   , 52   , 52   , 52   , 51   , 52   , 52   , 52   , 52  
+ , 52   , 52   , 52   , 52   , 52   , 52   , 52   , 52   , 52   , 52  
+ , 52   , 52   , 52   , 52  
+
+ /* POINTER_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 57   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49  
+
+ /* LESS_LESS_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 67   , 49   , 49   , 49  
+
+ /* GREATER_GREATER_STATE (1 explicit transition(s)) */
+
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49   , 49  
+ , 69   , 49   , 49   , 49  
+
+ /* STRING_LITERAL_ESCAPE_STATE (1 explicit transition(s)) */
+
+ , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7  
+ , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7  
+ , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7   , -7  
+ , -7   , -7   , -7   , -7  
+
+ /* CHAR_CONSTANT_ESCAPE_STATE (1 explicit transition(s)) */
+
+ , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6  
+ , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6  
+ , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6   , -6  
+ , -6   , -6   , -6   , -6  );
+
+/* State token type table: */
+Declare STATE_TYPE_TABLE(0: 77) fixed bin(15) static initial(
+        /*   0 */ 0,
+        /*   1 */ IDENTIFIER_TOKEN,
+        /*   2 */ IDENTIFIER_TOKEN,
+        /*   3 */ DECIMAL_CONSTANT_TOKEN,
+        /*   4 */ OCTAL_CONSTANT_TOKEN,
+        /*   5 */ DOT_TOKEN,
+        /*   6 */ CHAR_CONSTANT_TOKEN,
+        /*   7 */ STRING_LITERAL_TOKEN,
+        /*   8 */ PLUS_TOKEN,
+        /*   9 */ MINUS_TOKEN,
+        /*  10 */ STAR_TOKEN,
+        /*  11 */ SLASH_TOKEN,
+        /*  12 */ MOD_TOKEN,
+        /*  13 */ AND_TOKEN,
+        /*  14 */ OR_TOKEN,
+        /*  15 */ XOR_TOKEN,
+        /*  16 */ GREATER_THAN_TOKEN,
+        /*  17 */ LESS_THAN_TOKEN,
+        /*  18 */ EQUAL_TOKEN,
+        /*  19 */ NOT_TOKEN,
+        /*  20 */ COLON_TOKEN,
+        /*  21 */ PP_STRINGIZE_TOKEN,
+        /*  22 */ PP_NUMBER_TOKEN,
+        /*  23 */ PP_NUMBER_TOKEN,
+        /*  24 */ FLOAT_CONSTANT_TOKEN,
+        /*  25 */ 0,
+        /*  26 */ OCTAL_CONSTANT_TOKEN,
+        /*  27 */ OCTAL_CONSTANT_TOKEN,
+        /*  28 */ PP_NUMBER_TOKEN,
+        /*  29 */ PP_NUMBER_TOKEN,
+        /*  30 */ DECIMAL_CONSTANT_TOKEN,
+        /*  31 */ DECIMAL_CONSTANT_TOKEN,
+        /*  32 */ HEX_CONSTANT_TOKEN,
+        /*  33 */ HEX_CONSTANT_TOKEN,
+        /*  34 */ HEX_CONSTANT_TOKEN,
+        /*  35 */ HEX_CONSTANT_TOKEN,
+        /*  36 */ FLOAT_CONSTANT_TOKEN,
+        /*  37 */ PP_NUMBER_TOKEN,
+        /*  38 */ FLOAT_CONSTANT_TOKEN,
+        /*  39 */ 0,
+        /*  40 */ POINTER_TOKEN,
+        /*  41 */ LSHIFT_TOKEN,
+        /*  42 */ RSHIFT_TOKEN,
+        /*  43 */ 0,
+        /*  44 */ 0,
+        /*  45 */ 0,
+        /*  46 */ 0,
+        /*  47 */ 0,
+        /*  48 */ 0,
+        /*  49 */ 0,
+        /*  50 */ DOT_STAR_TOKEN,
+        /*  51 */ ELLIPSIS_TOKEN,
+        /*  52 */ 0,
+        /*  53 */ PLUS_PLUS_TOKEN,
+        /*  54 */ PLUS_EQUAL_TOKEN,
+        /*  55 */ MINUS_MINUS_TOKEN,
+        /*  56 */ MINUS_EQUAL_TOKEN,
+        /*  57 */ POINTER_STAR_TOKEN,
+        /*  58 */ STAR_EQUAL_TOKEN,
+        /*  59 */ SLASH_EQUAL_TOKEN,
+        /*  60 */ MOD_EQUAL_TOKEN,
+        /*  61 */ AND_AND_TOKEN,
+        /*  62 */ AND_EQUAL_TOKEN,
+        /*  63 */ OR_OR_TOKEN,
+        /*  64 */ OR_EQUAL_TOKEN,
+        /*  65 */ XOR_EQUAL_TOKEN,
+        /*  66 */ LESS_EQUAL_TOKEN,
+        /*  67 */ LSHIFT_EQUAL_TOKEN,
+        /*  68 */ GREATER_EQUAL_TOKEN,
+        /*  69 */ RSHIFT_EQUAL_TOKEN,
+        /*  70 */ EQUAL_EQUAL_TOKEN,
+        /*  71 */ NOT_EQUAL_TOKEN,
+        /*  72 */ PP_TOKEN_PASTE_TOKEN,
+        /*  73 */ COLON_COLON_TOKEN,
+        /*  74 */ 0,
+        /*  75 */ 0,
+        /*  76 */ 0,
+        /*  77 */ 0 );
+
+/* Byte classes: */
+%replace HB_CLASS by  33;
+
+%replace BACKSLASH_CLASS                   by   1;
+%replace NEWLINE_CLASS                     by   2;
+%replace OTHER_LETTER_CLASS                by   3;
+%replace HEX_LETTER_CLASS                  by   4;
+%replace E_LETTER_CLASS                    by   5;
+%replace F_LETTER_CLASS                    by   6;
+%replace L_UP_LETTER_CLASS                 by   7;
+%replace L_LO_LETTER_CLASS                 by   8;
+%replace U_LETTER_CLASS                    by   9;
+%replace X_LETTER_CLASS                    by  10;
+%replace DOLLAR_LETTER_CLASS               by  11;
+%replace DEC_DIGIT_CLASS                   by  12;
+%replace OCT_DIGIT_CLASS                   by  13;
+%replace ZERO_DIGIT_CLASS                  by  14;
+%replace DOT_CLASS                         by  15;
+%replace SQUOTE_CLASS                      by  16;
+%replace DQUOTE_CLASS                      by  17;
+%replace SIMPLE_TOKEN_CLASS                by  18;
+%replace QUESTION_CLASS                    by  19;
+%replace PLUS_CLASS                        by  20;
+%replace MINUS_CLASS                       by  21;
+%replace STAR_CLASS                        by  22;
+%replace SLASH_CLASS                       by  23;
+%replace MOD_CLASS                         by  24;
+%replace AND_CLASS                         by  25;
+%replace OR_CLASS                          by  26;
+%replace XOR_CLASS                         by  27;
+%replace GREATER_CLASS                     by  28;
+%replace LESS_CLASS                        by  29;
+%replace EQUAL_CLASS                       by  30;
+%replace NOT_CLASS                         by  31;
+%replace COLON_CLASS                       by  32;
+%replace PP_STRINGIZE_CLASS                by  33;
+
+/* Byte CLASS table: */
+Declare BYTE_CLASS_TABLE(0:127) fixed bin(15) static initial(
+        (10)0,2,(22)0,31,17,33,11,24,25,16,(2)18,22,20,18,21,15,23,14,
+        (7)13,(2)12,32,18,29,30,28,19,0,(4)4,5,6,(5)3,7,(8)3,9,(2)3,10,
+        (2)3,18,1,18,27,3,0,(4)4,5,6,(5)3,8,(8)3,9,(2)3,10,(2)3,18,26,
+        (2)18,0 );
+
+/* Byte TYPE table: */
+Declare BYTE_TYPE_TABLE(0:127) fixed bin(15) static initial(
+        (33)0,NOT_TOKEN,0,PP_STRINGIZE_TOKEN,0,MOD_TOKEN,AND_TOKEN,0,
+        LPAREN_TOKEN,RPAREN_TOKEN,STAR_TOKEN,PLUS_TOKEN,COMMA_TOKEN,
+        MINUS_TOKEN,DOT_TOKEN,SLASH_TOKEN,(10)0,COLON_TOKEN,
+        SEMICOLON_TOKEN,LESS_THAN_TOKEN,EQUAL_TOKEN,GREATER_THAN_TOKEN,
+        QUESTION_TOKEN,(27)0,LSQUARE_TOKEN,0,RSQUARE_TOKEN,XOR_TOKEN,
+        (28)0,LCURLY_TOKEN,OR_TOKEN,RCURLY_TOKEN,TILDE_TOKEN,0 );
+
+/*--------- end of Lex Tables ---------*/

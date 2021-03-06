@@ -1,0 +1,229 @@
+/* C++ CXX_TYPE_SIZE_IN - Type size maps */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.05.92  DGM  010  Updated for true "long double" (i.e. IEEE
+ *			extended precision) support (for Sequoia).
+ *  01.21.92  DGM  009  Updated for MEMBER_REFERENCE_DT.
+ *  10.19.90  PKT  008  Changed back end translation of VOID_BT.
+ *  09.25.90  DGM  007  Changed to be static *internal*; this should
+ *			only be included in *one* file! (typsiz.pl1).
+ *  09.14.90  DGM  006  Changed include file names and VOP names.
+ *  04.27.90  DGM  005  Updated for type code reorganization.
+ *  04.18.90  DGM  004  Corrected size/boundary for "double" types.
+ *  02.23.90  TLF  003  Updated.
+ *  02.15.90  DGM  002  Updated.
+ *  02.09.90  DGM  001  Updated.
+ *  01.30.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include GLOBAL_IN;                */
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_SYMBOL_TABLE_DEFS_IN; */
+/* %include CXX_TARGET_HARDWARE_IN;   */
+
+/* ---------------------------------------------------------------------
+/* Data declarations -- static *internal* -- include in one file only!
+/* ------------------------------------------------------------------- */
+
+declare
+
+SIZE_TABLE			(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (SHORT_T) initial (
+
+	/* NULL_BT/NULL_DT	*/   0
+	/* VOID_BT		*/ , 0
+	/* FLOAT_BT		*/ , FLOAT_TYPE_SIZE   /* BOUNDARY units */
+	/* DOUBLE_BT		*/ , DOUBLE_TYPE_SIZE  /* BOUNDARY units */
+	/* LDOUBLE_BT		*/ , LDOUBLE_TYPE_SIZE /* BOUNDARY units */
+	/* CHAR_BT		*/ , CHAR_TYPE_SIZE    /* BOUNDARY units */
+	/* SCHAR_BT		*/ , CHAR_TYPE_SIZE    /* BOUNDARY units */
+	/* UCHAR_BT		*/ , CHAR_TYPE_SIZE    /* BOUNDARY units */
+	/* SHORT_BT		*/ , SHORT_TYPE_SIZE   /* BOUNDARY units */
+	/* SSHORT_BT		*/ , SHORT_TYPE_SIZE   /* BOUNDARY units */
+	/* USHORT_BT		*/ , SHORT_TYPE_SIZE   /* BOUNDARY units */
+	/* INT_BT		*/ , INT_TYPE_SIZE     /* BOUNDARY units */
+	/* SINT_BT		*/ , INT_TYPE_SIZE     /* BOUNDARY units */
+	/* UINT_BT		*/ , INT_TYPE_SIZE     /* BOUNDARY units */
+	/* LONG_BT		*/ , LONG_TYPE_SIZE    /* BOUNDARY units */
+	/* SLONG_BT		*/ , LONG_TYPE_SIZE    /* BOUNDARY units */
+	/* ULONG_BT		*/ , LONG_TYPE_SIZE    /* BOUNDARY units */
+	/* LOGICAL_BT		*/ , INT_TYPE_SIZE     /* BOUNDARY units */
+	/* ENUMERATOR_BT	*/ , INT_TYPE_SIZE     /* BOUNDARY units */
+	/* ENUM_BT		*/ , INT_TYPE_SIZE     /* BOUNDARY units */
+	/* CLASS_BT		*/ , 0		       /* N/A */
+	/* STRUCT_BT		*/ , 0		       /* N/A */
+	/* UNION_BT		*/ , 0		       /* N/A */
+	/* REFERENCE_DT		*/ , PTR_TYPE_SIZE     /* BOUNDARY units */
+	/* POINTER_DT		*/ , PTR_TYPE_SIZE     /* BOUNDARY units */
+	/* MEMBER_POINTER_DT	*/ , 0                 /* BOUNDARY units */
+	/* ARRAY_DT		*/ , 0		       /* N/A */
+	/* FUNCTION_DT		*/ , 0		       /* N/A */
+	/* MEMBER_REFERENCE_DT	*/ , 0		       /* N/A */
+	/* TYPEDEF_BT		*/ , 0		       /* N/A */
+	/* LABEL_BT		*/ , PTR_TYPE_SIZE     /* BOUNDARY units */
+    ),
+
+BOUNDARY_TABLE			(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (SHORT_T) initial (
+
+	/* NULL_BT/NULL_DT	*/   0
+	/* VOID_BT		*/ , 0
+	/* FLOAT_BT		*/ , FLOAT_TYPE_BOUNDARY
+	/* DOUBLE_BT		*/ , DOUBLE_TYPE_BOUNDARY
+	/* LDOUBLE_BT		*/ , LDOUBLE_TYPE_BOUNDARY
+	/* CHAR_BT		*/ , CHAR_TYPE_BOUNDARY
+	/* SCHAR_BT		*/ , CHAR_TYPE_BOUNDARY
+	/* UCHAR_BT		*/ , CHAR_TYPE_BOUNDARY
+	/* SHORT_BT		*/ , SHORT_TYPE_BOUNDARY
+	/* SSHORT_BT		*/ , SHORT_TYPE_BOUNDARY
+	/* USHORT_BT		*/ , SHORT_TYPE_BOUNDARY
+	/* INT_BT		*/ , INT_TYPE_BOUNDARY
+	/* SINT_BT		*/ , INT_TYPE_BOUNDARY
+	/* UINT_BT		*/ , INT_TYPE_BOUNDARY
+	/* LONG_BT		*/ , LONG_TYPE_BOUNDARY
+	/* SLONG_BT		*/ , LONG_TYPE_BOUNDARY
+	/* ULONG_BT		*/ , LONG_TYPE_BOUNDARY
+	/* LOGICAL_BT		*/ , INT_TYPE_BOUNDARY
+	/* ENUMERATOR_BT	*/ , INT_TYPE_BOUNDARY
+	/* ENUM_BT		*/ , INT_TYPE_BOUNDARY
+	/* CLASS_BT		*/ , 0
+	/* STRUCT_BT		*/ , 0
+	/* UNION_BT		*/ , 0
+	/* REFERENCE_DT		*/ , PTR_TYPE_BOUNDARY
+	/* POINTER_DT		*/ , PTR_TYPE_BOUNDARY
+	/* MEMBER_POINTER_DT	*/ , 0
+	/* ARRAY_DT		*/ , 0
+	/* FUNCTION_DT		*/ , 0
+	/* MEMBER_REFERENCE_DT	*/ , 0
+	/* TYPEDEF_BT		*/ , 0
+	/* LABEL_BT		*/ , PTR_TYPE_BOUNDARY
+    ),
+
+BIT_FIELD_SIZE_TABLE		(LB_INTEGRAL_TYPES : HB_INTEGRAL_TYPES)
+				type (SHORT_T) initial (
+
+	/* CHAR_BT		*/   BIT_FIELD_CHAR_SIZE   /* BITS units */
+	/* SCHAR_BT		*/ , BIT_FIELD_CHAR_SIZE   /* BITS units */
+	/* UCHAR_BT		*/ , BIT_FIELD_CHAR_SIZE   /* BITS units */
+	/* SHORT_BT		*/ , BIT_FIELD_SHORT_SIZE  /* BITS units */
+	/* SSHORT_BT		*/ , BIT_FIELD_SHORT_SIZE  /* BITS units */
+	/* USHORT_BT		*/ , BIT_FIELD_SHORT_SIZE  /* BITS units */
+	/* INT_BT		*/ , BIT_FIELD_INT_SIZE    /* BITS units */
+	/* SINT_BT		*/ , BIT_FIELD_INT_SIZE    /* BITS units */
+	/* UINT_BT		*/ , BIT_FIELD_INT_SIZE    /* BITS units */
+	/* LONG_BT		*/ , BIT_FIELD_LONG_SIZE   /* BITS units */
+	/* SLONG_BT		*/ , BIT_FIELD_LONG_SIZE   /* BITS units */
+	/* ULONG_BT		*/ , BIT_FIELD_LONG_SIZE   /* BITS units */
+	/* LOGICAL_BT		*/ , 0
+	/* ENUMERATOR_BT	*/ , BIT_FIELD_INT_SIZE    /* BITS units */
+	/* ENUM_BT		*/ , BIT_FIELD_INT_SIZE    /* BITS units */
+    ),
+
+BIT_FIELD_BOUNDARY_TABLE	(LB_INTEGRAL_TYPES : HB_INTEGRAL_TYPES)
+				type (SHORT_T) initial (
+
+	/* CHAR_BT		*/   BIT_FIELD_CHAR_BOUNDARY
+	/* SCHAR_BT		*/ , BIT_FIELD_CHAR_BOUNDARY
+	/* UCHAR_BT		*/ , BIT_FIELD_CHAR_BOUNDARY
+	/* SHORT_BT		*/ , BIT_FIELD_SHORT_BOUNDARY
+	/* SSHORT_BT		*/ , BIT_FIELD_SHORT_BOUNDARY
+	/* USHORT_BT		*/ , BIT_FIELD_SHORT_BOUNDARY
+	/* INT_BT		*/ , BIT_FIELD_INT_BOUNDARY
+	/* SINT_BT		*/ , BIT_FIELD_INT_BOUNDARY
+	/* UINT_BT		*/ , BIT_FIELD_INT_BOUNDARY
+	/* LONG_BT		*/ , BIT_FIELD_LONG_BOUNDARY
+	/* SLONG_BT		*/ , BIT_FIELD_LONG_BOUNDARY
+	/* ULONG_BT		*/ , BIT_FIELD_LONG_BOUNDARY
+	/* LOGICAL_BT		*/ , 0
+	/* ENUMERATOR_BT	*/ , BIT_FIELD_INT_BOUNDARY
+	/* ENUM_BT		*/ , BIT_FIELD_INT_BOUNDARY
+    ),
+
+BACK_END_TYPE_TABLE 		(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (SHORT_T) initial (
+
+	/* NULL_BT/NULL_DT	*/   0
+	/* VOID_BT		*/ , 0
+	/* FLOAT_BT		*/ , FLOAT_BIN_
+	/* DOUBLE_BT		*/ , FLOAT_BIN_
+	/* LDOUBLE_BT		*/ , FLOAT_BIN_
+	/* CHAR_BT		*/ , CHAR_
+	/* SCHAR_BT		*/ , CHAR_
+	/* UCHAR_BT		*/ , CHAR_
+	/* SHORT_BT		*/ , FIXED_BIN_
+	/* SSHORT_BT		*/ , FIXED_BIN_
+	/* USHORT_BT		*/ , FIXED_BIN_UNSIGNED_
+	/* INT_BT		*/ , FIXED_BIN_
+	/* SINT_BT		*/ , FIXED_BIN_
+	/* UINT_BT		*/ , FIXED_BIN_UNSIGNED_
+	/* LONG_BT		*/ , FIXED_BIN_
+	/* SLONG_BT		*/ , FIXED_BIN_
+	/* ULONG_BT		*/ , FIXED_BIN_UNSIGNED_
+	/* LOGICAL_BT		*/ , BIT_ALIGNED_
+	/* ENUMERATOR_BT	*/ , FIXED_BIN_
+	/* ENUM_BT		*/ , FIXED_BIN_
+	/* CLASS_BT		*/ , STRUCTURE_
+	/* STRUCT_BT		*/ , STRUCTURE_
+	/* UNION_BT		*/ , STRUCTURE_
+	/* REFERENCE_DT		*/ , POINTER_
+	/* POINTER_DT		*/ , POINTER_
+	/* MEMBER_POINTER_DT	*/ , 0
+	/* ARRAY_DT		*/ , ARRAY_
+	/* FUNCTION_DT		*/ , ENTRY_
+	/* MEMBER_REFERENCE_DT	*/ , 0
+	/* TYPEDEF_BT		*/ , 0
+	/* LABEL_BT		*/ , LABEL_
+    ),
+
+BACK_END_SIZE_TABLE 		(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (SHORT_T) initial (
+
+	/* NULL_BT/NULL_DT	*/   0
+	/* VOID_BT		*/ , 0
+	/* FLOAT_BT		*/ , FLOAT_P
+	/* DOUBLE_BT		*/ , DOUBLE_P
+	/* LDOUBLE_BT		*/ , LDOUBLE_P
+	/* CHAR_BT		*/ , 1
+	/* SCHAR_BT		*/ , 1
+	/* UCHAR_BT		*/ , 1
+	/* SHORT_BT		*/ , SHORT_P
+	/* SSHORT_BT		*/ , SHORT_P
+	/* USHORT_BT		*/ , USHORT_P
+	/* INT_BT		*/ , INT_P
+	/* SINT_BT		*/ , INT_P
+	/* UINT_BT		*/ , UINT_P
+	/* LONG_BT		*/ , LONG_P
+	/* SLONG_BT		*/ , LONG_P
+	/* ULONG_BT		*/ , ULONG_P
+	/* LOGICAL_BT		*/ , 1
+	/* ENUMERATOR_BT	*/ , INT_P
+	/* ENUM_BT		*/ , INT_P
+	/* CLASS_BT		*/ , 0
+	/* STRUCT_BT		*/ , 0
+	/* UNION_BT		*/ , 0
+	/* REFERENCE_DT		*/ , 0
+	/* POINTER_DT		*/ , 0
+	/* MEMBER_POINTER_DT	*/ , 0
+	/* ARRAY_DT		*/ , 0
+	/* FUNCTION_DT		*/ , 0
+	/* MEMBER_REFERENCE_DT	*/ , 0
+	/* TYPEDEF_BT		*/ , 0
+	/* LABEL_BT		*/ , 0
+    );
+
+

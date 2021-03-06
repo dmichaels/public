@@ -1,0 +1,203 @@
+/* LPI-DEBUG M68 DISEA.IN - MC68020 effective address definitions */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  10.04.91  VTF  (001) Added definitions for TRUE and FALSE.
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68020 User's Manual.
+ *
+ **********************************************************************/
+
+/* -------------------------------------------------------------------
+ * -- Internal Effective Address Data --
+ * ---------------------------------------------------------------- */
+
+declare
+    1 EA_DATA               based,
+      2 MODE                fixed binary (15),
+      2 NWORDS              fixed binary (15),
+      2 BASE_REGISTER       fixed binary (15),
+      2 INDEX_REGISTER      fixed binary (15),
+      2 INDEX_SIZE          fixed binary (15),
+      2 INDEX_SCALE         fixed binary (15),
+      2 BASE_DISP           fixed binary (31),
+      2 BASE_DISP_SIZE      fixed binary (15),
+      2 OUTER_DISP          fixed binary (31),
+      2 OUTER_DISP_SIZE     fixed binary (15),
+      2 OPERAND_SIZE        fixed binary (15),
+      2 VALUE_IS_EA         bit (1),
+      2 VALUE_IS_OPERAND    bit (1),
+      2 VALUE               fixed binary (31),
+      2 reserved	    (3) fixed binary (31);
+
+%replace SIZEOF_EA_DATA	by 44;
+
+/* -------------------------------------------------------------------
+ * -- Internal Index Register Scaling Codes --
+ * ---------------------------------------------------------------- */
+
+%replace SCALE_UNKNOWN	by -1;
+%replace SCALE_NULL	by  0;
+%replace SCALE_BYTE	by  1;
+%replace SCALE_WORD	by  2;
+%replace SCALE_LONG	by  4;
+%replace SCALE_DOUBLE	by  8;
+
+/* -------------------------------------------------------------------
+ * -- Single Effective Address Format --
+ * ---------------------------------------------------------------- */
+
+declare
+    1 SINGLE_EA             based,
+      2 OPCODE              bit (10),
+      2 MODE                bit (3),
+      2 REG                 bit (3);
+
+/* -------------------------------------------------------------------
+ * -- Brief Format Effective Address Extension Word --
+ * ---------------------------------------------------------------- */
+
+declare
+    1 BRIEF_EA              based,
+      2 IR_TYPE             bit (1),    /* index register type */
+      2 IR_NUM              bit (3),    /* index register number */
+      2 IR_SIZE             bit (1),    /* index register size */
+      2 IR_SCALE            bit (2),    /* index register scale */
+      2 ZERO                bit (1),    /* constant: 0 (no shit!) */
+      2 DISP_8              bit (8);    /* 8-bit base displacement */
+
+/* -------------------------------------------------------------------
+ * -- Full Format Effective Address Extension Word(s) --
+ * ---------------------------------------------------------------- */
+
+declare
+    1 FULL_EA               based,
+      2 IR_TYPE             bit (1),    /* index register type */
+      2 IR_NUM              bit (3),    /* index register number */
+      2 IR_SIZE             bit (1),    /* index register size */
+      2 IR_SCALE            bit (2),    /* index register scale */
+      2 ONE                 bit (1),    /* constant: 1 */
+      2 BR_SUP              bit (1),    /* base register suppress */
+      2 IR_SUP              bit (1),    /* index suppress */
+      2 BD_SIZE             bit (2),    /* base displacement size */
+      2 ZERO                bit (1),    /* constant: 0 */
+      2 IIS_STRUCT,                     /* index/indirect selection */
+        3 IS                bit (1),    /* index selection (pre/post) */
+        3 OD_SIZE           bit (2);    /* outer displacement size */
+
+/* -------------------------------------------------------------------
+ * -- Effective Address Extension Field Data Definitions --
+ * ---------------------------------------------------------------- */
+
+%replace IR_TYPE_DATA	  by '0'B;    /* FULL_EA.IR_TYPE */
+%replace IR_TYPE_ADDRESS  by '1'B;
+
+%replace IR_SIZE_WORD	  by '0'B;    /* FULL_EA.IR_SIZE */
+%replace IR_SIZE_LONG	  by '1'B;
+
+declare  GET_SCALE_FACTOR (0:3)       /* FULL_EA.IR_SCALE */
+	 fixed binary (15)
+         static initial
+	 ( SCALE_BYTE,
+           SCALE_WORD,
+           SCALE_LONG,
+           SCALE_DOUBLE );
+
+%replace BD_SIZE_RESERVED by '00'B;   /* FULL_EA.BD_SIZE */
+%replace BD_SIZE_NULL	  by '01'B;
+%replace BD_SIZE_WORD	  by '10'B;
+%replace BD_SIZE_LONG	  by '11'B;
+
+%replace OD_SIZE_RESERVED by '00'B;   /* FULL_EA.OD_SIZE */
+%replace OD_SIZE_NULL	  by '01'B;
+%replace OD_SIZE_WORD	  by '10'B;
+%replace OD_SIZE_LONG	  by '11'B;
+
+/* -------------------------------------------------------------------
+ * -- Internal Effective Addressing Mode Category Codes --
+ * ---------------------------------------------------------------- */
+
+/*  D = Data    M = Memory    C = Control    A = Alterable  */
+
+%replace EATYPE_ALL                 by 101;  /* DMCA */
+%replace EATYPE_DATA                by 102;  /* D */
+%replace EATYPE_MEMORY              by 103;  /* M */
+%replace EATYPE_CONTROL             by 104;  /* C */
+%replace EATYPE_ALTER               by 105;  /* A */
+%replace EATYPE_DATA_ALTER          by 106;  /* DA */
+%replace EATYPE_MEMORY_ALTER        by 107;  /* MA */
+%replace EATYPE_CONTROL_ALTER       by 108;  /* CA */
+
+/* -------------------------------------------------------------------
+ * -- Internal Effective Addressing Mode Codes --
+ * ---------------------------------------------------------------- */
+
+%replace EA_DREG                    by  1;  /* Dn              DA */
+%replace EA_AREG                    by  2;  /* An              A */
+%replace EA_AREG_INDIR              by  3;  /* (An)            DMCA */
+%replace EA_AREG_INDIR_INC          by  4;  /* (An)+           DMA */
+%replace EA_AREG_INDIR_DEC          by  5;  /* -(An)           DMA */
+%replace EA_AREG_INDIR_DISP         by  6;  /* (d16,An)        DMCA */
+%replace EA_AREG_INDEX_DISP_8       by  7;  /* (d8,An,Xn)      DMCA */
+%replace EA_AREG_INDEX_BASE_DISP    by  8;  /* (bd,An,Xn)      DMCA */
+%replace EA_MEM_INDIR_POST_INDEX    by  9;  /* ([bd,An],Xn,od) DMCA */
+%replace EA_MEM_INDIR_PRE_INDEX     by 10;  /* ([bd,An,Xn],od) DMCA */
+%replace EA_ABS_WORD                by 11;  /* (xxx).W         DMCA */
+%replace EA_ABS_LONG                by 12;  /* (xxx).L         DMCA */
+%replace EA_PC_INDIR_DISP           by 13;  /* (d16,PC)        DMC */
+%replace EA_PC_INDEX_DISP_8         by 14;  /* (d8,PC,Xn)      DMC */
+%replace EA_PC_INDEX_BASE_DISP      by 15;  /* (bd,PC,Xn)      DMC */
+%replace EA_PC_MEM_INDIR_POST_INDEX by 16;  /* ([bd,PC],Xn,od) DMC */
+%replace EA_PC_MEM_INDIR_PRE_INDEX  by 17;  /* ([bd,PC,Xn],od) DMC */
+%replace EA_IMMED                   by 18;  /* #<data>         DM */
+
+/* -------------------------------------------------------------------
+ * -- Effective Addressing Mode and Register Field Definitions --
+ * ---------------------------------------------------------------- */
+
+%replace EAMODE_DREG                    by 0;
+%replace EAMODE_AREG                    by 1;
+%replace EAMODE_AREG_INDIR              by 2;
+%replace EAMODE_AREG_INDIR_INC          by 3;
+%replace EAMODE_AREG_INDIR_DEC          by 4;
+%replace EAMODE_AREG_INDIR_DISP         by 5;
+%replace EAMODE_AREG_INDEX_DISP_8       by 6;
+%replace EAMODE_AREG_INDEX_BASE_DISP    by 6;
+%replace EAMODE_MEM_INDIR_POST_INDEX    by 6;
+%replace EAMODE_MEM_INDIR_PRE_INDEX     by 6;
+%replace EAMODE_ABS_WORD                by 7;
+%replace EAMODE_ABS_LONG                by 7;
+%replace EAMODE_IMMED                   by 7;
+%replace EAMODE_PC_INDIR_DISP           by 7;
+%replace EAMODE_PC_INDEX_DISP_8         by 7;
+%replace EAMODE_PC_INDEX_BASE_DISP      by 7;
+%replace EAMODE_PC_MEM_INDIR_POST_INDEX by 7;
+%replace EAMODE_PC_MEM_INDIR_PRE_INDEX  by 7;
+
+%replace EAREG_ABS_WORD                 by 0;
+%replace EAREG_ABS_LONG                 by 1;
+%replace EAREG_IMMED                    by 4;
+%replace EAREG_PC_INDIR_DISP            by 3;
+%replace EAREG_PC_INDEX_DISP_8          by 3;
+%replace EAREG_PC_INDEX_BASE_DISP       by 3;
+%replace EAREG_PC_MEM_INDIR_POST_INDEX  by 3;
+%replace EAREG_PC_MEM_INDIR_PRE_INDEX   by 3;
+
+/* -------------------------------------------------------------------
+ * -- Miscellaneous Definitions --
+ * ---------------------------------------------------------------- */
+
+%replace TRUE	by  '1'B;
+%replace FALSE	by  '0'B;
+

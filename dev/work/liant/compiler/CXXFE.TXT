@@ -1,0 +1,1929 @@
+/* # C++ errmsg.txt - C++ front-end diagnostic messages
+/* 
+/* ########################################################################
+/* #  This product is the property of Language Processors, Inc. and is    #
+/* #  licensed pursuant to a written license agreement.  No portion of    #
+/* #  this product may be reproduced without the written permission of    #
+/* #  Language Processors, Inc. except pursuant to the license agreement. #
+/* ########################################################################
+/* 
+/* ########################################################################
+/* #
+/* #  LPI EDIT HISTORY
+/* #
+/* #  07.08.91  DGM  025  Updated.
+/* #  06.17.91  PKT  024  Updated.
+/* #  06.17.91  DGM  023  Updated.
+/* #  06.05.91  PKT  022  Updated.
+/* #  05.29.91  DGM  021  Updated.
+/* #  05.22.91  PKT  020  Updated.
+/* #  04.29.91  DGM  019  Updated.
+/* #  04.24.91  PKT  018  Updated.
+/* #  04.18.91  DGM  017  Updated.
+/* #  03.27.91  TLF  016  Updated.
+/* #  03.22.91  PKT  015  Changed a number of messages for formatting;
+/* #                      other messages from severity 2 to 3; updated.
+/* #  03.12.91  DGM  014  Updated.
+/* #  03.08.91  PKT  013  Updated.
+/* #  02.27.91  DGM  012  Updated.
+/* #  02.21.91  PKT  011  Updated.
+/* #  02.11.91  DGM  010  Updated.
+/* #  01.31.91  DGM  009  Updated.
+/* #  01.27.91  PKT  008  Updated for member pointers.
+/* #  01.18.91  DGM  007  Updated.
+/* #  01.11.91  PKT  006  Updated.
+/* #  01.10.91  DGM  005  Updated.
+/* #  12.18.90  PKT  004  Updated.
+/* #  12.17.90  DGM  003  Updated.
+/* #  11.29.90  DGM  002  Updated.
+/* #  11.15.90  DGM  001  Updated.
+/* #  11.12.90  DGM  000  Original; new format.
+/* #
+/* ########################################################################
+/* 
+/* # ---------------------------------------------------------------------
+/* #
+/* # This file defines the CXXFE component messages.
+/* #
+/* # This component has been allocated 1750 message
+/* # codes in the message range 20000-21749.
+/* #
+/* # N.B. the CPP component (ANSI-C/C++ preprocessor) has been
+/* # allocated 250 message codes in the message range 21750-21999.
+/* #
+/* # ---------------------------------------------------------------------
+/* 
+*ORG 20000
+/* 
+/* # ---------------------------------------------------------------------
+/* # Parser Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* SYNTAX 4
+1   4   Not a valid token in this context.!
+/* EXTRA_TEXT 3
+2   3   Extraneous text follows the apparent syntactic end of program.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Front-End Lexical Errors (converting preprocessing tokens to tokens)
+/* # ---------------------------------------------------------------------
+/* 
+/* BIG_INTEGER 2
+3   2   The value of this integer is too large to fit into any data type.!
+/* BIG_HEX_ESCAPE 1
+4   1   The value of this hex escape sequence is too large (larger than UCHAR_MAX).!
+/* BIG_OCTAL_ESCAPE 1
+5   1   The value of this octal escape sequence is too large (larger than UCHAR_MAX).!
+/* PREPROCESSOR_NUMBER 2
+6   2   Illegal token; this pp-number is not a valid constant; ignored.!
+/* BAD_ESCAPE_SEQ 1
+7   1   Undefined escape sequence; the backslash will be ignored.!
+/* PREPROCESSOR_OPERATOR 2
+8   2   Illegal token; unexpanded preprocessing-operator; ignored.!
+/* PREPROCESSOR_TOKEN 2
+9   2   Illegal token; ignored.!
+/* MULTI_BYTE_CHAR 1
+10  1   Multi-byte character constants are machine dependent.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Generic Front-End Semantic Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* GENERIC_SEV_1 1
+11  1   $1.!
+/* GENERIC_SEV_2 2
+12  2   $1.!
+/* GENERIC_SEV_3 3
+13  3   $1.!
+/* GENERIC_SEV_4 4
+14  4   $1.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Declaration Specifiers Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* STORAGE_PLACEMENT 1
+15  1   Placement of a storage-class specifier other than a the beginning of
+        the declaration is an obsolescent feature.  Avoid this if possible.!
+/* DUP_TYPE_KEYWORD 1
+16  1   Duplicate type keyword.!
+/* DUP_TYPE_QUAL 2
+17  2   Duplicate type qualifier (i.e. "const" or "volatile").!
+/* INCONSISTENT_TYPE_KEYWORDS 2
+18  2   Inconsistent type specifier keywords.!
+/* INCONSISTENT_TYPES 3
+19  3   Inconsistent type specifiers.!
+/* TOO_MANY_STORAGE 2
+20  2   At most, one storage-class specifier may be given in a declaration.!
+/* REG_FUN 2
+21  2   **OBSOLETE**!
+/* BAD_FUN_STORAGE 2
+22  2   The "auto" and "register" specifiers may not be used in function declarations.!
+/* STATIC_LOCAL_FUN 2
+23  2   The "static" specifier may not be used in local function declarations.!
+/* AUTO_STORAGE 3
+24  3   **OBSOLETE**!
+/* AUTO_EXTERN_STORAGE 2
+25  2   **OBSOLETE**!
+/* REG_EXTERN_STORAGE 2
+26  2   **OBSOLETE**!
+/* BAD_EXTERN_STORAGE 2
+27  2   The "auto" and "register" specifiers may not be used in external declarations.!
+/* AUTO_MEMBER_STORAGE 2
+28  2   **OBSOLETE**!
+/* REG_MEMBER_STORAGE 2
+29  2   **OBSOLETE**!
+/* EXTERN_MEMBER_STORAGE 2
+30  2   **OBSOLETE**!
+/* BAD_MEMBER_STORAGE 2
+31  2   Only the "static" storage class specifier may be used in member declarations.!
+/* BAD_C_MEMBER_STORAGE 2
+32  2   Storage class specifiers may not be used in member declarations.!
+/* STATIC_PARAM_STORAGE 2
+33  2   **OBSOLETE**!
+/* TYPEDEF_PARAM_STORAGE 2
+34  2   **OBSOLETE**!
+/* BAD_PARAM_STORAGE 2
+35  2   Only the "auto" or "register" specifiers may be used in parameter declarations.!
+/* PARAM_UNDEF_CLASS 2
+36  2   The parameter class type "$1" for this function definition of "$2"
+        has not yet been defined.!
+/* CLASS_DCL_SPEC 2
+37  2   A class declaration may not be decorated with any declaration specifiers.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Declarator Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* FCT_RETURNS_FCT 2
+38  2   A function may not return a function.!
+/* FCT_RETURNS_ARR 2
+39  2   A function may not return an array.!
+/* ARR_OF_FCTS 2
+40  2   An array of functions is not allowed.!
+/* TOO_MANY_PUNCTS 2
+41  2   **OBSOLETE**!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Array and Dimension Declaration Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* NEG_ARRAY_DIMENSION 1
+42  1   A negative array dimension has been given; zero has been assumed.!
+/* ZERO_ARRAY_DIMENSION 1
+43  1   An array dimension has been given as zero.!
+/* ARRAY_ZERO_SIZE 2
+44  2   Incomplete array definition; array "$1" is of unknown size.!
+/* MISSING_DIM_VALUE 1
+45  1   Missing dimension value.!
+/* BAD_EVAL_DIM 2
+46  2   The array dimension must be a compile time constant here;
+        zero dimension has been assumed.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Function and Parameter Declaration Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* PROTO_TAG_DEF 2
+47  2   A class may not be defined within a function parameter list; legal in ANSI-C.!
+/* FCT_STOR_CLASS 3
+48  3   Invalid storage class for function definition.!
+/* FCT_BODY 3
+49  3   Function body can only follow a function declarator.!
+/* PROMOTE_PARAM 1
+50  1   This old-style parameter "$" is of unpromoted type (float)
+        and will be implicitly adjusted to its promoted type (double).!
+/* PARAM_ADJUSTED_PTR_FCT 0
+51  0   **OBSOLETE**!
+/* PARAM_NAME 3
+52  3   A parameter must be a a simple identifer.!
+/* PARAM_LIST 3
+53  3   A parameter identifier list may be used only in a function definition.!
+/* PTR_TO_FCT 1
+54  1   This class cannot be a function; adjusting to pointer-to-function.!
+/* BAD_AUTO_DCL_NAME 3
+55  3   The parameter name "$" did not appear in
+        the (old-style) function parameter list.!
+/* HIDE_PARAM 2
+56  2   The name "$" has already been declared as a parameter.!
+/* UNNAMED_PARAM 2
+57  2   There is an unnamed parameter (#$1) in
+        this function definition declarator "$2".!
+/* DUP_PARAM_NAME 2
+58  2   The parameter name "$" has already been specified in the parameter list.!
+/* PARAM_UNPROMOTED 3
+59  3   This function was previously declared with an old-style declaration; this
+        prototyped declaration must be declared with parameters of promoted types
+        only (i.e. no char, short, float).!
+/* PARAM_UNPROMOTED_PREV 3
+60  3   This old-style function definition was illegally previously declared with a
+        prototyped declaration with parameters of unpromoted types (char/short/float).!
+/* ELLIPSIS 3
+61  3   This function was previously declared with an old-style declaration;
+        thus, this prototyped declaration may not have an ellipsis terminator.!
+/* PARAM_TYPE_MISMATCH 3
+62  3   This function declaration is incompatible with a previous
+        declaration due to incompatible corresponding parameter(s).!
+/* PARAMS_OR_ELLIPSIS 3
+63  3   This function declaration is incompatible with a previous declaration
+        due to different number of arguments or use of the ellipsis terminator.!
+/* PARAM_IDENT_MISMATCH 3
+64  3   Missing identifier(s) in parameter type list. For a function definition
+        all must be included; for a declaration, all or none must be included.!
+/* NUMBER_ARGUMENTS 3
+65  3   The number of arguments specified in this function call
+        is inconsistent with the declaration of this function.!
+/* TOO_FEW_ARGUMENTS 3
+66  3   Too few arguments specified in this (prototyped) function call.!
+/* TOO_MANY_ARGUMENTS 3
+67  3   Too many arguments specified in this (prototyped) function call.!
+/* BYPASS_CONSTRUCTOR 1
+68  1   Argument will be copied as a simple structure rather than using its
+        copy constructor, because it does not match a formal argument.!
+/* DUP_VOID_PARAM 2
+69  2   A function with a "void" parameter may contain no others.!
+/* NAMED_VOID_PARAM 1
+70  1   A "void" parameter should have no associated parameter name.!
+/* DUP_ELLIPSIS 2
+71  2   An ellipsis terminator may be specified only once, at the
+        end of a parameter type list, e.g. "void f (int, ...)".!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Miscellaneous Declaration Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* TYPE_ZERO_SIZE 1
+72  1   The size of the type in this declaration is either zero or unknown.!
+/* UNKNOWN_SIZE 1
+73  1   Unknown size (incomplete type).!
+/* FUN_TYPEDEF 1
+74  1   A function may not be defined via a "typedef" of type function.!
+/* NO_DECLARATOR 1
+75  1   A declaration must declare at least a declarator, a tag, or an enumerator.!
+/* NO_MEMBER_DECLARATOR 2
+76  2   A member declaration must declare at least a declarator,
+        a bit-field, a tag, or an enumerator; ignored.!
+/* ITERATION_DECLARATION 3
+77  3   This declaration statement is the statement of a "while", "do", or "for" loop.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Class, Struct, Union, & Enum Declaration Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* ANON_UNION_FUN_MEMBER 2
+78  2   An anonymous union may not have function members ($).!
+/* PRIVY_ANON_UNION_MEMBER 2
+79  2   An anonymous union may not have private or protected members ($).!
+/* ANON_UNION_MEMBER_REDCL 2
+80  2   This anonymous union member "$1" has been previously declared on line $2
+        in its enclosing semantic scope.!
+/* DUP_BIT_FIELD_MEMBER 2
+81  2   This bit-field member "$" has already been declared.!
+/* BAD_MEMBER 2
+82  2   A member cannot be an instance of a containing class/struct/union.!
+/* NON_CONSTANT_ENUM 2
+83  2   An enumerator initializer must specify an integral constant expression.!
+/* ENUM_TRAILING_COMMA 1
+84  1   Extraneous comma in enumerator list; ignored.!
+/* BIG_ENUM 2
+85  2   The value of this enumerator "$" is too large to fit into an "int".!
+/* ZERO_ARRAY_MEMBER_SIZE 2
+86  2   This array member is of unknown size; the dimension must be specified.!
+/* UNDEF_CLASS_OBJECT 3
+87  3   "$1" is an undefined class and may not be specified as the type of
+        an object, or array element.!
+/* NEST_TYPE_NAME 3
+88  3   A class/struct/union tag or "typedef" definition within a class (i.e. a
+        nested type-name definition) may not define a name which is the same as
+        its enclosing class.!
+/* MEMBER_NAME 2
+89  2   A nested tag, typedef, enumerator, anonymous union member, or static data
+        member may not have the same name "$" as its enclosing class or any of
+        the direct base classes of its enclosing class.!
+/* UNCONSTRUCTIBLE 2
+90  2   A constructor must be declared for this class "$" because
+        one of its members needs to be initialized explicitly.!
+/* TODO_GEN_CTOR 3
+91  3   Sorry, the compiler did not generate a needed constructor for class "$1".!
+/* TODO_GEN_DTOR 3
+92  3   Sorry, the compiler did not generate a needed destructor for class "$1".!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Bit-Field Declaration Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* ZERO_WIDTH_BIT_FIELD 1
+93  1   A bit-field of zero width should have no declarator;
+        aligning to the next field.!
+/* BIG_BIT_FIELD 2
+94  2   The size of this bit-field exceeds the number of bits for its type.!
+/* BAD_BIT_FIELD 2
+95  2   A bit-field may not be a derived (pointer/reference/array/function) type.!
+/* BIT_FIELD_TYPE 3
+96  3   A bit-field must be specified as a (signed or unsigned) integral type.!
+/* BIT_FIELD_SIZE 3
+97  3   A bit-field size must be specified as a non-negative
+        integral constant expression.!
+/* BIT_FIELD_TYPE_WARN 1
+98  1   In ANSI-C, a bit-field must be of type "int" (signed or unsigned);
+        this integral type will be allowed, with appropriate maximum width.!
+/* NO_BASE_TYPE 0
+99  0   No base type was specified, defaulting to "int".!
+/* STORAGE_BIT_FIELD 2
+100 2   A bit-field declaration may not specify a storage class.!
+/* FRIEND_BIT_FIELD 2
+101 2   A bit-field declaration may not be specified as a friend.!
+/* FUN_BIT_FIELD 2
+102 2   A bit-field declaration may not specify any function specifiers.!
+/* BIT_FIELD_PLACEMENT 2
+103 2   A bit-field specify is not allowed in this context.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Initialization Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* DUP_INITIAL 2
+104 2   Duplicate initialization of this identifier.!
+/* AUTO_INITIALIZER 2
+105 2   Aggregate "register" objects may not be initialized.!
+/* CLASS_INITIALIZER 3
+106 3   Invalid storage class for an initializer.!
+/* TOO_MANY_ARRAY 2
+107 2   Too many initial values for this array.!
+/* ARRAY_INITIAL_ARGS 2
+108 2   An array initializer may not have arguments.!
+/* NEEDS_DEFAULT_CTOR 3
+109 3   An array must be initialized here, but "$1" has no default constructor.!
+/* TOO_MANY_STRUCT 2
+110 2   Too many initial values for class/struct/union.!
+/* TOO_MANY_SCALAR 2
+111 2   More than one initial value for this scalar.!
+/* TOO_MANY_STRINGS 2
+112 2   More than one initial constant string for this array of characters.!
+/* TOO_MANY_CHAR_ARRAY 2
+113 2   Too many initial values for this array of characters.!
+/* BAD_INITIAL_EXPR 3
+114 3   Invalid initial expression; must be a constant-expression.!
+/* BAD_INITIAL_DECLARATION 4
+115 4   Invalid initializer token; an expression, "{", "}", or "," expected.!
+/* NOT_CHAR_ARRAY 3
+116 3   The target type of a string literal initializer must be of
+        type pointer-to-char (char *) or array-of-char (char []).!
+/* BAD_INITIAL_PTR 3
+117 3   Invalid initial value for pointer type.!
+/* BAD_INITIAL_FIELD 3
+118 3   Invalid initial expression for a bit-field.!
+/* EXCESS_INITIAL_VALUES 3
+119 3   Excess initial value(s) ignored.!
+/* BAD_INITIAL_PLACEMENT 2
+120 2   Illegal attempt to initialize an "extern" identifier with block scope;
+        initializer will be ignored.!
+/* UNKNOWN_INITIAL_SIZE 3
+121 3   This is an incomplete type which cannot be initialized. Its size
+        must be known prior to initialization.!
+/* UNINITIALIZED_CONSTANT 2
+122 2   An object declared "const" must be initialized.!
+/* PRIV_AGGREGATE_INIT 2
+123 2   A class with private or protected members may not be initialized using a
+        brace-enclosed list of initial values.!
+/* BASE_AGGREGATE_INIT 2
+124 2   A class with base classes may not be initialized using a brace-enclosed list
+        of initial values.!
+/* CTOR_AGGREGATE_INIT 2
+125 2   A class with a constructor or a virtual function may not be initialized using
+        a brace-enclosed list of initial values.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Redeclared, Undeclared, and Linkage Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* LINKAGE_CONFLICT 1
+126 1   The name "$1" was previously declared with external linkage on
+        line $2, and is thus in conflict with this internal linkage
+        declaration; will assume that all such declarations are intended
+        to refer to the same internal linkage entity.!
+/* DUP_ENUMERATOR 2
+127 2   The enumerator "$1" has been previously declared on line $2
+        in this enumeration "$3".!
+/* UNDECLARED_ID_INT 3
+128 3   Undeclared identifier "$"; implicitly declaring as type "int".!
+/* IMPLICIT_OLD_PARAM_DCL 0
+129 0   "$" is an undeclared old-style function parameter;
+        implicitly declaring as type "int".!
+/* ENUMERATOR_REDCL 2
+130 2   This enumerator "$1" has been previously declared on line $2
+        in its enclosing semantic scope.!
+/* LOCAL_REDCL 2
+131 2   This local object "$1" has already been declared on line $2.!
+/* INCOMPAT_REDCL 2
+132 2   This object "$1" has been previously declared on line $2
+        with a type which is incompatible with the type of this declaration.!
+/* REDEFINITION 3
+133 3   "$1" has been previously defined.!
+/* TENTATIVE_DEFN_OBJ 3
+134 3   Tentative definition of object with constructor and/or destructor.!
+/* REDEFINITION_OBJECT 3
+135 3   Redefinition of object with constructor or destructor.!
+/* UNDEF_STATIC_FUN 1
+136 1   Function "$1" was declared with internal linkage but was never defined.!
+/* NO_EXTERN_DEF 1
+137 1   This compilation unit contains no external definitions.!
+/* UNDEF_FUNCTION_WARN 1
+138 1   Undeclared function; implicitly declaring as "extern int $1(...)".!
+/* UNDEF_FUNCTION 2
+139 2   Function "$1" has not been declared.!
+/* UNDEF_CONVERSION_FUNCTION 3
+140 3   Function "operator $1" has not been declared.!
+/* INTERN_EXTERN_LINKAGE 2
+141 2   **OBSOLETE**!
+/* TYPEDEF_SPEC 2
+142 2   A "typedef" declaration may not contain any "friend", "virtual",
+        "inline", or "overload" specifiers.!
+/* TYPEDEF_BIT_FIELD 2
+143 2   A "typedef" declaration may not specify a bit-field.!
+/* NON_TYPE_TYPEDEF_REDCL 2
+144 2   This typedef "$1" was previously declared on line $2 as a non-type.!
+/* TYPEDEF_NON_TYPE_REDCL 2
+145 2   This name "$1" was previously declared on line $2 as a typedef.!
+/* TAG_NON_TYPE_REDCL 1
+146 1   This name "$1" was previously declared on  line $2
+        as a class with a constructor.!
+/* NON_TYPE_TYPE_REDCL 1
+147 1   This class "$1" (which has a constructor) was previously declared
+        on line $2 as a non-type.!
+/* TYPEDEF_TAG_REDEF 2
+148 2   This tag "$1" has been previously declared on line $2 as a typedef.!
+/* TAG_TYPEDEF_REDEF 2
+149 2   This typedef "$1" has been previously declared as a tag on line $2
+        in this scope; this is legal only if they define the same types.!
+/* TYPEDEF_TYPEDEF_REDEF 2
+150 2   This typedef "$1" has been previously declared on line $2 as a typedef with
+        a type which is incompatible with the type of this declaration.!
+/* TAG_TAG_REDEF 2
+151 2   This tag "$1" has been  previously declared on line $2
+        as a different kind of tag (i.e. class, struct, union, enum).!
+/* TYPE_HIDDEN_BY_NON_TYPE 1
+152 1   The type name "$" has been hidden by a previous non-type declaration of
+        the same name in the same scope; qualify the name with the appropriate
+        class, struct, union, or enum keyword if the type is to be referenced.!
+/* TYPEDEF_NAME 2
+153 2   A "typedef" declaration must declare a simple unqualified name.!
+/* UNDEF_QUAL_NAME 3
+154 3   The name "$1" was not declared as a member of "$2".!
+/* QUAL_DATA_MEMBER_TYPE 3
+155 3   This name "$1" was declared as a data member of "$2" on line $3,
+        but with a type which is incompatible with the type of this declaration.!
+/* QUAL_NAME 3
+156 3   Qualified declarator names may only appear at global scope to define
+        static data members or member functions, or in friend declarations,
+        or to (redundantly) qualify class member declarations.!
+/* MEMBER_QUALIFIED_NAME 3
+157 3   Member name declarations may only be qualified (redundantly)
+        with the name of enclosing class.!
+/* GLOBAL_QUALIFIED_NAME 3
+158 3   The global scope qualifier "::" may not be used in declarations.!
+/* BIT_FIELD_NAME 2
+159 2   A bit-field declaration must declare a simple unqualified name.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Compiler Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* SEM_STACK_OVERFLOW 4
+160 4   Compiler inconsistency (semantic stack overflow).!
+/* SEM_STACK_UNDERFLOW 4
+161 4   Compiler inconsistency (semantic stack underflow).!
+/* 
+/* # ---------------------------------------------------------------------
+/* # New messages
+/* # ---------------------------------------------------------------------
+/* 
+/* ABSTRACT_CLASS_OBJECT 3
+162 3   "$1" is an abstract class (it has/inherits a pure virtual function)
+        and may not be specified as the type of an object, member, parameter,
+        function, array element; it may be used as the type of a pointer or
+        reference, or as a base class.!
+/* UNDEF_SCOPE_QUALIFIER 3
+163 3   The name "$" is not a previously defined class; a class (scope) must
+        be defined before its name may be used as a class scope qualifier.!
+/* UNDEF_BASE_CLASS 2
+164 2   The name "$" is not a previously defined class; a class must be
+        defined before it may be used as a base class (i.e. derived from).!
+/* AMBIG_BASE_CLASS_REF 3
+165 3   This is an ambiguous reference to a base
+        class ($1) from a derived class ($2).!
+/* AMBIG_BASE_MEMBER_REF 3
+166 3   This is an ambiguous member reference; it is a member
+        of both class "$1" and class "$2".!
+/* DERIVED_UNION 3
+167 3   A union may not specify base class (i.e. a union may not be derived).!
+/* BASE_CLASS_UNION 3
+168 3   A union may not be specified as a base class
+        (i.e. a union may not be derived from).!
+/* STATIC_UNION_MEMBER 2
+169 2   A union may not have static members.!
+/* VIRTUAL_UNION_MEMBER 2
+170 2   A union may not have virtual members.!
+/* VIRTUAL_STATIC 2
+171 2   A virtual member function may not be declared "static".!
+/* PURE_SPEC 2
+172 2   A pure specifier may only be applied to "virtual" member functions.!
+/* NON_ZERO_PURE_SPEC 2
+173 2   A pure specifier for a virtual member function must specify a
+        zero-valued constant expression; ignored.!
+/* REDEF_CLASS 3
+174 3   This class "$1" has been previously defined on line $2.!
+/* REDEF_FUN_MEMBER 2
+175 2   This member function "$1" has been previously declared on line $2 with
+        a type which is neither compatible with, nor sufficiently distinct from
+        the type of this declaration.!
+/* REDCL_FUN 2
+176 2   This function "$1" has been previously declared on line $2
+        with a type which is neither compatible with, nor sufficiently
+        distinct from, the type of this declaration.!
+/* REDEF_DATA_MEMBER 2
+177 2   This data member "$1" has been previously declared on line $2.!
+/* DUP_MEMBER_FUN_DEF 2
+178 2   The member function "$1" has been previously defined on line $2.!
+/* REDEF_CTOR_MEMBER 2
+179 2   This member (which has the same name as the containing class name)
+        has been previously declared as a constructor; ignored.!
+/* REDEF_MEMBER_CTOR 2
+180 2   This constructor name has been previously declared as a (non-function)
+        member; ignored.!
+/* DTOR_BUT_NO_CTOR 1
+181 1   This class "$" defined a destructor but no constructor.!
+/* OBJECT_UNION_MEMBER 3
+182 3   An object of a class with a destructor, constructor, or user-defined
+        assignment operator may not be a member of a union.!
+/* REDEF_FUN 2
+183 2   This function "$1" has been previously defined on line $2.!
+/* OLD_PAR_DCL_PLACEMENT 3
+184 3   An old-style parameter declaration list must follow a function
+        declaration and must preceed a function body definition.!
+/* FUN_BODY_PLACEMENT 3
+185 3   A function body must be preceeded by a function type declaration.!
+/* MAX_DERIVED_TYPE_LEVEL 3
+186 3   Too many derived types (e.g. pointer-to, reference-to, array-of,
+        or function-returning) in one declarator; a maximum total of 16
+        is currently supported (including any/all expanded typedefs).!
+/* LINKAGE_PLACEMENT 2
+187 2   A linkage specifier may only occur at file scope.!
+/* UNKNOWN_LINKAGE 2
+188 2   This is an unknown linkage specification; only "C" and "C++" are currently
+        implemented.!
+/* LINKAGE_KIND_CONFLICT 2
+189 2   The name "$1" has been previously declared with a conflicting linkage
+        specification on line $2.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Base and Member Initialization Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* MEMBER_INIT_LIST_PLACEMENT 3
+190 3   A member initialization list is permitted only for a constructor.!
+/* NOT_BASE_OR_MEMBER 2
+191 2   "$1" is not a member or base class of "$2".!
+/* OMITTED_BASE_NAME 1
+192 1   Omission of the base class name ($1) is an anachronism.!
+/* BASE_NAME_REQUIRED 2
+193 2   "$1" has more than one base class; name of base class to
+        initialize is required.!
+/* NO_BASE_TO_INIT 2
+194 2   "$1" has no base class; name of member to initialize is required.!
+/* NOT_DIRECT_MEMBER 2
+195 2   "$1" is an inherited member of "$2"; it is initialized via the base class.!
+/* NOT_IMMEDIATE_OR_VIRTUAL 2
+196 2   "$1" is neither an immediate nor a virtual base class of "$2".!
+/* BAD_MEMBER_FUNC_INIT 2
+197 2   A member function must be initialized in a declaration, not in the member
+        initializer of a constructor.!
+/* BAD_STATIC_MEMBER_INIT 2
+198 2   A static data member must be initialized in a declaration, not in the member
+        initializer of a constructor.!
+/* NO_DEFAULT_CTOR 2
+199 2   Every constructor for "$1" requires one or more arguments,
+        but no initializer or argument is provided here.!
+/* NEED_INIT_FOR_MEMBER 2
+200 2   An explicit member initializer is required here
+        in order to construct member "$1".!
+/* NEED_INIT_FOR_BASE 2
+201 2   An explicit base initializer is required here
+        in order to construct base class "$1".!
+/* DUPLICATE_MEMBER_INIT 2
+202 2   "$1" has been initialized more than once in this base/member
+        initializer list.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Class Derivation Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* DUP_BASE_CLASS 2
+203 2   Duplicate base class for this derived class definition; ignored.!
+/* DUP_VIRTUAL_BASE_CLASS_SPEC 2
+204 2   Duplicate "virtual" base class specifier; ignored.!
+/* INCONSISTENT_BASE_CLASS_SPEC 2
+205 2   Confilicting or duplicate base class specifiers; ignored.!
+/* DEFAULT_PRIVATE_DERIVATION 0
+206 0   No base class access specifier given for this class; defaulting to "private".!
+/* DEFAULT_PUBLIC_DERIVATION 0
+207 0   No base class access specifier given for this class; defaulting to "public".!
+/* SELF_REF_BASE_CLASS 2
+208 2   A class may not be derived from itself.!
+/* CTOR_RETURN_TYPE 3
+209 3   Constructor functions should specify no return value.!
+/* DTOR_RETURN_TYPE 3
+210 3   Destructor functions should specify no return value.!
+/* DTOR_NOT_FUN 3
+211 3   A destructor name must declare a function type.!
+/* DTOR_PARAM_TYPE 3
+212 3   Destructor functions may specify no parameters.!
+/* WRONG_DTOR 3
+213 3   This destructor is not of (doesn't have the same name as) this class.!
+/* NON_MEMBER_DTOR 3
+214 3   A destructor must be a member function.!
+/* QUALIFIED_CDTOR 2
+215 2   A constructor or destructor may not be declared as "const" or "volatile".!
+/* STATIC_CDTOR 3
+216 3   A constructor or destructor may not be declared as "static".!
+/* VIRTUAL_CTOR 3
+217 3   A constructor may not be declared as "virtual".!
+/* OP_FUN_PLACEMENT 3
+218 3   This operator function must be declared as a non-static member function.!
+/* NON_MEMBER_CONV 3
+219 3   A conversion function must be a member function.!
+/* CONV_NOT_FUN 2
+220 2   A conversion name must refer to a function (with no return value and no
+        parameters).!
+/* CONV_RETURN_TYPE 3
+221 3   Conversion functions should specify no return value.!
+/* CONV_PARAM_TYPE 3
+222 3   Conversion functions should specify no parameters.!
+/* OPERATOR_FUN 2
+223 2   An operator name must refer to a function.!
+/* VIRTUAL_NEW_DELETE_OP 3
+224 3   The "new" and "delete" operators may not be "virtual" member functions.!
+/* STATIC_NEW_DELETE_OP 0
+225 0   Operators "new" and "delete" as member functions are implicitly static.!
+/* NEW_OP_PARAM_TYPE 3
+226 3   The "new" operator must specify a first parameter of type "size_t".!
+/* NEW_OP_RETURN_TYPE 3
+227 3   The "new" operator must specify a "void *" return type.!
+/* DELETE_OP_RETURN_TYPE 3
+228 3   The "delete" operator must specify a "void" return type.!
+/* MEMBER_DELETE_OP_PARAM_TYPE 3
+229 3   The "delete" operator member function must specify a first parameter
+        of type "void *", and an optional second parameter of type "size_t".!
+/* DELETE_OP_PARAM_TYPE 3
+230 3   The "delete" operator non-member function must specify one parameter
+        of type "void *".!
+/* OVERLOAD_DELETE 3
+231 3   The "delete" operator may not be overloaded.!
+/* EOF_MEMBER_FUN 3
+232 3   End-of-file encountered while collecting a member function body within a class
+        declaration.!
+/* MEMBER_FUN_NO_RETURN 1
+233 1   This member function specifies no return value; assuming "int".!
+/* FRIEND_FUN_NO_RETURN 1
+234 1   This friend function specifies no return value; assuming "int".!
+/* ONLY_MEMBER_FRIENDS 2
+235 2   Friend declarations may only be specified within a class definition.!
+/* UNDEF_QUAL_FRIEND 2
+236 2   **OBSOLETE**!
+/* BAD_FRIEND 2
+237 2   This "friend" specifier may only be used within a class definition.!
+/* BAD_VIRTUAL 3
+238 3   The "virtual" specifier may only be used within a class definition for a
+        member function declaration.!
+/* BAD_INLINE 2
+239 2   The "inline" specifier may only be used for a non-extern
+        function declaration.!
+/* FUN_SPEC_PARAM 2
+240 2   A parameter declaration may not specify any function specifiers; ignored.!
+/* WARN_OVERLOAD 1
+241 1   The "overload" specifier is an obsolescent feature; it is not portable and
+        may not be supported in future implementations.  Avoid its use if possible.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Friend Declaration Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* BEFRIEND_MEMBER 2
+242 2   A class may not befriend one of its own members.!
+/* FRIEND_TYPE 2
+243 2   Only function or named class types may be declared as friends.!
+/* DUP_FRIEND 2
+244 2   This class "$1" already declared "$2" as a friend.!
+/* FRIEND_MEMBER 2
+245 2   This friend was previously declared as a member of this class.!
+/* FRIEND_STRUCTOR 2
+246 2   Constructors/destructors are *member* functions and therefore
+        may not be declared as friends of the containing class.!
+/* FRIEND_STORAGE 2
+247 2   A friend declaration may not specify a storage class; ignored.!
+/* FRIEND_SPEC 2
+248 2   A friend declaration may not specify any function specifiers; ignored.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Member Access Adjustment Declaration Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* NULL_ACCESS_DCL 2
+249 2   A member access declaration must specify a base class member name.!
+/* TYPE_ACCESS_DCL 2
+250 2   A member access declaration may not specify a type.!
+/* STORAGE_ACCESS_DCL 2
+251 2   A member access declaration may not specify any storage class specifiers.!
+/* FUN_ACCESS_DCL 2
+252 2   A member access declaration may not specify any function specifiers.!
+/* FRIEND_ACCESS_DCL 2
+253 2   A member access declaration may not specify a friend specifier.!
+/* ACCESS_DCL 2
+254 2   A member access declaration is not allowed within "private" sections, only
+        within "public" or "protected" sections.!
+/* DERIVED_ACCESS_DCL 2
+255 2   A member access declaration may be used only in a derived class.!
+/* BASE_ACCESS_DCL 2
+256 2   The class qualifier for this member access declaration is not a
+        base class of this derived class.!
+/* ACCESS_DERIVED 2
+257 2   Access to a base class member may not be adjusted in a derived class which
+        also defines a member of that name.!
+/* ACCESS_ENABLE 2
+258 2   Access to member "$1" cannot be enabled,
+        because "$1" is not accessible from the present class.!
+/* ACCESS_RESTRICTION 2
+259 2   Access to member "$1" cannot be restricted,
+        because "$1" is accessible from the present class.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Compiler Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* DCL_STATE_STACK_OVERFLOW 4
+260 4   Compiler inconsistency; declaration state stack overflow.!
+/* DCL_STATE_STACK_UNDERFLOW 4
+261 4   Compiler inconsistency; declaration state stack underflow.!
+/* NAME_STATE_STACK_OVERFLOW 4
+262 4   Compiler inconsistency; name state stack overflow.!
+/* NAME_STATE_STACK_UNDERFLOW 4
+263 4   Compiler inconsistency; name state stack underflow.!
+/* CLASS_STATE_STACK_OVERFLOW 4
+264 4   Compiler inconsistency; class state stack overflow.!
+/* CLASS_STATE_STACK_UNDERFLOW 4
+265 4   Compiler inconsistency; class state stack underflow.!
+/* SIG_STATE_STACK_OVERFLOW 4
+266 4   Compiler inconsistency; signature state stack overflow.!
+/* SIG_STATE_STACK_UNDERFLOW 4
+267 4   Compiler inconsistency; signature state stack underflow.!
+/* LINK_STATE_STACK_OVERFLOW 4
+268 4   Compiler inconsistency; linkage state stack overflow.!
+/* LINK_STATE_STACK_UNDERFLOW 4
+269 4   Compiler inconsistency; linkage state stack underflow.!
+/* SCOPE_STATE_STACK_OVERFLOW 4
+270 4   Compiler inconsistency; scope state stack overflow.!
+/* SCOPE_STATE_STACK_UNDERFLOW 4
+271 4   Compiler inconsistency; scope state stack underflow.!
+/* TYPE_STATE_STACK_OVERFLOW 4
+272 4   Compiler inconsistency; type state stack overflow.!
+/* TYPE_STATE_STACK_UNDERFLOW 4
+273 4   Compiler inconsistency; type state stack underflow.
+        Compiler inconsistency; function signature stack underflow.!
+/* CLASS_STACK_OVERFLOW 4
+274 4   Compiler inconsistency; member-pointer class stack overflow.!
+/* CLASS_STACK_UNDERFLOW 4
+275 4   Compiler inconsistency; member-pointer class stack underflow.!
+/* DERIVED_TYPE_STACK_OVERFLOW 4
+276 4   Compiler inconsistency; derived type stack overflow.!
+/* DERIVED_TYPE_STACK_UNDERFLOW 4
+277 4   Compiler inconsistency; derived type stack underflow.!
+/* TYPEQ_STACK_OVERFLOW 4
+278 4   Compiler inconsistency; derived type qualifier stack overflow.!
+/* TYPEQ_STACK_UNDERFLOW 4
+279 4   Compiler inconsistency; derived type qualifier stack underflow.!
+/* FUN_TYPEQ_STACK_OVERFLOW 4
+280 4   Compiler inconsistency; function type qualifier stack overflow.!
+/* FUN_TYPEQ_STACK_UNDERFLOW 4
+281 4   Compiler inconsistency; function type qualifier stack underflow.!
+/* NODE_STACK_OVERFLOW 4
+282 4   Compiler inconsistency; node stack overflow.!
+/* NODE_STACK_UNDERFLOW 4
+283 4   Compiler inconsistency; node stack underflow.!
+/* LOOP_STK_OVER 4
+284 4   Compiler inconsistency; loop stack overflow.!
+/* LOOP_STK_UNDER 4
+285 4   Compiler inconsistency; loop stack underflow.!
+/* ASSERT_FAIL 4
+286 4   Compiler inconsistency.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Statement Control Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* DUP_LABEL_NAME 2
+287 2   Label duplicates another declaration of "$1" in this function.!
+/* DUP_CASE 3
+288 3   Duplicate case label.!
+/* DUP_DEFAULT 3
+289 3   A "default" for this switch has already been seen.!
+/* BAD_CASE_NUMBER 3
+290 3   Invalid case number.!
+/* BAD_CASE_OR_DEFAULT 3
+291 3   This "case" or "default" is not within any switch block.!
+/* BAD_BREAK 3
+292 3   This "break" is not within any loop or switch block.!
+/* BAD_CONTINUE 3
+293 3   This "continue" is not within any loop.!
+/* NO_RET_VALUE 2
+294 2   This function "$" may not return a value.!
+/* NEEDS_RET_VALUE 1
+295 1   This function "$" should specify a return value.!
+/* REQUIRES_RET_VALUE 3
+296 3   Return without expression from a function with a non-void return type.!
+/* BYPASS_INIT 2
+297 2   A jump to this label bypasses the initializing statement for "$1" on line $2.!
+/* SWITCH_BYPASS_INIT 2
+298 2   Entering switch at this case bypasses the initializing statement for "$1"
+        on line $2.!
+/* DESTRUCT_LABEL 3
+299 3   This label is preceded in this block by objects which require destruction.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Expression Errors
+/* # ---------------------------------------------------------------------
+/* 
+/* INT_CONST_EXPR_REQ 2
+300 2   An integral constant expression is required here.!
+/* INT_IS_REQD 2
+301 2   An integer value is required here.!
+/* SUBSCRIPT_OPERAND 3
+302 3   Neither of the operands of this subscript operator ([]) is a pointer type.!
+/* NONARITH_PLUS 2
+303 2   The operand of the unary plus operator (+) must be arithmetic type.!
+/* NONARITH_MINUS 2
+304 2   The operand of the unary minus operator (-) must be arithmetic type.!
+/* NONARITH_ADD 2
+305 2   The left and right operands of the addition operator (+) must both be
+        arithmetic type, or pointer and integral type.!
+/* PTR_NONINT_ADD 2
+306 2   An integral type is required for array subscripting and pointer addition.!
+/* NONARITH_SUB 2
+307 2   The left and right operands of the subraction operator (-) must both
+        be arithmetic type, pointer and integral type, or both pointer type.!
+/* PTR_NONINT_SUB 2
+308 2   Only an integral or a pointer type may be subtracted from a pointer.!
+/* NONARITH_MUL 2
+309 2   The operands of the multiplication operator (*) must be arithmetic type.!
+/* NONARITH_DIV 2
+310 2   The operands of the division operator (/) must be arithmetic types.!
+/* NONINT_MOD 2
+311 2   The operands of the remainder operator (%) must be integral type.!
+/* NONINT_BITOP 2
+312 2   The operands of the bitwise operators (|,&,^,<<,>>) must be integral type.!
+/* BAD_PTR_INT_ARITH 2
+313 2   Zero or unknown sized object for pointer+int or pointer-int.!
+/* BAD_CONVERSION_VALUE 3
+314 3   Invalid conversion; this is not a value.!
+/* CONVERSION_ARR_FCT 3
+315 3   Invalid conversion of an array or function.!
+/* CONVERSION_STRUCT 3
+316 3   Illegal attempt to convert a class, struct, or union to an incompatible type.!
+/* CONVERT_FROM_VOID 3
+317 3   A "void" expression is evaluated for its side effects only. Explicit
+        or implicit conversions may not be applied (except to "void").!
+/* USE_OF_LABEL 3
+318 3   A label name can be used only in a "goto" statement.!
+/* BAD_CONVERSION 3
+319 3   Invalid conversion; cannot convert to this result type.!
+/* NO_CONSTRUCTOR 3
+320 3   The type being initialized has no constructor, but its initializer has
+        2 or more constructor arguments.!
+/* NON_LVALUE_ARRAY 2
+321 2   An lvalue is required to convert "array of type" to "pointer to type".!
+/* UNARY_ADDR_LVALUE 3
+322 3   The argument of the address-of operator (&) must be an lvalue.!
+/* NOT_AN_LVALUE 2
+323 2   An lvalue is required here.!
+/* UNARY_ADDR_FIELD 3
+324 3   The address-of operator (&) may not be applied to a bit-field.!
+/* UNARY_ADDR_LABEL 2
+325 2   Unary "&" cannot be applied to a label name.!
+/* UNARY_ADDR_REG 2
+326 2   Unary "&" cannot be applied to a "register" variable.!
+/* DISSIMILAR_ENUM_TYPES 1
+327 1   Comparison of different enumeration types; "$1" and "$2".!
+/* REQ_VOID_IN_CONDITIONAL 2
+328 2   Incompatible types as second and third operands of conditional. The
+        "0" operand is being implicity cast to "void"; try explicit casting.!
+/* BAD_VOID_IN_CONDITIONAL 3
+329 3   Incompatible types as second and third operands of conditional. If
+        one operand has type "void", then both operands must have type "void";
+        try explicit casting.!
+/* NOT_CONST_PTR_EXPR 3
+330 3   This pointer valued initial expression is not a constant.!
+/* BAD_DEREFERNCE 3
+331 3   An array subscript "[]" or a unary indirection "*"
+        can be applied only to an array or pointer type.!
+/* NOT_CLASS_STRUCT_UNION 3
+332 3   The name of the left of this member access operator ".", "->", ".*", or "->*"
+        does not refer to a class, struct, or union.!
+/* NOT_A_MEMBER 3
+333 3   The name to the right of this member access operator is not a member
+        of the class, struct, or union referenced on the left.!
+/* NOT_MEMBER_NAME 3
+334 3   The name on right is not a class/struct/union member name.!
+/* SIZEOF_UNKNOWN 2
+335 2   Operand of "sizeof" is of unknown size; zero value being used.!
+/* SIZEOF_BIT_FIELD 1
+336 1   Operand of "sizeof" cannot designate a bit-field.!
+/* SIZEOF_FUNCT 3
+337 3   Operand of "sizeof" cannot designate a function.!
+/* SIZEOF_RET_ZERO 1
+338 1   Sizeof returns a zero value.!
+/* BAD_LVALUE_ASSIGN 3
+339 3   Left side of assignment is not an lvalue as required.!
+/* NOT_STRUCT_UNION 3
+340 3   Name on left of "." or "->" does not refer to a class/struct/union.!
+/* EVAL_FCT_DOT_MEMBER 2
+341 2   Cannot do "function().member" from debugger.!
+/* NOT_A_FCT 3
+342 3   This is not a function.!
+/* NOT_PRIMARY_EXPR 3
+343 3   Left of "()" is not a primary expression.!
+/* BAD_CAST 3
+344 3   Illegal cast to an array or function type; cast only to scalar types.
+        Try casting to the array element or function return type instead.!
+/* CAST_STRUCT_UNION 3
+345 3   Illegal cast to a class, struct, or union type; cast only to scalar types.
+        To get this effect, cast to the pointer-to type, then de-reference it.!
+/* CONVERT_FUNCTION 3
+346 3   An expression cannot be converted to a function type.!
+/* ILLEGAL_CONST_ACCESS 3
+347 3   Illegal attempt to modify a "const" object.!
+/* UNKNOWN_PTR_SUBTR_SIZE 2
+348 2   Illegal pointer subtraction; pointer(s) may not point to function types or
+        types of unknown size (incomplete types).!
+/* ZERO_DIVIDE 1
+349 1   Division by zero is not defined.!
+/* TOO_MANY_ARGS 2
+350 2   Number of arguments exceeds implementation limit.!
+/* PASS_AS_PTR_TO 2
+351 2   An array must be passed as a pointer-to type.!
+/* MUST_BE_INTEGRAL 2
+352 2   Operand(s) must be of integral type.!
+/* ILLEGAL_MEMBER_FUN 3
+353 3   A member function that is bound to an object does not have an address.!
+/* MISSING_OBJECT 3
+354 3   Object missing in call of non-static member "$1".!
+/* NEW_FUNCTION 2
+355 2   Type of new object must not be function.!
+/* NEW_REFERENCE 2
+356 2   Type of new object must not be reference.!
+/* NEW_INCOMPLETE 2
+357 2   Type of new object is incomplete; its size cannot be calculated.!
+/* NEW_NO_MATCH 2
+358 2   No declaration of operator "new" matches the "placement" arguments used here.!
+/* DELETE_FUNCTION 1
+359 1   "Delete" expression must not point to function.!
+/* DELETE_REFERENCE 1
+360 1   "Delete" expression must not point to reference.!
+/* DELETE_NON_POINTER 2
+361 2   Type of "delete" expression must be pointer.!
+/* DELETE_CONST 2
+362 2   Attempt to "delete" const object.!
+/* DELETE_UNDEFINED_CLASS 1
+363 1   The class ($1) of the object being deleted has not been defined.!
+/* CTOR_NO_MATCH 3
+364 3   No declaration of a constructor for "$1" matches the
+        argument list or initializer used here.!
+/* 
+/* MBR_PTR_OVERFLOW 3
+365 3   A pointer to member cannot be created here, because the referenced class is
+        too big.!
+/* BAD_MBR_PTR_CAST 3
+366 3   Illegal conversion of non member-pointer to member-pointer.!
+/* VIRT_DERIVED_BASE_PTR_CNV 2
+367 2   A member pointer to a derived class ($1) may not be converted
+        to a member pointer to a virtual base class ($2).!
+/* AMBIG_BASE_DERIVED_MP_CNV 3
+368 3   A pointer to a member of an ambiguous base class ($1) may not
+        be converted to a pointer to a member of a derived class ($2).!
+/* VIRT_BASE_DERIVED_MP_CNV 2
+369 2   A pointer to a member of a virtual base class ($1) may not
+        be converted to a pointer to a member of a derived class ($2).!
+/* PRIV_BASE_DERIVED_MP_CNV 2
+370 2   A pointer to a member of an inaccessible base class ($1) may not
+        be converted to a pointer to a member of a derived class ($2).!
+/* UNRELATED_MP_CNV 2
+371 2   A pointer to a member of class "$1" may not be converted to
+        a pointer to a member of class "$2" because neither class is
+        a base of the other.!
+/* DERIVED_BASE_MP_CNV 2
+372 2   A pointer to a member of a derived class ($1) may not be converted to
+        a pointer to a member of a base class ($2) without an appropriate cast.!
+/* AMBIG_DERIVED_BASE_MP_CNV 3
+373 3   A pointer to a member of a derived class ($1) may not be converted to
+        a pointer to a member of an ambiguous base class ($2).!
+/* VIRT_DERIVED_BASE_MP_CNV 2
+374 2   A pointer to a member of a derived class ($1) may not be converted to
+        a pointer to a member of a virtual base class ($2).!
+/* CONVERSION_MEMBER_POINTER 3
+375 3   A pointer to member may not be converted to $1.!
+/* MBR_PTR_COMPARE_PTR 3
+376 3   A pointer to member may not be compared with an ordinary pointer.!
+/* MBR_PTR_COMPARE 3
+377 3   Neither class "$1" nor "$2" is derived from the other;
+        consequently pointers to members of these classes may not be compared.!
+/* MBR_PTR_COMPARE_OP 3
+378 3   Pointers to members may only be compared using the equality and inequality
+        operators.!
+/* MBR_PTR_CAST_TO_PTR 3
+379 3   A pointer to member may not be converted to a pointer.!
+/* ILLEGAL_MEMBER_COMPARISON 3
+380 3   Illegal comparison of member pointer with incompatible type.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Overloaded function resolution/unresolution
+/* # ---------------------------------------------------------------------
+/* 
+/* CAST_VOID_OVLD_FUN 3
+381 3   "$1" is overloaded.  An overloaded function may not be converted to void.!
+/* 
+/* OVLD_FUN_PTR 3
+382 3   Illegal use of a pointer to an overloaded function; only allowed as the right
+        hand side of an initialization/assignment, an argument, or a return value.!
+/* 
+/* NO_OVERLOAD_MATCH 3
+383 3   No match could be found for this overloaded function reference: "$".!
+/* DEREF_OVLD_FUN 3
+384 3   "$1" is overloaded.  The operator "*" may not be used to
+        dereference an overloaded member function.!
+/* DEREF_OVLD_FUN_PTR 3
+385 3   "$1" is overloaded.  The operator "*" may not be used to
+        dereference the address of an overloaded member function.!
+/* CAST_OVLD_FUN_PTR 3
+386 3   "$1" is overloaded.  The address of an overloaded function may not be
+        explicitly converted to another type.!
+/* SIZEOF_OVLD_FUN_PTR 2
+387 2   "$1" is overloaded.  Sizeof is not a legal operation on the address
+        of an overloaded function.!
+/* 
+/* PTR_CAST_TO_MBR_PTR 3
+388 3   The address of "$1" is a regular pointer because once overloading
+        is resolved, it is a static member.
+        A regular pointer may not be converted to a pointer to member.!
+/* OVLD_MBR_PTR_CAST_TO_PTR 3
+389 3   The address of "$1" is a pointer to member because once overloading
+        is resolved, it is not a static member.
+        A pointer to member may not be converted to a pointer.!
+/* 
+/* DEREF_OVLD_FUN_MBR_PTR 3
+390 3   "$1" is overloaded.  The operators ".*" and "->*" may not be used to
+        dereference the address of an overloaded function.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Pointer incompatibilities
+/* # ---------------------------------------------------------------------
+/* 
+/* PTR_PTR_ASSIGNMENT 2
+391 2   Incompatible pointer types in assignment.  Try explicit casting.!
+/* PTR_PTR_QUAL_ASSIGNMENT 2
+392 2   Incompatible pointer types in assignment; the types (qualified
+        or unqualified) pointed to contain incompatible type qualifiers.
+        Try explicit casting.!
+/* PTR_PTR_TOP_QUAL_ASSIGNMENT 2
+393 2   Incompatible qualified pointer types in assignment; the type pointed
+        to by the destination operand must have all the qualifiers of the
+        type pointed to by the source operand.  Try explicit casting.!
+/* PTR_PTR_ARRAY_ASSIGNMENT 2
+394 2   Incompatible pointer types in assignment; the size specifiers of any
+        arrays pointed to, must have the same value.  Try explicit casting.!
+/* PTR_PTR_FUN_ASSIGNMENT 2
+395 2   Incompatible pointer types in assignment; the number and types of
+        parameters of any functions pointed to, must have compatible types.
+        Try explicit casting.!
+/* NON_PTR_PTR_ASSIGNMENT 2
+396 2   Illegal assignment of a non-pointer type to a pointer type; the
+        non-pointer must be zero (i.e. a null pointer).  Try explicit casting.!
+/* PTR_NON_PTR_ASSIGNMENT 2
+397 2   Illegal assignment of a pointer type to a non-pointer type.
+        Try explicit casting.!
+/* PTR_PTR_INITIAL 2
+398 2   Incompatible pointer types in initialization.!
+/* PTR_PTR_QUAL_INITIAL 2
+399 2   Incompatible pointer types in initialization; the types (qualified or
+        unqualified) pointed to contain incompatible type qualifiers.!
+/* PTR_PTR_TOP_QUAL_INITIAL 2
+400 2   Incompatible qualified pointer types in initialization; the type pointed
+        to by the declared variable must have all the qualifiers of the type
+        pointed to by the initializer.!
+/* PTR_PTR_ARRAY_INITIAL 2
+401 2   Incompatible pointer types in initialization; the size specifiers
+        of any arrays pointed to, must have the same value.!
+/* PTR_PTR_FUN_INITIAL 2
+402 2   Incompatible pointer types in initialization; the number and types of
+        parameters of any functions pointed to, must have compatible types.!
+/* NON_PTR_PTR_INITIAL 2
+403 2   Illegal initialization of a pointer type to a non-pointer type;
+        the non-pointer must be zero (i.e. a null pointer).!
+/* PTR_NON_PTR_INITIAL 2
+404 2   Illegal initialization of a non-pointer type to a pointer type.!
+/* PTR_PTR_ARGUMENT 2
+405 2   The type of this argument and the corresponding parameter are
+        incompatible pointer types.!
+/* PTR_PTR_QUAL_ARGUMENT 2
+406 2   The type of this argument and the corresponding parameter are
+        incompatible pointer types; the types (qualified or unqualified)
+        pointed to contain incompatible type qualifiers.  Try explicit casting.!
+/* PTR_PTR_TOP_QUAL_ARGUMENT 2
+407 2   The type of this argument and the corresponding parameter are
+        incompatible pointer types; the type pointed to by the parameter
+        must have all the qualifiers of the type pointed to by the argument.
+        Try explicit casting.!
+/* PTR_PTR_ARRAY_ARGUMENT 2
+408 2   The type of this argument and the corresponding parameter are
+        incompatible pointer types; the size specifiers of any arrays pointed
+        to, must have the same value.  Try explicit casting.!
+/* PTR_PTR_FUN_ARGUMENT 2
+409 2   The type of this argument and the corresponding parameter are
+        incompatible pointer types; the number and types of parameters
+        of any functions pointed to, must have compatible types.
+        Try explicit casting.!
+/* NON_PTR_PTR_ARGUMENT 2
+410 2   This non-pointer argument may not be converted to the pointer type of the
+        corresponding parameter; the non-pointer must be zero (i.e. a null pointer).!
+/* PTR_NON_PTR_ARGUMENT 2
+411 2   This pointer argument may not be converted to the non-pointer
+        type of the corresponding parameter.  Try explicit casting.!
+/* PTR_PTR_RETURN 2
+412 2   The type of this return value and the declared function return
+        are incompatible pointer types.  Try explicit casting.!
+/* PTR_PTR_QUAL_RETURN 2
+413 2   The type of this return value and the declared function return are
+        incompatible pointer types; the types (qualified or unqualified)
+        pointed to contain incompatible type qualifiers.  Try explicit casting.!
+/* PTR_PTR_TOP_QUAL_RETURN 2
+414 2   The type of this return value and the declared function return are
+        incompatible pointer types; the type pointed to by the declared return
+        type must have all the qualifiers of the type pointed to by the return
+        value.  Try explicit casting.!
+/* PTR_PTR_ARRAY_RETURN 2
+415 2   The type of this return value and the declared function return are
+        incompatible pointer types; the size specifiers of any arrays pointed
+        to, must have the same value.  Try explicit casting.!
+/* PTR_PTR_FUN_RETURN 2
+416 2   The type of this return value and the declared function return are
+        incompatible pointer types; the number and types of parameters of
+        any functions pointed to, must have compatible types.  Try explicit casting.!
+/* NON_PTR_PTR_RETURN 2
+417 2   This non-pointer return value type may not be converted to the declared
+        pointer return type; the non-pointer must be zero (i.e. a null pointer).
+        Try explicit casting.!
+/* PTR_NON_PTR_RETURN 2
+418 2   This pointer return value type may not be converted to the declared
+        non-pointer return type.  Try explicit casting.!
+/* PTR_PTR_RELATIONAL 2
+419 2   Incompatible pointer types in comparison.  Try explicit casting.!
+/* PTR_PTR_QUAL_RELATIONAL 2
+420 2   Incompatible pointer types in comparison; the types (qualified or unqualified)
+        pointed to contain incompatible type qualifiers.  Try explicit casting.!
+/* PTR_PTR_ARRAY_RELATIONAL 2
+421 2   Incompatible pointer types in comparison; the size specifiers of any
+        arrays pointed to, must have the same value.  Try explicit casting.!
+/* PTR_PTR_FUN_RELATIONAL 2
+422 2   Incompatible pointer types in comparison; the number and types of
+        parameters of any functions pointed to, must have compatible types.
+        Try explicit casting.!
+/* NON_PTR_PTR_RELATIONAL 2
+423 2   Illegal comparison of a pointer type to a non-pointer type; the
+        non-pointer must be zero (i.e. a null pointer).  Try explicit casting.!
+/* PTR_PTR_CONDITIONAL 2
+424 2   Incompatible pointer types as second and third operands of conditional.
+        Try explicit casting.!
+/* PTR_PTR_QUAL_CONDITIONAL 2
+425 2   Incompatible pointer types as second and third operands of conditional;
+        the (qualified or unqualified) types pointed to contain incompatible
+        type qualifiers.  Try explicit casting.!
+/* PTR_PTR_ARRAY_CONDITIONAL 2
+426 2   Incompatible pointer types as second and third operands of conditional;
+        the size specifiers of any arrays pointed to, must have the same value.
+        Try explicit casting.!
+/* PTR_PTR_FUN_CONDITIONAL 2
+427 2   Incompatible pointer types as second and third operands of conditional;
+        the number and types of parameters of any functions pointed to, must
+        have compatible types.  Try explicit casting.!
+/* NON_PTR_PTR_CONDITIONAL 2
+428 2   Incompatible pointer and non-pointer type as second and third operands
+        of conditional; the non-pointer must be zero (i.e. a null pointer).
+        Try explicit casting.!
+/* PTR_PTR_SUBTRACTION 2
+429 2   Incompatible pointer types in subtraction.  Try explicit casting.!
+/* PTR_PTR_QUAL_SUBTRACTION 2
+430 2   Incompatible pointer types in subtraction; the types (qualified
+        or unqualified) pointed to contain incompatible type qualifiers.
+        Try explicit casting.!
+/* PTR_PTR_ARRAY_SUBTRACTION 2
+431 2   Incompatible pointer types in subtraction; the size specifiers of any
+        arrays pointed to, must have the same value.  Try explicit casting.!
+/* PTR_PTR_FUN_SUBTRACTION 2
+432 2   Incompatible pointer types in subtraction; the number and types of
+        parameters of any functions pointed to, must have compatible types.
+        Try explicit casting.!
+/* PTR_PTR_EXPRESSION 2
+433 2   Incompatible pointer types in expression.  Try explicit casting.!
+/* PTR_PTR_QUAL_EXPRESSION 2
+434 2   Incompatible pointer types in expression; the types (qualified
+        or unqualified) pointed to contain incompatible type qualifiers.
+        Try explicit casting.!
+/* PTR_PTR_ARRAY_EXPRESSION 2
+435 2   Incompatible pointer types in expression; the size specifiers of any
+        arrays pointed to, must have the same value.  Try explicit casting.!
+/* PTR_PTR_FUN_EXPRESSION 2
+436 2   Incompatible pointer types in expression; the number and types of
+        parameters of any functions pointed to, must have compatible types.
+        Try explicit casting.!
+/* NON_PTR_PTR_EXPRESSION 2
+437 2   Incompatible pointer and non-pointer types in expression; the non-pointer
+        must be zero (i.e. a null pointer).  Try explicit casting.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # End of pointer incompatibilities diagnostics
+/* # ---------------------------------------------------------------------
+/* 
+/* ILLEGAL_STRUCT_COND 3
+438 3   Incompatible class types as second and third operands of conditional.!
+/* BAD_CONSTANT_EXPR 2
+439 2   This constant expression does not evaluate to a constant that is in
+        the range of representable values for its type.!
+/* QUAL_VOID_PARAM 1
+440 1   A "void" parameter should not be "const" or "volatile" qualified.!
+/* OLD_STYLE_VOID_PARAM 2
+441 2   An old-style function parameter may not be of type "void"; assuming "int".!
+/* VOID_OBJECT 2
+442 2   An object may not be declared as type "void"; assuming "int".!
+/* VIRT_FUN_RETURN_TYPE 3
+443 3   Function "$1" differs only in return type from a virtual
+        function of the same name in the base class "$2".!
+/* DIRECT_INDIRECT_BASE 3
+444 3   Class "$1" has been specified as both a direct
+        and an indirect base class of class "$2".!
+/* ARRAY_OF_INCOMPLETE 2
+445 2   An array of incomplete type may not be specified.!
+/* REF_TO_REF 3
+446 3   A reference to a reference type may not be specified.!
+/* MPTR_TO_REF 3
+447 3   A pointer-to-member to a reference type may not be specified.!
+/* PTR_TO_REF 3
+448 3   A pointer to a reference type may not be specified.!
+/* ARRAY_OF_FUN 3
+449 3   An array of function type may not be specified.!
+/* FUN_RET_ARRAY 3
+450 3   A function returning array type may not be specified.!
+/* FUN_RET_FUN 3
+451 3   A function returning function type may not be specified.!
+/* BASE_DERIVED_PTR_CNV 2
+452 2   A pointer to a base class ($1) may not be converted to
+        a pointer to a derived class ($2) without an appropriate cast.!
+/* VBASE_DERIVED_PTR_CNV 2
+453 2   A pointer to a virtual base class ($1) may not be
+        converted to a pointer to a derived class ($2).!
+/* REF_CONSTANT_NEEDED 2
+454 2   Type of $1 is not compatible with the destination reference type.
+        An incompatible initializer for a reference is valid
+        only if the reference is to a const.!
+/* REF_INVALID_INIT 2
+455 2   Expression of $ is not an lvalue.  It is a valid initializer
+        for a reference only if the reference is to a "const".!
+/* REF_BOUND_MBR_FUN_INIT 3
+456 3   Expression of "$1" is a member function bound to an object.
+        A bound member function may not initialize a reference.!
+/* REF_RET_LOCAL 3
+457 3   A reference to a local name (automatic or passed-by-value argument)
+        cannot be returned.!
+/* PRIV_BASE_CLASS_REF 2
+458 2   This is an illegal reference to a base class ($1) from
+        a derived class ($2) due to insufficient access privileges.!
+/* AMBIG_BASE_DERIVED_PTR_CNV 3
+459 3   A pointer to an ambiguous base class ($1) may not
+        be converted to a pointer to an derived class ($2).!
+/* PRIV_BASE_DERIVED_PTR_CNV 2
+460 2   A pointer to an inaccessible base class ($1) may not
+        be converted to a pointer to a derived class ($2).!
+/* AMBIG_DERIVED_BASE_PTR_CNV 3
+461 3   A pointer to a derived class ($1) may not be converted
+        to a pointer to an ambiguous base class ($2).!
+/* PRIV_DERIVED_BASE_PTR_CNV 2
+462 2   A pointer to a derived class ($1) may not be converted
+        to a pointer to an inaccessible base class ($2).!
+/* TYPE_HIDES_NON_TYPE 1
+463 1   The type name "$" hides a previous non-type declaration of the same name
+        in an enclosing scope.  A Classic C compatibility switch is available
+        to alter this behavior; see your User's Guide for more information.!
+/* PRIV_BASE_MEMBER_REF 2
+464 2   "$1" is not accessible from the current scope.!
+/* PRIV_REF_VIA_OBJ 2
+465 2   "$1" is not accessible through an object of class "$2",
+        from the current scope.!
+/* NOT_BASE_CLASS_OF 2
+466 2   The class "$1" is not a base of the class "$2".!
+/* NO_MULTIPLE_INHERITANCE 1
+467 1   No multiple inheritance is disabled; this base class will be ignored.!
+/* AMBIGUOUS_USER_CONVERSION 3
+468 3   Ambiguous user conversions for this class object: "$1" and "$2".!
+/* AMBIGUOUS_OVERLOAD 3
+469 3   Ambiguous overload resolution: "$1" and "$2".!
+/* PRIV_ARRAY_CTOR 2
+470 2   Initialization of this array requires the default constructor
+        for class "$1", but the constructor is not accessible.!
+/* PRIV_CTOR 2
+471 2   The constructor "$1" is required here, but is not accessible.!
+/* PRIV_COPY_CTOR 2
+472 2   The copy constructor "$1" must be accessible here.!
+/* PRIV_DTOR 2
+473 2   The destructor "$1" is required here, but is not accessible.!
+/* PRIV_BASE 2
+474 2   "$1" may not be initialized explicitly, because it is
+        an inaccessible virtual base of the class being constructed.!
+/* 
+/* # ---------------------------------------------------------------------
+/* 
+/* UNOP_PARAM 3
+475 3   A unary operator member function must specify no parameters; a
+        unary operator non-member function must specify one parameter.!
+/* BINOP_PARAM 3
+476 3   A binary operator member function must specify one parameter; a
+        binary operator non-member function must specify two parameters.!
+/* MEMBER_OP_PARAM 3
+477 3   A unary operator member function must specify no parameters; a
+        binary operator member function must specify two parameters.!
+/* NON_MEMBER_OP_PARAM 3
+478 3   A unary operator non-member function must specify one parameter; a
+        binary operator non-member function must specify two parameters.!
+/* MEMBER_UNOP_PARAM 3
+479 3   A unary operator member function must specify no parameters.!
+/* MEMBER_BINOP_PARAM 3
+480 3   A binary operator member function must specify one parameter.!
+/* NON_MEMBER_UNOP_PARAM 3
+481 3   A unary operator non-member function must specify one parameter.!
+/* NON_MEMBER_BINOP_PARAM 3
+482 3   A binary operator non-member function must specify two parameters.!
+/* NON_STATIC_OP 3
+483 3   This operator function must be declared as a non-static member function
+        or as non-member function.!
+/* NON_STATIC_MEMBER_OP 3
+484 3   This operator function must be declared as a non-static member function.!
+/* MEMBER_INCDEC_OP_PARAM 3
+485 3   An increment/decrement operator member function may specify no
+        parameters, or one parameter of type "int".!
+/* INCDEC_OP_PARAM 3
+486 3   An increment/decrement operator non-member function must specify a
+        first parameter, and optionally a second parameter of type "int".!
+/* COPY_CTOR_PARAM 3
+487 3   A copy constructor for a class X may not be declared with a parameter
+        of class type X, only a reference to class type X.!
+/* NO_VFTP 4
+488 4   Cannot find virtual function table pointer for "$1".!
+/* OVERLOAD_NON_FUN 2
+489 2   The "overload" keyword may only be applied to function types.!
+/* NO_MEMBER_DCL_SPEC 1
+490 1   No declaration specifiers (assuming "int"); declaration specifiers for
+        a member declaration may be entirely omitted only for member functions.!
+/* ZERO_MEMBER_SIZE 2
+491 2   This member is of unknown size (incomplete type).!
+/* 
+/* # ---------------------------------------------------------------------
+/* # Reference incompatibilities
+/* # ---------------------------------------------------------------------
+/* 
+/* REF_REF_CAST 1
+492 1   Incompatible types in cast to reference.  The operand is converted to a
+        temporary of the type of the reference.!
+/* REF_REF_QUAL_CAST 1
+493 1   Incompatible types in cast to reference; the types contain incompatible type
+        qualifiers.  The operand is converted to a temporary of the type of the
+        reference.!
+/* REF_REF_TOP_QUAL_CAST 2
+494 2   Incompatible type qualifiers in cast to reference; the type referenced by the
+        destination must have all the qualifiers of the type of the source operand.!
+/* REF_REF_ARRAY_CAST 1
+495 1   Incompatible types in cast to reference; the size specifiers of any
+        arrays referenced, must have the same value.  The operand is converted
+        to a temporary of the type of the reference.!
+/* REF_REF_FUN_CAST 1
+496 1   Incompatible types in cast to reference; the number and types of parameters
+        of any functions referenced, must have compatible types.  The operand is
+        converted to a temporary of the type of the reference.!
+/* NON_REF_REF_CAST 3
+497 3   The operand of cast is not an lvalue.  An lvalue is required when the type of
+        the cast is a reference type.!
+/* REF_REF_INITIAL 1
+498 1   Incompatible types in initialization of reference.  This initializer is
+        converted to a temporary of the type of the reference being initialized.!
+/* REF_REF_QUAL_INITIAL 1
+499 1   Incompatible types in initialization of reference; the types contain
+        incompatible type qualifiers.  This initializer is converted to a
+        temporary of the type of the reference being initialized.!
+/* REF_REF_TOP_QUAL_INITIAL 2
+500 2   Incompatible type qualifiers in initialization of reference; the type
+        referenced by the declared variable must have all the qualifiers of the
+        initializer.!
+/* REF_REF_ARRAY_INITIAL 1
+501 1   Incompatible types in initialization of reference; the size specifiers
+        of any arrays referenced, must have the same value.  This initializer is
+        converted to a temporary of the type of the reference being initialized.!
+/* REF_REF_FUN_INITIAL 1
+502 1   Incompatible types in initialization of reference; the number and types of
+        parameters of any functions referenced, must have compatible types.  This
+        initializer is converted to a temporary of the type of the reference being
+        initialized.!
+/* REF_REF_ARGUMENT 1
+503 1   The types of this argument and the corresponding reference parameter are
+        incompatible.  The argument is converted to a temporary of the type
+        referenced by the parameter.!
+/* REF_REF_QUAL_ARGUMENT 1
+504 1   The types of this argument and the corresponding reference parameter are
+        incompatible; the types contain incompatible type qualifiers.  The argument
+        is converted to a temporary of the type referenced by the parameter.!
+/* REF_REF_TOP_QUAL_ARGUMENT 2
+505 2   The types of this argument and the corresponding reference parameter are
+        incompatible; the type referenced by the parameter must have all the
+        qualifiers of the type of the argument.!
+/* REF_REF_ARRAY_ARGUMENT 1
+506 1   The types of this argument and the corresponding reference parameter are
+        incompatible; the size specifiers of any arrays referenced, must have the
+        same value.  The argument is converted to a temporary of the type referenced
+        by the parameter.!
+/* REF_REF_FUN_ARGUMENT 1
+507 1   The types of this argument and the corresponding reference parameter are
+        incompatible; the parameters of any functions referenced must have compatible
+        types.  The argument is converted to a temporary of the type referenced by
+        the parameter.!
+/* REF_REF_RETURN 3
+508 3   The type of this return value is incompatible with the reference type
+        declared for the function return.!
+/* REF_REF_QUAL_RETURN 3
+509 3   The type of this return value is incompatible with the type referenced by
+        the declared function return; the types contain incompatible type qualifiers.!
+/* REF_REF_TOP_QUAL_RETURN 2
+510 2   The types of this return value and the declared function return are
+        incompatible; the type referenced by the declared return type must
+        have all the qualifiers of the type of the return value.!
+/* REF_REF_ARRAY_RETURN 3
+511 3   The type of this return value is incompatible with the type referenced by the
+        declared function return; the size specifiers of any arrays referenced, must
+        have the same value.!
+/* REF_REF_FUN_RETURN 2
+512 2   The type of this return value is incompatible with the type referenced by the
+        declared function return; the number and types of parameters of any functions
+        referenced, must have compatible types.!
+/* NON_REF_REF_RETURN 3
+513 3   The return expression is not an lvalue.  An lvalue is required when the
+        return type is a reference type.!
+/* 
+/* # ---------------------------------------------------------------------
+/* # End of pointer and reference incompatibilities diagnostics
+/* # ---------------------------------------------------------------------
+/* 
+/* VOID_CONVERSION 2
+514 2   A conversion to type "void" is not allowed.!
+/* DFTGEN_CTOR_CLASS_INACCESS 2
+515 2   In generating the default constructor for class "$2",
+        the base class constructor "$1" is required, but is not accessible.!
+/* DFTGEN_CTOR_MEMBER_INACCESS 2
+516 2   In generating the default constructor for this class,
+        the constructor "$1" for member "$2" is required, but is not accessible.!
+/* DFT_DTOR_CLASS_INACCESS 2
+517 2   Destructor "$1" exists, but is not accessible for the destruction of base
+        class "$2".!
+/* DFT_DTOR_MEMBER_INACCESS 2
+518 2   Destructor "$1" exists, but is not accessible for the destruction of member
+        "$2".!
+/* DFT_COPY_CLASS_INACCESS 2
+519 2   In generating the copy constructor for class "$2",
+        the copy constructor "$1" exists,
+        but is not accessible for copying the base class.!
+/* DFT_COPY_MEMBER_INACCESS 2
+520 2   In generating a copy constructor,
+        the copy constructor "$1" exists, but is not accessible for copying member "$2".!
+/* DFT_ASSIGN_CLASS_INACCESS 2
+521 2   In generating the assignment operator for class "$2",
+        the assignment operator "$1" exists,
+        but is not accessible for the assignment of the base class.!
+/* DFT_ASSIGN_MEMBER_INACCESS 2
+522 2   In generating an assignment operator,
+        the assignment operator "$1" exists, but is not accessible for the assignment of
+        member "$2".!
+/* DFT_ASSIGN_SEMERR 2
+523 2   Cannot generate a default assignment operator for class "$1" because the
+        class has a "$2" member.!
+/* DFT_CTOR_CLASS_INACCESS 2
+524 2   Constructor "$1" exists, but is not accessible for the construction of base
+        class "$2".!
+/* DFT_CTOR_MEMBER_INACCESS 2
+525 2   Constructor "$1" exists, but is not accessible for the construction of member
+        "$2".!
+/* DFTGEN_CTOR_CLASS_ABSENT 2
+526 2   In generating the default constructor for class "$2",
+        the base class constructor "$1()" is required, but does not exist.!
+/* DFTGEN_CTOR_MEMBER_ABSENT 2
+527 2   In generating the default constructor for this class,
+        the constructor "$1()" for member "$2" is required, but does not exist.
+        One remedy for this error would be to define a constructor for
+        the present class.!
+/* DUP_DEFAULT_ARG 2
+528 2   A default argument for this parameter has already been given.!
+/* DEFAULT_ARG_PLACEMENT 2
+529 2   A default argument may only be specified for a parameter after the last
+        parameter without a default argument (or for the first parameter).!
+/* VIRT_FUN_INCOMPLETE_BASE 1
+530 1   Function "$1" is more complete than the virtual function
+        it overrides in the base class "$2".!
+/* VIRT_FUN_INCOMPLETE_DERIVED 0
+531 0   Function "$1" is less complete than the virtual function
+        it overrides in the base class "$2".!
+/* PURE_FUN_CALL 2
+532 2   This is an illegal call to a pure virtual function "$1".!
+/* AMBIG_VBC_VFO 2
+533 2   Ambiguous overriding of a virtual function in a virtual base class;
+        "$1" both override the same virtual base class virtual function "$2".!
+/* NO_DCL_SPEC 1
+534 1   No declaration specifiers (assuming "int"); declaration specifiers for
+        a declaration may be entirely omitted only for function declarations.!
+/* NO_MEMBER_DCL_SPEC_ANSI_C 1
+535 1   No declaration specifiers (assuming "int"); declaration specifiers for
+        a member declaration may not be omitted.!
+/* NO_DCL_SPEC_ANSI_C 1
+536 1   No declaration specifiers (assuming "int"); declaration specifiers for
+        a declaration may be entirely omitted only for function definitions.!
+/* ABSTRACT_CLASS_CAST 3
+537 3   "$1" is an abstract class (it has/inherits a pure virtual function)
+        and may not be specified as the type of an explicit cast.!
+/* UNDEF_CLASS_CAST 3
+538 3   "$1" is an undefined class and may not be specified as the type of an
+        explicit cast.!
+/* FUN_RET_UNDEF_CLASS 2
+539 2   The class return type "$1" for this function definition of "$2"
+        has not yet been defined.!
+/* 
+/* # ---------------------------------------------------------------------
+/* 
+/* UNDEF_IDENTIFIER 2
+540 2   Undefined identifier "$".!
+/* 
+/* TYPELESS_SYM_NODE 1
+541 1   Type-less sym-node encountered; id $1, "$2".!
+/* 
+/* NESTED_FUN_REF_AUTO 2
+542 2   A nested function (i.e. a member function defined within a local class) may
+        not reference automatic data an enclosing local scope.!
+/* 
+/* MEM_FUN_REDCL 2
+543 2   A member function may not be redeclared without being defined.!
+/* 
+/* STATIC_DATA_MEM_REDCL 2
+544 2   A static data member may not be redeclared without being initialized.!
+/* 
+/* STATIC_DATA_MEM_REDEF 2
+545 2   This static data member "$" has already been initialized.!
+/* 
+/* DATA_MEM_REDCL 2
+546 2   Data members may not be redeclared (except to initialize static data members).!
+/* 
+/* NO_COMMA_BEFORE_ELLIPSIS 2
+547 2   This parameter list is missing a comma before the ellipsis.!
+/* 
+/* LOCAL_STATIC_DATA_MEM 2
+548 2   Local classes may not have static data members.!
+/* 
+/* INIT_DATA_MEM 2
+549 2   Static members must be defined/initialized at global scope.!
+/* 
+/* PRIV_TYPE_NAME 2
+550 2   This nested type "$" is inaccessible.!
+/* 
+/* PRIV_CLASS_NAME 2
+551 2   This nested class "$" is inaccessible.!
+/* 
+/* DEFAULT_ARG_USES_PARAM 2
+552 2   A formal argument "$" of a function may not be used in a default argument.!
+/* 
+/* DEFAULT_ARG_USES_MEM 2
+553 2   A non-static data member "$" may not be used in a default argument
+        expression except through an object.!
+/* 
+/* BAD_TYPE_REF 3
+554 3   This identifier "$" was previously declared as a type
+        and may not be used in this context.!
+/* 
+/* BAD_LABEL_REF 3
+555 3   This identifier "$" was previously declared as a label
+        and may not be used in this context.!
+/* 
+/* GLOBAL_ANON_UNION 2
+556 2   A global anonymous union must be declared as "static".!
+/* 
+/* UNINITIALIZED_REFERENCE 2
+557 2   A reference must be initialized.!
+/* 
+/* INCOMPAT_INT_ENUM 2
+558 2   Incompatible conversion of an integral type to an enumeration type "$".!
+/* 
+/* INCOMPAT_ENUM_ENUM 2
+559 2   Incompatible enumeration type conversion; "$1" to "$2".!
+/* 
+/* LOOK_AHEAD_LEVEL 4
+560 4   Parser exceeded look-ahead nesting level ($); simplify ambiguous construct.!
+/* 
+/* LOOK_AHEAD_SCOPE_LEVEL 1
+561 1   Parser exceeded look-ahead scope nesting level ($);
+        simplify ambiguous construct.!
+/* 
+/* DUP_FUN_DEF 2
+562 2   The function "$1" has been previously defined on line $2.!
+/* 
+/* NON_STATIC_MEM_REF 3
+563 3   A non-static member "$" must be referenced through an object.!
+/* 
+/* THIS_REF 3
+564 3   The "this" pointer may only be referenced within a non-static member function.!
+/* 
+/* STATIC_MEM_DEF_STORAGE 3
+565 3   A member definition may not be specified as "static" or "extern".!
+/* 
+/* TOO_MANY_CHAR_ARRAY_ANSIC 2
+566 2   This string is too long (by one character, i.e. the implicit terminating null
+        character) for the array of of characters being initialized; legal in ANSI-C.!
+/* 
+/* DEF_TAG_IN_RETURN_TYPE 2
+567 2   A tag may not be defined in a function return type; legal in ANSI-C.!
+/* 
+/* NOT_MEMBER_PTR 2
+568 2   The right operand of ".*" or "->*" is not pointer-to-member as required.!
+/* 
+/* DEFAULT_ARG_USES_THIS 2
+569 2   The implicit "this" parameter may not be used in a default argument.!
+/* 
+/* DEFAULT_ARG_USES_LOCAL 2
+570 2   A local variable "$" may not be used in a default argument.!
+/* 
+/* CALL_MAIN 2
+571 2   The function "main" may not be called from within a program.!
+/* 
+/* OVERLOAD_MAIN 2
+572 2   The function "main" may not be overloaded.!
+/* 
+/* STATIC_MAIN 2
+573 2   The function "main" may not be declared as "static" or "inline".!
+/* 
+/* ADDR_OF_MAIN 2
+574 2   The address of function "main" may not be taken.!
+/* 
+/* CONST_FUN_DCL 2
+575 2   Only non-static member functions may be declared as "const".!
+/* 
+/* CALL_CONST_THRU_NON_CONST 2
+576 2   A non-const function may not be called through a const object.!
+/* 
+/* CALL_VOL_THRU_NON_VOL 2
+577 2   A non-volatile function may not be called through a volatile object.!
+/* 
+/* VOID_ARRAY 2
+578 2   An array may not be declared as type "void"; assuming "int []".!
+/* 
+/* VOID_REFERENCE 2
+579 2   An reference may not be declared as type "void"; assuming "int &".!
+/* 
+/* NO_ASM 1
+580 1   The "asm" construct is not supported; ignored.!
+/* 
+/* MAIN_RET_VAL 1
+581 1   The return type of "main" should be "int".!
+/* 
+/* OPERATOR_NON_CLASS_PARAM 2
+582 2   A non-member operator function must specify at least one parameter of class
+        type or reference to class type.!
+/* 
+/* OLD_STYLE_FUN 1
+583 1   Old-style function definitions are an anachronism in C++; old-style functions
+        with external linkage will implicitly be declared with extern "C" linkage.!
+/* 
+/* NESTED_FUN 2
+584 2   Sorry; nested functions (i.e. member functions within a
+        local class) are not supported in this release of LPI-C++.!
+/* 
+/* ANON_UNION_STORAGE 2
+585 2   An anonoymous union may only have the storaage class "static" (for
+        a member or local declaration) or "auto" (for a local declaration).!
+/* 
+/* ANON_UNION_REGISTER 1
+586 1   Warning; ignoring "register" for local anonymous union declaration.!
+/* 
+/* ANON_UNION_SPEC 2
+587 2   Type-qualifiers and function specifiers may not be applied to anonymous unions.!
+/* 
+/* RET_TAG_DEF 2
+588 2   A tag may not be defined in the (base) return type of a function declaration.!
+/* 
+/* HIDDEN_EXTERN_LINKAGE_REDCL 1
+589 1   The name "$" was previously declared (in a non-visible scope) with
+        external linkage, and a type incompatible with this declaration.!
+/* 
+/* HIDDEN_LINKAGE_KIND_CONFLICT 1
+590 1   The name "$" was previously declared (in a non-visible scope)
+        with a conflicting external linkage specifier.!
+/* 
+/* HIDDEN_LINKAGE_CONFLICT 1
+591 1   The name "$" was previously declared with external linkage (in a non-visible
+        scope), and is thus in conflict with this internal linkage declaration; will
+        assume that all such declarations are intended to refer to the same internal
+        linkage entity.!
+/* 
+/* MULTIPLE_C_LINKAGE_OVERLOAD 2
+592 2   This "C" linkage name "$1" was previously declared with "C" linkage on line
+        $2 with a type which is incompatible with the type of this declaration.  At
+        most, one of a set of overloaded functions can be specified with "C" linkage.!
+/* 
+/* TAG_STORAGE_CLASS 2
+593 2   A storage class specifier may not be specified after a tag keyword;
+        the "extern" specifier is allowed in this context as an extension.!
+/* 
+/* BAD_QUAL_TYPE_NAME 2
+594 2   This type-name was qualified with a class name in which it was not declared;
+        use "$".!
+/* 
+/* NONVIS_TYPE 1
+595 1   This nested type name "$1" is not visible in this scope,
+        use the qualified name "$2".!
+/* 
+/* DUP_NONVIS_TYPE 2
+596 2   This name "$1" is not visible as a type name and is defined as a type within
+        (at least) two classes, "$2" and "3".!
+/* 
+/* ARRAY_OF_REF 3
+597 3   An array of reference type may not be specified.!
+/* 
+/* NO_CTOR_FOR_CONST_CLASS 2
+598 2   This class "$" contains a non-static "const" member and must
+        declare a constructor.!
+/* 
+/* AMBIGUOUS_OVERLOAD_BUILTIN 3
+599 3   Ambiguous overload resolution: "$1" and built-in "$2".!
+/* 
+/* TYPE_NON_TYPE_REDCL 2
+600 2   This name "$1" was previously declared on line $2 as a type.!
+/* 
+/* ARROW_OP_RET_TYPE 2
+601 2   The return type of operator-> must be a pointer to a class,
+        a reference to a class, or a class.!
+/* 
+/* REDCL_OLD_FUN 2
+602 2   This old-style function "$1" was previously declared on line $2 with an
+        incompatible type; the type of each prototype parameter must be compatible
+        with the promoted type of the corresponding old-style parameter.!
+/* 
+/* REDCL_NEW_FUN 2
+603 2   This function "$1" was previously declared on line $2 as an old-style function
+        with an incompatible type; the type of each prototype parameter must be
+        compatible with the promoted type of the corresponding old-style parameter.!
+/* 
+/* SIMPLE_REDCL_OLD_FUN 2
+604 2   This old-style function "$1" was previously declared on line $2 with an
+        incompatible type.!
+/* 
+/* SIMPLE_REDCL_NEW_FUN 2
+605 2   This function "$1" was previously declared on line $2 as an old-style function
+        with an incompatible type.!
+/* 
+/* SIMPLE_REDCL_FUN 2
+606 2   This function "$1" has been previously declared on line $2
+        with a type which is not compatible with the type of this declaration.!
+/* 
+/* MEMBER_REDCL 2
+607 2   This member "$1" has been previously declared on line $2 in this class "$3".!
+/* 
+/* MEMBER_REDCL_UNNAMED 2
+608 2   This member "$1" has been previously declared on line $2 in this class.!
+/* 
+/* EXTRA_SEMI_COLON 1
+609 1   Extraneous semi-colon; ignored.!
+/* 
+/* TYPE_DESTRUCTOR_DECLARATOR 3
+610 3   "~$1" is not a valid declarator name.!
+/* 
+/* INHERIT_DESTRUCTOR 2
+611 2   Destructors are not inherited.!
+/* 
+/* CAST_NOT_AN_LVALUE 2
+612 2   An lvalue is required here.  Use a cast to reference type ($1) instead.!
+/* 
+/* TOUGH_DESTRUCTION 3
+613 3   Sorry, a temporary variable is created here to initialize a reference, but
+        the compiler is unable to call the temporary's destructor at the proper time.!
+/* 
+/* OBSOLETE_INC_DEC 2
+614 2   "$1" is defined, but without the extra formal argument
+        required when overloading the postfix operator ++ or --.!
+/* 
+/* REDEF_MEMBER 2
+615 2   This member function name "$1" has been previously declared on line $2 as
+        a non-function.!
+/* 
+/* QUAL_MEMBER_FUN_TYPE 3
+616 3   This name "$1" was declared as a member function of "$2" on line $3,
+        but with a type which is incompatible with the type of this declaration.!
+/* 
+/* UNDEF_QUAL_CTOR_NAME 3
+617 3   No constructors were declared for "$1".!
+/* 
+/* UNDEF_QUAL_DTOR_NAME 3
+618 3   No destructors were declared for "$1".!
+/* 
+/* UNDEF_QUAL_CNV_NAME 3
+619 3   No conversion functions were declared for "$1".!
+/* 
+/* INCOMPAT_FUN_NON_FUN_REDCL 2
+620 2   This non-function name "$1" has been previously declared on line $2
+        as a function.!
+/* 
+/* INCOMPAT_NON_FUN_FUN_REDCL 2
+621 2   This function name "$1" has been previously declared on line $2
+        as a non-function.!
+/* 
+/* PROTO_TAG_DCL 1
+622 1   This tag name "$" is being declared at prototype scope; this is a dubious
+        construct since the tag is visable only within this prototype scope, and this
+        function won't be callable with the correct parameter type.!
+/* 
+/* PROTO_UNNAMED_TAG_DCL 2
+623 2   An unnamed tag name should not be declared at prototype scope.!
+/* 
+/* ENUM_DCL_TYPEDEF 1
+624 1   This enum "$" is declared with an extraneous "typedef" keyword.!
+/* 
+/* CLASS_DCL_TYPEDEF 1
+625 1   This class "$" is declared with an extraneous "typedef" keyword.!
+/* 
+/* SWITCH_BYPASS_NEEDS_INIT 3
+626 3   Entering switch at this case bypasses the non-trivial initializing
+        statement for "$1" on line $2.!
+/* 
+/* BYPASS_NEEDS_INIT 3
+627 3   A jump to this label bypasses the non-trivial initializing statement
+        for "$1" on line $2.!
+/* 
+/* UNION_DCL_SPEC 2
+628 2   A union declaration may not be decorated with any declaration specifiers,
+        except for global anonymous unions which must be declared as "static".!
+/* 
+/* OPTIONS_HELP_MESSAGE 0
+629 0   LPI-C++ -- Major Command-Line Options
+        --------------------------------------------------------------------------
+        -cfront2.1    = Cfront 2.1 compatibility mode
+        -cfront2.0    = Cfront 2.0 compatibility mode
+        -cfront1.2    = Cfront 1.2 compatibility mode
+        -ansic        = ANSI C mode
+        -classicc     = Classic C mode (implies -classiccpp)
+        -classiccpp   = Classic C preprocessor mode
+        -cppx         = Enable common preprocessor extensions
+        -cpp          = Run only the preprocessor (to standard output)
+        -lint         = Turn on extra "lint-like" semantic checking
+        -nowarn       = Supress all compiler warnings
+        -vnoobj       = Do not produce object file if any "violations" are found
+        -noobj        = Do not produce object file
+        --------------------------------------------------------------------------
+        -ipath        = Specify include search path (colon separated list)
+        -ipathc       = Specify C-header include search path (colon separated list)
+        -include file = Include specified file before compilation
+        -define name  = Define a specified preprocessor name
+        -undef        = Undefine a specified preprocessor name
+        -sysdef       = Define standard system preprocessor macros
+        -sys          = Favor the standard system headers (use this in linking too)
+        -oldstream    = Use Cfront 1.2 stream.h (use this in linking too)
+        --------------------------------------------------------------------------
+        -files        = Run preprocessor; print list of files included
+        -macros       = Run preprocessor; print list of macros defined
+        -predef       = Print list of pre-define macros
+        --------------------------------------------------------------------------
+        -deb          = Produce debugging data for CodeWatch (in file.stb)
+        -opt          = Turn on all optimization (default)
+        -noopt        = Turn off all optimization
+        -imath        = Inline common standard C math.h functions
+        -istring      = Inline common standard C string.h functions
+        --------------------------------------------------------------------------
+        -stat         = Print compiler statistics
+        -exp          = Generate an expanded listing file
+        -map          = Generate symbol table map in listing file
+        -list file    = Generate listing in specified file
+        -nolist       = Do not include listing of file in listing file
+        -noincludes   = Do not include listing of include files in listing file
+        --------------------------------------------------------------------------!
+/* 
+/* MISSING_SOURCE_FILE_NAME 0
+630 0   Missing source file name.!
+/* 
+/* UNDEF_LABEL 3
+631 3   Undefined label "$".!
+/* 
+/* DEF_DUMMY_MEMBER 2
+632 2   The name "$1" was not explicitly declared as a member of "$2".!
+/* 

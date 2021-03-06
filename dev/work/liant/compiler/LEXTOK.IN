@@ -1,0 +1,63 @@
+/* C++ CXX_LEXER_TOKENS_IN - Declaration of lexer token data */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.25.90  DGM  003  Preprocessor include file name changes.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  11.20.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+/* %include CXX_PP_TOKEN_POD_DEF_IN;  */
+
+/* ---------------------------------------------------------------------
+/* Declarations & data
+/* ------------------------------------------------------------------- */
+
+/* Token data */
+
+declare
+
+MATCHED_TOKEN		type (TOKEN_POD) based (MATCHED_TOKEN_PTR),
+CURRENT_TOKEN		type (TOKEN_POD) based (CURRENT_TOKEN_PTR),
+PEEK_TOKEN		type (TOKEN_POD) based (PEEK_TOKEN_PTR);
+
+declare
+
+MATCHED_TOKEN_PTR	type (POINTER_T) initial (null())
+			external (X_MATCHED_TOKEN_PTR),
+
+CURRENT_TOKEN_PTR	type (POINTER_T) initial (null())
+			external (X_CURRENT_TOKEN_PTR),
+
+PEEK_TOKEN_PTR		type (POINTER_T) initial (null())
+			external (X_PEEK_TOKEN_PTR);
+
+/* Saved token context data */
+
+%replace MAX_TOKEN_CONTEXT	by 16;
+
+declare
+
+TOKEN_CONTEXT_INDEX	type (SHORT_T) initial (0)
+			external (X_TOKEN_CONTEXT_INDEX),
+
+TOKEN_CONTEXT		(MAX_TOKEN_CONTEXT) type (POINTER_T)
+			initial ((MAX_TOKEN_CONTEXT) (null()))
+			external (X_TOKEN_CONTEXT);
+

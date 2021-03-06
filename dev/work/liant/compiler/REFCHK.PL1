@@ -1,0 +1,538 @@
+/* C++ refchk.pl1 - Check a reference type used in initialization context */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.12.92  PKT  031	Fixed for initializer that's reference to
+ *			function.  Also for initializing expression
+ *			that has too few type qualifiers.  Also for
+ *			implied temporary object of unknown size.
+ *			Also prevent spurious diagnostics when
+ *			initializing expression is qualified and was
+ *			causing creation of qualified-type temp.
+ *  06.04.92  PKT  030	Fixed -ztemp so that temp bound to reference
+ *			parameter doesn't get early destruction.
+ *  04.30.92  PKT  029	Now resolves overloaded initializer.
+ *  04.30.92  PKT  029	Changed to call RESTORE_FUNCTION_VALUE.
+ *  04.03.92  PKT  029	Fixed for member reference expression.
+ *  04.18.92  PKT  028	Merged 024->025 with 024->027.
+ *  03.13.92  PKT  027	Updated comments for parameter node change.
+ *  03.26.92  DGM  026  New value-node scheme.
+ *  03.30.92  DGM  025  New INCOMPATIBLE_REFERENCE_ERROR.
+ *  01.13.92  DGM  024  Fix in INIT_REF_CHECK for cbp022.cpp.
+ *  12.26.91  PKT  023  For cfront compatibility, allow cast of
+ *			object with nontrivial copy constructor to
+ *			reference type.
+ *  10.03.91  DGM  022  Handle "void &".
+ *  09.19.91  PKT  021  Support initializing reference to array.
+ *  07.30.91  TLF  020  Changed interface to NOTE_DESTRUCTOR.
+ *  06.12.91  PKT  019  Support for -cfrontX.Y.
+ *			Bug fix needed for -xcastl support.
+ *  06.05.91  PKT  018  Bug fix and update.
+ *  04.11.91  PKT  017  Fixes for references to functions.
+ *  03.08.91  PKT  016  Added support for references to functions.
+ *  12.17.90  PKT  015  Fixed so functional casts will work like casts.
+ *			Updated to call improved TRANSMUTE_WITH_TEMP,
+ *			and revised NOTE_DESTRUCTOR.
+ *  11.09.90  PKT  014  Updated for default arguments.
+ *  11.01.90  PKT  013  Fixed for initializing a base class reference
+ *			with a derived class non-lvalue.
+ *			Updated for strict INITIALIZE_OBJECT.
+ *  10.18.90  PKT  012  Fixed error message bug.
+ *  10.16.90  PKT  011  Follow-on to 010 changes.
+ *  09.28.90  PKT  010  Bug fixes; RETURN_REF_CHECK subsumed into
+ *			INIT_REF_CHECK.
+ *  09.25.90  DGM  009  Preprocessor include file name changes.
+ *  09.14.90  DGM  008  Changed include file names and VOP names.
+ *  09.13.90  DGM  007  Changed xxx_SC names to xxx_ST.
+ *  09.06.90  TLF  006  Updated to give correct semantic warning for
+ *                      non-const reference being initialized by a
+ *                      constant.
+ *  09.05.90  PKT  005  Updated.
+ *  08.31.90  TLF  004  Modified to handle references to classes.
+ *  08.21.90  TLF  003  Bug fix for left a ref, and right not a ref.
+ *  08.08.90  DGM  002  New type-node.
+ *  08.07.90  PKT  001  Added support for destruction of temp created
+ *			in connection with reference parameter.
+ *  06/15/90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.12.92 031 REFCHK');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_ADD_XREF_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_PP_TOKEN_POD_IN;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_INITIALIZE_STRING_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_OPERATOR_NAME_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_FOLD_VALUE_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_CONVERT_CLASS_POINTER_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_PROCESS_CONSTANT_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_INTEGRAL_PROMOTION_PKG;
+%include CXX_EVALUATE_INTEGER_PKG;
+%include CXX_EVALUATE_POINTER_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_LOOKUP_BUILTIN_PKG;
+%include CXX_CHECK_ARGUMENT_LIST_PKG;
+%include CXX_EXPRESSION_COMPATIBILITY_PKG;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+
+/* ----------------------------------------------------------------------
+/* INIT_REF_CHECK
+/*
+/* Do semantic checks and actions for the initialization of a reference type
+/* object.  L_INF is the reference type being initialized.
+/* RIGHT is the id of the expression tree to which it is to be initialized.
+/* The id of the expression tree to be actually used in the initialization
+/* is returned by this procedure -- this is an expression having pointer type.
+/* This value node is paged in on return.
+/* LEFT is the id of the sym_node for the reference variable (NULL_NID in
+/* the context of return, cast, or argument).
+/*
+/* VOP indicates the context of the initialization.  INIT_REF_CHECK now
+/* handles return and cast contexts, as well as arguments and variables.
+/*
+/* If this routine is called to do semantic checks for an initializer,
+/* ARG_NUM is zero.  If a temporary is created which requires destruction,
+/* the destroying expression will be stuck onto the list for the current
+/* scope.  VICTIM is set to NULL_CXX_VID.
+/*
+/* If this routine is called to do semantic checks for an argument being
+/* passed to a subroutine, then ARG_NUM is the position of the argument
+/* in the call which is being checked.  If a temporary is created which
+/* requires destruction and SW_ZOMBIE_TEMP is false, VICTIM is set with
+/* the ID of the expression to destroy it; otherwise VICTIM is set to 
+/* NULL_CXX_VID.  For default arguments the processing is similar, 
+/* however ARG_NUM is 0.
+/*
+/* If this routine is called to do semantic checks for a cast or return,
+/* ARG_NUM is zero.  VICTIM is set to NULL_CXX_VID.  A temporary is not
+/* created.  If the RIGHT is not an lvalue then an error will be
+/* reported.  However, at some future time it might seem convenient to
+/* create a VICTIM.
+/*
+/* Note that INIT_REF_CHECK is interchangeable
+/* with GENERAL_CONVERT_VALUE for the cases that they handle in common,
+/* except that INIT_REF_CHECK sets the type of its returned value
+/* node to the pointer type which represents the reference type.
+/* -------------------------------------------------------------------- */
+
+INIT_REF_CHECK: procedure (L_INF, RIGHT, VOP, ARG_NUM, LEFT, VICTIM)
+		  returns   (type (CXX_VID_T))
+		  external (X_INIT_REF_CHECK);
+
+	declare
+		L_INF		type (TYPE_INFO_T),
+		RIGHT		type (CXX_VID_T),
+		VOP		type (SHORT_T),
+		ARG_NUM		type (SHORT_T),
+		LEFT		type (NID_T),
+		VICTIM		type (CXX_VID_T);
+	declare
+		L_INFO		type (TYPE_INFO_T),
+		R_INFO		type (TYPE_INFO_T),
+		LRT		type (TYPE_DATA_T),
+		T_VID   	type (CXX_VID_T),
+		ERRCODE 	type (SHORT_T);
+
+	declare
+		R_VOP		type (SHORT_T),
+		LEFT_BT		type (SHORT_T),
+		T_TYPE		type (NID_T),
+		T_CLASS		type (SHORT_T),
+		T_SZ		type (LONG_T),
+		T_SU		type (SHORT_T),
+		T_BDRY		type (SHORT_T),
+		TEMP_DECLARATION
+			 	type (CXX_VID_T),
+		SAV_LEFT	type (CXX_VID_T),  /* Expr to init temp */
+		T_INFO		type (TYPE_INFO_T),
+		CVRT_FLAG	type (BOOL_T),
+		USING_DERIVED_TEMP
+				type (BOOL_T),
+		SCOPE_P		type (POINTER_T),
+		THIS_INSERT     character (30) varying,
+		R_TYPE_CODE	type (SHORT_T),
+		R_LVALUE	type (BOOL_T),
+		SP		type (POINTER_T);
+
+	T_VID = RIGHT;
+	VICTIM = NULL_CXX_VID;
+ 
+	L_INFO = L_INF;		     /* protect the param from modification */
+	CXX_VALUE_NODE_PTR = RIGHT;
+	call GET_VALUE_TYPE (R_INFO);
+	R_TYPE_CODE = rank (R_INFO.TYPE_CODE);
+
+	/*
+	/* Resolve overloading here when result is reference
+	/* to function.  That's the only case which can succeed
+	/* and it is relevant if and only if INIT_REF_CHECK
+	/* does not call back to GENERAL_CONVERT_VALUE.
+	/**/
+	call GET_TOP_LEVEL_TYPE_INFO (L_INFO, 1, LRT);
+	if rank (LRT.CODE) = FUNCTION_DT then do;
+		if ^CONVERT_OVERLOADED (L_INFO, T_VID, VOP) then do;
+			/* Suppress further diagnostics. */
+			call COUNT_DOWN_VALUE (T_VID);
+			T_VID = ALLOC_CXX_VALUE_NODE (UNINITIALIZED_VO);
+			R_INFO = L_INFO;
+			call STRIP_TOP_TYPE (R_INFO, TRUE);
+			R_INFO.NOT_AN_LVALUE = TRUE;
+			call SET_VALUE_TYPE (R_INFO);
+			CXX_VALUE_NODE.NULARY = TRUE;
+		end;
+		else do;
+			CXX_VALUE_NODE_PTR = T_VID;
+			call GET_VALUE_TYPE (R_INFO);
+		end;
+		R_TYPE_CODE = rank (R_INFO.TYPE_CODE);
+	end;
+
+	/*
+	/* If right value is a function, and it's a reference to
+	/* function that's being initialized, eliminate the fakery 
+	/* which by default converts it to a pointer to function.
+	/**/
+	if R_TYPE_CODE = POINTER_DT then do;
+		if   CXX_VALUE_NODE.FUNCTION_DESIGNATOR
+		   & rank (LRT.CODE) = FUNCTION_DT then do;
+			call RESTORE_FUNCTION_VALUE (T_VID, R_INFO);
+		end;
+		else if   CXX_VALUE_NODE.ARRAY_DESIGNATOR
+		        & rank (LRT.CODE) = ARRAY_DT then do;
+			/*
+			/* Here, we are initializing a reference to array
+			/* with an array, so we will undo the transformation
+			/* into a pointer to the first element.
+			/**/
+			call RESTORE_ARRAY_VALUE (T_VID, R_INFO);
+		end;
+		R_TYPE_CODE = rank (R_INFO.TYPE_CODE);
+	end;
+
+	/*
+	/* If right value is a member pointer, it might be a
+	/* "member reference", i.e. a qualified member name that
+	/* needs "this->" stuck onto it.
+	/**/
+	if R_TYPE_CODE = MEMBER_POINTER_DT then do;
+/*
+/*		call DETACH_COMMA (T_VID, V1, V2);
+/*		if CXX_VALUE_NODE.OP = MEMBER_REF_VO then do;
+/*			/*
+/*			/* Dereference a member reference, but defer
+/*			/* doing so for an overloaded member function.
+/*			/**/
+/*			call GET_TOP_LEVEL_TYPE_INFO
+/*			     (WORK_TYPE, 1, LRT);
+/*			if LRT.CODE ^= byte (FUNCTION_DT) then
+/*				T_VID = DEREFERENCE_MEMBER (T_VID, TRUE);
+/*		end;
+/*		call REATTACH_COMMA (T_VID, V1, V2);
+/**/
+		T_VID = GENERAL_VALUE_OF (T_VID, FALSE, TRUE);
+		call GET_VALUE_TYPE (R_INFO);
+		R_TYPE_CODE = rank (R_INFO.TYPE_CODE);
+	end;
+
+	if   ^R_INFO.NOT_AN_LVALUE
+	   | R_TYPE_CODE = REFERENCE_DT then
+		R_LVALUE = TRUE;
+	else if   IS_AGGREGATE_TAG_TYPE (R_TYPE_CODE)
+		& IS_CAST_VOP (VOP)
+		& SW_X_CAST_OBJECT_TO_REFERENCE
+		& SW_ZOMBIE_TEMP then do;
+		/*
+		/* For cfront compatibility, allow cast to a reference
+		/* of a type that has a nontrivial copy constructor,
+		/* even if it's a non-lvalue.
+		/**/
+		call GET_SYM_NODE_R (R_INFO.TOP_TYPE.TAG_SYMBOL, SP);
+		R_LVALUE = SP->SYM_NODE.NEEDS_COPY;
+		call RELEASE_SYM_NODE (R_INFO.TOP_TYPE.TAG_SYMBOL);
+		if R_LVALUE then do;
+			/* Fix up T_VID so its address can be taken. */
+			T_VID = TRANSMUTE_WITH_TEMP (T_VID, 
+						     VICTIM,
+						     FALSE, 
+						     AUTO_ST, 
+						     ADDR_VO);
+			if VICTIM ^= NULL_CXX_VID then
+				call COMPILER_ERROR (ERR_ASSERT_FAIL);
+			T_VID = COPY_VALUE (T_VID);
+			CXX_VALUE_NODE.NOT_AN_LVALUE = FALSE;
+		end;
+	end;
+	else
+		R_LVALUE = FALSE;
+
+	if R_LVALUE then do;
+		/*
+		/* Check for complete compatibility.  If compatible, 
+		/* then take the address of the RIGHT, and return it.
+		/* Also, filter it through CONVERT_TO_POINTER_VALUE which
+		/* will handle references to base classes correctly, and
+		/* will report any errors for situations in which a
+		/* temporary is not required.
+		/**/
+		if COMPATIBLE_INITIAL_REFERENCES (L_INFO, R_INFO, VOP) then do;
+			T_VID = GET_VALUE_AND_EXPAND_L (ADDR_VO, T_VID);
+			if (VOP = RETURN_VO) &
+			   (CXX_VALUE_NODE.LEFT_IS_NID) &
+			   (CXX_VALUE_NODE.LEFT_NID ^= NULL_NID) then do;
+				/*
+				/* If the variable being returned is
+				/* automatic or an input parameter, it is
+				/* invalid, because its value is unpredictable
+				/* once the procedure exits.
+				/*
+				/* Get the REF (symbol-node-id).
+				/**/
+				CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+				call SET_SYM_NODE_R (CXX_VALUE_NODE.LEFT_NID);
+				if SYM_NODE.STORAGE_CLASS = byte (AUTO_ST) then
+					call SEMANTIC_ERROR (ERR_REF_RET_LOCAL);
+			end;
+			T_VID = CONVERT_TO_POINTER_VALUE (T_VID, L_INFO, VOP);
+			call STRIP_TOP_TYPE (L_INFO, FALSE);
+			call ADD_POINTER_LEVEL (L_INFO);
+			call SET_VALUE_TYPE (L_INFO);
+			return (T_VID);
+		end;
+	end;
+
+	/*
+	/* At this point, PKT considered and rejected adding code to check for
+	/* a user conversion to a reference type.  Cfront and the ARM
+	/* don't do such a thing.  When there are user conversions 
+	/* involved with initializing a reference, cfront will always
+	/* make a temporary (though it won't always give the associated
+	/* warnings).
+	/**/
+
+	if ^R_LVALUE then do;
+		/* This will report error only for cast and return contexts. */
+		TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS;
+		call INCOMPATIBLE_REFERENCE_ERROR (VOP, L_INFO, R_INFO);
+	end;
+
+	/*
+	/* T_VID is the value to be converted.
+	/* R_INFO is its type.  Strip top REFERENCE level (if any) from R_INFO.
+	/**/
+
+	if R_TYPE_CODE = REFERENCE_DT then do;
+		call STRIP_TOP_TYPE (R_INFO, FALSE);
+		R_TYPE_CODE = rank (R_INFO.TYPE_CODE);
+	end;
+
+	if VOP = RETURN_VO | IS_CAST_VOP (VOP) then do;
+		/* Set it up with a null pointer. */
+		call COUNT_DOWN_VALUE (T_VID);
+		T_VID = INTEGER_VALUE_ZERO ();
+		call STRIP_TOP_TYPE (L_INFO, FALSE);
+		call ADD_POINTER_LEVEL (L_INFO);
+		T_VID = CONVERT_TO_POINTER_VALUE (T_VID, L_INFO, VOP);
+		return (T_VID);
+	end;
+
+	/*  The right (T_VID) is either a VALUE_VO of type that is not 
+	/*  completely compatible, or an expression of some type.
+	/*  Convert the right to the type of the left,
+	/*  assign the converted value to a compiler-generated temp
+	/*  of the type of the left, and then take the address
+	/*  of the temp.
+	/**/
+
+	call STRIP_TOP_TYPE (L_INFO, TRUE);  /* strip REFERENCE_DT */
+
+	/*  Check to see that the reference is a reference to const.
+	/*  If not, then issue a diagnostic.  Cfront doesn't diagnose
+	/*  this as of 2.1; strive for compatibility.
+	/**/
+	if ^(L_INFO.TOP_TYPE.CONST | SW_X_REFERENCE_TEMP) then do;
+		call SETUP_INSERT;
+		if R_INFO.NOT_AN_LVALUE then
+			ERRCODE = ERR_REF_INVALID_INIT;
+		else
+			ERRCODE = ERR_REF_CONSTANT_NEEDED;
+		call SEMANTIC_ERROR_I (ERRCODE, THIS_INSERT );
+		if L_INFO.TYPE_CODE = byte (VOID_BT) then
+			return (T_VID);
+	end;
+
+	if L_INFO.SIZE_UNITS = 0 | L_INFO.SIZE = 0 then do;
+		/*
+		/* Can't make a temp of unknown size, for the
+		/* reference to refer to.
+		/**/
+		call SETUP_INSERT;
+		call SEMANTIC_ERROR_II (ERR_REFERENCE_TEMP_SIZE,
+					TYPE_INFO_NAME (L_INFO),
+					THIS_INSERT);
+	end;
+
+	if LEFT ^= NULL_NID then do;
+		call SET_SYM_NODE_R (LEFT);	/* The symbol_node */
+		if (SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (GLOBAL_SCOPE)) |
+		    SYM_NODE.EXTERNAL_LINKAGE |
+		    SYM_NODE.INTERNAL_LINKAGE then
+			T_CLASS = STATIC_ST;
+		else	T_CLASS = AUTO_ST;
+	end;
+	else	T_CLASS = AUTO_ST;
+
+	/* T_CLASS now gives the storage class of the temp that must
+	/* be created.  Cfront 2.0 does not support initializing a static
+	/* reference, while the draft standard (90-0091) is plainly
+	/* inconsistent with supporting initializing a static reference
+	/* with an expression which requires a temp.
+	/* However Turbo and Zortech both do (with limitations).  
+	/* Zortech destroys the temp when the activation
+	/* returns in which it was initialized.  Turbo gets confused
+	/* if the expression is too tricky.
+	/*
+	/* PKT hopes that the standard eventually states the situation in
+	/* the way the cfront 2.0 error message does, so that this will
+	/* not be supported at all.
+	/**/
+
+	T_VID = GENERAL_CONVERT_VALUE (T_VID, L_INFO, VOP);
+	T_VID->CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+	call SET_VALUE_TYPE_QUALIFIERS (T_VID, NULL_TQ);
+	T_VID = TRANSMUTE_WITH_TEMP (T_VID, VICTIM, VOP ^= ARG_VO,
+				     T_CLASS, ADDR_VO);
+	T_VID = GET_VALUE_AND_EXPAND_L (IMPLICIT_ADDR_VO, T_VID);
+
+	if VOP ^= ARG_VO then do;
+		/* Don't let TRANSMUTE_WITH_TEMP and GET_TEMP_VALUE handle
+		/* non-args; treated as a compiler temp it could be
+		/* destroyed too soon.
+		/**/
+		if CURRENT_SCOPE_TYPE = PROTOTYPE_SCOPE then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		call GET_SCOPE_NODE (CURRENT_SCOPE, SCOPE_P);
+
+		call NOTE_DESTRUCTOR (SCOPE_P->SCOPE_NODE.DESTRUCTORS,
+				      VICTIM, FALSE, NULL_CXX_VID);
+		call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+		VICTIM = NULL_CXX_VID;
+	end;
+	else do;
+		/* ARG_VO, leave VICTIM so that temp associated with the ref
+		/* parameter can be destroyed soon as the function returns.
+		/**/
+	end;
+
+	return (T_VID);
+
+/* ---------------------------------------------------------------------
+ * SETUP_INSERT
+ * ------------------------------------------------------------------- */
+
+SETUP_INSERT: procedure
+	      internal;
+
+	if VOP = ARG_VO then do;
+		if ARG_NUM > 0 then
+			THIS_INSERT = 'argument number ' 
+				      || trim (char (ARG_NUM));
+		else
+			THIS_INSERT = 'argument';
+	end;
+	else if VOP = INITIAL_VO then
+		THIS_INSERT = 'initializer';
+	else if VOP = RETURN_VO then
+		THIS_INSERT = 'return expression';
+	else if IS_CAST_VOP (VOP) then
+		THIS_INSERT = 'operand';
+
+end SETUP_INSERT;
+
+/* ---------------------------------------------------------------------
+/* SET_VALUE_TYPE_QUALIFIERS
+/*
+/* Modifies the type of the given value node to have the specified
+/* qualifiers for its top type.  Calls COPY_VALUE as necessary.
+/* Does not support an actual change, if the value node has EXTRA_PTR_LEVEL.
+/* ------------------------------------------------------------------- */
+SET_VALUE_TYPE_QUALIFIERS: procedure (T_VID, NEW_QUALIFIERS);
+
+	declare
+		T_VID		type (CXX_VID_T),
+		NEW_QUALIFIERS	type (BYTE_BITS_T);
+
+	if T_VID->CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS = NEW_QUALIFIERS then
+		return;
+
+	if CXX_VALUE_NODE.EXTRA_PTR_LEVEL then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	T_VID = COPY_VALUE (T_VID);
+	T_VID->CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS = NEW_QUALIFIERS;
+	T_VID->CXX_VALUE_NODE.TYPE
+		= MODIFY_TYPE_LEVEL (T_VID->CXX_VALUE_NODE.TYPE,
+				     T_VID->CXX_VALUE_NODE.DERIVED_TYPE_SKIP,
+				     T_VID->CXX_VALUE_NODE.TOP_TYPE);
+
+end SET_VALUE_TYPE_QUALIFIERS;
+
+end INIT_REF_CHECK;

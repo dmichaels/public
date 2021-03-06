@@ -1,0 +1,1113 @@
+/* C++ clasiz.pl1 - Class sizing routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  05.29.92  DGM  020	Changed ABI_STYLE_UNNAMED_BIT_FIELDS
+ *			to SW_ABI_STYLE_BIT_FIELDS.
+ *  04.17.92  PKT  019	Fixed VBC_NODE.OFFSET.
+ *  03.26.92  DGM  018  New value-node scheme.
+ *  03.05.92  DGM  017  Changed ABI_STYLE_UNNAMED_BIT_FIELDS name
+ *			to CXX_ABI_STYLE_UNNAMED_BIT_FIELDS.
+ *  01.28.92  DGM  016  Fix in FINISH_VBC_LIST which showed up when
+ *			the paged version of the symbol table was used.
+ *  06.16.91  PKT  015  Bug fix.
+ *  01.11.91  DGM  014  Updated for nested anonymous unions.
+ *  12.12.90  DGM  013  Added support for SYM_NODE.VIRTUAL_BASE_CLASSES
+ *			(linked list of vbc-nodes).
+ *  11.06.90  DGM  012  Fixed bug in ALLOCATE_BASE_CLASSES which caused
+ *			the "this" pointer to be adjusted incorrectly
+ *			for the following sort of virtual function call:
+ *				class A { };
+ *				class B { virtual f (); };
+ *				class C : A, B { virtual f (); };
+ *				main () { C c; B *bp = &c; bp->f (); }
+ *			The bug manifested itself when the left-most
+ *			base class had no virtual functions.  This bug
+ *			was reported on USENET for Turbo (TauMetric) C++.
+ *  10.12.90  DGM  011  Fixed bug in FINISH_CLASS_SIZE -- was getting
+ *			the size wrong for inherited empty classes.
+ *  10.10.90  DGM  010  Fixed minor bug in FINISH_CLASS_SIZE (wasn't
+ *			setting up vft/vftp if the class size was zero).
+ *  09.25.90  MJF  009  Changed ABI_UNNAMED_BIT_FIELDS to
+ *                      ABI_STYLE_UNNAMED_BIT_FIELDS.
+ *  09.14.90  DGM  008  Changed include file names and VOP names.
+ *  08.08.90  DGM  007  New type-node.
+ *  07.23.90  DGM  006  Moved GET/DELETE_VIRTUAL_BASE_CLASS_LIST
+ *			to lookup.pl1.
+ *  07.19.90  DGM  005  Added INITIALIZE_CLASS_SIZE and FINISH_CLASS_SIZE.
+ *  06.20.90  DGM  004R RECHECKOUT; fixed bugs (typos) in
+ *			ALLOCATE_VIRTUAL_PART and
+ *			GET_VIRTUAL_BASE_CLASS_LIST.
+ *  05.25.90  DGM  004  Fix in ALLOCATE_BASE_CLASSES and other changes.
+ *  05.17.90  DGM  003  Updates/fixes for (virtual) base classes.
+ *  05.15.90  DGM  002  Added:	ALLOCATE_BASE_CLASSES
+ *				ALLOCATE_VIRTUAL_PART
+ *				GET_VIRTUAL_BASE_CLASS_LIST
+ *				DELETE_VIRTUAL_BASE_CLASS_LIST
+ *  05.01.90  DGM  001  General fixes.
+ *  04.27.90  DGM  000  Original (bit-field handling adapted from ANSI-C).
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 05.29.92 020 CLASIZ');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_VIRTUAL_FUNCTION_TABLE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* UPDATE_CLASS_SIZE
+/*
+/* This routine is called at the end of each member declaration, to
+/* appropriately update the size and boundary (alignment) of the given
+/* parent class (sym-node), and to set the member offset of the given
+/* member (sym-node); the given member is assumed to have its SIZE,
+/* SIZE_UNITS, and BOUNDARY (except for bit-fields) set appropriately
+/*
+/* ---------------------------------------------------------------------
+/* During a class (or struct, but not union) definition, at the end of
+/* each member declaration, the (current) size of a class is given in
+/* terms of the size-units of its last (i.e. it most recently declared)
+/* member, but the boundary of the class (of course) reflects the most
+/* stringent boundary requirement of any of its members (thus far). For
+/* example, given the class "class { long x; char y; };", its size would
+/* be 5, its size-units would be BYTES, but its boundary would be WORDS.
+/*
+/* For unions, the (current) size is simply the size of the largest
+/* member in terms (units) of the union member with the most stringent
+/* boundary requirement.
+/*
+/* For bit-field members, its sym-node offset field (LOCATION) corresponds
+/* to the offset of the containing unit; it is *not* a *bit* offset.  The
+/* bit offset within the containing is derived from FIELD2 which represents
+/* the number of remaining bits in the containing unit; i.e. the bit offset
+/* would be the total number of bits in the containing unit minus the sum
+/* of the remaining bits and the bit-field size.
+/*
+/* At the *end* of a class definition, the total size of the class is
+/* expressed in terms of its boundary; this is done in END_CLASS_BODY.
+/*
+/* Note the general assumption that for any symbol, its size-units are
+/* *always* the same as its boundary, *except* for bit-fields, in which
+/* case the size-units are *always* BITS; see TYPE_SIZE.
+/* ------------------------------------------------------------------- */
+
+UPDATE_CLASS_SIZE: procedure (CLASS_PTR, MEMBER_PTR)
+		   external  (X_UPDATE_CLASS_SIZE);
+	declare
+		CLASS_PTR	type (POINTER_T),
+		MEMBER_PTR	type (POINTER_T);
+
+	/*
+	/* If this is a member function, a static member,
+	/* or a nested type, then ignore it since it does
+	/* not change the size of a class.
+	/**/
+
+	if ^MEMBER_PTR->SYM_NODE.IS_NON_STATIC_DATA_MEMBER &
+	   ^MEMBER_PTR->SYM_NODE.IS_ANON_UNION_TAG then
+		return;
+
+	/* Handle a union member */
+
+	if CLASS_PTR->SYM_NODE.IS_UNION_TAG then do;
+		call UPDATE_UNION_SIZE (CLASS_PTR, MEMBER_PTR);
+		return;
+	end;
+
+	/* Allocate a member; handle bit-field members specially */
+
+	if MEMBER_PTR->SYM_NODE.IS_BIT_FIELD then
+		call ALLOCATE_BIT_FIELD_MEMBER (CLASS_PTR, MEMBER_PTR);
+	else	call ALLOCATE_MEMBER (CLASS_PTR, MEMBER_PTR);
+
+	/* Adjust the class size */
+
+	CLASS_PTR->SYM_NODE.SIZE
+		= ROUNDU (CLASS_PTR->SYM_NODE.SIZE,
+			  rank (CLASS_PTR->SYM_NODE.SIZE_UNITS),
+			  rank (MEMBER_PTR->SYM_NODE.SIZE_UNITS))
+		  + MEMBER_PTR->SYM_NODE.SIZE;
+	CLASS_PTR->SYM_NODE.SIZE_UNITS = MEMBER_PTR->SYM_NODE.SIZE_UNITS;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* ALLOCATE_MEMBER
+/*
+/* Aligns the given class if necessary to accomodate the given
+/* new member, and appropriately sets the offset of the member.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ALLOCATE_MEMBER: procedure (C, M) internal;
+
+	declare
+		C	type (POINTER_T),
+		M	type (POINTER_T);
+
+	/*
+	/* Compare the current alignment the class with the aligment of the
+	/* new member, and introduce padding if necessary, i.e. if this new
+	/* member has a more stringent alignment requirement than the last
+	/* previous member.
+	/**/
+
+	if rank (M->SYM_NODE.BOUNDARY) > rank (C->SYM_NODE.SIZE_UNITS) then do;
+		/*
+		/* Here, this is either the first member, or this new
+		/* member is a forcing more stringent class alignement.
+		/**/
+		C->SYM_NODE.SIZE = ROUNDU (C->SYM_NODE.SIZE,
+					   rank (C->SYM_NODE.SIZE_UNITS),
+					   rank (M->SYM_NODE.BOUNDARY));
+		C->SYM_NODE.SIZE_UNITS = M->SYM_NODE.BOUNDARY;
+	end;
+
+	/* Adjust the class boundary (alignment) if necessary */
+
+	call ADJUST_CLASS_BOUNDARY (C, M);
+
+	/* Set the member offset */
+
+	M->SYM_NODE.LOCATION     = C->SYM_NODE.SIZE;
+	M->SYM_NODE.OFFSET_UNITS = C->SYM_NODE.SIZE_UNITS;
+	
+end ALLOCATE_MEMBER;
+
+/* ---------------------------------------------------------------------
+/* ADJUST_CLASS_BOUNDARY
+/*
+/* Adjusts the boundary (alignment) of the given class for the given
+/* new member.
+/* ------------------------------------------------------------------- */
+
+ADJUST_CLASS_BOUNDARY: procedure (C, M) internal;
+
+	declare
+		C	type (POINTER_T),
+		M	type (POINTER_T);
+
+	/*
+	/* Set the boundary (alignment) of the class to the stringent
+	/* boundary (alignment) of any of its members (thus far).
+	/* If this is a zero sized bit-field member and the newer
+	/* ABI conventions are in effect, then the alignment will
+	/* not be affected.
+	/**/
+
+	if SW_ABI_STYLE_BIT_FIELDS &
+	   M->SYM_NODE.IS_BIT_FIELD &
+	   ((M->SYM_NODE.NAME = NULL_NID) |
+	    (M->SYM_NODE.SIZE = 0)) then
+		return;
+
+	if rank (M->SYM_NODE.BOUNDARY) > rank (C->SYM_NODE.BOUNDARY) then
+		C->SYM_NODE.BOUNDARY = M->SYM_NODE.BOUNDARY;
+
+end ADJUST_CLASS_BOUNDARY;
+
+/* ---------------------------------------------------------------------
+/* UPDATE_UNION_SIZE
+/*
+/* Update the size and boundary (alignment) of the given parent union
+/* (sym-node), and sets the member offset of the given member (sym-node);
+/* the given member is assumed to have its SIZE, SIZE_UNITS, and BOUNDARY
+/* (except for bit-fields) set appropriately.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+UPDATE_UNION_SIZE: procedure (C, M) internal;
+
+	declare
+		C		type (POINTER_T),
+		M		type (POINTER_T);
+
+	/* Handle a bit-field union member */
+
+	if M->SYM_NODE.IS_BIT_FIELD then
+		call ALLOCATE_BIT_FIELD_MEMBER (C, M);
+
+	/* Otherwise, simply set the union member offset to zero */
+
+	else do;
+		M->SYM_NODE.LOCATION     = 0;
+		M->SYM_NODE.OFFSET_UNITS = byte (0);
+	end;
+
+	/*
+	/* Set the size, size-units, and boundary of the union.
+	/* For unions, the (current) size is simply the size of the
+	/* largest member in terms (units) of the union member with
+	/* the most stringent /* boundary requirement.
+	/**/
+
+	C->SYM_NODE.BOUNDARY
+		= byte (max (rank (C->SYM_NODE.BOUNDARY),
+			     rank (M->SYM_NODE.BOUNDARY)));
+	C->SYM_NODE.SIZE
+		= max (ROUNDU (C->SYM_NODE.SIZE,
+			       rank (C->SYM_NODE.SIZE_UNITS),
+			       rank (C->SYM_NODE.BOUNDARY)),
+		       ROUNDU (M->SYM_NODE.SIZE,
+			       rank (M->SYM_NODE.SIZE_UNITS),
+			       rank (C->SYM_NODE.BOUNDARY)));
+	C->SYM_NODE.SIZE_UNITS
+		= C->SYM_NODE.BOUNDARY;
+
+end UPDATE_UNION_SIZE;
+
+/* ---------------------------------------------------------------------
+/* ALLOCATE_BIT_FIELD_MEMBER
+/*
+/* Aligns the given class if necessary to accomodate the given new
+/* bit-field member, and appropriately sets the offset of the member.
+/* Preserves current-node-id.
+/*
+/* It is assumed upon entry that the bit-field member sym-node has its
+/* SIZE field is set to the number of bits specified by the user, its
+/* SIZE_UNITS field is set to BITS, and its TOP_TYPE field is set to
+/* the (integral) base-type of the bit-field.
+/*
+/* The BOUNDARY, LOCATION, OFFSET_UNITS, and FIELD2 fields in the given
+/* bit-field member sym-node will be set appropriately.
+/*
+/* The given class symbol will be aligned if necessary, i.e. the SIZE
+/* and SIZE_UNITS fields of the class sym-node may be set.
+/* ------------------------------------------------------------------- */
+
+ALLOCATE_BIT_FIELD_MEMBER: procedure (C, M) internal;
+
+	declare
+		C				type (POINTER_T),
+		M				type (POINTER_T);
+	declare
+		BIT_MEMBER_TYPE			type (SHORT_T),
+		BIT_MEMBER_TYPE_SIZE		type (LONG_T),
+		BIT_MEMBER_TYPE_SIZE_UNITS	type (SHORT_T),
+		BIT_MEMBER_TYPE_BOUNDARY	type (SHORT_T),
+		BIT_MEMBER_SIZE			type (SHORT_T),
+		BIT_MEMBER_OFFSET		type (LONG_T),
+		BIT_MEMBER_OFFSET_UNITS		type (SHORT_T),
+		REMAINING_BITS			type (SHORT_T),
+		BIT_OFFSET_WITHIN_UNIT		type (LONG_T),
+		PREV_LOCATION			type (LONG_T),
+		PREV_BIT_LOCATION		type (LONG_T),
+		NEXT_BIT_LOCATION		type (LONG_T),
+		UNIT_SIZE			type (LONG_T),
+		UNIT_BOUNDARY_BIT_SIZE		type (LONG_T),
+		CLASS_BIT_SIZE			type (LONG_T),
+		PREV_MEMBER			type (NID_T),
+		P				type (POINTER_T);
+
+	/* Get the bit-field member base-type, specified size, and boundary */
+
+	BIT_MEMBER_TYPE = rank (M->SYM_NODE.TOP_TYPE.CODE);
+	BIT_MEMBER_SIZE = M->SYM_NODE.SIZE;
+
+	/* Get the size of this bit-field base-type */ 
+    
+	call BIT_FIELD_TYPE_SIZE (BIT_MEMBER_TYPE,
+				  BIT_MEMBER_TYPE_SIZE,
+				  BIT_MEMBER_TYPE_SIZE_UNITS,
+				  BIT_MEMBER_TYPE_BOUNDARY);
+
+	/* Sanity check the size of this bit-field */
+
+	if BIT_MEMBER_SIZE > BIT_MEMBER_TYPE_SIZE then do;
+		/*
+		/* Error; this bit-field is too big to fit
+		/* in its storage unit; assume the max.
+		/**/
+		call SEMANTIC_ERROR (ERR_BIG_BIT_FIELD);
+		M->SYM_NODE.SIZE = BIT_MEMBER_TYPE_SIZE;
+		BIT_MEMBER_SIZE  = BIT_MEMBER_TYPE_SIZE;
+	end;
+
+	/* Set the boundary of this bit-field member */
+
+	M->SYM_NODE.BOUNDARY = byte (BIT_MEMBER_TYPE_BOUNDARY);
+
+	/* See if this is a union bit-field member (easy) */
+
+	if C->SYM_NODE.IS_UNION_TAG then do;
+		M->SYM_NODE.FIELD2 = BIT_MEMBER_TYPE_SIZE - BIT_MEMBER_SIZE;
+		return;
+	end;
+
+	/* See if this a a zero size bit-field member (easy) */
+
+	if BIT_MEMBER_SIZE = 0 then do;
+		call ALLOCATE_MEMBER (C, M);
+		return;
+	end;
+
+	/* See if this is the first member */
+
+	call GET_SCOPE_NODE_R (C->SYM_NODE.DEFINED_SCOPE, P);
+	PREV_MEMBER = P->SCOPE_NODE.LAST_SYMBOL;
+	call RELEASE_SCOPE_NODE (C->SYM_NODE.DEFINED_SCOPE);
+
+	if PREV_MEMBER = NULL_NID then do;
+		BIT_MEMBER_OFFSET	    = 0;
+		BIT_MEMBER_OFFSET_UNITS	    = 0;
+		REMAINING_BITS		    = BIT_MEMBER_TYPE_SIZE -
+					      BIT_MEMBER_SIZE;
+		goto DONE_ALLOCATE_BIT_FIELD_MEMBER;
+	end;
+
+	/* Get the size of this class in terms (units) of bits */
+
+	if rank (C->SYM_NODE.SIZE_UNITS) ^= BITS then do;
+		CLASS_BIT_SIZE = ROUNDU (C->SYM_NODE.SIZE,
+					 rank (C->SYM_NODE.SIZE_UNITS),
+					 BITS);
+	end;
+	else	CLASS_BIT_SIZE = C->SYM_NODE.SIZE;
+    
+	/*
+	/* Get the previous boundary for this type.  Calculate the bit
+	/* offset of the next "unit boundary" for which this type may not
+	/* cross.  N.B. "unit boundary" is NOT synonymous with "alignment
+	/* boundary".
+	/**/
+
+	PREV_LOCATION	  = PREV_CLASS_BOUNDARY (CLASS_BIT_SIZE,
+						 BIT_MEMBER_TYPE_BOUNDARY);
+	PREV_BIT_LOCATION = ROUNDU (PREV_LOCATION,
+				    BIT_MEMBER_TYPE_BOUNDARY,
+				    BITS);
+
+	call SIMPLE_TYPE_SIZE (BIT_MEMBER_TYPE, UNIT_SIZE, 0, 0);
+
+	UNIT_BOUNDARY_BIT_SIZE	= PREV_BIT_LOCATION +
+				  ROUNDU (UNIT_SIZE,
+					  BIT_MEMBER_TYPE_BOUNDARY,
+					  BITS);
+    
+	/*
+	/* Get the next boundary for this type.
+	/* N.B. "boundary" is synonymous with "alignment boundary".
+	/**/
+
+	NEXT_BIT_LOCATION = NEXT_CLASS_BOUNDARY (CLASS_BIT_SIZE,
+						 BIT_MEMBER_TYPE_BOUNDARY);
+	NEXT_BIT_LOCATION = ROUNDU (NEXT_BIT_LOCATION,
+				    BIT_MEMBER_TYPE_BOUNDARY,
+				    BITS);
+
+	/*
+	/* A bit-field must reside entirely in a storage unit appropriate
+	/* for its declared type.  Thus, a bit-field never crosses its
+	/* unit boundary.  Check if the current bit-field can be "packed".
+        /**/        
+
+	if (CLASS_BIT_SIZE + BIT_MEMBER_SIZE) > UNIT_BOUNDARY_BIT_SIZE then do;
+		/*
+		/* It crossed its unit boundary.  Bump everything to
+		/* the next BOUNDARY location, set the remaining bits
+		/* and initial size for this field, and return.
+		/**/
+		BIT_MEMBER_OFFSET	  = ROUNDU (NEXT_BIT_LOCATION,
+						    BITS,
+						    BIT_MEMBER_TYPE_BOUNDARY);
+		BIT_MEMBER_OFFSET_UNITS	  = BIT_MEMBER_TYPE_BOUNDARY;
+		REMAINING_BITS		  = BIT_MEMBER_TYPE_SIZE -
+					    BIT_MEMBER_SIZE; 
+		C->SYM_NODE.SIZE	  = BIT_MEMBER_OFFSET;
+		C->SYM_NODE.SIZE_UNITS	  = byte (BIT_MEMBER_OFFSET_UNITS);
+		goto DONE_ALLOCATE_BIT_FIELD_MEMBER;
+	end;
+
+	/*
+	/* It didn't cross its "unit boundary", so it can
+	/* be "packed" into the current BIT_MEMBER_TYPE_BOUNDARY field. 
+	/*
+	/* Set its offset to the previous BIT_MEMBER_TYPE_BOUNDARY
+	/* offset, calculate the remaining bits in the current
+	/* BIT_MEMBER_TYPE_BOUNDARY field, and adjust the size (number
+	/* of consecutively packed bits) within this storage unit.
+	/**/
+
+	BIT_MEMBER_OFFSET	  = PREV_LOCATION;
+	BIT_MEMBER_OFFSET_UNITS	  = BIT_MEMBER_TYPE_BOUNDARY;
+
+	/* Get the offset into current BIT_MEMBER_TYPE_BOUNDARY units */
+
+	BIT_OFFSET_WITHIN_UNIT	  = CLASS_BIT_SIZE - PREV_BIT_LOCATION;
+	REMAINING_BITS		  = BIT_MEMBER_TYPE_SIZE -
+				    BIT_OFFSET_WITHIN_UNIT - BIT_MEMBER_SIZE;
+
+	/* Get the new size of the class (before this bit-field member) */
+
+	DONE_ALLOCATE_BIT_FIELD_MEMBER:
+
+	/* Set the bit-field member offset */
+
+	M->SYM_NODE.LOCATION	 = BIT_MEMBER_OFFSET;
+	M->SYM_NODE.OFFSET_UNITS = byte (BIT_MEMBER_OFFSET_UNITS);
+
+	/* Set the remaining bits of the bit-field member */
+
+	M->SYM_NODE.FIELD2	 = REMAINING_BITS;
+
+	/* Adjust the class boundary (alignment) if necessary */
+
+	call ADJUST_CLASS_BOUNDARY (C, M);
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* PREV_CLASS_BOUNDARY
+/* ------------------------------------------------------------------- */
+    
+PREV_CLASS_BOUNDARY: procedure (CLASS_BIT_SIZE, BOUNDARY)
+		     returns   (type (SHORT_T))
+		     internal;
+	declare
+		CLASS_BIT_SIZE		type (LONG_T),
+		BOUNDARY		type (SHORT_T);
+	declare
+		NBITS			type (LONG_T),
+		BOUNDARY_BIT_SIZE	type (LONG_T);
+
+	/* Get number of bits in this boundary unit */
+
+	BOUNDARY_BIT_SIZE = ROUNDU (1, BOUNDARY, BITS);
+
+	/* Return zero if the class size is less than the boundary size */
+
+	if CLASS_BIT_SIZE < BOUNDARY_BIT_SIZE then
+		return (0);
+
+	else if CLASS_BIT_SIZE = 0 then
+		return (0);
+    
+	/* Get the number of bits rounded *down* to the boundary size */
+
+	if mod (CLASS_BIT_SIZE, BOUNDARY_BIT_SIZE) ^= 0 then
+		NBITS = CLASS_BIT_SIZE - BOUNDARY_BIT_SIZE;
+	else	NBITS = CLASS_BIT_SIZE;
+    
+	/* Now, round up the size to the next boundary unit & return */
+
+	return (ROUNDU (NBITS, BITS, BOUNDARY));
+
+end PREV_CLASS_BOUNDARY;
+
+/* ---------------------------------------------------------------------
+/* NEXT_CLASS_BOUNDARY
+/* ------------------------------------------------------------------- */
+    
+NEXT_CLASS_BOUNDARY: procedure (CLASS_BIT_SIZE, BOUNDARY)
+		     returns   (type (SHORT_T))
+		     internal;
+	declare
+		CLASS_BIT_SIZE		type (LONG_T),
+		BOUNDARY		type (SHORT_T);
+	declare
+		NBITS			type (LONG_T),
+		BOUNDARY_BIT_SIZE	type (SHORT_T);
+
+	/* Get number of bits in this boundary unit */
+
+	BOUNDARY_BIT_SIZE = ROUNDU (1, BOUNDARY, BITS);
+    
+	/* Get the number of bits rounded *up* to the boundary size */
+
+	if mod (CLASS_BIT_SIZE, BOUNDARY_BIT_SIZE) = 0 then
+       		NBITS = CLASS_BIT_SIZE + 1;
+	else	NBITS = CLASS_BIT_SIZE;
+    
+	/* Now, round up the size to the next boundary unit & return */
+
+	return (ROUNDU (NBITS, BITS, BOUNDARY));
+
+end NEXT_CLASS_BOUNDARY;
+
+end ALLOCATE_BIT_FIELD_MEMBER;
+
+end UPDATE_CLASS_SIZE;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_CLASS_SIZE
+/*
+/* Initialize the size of the given class sym-node; allocates space
+/* for any non-virtual base classes.  This routine is to be called once
+/* at the beginning of a class declaration.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_CLASS_SIZE: procedure (CLASS) external (X_INITIALIZE_CLASS_SIZE);
+
+	declare
+		CLASS		type (NID_T);
+	declare
+		CLASS_PTR	type (POINTER_T);
+
+	call GET_SYM_NODE (CLASS, CLASS_PTR);
+
+	if ^CLASS_PTR->SYM_NODE.IS_AGGREGATE_TAG then
+		goto DONE_INITIALIZE_CLASS_SIZE;
+
+	call ALLOCATE_BASE_CLASSES ();
+
+	DONE_INITIALIZE_CLASS_SIZE:
+	call RELEASE_SYM_NODE (CLASS);
+	return;
+
+/* ---------------------------------------------------------------------
+/* ALLOCATE_BASE_CLASSES
+/*
+/* Initialize the size of class represented by CLASS and CLASS_PTR to
+/* reflect the total (non-virtual) size of its (direct and indirect)
+/* base-classes (if any).  Also initialize the virtual function count
+/* for the derived-class and set the has-virtual-table-pointer flag
+/* (BASE_CLASS_NODE.HAS_VFT_POINTER) for each base-class.  This routine
+/* is to be called at the beginning of a class definition, after the
+/* derivation list has been parsed and the class scope has been opened.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ALLOCATE_BASE_CLASSES: procedure internal;
+
+	declare
+		(BCP, P)		type (POINTER_T),
+		(BC, NEXT_BC)		type (NID_T),
+		BC_SIZE			type (LONG_T),
+		BC_SIZE_UNITS		type (SHORT_T),
+		BC_BOUNDARY		type (SHORT_T);
+
+	/* ------------------------------------------------------
+	/* N.B. CLASS and CLASS_PTR are assumed to to represent
+	/* the id of and the pointer to the sym-node of the class.
+	/* ----------------------------------------------------- */
+
+	/*
+	/* Add up the size of each non-virtual base class;
+	/* for virtual base classes, add space for the pointer.
+	/**/
+
+	do BC = CLASS_PTR->SYM_NODE.BASE_CLASSES repeat (NEXT_BC)
+	while (BC ^= NULL_NID);
+
+		call GET_BASE_CLASS_NODE (BC, BCP);
+
+		/* Get the base-class symbol size, size-units, boundary */
+
+		if BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			call SIMPLE_TYPE_SIZE (POINTER_DT,
+					       BC_SIZE,
+					       BC_SIZE_UNITS,
+					       BC_BOUNDARY);
+			CLASS_PTR->SYM_NODE.HAS_VIRTUAL_BASES = TRUE;
+		end;
+		else do;
+			call GET_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL, P);
+			if P->SYM_NODE.SIZE = 0 then do;
+				/*
+				/* Paranoid check; this should never happen.
+				/* Note that even null size classes actually
+				/* have a non-zero size (of one byte -- see
+				/* FINISH_CLASS_SIZE), and this size is taken
+				/* into account when adding of the base class
+				/* sizes (I previously thought differently).
+				/**/
+				call RELEASE_SYM_NODE
+					(BCP->BASE_CLASS_NODE.SYMBOL);
+				goto CONTINUE;
+			end;
+			BC_SIZE	= ROUNDU (P->SYM_NODE.NON_VIRTUAL_SIZE,
+					  BYTES,
+					  rank (P->SYM_NODE.SIZE_UNITS));
+			BC_SIZE_UNITS = rank (P->SYM_NODE.SIZE_UNITS);
+			BC_BOUNDARY = rank (P->SYM_NODE.BOUNDARY);
+			if P->SYM_NODE.HAS_VIRTUAL_BASES then
+				CLASS_PTR->SYM_NODE.HAS_VIRTUAL_BASES = TRUE;
+			/*
+			/* If this is the left-most direct base class which
+			/* has virtual functions, we can share its virtual
+			/* function table pointer with this derived class.
+			/**/
+			if (BC = CLASS_PTR->SYM_NODE.BASE_CLASSES) &
+			   (P->SYM_NODE.VIRTUAL_FUNCTION_COUNT > 0) then do;
+				CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_COUNT
+					= P->SYM_NODE.VIRTUAL_FUNCTION_COUNT;
+				BCP->BASE_CLASS_NODE.HAS_VFT_POINTER = TRUE;
+			end;
+			call RELEASE_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL);
+		end;
+
+		/*
+		/* Allocate space in the derived-class for the base-class.
+		/* Introduce padding into the derived-class if necessary,
+		/* if this new base-class has a more stringent alignment
+		/* requirement than the last previous base-class.
+		/**/
+
+		if BC_BOUNDARY > rank (CLASS_PTR->SYM_NODE.SIZE_UNITS) then do;
+			CLASS_PTR->SYM_NODE.SIZE
+				= ROUNDU (CLASS_PTR->SYM_NODE.SIZE,
+					  rank (CLASS_PTR->SYM_NODE.SIZE_UNITS),
+					  BC_BOUNDARY);
+			CLASS_PTR->SYM_NODE.SIZE_UNITS = byte (BC_BOUNDARY);
+		end;
+
+		/* Adjust the class boundary (alignment) if necessary */
+
+		if BC_BOUNDARY > rank (CLASS_PTR->SYM_NODE.BOUNDARY) then
+			CLASS_PTR->SYM_NODE.BOUNDARY = byte (BC_BOUNDARY);
+
+		/* Set the base-class offset (in bytes) */
+
+		BCP->BASE_CLASS_NODE.OFFSET
+			= ROUNDU (CLASS_PTR->SYM_NODE.SIZE,
+				  rank (CLASS_PTR->SYM_NODE.SIZE_UNITS),
+				  BYTES);
+
+		/* Adjust the derived-class size */
+
+		CLASS_PTR->SYM_NODE.SIZE
+			= ROUNDU (CLASS_PTR->SYM_NODE.SIZE,
+				  rank (CLASS_PTR->SYM_NODE.SIZE_UNITS),
+				  BC_SIZE_UNITS) + BC_SIZE;
+		CLASS_PTR->SYM_NODE.SIZE_UNITS = byte (BC_SIZE_UNITS);
+
+		/* Go on to the next base-class */
+
+		CONTINUE:
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	/* Make the virtual base class list */
+
+	call MAKE_VIRTUAL_BASE_CLASS_LIST ();
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* MAKE_VIRTUAL_BASE_CLASS_LIST
+/*
+/* Make the vbc-node list for the class represented by the global class
+/* sym-node pointer CLASS_PTR, and hang it off of the VIRTUAL_BASE_CLASSES
+/* field of the class sym-node.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MAKE_VIRTUAL_BASE_CLASS_LIST: procedure internal;
+
+	declare
+		(BC, NEXT_BC)			type (NID_T),
+		BCP				type (POINTER_T);
+	declare
+		(VBC_LIST, LAST_VBC)		type (NID_T),
+		(VBC_LIST_PTR, LAST_VBC_PTR)	type (POINTER_T);
+
+	VBC_LIST = NULL_NID;
+
+	do BC = CLASS_PTR->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		call COPY_AND_APPEND_VBC_LIST (BCP->BASE_CLASS_NODE.SYMBOL);
+		if BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			call MAKE_AND_APPEND_VBC_NODE
+				(BCP->BASE_CLASS_NODE.SYMBOL, BC);
+		end;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	call FINISH_VBC_LIST ();
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* COPY_AND_APPEND_VBC_LIST
+/*
+/* Copies the virtual base class list of the class symbol represented
+/* by the given sym-node id SYMBOL and appends it to the end of the
+/* virtual base class list represented by the vbc-node VBC_LIST.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COPY_AND_APPEND_VBC_LIST: procedure (SYMBOL) internal;
+
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		(VBC, NEXT_VBC)	type (NID_T),
+		(VBCP, P)	type (POINTER_T);
+
+	call GET_SYM_NODE_R (SYMBOL, P);
+
+	do VBC = P->SYM_NODE.VIRTUAL_BASE_CLASSES
+	repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		call MAKE_AND_APPEND_VBC_NODE
+			(VBCP->VBC_NODE.SYMBOL,
+			 VBCP->VBC_NODE.BASE_CLASS_NODE_ID);
+		NEXT_VBC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+
+	call RELEASE_SYM_NODE (SYMBOL);
+	return;
+
+end COPY_AND_APPEND_VBC_LIST;
+
+/* ---------------------------------------------------------------------
+/* MAKE_AND_APPEND_VBC_NODE
+/*
+/* Make a vbc-node for the class symbol represented by the given sym-node
+/* id SYMBOL and its corresponding base-class-node BASE_CLASS_NODE_ID, and
+/* append it to the virtual base class list represented by the vbc-node
+/* VBC_LIST (and the vbc-node id and pointer LAST_VBC and LAST_VBC_PTR
+/* which point to the last vbc-node on the list).
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MAKE_AND_APPEND_VBC_NODE: procedure (SYMBOL, BASE_CLASS_NODE_ID)
+			  internal;
+	declare
+		SYMBOL			type (NID_T),
+		BASE_CLASS_NODE_ID	type (NID_T);
+	declare
+		NEW_VBC			type (NID_T),
+		(NEW_VBCP, P)		type (POINTER_T);
+
+	if IS_ALREADY_ON_VBC_LIST (SYMBOL) then
+		return;
+
+	call NEW_VBC_NODE (NEW_VBC, NEW_VBCP);
+	NEW_VBCP->VBC_NODE.SYMBOL = SYMBOL;
+	NEW_VBCP->VBC_NODE.BASE_CLASS_NODE_ID = BASE_CLASS_NODE_ID;
+	NEW_VBCP->VBC_NODE.NEXT = NULL_NID;
+	if VBC_LIST = NULL_NID then do;
+		VBC_LIST = NEW_VBC;
+		VBC_LIST_PTR = NEW_VBCP;
+	end;
+	else do;
+		call GET_SYM_NODE_R (LAST_VBC_PTR->VBC_NODE.SYMBOL, P);
+		call RELEASE_SYM_NODE (LAST_VBC_PTR->VBC_NODE.SYMBOL);
+		NEW_VBCP->VBC_NODE.PREV = LAST_VBC;
+		LAST_VBC_PTR->VBC_NODE.NEXT = NEW_VBC;
+		if LAST_VBC ^= VBC_LIST then
+			call RELEASE_VBC_NODE (LAST_VBC);
+	end;
+	LAST_VBC_PTR = NEW_VBCP;
+	LAST_VBC = NEW_VBC;
+
+/* ---------------------------------------------------------------------
+/* IS_ALREADY_ON_VBC_LIST
+/*
+/* If the class symbol represented by the sym-node id SYMBOL is already
+/* on the virtual base class list represented by the vbc-node VBC_LIST
+/* then return TRUE, otherwise FALSE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+IS_ALREADY_ON_VBC_LIST: procedure (SYMBOL) returns (type (BOOL_T)) internal;
+
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		VBCP		type (POINTER_T),
+		(VBC, NEXT_VBC)	type (NID_T);
+
+	if VBC_LIST = NULL_NID then
+		return (FALSE);
+
+	if (VBC_LIST_PTR->VBC_NODE.SYMBOL = SYMBOL) |
+	   (LAST_VBC_PTR->VBC_NODE.SYMBOL = SYMBOL) then
+		return (TRUE);
+
+	if (VBC_LIST_PTR->VBC_NODE.NEXT = NULL_NID)  |
+	   (VBC_LIST_PTR->VBC_NODE.NEXT = LAST_VBC) then
+		return (FALSE);
+
+	do VBC = VBC_LIST_PTR->VBC_NODE.NEXT
+	repeat (NEXT_VBC) while (VBC ^= LAST_VBC);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		if VBCP->VBC_NODE.SYMBOL = SYMBOL then do;
+			call RELEASE_VBC_NODE (VBC);
+			return (TRUE);
+		end;
+		NEXT_VBC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+
+	return (FALSE);
+
+end IS_ALREADY_ON_VBC_LIST;
+
+end MAKE_AND_APPEND_VBC_NODE;
+
+/* ---------------------------------------------------------------------
+/* FINISH_VBC_LIST
+/* ------------------------------------------------------------------- */
+
+FINISH_VBC_LIST: procedure internal;
+
+	declare P type (POINTER_T);
+
+	if VBC_LIST = NULL_NID then
+		return;
+
+	VBC_LIST_PTR->VBC_NODE.PREV = LAST_VBC;
+	call RELEASE_VBC_NODE (VBC_LIST);
+
+	CLASS_PTR->SYM_NODE.VIRTUAL_BASE_CLASSES = VBC_LIST;
+	if LAST_VBC ^= VBC_LIST then
+		call RELEASE_VBC_NODE (LAST_VBC);
+
+end FINISH_VBC_LIST;
+
+end MAKE_VIRTUAL_BASE_CLASS_LIST;
+
+end ALLOCATE_BASE_CLASSES;
+
+end INITIALIZE_CLASS_SIZE;
+
+/* ---------------------------------------------------------------------
+/* FINISH_CLASS_SIZE
+/*
+/* Finish setting the size of the given class sym-node; allocates space
+/* for any virtual base classes.  This routine is to be called once at
+/* the end of a class declaration.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+FINISH_CLASS_SIZE: procedure (CLASS) external (X_FINISH_CLASS_SIZE);
+
+	declare
+		CLASS			type (NID_T);
+	declare
+		CLASS_PTR		type (POINTER_T),
+		NEEDS_VFT_POINTER	type (BOOL_T);
+
+	call GET_SYM_NODE (CLASS, CLASS_PTR);
+
+	if ^CLASS_PTR->SYM_NODE.IS_AGGREGATE_TAG then
+		goto DONE_FINISH_CLASS_SIZE;
+
+	NEEDS_VFT_POINTER = CHECK_NEEDS_VFT_POINTER (CLASS_PTR);
+
+	/* If this is an empty class, simply give it a size of one byte */
+
+	if NEEDS_VFT_POINTER then
+		/*
+		/* It will get a size from its VFT pointer, allocated soon.
+		/* This should fix a bug, because the following appears to
+		/* have messed up the allocation of the VFT pointer. -- PKT 
+		/**/
+		;
+	else if CLASS_PTR->SYM_NODE.SIZE = 0 then do;
+		CLASS_PTR->SYM_NODE.SIZE	= 1;
+		CLASS_PTR->SYM_NODE.SIZE_UNITS	= byte (BYTES);
+		CLASS_PTR->SYM_NODE.BOUNDARY	= byte (BYTES);
+	end;
+
+	/* Express the total size of this class in terms of its boundary */
+
+	else do;
+		CLASS_PTR->SYM_NODE.SIZE
+			= ROUNDU (CLASS_PTR->SYM_NODE.SIZE,
+				  rank (CLASS_PTR->SYM_NODE.SIZE_UNITS),
+				  rank (CLASS_PTR->SYM_NODE.BOUNDARY));
+		CLASS_PTR->SYM_NODE.SIZE_UNITS
+			= CLASS_PTR->SYM_NODE.BOUNDARY;
+	end;
+
+	/*
+	/* Allocate space in this class for any virtual base classes and
+	/* set up the virtual function table and pointer if necessary.
+	/**/
+
+	call ALLOCATE_VIRTUAL_PART_ETC ();
+
+	/* Done; release the class sym-node and return */
+
+	DONE_FINISH_CLASS_SIZE:
+	call RELEASE_SYM_NODE (CLASS);
+	return;
+
+/* ---------------------------------------------------------------------
+/* ALLOCATE_VIRTUAL_PART_ETC
+/*
+/* Set the final size of the class represented by CLASS and CLASS_PTR
+/* including any/all virtual base classes.  Also figures out if this
+/* class needs a virtual function table, and if so, then makes a virtual
+/* function table symbol for the class.  This routine is to be called at
+/* the end of a class definition, but before the class scope has been
+/* closed out.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ALLOCATE_VIRTUAL_PART_ETC: procedure internal;
+
+	declare
+		P			type (POINTER_T),
+		NEEDS_VFT		type (BOOL_T),
+		(VBC, NEXT_VBC)		type (NID_T),
+		(VBC_LIST, VBCP)	type (POINTER_T),
+		VBC_SIZE		type (LONG_T),
+		VBC_SIZE_UNITS		type (SHORT_T),
+		VBC_BOUNDARY		type (SHORT_T);
+
+	/* ------------------------------------------------------
+	/* N.B. CLASS and CLASS_PTR are assumed to to represent
+	/* the id of and the pointer to the sym-node of the class.
+	/* ----------------------------------------------------- */
+
+	if NEEDS_VFT_POINTER then
+		call DECLARE_VFT_POINTER (CLASS_PTR);
+
+	/* See if the derived-class needs a virtual function table */
+
+	NEEDS_VFT = (CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_COUNT > 0);
+
+	/* Save the current non-virtual size (in bytes) of the class */
+
+	CLASS_PTR->SYM_NODE.NON_VIRTUAL_SIZE
+		= ROUNDU (CLASS_PTR->SYM_NODE.SIZE,
+			  rank (CLASS_PTR->SYM_NODE.SIZE_UNITS), BYTES);
+
+	/* Compute the total size of the class including virtual-base-classes */
+
+	do VBC = CLASS_PTR->SYM_NODE.VIRTUAL_BASE_CLASSES
+	repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+
+		call GET_VBC_NODE_R (VBC, VBCP);
+		call GET_SYM_NODE_R (VBCP->VBC_NODE.SYMBOL, P);
+
+		/* See if the derived-class needs a virtual function table */
+
+		if P->SYM_NODE.VIRTUAL_FUNCTION_COUNT > 0 then
+			NEEDS_VFT = TRUE;
+
+		/* Get the size of this virtual base class */
+
+		VBC_SIZE = ROUNDU (P->SYM_NODE.NON_VIRTUAL_SIZE,
+				   BYTES,
+				   rank (P->SYM_NODE.SIZE_UNITS));
+		VBC_SIZE_UNITS = rank (P->SYM_NODE.SIZE_UNITS);
+		VBC_BOUNDARY = rank (P->SYM_NODE.BOUNDARY);
+
+		/*
+		/* Allocate space in the derived-class for the virtual
+		/* base-class.  Introduce padding into the derived-class
+		/* if necessary, if this new base-class has a more stringent
+		/* alignment requirement than the last previous base-class.
+		/**/
+
+		if VBC_BOUNDARY > rank (CLASS_PTR->SYM_NODE.SIZE_UNITS) then do;
+			CLASS_PTR->SYM_NODE.SIZE
+				= ROUNDU (CLASS_PTR->SYM_NODE.SIZE,
+					  rank (CLASS_PTR->SYM_NODE.SIZE_UNITS),
+					  VBC_BOUNDARY);
+			CLASS_PTR->SYM_NODE.SIZE_UNITS = byte (VBC_BOUNDARY);
+		end;
+
+		/* Adjust the class boundary (alignment) if necessary */
+
+		if VBC_BOUNDARY > rank (CLASS_PTR->SYM_NODE.BOUNDARY) then
+			CLASS_PTR->SYM_NODE.BOUNDARY = byte (VBC_BOUNDARY);
+
+		/* Set the virtual-base-class offset */
+
+		VBCP->VBC_NODE.OFFSET
+			= ROUNDU (CLASS_PTR->SYM_NODE.SIZE,
+				  rank (CLASS_PTR->SYM_NODE.SIZE_UNITS),
+				  BYTES);
+
+		/* Adjust the derived-class size */
+
+		CLASS_PTR->SYM_NODE.SIZE
+			= ROUNDU (CLASS_PTR->SYM_NODE.SIZE,
+				  rank (CLASS_PTR->SYM_NODE.SIZE_UNITS),
+				  VBC_SIZE_UNITS) + VBC_SIZE;
+		CLASS_PTR->SYM_NODE.SIZE_UNITS = byte (VBC_SIZE_UNITS);
+
+		/* Release this base-class sym-node */
+
+		call RELEASE_SYM_NODE (VBCP->VBC_NODE.SYMBOL);
+
+		/* Get the next vbc-node and release this one */
+
+		NEXT_VBC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+
+	/*
+	/* See if the derived-class needs a virtual function table;
+	/* if so, declare a pseudo (static) member representing the
+	/* table (array-of-virtual-table-entry-type), and queue up the
+	/* class on the list of classes which have virtual function tables.
+	/**/
+
+	if NEEDS_VFT then do;
+		call DECLARE_VFT (CLASS_PTR);
+		call QUEUE_VFT (CLASS);
+	end;
+
+end ALLOCATE_VIRTUAL_PART_ETC;
+
+/* ---------------------------------------------------------------------
+/* CHECK_NEEDS_VFT_POINTER
+/* ------------------------------------------------------------------- */
+
+CHECK_NEEDS_VFT_POINTER: procedure (CLASS_PTR)
+			 internal
+			 returns (type (BOOL_T));
+
+	declare
+		CLASS_PTR		pointer;
+	declare
+		RESULT			type (BOOL_T),
+		(BC, NEXT_BC)		type (NID_T),
+		BCP			pointer;
+
+	RESULT = (CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_COUNT > 0);
+
+	do BC = CLASS_PTR->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID & RESULT);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+
+		if BCP->BASE_CLASS_NODE.HAS_VFT_POINTER then
+			RESULT = FALSE;
+	end;
+
+	return (RESULT);
+
+end CHECK_NEEDS_VFT_POINTER;
+
+end FINISH_CLASS_SIZE;
+
+

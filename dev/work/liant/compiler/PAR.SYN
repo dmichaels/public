@@ -1,0 +1,46 @@
+* LPI Parse-Tool language definition file for MPL preprocessor
+
+***********************************************************************
+* This product is the property of Language Processors, Inc. and is    *
+* licensed pursuant to a written license agreement.  No portion of    *
+* this product may be reproduced without the written permission of    *
+* Language Processors, Inc. except pursuant to the license agreement. *
+***********************************************************************
+
+***********************************************************************
+*
+*  LPI EDIT HISTORY
+*
+*  11.13.89  DGM  000  Original; used for C++ grammar file.
+*
+***********************************************************************
+
+Begin
+
+    Language  "Parse-Tool"
+    Nickname  "parse"
+    Extension "par"
+
+    PSletters "_"
+
+    Endline "--"
+
+    Matching "'"
+
+    Casesensitivity On
+    Indenting On
+
+    Argmark "#"
+    Continuation "$"
+
+    Builtin "@"
+
+    Larglist "("
+    Rarglist ")"
+    Argbreak ","
+
+    Sescape "\"
+    Lescape "<"
+    Rescape ">"
+
+End

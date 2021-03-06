@@ -1,0 +1,1441 @@
+# CXXFE cxxfe.bld - LPI-C++ Front-End Component List
+
+########################################################################
+#  This product is the property of Liant Software Corporation and is   #
+#  licensed pursuant to a written license agreement.  No portion of    #
+#  this product may be reproduced without the written permission of    #
+#  Liant Software Corporation except pursuant to the license agreement.#
+########################################################################
+
+-def(cxxfe_version)='182'
+
+########################################################################
+#
+#  LPI EDIT HISTORY                [ Update "cxxfe_version" above ]
+#
+#  03.28.94  TXK  182  Created targhdw.in file in div/m88.
+#  12.08.93  TXK  181  Cloned include files from div/hp-pa to div/bacon
+#		       and from div/hp-ux to div/eggs so that debugger 
+#		       source files will compile. 
+#  11.11.93  DGM  180R Updated to cerror.034.pl1 (PL/I bug workaround)
+#  07.27.93  DGM  180R Updated to cxxbe.066.pl1 and emitv.052.pl1
+#		       fixes for the Intel 386/486 SVR4 port.
+#  05.12.93  DGM  180  Minor fix to expv.124.pl1; support for putting
+#		       local symbols at the beginning of the symbol list;
+#		       this was for SVR4 as the OE (genesd) was not doing
+#		       this correctly; added the -(no)locnm and -(no)locord.
+#  02.18.93  DGM  179  Minor fixes.
+#  11.09.92  DGM  178R Last minute fix to arglst.
+#  11.06.92  DGM  178R Minor fix to chkdcl.
+#  10.20.92  DGM  178  Yet more fixes for bit-field initialization;
+#		       using a new and different method which PLB first
+#		       used in the LPI-C front-end -- see datini & parini.
+#		       Minor diagnostic improvement in pardcl.
+#		       PLB fix for "case" in parstm.
+#  09.29.92  DGM  177  Added -noremfun (insurance); fixed/hacked-out
+#		       a problem in vft.022.pl1 which messed up an
+#		       external linkage VFT when compiling in debug
+#		       mode -- the CodeWatch command TYPE /VIRTUAL
+#		       will not always work correctly now -- this
+#		       needs more investigation when time permits.
+#  09.09.92  DGM  176  Fixed/enhanced diagnostics for ambiguous base
+#		       member reference and non-existent member reference.
+#		       Added the -catalogue/-vcatalogue switch (primarily
+#		       for C++/Views documentation purposes).  Fix to
+#		       not blow up after a "va_start" usage error.  Fix
+#		       to recognize "alloca" as well as "__builtin_alloca".
+#		       Preprocessor fix to allow many more include files
+#		       to be "skipped" for optimization purposes.
+#		       Preprocessor line-splicing fixes.
+#  08.31.92  DGM  175  Added SYM_NODE.DEFERRED for CodeWatch.
+#		       Scary/tricky fixes for multiple assignments of
+#		       bit-field.  Diagnose (a = b) = c in -ansic and
+#		       -classicc modes (i.e. not an lvalue).
+#		       Happy First Birthday, LPI-C++!
+#  08.19.92  DGM  174  Fixes for anonymous union member scoping, access,
+#		       and initialization.  Regression fix for USE_LONG_
+#		       OPERATIONS (plumhall/sampler/a014.c).  Catch new
+#		       of an abstract-class.  Implemented new virtual
+#		       function overriding rules wherein the return
+#		       types may differ in certain situations.
+#		       Nested class typedef fix.
+#  08.12.92  DGM  173R Float/double-to-unsigned conversion fix (convrt).
+#  08.10.92  DGM  173  More node spaces & a few minor fixes including:
+#		       #line fix (egetv.p), a (scary) user-defined-
+#		       conversion lookup change (member.p), removed
+#		       extraneous diagnostic for va_start with struct
+#		       parameter, and fix to not do usual arithmetic
+#		       conversions to 2nd/3rd operands of conditional
+#		       if they are the same type.  We now have the
+#		       following four node spaces:
+#			  1. C++ front-end node space (e.g. SET_OTHER_A)
+#			     - type-nodes
+#			     - scope-nodes
+#			     - friend-nodes
+#			     - vbc-nodes
+#			     - base-class-nodes
+#			     - derived-class-nodes
+#			     - base-member-nodes
+#			     - source-nodes
+#			     - list-nodes
+#			  2. C++ front-end node space (e.g. SET_OTHER_B)
+#			     - dim-nodes
+#			     - sig-nodes
+#			     - parameter-nodes
+#			  3. Common node space (e.g. SET_TOKEN)
+#			     - token-nodes
+#			     - pcline-nodes
+#			     - data-initial-nodes
+#			     - initial-nodes
+#			     - xxref-nodes
+#			  4. Common node space (e.g. SET_NODE)
+#			     - symbol-nodes
+#			     - block-nodes
+#			     - link-nodes
+#			     - array-nodes
+#			     - and all other common nodes
+#  07.20.92  DGM  172R Just one more fix for long standing bug comtyp.
+#  07.15.92  DGM  172  A few fixes:
+#		       dstroy: Fix in COMMON_DESTRUCTORS
+#		       pardri: Ambiguous parsing fix (regression)
+#		       comtyp: Sequence number (-defer) fix
+#		       expv:   union init bug & value-node regress fix
+#		       cpp:    #line fix
+#		       pardcl: No ANSI-C diag for impl-fun-dcl in for-stm
+#		       dclscp: BEGIN_PROTOTYPE_SCOPE fix
+#		       cpprun: Break up long lines
+#		       cpatex: Fix for: char *p; p == (char)0;
+#		       overld: Catch conversion ambiguity
+#  07.03.92  DGM  171  Applied PKT undefined nested class warnings.
+#		       Two fixes related to InterViews 3.1 (Beta).
+#  06.25.92  DGM  170  Null member-function-pointer fix.
+#		       Fix to not generate default assignment operator
+#		       if there is a user declared one which takes an
+#		       argument of the enclosing class type *or* of
+#		       a type which can be converted to the enclosing
+#		       class type.  Fix for long standing bug involving
+#		       an initializer which refers to an address of an
+#		       uninitialized internal linkage object.  Changes
+#		       for #pragma LPI data_section.  Preparation for
+#		       TOKEN_NODE space split.
+#		       Also, made -defer the default!
+#  06.22.92  MJF  169  Cloned include files from div/sparc to div/hp-pa
+#		       and from div/unix5 to div/hp-ux so that debugger 
+#		       source files will compile.  New osymnod.in so 
+#		       debugger can compile without "-def:newutil".
+#            DGM       Added -nodiag N switch to ignore any number of
+#		       specified diagnostics.  New preprocessor output
+#		       to look more like normal UNIX preprocessors.
+#		       Buffer preprocessor output for speed.
+#		       A couple Classic C compatibility switches.
+#  06.18.92  DGM  168  Misc minor fixes from PKT and myself.
+#		       Implemented first cut at #pragma LPI data_section.
+#  06.11.92  DGM  167  Correct lookup semantics for -defer switch.
+#		       Reinstated original #pragma weak implementation
+#		       which was changed because burn@sequoia.com said
+#		       we did it backwards but he was wrong.  Print
+#		       #pragmas with preprocessed output.  Added
+#		       #pragma C-header (on | off) capability.
+#  05.29.92  DGM  166  Much grammar tweaking to squeeze 10-15% compile
+#		       time speed from the front-end.  Also, a fair
+#		       number fixes, regressions and otherwise.
+#  05.19.92  DGM  165  Implemented #pragma weak.  Set SOURCE_NODE.NLINES
+#		       for the debugger.  Defer processing of internal
+#		       linkage functions defined in header files until
+#		       the end of the compilation unit (hooked on -defer);
+#		       initial results indicate a 32% to 42% compile-time
+#		       speed increase in some typical C++ modules.  Don't
+#		       emit STMNT_IDs for global initializations.  Don't
+#		       set LOCAL_AT for tag/type/member symbols.
+#  05.13.92  DGM  164R Regression fix; extern "C" { struct S { }; }.
+#  05.12.92  DGM  164  Regression fix; extern "C" int A[] fix.
+#		       Implemented extern "FORTRAN", "Pascal", "PL/I".
+#  05.08.92  DGM  163R Regression fix.
+#  05.08.92  PKT  163R TLF bug fix in pardcl.pl1 for branch-around-label.
+#  05.07.92  PKT  163R New dcldat.in, gram.par, and pardcl.dcl
+#		       to fix regressions since 158.
+#  05.05.92  PKT  163  Qualifiers of 'this' are now in SIG_NODEs.
+#		       Major rearrangement of GENERAL_CONVERT_VALUE.
+#		       Diagnostics and recovery for expressions with
+#		       function type.
+#		       Fixed base/member initializers for unions.
+#		       Diagnosis and semantics for aggregate initializers
+#		       that don't fill out the array/class.
+#		       Fixed day 1 bugs in DERIVED_TO_BASE_CLASS_POINTER
+#		       and VBC_NODE.OFFSET, and other bugs.
+#  04.30.92  DGM  162  Miscellaneous fixes for PlumHall++ negtests,
+#		       sizeof struct containing null dimensioned array,
+#		       PlumHall sampler a040.c, initializers with mixed
+#		       constant/non-constants, short enum bug,
+#		       no overloading across scopes, predefine
+#		       c_plusplus for -cfront modes, etc.
+#  04.18.92  PKT  161  Merged in the 157->158 changes, which were
+#		       absent from 159 and 160.
+#  04.03.92  PKT  160  Added reuse of nodes from prototype scope,
+#		       introduced PARAMETER_NODEs.
+#  03.27.92  DGM  159  New value-node scheme, based on 157
+#		       (i.e. excludes the changes from 157-158).
+#  03.30.92  DGM  158  Fix for globally-qualified/nested types;
+#		       Fix for Sequoia short enum parameter bug.
+#		       Nicer diagnostics for incompatible types in
+#		       expressions (esp. function arguments).
+#		       Implemented MARK macro for Sequioa (V.4).
+#  03.19.92  DGM  157  A few minor fixes (mostly for C mode); updated
+#		       parini.053.pl1, foldv.022.pl1, pardcl.106.pl1,
+#		       evali.005.pl1, lexer.023.pl1, main.030.pl1,
+#		       convrt.060.pl1, parstm.033.pl1, stmdat.007.in,
+#		       semdat.013.in, dclscp.032.pl1, and cpp.039.bld.
+#		       We now pass all the Plum Hall Error Tests except
+#		       m34004.c (comma expression in static initializer).
+#		       Fixed bit-field initialization (constant as well
+#		       as non-constant).  Fixed unsigned char comparison.
+#  03.16.92  DGM  156R Fix in expv.108.pl1 for sizeof (reference_type).
+#  03.11.92  DGM  156R Added CXX_MAY_NOT_MESS_WITH_OPS_STREAM and
+#		       updated to remfun.001.pl1 for Sequoia.
+#  03.10.92  DGM  156R Updated to typsiz.023.pl1/typsiz.009.dcl (added
+#		       extended precision long double routine for Sequoia).
+#  03.09.92  DGM  156  Updated procvf.006.pl1 (important fix which caused
+#		       certain VFTs to misconstructed), and expv.107.pl1
+#		       for a PKT fix for enums in conditionals.
+#  03.05.92  DGM  155  Updated bindut.037.pl1 (minor sym-node.referenced
+#		       fix), typsiz.010.in, sequoia/targhdw.in, and
+#		       */targhdw.in (for true extended precision long
+#		       double support for Sequoia).  Implemented some
+#		       of the C-only mode required for Sequoia
+#		       (build -def:c_only to enable this).
+#  02.26.92  DGM  154R Updated to cpp.038.bld for #pragma comment fix.
+#  02.24.92  PKT  154  Added unreferenced function removal, to speed
+#		       compilation.
+#  02.20.92  DGM  153  Fixes in emit.042.pl1, parexp.056.pl1, expv.106.pl1.
+#  02.12.92  DGM  152R Quick fix to cerror.030.pl1.
+#  02.11.92  DGM  152R Quick fix to instal.049.pl1.
+#  02.10.92  DGM  152  Minor updates; applied PKT fixes.
+#		       This may be the official LPI-C++ 1.0.7 FE list.
+#  02.06.92  BA   151R Support profiling for i386 targets.
+#  02.05.92  DGM  151R Very minor fixes; added -makedepend and -help
+#		       for lpicxx.
+#  02.04.92  PKT  151R Fixed struct argument passed by value to
+#		       non-prototyped function, affects optimizer.
+#  02.03.92  PKT  151  Added SW_LAX_STATIC_MEMBER_DEFINITION (-xsmd).
+#  01.31.92  DGM  150  Miscellaneous minor fixes from me and PKT.
+#  01.28.92  DGM  149  Implemented extension to allow a null argument
+#		       as the second argument to the "va_start" macro;
+#		       this was observed first on UNIX V.4 (it is in
+#		       documented) and was requested by a customer.
+#		       NOTE: Must be used with TMLIB-017 or later
+#		             in order to pick up the new stdarg.h.
+#  01.27.92  PKT  148  Fixes for overloaded operator->, constness of
+#		       members, front end crash regression, and more.
+#  01.24.92  DGM  147  Updated to parse.007.sh, pardri.045.pl1,
+#		       parini.052.pl1, cxxfe.019.pl1, and gram.047.par
+#		       ostensibly for compile-time improvedments, but
+#		       results were negligible; checked in anyways
+#		       since we no longer have to recompile defext
+#		       when changing the grammar.
+#  01.23.92  DGM  146R Picked up PKT fix to member.025.pl1.
+#  01.21.92  DGM  146  More fixes for InterViews, etc.
+#		       Enabled multi-space nodes for newutils.
+#		       N.B. to build with new utilities but not with
+#		       the new optimizer (BlackBird), use:
+#				-def(newutils) -def(old_optimizer)
+#  01.17.92  PKT  145  Fixed "Rogue Wave" bug in operator overloading.
+#		       Improved destructor access checking.  Bug fixes
+#		       (including 3 of them for reference operands).
+#		       SYM_NODE.ALIAS not set for based symbols.
+#  01.13.92  DGM  144  Many little bug fixes.  
+#  12.28.91  PKT  143  Support for -xcotr; miscellaneous bug fixes.
+#  12.20.91  PKT  142  Fixes for dereferenced void type, and for
+#		       void argument passed wbo prototype.
+#  12.19.91  PKT  141  Fixes for user-defined conversions.
+#  12.16.91  DGM  140  Fix in pardcl & .init/.fini stuff in gxlink.
+#		       Added -pack switch.
+#  12.03.91  DGM  139  Merge plus fix in pardcl.
+#  11.27.91  PKT  138L The "really real" 1.0.2, to refix argument
+#		       passing with -inline.
+#  11.25.91  DGM  137R Fix in instal.pl1 for ncr486.
+#  11.21.91  DGM  137  Merge & minor updates.
+#  11.19.91  PKT  136L The "real" 1.0.2.
+#		       Added CXX_STRUCTS_PASSED_BY_VALUE, to fix
+#		       variable argument list bug.  Also fixes for
+#		       overloaded member references and declaration
+#		       in the controlled statement of an iteration.
+#  11.19.91  DGM  135R Fix and eliminate P$AEQB calls.
+#  11.12.91  DGM  135  Merge.
+#  10.31.91  PKT  134R Recheck for expv.pl1 long double relational bug.
+#		       LPI-C++ 1.0.2 (sparc).
+#  10.30.91  PKT  134R Recheck for char comparison bug.
+#  10.30.91  PKT  134R Recheck to correct number for bldmsg.sh.
+#  10.28.91  PKT  134  Fixes for "unknown size" diagnostic, to generate
+#		       a copy assignment in the right circumstances, to
+#		       prevent stack blowup, to match overloading
+#		       argument that's lvalue base class.
+#  10.25.91  PKT  133R Foldv.pl1 fix.
+#  10.24.91  PKT  133  Revision 1.0.2 anticipated.  
+#		       Fixes to overloading, etc.
+#  10.21.91  PKT  132R Small fix to procvf.pl1.
+#  10.18.91  DGM  132R Added osv=unixv4 (targvar.in).
+#  10.15.91  PKT  132R Minor fix to comtyp.pl1.
+#  10.09.91  PKT  132  Support for SPARC variable argument lists.
+#  10.07.91  DGM  131R Fix in cpatex.030.pl1 (leap-frog over Sequoia 029).
+#  10.03.91  DGM  131  New cpp.028.bld (-ipathc fix); added -wcnpf.
+#  10.01.91  PKT  130R New parmin.013.pl1 to diagnose uninitialized
+#		       arrays, consts, and references.
+#  09.26.91  PKT  130  Fixes to overloading, default arguments,
+#		       array expressions, and diagnostics for generated
+#		       member functions.
+#  09.12.91  PKT  129  Miscellaneous bug fixes:  constness of 'this' in
+#		       overloading, CodeWatch evaluation of member
+#		       that is an array of structures, diagnostics,
+#		       SYM_NODE.ALIAS set properly for arrays.
+#		       Revision 1.0.1 anticipated.
+#  09.06.91  DGM  128  Very minor bug fixes and enhancements.
+#  08.30.91  DGM  127  First official release.  Happy Birthday!
+#		       LPI-C++ 1.0.0 (i386).
+#  08.23.91  DGM  127  Updated to new setjmp handling:
+#			 symnod.049.in
+#			 osymnod.007.in
+#			 emitv.034.pl1
+#			 expv.086.pl1
+#		       Warn for variables used before set if -lint:
+#			 symnod.049.in
+#			 osymnod.007.in
+#		         extmapl.095.in
+#			 bindut.028.pl1
+#			 bindut.009.dcl
+#			 arglst.023.pl1
+#			 parini.041.pl1
+#		       Warn for variables never used if -lint:
+#			 cxxbe.039.pl1
+#			 parini.041.pl1
+#		       New diagnostics for above and spelling corrections:
+#			 errmsg.029.txt
+#			 errcod.029.txt
+#			 cxxfe.017.txt (msgs)
+#		       Other minor updates:
+#			 pardcl.092.pl1
+#			 chkdcl.020.pl1
+#			 convrt.050.pl1
+#			 expv.086.pl1
+#			 cpp.027.bld
+#		       Can you tell I'm getting paranoid about tracking
+#		       changes?  Release LPI-C++ 1.0.0 in *one* week!
+#  08.21.91  VTF  126r Minor change affecting the appearance of the
+#		       TYPE /FULL command in the debugger (only).
+#                        prtyp.pl1      009
+#  08.19.91  DGM  126  Scary changes so close to release!  Applied PLB
+#		       changes (from ansic/cfe.069.bld, 06.05.90) for
+#		       handling of floating point constant folding.
+#		       The following are the relevant modules:
+#			 expv.085.pl1
+#			 foldv.017.pl1
+#			 convrt.049.pl1
+#			 parini.040.pl1
+#			 cdownv.012.pl1
+#			 emitt.021.pl1
+#			 cxxbe.038.pl1
+#			 dumpvt.009.pl1
+#			 cvalue.008.in
+#			 cnvfu.000.dcl
+#			 cnvfu.000.c
+#			 errmsg.028.txt
+#			 errcod.028.in
+#  08.14.91  DGM  125  Minor fixes.
+#  08.06.91  DGM  124  Minor fixes.
+#  08.05.91  PKT  123  Same as 122.  Created because rel.122.bld broken.
+#  08.05.91  PKT  122  4 small fixes.
+#  07.31.91  DGM  121  Misc fixes/enhancements; made -sys default!
+#  07.30.91  TLF  120  Changes to support local static destructors.
+#  07.30.91  DGM  119R Hooked pte.in on hosthardware rather than
+#		       (target) hardware; discovered doing cross
+#		       compiler for SUN/3 --> i386.
+#  07.24.91  DGM  119  #pragma LPI wrapper_redeclarations; misc fixes;
+#		       for SYM_NODE.REFERENCED; continue/case/default
+#		       fix; generate default procedures & VFTs together.
+#  07.23.91  PKT  118R Recheck: fixed small access checking regression.
+#  07.19.91  PKT  118  Miscellaneous improvements.  -istring & -imath.
+#		       Made size_t dependent on OS variant and -syssizet.
+#		       Support for CodeWatch evaluation of array slices.
+#  07.18.91  DGM  117  Misc. fixes; new start-up; CodeWatch stmnt-ids.
+#  07.09.91  DGM  116  Miscellaneous fixes.
+#  06.28.91  PKT  115  Miscellaneous fixes.  Fixed handling of string
+#		       literals in initializers.  Two VFT fixes.
+#  06.17.91  DGM  114  Miscellaneous fixes.
+#  06.14.91  PKT  113  New options -cfront1.2, -cfront2.0, -cfront2.1,
+#		       -xotp, and -xcastl. 
+#		       Support for trivial "operator=".  Bug fixes.
+#  06.06.91  PKT  112  Revision 00.90.04 anticipated.
+#		       Support for int::~int; several fixes for 
+#		       expressions with reference type; other fixes.
+#  06.05.91  DGM  111  Updated dclscp.026.pl1 and symnod.043.in to fix
+#		       my mistake in deleting the SCOPE_NODE.SCOPES list
+#		       which the front-end doesn't need but CodeWatch does.
+#  05.30.91  DGM  110  Miscellaneous fixes.
+#  05.22.91  PKT  109  Fixed and enhanced overloading matching;
+#		       fixed new_type_name; miscellaneous other fixes.
+#  05.14.91  PKT  108  Miscellaneous fixes.
+#  05.13.91  DGM  107  Revision 00.90.03.  Minor fixes.
+#  05.06.91  DGM  106  Revision 00.90.02.  External name change (INTV).
+#  05.02.91  DGM  105  Revision 00.90.02.
+#		       SPARC support/fixes.
+#  04.29.91  DGM  104  Revision 00.90.01.
+#		       Miscellaneous fixes.
+#  04.24.91  PKT  103  Oops.  102 lacked a necessary new overld.dcl.
+#  04.24.91  PKT  102  Accumulated fixes, including overloading.
+#  04.18.91  DGM  101  Revision 00.90.00.
+#		       Miscellaneous fixes; tracked down the cause and
+#		       fixed more blow-ups for i386.
+#  04.08.91  DGM  100  Miscellaneous fixes; tracked down the cause and
+#		       fixed a number of blow-ups for i386 (worked by
+#		       accident on MC680x0).  Added -version.
+#  04.08.91  DGM  099  Added %(H) build directive to indicate a *header*
+#		       module which is shared between the front-end and
+#		       debugger; changed %(B) to %(S) for "shared".
+#  04.01.91  DGM  098  Miscellaneous bug fixes; new bigger/faster parse
+#		       table implementation (new parse tool, revision 006).
+#		       Added -dbmon switch to monitor the front-end on UNIX
+#		       (use prof -a -s cxx mon.out for results).
+#  03.27.91  TLF  097  Miscellaneous bug fixes.
+#  03.26.91  PKT  096  Miscellaneous bug fixes.
+#  03.21.91  DGM  095  New #include header lookup scheme; #pragma C-header;
+#		       extern "C-header"; CPP bug fix; namdat bug fix.
+#  03.20.91  TLF  094  Miscellaneous bug fixes in overloading.
+#  03.12.91  DGM  093  Miscellaneous bug fixes; added new keywords,
+#		       write out VFT id string for CodeWatch.
+#  03.11.91  TLF  092  Bug fixes in datini.pl1, overld.pl1, and vft.pl1
+#                      for bugs revealed on 386.
+#  03.08.91  PKT  091  Miscellaneous bug fixes.
+#  03.08.91  DGM  090  Many miscellaneous/important bug fixes.
+#  02.27.91  DGM  089  Miscellaneous bug fixes.
+#  02.26.91  TLF  088  Miscellaneous bug fixes.
+#  02.21.91  DGM  087  Miscellaneous fixes; new DUMPVT. PlumHall results:
+#		       lang:  1222 passes 5 failures
+#		       prec1:  821 passes 0 failures
+#		       prec2: 1179 passes 1 failure
+#  02.21.91  PKT  086  Member pointers mostly implemented.
+#  02.13.91  TLF  085  RECHECKOUT!! Incremented version number for 
+#		       i386 version of targhdw.in to 001.
+#  02.11.91  DGM  085  Many miscellaneous fixes.
+#  02.01.91  DGM  084  Updated to the new global names scheme.
+#  01.31.91  DGM  083  Many miscellaneous fixes include anonymous
+#		       unions and static member fixes.
+#  01.27.91  PKT  082  Laid the groundwork for member pointers; a few fixes.
+#  01.23.91  TLF  081  Two bug fixes.
+#  01.18.91  DGM  080  Enumeration checks; various misc. fixes.
+#  01.15.91  PKT  079  Full implementation of access control; fixes.
+#  01.10.91  DGM  078  Multi-qualified names; syntax ambiguities;
+#		       many miscellaneous minor fixes.
+#  01.09.91  TLF  077  Fixes to bugs found when building the stream library.
+#  12.28.90  PKT  076  Bug fixes associated with 075.  Also DGM improved
+#                      name mangling and linkage of inline functions.
+#  12.20.90  PKT  075  Partial implementation of access control;
+#		       substantial changes to defer handling cast and dot
+#		       until TRANSMUTE_WITH_TEMP time.  Bug fixes.
+#  12.17.90  DGM  074  Handled integral "const" variables properly.
+#		       Misc. fixes/enhancements from DGM & TLF.
+#  12.13.90  TLF  073  Added address of overloaded function to 
+#                      COMPATIBLE_ASSIGNMENT_POINTERS, bug fixes
+#                      for initialization of statics with constant
+#                      initializers.
+#  12.12.90  DGM  072  New base class & inherited member lookup algorithms.
+#		       Added SYM_NODE.VIRTUAL_BASE_CLASSES and routines
+#		       to construct the associated vbc-node list.
+#		       Updated misc. modules to use the vbc-node list
+#		       rather than GET/DELETE_VIRTUAL_BASE_CLASS_LIST.
+#		       Fix for "void f (int = (ios::in))".
+#  11.29.90  DGM  071  Miscellaneous changes for CodeWatch; also, call
+#		       virtual functions non-virtually when called thru
+#		       class *object*; mangled names properly; nested
+#		       function/class support.  Added VBC_NODE.
+#  11.29.90  TLF  070  Changes to allow > 32000 value_nodes. (Note:
+#                      removed cxvalu.pl1 from the list.)
+#		       Added support for arrays of class objects in
+#		       compiler-generated copy constructor and assign
+#                      operator.
+#		       Miscellaneous bug fixes.
+#  11.19.90  TLF  069  Miscellaneuos changes to support initialization
+#                      with non-constant initializers at file scope.
+#  11.15.90  DGM  068  Miscellaneous front-end and CodeWatch fixes.
+#  11.12.90  DGM  067  Updated to the new diagnostic message facility.
+#  11.09.90  PKT  066  Support for default arguments; bug fixes.
+#  11.06.90  DGM  065  Additions for inheriting pure virtual functions,
+#		       virtual function overriding, catching ambiguous
+#		       virtual base class virtual function overriding down
+#		       more than one path, catch illegal pure virtual
+#		       function calls; fixes non-virtually called virtual
+#		       functions, virtual function table construction,
+#		       omitted declaration specifiers, etc..
+#  11.02.90  TLF  064  Added non-constant initializers for non-class
+#                      variables.
+#  11.01.90  PKT  063  Better tracking of whether expression trees
+#                      need to go through INITIALIZE_OBJECT.  Other fixes.
+#  10.24.90  PKT  062  Misc. fixes, e.g. base and member initialization.
+#		       Added CXX_USING_PHOENIX, etc. from ANSI C.
+#  10.23.90  DGM  061  Misc. debugger updates; finished composite types
+#		       for declarations as well as for expressions (e.g.
+#		       in conditionals); misc. fixes.
+#  10.22.90  TLF  060  Added generation of default procedures.
+#  10.17.90  PKT  059  Tiny tweak to dot expressions, for debugger.
+#  10.16.90  PKT  058  Base & member initialization;
+#		       CPLUS_VAL.COUNT fixes.
+#  10.12.90  DGM  057  Miscellaneous debugger updates,
+#		       as well as a number of fixes.
+#  10.10.90  DGM  056  Miscellaneous debugger updates, as well
+#		       as a number of front-end and preprocessor
+#		       (cpp.004.bld) fixes and enhancements.
+#  09.28.90  PKT  055  Fixes; INIT_REF_CHECK revision.
+#  09.25.90  DGM  054  Updated for debugger usage (and misc fixes).
+#		       Following (the version number of) each module in
+#		       this list, a %(F), %(D), or %(B) should be placed
+#		       to indicate whether the module is for front-end
+#		       use only, debugger use only, or for both.
+#  09.17.90  PKT  053  Fixes for free store; use copy constructor for args.
+#  09.17.90  PKT  052  Fixed list 051 reference to wrong grammar files.
+#  09.14.90  DGM  051  New include file replace constant names
+#		       to resolve CodeWatch/ANSI-C clashes.
+#  09.12.90  DGM  050  Implicit copy constructor declaration & fixes.
+#  09.06.90  TLF  049  Added support for overloading of comma.
+#  09.05.90  PKT  048  Added free store operations, SYM_NODE.NEEDS_XXX.
+#  09.04.90  DGM  047  Miscellaneous updates/fixes.
+#  09.04.90  TLF  046  Updated.
+#  08.29.90  DGM  045  Added type-node hashing.
+#  08.27.90  TLF  044  Updated.
+#  08.21.90  DGM  043  Integrated TLFs new overloading code.
+#  08.10.90  DGM  042  New type-node and type-compatibility routines.
+#  08.07.90  PKT  041  Destructor calls for gotos, switches and reference
+#		       temps.  Control flow analysis.  Better checks for
+#		       when a symbol is defined.  New LEFT_VALUE_VOP.
+#  07.26.90  DGM  040  Set the "not-most-derived" flag for constructors
+#		       and destructors, and miscellaneous fixes.
+#  07.24.90  TLF  039  Partial implementation of user conversions.
+#  07.23.90  DGM  038  Set virtual base class pointers in constructors,
+#		       Added SYM_NODE.CONVERSION_TYPE, minor bug fixes,
+#		       and updated to cpp.002.bld.
+#  07.23.90  PKT  037  Destructor calls implemented, except for gotos,
+#		       switches, and arrays.
+#  07.19.90  DGM  036  Implemented virtual function calls, set virtual
+#		       function table pointers in constructor, inherited
+#		       member reference and access control, etc.
+#  07.05.90  PKT  035  Changed the treatment of CPLUS_VAL.COUNT=0.
+#                      Calls to member functions, skeleton of destructors.
+#  06.25.90  DGM  034  Added class pointer conversion code.
+#  06.20.90  PKT  033  Made references to cswitch.in consistent (recheck).
+#  06.19.90  PKT  033  Bug fixes, especially for static initialization.
+#  06.18.90  TLF  032  Modifications to handle reference types (except
+#                      classes) in non-static inits, calls, and returns.
+#  06.14.90  PKT  031  Better compatibility with ANSI C; Plum-Hall tests.
+#  06.07.90  DGM  030  Updated for new utilities; factored out the
+#		       preprocessor and token-pod manager into a new
+#		       component call "cpp".
+#  05.31.90  PKT  029  Calls to constructors; using an assignment
+#		       operation as an lvalue.
+#  05.25.90  DGM  028  Virtual-function-table changes/fixes et al.
+#  05.17.90  DGM  027  More virtual-base-class/virtual-function changes.
+#  05.15.90  DGM  026  Added code to set the sizes/offsets of derived/
+#		       base classes and to look up virtual functions
+#		       set the virtual function indices.  Also, new
+#		       error message interface -- see cerror_dcl.
+#  05.11.90  DGM  025  Added stuff for virtual function and base
+#		       classes the SYM_NODE.
+#  05.11.90  TLF  024  Added folding of float constants to foldv,
+#                      added some missing VOPs to expv.
+#  04.27.90  DGM  023  Updated to new ABI bit-field handling (for decla-
+#		       rations, still needs work in expv).  Also, set
+#		       EXTERNAL_BLOCK properly, handle initialization of
+#		       "const" types and guard against assignment to
+#		       classes containing "const" members.  Also (for PLB),
+#		       modified pp.pl1 to handle arbitrarily long strings.
+#		       And other miscellaneous fixes.
+#  04.25.90  DGM  022  Old-style function declarations and & other fixes.
+#  04.19.90  DGM  021  Data initialization & misc. fixes.
+#  04.17.90  PKT  020  Call and argument checking.
+#  04.06.90  TLF  019  Minor fixes/enhancements to incomplete routines.
+#  04.04.90  DGM  018  Minor fixes/updates.
+#  03.27.90  DGM  017  Changes in the declarations processor.
+#  03.26.90  TLF  016  Added pointer compatiblity checking
+#		       routines to EXPAND_VALUE.
+#  03.14.90  PKT  015  More capabilities for EXPAND_VALUE.
+#  03.02.90  DGM  014  Many changed for declarations processor.
+#  02.27.90  PKT  013  Implemented DETERMINE_SIZE, etc.
+#  02.22.90  DGM  012  Changes for declaration parser.
+#  02.22.90  TLF  011  Many changes for expression parser.
+#  02.20.90  PKT  010  Parsing statements.
+#  02.15.90  DGM  009  New TYPE_NODE scheme, CXXBE, etc.
+#  02.09.90  DGM  008  Many changes all around.
+#  02.06.90  TLF  007  Many changes for expression parser.
+#  02.05.90  DGM  006  Updated.
+#  01.19.90  DGM  005  Updated.
+#  12.12.89  DGM  004  Updated.
+#  12.08.89  DGM  003  Updated.
+#  11.22.89  DGM  000  Original.
+#
+########################################################################
+
+# ----------------------------------------------------------------------
+# Front-end version
+# ----------------------------------------------------------------------
+
+# For development, just make this the version number of this list.
+
+-replace CXXFE_VERSION=%"'%(cxxfe_version)'"
+
+# ----------------------------------------------------------------------
+# Configuration
+# ----------------------------------------------------------------------
+
+-ifdef(cxx_debugger)	# DEBUGGER WITH C++:
+ -def(F)="-ignore"	# %(F) -- Front-end only module.
+ -def(S)="-o=cxx_%N"	# %(S) -- Shared front-end & debugger module.
+ -def(H)="-name=%F"	# %(H) -- Shared front-end & debugger header module.
+-elseifdef(debugger)	# DEBUGGER WITHOUT C++:
+ -def(F)="-ignore"	# %(F) -- Front-end only module.
+ -def(S)="-ignore"	# %(S) -- Shared front-end & debugger module.
+ -def(H)="-name=%F"	# %(H) -- Shared front-end & debugger header module.
+-else			# FRONT-END:
+ -def(F)="-o=%N"	# %(F) -- Front-end only module.
+ -def(S)="%(F)"		# %(S) -- Shared front-end & debugger module.
+ -def(H)="-name=%F"	# %(H) -- Shared front-end & debugger header module.
+-endif
+
+# ----------------------------------------------------------------------
+# Build as a C-only compiler?
+# ----------------------------------------------------------------------
+
+-ifdef(c_only)
+ -replace CXX_C_ONLY="'1'b"
+-else
+ -replace CXX_C_ONLY="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# Select Phoenix/Non-Phoenix Style OPs.
+#
+# N.B. -def:phoenix or -def:no_phoenix may be set in the build command.
+# ----------------------------------------------------------------------
+
+-ifndef(no_phoenix)
+ -if(hardware)=m88
+  -def(phoenix)
+ -elseif(hardware)=sparc
+  -def(phoenix)
+ -endif
+-endif    
+
+-ifdef(phoenix)
+ -replace CXX_USING_PHOENIX="'1'b"
+ -ifdef(label_ref)
+  -replace CXX_USING_PHOENIX_LABEL_REF="'1'b"
+ -else
+  -replace CXX_USING_PHOENIX_LABEL_REF="'0'b"
+ -endif
+-else
+ -replace CXX_USING_PHOENIX="'0'b"
+ -replace CXX_USING_PHOENIX_LABEL_REF="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# Select new or old utilities
+# ----------------------------------------------------------------------
+
+-ifdef(newutils)
+ -replace CXX_USING_NEW_UTILS="'1'b"
+-else
+ -replace CXX_USING_NEW_UTILS="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# Select new (BlackBird) or old optimizer
+# ----------------------------------------------------------------------
+
+-ifdef(newutils)
+ -ifndef(old_optimizer)   # set via command-line only
+  -def(using_blackbird)   # default is blackbird for new utils.
+ -endif
+ -ifndef(no_multi_space_nodes)
+  -replace CXX_NO_MULTI_SPACE_NODE_SCHEME="'0'b"
+ -else
+  -replace CXX_NO_MULTI_SPACE_NODE_SCHEME="'1'b"
+ -endif
+-else
+ -replace CXX_NO_MULTI_SPACE_NODE_SCHEME="'1'b"
+-endif
+
+# ----------------------------------------------------------------------
+# If we are using old utilities (which is not really done anymore) OR if
+# we are using new utilities, the old optimizer AND this is Sequoia, then
+# disable the code which removes OPs of unreferenced functions from the OP
+# file.  This is because of a weird hack we do for Sequoia which allows
+# them to compile large programs which require 32-bit OP ids in -noopt mode.
+# You see, the only reason we can use new utilities with the old optimizer
+# is that John Kaminski wrote adapter routines which translate 32-bit OP
+# ids to 16-bit OP ids.  So, what we do is to not call the adapter OP
+# utility routines if we are compiling in -noopt mode; in -opt mode
+# we must still call the adaptor routines.  This allows us to to compile
+# large programs which require 32-bit OP ids in -noopt mode (but not in
+# -opt mode).  But, this also means that in -opt mode we cannot mess with
+# the OP stream, e.g. delete OP from the OP file, which is exactly what
+# we do when we delete OPs of unreferenced functions.  Fortunately these
+# hacks will go away when we go to the new optimizer on Sequoia.
+# ----------------------------------------------------------------------
+
+-ifdef(newutils)
+ -ifdef(old_optimizer)
+  -if(target)=sequoia
+   -replace CXX_MAY_NOT_MESS_WITH_OPS_STREAM="'1'b"
+  -else
+   -replace CXX_MAY_NOT_MESS_WITH_OPS_STREAM="'0'b"
+  -endif
+ -else
+   -replace CXX_MAY_NOT_MESS_WITH_OPS_STREAM="'0'b"
+ -endif
+-else
+ -replace CXX_MAY_NOT_MESS_WITH_OPS_STREAM="'1'b"
+-endif
+
+# ----------------------------------------------------------------------
+# Old optimizer needs the infamous alias bit set address and external REFs.
+# ----------------------------------------------------------------------
+
+-ifndef(using_blackbird)
+ -def(optimizer_needs_alias_bit)
+-endif
+
+-ifdef(optimizer_needs_alias_bit)
+ -replace CXX_OPTIMIZER_NEEDS_ALIAS_BIT="'1'b"
+-else
+ -replace CXX_OPTIMIZER_NEEDS_ALIAS_BIT="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# Signed "char" type comparisons supported on this architecture by CGG.
+# ----------------------------------------------------------------------
+
+-ifdef(allows_byte_compares)
+ -replace CXX_ALLOWS_BYTE_COMPARES="'1'b"
+-else
+ -replace CXX_ALLOWS_BYTE_COMPARES="'0'b" 
+-endif
+
+# ----------------------------------------------------------------------
+# Toggle whether the we should attempt to perform operations
+# on narrower types, thus avoiding widening conversions. 
+# ----------------------------------------------------------------------
+
+-if(hardware)=i386
+ -def(use_long_operations)
+-elseif(hardware)=m88
+ -def(use_long_operations)      
+-elseif(hardware)=sparc
+ -def(use_long_operations)      
+-endif
+
+-ifdef(use_long_operations)      
+ -replace CXX_USE_LONG_OPERATIONS="'1'b"
+-else
+ -replace CXX_USE_LONG_OPERATIONS="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# How are structures passed?
+# ----------------------------------------------------------------------
+
+-if(hardware)=i386
+ -def(hardware_passes_structs_by_value)
+-elseif(hardware)=m68
+ -def(hardware_passes_structs_by_value)
+-endif
+
+-ifdef(hardware_passes_structs_by_value)
+ -replace CXX_STRUCTS_PASSED_BY_VALUE="'1'b"
+-else
+ -replace CXX_STRUCTS_PASSED_BY_VALUE="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# ABI (88/Open) conventions for bit-fields require unnamed
+# bit-field members contribute to structure alignment.
+# ----------------------------------------------------------------------
+
+-ifdef(ABI_unnamed_bit_fields)
+ -replace CXX_ABI_STYLE_UNNAMED_BIT_FIELDS="'1'b"
+-else
+ -replace CXX_ABI_STYLE_UNNAMED_BIT_FIELDS="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# Traditional flavor of VARARGS, i.e. "va_alist" may requires 
+# builtin functionality; closely tied to <varargs.h> and <LPI/sysdef.h>
+# ----------------------------------------------------------------------
+
+-if(target)=sun4
+ -replace CXX_TRADITIONAL_VARARGS_BUILTIN="'1'b"
+-else
+ -replace CXX_TRADITIONAL_VARARGS_BUILTIN="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# If the system support object files with .init/.fini sections,
+# then set SYSTEM_HAS_INIT_FINI_SECTIONS.
+# ----------------------------------------------------------------------
+
+-if(osv)=unixv4
+ -replace CXX_SYS_HAS_INIT_FINI_SECTIONS="'1'b"
+-else
+ -replace CXX_SYS_HAS_INIT_FINI_SECTIONS="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# Use the target system mbtowc and mbstowcs routines if possible.
+# If we can, then compiled mbtowc.c with USE_SYSTEM_MBTOWC_ROUTINES
+# #defined, in addition, if the the particular routine mbstowcs does
+# not exist, then compile mbtowc.c with MBSTOWCS_DOES_NOT_EXIT #defined.
+# ----------------------------------------------------------------------
+
+-if(target)=sequoia
+ -def(mbtowc_args)='-define USE_SYSTEM_MBTOWC_ROUTINES -define SYSTEM_MBSTOWCS_DOES_NOT_EXIST'
+-else
+ -def(mbtowc_args)=''
+-endif
+
+# ----------------------------------------------------------------------
+# Do we want to mangle static member functions like cfront?
+# ----------------------------------------------------------------------
+
+-if(target)=unixv4
+ -replace CXX_MANGLE_STATIC_MEMBER_FUN="'1'b"
+-else
+ -replace CXX_MANGLE_STATIC_MEMBER_FUN="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# Do we want to output #pragma data_section implicitly for #idents?
+# ----------------------------------------------------------------------
+
+-if(target)=sequoia
+ -replace CXX_IMPLICIT_PRAGMA_DATA_SECTION="'1'b"
+-else
+ -replace CXX_IMPLICIT_PRAGMA_DATA_SECTION="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# Do we need to do re-ordering of symbols which have relocation data
+# and/or on local symbols?
+# ----------------------------------------------------------------------
+
+-if(osv)=unix5
+ -replace CXX_NEEDS_RELOCATION_ORDERING="'1'b"
+ -replace CXX_NEEDS_LOCAL_SYMBOL_ORDERING="'0'b"
+-elseif(osv)=unixv4
+ -replace CXX_NEEDS_RELOCATION_ORDERING="'0'b"
+ -replace CXX_NEEDS_LOCAL_SYMBOL_ORDERING="'1'b"
+-else
+ -replace CXX_NEEDS_RELOCATION_ORDERING="'0'b"
+ -replace CXX_NEEDS_LOCAL_SYMBOL_ORDERING="'0'b"
+-endif
+
+# ----------------------------------------------------------------------
+# C++ front-end
+# ----------------------------------------------------------------------
+
+-component=cxxfe
+
+# Main/startup modules
+
+main.pl1   -v=036 %(F) # Main front-end module (first in bin.list)
+xinife.pl1 -v=079 %(F) # Command line processor module
+cxxfe.pl1  -v=021 %(F) # C++ parser	
+cxxbe.pl1  -v=066 %(F) # Front-end "back-end" post-pass (pre-allocater)
+mon.c      -v=003 %(F) # Monitor front-end performance.
+
+# Token-pod code-maps
+
+tokmapo.in -v=008 %(H) -replace=CXX_TOKEN_MAP_OPERATOR_IN
+tokmapd.in -v=006 %(F) -replace=CXX_TOKEN_MAP_DECLARATION_IN
+tokmapt.in -v=007 %(H) -replace=CXX_TOKEN_MAP_TERMINAL_IN
+
+# Front-end "lexer" (invokes preprocessor via the token pod manager)
+
+lexer.dcl  -v=006 %(H) -replace=CXX_LEXER_PKG
+lexer.in   -v=005 %(H) -replace=CXX_LEXER_IN
+lextok.dcl -v=002 %(H) -replace=CXX_LEXER_TOKENS_PKG
+lextok.in  -v=003 %(H) -replace=CXX_LEXER_TOKENS_IN
+lexer.pl1  -v=028 %(F) 
+
+# Front-end source file state (stack) manager
+
+srcmgr.dcl -v=005 %(H) -replace=CXX_SOURCE_MGR_PKG
+srcmgr.in  -v=004 %(H) -replace=CXX_SOURCE_MGR_IN
+srcmgr.pl1 -v=011 %(F) 
+
+# C++ Grammar & Parser
+
+parse.sh   -v=008 %(F) -ignore # Builds partab.in/paract.pl1 from gram.par
+parse1.sed -v=007 %(F) -ignore # Used by parse.sh
+parse2.sed -v=007 %(F) -ignore # Used by parse.sh
+parse3.sed -v=007 %(F) -ignore # Used by parse.sh
+par.lan    -v=001 %(F) -ignore # Used by MPL for parse.sh
+par.syn    -v=001 %(F) -ignore # Used by MPL for parse.sh
+
+gram.par   -v=057 %(F) -ignore # The C++ grammar
+partab.in  -v=057 %(F) -replace=CXX_PARSE_TABLE_IN
+paract.pl1 -v=057 %(F) -replace=CXX_PARSE_ACTION_CODE_IN
+
+parterm.in -v=004 %(H) -replace=CXX_PARSER_TERMINAL_CODES_IN
+
+pardri.dcl -v=010 %(H) -replace=CXX_PARSER_PKG
+pardri.pl1 -v=054 %(F) # Main parser driver
+
+# partab.c   -v=001 %(F) # Gets entries from the parse table (OBSOLETE)
+
+intpar.dcl -v=002 %(H) -replace=CXX_INTERNAL_PARSE_PKG
+intpar.in  -v=004 %(H) -replace=CXX_INTERNAL_PARSE_IN
+intpar.pl1 -v=005 %(F) 
+
+# Parser semantic action modules (declarations, expressions, statements)
+
+semdat.in  -v=014 %(H) -replace=CXX_GLOBAL_SEMANTIC_DATA_IN
+
+# Parser semantic action modules (types/declarations)
+
+typdat.in  -v=004 %(H) -replace=CXX_GLOBAL_TYPE_DATA_IN
+dcldat.in  -v=019 %(H) -replace=CXX_GLOBAL_DECLARATION_DATA_IN
+
+pardcl.dcl -v=035 %(S) -replace=CXX_PROCESS_DECLARATION_PKG
+pardcl.pl1 -v=129 %(F)
+
+chkdcl.dcl -v=006 %(F) -replace=CXX_CHECK_DECLARATION_PKG
+chkdcl.in  -v=001 %(F) -replace=CXX_CHECK_DECLARATION_IN
+chkdcl.pl1 -v=033 %(F)
+
+procvf.dcl -v=000 %(F) -replace=CXX_PROCESS_VIRTUAL_FUNCTION_PKG
+procvf.pl1 -v=009 %(F)
+
+buityp.dcl -v=008 %(H) -replace=CXX_BUILD_TYPE_PKG
+buityp.pl1 -v=027 %(S)
+
+hshtyp.dcl -v=001 %(H) -replace=CXX_HASH_TYPE_PKG
+hshtyp.pl1 -v=009 %(F)
+hasht.c    -v=002 %(F)
+
+typstk.dcl -v=009 %(H) -replace=CXX_TYPE_STACK_PKG
+typstk.pl1 -v=010 %(S)
+
+dclstk.dcl -v=008 %(H) -replace=CXX_DECLARATION_STACK_PKG
+dclstk.pl1 -v=012 %(S)
+
+scpstk.dcl -v=001 %(H) -replace=CXX_SCOPE_STACK_PKG
+scpstk.pl1 -v=004 %(F)
+
+dclscp.dcl -v=005 %(H) -replace=CXX_SCOPE_DECLARATION_PKG
+dclscp.pl1 -v=040 %(F)
+
+setscp.dcl -v=001 %(H) -replace=CXX_SET_SCOPE_PKG
+setscp.pl1 -v=002 %(S)
+
+dclsym.dcl -v=015 %(H) -replace=CXX_DECLARE_SYMBOL_PKG
+dclsym.pl1 -v=044 %(F)
+
+dcltyp.dcl -v=012 %(H) -replace=CXX_DECLARE_TYPE_PKG
+dcltyp.pl1 -v=028 %(S)
+
+namdat.dcl -v=001 %(H) -replace=CXX_GLOBAL_NAMES_PKG
+namdat.in  -v=007 %(H) -replace=CXX_GLOBAL_NAMES_IN
+namdat.pl1 -v=011 %(S)
+
+savgbl.dcl -v=000 %(H) -replace=CXX_SAVE_GLOBAL_DATA_PKG
+savgbl.pl1 -v=005 %(S)
+
+clasiz.dcl -v=005 %(H) -replace=CXX_CLASS_SIZE_PKG
+clasiz.pl1 -v=020 %(F)
+
+vft.dcl    -v=005 %(F) -replace=CXX_VIRTUAL_FUNCTION_TABLE_PKG
+vft.pl1    -v=023 %(F)
+
+# Parser semantic action modules (expression)
+
+expdat.in   -v=010 %(H) -replace=CXX_GLOBAL_EXPRESSION_DATA_IN
+
+parexp.dcl  -v=010 %(H) -replace=CXX_PROCESS_EXPRESSION_PKG
+parexp.in   -v=002 %(H) -replace=CXX_PROCESS_EXPRESSION_IN
+parexp.pl1  -v=061 %(S)
+addck.dcl   -v=002 %(H) -replace=CXX_CHECK_ARITHMETIC_PKG
+addck.pl1   -v=004 %(S)
+arglst.dcl  -v=005 %(H) -replace=CXX_CHECK_ARGUMENT_LIST_PKG
+arglst.pl1  -v=042 %(S)
+argprm.dcl  -v=001 %(H) -replace=CXX_ARGUMENT_PROMOTION_PKG
+argprm.pl1  -v=001 %(S)
+bassym.dcl  -v=001 %(H) -replace=CXX_BASSYM_PKG
+bassym.pl1  -v=005 %(S)
+bif.dcl     -v=002 %(H) -replace=CXX_LOOKUP_BUILTIN_PKG
+bif.pl1     -v=004 %(S)
+bindut.dcl  -v=013 %(H) -replace=CXX_BIND_EXPRESSION_UTL_PKG
+bindut.pl1  -v=041 %(S)
+cdownv.dcl  -v=004 %(H) -replace=CXX_COUNT_DOWN_VALUE_PKG
+cdownv.pl1  -v=013 %(S)
+ckflow.dcl  -v=002 %(H) -replace=CXX_CHECK_FLOW_PKG
+ckflow.pl1  -v=005 %(F)
+clsutl.dcl  -v=017 %(H) -replace=CXX_CLASS_UTL_PKG
+clsutl.pl1  -v=049 %(S)
+cnvptr.dcl  -v=005 %(H) -replace=CXX_CONVERT_CLASS_POINTER_PKG
+cnvptr.pl1  -v=010 %(S)
+constr.dcl  -v=001 %(H) -replace=CXX_PROCESS_CONSTANT_PKG
+constr.pl1  -v=010 %(S)
+cnvcon.dcl  -v=000 %(H) -replace=CXX_CONVERT_CONSTANT_PKG
+cnvcon.pl1  -v=003 %(S)
+mbtowc.c    -v=003 %(S) -args=%(mbtowc_args)
+convrt.dcl  -v=012 %(H) -replace=CXX_CONVERT_VALUE_PKG
+convrt.pl1  -v=070 %(S)
+copyv.dcl   -v=002 %(H) -replace=CXX_COPY_VALUE_PKG
+copyv.pl1   -v=005 %(S)
+ctor.dcl    -v=003 %(F) -replace=CXX_EMIT_CONSTRUCTOR_CODE_PKG
+ctor.pl1    -v=018 %(F)
+cupv.dcl    -v=002 %(H) -replace=CXX_COUNT_UP_VALUE_PKG
+cupv.pl1    -v=007 %(S)
+cvalue.in   -v=010 %(H) -replace=CXX_VALUE_NODE_IN
+cxvalu.dcl  -v=004 %(H) -replace=CXX_VALUE_NODE_MGR_PKG
+datsec.in   -v=000 %(H) -replace=CXX_PRAGMA_DATA_SECTION_IN
+datsec.dcl  -v=002 %(H) -replace=CXX_PRAGMA_DATA_SECTION_PKG
+datsec.pl1  -v=003 %(F)
+defer.dcl   -v=004 %(H) -replace=CXX_DEFER_FUNCTION_PKG
+defer.pl1   -v=006 %(F)
+dftgen.dcl  -v=005 %(H) -replace=CXX_DEFAULT_PROC_GENERATION_PKG
+dftgen.pl1  -v=026 %(F)
+dstroy.dcl  -v=006 %(H) -replace=CXX_CALL_DESTRUCTOR_PKG
+dstroy.in   -v=001 %(H) -replace=CXX_CALL_DESTRUCTOR_IN
+dstroy.pl1  -v=030 %(S)
+dtor.dcl    -v=003 %(H) -replace=CXX_EMIT_DESTRUCTOR_CODE_PKG
+dtor.pl1    -v=010 %(F)
+dumpvt.dcl  -v=003 %(H) -replace=CXX_DUMP_VALUE_TREE_PKG
+dumpvt.pl1  -v=012 %(S)
+dupv.dcl    -v=001 %(H) -replace=CXX_DUPLICATE_VALUE_PKG
+dupv.pl1    -v=003 %(S)
+egetv.dcl   -v=002 %(H) -replace=CXX_GET_EXPANDED_VALUE_PKG
+egetv.pl1   -v=005 %(S)
+emitcr.dcl  -v=002 %(F) -replace=CXX_EMIT_CONDITIONAL_REF_PKG
+emitcr.pl1  -v=006 %(F)
+emitt.dcl   -v=002 %(H) -replace=CXX_EMIT_VALUE_TREE_PKG
+emitt.pl1   -v=027 %(F)
+emitv.dcl   -v=002 %(F) -replace=CXX_EMIT_VALUE_PKG
+emitv.pl1   -v=052 %(F)
+evali.dcl   -v=002 %(H) -replace=CXX_EVALUATE_INTEGER_PKG
+evali.pl1   -v=006 %(S)
+evalp.dcl   -v=002 %(H) -replace=CXX_EVALUATE_POINTER_PKG
+evalp.pl1   -v=006 %(S)
+expv.dcl    -v=002 %(H) -replace=CXX_EXPAND_VALUE_PKG
+expv.pl1    -v=125 %(S)
+foldv.dcl   -v=002 %(H) -replace=CXX_FOLD_VALUE_PKG
+foldv.pl1   -v=026 %(S)
+gtvpnm.dcl  -v=002 %(H) -replace=CXX_OPERATOR_NAME_PKG
+gtvpnm.pl1  -v=019 %(S)
+intprm.dcl  -v=001 %(H) -replace=CXX_INTEGRAL_PROMOTION_PKG
+intprm.pl1  -v=005 %(S)
+intv.dcl    -v=004 %(H) -replace=CXX_INTEGER_VALUE_PKG
+intv.pl1    -v=008 %(S)
+istycl.dcl  -v=002 %(H) -replace=CXX_TYPE_CLASS_PKG
+istycl.in   -v=004 %(H) -replace=CXX_TYPE_CLASS_IN
+istycl.pl1  -v=005 %(S)
+newval.pl1  -v=002 %(S)
+maktmp.dcl  -v=003 %(H) -replace=CXX_MAKE_TEMPORARY_PKG
+maktmp.pl1  -v=014 %(S)
+mbrptr.dcl  -v=004 %(H) -replace=CXX_MEMBER_POINTER_PKG
+mbrptr.pl1  -v=013 %(S)
+member.dcl  -v=005 %(H) -replace=CXX_MEMBER_VALUE_PKG
+member.pl1  -v=030 %(S)
+overld.dcl  -v=007 %(H) -replace=CXX_OVERLOAD_PKG
+overld.pl1  -v=051 %(S)
+refchk.dcl  -v=004 %(H) -replace=CXX_CHECK_REFERENCE_TYPE_PKG
+refchk.pl1  -v=030 %(S)
+relord.dcl  -v=002 %(H) -replace=CXX_RELOCATION_DEPENDENCY_PKG
+relord.pl1  -v=003 %(F)
+remfun.dcl  -v=000 %(H) -replace=CXX_REMOVE_FUNCTIONS_PKG
+remfun.pl1  -v=004 %(F)
+semstk.dcl  -v=000 %(H) -replace=CXX_SEMANTIC_STACK_PKG
+semstk.in   -v=000 %(H) -replace=CXX_SEMANTIC_STACK_IN
+semstk.pl1  -v=001 %(S)
+termap.in   -v=004 %(H) -replace=CXX_TERMINAL_MAP_IN
+typinf.dcl  -v=011 %(H) -replace=CXX_TYPE_INFO_PKG
+typinf.in   -v=005 %(H) -replace=CXX_TYPE_INFO_IN
+typinf.pl1  -v=025 %(S)
+typsiz.dcl  -v=009 %(H) -replace=CXX_TYPE_SIZE_PKG
+typsiz.in   -v=010 %(H) -replace=CXX_TYPE_SIZE_IN
+typsiz.pl1  -v=023 %(S)
+weak.dcl    -v=000 %(H) -replace=CXX_PRAGMA_WEAK_PKG
+weak.pl1    -v=002 %(F)
+udiv32.dcl  -v=001 %(H) -replace=CXX_UNSIGNED_LONG_DIVISION_PKG	
+
+cnvfu.dcl   -v=000 %(H) -replace=CXX_FLOAT_UNSIGNED_CONVERT_PKG
+cnvfu.c     -v=000 %(S)
+
+# Parser semantic action modules (statements)
+
+stmdat.in  -v=008 %(F) -replace=CXX_GLOBAL_STATEMENT_DATA_IN
+
+parstm.dcl -v=012 %(H) -replace=CXX_PROCESS_STATEMENT_PKG
+parstm.in  -v=002 %(H) -replace=CXX_PROCESS_STATEMENT_IN
+parstm.pl1 -v=037 %(F)
+
+cxoper.pl1 -v=007 %(S)
+
+fixdtl.dcl -v=000 %(F) -replace=CXX_FIXUP_DESTRUCTOR_LIST_PKG
+fixdtl.pl1 -v=002 %(F)
+
+psect.in   -v=000 %(H) -replace=CXX_PSECT_IN
+psect.dcl  -v=001 %(F) -replace=CXX_PSECT_PKG
+
+chead.dcl  -v=000 %(F) -replace=CXX_C_HEADER_MODE_PKG
+chead.pl1  -v=005 %(F)
+
+# Data initialization modules
+
+parini.dcl -v=005 %(F) -replace=CXX_PROCESS_INITIALIZER_PKG
+parini.pl1 -v=067 %(F) 	
+
+strini.dcl -v=006 %(H) -replace=CXX_INITIALIZE_STRING_PKG
+strini.pl1 -v=012 %(F)
+
+datini.dcl -v=007 %(H) -replace=CXX_DATA_INITIAL_FILE_PKG
+datini.in  -v=002 %(H) -replace=CXX_DATA_INITIAL_FILE_IN
+datini.pl1 -v=011 %(F)
+
+xcnvrt.dcl -v=001 %(H) -replace=CXX_TARGET_DATA_CONVERSION_PKG
+xcnvrt.pl1 -v=002 %(F)
+
+parmin.dcl -v=004 %(H) -replace=CXX_PROCESS_BASE_MBR_INIT_PKG
+parmin.pl1 -v=018 %(F)
+
+gxlink.dcl -v=002 %(H) -replace=CXX_GENERATE_INIT_FINI_PKG
+gxlink.pl1 -v=012 %(F)
+
+# Symbol table modules
+
+symtab.in  -v=005 %(H) -replace=CXX_SYMBOL_TABLE_IN
+
+-ifdef(newutils)
+symnod.in  -v=062 %(H) -replace=CXX_SYMBOL_TABLE_NODES_IN
+-else
+osymnod.in -v=011 %(H) -replace=CXX_SYMBOL_TABLE_NODES_IN
+-endif
+
+symdef.in  -v=021 %(H) -replace=CXX_SYMBOL_TABLE_DEFS_IN
+
+symtab.dcl -v=020 %(H) -replace=CXX_SYMBOL_TABLE_PKG
+
+instal.dcl -v=013 %(H) -replace=CXX_SYMBOL_TABLE_INSTALL_PKG
+instal.pl1 -v=055 %(F)
+
+lookup.in  -v=002 %(H) -replace=CXX_SYMBOL_TABLE_LOOKUP_IN
+lookup.dcl -v=019 %(H) -replace=CXX_SYMBOL_TABLE_LOOKUP_PKG
+lookup.pl1 -v=037 %(S)
+
+access.dcl -v=003 %(H) -replace=CXX_ACCESS_CONTROL_PKG
+access.pl1 -v=010 %(S)
+
+# Type compatibility/utility modules
+
+compat.pl1 -v=037 %(S)
+compat.dcl -v=012 %(H) -replace=CXX_TYPE_COMPATIBILITY_PKG
+compat.in  -v=008 %(H) -replace=CXX_TYPE_COMPATIBILITY_IN
+
+# Expression compatibility/utility modules
+
+cpatex.pl1 -v=042 %(S)
+cpatex.dcl -v=013 %(H) -replace=CXX_EXPRESSION_COMPATIBILITY_PKG
+
+# Composite type modules
+
+comtyp.pl1 -v=028 %(S)
+comtyp.dcl -v=006 %(H) -replace=CXX_COMPOSITE_TYPE_PKG
+
+# Node manager modules
+
+nodmgr.dcl -v=023 %(H) -replace=CXX_NODE_MGR_PKG
+nodmgr.pl1 -v=044 %(S)
+
+nodlis.dcl -v=000 %(H) -replace=CXX_NODE_LIST_PKG
+nodlis.in  -v=000 %(H) -replace=CXX_NODE_LIST_IN
+nodlis.pl1 -v=001 %(S)
+
+cerror.dcl -v=009 %(H) -replace=CXX_ERROR_MGR_PKG
+cerror.in  -v=001 %(H) -replace=CXX_ERROR_MGR_IN
+cerror.pl1 -v=034 %(F) # Error handler for FE (calls PUTCTX & PUTXER).
+putctx.pl1 -v=011 %(F) # Prints token context for FE error messages.
+
+# Miscellaneous header modules
+
+stddef.in  -v=008 %(H) -replace=CXX_STANDARD_DEFS_IN
+
+extmapl.in -v=126 %(H) -replace=CXX_EXTERNAL_NAME_MAP_IN
+extmaps.in -v=001 %(H) -ignore
+
+global.in  -v=005 %(H) -replace=CXX_GLOBAL_IN
+global.in  -v=005 %(F) -replace=CXX_COMPILATION_DATA_IN
+
+cswitch.in -v=062 %(H) -replace=CXX_COMPILATION_SWITCHES_IN
+
+typmap.in  -v=017 %(H) -replace=CXX_TYPE_MAP_IN
+voptmap.in -v=012 %(H) -replace=CXX_OPERATOR_TOKEN_MAP_IN
+vopdef.in  -v=019 %(H) -replace=CXX_OPERATOR_CODES_IN
+
+# Miscellaneous modules
+
+prints.pl1 -v=011 %(F) # Print symbol for map file (called from allocater)
+
+mngnam.dcl -v=001 %(F) -replace=CXX_MANGLED_NAMES_PKG
+mngnam.pl1 -v=027 %(F) # Name mangler
+
+rtcall.dcl -v=003 %(H) -replace=CXX_RUN_TIME_CALL_PKG
+rtcall.in  -v=002 %(H) -replace=CXX_RUN_TIME_CALL_IN
+rtcall.pl1 -v=010 %(S) # Set up call to a run-time library routine
+
+symnam.in  -v=007 %(H) -replace=CXX_SYMBOL_TABLE_NAMES_IN
+symnam.dcl -v=014 %(H) -replace=CXX_SYMBOL_TABLE_NAMES_PKG
+symnam.pl1 -v=046 %(S) # Map various kinds of nodes to names
+
+valnam.dcl -v=004 %(H) -replace=CXX_VALUE_NAMES_PKG
+valnam.pl1 -v=011 %(S) # Map value-nodes to (type) names
+
+cpprun.dcl -v=001 %(F) -replace=CXX_RUN_PREPROCESSOR_PKG
+cpprun.pl1 -v=015 %(F) # Print preprocessed expanded source to stdout
+
+# External data definition modules
+
+defext.pl1 -v=012 %(F) -defext
+
+# Debugging/scaffolding modules
+
+dswitch.in -v=002 %(H) -replace=CXX_DEBUG_SWITCHES_IN  # (obsolete)
+
+dmpsym.dcl -v=007 %(F) -replace=CXX_SYMBOL_TABLE_DEBUG_PKG
+dmpsym.pl1 -v=028 %(F) # Dump symbol table declaration
+dmpsrc.dcl -v=001 %(H) -replace=CXX_DUMP_SOURCE_MAP_PKG
+dmpsrc.pl1 -v=008 %(S) # Dump source map
+dmpcla.pl1 -v=007 %(F) # Dump class layouts
+
+prtyp.pl1  -v=011 %(S)
+prtyp.in   -v=002 %(H) -replace=CXX_PRINT_TYPE_IN
+prtyp.dcl  -v=005 %(H) -replace=CXX_PRINT_TYPE_PKG
+
+prcla.pl1  -v=003 %(S)
+prcla.dcl  -v=000 %(H) -replace=CXX_PRINT_CLASS_LAYOUT_PKG
+
+# Utilities interface
+
+utldef.in  -v=001 %(H) -replace=CXX_UTL_DEFS_IN
+utlsym.dcl -v=001 %(H) -replace=CXX_UTL_SYMBOL_TABLE_PKG
+utlstt.dcl -v=001 %(H) -replace=CXX_UTL_STORE_TOKEN_PKG
+utlsta.dcl -v=001 %(F) -replace=CXX_UTL_STATS_PKG
+utlval.dcl -v=001 %(H) -replace=CXX_UTL_VALUE_NODE_PKG
+utlftv.dcl -v=001 %(F) -replace=CXX_UTL_FIND_TOKEN_VALUE_PKG
+utlop.dcl  -v=001 %(H) -replace=CXX_UTL_OPERATOR_PKG
+utldi.dcl  -v=001 %(H) -replace=CXX_UTL_DATA_INITIAL_PKG
+utlwrt.dcl -v=001 %(H) -replace=CXX_UTL_WRITE_PKG
+utlmsg.dcl -v=001 %(H) -replace=CXX_UTL_MESSAGES_PKG
+utlrnd.dcl -v=002 %(H) -replace=CXX_UTL_ROUNDU_PKG
+utlxrf.dcl -v=001 %(H) -replace=CXX_UTL_ADD_XREF_PKG
+utlcmd.dcl -v=001 %(F) -replace=CXX_UTL_COMMAND_LINE_PKG
+utlabt.dcl -v=002 %(H) -replace=CXX_UTL_ABORT_PKG
+utlenv.dcl -v=001 %(F) -replace=CXX_UTL_ENVIRONMENT_PKG
+utlall.dcl -v=003 %(F) -replace=CXX_UTL_PKG
+
+# Temporary old/new utilities compatibility HACK
+
+-ifdef(newutils)
+ si_nu.pl1 -v=001 %(F) -replace=CXX_SET_SHOULD_INLINE_PLI
+-else
+ si_ou.pl1 -v=001 %(F) -replace=CXX_SET_SHOULD_INLINE_PLI
+-endif
+
+# ----------------------------------------------------------------------
+# Routines Written in C  
+# ----------------------------------------------------------------------
+
+-div=unix
+udiv32.c -v=000	%(F)
+
+# ----------------------------------------------------------------------
+# Target Specific Modules
+# ----------------------------------------------------------------------
+
+# All host/target os/hardware specific definitions
+
+-component=cxxfe
+
+system.in -v=001 %(H) -replace=CXX_SYSTEM_IN
+
+# CXX_HOST_SYSTEM_IN
+
+-if(hostos)=unix
+ -div=unix
+  hostsys.in -v=007 %(H) -replace=CXX_HOST_SYSTEM_IN
+-else
+ -error='Host OS %(os) is not supported for C++.'
+-endif
+
+# CXX_HOST_HARDWARE_IN
+
+-if(hosthardware)=i386
+ -div=i386
+  hosthdw.in -v=000 %(H) -replace=CXX_HOST_HARDWARE_IN
+  pte.in     -v=000 %(F) -replace=CXX_PARSE_TABLE_ENTRY_TYPE_IN
+-elseif(hosthardware)=m68
+ -div=m68
+  hosthdw.in -v=003 %(H) -replace=CXX_HOST_HARDWARE_IN
+  pte.in     -v=000 %(F) -replace=CXX_PARSE_TABLE_ENTRY_TYPE_IN
+-elseif(hosthardware)=sparc
+ -div=sparc
+  hosthdw.in -v=001 %(H) -replace=CXX_HOST_HARDWARE_IN
+  pte.in     -v=000 %(F) -replace=CXX_PARSE_TABLE_ENTRY_TYPE_IN
+-elseif(hosthardware)=hp-pa
+ -div=hp-pa
+  hosthdw.in -v=000 %(H) -replace=CXX_HOST_HARDWARE_IN
+  pte.in     -v=000 %(F) -replace=CXX_PARSE_TABLE_ENTRY_TYPE_IN
+-elseif(hosthardware)=bacon
+ -div=bacon
+  hosthdw.in -v=000 %(H) -replace=CXX_HOST_HARDWARE_IN
+  pte.in     -v=000 %(F) -replace=CXX_PARSE_TABLE_ENTRY_TYPE_IN
+-elseif(hosthardware)=m88
+ -div=m88
+ -warn='Host hardware %(hardware) is not supported for C++.'
+-else
+ -error='Host hardware %(hardware) is not supported for C++.'
+-endif
+
+# CXX_TARGET_SYSTEM_IN
+
+-if(os)=unix
+ -div=unix
+  targsys.in -v=001 %(H) -replace=CXX_TARGET_SYSTEM_IN
+-else
+ -error=' Target OS %(os) is not supported for C++.'
+-endif
+
+# CXX_TARGET_SYSTEM_VARIANT_IN
+
+-if(target)=sequoia
+ -div=unixv4
+  targvar.in -v=000 %(H) -replace=CXX_TARGET_SYSTEM_VARIANT_IN
+-elseif(osv)=unixv4
+ -div=unixv4
+  targvar.in -v=000 %(H) -replace=CXX_TARGET_SYSTEM_VARIANT_IN
+-elseif(osv)=unix4
+ -div=unix4
+  targvar.in -v=001 %(H) -replace=CXX_TARGET_SYSTEM_VARIANT_IN
+-elseif(osv)=unix5
+ -div=unix5
+  targvar.in -v=001 %(H) -replace=CXX_TARGET_SYSTEM_VARIANT_IN
+-elseif(osv)=hp-ux
+ -div=hp-ux
+  targvar.in -v=000 %(H) -replace=CXX_TARGET_SYSTEM_VARIANT_IN
+-elseif(osv)=eggs
+ -div=eggs
+  targvar.in -v=000 %(H) -replace=CXX_TARGET_SYSTEM_VARIANT_IN
+-else
+ -error=' Target OS variant %(osv) is not supported for C++.'
+-endif
+
+# CXX_TARGET_HARDWARE_IN
+
+-if(target)=sequoia
+ -div=sequoia
+  targhdw.in -v=000 %(H) -replace=CXX_TARGET_HARDWARE_IN
+-elseif(hardware)=i386
+ -div=i386
+  targhdw.in -v=003 %(H) -replace=CXX_TARGET_HARDWARE_IN
+-elseif(hardware)=m68
+ -div=m68
+  targhdw.in -v=009 %(H) -replace=CXX_TARGET_HARDWARE_IN
+-elseif(hardware)=sparc
+ -div=sparc
+  targhdw.in -v=004 %(H) -replace=CXX_TARGET_HARDWARE_IN
+-elseif(hardware)=hp-pa
+ -div=hp-pa
+  targhdw.in -v=000 %(H) -replace=CXX_TARGET_HARDWARE_IN
+-elseif(hardware)=bacon
+ -div=bacon
+  targhdw.in -v=000 %(H) -replace=CXX_TARGET_HARDWARE_IN
+-elseif(hardware)=m88
+ -div=m88
+  targhdw.in -v=001 %(H) -replace=CXX_TARGET_HARDWARE_IN
+-else
+ -error=' Target hardware %(hardware) is not a supported C++.'
+-endif
+
+# ----------------------------------------------------------------------
+# Diagnostic/error message component
+# ----------------------------------------------------------------------
+
+-component=msgs
+
+-note='**** NOTE: Messages component 023 or greater required.'
+
+# Bldmsg tool output; verify existence.  Corresponds to errmsg.txt
+
+cxxfe.txt   -v=049 %(F) -verify			     # Bldmsg tool output
+
+-component=cxxfe
+
+bldmsg.sh   -v=005 %(F) -ignore			     # Bldmsg make script 
+bldmsg.c    -v=000 %(F) -ignore			     # Bldmsg tool
+
+errmsg.txt  -v=062 %(F) -ignore			     # Bldmsg input
+errcod.in   -v=062 %(H)  -replace=CXX_ERROR_CODES_IN # Bldmsg output
+
+# ----------------------------------------------------------------------
+# ANSI-C/C++ preprocessor (and token-pod manager) component -- cpp
+# ----------------------------------------------------------------------
+
+-def(cxx_preprocessor)
+
+# Set the names of include files imported by the preprocessor component.
+
+-replace CPP_COMPILATION_DATA_IN=CXX_COMPILATION_DATA_IN
+-replace CPP_COMPILATION_SWITCHES_IN=CXX_COMPILATION_SWITCHES_IN
+-replace CPP_HOST_SYSTEM_IN=CXX_HOST_SYSTEM_IN
+-replace CPP_TARGET_SYSTEM_IN=CXX_TARGET_SYSTEM_IN
+-replace CPP_TARGET_HARDWARE_IN=CXX_TARGET_HARDWARE_IN
+-replace CPP_HOST_HARDWARE_IN=CXX_HOST_HARDWARE_IN
+-replace CPP_CONVERT_CONSTANT_PKG=CXX_CONVERT_CONSTANT_PKG
+-replace CPP_FE_EXTERNAL_NAME_MAP_IN=CXX_EXTERNAL_NAME_MAP_IN
+
+# Include the preprocessor component.
+
+-component=cpp
+
+ @cpp.bld -v=052
+
+# Set the names of include files exported by the preprocessor component.
+
+-replace CXX_PP_CHARACTER_SET_IN=CPP_CHARACTER_SET_IN
+-replace CXX_PP_TOKEN_TYPE_CODES_IN=CPP_TOKEN_TYPE_CODES_IN
+-replace CXX_PP_TOKEN_LIMITS_IN=CPP_TOKEN_LIMITS_IN
+-replace CXX_PP_TOKEN_POD_MGR_PKG=CPP_TOKEN_POD_MGR_PKG
+-replace CXX_PP_TOKEN_POD_MGR_IN=CPP_TOKEN_POD_MGR_IN
+-replace CXX_PP_TOKEN_POD_IN=CPP_TOKEN_POD_IN
+-replace CXX_PP_TOKEN_POD_DEF_IN=CPP_TOKEN_POD_DEF_IN
+-replace CXX_PP_TOKEN_POD_SPELLING_PKG=CPP_TOKEN_POD_SPELLING_PKG
+-replace CXX_PP_TOKEN_POD_SPELLING_IN=CPP_TOKEN_POD_SPELLING_IN
+-replace CXX_PP_TOKEN_MAP_SPELLING_IN=CPP_TOKEN_MAP_SPELLING_IN
+-replace CXX_PP_TOKEN_POD_DEBUG_IN=CPP_TOKEN_POD_DEBUG_IN
+-replace CXX_PP_TOKEN_POD_DEBUG_PKG=CPP_TOKEN_POD_DEBUG_PKG
+-replace CXX_PP_DUMP_MACRO_PKG=CPP_DUMP_MACRO_PKG
+-replace CXX_PP_KEYWORD_PKG=CPP_KEYWORD_PKG
+-replace CXX_PP_EXTERNAL_NAME_MAP_IN=CPP_EXTERNAL_NAME_MAP_IN
+-replace CXX_PP_ERROR_MGR_PKG=CPP_ERROR_MGR_PKG
+
+# ----------------------------------------------------------------------
+# Done
+# ----------------------------------------------------------------------
+
+-note='**** LPI-C++ front-end version is: "%(cxxfe_version)"'
+
+-ifdef(c_only)
+ -note='**** -----------------------------------------------------------'
+ -note='**** This is a C-only compiler!'
+ -note='**** The compiler proper should be called:        lpic'
+ -note='**** The link script should be called:            ldc'
+ -note='**** The compiler/linker driver should be called: lpicc'
+ -note='**** -----------------------------------------------------------'
+-endif
+
+# ----------------------------------------------------------------------
+# End-of C++ cxxfe.bld
+# ----------------------------------------------------------------------

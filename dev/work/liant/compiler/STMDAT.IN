@@ -1,0 +1,137 @@
+/* C++ CXX_GLOBAL_STATEMENT_DATA_IN - Statement semantic analysis data */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.26.92  DGM  008  New value-node scheme.
+ *  03.19.92  DGM  007  Added IN_FOR_STATEMENT_INITIALIZER.
+ *  07.18.91  DGM  006  Added LOOP_INFO_T.{LINE,FILE} for CodeWatch.
+ *  09.14.90  DGM  005  Changed include file names and VOP names.
+ *  08.07.90  PKT  004  Added support for control flow analysis.
+ *  07.10.90  PKT  003  Added LOOP_INFO_T.DESTRUCTORS.
+ *  02.20.90  PKT  002  Added case nodes and other updates.
+ *  02.08.90  PKT  001  Added declarations for loop support.
+ *  01.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/***********************************************************************
+/* This header contains the data which is needed by (and
+/* should ONLY be included by) the modules which perform
+/* the semantic actions necessary to process statements.
+/*
+/* See CXX_GLOBAL_SEMANTIC_DATA_IN for data which needs to
+/* be among the difference modules which perform various
+/* kinds of semantic actions during the parse.
+/***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+%replace DO_LOOP			by 1;
+%replace WHILE_LOOP			by 2;
+%replace FOR_LOOP			by 3;
+%replace SWITCH_LOOP			by 4;
+
+%replace HB_LOOP_STACK			by 32;
+
+declare
+
+1 LOOP_INFO_T		based,
+  2 TOP			type (CXX_VID_T),
+  2 CONTINUE		type (CXX_VID_T),
+  2 EXIT		type (CXX_VID_T),
+  2 EXPRESSION		type (CXX_VID_T),
+  2 DESTRUCTORS		type (CXX_VID_T),
+  2 CONT_DESTRUCTORS	type (CXX_VID_T),
+  2 SCOPE		type (NID_T),
+  2 TYPE		type (SHORT_T),
+  2 BREAK_FOUND		type (BOOL_T),
+  2 ENTRY_FOUND		type (BOOL_T),
+  2 FILE		type (NID_T),
+  2 LINE		type (LONG_T);
+
+/* ---------------------------------------------------------------------
+ * 		CASE_NODEs for SWITCH statement processing
+ * There is a case node for each case or default label, in addition to one
+ * created during header processing of a switch statement.  The cases
+ * of each switch statement are on the list linked from the header case
+ * node via CASE_NEXTC, the nodes always being sorted in reverse order.
+ * The switch statement header nodes are on the doubly-linked list with
+ * CASE_HEAD pointing to the node for the outermost switch currently
+ * being parsed, while CURR_CASE is for the innermost.  CASE_NEXTL and
+ * CASE_PREV provide the links leading to inner and outer switches
+ * respectively.
+ * -------------------------------------------------------------------*/
+
+declare 
+
+1 CASE_NODE		based, 
+  2 CASE_NEXTL		type (POINTER_T),	/* Next Switch Level    */
+  2 CASE_PREV		type (POINTER_T),	/* Prev Switch Level    */
+  2 CASE_COUNT		type (SHORT_T),		/* Selector Count       */
+  2 CASE_NEXTC		type (POINTER_T),	/* Next Case (selector) */
+  2 CASE_LABEL		type (CXX_VID_T),	/* This LABEL           */
+  2 CASE_CREF		type (LONG_T),		/* Emitted CREF         */
+  2 CASE_VALUE		type (LONG_T),		/* Case expression,     */
+						/* its constant value   */
+						/* or tree		*/
+  2 CASE_VF     	type (BOOL_T);		/* Variable flag        */
+						/* VF=FALSE for constant*/
+
+%replace HB_LOOP_INFO_STACK	by 64;
+
+declare
+
+1 GLOBAL_STATEMENT_DATA		external (X_GLOBAL_STATEMENT_DATA),
+
+  2 LOOP_DATA,
+    3 LOOP_INFO_STACK		(0 : HB_LOOP_INFO_STACK - 1)
+				type (LOOP_INFO_T),
+    3 LOOP_INFO_STACK_TOP	type (SHORT_T)
+				initial (HB_LOOP_INFO_STACK),
+    3 TOP_LOOP_INFO_STACK_PTR	type (POINTER_T)
+				initial (NULL),
+
+  2 CASE_DATA,
+    3 CASE_LIST			type (POINTER_T)
+				initial (NULL), /* case-node free-list */
+    3 CURR_CASE			type (POINTER_T)
+				initial (NULL),
+    3 CASE_HEAD			type (POINTER_T)
+				initial (NULL),
+
+  2 FLOW_DATA,
+    3 CURRENT_CODE_DEAD		type (BOOL_T),
+
+  2 IN_FOR_STATEMENT_INITIALIZER	type (BOOL_T),
+  2 available_01			type (BOOL_T),
+
+  2 END_GLOBAL_STATEMENT_DATA	type (SHORT_T);
+
+
+declare
+
+TOP_LOOP_INFO_STACK		type (LOOP_INFO_T)
+				based (TOP_LOOP_INFO_STACK_PTR);
+

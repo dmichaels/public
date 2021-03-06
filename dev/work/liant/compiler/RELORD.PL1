@@ -1,0 +1,703 @@
+/* C++ relord.pl1 - Relocation symbol reordering package */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  05.13.93  DGM  003  No change.
+ *  05.13.93  DGM  002  Changed interface to REORDER_RELOCATION_SYMBOLS
+ *			to allow for the reordering of local symbols.
+ *  10.27.92  DGM  001R	Use SYM_NODE.AUX rather than
+ *			SYM_NODE.RELOCATION_ORDERING_DATA.
+ *  10.22.92  DGM  001 	Use HAVE_ONE_OR_MORE_RELOCATIONS.
+ *  10.06.92  DGM  000 	Original -- for deficient UNIX-V output-editor.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 05.13.93 003 RELORD');
+
+/* ---------------------------------------------------------------------
+/* This module helps to keep track of and finally performs the reording
+/* of symbols which have associated relocation information.  When a
+/* relocation dependency is discovered (i.e. during initialization of
+/* a symbol) that dependency can be recorded by calling NOTE_RELOATION_
+/* DEPENDENCY with the symbol R which has relocation information (e.g.
+/* a symbol whose address is being used in an initializer) and the
+/* symbol D upon which that symbol is dependent (e.g. the symbol which
+/* is begin initialized).  For each such symbol R, we will keep track
+/* of a list of each such symbol D (hanging off of the AUX field of the
+/* sym-node for R); this list represents all of the symbols which must
+/* come before R in the dcl-list.  At the end of the compilation-unit,
+/* we will call REORDER_RELOCATION_SYMBOLS which uses a standard
+/* topological sorting algorithm to reorder the symbols based on
+/* the lists we've kept.
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_NODE_LIST_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 RSD				based,
+  2 SYMBOL			type (NID_T),
+  2 PREV_SYMBOL			type (NID_T),
+  2 NEXT_SYMBOL			type (NID_T),
+  2 PREDECESSOR_COUNT		type (LONG_T),
+  2 SUCCESSOR_LIST		type (POINTER_T),
+  2 PREV			type (POINTER_T),
+  2 NEXT			type (POINTER_T);
+
+/* ---------------------------------------------------------------------
+/* Local static data definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+HAVE_ONE_OR_MORE_RELOCATIONS type (BOOL_T) static internal initial (FALSE);
+
+/* ---------------------------------------------------------------------
+/* NOTE_RELOCATION_DEPENDENCY
+/*
+/* Called to note that the given RELOCATION_SYMBOL is dependent upon
+/* the given DEPENDENT_SYMBOL; called only during initializer processing.
+/* ------------------------------------------------------------------- */
+
+NOTE_RELOCATION_DEPENDENCY: procedure (RELOCATION_SYMBOL, DEPENDENT_SYMBOL)
+			    external  (X_NOTE_RELOCATION_DEPENDENCY);
+
+	declare
+		RELOCATION_SYMBOL		type (NID_T),
+		DEPENDENT_SYMBOL		type (NID_T);
+	declare
+		(P, Q)				type (POINTER_T),
+		PUT_ON_RELOC_SUCCESSOR_LIST	type (BOOL_T);
+
+	if ^SW_NEEDS_RELOCATION_ORDERING then
+		return;
+
+	if (RELOCATION_SYMBOL = NULL_NID) |
+	   (DEPENDENT_SYMBOL = NULL_NID) |
+	   (DEPENDENT_SYMBOL = RELOCATION_SYMBOL) then
+		return;
+
+	call GET_SYM_NODE (RELOCATION_SYMBOL, P);
+
+	if P->SYM_NODE.IS_TYPE then do;
+		call RELEASE_SYM_NODE (RELOCATION_SYMBOL);
+		return;
+	end;
+
+	if P->SYM_NODE.AUX = 0 then
+		P->SYM_NODE.AUX = null ();
+	if P->SYM_NODE.AUX = null () then do;
+		call APPEND_TO_NODE_LIST_WITH_VALUE
+		     (P->SYM_NODE.AUX, NULL_NID, 0);
+		P->SYM_NODE.HAS_RELOCATION_PREDECESSOR_COUNT = TRUE;
+		PUT_ON_RELOC_SUCCESSOR_LIST = TRUE;
+	end;
+	else if ALREADY_ON_NODE_LIST
+		(P->SYM_NODE.AUX->NODE_DATA.NEXT, DEPENDENT_SYMBOL) then
+		PUT_ON_RELOC_SUCCESSOR_LIST = FALSE;
+	else	PUT_ON_RELOC_SUCCESSOR_LIST = TRUE;
+
+	if PUT_ON_RELOC_SUCCESSOR_LIST then do;
+		call APPEND_TO_NODE_LIST_WITH_VALUE
+		     (P->SYM_NODE.AUX->NODE_DATA.NEXT, DEPENDENT_SYMBOL, 0);
+		P->SYM_NODE.HAS_RELOCATION_SUCCESSOR_LIST = TRUE;
+		call GET_SYM_NODE (DEPENDENT_SYMBOL, Q);
+		if Q->SYM_NODE.AUX = 0 then
+			Q->SYM_NODE.AUX = null ();
+		if Q->SYM_NODE.AUX = null () then do;
+			call APPEND_TO_NODE_LIST_WITH_VALUE
+			     (Q->SYM_NODE.AUX, NULL_NID, 1);
+			Q->SYM_NODE.HAS_RELOCATION_PREDECESSOR_COUNT = TRUE;
+		end;
+		else do;
+			Q->SYM_NODE.AUX->NODE_DATA.VALUE =
+				Q->SYM_NODE.AUX->NODE_DATA.VALUE + 1;
+		end;
+		call RELEASE_SYM_NODE (DEPENDENT_SYMBOL);
+	end;
+	call RELEASE_SYM_NODE (RELOCATION_SYMBOL);
+
+	HAVE_ONE_OR_MORE_RELOCATIONS = TRUE;
+
+end NOTE_RELOCATION_DEPENDENCY;
+
+/* ---------------------------------------------------------------------
+/* REORDER_RELOCATION_SYMBOLS
+/*
+/* Called at front-end post-processing time to appropriately reorder
+/* symbols which have associated relocation information.
+/* ------------------------------------------------------------------- */
+
+REORDER_RELOCATION_SYMBOLS: procedure (HAVE_ONE_OR_MORE_LOCAL_SYMBOLS)
+			    external  (X_REORDER_RELOCATION_SYMBOLS);
+	declare
+		HAVE_ONE_OR_MORE_LOCAL_SYMBOLS	type (BOOL_T);
+	declare
+		LOCAL_SYMBOL_LIST		type (NID_T),
+		END_LOCAL_SYMBOL_LIST		type (NID_T),
+		RELOCATION_SYMBOL_LIST		type (NID_T),
+		END_RELOCATION_SYMBOL_LIST	type (NID_T),
+		BLOCK_PTR			type (POINTER_T),
+		RSL				type (POINTER_T);
+
+	call GET_BLOCK_NODE (BLOCK_LIST_ID, BLOCK_PTR);
+
+	if SW_NEEDS_RELOCATION_ORDERING &
+	   HAVE_ONE_OR_MORE_RELOCATIONS then do;
+		RSL = CREATE_RSL (BLOCK_PTR->BLOCK_NODE.DCL_LIST);
+		call REORDER_RSL (RSL);
+		call CONSTRUCT_RELOCATION_SYMBOL_LIST
+			(RSL, BLOCK_PTR,
+			 RELOCATION_SYMBOL_LIST,
+			 END_RELOCATION_SYMBOL_LIST);
+		call DESTROY_RSL (RSL);
+	end;
+	else do;
+		RELOCATION_SYMBOL_LIST	   = NULL_NID;
+		END_RELOCATION_SYMBOL_LIST = NULL_NID;
+	end;
+
+	if SW_NEEDS_LOCAL_SYMBOL_ORDERING &
+	   HAVE_ONE_OR_MORE_LOCAL_SYMBOLS then do;
+		call CONSTRUCT_LOCAL_SYMBOL_LIST
+			(BLOCK_PTR,
+			 LOCAL_SYMBOL_LIST,
+			 END_LOCAL_SYMBOL_LIST);
+	end;
+	else do;
+		LOCAL_SYMBOL_LIST     = NULL_NID;
+		END_LOCAL_SYMBOL_LIST = NULL_NID;
+	end;
+
+	call INSERT_SYMBOL_LISTS_INTO_BLOCK (BLOCK_PTR,
+					     LOCAL_SYMBOL_LIST,
+					     END_LOCAL_SYMBOL_LIST,
+					     RELOCATION_SYMBOL_LIST,
+					     END_RELOCATION_SYMBOL_LIST);
+
+	call RELEASE_BLOCK_NODE (BLOCK_LIST_ID);
+
+end REORDER_RELOCATION_SYMBOLS;
+
+/* ---------------------------------------------------------------------
+/* CREATE_RSL
+/*
+/* Create the relocation-symbol-list for the given declaration-list.
+/* ------------------------------------------------------------------- */
+
+CREATE_RSL: procedure (BLOCK_DCL_LIST) returns (type (POINTER_T)) internal;
+
+	declare
+		BLOCK_DCL_LIST			type (NID_T);
+	declare
+		(S, NEXT_S, PREV_S)		type (NID_T),
+		(P, Q, R)			type (POINTER_T),
+		RSL				type (POINTER_T),
+		SUCCESSOR_LIST			type (POINTER_T),
+		PREDECESSOR_COUNT		type (LONG_T);
+
+	RSL	= null ();
+	PREV_S	= NULL_NID;
+
+	do S = BLOCK_DCL_LIST repeat NEXT_S while (S ^= NULL_NID);
+		call GET_SYM_NODE_R (S, P);
+		NEXT_S = P->SYM_NODE.BROTHER;
+		if P->SYM_NODE.HAS_RELOCATION_SUCCESSOR_LIST then do;
+			PREDECESSOR_COUNT = P->SYM_NODE.AUX->NODE_DATA.VALUE;
+			SUCCESSOR_LIST	  = P->SYM_NODE.AUX->NODE_DATA.NEXT;
+			P->SYM_NODE.AUX->NODE_DATA.NEXT = null ();
+			call DELETE_NODE_LIST (P->SYM_NODE.AUX);
+			call APPEND_TO_RSL
+			     (RSL,
+			      S,
+			      PREV_S,
+			      NEXT_S,
+			      PREDECESSOR_COUNT,
+			      SUCCESSOR_LIST);
+		end;
+		else if P->SYM_NODE.HAS_RELOCATION_PREDECESSOR_COUNT then
+			call DELETE_NODE_LIST (P->SYM_NODE.AUX);
+		PREV_S = S;
+		call RELEASE_SYM_NODE (S);
+	end;
+
+	do P = RSL repeat P->RSD.NEXT while (P ^= null ());
+		do Q = P->RSD.SUCCESSOR_LIST
+		repeat Q->NODE_DATA.NEXT while (Q ^= null ());
+			do R = RSL repeat R->RSD.NEXT while (R ^= null ());
+				if Q->NODE_DATA.ID = R->RSD.SYMBOL then
+					Q->NODE_DATA.VALUE = addr (R)->LONG_T;
+			end;
+		end;
+	end;
+
+	return (RSL);
+
+end CREATE_RSL;
+
+/* ---------------------------------------------------------------------
+/* REORDER_RSL
+/*
+/* Reorder the given relocation-symbol-list.
+/* ------------------------------------------------------------------- */
+
+REORDER_RSL: procedure (RSL) internal;
+
+	declare
+		RSL			type (POINTER_T);
+	declare
+		(RP, NEXT_RP, P, Q)	type (POINTER_T),
+		NEW_RSL			type (POINTER_T);
+
+	NEW_RSL = null ();
+
+	BEGIN_REORDER_RSL:
+
+	do RP = RSL repeat NEXT_RP while (RP ^= null ());
+		if RP->RSD.PREDECESSOR_COUNT <= 0 then do;
+			call EXTRACT_ITEM_FROM_RSL (RSL, RP);
+			call APPEND_ITEM_TO_RSL (NEW_RSL, RP);
+			do P = RP->RSD.SUCCESSOR_LIST
+			repeat P->NODE_DATA.NEXT while (P ^= null ());
+			    if P->NODE_DATA.VALUE ^= 0 then do;
+				Q = addr (P->NODE_DATA.VALUE)->POINTER_T;
+				if Q ^= null () then do;
+				    Q->RSD.PREDECESSOR_COUNT =
+					Q->RSD.PREDECESSOR_COUNT - 1;
+				end;
+			    end;
+			end;
+			goto BEGIN_REORDER_RSL;
+		end;
+		else	NEXT_RP = RP->RSD.NEXT;
+	end;
+
+	RSL = NEW_RSL;
+
+/* ---------------------------------------------------------------------
+/* APPEND_ITEM_TO_RSL
+/*
+/* Add the given relocation-symbol-data item
+/* to the given relocation-symbol-list.
+/* ------------------------------------------------------------------- */
+
+APPEND_ITEM_TO_RSL: procedure (RSL, ITEM) internal;
+
+	declare
+		RSL	type (POINTER_T),
+		ITEM	type (POINTER_T);
+
+	if RSL ^= null () then do;
+		ITEM->RSD.PREV = RSL->RSD.PREV;
+		RSL->RSD.PREV->RSD.NEXT = ITEM;
+	end;
+	else	RSL = ITEM;
+	RSL->RSD.PREV = ITEM;
+
+end APPEND_ITEM_TO_RSL;
+
+/* ---------------------------------------------------------------------
+/* EXTRACT_ITEM_FROM_RSL
+/* ------------------------------------------------------------------- */
+
+EXTRACT_ITEM_FROM_RSL: procedure (RSL, ITEM) internal;
+
+	declare
+		RSL			type (POINTER_T),
+		ITEM			type (POINTER_T);
+	declare
+		RP			type (POINTER_T);
+
+	if ITEM = RSL then
+		RSL = ITEM->RSD.NEXT;
+	else	ITEM->RSD.PREV->RSD.NEXT = ITEM->RSD.NEXT;
+	if ITEM->RSD.NEXT ^= null () then
+		ITEM->RSD.NEXT->RSD.PREV = ITEM->RSD.PREV;
+
+	ITEM->RSD.NEXT = null ();
+
+	do RP = RSL repeat RP->RSD.NEXT while (RP ^= null ());
+		if RP->RSD.PREV_SYMBOL = ITEM->RSD.SYMBOL then do;
+			RP->RSD.PREV_SYMBOL = ITEM->RSD.PREV_SYMBOL;
+			goto CONTINUE;
+		end;
+	end;
+
+	CONTINUE:
+
+	do RP = RSL repeat RP->RSD.NEXT while (RP ^= null ());
+		if RP->RSD.NEXT_SYMBOL = ITEM->RSD.SYMBOL then do;
+			RP->RSD.NEXT_SYMBOL = ITEM->RSD.NEXT_SYMBOL;
+			return;
+		end;
+	end;
+
+end EXTRACT_ITEM_FROM_RSL;
+
+end REORDER_RSL;
+
+/* ---------------------------------------------------------------------
+/* CONSTRUCT_RELOCATION_SYMBOL_LIST
+/* ------------------------------------------------------------------- */
+
+CONSTRUCT_RELOCATION_SYMBOL_LIST: procedure (RSL, BLOCK_PTR,
+					     RELOCATION_SYMBOL_LIST,
+					     END_RELOCATION_SYMBOL_LIST)
+				  internal;
+	declare
+		RSL				type (POINTER_T),
+		BLOCK_PTR			type (POINTER_T),
+		RELOCATION_SYMBOL_LIST		type (NID_T),
+		END_RELOCATION_SYMBOL_LIST	type (NID_T);
+	declare
+		(S, PREV_S)			type (NID_T),
+		(RP, P)				type (POINTER_T);
+
+	RELOCATION_SYMBOL_LIST	   = NULL_NID;
+	END_RELOCATION_SYMBOL_LIST = NULL_NID;
+	PREV_S			   = NULL_NID;
+
+	do RP = RSL repeat RP->RSD.NEXT while (RP ^= null ());
+		if RP->RSD.PREV_SYMBOL ^= NULL_NID then do;
+			call GET_SYM_NODE (RP->RSD.PREV_SYMBOL, P);
+			P->SYM_NODE.BROTHER = RP->RSD.NEXT_SYMBOL;
+			call RELEASE_SYM_NODE (RP->RSD.PREV_SYMBOL);
+		end;
+		else	BLOCK_PTR->BLOCK_NODE.DCL_LIST =
+				RP->RSD.NEXT_SYMBOL;
+		if RELOCATION_SYMBOL_LIST ^= NULL_NID then do;
+			call GET_SYM_NODE (END_RELOCATION_SYMBOL_LIST, P);
+			P->SYM_NODE.BROTHER = RP->RSD.SYMBOL;
+			call RELEASE_SYM_NODE (END_RELOCATION_SYMBOL_LIST);
+		end;
+		else	RELOCATION_SYMBOL_LIST = RP->RSD.SYMBOL;
+		END_RELOCATION_SYMBOL_LIST = RP->RSD.SYMBOL;
+	end;
+
+end CONSTRUCT_RELOCATION_SYMBOL_LIST;
+
+/* ---------------------------------------------------------------------
+/* CONSTRUCT_LOCAL_SYMBOL_LIST
+/* ------------------------------------------------------------------- */
+
+CONSTRUCT_LOCAL_SYMBOL_LIST: procedure (BLOCK_PTR,
+					LOCAL_SYMBOL_LIST,
+					END_LOCAL_SYMBOL_LIST)
+			     internal;
+	declare
+		RSL			type (POINTER_T),
+		BLOCK_PTR		type (POINTER_T),
+		LOCAL_SYMBOL_LIST	type (NID_T),
+		END_LOCAL_SYMBOL_LIST	type (NID_T);
+	declare
+		(S, NEXT_S, PREV_S)	type (NID_T),
+		(SP, P)			type (POINTER_T);
+
+	LOCAL_SYMBOL_LIST	= NULL_NID;
+	END_LOCAL_SYMBOL_LIST	= NULL_NID;
+	PREV_S			= NULL_NID;
+
+	do S = BLOCK_PTR->BLOCK_NODE.DCL_LIST
+	repeat NEXT_S while (S ^= NULL_NID);
+		call GET_SYM_NODE (S, SP);
+		NEXT_S = SP->SYM_NODE.BROTHER;
+		if SP->SYM_NODE.LOCAL_AT then do;
+			if PREV_S ^= NULL_NID then do;
+				call GET_SYM_NODE_R (PREV_S, P);
+				P->SYM_NODE.BROTHER =
+					SP->SYM_NODE.BROTHER;
+				call RELEASE_SYM_NODE (PREV_S);
+			end;
+			else do;
+				BLOCK_PTR->BLOCK_NODE.DCL_LIST =
+					SP->SYM_NODE.BROTHER;
+			end;
+			if END_LOCAL_SYMBOL_LIST ^= NULL_NID then do;
+				call GET_SYM_NODE_R
+					(END_LOCAL_SYMBOL_LIST, P);
+				P->SYM_NODE.BROTHER = S;
+				call RELEASE_SYM_NODE
+					(END_LOCAL_SYMBOL_LIST);
+			end;
+			else	LOCAL_SYMBOL_LIST = S;
+			END_LOCAL_SYMBOL_LIST = S;
+		end;
+		else	PREV_S = S;
+		call RELEASE_SYM_NODE (S);
+	end;
+
+end CONSTRUCT_LOCAL_SYMBOL_LIST;
+
+/* ---------------------------------------------------------------------
+/* INSERT_SYMBOL_LISTS_INTO_BLOCK
+/* ------------------------------------------------------------------- */
+
+INSERT_SYMBOL_LISTS_INTO_BLOCK: procedure (BLOCK_PTR,
+					   LOCAL_SYMBOL_LIST,
+					   END_LOCAL_SYMBOL_LIST,
+					   RELOCATION_SYMBOL_LIST,
+					   END_RELOCATION_SYMBOL_LIST)
+				internal;
+	declare
+		BLOCK_PTR			type (POINTER_T),
+		LOCAL_SYMBOL_LIST		type (NID_T),
+		END_LOCAL_SYMBOL_LIST		type (NID_T),
+		RELOCATION_SYMBOL_LIST		type (NID_T),
+		END_RELOCATION_SYMBOL_LIST	type (NID_T);
+	declare
+		DO_LOCAL_SYMBOL_LIST		type (BOOL_T),
+		DO_RELOCATION_SYMBOL_LIST	type (BOOL_T),
+		(LIST, END_LIST)		type (NID_T),
+		(S, NEXT_S, PREV_S)		type (NID_T),
+		(SP, P)				type (POINTER_T);
+
+	DO_LOCAL_SYMBOL_LIST = (LOCAL_SYMBOL_LIST ^= NULL_NID) &
+			       (END_LOCAL_SYMBOL_LIST ^= NULL_NID);
+	DO_RELOCATION_SYMBOL_LIST = (RELOCATION_SYMBOL_LIST ^= NULL_NID) &
+				    (END_RELOCATION_SYMBOL_LIST ^= NULL_NID);
+
+	if DO_LOCAL_SYMBOL_LIST then do;
+		if DO_RELOCATION_SYMBOL_LIST then do;
+			LIST	 = LOCAL_SYMBOL_LIST;
+			call GET_SYM_NODE (LOCAL_SYMBOL_LIST, SP);
+			SP->SYM_NODE.BROTHER = RELOCATION_SYMBOL_LIST;
+			call RELEASE_SYM_NODE (LOCAL_SYMBOL_LIST);
+			END_LIST = END_RELOCATION_SYMBOL_LIST;
+		end;
+		else do;
+			LIST	 = LOCAL_SYMBOL_LIST;
+			END_LIST = END_LOCAL_SYMBOL_LIST;
+		end;
+	end;
+	else if DO_RELOCATION_SYMBOL_LIST then do;
+		LIST	 = RELOCATION_SYMBOL_LIST;
+		END_LIST = END_RELOCATION_SYMBOL_LIST;
+	end;
+	else	return;
+
+	PREV_S = NULL_NID;
+
+	do S = BLOCK_PTR->BLOCK_NODE.DCL_LIST
+	repeat NEXT_S while (S ^= NULL_NID);
+
+		call GET_SYM_NODE (S, P);
+
+		if ^P->SYM_NODE.IS_DUMMY |
+		   ^P->SYM_NODE.IS_DATA |
+		   ^P->SYM_NODE.IS_CONSTANT |
+		   (P->SYM_NODE.TOP_TYPE.CODE ^= byte (ARRAY_DT)) then do;
+
+			/* Here, this symbol is *not* a string-literal */
+
+			call RELEASE_SYM_NODE (S);
+
+			if PREV_S ^= NULL_NID then do;
+				call GET_SYM_NODE (END_LIST, P);
+				P->SYM_NODE.BROTHER = S;
+				call RELEASE_SYM_NODE (END_LIST);
+				call GET_SYM_NODE (PREV_S, P);
+				P->SYM_NODE.BROTHER = LIST;
+				call RELEASE_SYM_NODE (PREV_S);
+			end;
+			else do;
+				call GET_SYM_NODE (END_LIST, P);
+				P->SYM_NODE.BROTHER =
+					BLOCK_PTR->BLOCK_NODE.DCL_LIST;
+				call RELEASE_SYM_NODE (END_LIST);
+				BLOCK_PTR->BLOCK_NODE.DCL_LIST = LIST;
+			end;
+
+			return;
+		end;
+
+		PREV_S = S;
+		NEXT_S = P->SYM_NODE.BROTHER;
+		call RELEASE_SYM_NODE (S);
+	end;
+
+end INSERT_SYMBOL_LISTS_INTO_BLOCK;
+
+/* ---------------------------------------------------------------------
+/* APPEND_TO_RSL
+/* ------------------------------------------------------------------- */
+
+APPEND_TO_RSL: procedure (RSL,
+			  SYMBOL,
+			  PREV_SYMBOL,
+			  NEXT_SYMBOL,
+			  PREDECESSOR_COUNT,
+			  SUCCESSOR_LIST) internal;
+	declare
+		RSL			type (POINTER_T),
+		SYMBOL			type (NID_T),
+		PREV_SYMBOL		type (NID_T),
+		NEXT_SYMBOL		type (NID_T),
+		PREDECESSOR_COUNT	type (LONG_T),
+		SUCCESSOR_LIST		type (POINTER_T);
+	declare
+		NEW			type (POINTER_T);
+
+	allocate RSD set (NEW);
+
+	NEW->RSD.SYMBOL	           = SYMBOL;
+	NEW->RSD.PREV_SYMBOL       = PREV_SYMBOL;
+	NEW->RSD.NEXT_SYMBOL       = NEXT_SYMBOL;
+	NEW->RSD.PREDECESSOR_COUNT = PREDECESSOR_COUNT;
+	NEW->RSD.SUCCESSOR_LIST    = SUCCESSOR_LIST;
+	NEW->RSD.NEXT		   = null ();
+
+	if RSL ^= null () then do;
+		NEW->RSD.PREV = RSL->RSD.PREV;
+		RSL->RSD.PREV->RSD.NEXT = NEW;
+	end;
+	else	RSL = NEW;
+	RSL->RSD.PREV = NEW;
+
+end APPEND_TO_RSL;
+
+/* ---------------------------------------------------------------------
+/* DESTROY_RSL
+/* ------------------------------------------------------------------- */
+
+DESTROY_RSL: procedure (RSL) internal;
+
+	declare
+		RSL		type (POINTER_T);
+	declare
+		(RP, NEXT_RP)	type (POINTER_T);
+
+	do RP = RSL repeat NEXT_RP while (RP ^= null());
+		NEXT_RP = RP->RSD.NEXT;
+		call DELETE_NODE_LIST (RP->RSD.SUCCESSOR_LIST);
+		free RP->RSD;
+	end;
+
+	RSL = null ();
+
+end DESTROY_RSL;
+
+
+/* ---------------------------------------------------------------------
+/* INTEGRATE_RSL_INTO_BLOCK	[OBSOLETE]
+/* ------------------------------------------------------------------- */
+
+INTEGRATE_RSL_INTO_BLOCK: procedure (RSL, BLOCK_PTR, DO_LOCAL_SYMBOL_ORDERING)
+			  internal;
+
+	declare
+		BLOCK_PTR			type (POINTER_T),
+		RSL				type (POINTER_T),
+		DO_LOCAL_SYMBOL_ORDERING	type (BOOL_T);
+	declare
+		(LIST, END_LIST)		type (NID_T),
+		(S, NEXT_S, PREV_S)		type (NID_T),
+		(RP, P)				type (POINTER_T);
+
+	LIST		= NULL_NID;
+	END_LIST	= NULL_NID;
+	PREV_S		= NULL_NID;
+
+	do RP = RSL repeat RP->RSD.NEXT while (RP ^= null ());
+
+		if RP->RSD.PREV_SYMBOL ^= NULL_NID then do;
+			call GET_SYM_NODE (RP->RSD.PREV_SYMBOL, P);
+			P->SYM_NODE.BROTHER = RP->RSD.NEXT_SYMBOL;
+			call RELEASE_SYM_NODE (RP->RSD.PREV_SYMBOL);
+		end;
+		else	BLOCK_PTR->BLOCK_NODE.DCL_LIST =
+				RP->RSD.NEXT_SYMBOL;
+
+		if LIST ^= NULL_NID then do;
+			call GET_SYM_NODE (END_LIST, P);
+			P->SYM_NODE.BROTHER = RP->RSD.SYMBOL;
+			call RELEASE_SYM_NODE (END_LIST);
+		end;
+		else	LIST = RP->RSD.SYMBOL;
+		END_LIST = RP->RSD.SYMBOL;
+	end;
+
+	/*
+	/* Place the newly sorted list of relocation symbols on at the
+	/* beginning of the block dcl-list, but *after* the string-literal
+	/* symbols which we've so carefully kept at the very beginning.
+	/**/
+
+	if END_LIST ^= NULL_NID then do;
+		call GET_SYM_NODE (END_LIST, P);
+		P->SYM_NODE.BROTHER = NULL_NID;
+		call RELEASE_SYM_NODE (END_LIST);
+	end;
+
+	PREV_S = NULL_NID;
+
+	do S = BLOCK_PTR->BLOCK_NODE.DCL_LIST
+	repeat NEXT_S while (S ^= NULL_NID);
+
+		call GET_SYM_NODE (S, P);
+
+		if ^P->SYM_NODE.IS_DUMMY |
+		   ^P->SYM_NODE.IS_DATA |
+		   ^P->SYM_NODE.IS_CONSTANT |
+		   (P->SYM_NODE.TOP_TYPE.CODE ^= byte (ARRAY_DT)) then do;
+
+			/* Here, this symbol is *not* a string-literal */
+
+			call RELEASE_SYM_NODE (S);
+
+			if PREV_S ^= NULL_NID then do;
+				call GET_SYM_NODE (END_LIST, P);
+				P->SYM_NODE.BROTHER = S;
+				call RELEASE_SYM_NODE (END_LIST);
+				call GET_SYM_NODE (PREV_S, P);
+				P->SYM_NODE.BROTHER = LIST;
+				call RELEASE_SYM_NODE (PREV_S);
+			end;
+			else do;
+				call GET_SYM_NODE (END_LIST, P);
+				P->SYM_NODE.BROTHER =
+					BLOCK_PTR->BLOCK_NODE.DCL_LIST;
+				call RELEASE_SYM_NODE (END_LIST);
+				BLOCK_PTR->BLOCK_NODE.DCL_LIST = LIST;
+			end;
+
+			return;
+		end;
+
+		PREV_S = S;
+		NEXT_S = P->SYM_NODE.BROTHER;
+		call RELEASE_SYM_NODE (S);
+	end;
+
+end INTEGRATE_RSL_INTO_BLOCK;

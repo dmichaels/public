@@ -1,0 +1,20 @@
+.TH ISINT 3L LOCAL
+
+.SH NAME
+isint - true if a string is all digits
+
+.SH SYNOPSIS
+.ft B
+bool
+.br
+isint(str)
+.br
+char *str;
+.ft P
+
+.SH DESCRIPTION
+Returns TRUE if string \fIstr\fP consists only of digits (\fI0-9\fP),
+otherwise return FALSE.
+
+.SH FILES
+isint.c

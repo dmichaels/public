@@ -1,0 +1,59 @@
+/* CPP CPP_EXPRESSION_OP_PKG - Low level expression operations */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.25.90  DGM  001  Include file name changes.
+ *  06.05.90  DGM  000  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  11.08.88  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+declare
+	( PPMUL		/* Multiply (signed) */
+	, PPUMUL	/* Multiply (unsigned) */
+	, PPDIV		/* Divide (signed) */
+	, PPUDIV	/* Divide (unsigned) */
+	, PPMOD		/* Modulus (signed) */
+	, PPUMOD	/* Modulus (unsigned) */
+	, PPADD		/* Add (signed) */
+	, PPUADD	/* Add (unsigned) */
+	, PPSUB		/* Subtract (signed) */
+	, PPUSUB	/* Subtract (unsigned) */
+	, PPLSH		/* Bitwise left shift (signed) */
+	, PPULSH	/* Bitwise left shift (unsigned) */
+	, PPRSH		/* Bitwise right shift (signed) */
+	, PPURSH	/* Bitwise right shift (unsigned) */
+	, PPOR		/* Bitwise inclusive OR (signed) */
+	, PPUOR		/* Bitwise inclusive OR (unsigned) */
+	, PPXOR		/* Bitwise exclusive OR (signed) */
+	, PPUXOR	/* Bitwise exclusive OR (unsigned) */
+	, PPAND		/* Bitwise AND (signed) */
+	, PPUAND	/* Bitwise AND (unsigned) */
+	, PPLT		/* Less-than (signed) */
+	, PPULT		/* Less-than (unsigned) */
+	, PPGT		/* Greater-than (signed) */
+	, PPUGT		/* Greater-than (unsigned) */
+	, PPLE		/* Less-than-or-equal (signed) */
+	, PPULE		/* Less-than-or-equal (unsigned) */
+	, PPUGE )	/* Greater-than-or-equal (unsigned) */
+
+			entry   (fixed binary (31), fixed binary (31))
+			returns (fixed binary (31))
+	,
+
+	PPCOMP		/* Bitwise complement */
+
+			entry   (fixed binary (31))
+			returns (fixed binary (31))
+	;
+

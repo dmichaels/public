@@ -1,0 +1,142 @@
+/* LPI-DEBUG M68 ALCTMP.PL1 - Allocate temporary storage in user space */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.12.86  DGM  000  Original.  See LPI-DEBUG document
+ *                      "System Interface Specification".
+ *
+ **********************************************************************/
+
+/***********************************************************************
+ * ALCTMP Description:
+ *
+ * This routine allocates temporary storage from the user program's
+ * dynamic stack and copies data to it from the debugger's memory.  The
+ * address of the allocated area will later be used as input to PTRBLD.
+ * Note that the area allocated must be on the most restrictive boundary
+ * of the target machine; POINTER_SIZE (four bytes) in this case.
+ *
+ * If the given pointer to data in debugger memory is NULL,
+ * then do not initialize the allocated user memory at all.
+ *
+ * Input:  DATALEN  - Length of the data item in bytes.
+ *         DATAPTR  - Pointer to an area in debugger  memory that
+ *                    holds the value of the temporary data item.
+ *
+ * Output: TEMPADDR - Address of the temporary area in the user program.
+ *                    ALCTMP must fill this area with the data from the
+ *                    debugger.
+ *         UNUSED   - Currently unused.
+ *         RET      - Return status; zero if successful, else non-zero.
+ *
+ **********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include SYSWRITUSER_IN;
+%include SYSGETPC_IN;
+%include SYSSETEXPC_IN;
+%include TARGET_IN;
+%include EXTSYM_IN;
+
+ALCTMP: procedure (DATALEN,DATAPTR,TEMPADDR,UNUSED,RET);
+
+    declare
+        DATALEN     fixed binary (31),
+        DATAPTR     pointer,
+        TEMPADDR    fixed binary (ADDRESS_LENGTH),
+        UNUSED      fixed binary (ADDRESS_LENGTH),
+        RET         fixed binary (15);
+
+    declare
+        CURRENTSP   fixed binary (ADDRESS_LENGTH),
+        NPAD        fixed binary (15),
+        NBYTES      fixed binary (15),
+        PADDING     fixed binary (ADDRESS_LENGTH),
+        STACKADDR   fixed binary (ADDRESS_LENGTH);
+
+    RET = 0;
+    CURRENTSP = SGETSP();
+    NPAD = 0;
+    NBYTES = DATALEN;
+
+    /*
+     * Round up the number of bytes to be allocated to
+     * be POINTER_SIZE aligned (four bytes in this case).
+     */
+
+    if MOD (NBYTES, POINTER_SIZE) ^= 0 then do;
+        NPAD = POINTER_SIZE - MOD (NBYTES, POINTER_SIZE);
+        NBYTES = NBYTES + NPAD;
+    end;
+
+    /*
+     * If the given DATAPTR is NULL then simply allocate
+     * NBYTES in user memory by adjusting the stack
+     * pointer appropriately; do not copy any data.
+     */
+
+    if DATAPTR = NULL then
+         STACKADDR = CURRENTSP - NBYTES;
+
+    /*
+     * Now, the given DATAPTR is not NULL, so copy the data
+     * from debugger memory (pointed to by DATAPTR) to the
+     * space allocated on the user stack.
+     */
+
+    else do;
+  
+        /*
+         * If we did have to round up the size to be allocated
+         * (to be POINTER_SIZE aligned), then the zero out the
+         * the space allocated on the stack for this padding.
+         */
+
+        if NPAD > 0 then do;
+            PADDING = 0;
+            STACKADDR = CURRENTSP - NPAD;
+            call WRIUSR (SON_ID,
+                         CURRENT_ENV.FRAME_ADDR,
+                         STACKADDR,
+                         NPAD,
+                         ADDR(PADDING),
+                         RET);
+            if RET ^= 0 then
+                return;
+        end;
+
+        /*
+         * Now, actually write the data
+         * from debugger to user memory.
+         */
+
+        STACKADDR = CURRENTSP - NBYTES;
+        call WRIUSR (SON_ID,
+                     CURRENT_ENV.FRAME_ADDR,
+                     STACKADDR,
+                     NBYTES - NPAD,
+                     DATAPTR,
+                     RET);
+        if RET ^= 0 then
+            return;
+
+    end;
+
+    TEMPADDR = STACKADDR;
+    PROGRAM_REGISTER_AREA->REGS.A7 = STACKADDR;
+    return;
+
+end ALCTMP;
+

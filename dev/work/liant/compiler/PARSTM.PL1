@@ -1,0 +1,1728 @@
+/* c++ parstm.pl1 - Statement semantic analysis package */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.20.92  DGM  037  Change from PLB for tunability of EMIT_BRANCH_CASE.
+ *  05.01.92  TLF  036  Made EMIT_LABEL_VALUE external.
+ *  03.26.92  DGM  035  New value-node scheme.
+ *  03.19.92  DGM  033	Added IN_FOR_STATEMENT_INITIALIZER.
+ *			Added CURRENT_SCOPE_PAST_DECLARATIONS.
+ *  02.24.92  PKT  032	Set SYM_NODE.FIRST_OPID for functions.
+ *  12.23.91  PKT  031  Removed CHECK_NOT_LOOP_BODY.
+ *  11.12.91  DGM  030  Updated.
+ *  07.31.91  DGM  029  Don't emit call to ____lpi_cxx_entry for -ansic
+ *			or for -classicc mode.
+ *  07.24.91  DGM  028  Fix in EMIT_BRANCH_CONTINUE, DEFINE_SWITCH_CASE,
+ *			and DEFINE_SWITCH_DEFAULT.
+ *  07.18.91  DGM  027  StatementId work for CodeWatch. Emit call to
+ *			global initializer ____lpi_cxx_entry from main.
+ *  05.29.91  DGM  026  Enable COND_REF handling of switch statements
+ *			(for Phoenix/BlackBird (on SPARC)).
+ *  05.02.91  DGM  025  Eliminated extra statement-id at end of for loop
+ *			(added EMIT_LOOP_LABEL_NO_STATEMENT_ID).
+ *  04.29.91  DGM  024  Emit more statment-id ops for loops.
+ *  03.08.91  DGM  023  Prevent blowups on errors in EMIT_FUNCTION_BEGIN.
+ *  11.29.90  DGM  022  Added BRANCH_AROUND_NESTED_FUNCTION and EMIT_LABEL.
+ *  11.20.90  TLF  021  Changed references to old value_node interface
+ *                 	routines (from ANSI-C) to C++ names.
+ *  11.13.90  TLF  020  Changed call to EMIT_TREE to EMIT_CPLUS_TREE.
+ *  11.01.90  PKT  019  Updated for strict INITIALIZE_OBJECT.
+ *  10.16.90  PKT  018  Merged 'switch' fix from ansic;
+ *			change to EMIT_FUNCTION_BEGIN; COUNT bug fix.
+ *  09.14.90  DGM  017  Changed include file names and VOP names.
+ *  08.29.90  DGM  016  Changed GET_SIMPLE_TYPE to GET_BASIC_TYPE.
+ *  08.15.90  DGM  015  New type-node.
+ *  08.07.90  PKT  014  More destruction support, with control flow
+ *			analysis.
+ *  07.19.90  PKT  013  Destruction support.
+ *  07.13.90  DGM  012  Added EMIT_FUNCTION_BEGIN/END.
+ *  07.05.90  PKT  011  Updated for new treatment of COUNT=0.
+ *  06.06.90  DGM  010  Updated for the new utilities.
+ *  04.19.90  DGM  009  Fixed up includes.
+ *  04.02.90  DGM  008  Changed MAKE_SIMPLE_TYPE to GET_SIMPLE_TYPE, and
+ *			CXX_PROCESS_DECLARATION_PKG to C_DECLARE_MISCELLANY_PKG.
+ *  03.14.90  PKT  007  Updated to fix typographical bug.
+ *  03.02.90  DGM  006  Changed MAKE_LABEL to DECLARE_LABEL; do we want
+ *			to pass the scope in which to declare the label?
+ *  02.27.90  PKT  005  Updated to enable DELIMIT_LOOP.
+ *  02.13.90  PKT  004  Added support for for, while, and do loops.
+ *  02.08.90  PKT  003  Got EMIT_EXPRESSION, EMIT, STATEMENT_START,
+ *			and EMIT_STMNT_ID from expdat.pl1.
+ *  01.04.90  DGM  001  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.20.92 037 PARSTM');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ADD_XREF_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_EMIT_VALUE_TREE_PKG;
+%include CXX_EMIT_CONDITIONAL_REF_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_STATEMENT_DATA_IN;
+%include CXX_GLOBAL_NAMES_IN;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_CHECK_FLOW_PKG;
+%include CXX_PROCESS_BASE_MBR_INIT_PKG;
+%include CXX_EMIT_CONSTRUCTOR_CODE_PKG;
+%include CXX_EMIT_DESTRUCTOR_CODE_PKG;
+%include CXX_PROCESS_STATEMENT_IN;
+%include CXX_PSECT_PKG;
+%include CXX_SEMANTIC_STACK_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+
+/* ---------------------------------------------------------------------
+/* STATEMENT_START
+/* ------------------------------------------------------------------- */
+
+STATEMENT_START: procedure external (X_STATEMENT_START);
+
+	call EMIT_STATEMENT_ID ();
+	CURRENT_SCOPE_PAST_DECLARATIONS = TRUE;
+
+end STATEMENT_START;
+
+/* ---------------------------------------------------------------------
+/* EMIT_STATEMENT_ID
+/* ------------------------------------------------------------------- */
+
+EMIT_STATEMENT_ID: procedure external (X_EMIT_STATEMENT_ID);
+
+	declare
+		V		type (CXX_VID_T),
+		VOID_OID	type (OID_T);
+
+	if ^SW_NO_STATEMENT_ID_OPS then do;
+		V = GET_STATEMENT_ID_AND_EXPAND ();
+		VOID_OID = EMIT_CPLUS_TREE (V);
+		call COUNT_DOWN_VALUE (V);
+	end;
+
+end EMIT_STATEMENT_ID;
+
+/* ---------------------------------------------------------------------
+/* EMIT_GIVEN_STATEMENT_ID
+/* ------------------------------------------------------------------- */
+
+EMIT_GIVEN_STATEMENT_ID: procedure (FILE, LINE) internal;
+
+	declare
+		FILE	type (NID_T),
+		LINE	type (LONG_T);
+	declare
+		V	type (CXX_VID_T);
+
+	if ^SW_NO_STATEMENT_ID_OPS then do;
+        	V = ALLOC_CXX_VALUE_NODE (STMNT_ID_VO);
+        	V->CXX_VALUE_NODE.OFFSET = LINE;
+        	V->CXX_VALUE_NODE.RIGHT_NID = FILE;
+        	V->CXX_VALUE_NODE.RIGHT_IS_NID = TRUE;
+        	V->CXX_VALUE_NODE.RIGHT_IS_NOT_VID = TRUE;
+        	call EMIT_STATEMENT (EXPAND_VALUE (V));
+	end;
+
+end EMIT_GIVEN_STATEMENT_ID;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_AND_LINK_LABEL
+/*
+/* Declare label with CURRENT_NAME, setting CURRENT_SYMBOL to refer to
+/* it, and linking the label into the current function's list of labels.
+/* ------------------------------------------------------------------- */
+
+DECLARE_AND_LINK_LABEL: procedure internal;
+
+	declare (SP, FP) type (POINTER_T);
+
+	CURRENT_SYMBOL = DECLARE_LABEL (CURRENT_NAME);
+
+	call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, SP);
+	call GET_SYM_NODE (SP->SCOPE_NODE.OWNER, FP);
+	SYM_NODE.NEXT_LABEL = FP->SYM_NODE.FIRST_LABEL;
+	FP->SYM_NODE.FIRST_LABEL = CURRENT_SYMBOL;
+	call RELEASE_SYM_NODE (SP->SCOPE_NODE.OWNER);
+	call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+
+	/* The symbol is OK to declare in the current block */
+	
+	call GET_SCOPE_NODE_R (CURRENT_SCOPE, SP);
+	SYM_NODE.BLOCK_LEVEL = SP->SCOPE_NODE.LEVEL;
+	SYM_NODE.BYPASSED_SYMBOL = NULL_NID;
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+end DECLARE_AND_LINK_LABEL;
+
+/* ---------------------------------------------------------------------
+/* SET_LABEL_DEFINITION
+/*
+/* Process label definition.  This assumes that name information
+/* has been set.
+/* ------------------------------------------------------------------- */
+
+SET_LABEL_DEFINITION: procedure external (X_SET_LABEL_DEFINITION);
+
+	declare
+		LABEL_TO_USE	type (NID_T),
+		FWD_DTORS	type (CXX_VID_T),
+		DTOR_EXPR	type (CXX_VID_T);
+
+	call FLUSH_TEMPORARIES ();
+
+	CURRENT_SYMBOL = LOOKUP_LABEL (CURRENT_NAME, CURRENT_FUNCTION_SCOPE);
+
+	if CURRENT_SYMBOL ^= NULL_NID then do;
+		if SYM_NODE.VALUE ^= NULL_NID then do;
+			/*
+			/* Error; this label duplicates another declaration
+			/* of the same LABEL name in this function; labels
+			/* are in their own separate name space.
+			/**/
+			call SEMANTIC_ERROR_I (ERR_DUP_LABEL_NAME,
+					       SYMBOL_NAME (CURRENT_SYMBOL));
+			CURRENT_SYMBOL = NULL_NID;
+		end;
+	end;
+
+	if CURRENT_SYMBOL = NULL_NID then do;
+		call DECLARE_AND_LINK_LABEL ();
+	end;
+	else do;
+		/* This label definition satisfies a previous forward
+		/* goto.  Because there may be destructors to call,
+		/* that goto was to a different, dummy label.
+		/* Identify the destructors, if any.
+		/**/
+		LABEL_TO_USE = SYM_NODE.LABEL_TO_USE;
+
+		call COUNT_UP_VALUE (SYM_NODE.DESTRUCTORS);
+		DTOR_EXPR = DESTROY_DIFFERENCE ((SYM_NODE.DESTRUCTORS),
+					        CURRENT_DESTRUCTORS());
+		call COUNT_DOWN_DESTRUCTORS (SYM_NODE.DESTRUCTORS);
+
+		if DTOR_EXPR = NULL_CXX_VID then do;
+			/* No destructors; just emit the dummy label. */
+			call EMIT_LABEL (LABEL_TO_USE);
+		end;
+		else do;
+			/* Destructors present.  Branch around them. */
+			call EMIT_BRANCH (CURRENT_SYMBOL);
+
+			/* Emit the dummy label; come here to get destroyed. */
+			call EMIT_LABEL (LABEL_TO_USE);
+
+			/* Emit the destructors. */
+			call EMIT_STATEMENT (DTOR_EXPR);
+		end;
+	end;
+
+	/* Henceforth use this label symbol at gotos. */
+	call SET_SYM_NODE (CURRENT_SYMBOL);
+	SYM_NODE.DESTRUCTORS = CURRENT_DESTRUCTORS ();
+	SYM_NODE.DEFINED = TRUE;
+	SYM_NODE.LABEL_TO_USE = NULL_NID;
+
+	call CHECK_LABEL_DEFINITION ();
+	CURRENT_CODE_DEAD = FALSE;
+
+	call EMIT_LABEL (CURRENT_SYMBOL);
+
+end SET_LABEL_DEFINITION;
+
+/* ---------------------------------------------------------------------
+/* EMIT_GOTO
+/* ------------------------------------------------------------------- */
+
+EMIT_GOTO: procedure external (X_EMIT_GOTO);
+
+	declare
+		DTORS		type (CXX_VID_T),
+		DUMMY		type (NID_T),
+		COMMON_LABEL	type (NID_T),
+		PREV_DTORS	type (CXX_VID_T),
+		PREV_LABEL	type (NID_T),
+		COMMON_DTORS	type (CXX_VID_T),
+		UNUSED		type (SHORT_T);
+
+	CURRENT_SYMBOL = LOOKUP_LABEL (CURRENT_NAME,
+				       CURRENT_FUNCTION_SCOPE);
+
+	if CURRENT_SYMBOL = NULL_NID then do;
+		call DECLARE_AND_LINK_LABEL ();
+		SYM_NODE.DESTRUCTORS = CURRENT_DESTRUCTORS ();
+		DUMMY = DECLARE_LABEL (NULL_NID);
+		call SET_SYM_NODE (CURRENT_SYMBOL);
+		SYM_NODE.LABEL_TO_USE = DUMMY;
+	end;
+
+	SYM_NODE.REFERENCED = TRUE;
+	if XREF then call ADDXRF ((CURRENT_SYMBOL),FALSE);
+
+	if SYM_NODE.DEFINED then do;
+		DTORS = SYM_NODE.DESTRUCTORS;
+		call COUNT_UP_VALUE (DTORS);
+		UNUSED = EMIT_BRANCH_WITH_DTORS (CURRENT_SYMBOL, DTORS);
+	end;
+	else do;
+		/* Find the commonality between the destructors at
+		/* the current point, and at the point of the prev goto.
+		/**/
+		PREV_DTORS = SYM_NODE.DESTRUCTORS;
+		call COUNT_UP_VALUE (PREV_DTORS);
+		DTORS = CURRENT_DESTRUCTORS ();
+		COMMON_DTORS = COMMON_DESTRUCTORS (PREV_DTORS, DTORS);
+
+		/* The common destructors are the new destructors
+		/* associated with the label.
+		/**/
+		SYM_NODE.DESTRUCTORS = COMMON_DTORS;
+
+		if PREV_DTORS ^= COMMON_DTORS then do;
+			/* Need a new label for the new destructors. */
+			PREV_LABEL = SYM_NODE.LABEL_TO_USE;
+			COMMON_LABEL = DECLARE_LABEL (NULL_NID);
+			call SET_SYM_NODE (CURRENT_SYMBOL);
+			SYM_NODE.LABEL_TO_USE = COMMON_LABEL;
+		end;
+		else
+			COMMON_LABEL = SYM_NODE.LABEL_TO_USE;
+
+		call COUNT_UP_VALUE (COMMON_DTORS);
+		UNUSED = EMIT_BRANCH_WITH_DTORS (COMMON_LABEL, COMMON_DTORS);
+		
+		if PREV_DTORS ^= COMMON_DTORS then do;
+			/* Define the label for the prev goto to use. */
+			call EMIT_LABEL (PREV_LABEL);
+
+			/* Emit destructors from the prev goto down to
+			/* the common part, with the branch.
+			/**/
+			call COUNT_UP_VALUE (COMMON_DTORS);
+			call COUNT_UP_VALUE (PREV_DTORS);
+			call EMIT_BRANCH_BETWEEN_DTORS (COMMON_LABEL,
+						        COMMON_DTORS,
+						        PREV_DTORS);
+			call COUNT_DOWN_DESTRUCTORS (PREV_DTORS);
+		end;
+		else
+			call COUNT_DOWN_VALUE (PREV_DTORS);
+	end;
+
+	CURRENT_CODE_DEAD = TRUE;
+	call CHECK_GOTO ();
+
+end EMIT_GOTO;
+
+/* ---------------------------------------------------------------------
+/* EMIT_RETURN
+/* ------------------------------------------------------------------- */
+
+EMIT_RETURN: procedure external (X_EMIT_RETURN);
+
+	call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L
+			     (RETURN_VO, CURRENT_VALUE));
+	CURRENT_CODE_DEAD = TRUE;
+
+end EMIT_RETURN;
+
+/* ---------------------------------------------------------------------
+/* EMIT_IMPLICIT_RETURN
+/*
+/* When the return is implicit (as at the end of a function body)
+/* avoid emitting it because of the warning it can produce about
+/* requiring a return value.
+/* ------------------------------------------------------------------- */
+
+EMIT_IMPLICIT_RETURN: procedure
+		      external (X_EMIT_IMPLICIT_RETURN);
+
+	if ^CURRENT_CODE_DEAD then do;
+		call EMIT_STATEMENT_ID ();
+		call EMIT_STATEMENT (GET_VALUE_AND_EXPAND
+				     (IMPLICIT_RETURN_VO));
+		CURRENT_CODE_DEAD = TRUE;
+	end;
+
+end EMIT_IMPLICIT_RETURN;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_LABEL_VALUE 
+/* ------------------------------------------------------------------- */
+
+DECLARE_LABEL_VALUE: procedure (COUNT)
+		     returns   (type (CXX_VID_T))
+		     external  (X_DECLARE_LABEL_VALUE);
+
+	declare COUNT		type (SHORT_T);
+	declare K		type (CXX_VID_T);
+
+        K = ALLOC_CXX_VALUE_NODE (DECLARE_LABEL_VO);
+        CXX_VALUE_NODE.COUNT = COUNT;
+        return (EXPAND_VALUE (K));
+
+end DECLARE_LABEL_VALUE;
+
+/* ---------------------------------------------------------------------
+/* START_IF
+/*
+/* Figure the destructors to be shared by the if and else branches now,
+/* because temps may arise while processing the test expression,
+/* and it's convenient to flush temps prior to emitting the test.
+/* ------------------------------------------------------------------- */
+
+START_IF: procedure external (X_START_IF);
+
+	/* Flush temps because it's hard to handle
+	/* if one branch of the if is a declaration
+	/* and the other isn't.
+	/**/
+	call FLUSH_TEMPORARIES ();
+	call PUSH_CXX_VALUE_NODE (CURRENT_DESTRUCTORS ());
+
+end START_IF;
+
+/* ---------------------------------------------------------------------
+/* IF_HEADER
+/* ------------------------------------------------------------------- */
+
+IF_HEADER: procedure external (X_IF_HEADER);
+
+	declare
+		LABEL_VALUE	type (CXX_VID_T),
+		WILL_BRANCH	type (SHORT_T),
+		DTORS		type (CXX_VID_T);
+
+	LABEL_VALUE = DECLARE_LABEL_VALUE (2);
+
+	DTORS = POP_CXX_VALUE_NODE ();
+	call COUNT_UP_VALUE (DTORS);
+	WILL_BRANCH = EMIT_BRANCH_VALUE_WITH_DTORS
+		      (BRANCH_FALSE_VO,
+		       LABEL_VALUE,
+		       CURRENT_VALUE,
+		       DTORS);
+	if WILL_BRANCH = NO_NO then do;  
+		/* the branch was folded away */
+                call COUNT_DOWN_VALUE (LABEL_VALUE);
+                LABEL_VALUE = NULL_CXX_VID;
+	end;
+
+	call PUSH_CXX_VALUE_NODE (DTORS);
+        call PUSH_CXX_VALUE_NODE (LABEL_VALUE);
+
+	/* Push whether code is dead on the else path. */ 
+	call PUSH_BOOLEAN (WILL_BRANCH = NO_NO | CURRENT_CODE_DEAD);
+
+	CURRENT_CODE_DEAD = WILL_BRANCH = YES_YES | CURRENT_CODE_DEAD;
+
+end IF_HEADER;
+
+/* ---------------------------------------------------------------------
+/* ELSE_HEADER
+/* ------------------------------------------------------------------- */
+
+ELSE_HEADER: procedure external (X_ELSE_HEADER);
+
+	declare K 		type (CXX_VID_T),
+		DTORS		type (CXX_VID_T),
+		CODE_DEAD	type (BOOL_T);
+
+	CODE_DEAD	= POP_BOOLEAN ();
+	K		= POP_CXX_VALUE_NODE ();
+	DTORS		= POP_CXX_VALUE_NODE ();
+
+	call PUSH_CXX_VALUE_NODE (DTORS);
+
+	call COUNT_UP_VALUE (DTORS);
+	call EMIT_DESTRUCTORS (DTORS);
+	call COUNT_UP_VALUE (DTORS);
+	call POP_DESTRUCTORS (DTORS);
+
+	CURRENT_VALUE = DECLARE_LABEL_VALUE (2);
+
+        call PUSH_CXX_VALUE_NODE (CURRENT_VALUE);
+	call PUSH_BOOLEAN (CURRENT_CODE_DEAD);
+
+	call EMIT_BRANCH_VALUE (CURRENT_VALUE);
+
+        if K ^= NULL_CXX_VID then
+		call EMIT_LABEL_VALUE (K);
+
+	CURRENT_CODE_DEAD = CODE_DEAD;
+
+end ELSE_HEADER;
+
+/* ---------------------------------------------------------------------
+/* IF_TRAILER
+/* ------------------------------------------------------------------- */
+
+IF_TRAILER: procedure external (X_IF_TRAILER);
+
+	declare K 		type (CXX_VID_T),
+		DTORS		type (CXX_VID_T),
+		CODE_DEAD	type (BOOL_T);
+
+	CODE_DEAD	= POP_BOOLEAN ();
+	K		= POP_CXX_VALUE_NODE ();
+	DTORS		= POP_CXX_VALUE_NODE ();
+
+	call COUNT_UP_VALUE (DTORS);
+	call EMIT_DESTRUCTORS (DTORS);
+	call POP_DESTRUCTORS (DTORS);
+        if K ^= NULL_CXX_VID then
+		call EMIT_LABEL_VALUE (K);
+
+	CURRENT_CODE_DEAD = (CURRENT_CODE_DEAD & CODE_DEAD);
+
+end IF_TRAILER;
+
+/* ---------------------------------------------------------------------
+/* START_FOR_LOOP
+/* ------------------------------------------------------------------- */
+
+START_FOR_LOOP: procedure external (X_START_FOR_LOOP);
+
+	IN_FOR_STATEMENT_INITIALIZER = FALSE;
+	call PUSH_LOOP_INFO (FOR_LOOP);
+        TOP_LOOP_INFO_STACK.TOP = DECLARE_LABEL_VALUE (-1);
+	call EMIT_LOOP_DELIMITER (LOOP_TOP_VO);
+	call EMIT_LOOP_DELIMITER (LOOP_BODY_VO);
+	call EMIT_LOOP_TOP_LABEL ();
+	CURRENT_VALUE = NULL_CXX_VID;
+
+end START_FOR_LOOP;
+
+/* ---------------------------------------------------------------------
+/* TEST_FOR_LOOP
+/* ------------------------------------------------------------------- */
+
+TEST_FOR_LOOP: procedure external (X_TEST_FOR_LOOP);
+
+	declare
+		WILL_BRANCH	type (SHORT_T);
+
+	if CURRENT_VALUE = NULL_CXX_VID then
+		CURRENT_VALUE = INTEGER_VALUE_ONE ();
+	TOP_LOOP_INFO_STACK.EXPRESSION = CURRENT_VALUE;
+	TOP_LOOP_INFO_STACK.EXIT = DECLARE_LABEL_VALUE (-1);
+	call EMIT_GIVEN_STATEMENT_ID (TOP_LOOP_INFO_STACK.FILE,
+				      TOP_LOOP_INFO_STACK.LINE);
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	WILL_BRANCH = EMIT_BRANCH_VALUE_WITH_DTORS
+		      (BRANCH_FALSE_VO,
+		       TOP_LOOP_INFO_STACK.EXIT,
+		       TOP_LOOP_INFO_STACK.EXPRESSION,
+		       TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	if WILL_BRANCH ^= NO_NO then
+		TOP_LOOP_INFO_STACK.BREAK_FOUND = TRUE;
+	TOP_LOOP_INFO_STACK.CONT_DESTRUCTORS = CURRENT_DESTRUCTORS ();
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call POP_DESTRUCTORS (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	CURRENT_VALUE = NULL_CXX_VID;
+
+end TEST_FOR_LOOP;
+
+/* ---------------------------------------------------------------------
+/* SET_FOR_LOOP_INITIALIZER
+/* ------------------------------------------------------------------- */
+
+SET_FOR_LOOP_INITIALIZER: procedure external (X_SET_FOR_LOOP_INITIALIZER);
+
+	declare V type (CXX_VID_T);
+
+	call EMIT_STATEMENT_ID ();
+
+	/*
+	call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L
+			     (NOP_VO, INTEGER_VALUE_ONE ()));
+	*/
+
+	IN_FOR_STATEMENT_INITIALIZER = TRUE;
+	
+end SET_FOR_LOOP_INITIALIZER;
+
+/* ---------------------------------------------------------------------
+/* FINISH_FOR_LOOP
+/* ------------------------------------------------------------------- */
+
+FINISH_FOR_LOOP: procedure external (X_FINISH_FOR_LOOP);
+
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call EMIT_GIVEN_STATEMENT_ID (TOP_LOOP_INFO_STACK.FILE,
+				      TOP_LOOP_INFO_STACK.LINE);
+	call EMIT_DESTRUCTORS (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call EMIT_LOOP_LABEL (TOP_LOOP_INFO_STACK.CONTINUE);
+	call EMIT_STATEMENT (TOP_LOOP_INFO_STACK.EXPRESSION); /* step value */
+	call EMIT_BRANCH_VALUE (TOP_LOOP_INFO_STACK.TOP);
+	call EMIT_LOOP_DELIMITER (LOOP_EXIT_VO);
+	call EMIT_LOOP_LABEL_NO_STATEMENT_ID (TOP_LOOP_INFO_STACK.EXIT);
+	call POP_LOOP_INFO ();
+
+end FINISH_FOR_LOOP;
+
+/* ---------------------------------------------------------------------
+/* START_WHILE_LOOP
+/* ------------------------------------------------------------------- */
+
+START_WHILE_LOOP: procedure external (X_START_WHILE_LOOP);
+
+	call PUSH_LOOP_INFO (WHILE_LOOP);
+	TOP_LOOP_INFO_STACK.TOP = DECLARE_LABEL_VALUE (-1);
+	call EMIT_LOOP_DELIMITER (LOOP_TOP_VO);
+	call EMIT_LOOP_DELIMITER (LOOP_BODY_VO);
+	call EMIT_LOOP_TOP_LABEL ();
+
+end START_WHILE_LOOP;
+
+/* ---------------------------------------------------------------------
+/* TEST_WHILE_LOOP
+/* ------------------------------------------------------------------- */
+
+TEST_WHILE_LOOP: procedure external (X_TEST_WHILE_LOOP);
+
+	declare
+		WILL_BRANCH	type (SHORT_T);
+
+	TOP_LOOP_INFO_STACK.EXPRESSION = CURRENT_VALUE;
+	TOP_LOOP_INFO_STACK.EXIT = DECLARE_LABEL_VALUE (-1);
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	WILL_BRANCH = EMIT_BRANCH_VALUE_WITH_DTORS
+		      (BRANCH_FALSE_VO,
+		       TOP_LOOP_INFO_STACK.EXIT,
+		       TOP_LOOP_INFO_STACK.EXPRESSION,
+		       TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	if WILL_BRANCH ^= NO_NO then
+		TOP_LOOP_INFO_STACK.BREAK_FOUND = TRUE;
+
+end TEST_WHILE_LOOP;
+
+/* ---------------------------------------------------------------------
+/* FINISH_WHILE_LOOP
+/* ------------------------------------------------------------------- */
+
+FINISH_WHILE_LOOP: procedure external (X_FINISH_WHILE_LOOP);
+
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call EMIT_DESTRUCTORS (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call EMIT_BRANCH_VALUE (TOP_LOOP_INFO_STACK.TOP);
+	call EMIT_LOOP_DELIMITER (LOOP_EXIT_VO);
+	call EMIT_LOOP_LABEL_NO_STATEMENT_ID (TOP_LOOP_INFO_STACK.EXIT);
+	call POP_LOOP_INFO ();
+
+end FINISH_WHILE_LOOP;
+
+/* ---------------------------------------------------------------------
+/* START_DO_LOOP
+/* ------------------------------------------------------------------- */
+
+START_DO_LOOP: procedure external (X_START_DO_LOOP);
+
+	call PUSH_LOOP_INFO (DO_LOOP);
+	TOP_LOOP_INFO_STACK.TOP = DECLARE_LABEL_VALUE (-1);
+	call EMIT_LOOP_DELIMITER (LOOP_TOP_VO);
+	call EMIT_LOOP_DELIMITER (LOOP_BODY_VO);
+	call EMIT_LOOP_TOP_LABEL ();
+
+end START_DO_LOOP;
+
+/* ---------------------------------------------------------------------
+/* TEST_DO_LOOP
+/* ------------------------------------------------------------------- */
+
+TEST_DO_LOOP: procedure external (X_TEST_DO_LOOP);
+	
+	declare
+		WILL_BRANCH	type (SHORT_T);
+
+	TOP_LOOP_INFO_STACK.EXPRESSION = CURRENT_VALUE;
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	WILL_BRANCH = EMIT_BRANCH_VALUE_WITH_DTORS
+		      (BRANCH_TRUE_VO,
+		       TOP_LOOP_INFO_STACK.TOP,
+		       TOP_LOOP_INFO_STACK.EXPRESSION,
+		       TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	if WILL_BRANCH ^= YES_YES
+	 & ^CURRENT_CODE_DEAD then
+		TOP_LOOP_INFO_STACK.BREAK_FOUND = TRUE;
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call EMIT_DESTRUCTORS (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+
+end TEST_DO_LOOP;
+
+/* ---------------------------------------------------------------------
+/* FINISH_DO_LOOP
+/* ------------------------------------------------------------------- */
+
+FINISH_DO_LOOP: procedure external (X_FINISH_DO_LOOP);
+
+	call EMIT_LOOP_DELIMITER (LOOP_EXIT_VO);
+	call EMIT_LOOP_LABEL (TOP_LOOP_INFO_STACK.EXIT);
+	call POP_LOOP_INFO ();
+
+end FINISH_DO_LOOP;
+
+/* ---------------------------------------------------------------------
+/* START_SWITCH_LOOP
+/* ------------------------------------------------------------------- */
+
+START_SWITCH_LOOP: procedure external (X_START_SWITCH_LOOP);
+
+	call PUSH_LOOP_INFO (SWITCH_LOOP);
+	call FLUSH_TEMPORARIES ();
+	TOP_LOOP_INFO_STACK.DESTRUCTORS = CURRENT_DESTRUCTORS();
+
+end START_SWITCH_LOOP;
+
+/* ---------------------------------------------------------------------
+/* TEST_SWITCH_LOOP
+/* ------------------------------------------------------------------- */
+
+TEST_SWITCH_LOOP: procedure external (X_TEST_SWITCH_LOOP);
+
+	declare
+		K		type (LONG_T),
+		P		type (POINTER_T),
+		V		type (CXX_VID_T);
+
+        /* First, check/convert switch expression to int */
+
+        CURRENT_VALUE = GET_VALUE_AND_EXPAND_L (SWITCH_VO, CURRENT_VALUE);
+
+        /*
+        /* Generate a COND_REF for the ALTERNATE and CONDITIONAL.       
+        /* Note that count = 2 on the COND_REF; refered by ALT_VALUE
+	/* and COND_VALUE once each.  Use CURRENT_VALUE as type tree.
+        /**/
+
+        K = EMIT_COND_REF (CURRENT_VALUE, 2);
+
+        /*
+        /* Emit the ALTERNATE but first "hide" its associated
+	/* COND_REF in its OFFSET field (see EMITV).
+	/**/
+
+        V = GET_VALUE_AND_EXPAND_L (ALTERNATE_VO, CURRENT_VALUE);
+        CXX_VALUE_NODE.OFFSET = K;
+        call EMIT_STATEMENT (V);
+
+        /* Set up the loop frame for the switch */
+
+        TOP_LOOP_INFO_STACK.TOP = DECLARE_LABEL_VALUE (2);
+        call EMIT_BRANCH_VALUE (TOP_LOOP_INFO_STACK.TOP);
+
+        /*
+        /* Make a CASE_NODE for the switch; note that the emitted
+	/* COND_REF is saved in case of nested switch statements.
+        /**/
+
+	call MAKE_SWITCH_HEADER_CASE (K);
+
+end TEST_SWITCH_LOOP;
+
+/* ---------------------------------------------------------------------
+/* FINISH_SWITCH_LOOP
+/* ------------------------------------------------------------------- */
+
+FINISH_SWITCH_LOOP: procedure external (X_FINISH_SWITCH_LOOP);
+
+	declare
+		DEFAULT		type (CXX_VID_T),
+		EXIT		type (CXX_VID_T),
+		TEST		type (CXX_VID_T);
+
+        DEFAULT = TOP_LOOP_INFO_STACK.CONTINUE;
+        EXIT    = TOP_LOOP_INFO_STACK.EXIT;
+
+        if EXIT = NULL_NID then do;
+                EXIT = DECLARE_LABEL_VALUE (-1);
+                TOP_LOOP_INFO_STACK.EXIT = EXIT;
+	end;
+
+        if DEFAULT = NULL_NID then do;
+		DEFAULT = EXIT;
+		CURRENT_CODE_DEAD = FALSE;
+	end;
+
+	if ^CURRENT_CODE_DEAD then
+		TOP_LOOP_INFO_STACK.BREAK_FOUND = TRUE;
+
+        call EMIT_BRANCH_VALUE (EXIT);
+
+        call EMIT_LABEL_VALUE (TOP_LOOP_INFO_STACK.TOP);
+        TOP_LOOP_INFO_STACK.TOP = NULL_CXX_VID;
+
+        TEST = ALLOC_CXX_VALUE_NODE (CONDITIONAL_VO);
+	CXX_VALUE_NODE.TYPE		   = GET_BASIC_TYPE (INT_BT);
+        CXX_VALUE_NODE.TOP_TYPE.CODE	   = byte (INT_BT);
+        CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS = NULL_TQ;
+        CXX_VALUE_NODE.NULARY		   = TRUE;
+        CXX_VALUE_NODE.OFFSET		   = CURR_CASE->CASE_CREF;
+					     /* Emitted CREF */
+
+        if CURR_CASE->CASE_COUNT > 0 then
+		call EMIT_BRANCH_CASE (TEST, DEFAULT);
+        else do;
+		/*
+		/* NOP the CONDITIONAL on empty switch.
+		/**/
+		call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L (NOP_VO, TEST));
+	end;
+
+        if DEFAULT ^= EXIT then 
+		call EMIT_BRANCH_VALUE (DEFAULT);
+
+	EMIT_EXIT:
+
+        call EMIT_LABEL_VALUE (EXIT);
+
+        call FREE_CASE;  /* Free all case nodes at this switch level */
+
+	call POP_LOOP_INFO ();
+
+end FINISH_SWITCH_LOOP;
+
+/* ---------------------------------------------------------------------
+/* MAKE_SWITCH_HEADER_CASE 
+/* ------------------------------------------------------------------- */
+
+MAKE_SWITCH_HEADER_CASE: procedure (N) internal;
+
+	declare
+		N       	type (LONG_T);
+	declare
+		(P, P0, P1)	type (POINTER_T);
+
+	P = GET_CASE();			/* Get node for Switch Level */
+	if CASE_HEAD = null () then do;	/* First Switch Level */
+		CASE_HEAD = P;
+		P->CASE_PREV = null ();
+	end;
+	else do;
+		CURR_CASE->CASE_NEXTL = P; /* Nested switches */
+		P->CASE_PREV = CURR_CASE;
+	end;
+	CURR_CASE = P;
+	CURR_CASE->CASE_NEXTC = null ();/* Next Case, i.e. selector */
+	CURR_CASE->CASE_NEXTL = null ();/* Next Switch Nest Level */
+	CURR_CASE->CASE_COUNT = 0;	/* Init count */
+	CURR_CASE->CASE_VALUE = 0;	/* Value tree */
+	CURR_CASE->CASE_CREF  = N;	/* Emitted CREF */
+
+end MAKE_SWITCH_HEADER_CASE;
+
+/* ---------------------------------------------------------------------
+/* MAKE_CASE 
+/* ------------------------------------------------------------------- */
+
+MAKE_CASE: procedure (N) internal;
+
+	declare
+		N       	type (CXX_VID_T);
+	declare
+		(P, P0, P1)	type (POINTER_T);
+
+	/* Get and fill in a new case node */
+
+	P = GET_CASE ();
+
+	P->CASE_VALUE = CURRENT_CONSTANT_VALUE;
+	P->CASE_VF = CURRENT_CONSTANT_NON_CONSTANT;
+
+	P->CASE_LABEL = N;	/* Value Tree w/LABEL */
+
+	P0 = CURR_CASE;                     /* Prev of P1, Head of Subchain */
+	P1 = CURR_CASE->CASE_NEXTC;         /* First Case                   */
+
+	do while (P1 ^= null ());
+		/*
+		/* IMPORTANT: EMIT_BRANCH_CASE depends on this reverse ordering
+		/* Note the heuristic: No sorting required if the case values
+		/* were layed out in the "logical" order.
+		/**/
+		if P->CASE_VALUE > P1->CASE_VALUE then
+			/* Make List in Reverse Order */
+			goto INSERT;
+
+		if P->CASE_VALUE = P1->CASE_VALUE then do;
+			/* Duplicate case label */
+			call SEMANTIC_ERROR (ERR_DUP_CASE);
+			goto INSERT;
+		end;
+
+		P0 = P1;                       
+		P1 = P1->CASE_NEXTC;
+	end;
+
+	INSERT:
+
+	P->CASE_NEXTC = P1;	/* Link into case chain */
+	P0->CASE_NEXTC = P;	/* and increment count */
+
+	CURR_CASE->CASE_COUNT = CURR_CASE->CASE_COUNT + 1;
+
+end MAKE_CASE;
+        
+/* ---------------------------------------------------------------------
+/* GET_CASE 
+/* ------------------------------------------------------------------- */
+
+GET_CASE: procedure returns (type (POINTER_T)) internal;
+
+	declare I       fixed binary (15),
+		P       type (POINTER_T);
+
+        if CASE_LIST = null () then do;
+		/*
+		/* Free-list for case-nodes.
+		/* Allocate 8 at a time.
+		/**/
+		do I = 1 to 8;
+			allocate CASE_NODE set (P);
+			P->CASE_NEXTC = CASE_LIST;
+			CASE_LIST = P;
+		end;
+	end;
+
+	P = CASE_LIST; /* Return the next free node */
+	CASE_LIST = CASE_LIST->CASE_NEXTC;
+	return (P);
+
+end GET_CASE;
+
+/* ---------------------------------------------------------------------
+/* FREE_CASE 
+/* ------------------------------------------------------------------- */
+
+FREE_CASE: procedure internal;
+
+	declare I       type (SHORT_T),
+		(P,P1)  type (POINTER_T);
+
+        P = CURR_CASE;                  /* Unlink from previous case level  */
+        CURR_CASE = P->CASE_PREV;
+        if CURR_CASE = NULL then
+             CASE_HEAD = NULL;
+        else CURR_CASE->CASE_NEXTL = NULL;
+                                        /* Restore to Case Free List        */
+        do I = 1 to (P->CASE_COUNT + 1);
+            P1 = P->CASE_NEXTC;
+            P->CASE_NEXTC = CASE_LIST;
+            CASE_LIST = P;
+            P = P1;
+        end;
+
+end FREE_CASE;
+
+/* ---------------------------------------------------------------------
+/* EMIT_BRANCH_CASE 
+/* ------------------------------------------------------------------- */
+
+EMIT_BRANCH_CASE: procedure (E, THIS_DEFAULT) internal;
+
+	%replace MAX_CASE_DELTA		by 5;  /* (037) */
+	%replace MIN_CASE_ALLOWED	by 5;
+
+	declare
+		E			type (CXX_VID_T),
+		THIS_DEFAULT		type (CXX_VID_T);
+	declare
+		(P, P1)			type (POINTER_T),
+		EMIT_P			type (POINTER_T),
+		THIS_COUNT		type (SHORT_T),
+		PASS			type (SHORT_T),            
+		I			type (SHORT_T),
+		J			type (CXX_VID_T),
+		(M, N)			type (SHORT_T),
+		GAP			type (LONG_T),
+		LAST_VALUE		type (LONG_T),
+		LOWER			type (LONG_T),
+		TOTAL			type (LONG_T),
+		TOTAL_DONE		type (SHORT_T);
+	declare
+		EMIT_BRANCH_COMPUTED	type (BOOL_T),
+		DONE			type (BOOL_T),
+		SPARSE			type (POINTER_T)
+					static initial (null ());
+
+
+    THIS_COUNT = 0;                     /* Init count on BRANCH expression  */
+
+    /* Create a dummy first node to point a list of sparse case nodes.      */
+
+    if SPARSE = NULL then
+        SPARSE = GET_CASE();
+    SPARSE->CASE_NEXTC = SPARSE;
+    SPARSE->CASE_PREV  = NULL;
+                
+    /* Loop thru the case list. On PASS1 acquire the counts for the BRANCH  */
+    /* expression. On PASS2, recompute everything and emit the BRANCH ops.  */
+
+    do PASS = 1 to 2;           
+        TOTAL_DONE = 0;
+        TOTAL = CURR_CASE->CASE_COUNT;  /* Total number of case selectors   */
+        P  = CURR_CASE->CASE_NEXTC;     /* First case                       */
+        P1 = P;
+
+        do while (TOTAL_DONE < TOTAL);  /* Main loop on each pass.          */
+            EMIT_P = P;                     /* Next case node ptr           */
+            P1 = P;                         /* Point to next two cases      */
+            P  = P->CASE_NEXTC;
+
+            /* Loop, tracking possible case selectors for branch computed.  */
+            /* Note: MAX_ARGUMENTS from LIMITS_IN (64 max OP operands).     */
+            /*       1st arg is branch expression, next 1..63 are labels.   */
+
+            M  = 0;                         /* M = branch range             */
+            N  = 1;                         /* N = number of labels         */
+            DONE = FALSE;
+
+            do while (^DONE & (P ^= NULL));
+                GAP = abs(P1->CASE_VALUE - P->CASE_VALUE);
+                if (GAP <= MAX_CASE_DELTA) then
+                do;
+                    if (M + GAP < MAX_ARGUMENTS - 1) then
+                    do;
+                        M = M + GAP;        /* Range for branch computed op */
+                        N = N + 1;          /* Incr branch labels           */
+                    end;
+                    else DONE = TRUE;
+                end;
+                else DONE = TRUE;
+
+                P1 = P;                     /* Bump ptrs to next cases      */
+                P  = P->CASE_NEXTC;
+            end;
+
+            EMIT_BRANCH_COMPUTED = (N >= MIN_CASE_ALLOWED);
+
+            TOTAL_DONE = TOTAL_DONE + N;    /* Track total cases done so far*/
+
+            /* On PASS1, not emitting anything, just acquiring counts.      */
+            /* On PASS2, emit BRANCH COMPUTED's and link up sparse chain.   */
+
+            if PASS = 1 then do; /* Incr count on branch expr */
+                if EMIT_BRANCH_COMPUTED then
+                    THIS_COUNT = THIS_COUNT + 1;
+                else
+                    THIS_COUNT = THIS_COUNT + N;
+                P = P1;                     /* Reset P for top of loop      */
+            end;                
+            else do;    
+                P = EMIT_P;                 /* Start emitting next case(s)  */
+                if EMIT_BRANCH_COMPUTED then do;
+                    J = NULL_CXX_VID;
+                    LAST_VALUE = P->CASE_VALUE /* + 1 (037) */ ;
+            
+                    /* Loop thru the next set of case values, making an ARG */
+                    /* list with Label args.                                */
+
+                    do I = 1 TO N;         /* N = number cases from above   */
+                        do while           /* Fill gaps with DEFAULT label. */
+                         (abs(LAST_VALUE - P->CASE_VALUE)
+			  /* >= MAX_CASE_DELTA (037) */ > 1);
+                            J = GET_VALUE_AND_EXPAND_LR
+				(ARG_VO, THIS_DEFAULT, J);
+                            LAST_VALUE = LAST_VALUE - 1;
+                        end;
+        
+                        /* Hook up the next case value & point to its next  */
+                        J = GET_VALUE_AND_EXPAND_LR (ARG_VO, P->CASE_LABEL, J);
+                        LAST_VALUE = P->CASE_VALUE;
+                        LOWER = P->CASE_VALUE;
+                        P1 = P;
+                        P = P->CASE_NEXTC;
+                    end;
+                            
+                    /* Emit the branch-computed */
+
+                    call EMIT (BRANCH_COMPUTED_VO,
+			       GET_VALUE_AND_EXPAND_LR
+			       (SUB_VO, E, INTEGER_VALUE (LOWER - 1, 0)),
+			       J);
+                end;
+                else do;
+                    /* Make a circular list of the sparse case selectors.   */
+                    do I = 1 TO N;
+                        P->CASE_PREV = SPARSE->CASE_NEXTC;
+                        SPARSE->CASE_NEXTC = P;
+                        P1 = P;
+                        P = P->CASE_NEXTC;
+                    end;
+                end;
+            end;
+        end;
+
+        /* On PASS1, set the actual count on the branch expression.         */
+        /* On PASS2, emit the list of sparse case selectors.                */
+
+        if PASS = 1 then do; 
+	    CXX_VALUE_NODE_PTR = E; /* Set count on conditional expr */
+            CXX_VALUE_NODE.COUNT = THIS_COUNT;
+        end;
+        else do;			/* Loop thru sparse list */
+            P = SPARSE->CASE_NEXTC;
+            do while (P ^= SPARSE);
+                call EMIT (BRANCH_TRUE_VO,
+			   P->CASE_LABEL,
+			   GET_VALUE_AND_EXPAND_LR
+			   (EQ_VO, E, INTEGER_VALUE (P->CASE_VALUE, NULL_BT)));
+                P = P->CASE_PREV;
+            end;
+        end;
+    end;
+
+end EMIT_BRANCH_CASE;
+
+/* ---------------------------------------------------------------------
+/* DEFINE_SWITCH_CASE
+/* ------------------------------------------------------------------- */
+
+DEFINE_SWITCH_CASE: procedure external (X_DEFINE_SWITCH_CASE);
+
+	declare LABEL_VALUE	type (CXX_VID_T),
+		LOOP_INFO_P	type (POINTER_T),
+		LOOP_INFO	type (LOOP_INFO_T) based (LOOP_INFO_P),
+		INDEX		type (SHORT_T);
+
+	INDEX = LOOP_INFO_STACK_TOP;
+
+	if INDEX = HB_LOOP_INFO_STACK then
+		goto ERROR_NOT_IN_SWITCH;
+
+	LOOP_INFO_P = addr (LOOP_INFO_STACK (INDEX));
+
+	do while (LOOP_INFO.TYPE ^= SWITCH_LOOP);
+		INDEX = INDEX + 1;
+		if INDEX = HB_LOOP_INFO_STACK then
+			goto ERROR_NOT_IN_SWITCH;
+		LOOP_INFO_P = addr (LOOP_INFO_STACK (INDEX));
+	end;
+
+        if CURRENT_CONSTANT_NON_CONSTANT then do;
+		 /*
+		 /* Invalid case number.
+		 /**/
+                call SEMANTIC_ERROR (ERR_BAD_CASE_NUMBER);
+                return;
+	end;
+
+	call FLUSH_TEMPORARIES ();
+	call CHECK_CASE_DEFINITION (INDEX);
+
+        LABEL_VALUE = DECLARE_LABEL_VALUE (2);
+        call MAKE_CASE (LABEL_VALUE);
+        call EMIT_LABEL_VALUE (LABEL_VALUE);
+	CURRENT_CODE_DEAD = FALSE;
+        return;
+
+	ERROR_NOT_IN_SWITCH:
+
+        /* This "case" is not within any switch block */
+
+        call SEMANTIC_ERROR (ERR_BAD_CASE_OR_DEFAULT);
+
+end DEFINE_SWITCH_CASE;
+
+/* ---------------------------------------------------------------------
+/* DEFINE_SWITCH_DEFAULT
+/* ------------------------------------------------------------------- */
+
+DEFINE_SWITCH_DEFAULT: procedure external (X_DEFINE_SWITCH_DEFAULT);
+
+	declare
+		LOOP_INFO_P	type (POINTER_T),
+		LOOP_INFO	type (LOOP_INFO_T) based (LOOP_INFO_P),
+		INDEX		type (SHORT_T);
+
+	INDEX = LOOP_INFO_STACK_TOP;
+
+	if INDEX = HB_LOOP_INFO_STACK then
+		goto ERROR_NOT_IN_SWITCH;
+
+	LOOP_INFO_P = addr (LOOP_INFO_STACK (INDEX));
+
+	do while (LOOP_INFO.TYPE ^= SWITCH_LOOP);
+		INDEX = INDEX + 1;
+		if INDEX = HB_LOOP_INFO_STACK then
+			goto ERROR_NOT_IN_SWITCH;
+		LOOP_INFO_P = addr (LOOP_INFO_STACK (INDEX));
+	end;
+
+        if LOOP_INFO.CONTINUE = NULL_CXX_VID then do;
+		call FLUSH_TEMPORARIES ();
+		call CHECK_CASE_DEFINITION (INDEX);
+                LOOP_INFO.CONTINUE = DECLARE_LABEL_VALUE (-1);
+                call EMIT_LABEL_VALUE (LOOP_INFO.CONTINUE);
+		CURRENT_CODE_DEAD = FALSE;
+	end;
+	else do;
+		/*
+		/* Error; a default for this
+		/* switch has already been seen.
+		/**/
+		call SEMANTIC_ERROR (ERR_DUP_DEFAULT);
+	end;
+	return;
+
+	ERROR_NOT_IN_SWITCH:
+
+        /* This "default" is not within any switch block */
+
+        call SEMANTIC_ERROR (ERR_BAD_CASE_OR_DEFAULT);
+
+end DEFINE_SWITCH_DEFAULT;
+
+/* ---------------------------------------------------------------------
+/* EMIT_LOOP_DELIMITER
+/* ------------------------------------------------------------------- */
+
+EMIT_LOOP_DELIMITER: procedure (OP) internal;
+
+	declare
+		OP	type (SHORT_T);
+	declare
+		V	type (CXX_VID_T);
+
+	V = ALLOC_CXX_VALUE_NODE (OP);
+        V->CXX_VALUE_NODE.LEFT_SHORT = LOOP_INFO_STACK_TOP;
+        V->CXX_VALUE_NODE.LEFT_IS_NOT_VID = TRUE;
+        /* V->CXX_VALUE_NODE.OFFSET = LOOP_INFO_STACK_TOP; */
+        V->CXX_VALUE_NODE.UNARY = TRUE;
+	call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+        call EMIT_STATEMENT (V);
+
+end EMIT_LOOP_DELIMITER;
+
+/* ---------------------------------------------------------------------
+/* EMIT_LOOP_TOP_LABEL
+/* 
+/* In addition to defining the loop's top label,
+/* also records the current destructor expressions.
+/* This destructor state will be forced at every implicit
+/* label in the loop: top, continue and exit.
+/* All loops flush temporaries, because the temporaries could
+/* have associated destructors, and we don't want to have to deal
+/* with the discrepancy which might occur on the branch back, if
+/* the temporaries got flushed in the body of the loop.
+/* ------------------------------------------------------------------- */
+
+EMIT_LOOP_TOP_LABEL: procedure internal;
+
+	declare SCOPE_P		type (POINTER_T);
+
+	call FLUSH_TEMPORARIES ();
+	TOP_LOOP_INFO_STACK.DESTRUCTORS = CURRENT_DESTRUCTORS ();
+	call EMIT_LOOP_LABEL_NO_STATEMENT_ID (TOP_LOOP_INFO_STACK.TOP);
+
+end EMIT_LOOP_TOP_LABEL;
+
+/* ---------------------------------------------------------------------
+/* EMIT_LOOP_CONTINUE_LABEL
+/* ------------------------------------------------------------------- */
+
+EMIT_LOOP_CONTINUE_LABEL: procedure external (X_EMIT_LOOP_CONTINUE_LABEL);
+
+	call EMIT_STATEMENT_ID ();
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call EMIT_DESTRUCTORS (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call POP_DESTRUCTORS (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	call EMIT_LOOP_LABEL (TOP_LOOP_INFO_STACK.CONTINUE);
+
+end EMIT_LOOP_CONTINUE_LABEL;
+
+/* ---------------------------------------------------------------------
+/* EMIT_LOOP_LABEL 
+/* ------------------------------------------------------------------- */
+
+EMIT_LOOP_LABEL: procedure (V) internal;
+
+	declare V type (CXX_VID_T);
+
+	if (V ^= NULL_CXX_VID) then do;
+		call EMIT_STATEMENT_ID ();
+		call EMIT_LABEL_VALUE (V);
+	end;
+
+end EMIT_LOOP_LABEL;
+
+/* ---------------------------------------------------------------------
+/* EMIT_LOOP_LABEL_NO_STATEMENT_ID
+/* ------------------------------------------------------------------- */
+
+EMIT_LOOP_LABEL_NO_STATEMENT_ID: procedure (V) internal;
+
+	declare V type (CXX_VID_T);
+
+	if (V ^= NULL_CXX_VID) then
+		call EMIT_LABEL_VALUE (V);
+
+end EMIT_LOOP_LABEL_NO_STATEMENT_ID;
+
+/* ---------------------------------------------------------------------
+/* SET_LOOP_EXPRESSION
+/* ------------------------------------------------------------------- */
+
+SET_LOOP_EXPRESSION: procedure external (X_SET_LOOP_EXPRESSION);
+
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+	if CURRENT_VALUE ^= NULL_CXX_VID then
+		CURRENT_VALUE =	
+			GET_VALUE_AND_EXPAND_L (NOP_VO, CURRENT_VALUE);
+		
+	TOP_LOOP_INFO_STACK.EXPRESSION 
+		= CONCATENATE_STATEMENTS (
+			CURRENT_VALUE,
+			DESTROY_DIFFERENCE (CURRENT_DESTRUCTORS (),
+					    TOP_LOOP_INFO_STACK.DESTRUCTORS));
+	call POP_DESTRUCTORS (TOP_LOOP_INFO_STACK.CONT_DESTRUCTORS);
+	TOP_LOOP_INFO_STACK.CONT_DESTRUCTORS = NULL_CXX_VID;
+
+end SET_LOOP_EXPRESSION;
+
+/* ---------------------------------------------------------------------
+/* EMIT_BRANCH_CONTINUE
+/* ------------------------------------------------------------------- */
+
+EMIT_BRANCH_CONTINUE: procedure external (X_EMIT_BRANCH_CONTINUE);
+
+	declare
+		LOOP_INFO_P	type (POINTER_T),
+		LOOP_INFO	type (LOOP_INFO_T) based (LOOP_INFO_P),
+		CONTINUE	type (CXX_VID_T),
+		INDEX		type (SHORT_T),
+		UNUSED		type (SHORT_T);
+
+	INDEX = LOOP_INFO_STACK_TOP;
+
+	if INDEX = HB_LOOP_INFO_STACK then
+		goto ERROR_NOT_IN_LOOP;
+
+	LOOP_INFO_P = addr (LOOP_INFO_STACK(INDEX));
+
+	do while (LOOP_INFO.TYPE = SWITCH_LOOP);
+		INDEX = INDEX + 1;
+		if INDEX = HB_LOOP_INFO_STACK then
+			goto ERROR_NOT_IN_LOOP;
+		LOOP_INFO_P = addr (LOOP_INFO_STACK (INDEX));
+	end;
+
+	CONTINUE = LOOP_INFO.CONTINUE;
+
+	if CONTINUE = NULL_CXX_VID then do;
+		if (LOOP_INFO.TYPE = WHILE_LOOP) |
+                   (LOOP_INFO.TYPE = FOR_LOOP) &
+		   (LOOP_INFO.EXPRESSION = NULL_CXX_VID) then do;
+			CONTINUE = LOOP_INFO.TOP;
+		end;
+		else do;
+                        CONTINUE = DECLARE_LABEL_VALUE (-1);
+                        LOOP_INFO.CONTINUE = CONTINUE;
+		end;
+	end;
+
+	call COUNT_UP_VALUE (LOOP_INFO.DESTRUCTORS);
+        UNUSED = EMIT_BRANCH_VALUE_WITH_DTORS
+		 (BRANCH_VO,
+		  CONTINUE,
+		  NULL_CXX_VID,
+		  LOOP_INFO.DESTRUCTORS);
+	CURRENT_CODE_DEAD = TRUE;
+        return;
+
+	ERROR_NOT_IN_LOOP:
+
+        /* This "continue" is not within any loop */
+
+        call SEMANTIC_ERROR (ERR_BAD_CONTINUE);
+
+end EMIT_BRANCH_CONTINUE;
+
+/* ---------------------------------------------------------------------
+/* EMIT_BRANCH_EXIT
+/* ------------------------------------------------------------------- */
+
+EMIT_BRANCH_EXIT: procedure external (X_EMIT_BRANCH_EXIT);
+
+	declare UNUSED type (SHORT_T);
+
+        if LOOP_INFO_STACK_TOP = HB_LOOP_INFO_STACK then do;
+                /* This "break" is not within any loop or switch block. */
+                call SEMANTIC_ERROR (ERR_BAD_BREAK);
+                return;
+	end;
+
+        if TOP_LOOP_INFO_STACK.EXIT = NULL_NID then
+		TOP_LOOP_INFO_STACK.EXIT = DECLARE_LABEL_VALUE (-1);
+
+	call COUNT_UP_VALUE (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+        UNUSED = EMIT_BRANCH_VALUE_WITH_DTORS
+		 (BRANCH_VO,
+		  TOP_LOOP_INFO_STACK.EXIT,
+		  NULL_CXX_VID,
+		  TOP_LOOP_INFO_STACK.DESTRUCTORS);
+
+	if ^CURRENT_CODE_DEAD then do;
+		TOP_LOOP_INFO_STACK.BREAK_FOUND = TRUE;
+		CURRENT_CODE_DEAD = TRUE;
+	end;
+
+end EMIT_BRANCH_EXIT;
+
+/* ---------------------------------------------------------------------
+/* EMIT_EXPRESSION
+/*
+/* Emit code for the expression tree CURRENT_VALUE.  If the expression
+/* returns a value, NOP it.  Sets CURRENT_VALUE to NULL_CXX_VID.
+/* ------------------------------------------------------------------- */
+
+EMIT_EXPRESSION: procedure recursive external (X_EMIT_EXPRESSION);
+ 
+	if CURRENT_VALUE ^= NULL_CXX_VID then
+		CURRENT_VALUE = GET_VALUE_AND_EXPAND_L
+				(NOP_VO, CURRENT_VALUE);
+	call EMIT_STATEMENT (CURRENT_VALUE);
+	CURRENT_VALUE = NULL_CXX_VID;
+
+end EMIT_EXPRESSION;
+
+/* ---------------------------------------------------------------------
+/* EMIT_STATEMENT
+/*
+/* Emit code for an expression tree which does not return a value.
+/* ------------------------------------------------------------------- */
+
+EMIT_STATEMENT: procedure (V) recursive external (X_EMIT_STATEMENT);
+
+	declare
+		V		type (CXX_VID_T);
+	declare
+		VOID_OID	type (OID_T);
+ 
+	if V = NULL_CXX_VID then
+		return;
+
+	/* V->CXX_VALUE_NODE.COUNT should be 1 */
+
+	VOID_OID = EMIT_CPLUS_TREE (V);
+	call COUNT_DOWN_VALUE (V);
+
+end EMIT_STATEMENT;
+
+/* ---------------------------------------------------------------------
+/* EMIT_DESTRUCTORS
+/*
+/* Uses (counts down) its argument.
+/* ------------------------------------------------------------------- */
+
+EMIT_DESTRUCTORS: procedure (DESTINATION_DTORS) internal;
+	
+	declare
+		DESTINATION_DTORS	type (CXX_VID_T);
+
+	call EMIT_STATEMENT (DESTROY_DIFFERENCE (CURRENT_DESTRUCTORS (), 
+					         DESTINATION_DTORS));
+
+end EMIT_DESTRUCTORS;
+
+/* ---------------------------------------------------------------------
+/* EMIT_BRANCH
+/* ------------------------------------------------------------------- */
+
+EMIT_BRANCH: procedure (LABEL_NID) internal;
+
+	declare LABEL_NID type (NID_T);
+
+        call EMIT_STATEMENT (GET_BRANCH_REF_AND_EXPAND (LABEL_NID));
+
+end EMIT_BRANCH;
+
+/* ---------------------------------------------------------------------
+/* EMIT_BRANCH_VALUE
+/* ------------------------------------------------------------------- */
+
+EMIT_BRANCH_VALUE: procedure (LABEL_VID) internal;
+
+	declare LABEL_VID type (CXX_VID_T);
+
+        call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L (BRANCH_VO, LABEL_VID));
+
+end EMIT_BRANCH_VALUE;
+
+/* ---------------------------------------------------------------------
+/* EMIT_LABEL
+/* ------------------------------------------------------------------- */
+
+EMIT_LABEL: procedure (LABEL_NID) external (X_EMIT_LABEL);
+
+	declare LABEL_NID type (NID_T);
+
+        call EMIT_STATEMENT (GET_LABEL_REF_AND_EXPAND (LABEL_NID));
+
+end EMIT_LABEL;
+
+/* ---------------------------------------------------------------------
+/* EMIT_LABEL_VALUE
+/* ------------------------------------------------------------------- */
+
+EMIT_LABEL_VALUE: procedure (LABEL_VID) external (X_EMIT_LABEL_VALUE);
+
+	declare LABEL_VID type (CXX_VID_T);
+
+        call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L (LABEL_VO, LABEL_VID));
+
+end EMIT_LABEL_VALUE;
+
+/* ---------------------------------------------------------------------
+/* EMIT 
+/* ------------------------------------------------------------------- */
+
+EMIT: procedure (VOP, LEFT, RIGHT) internal;
+
+	declare
+		VOP	type (SHORT_T),
+		LEFT	type (CXX_VID_T),
+		RIGHT	type (CXX_VID_T);
+
+        call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_LR (VOP, LEFT, RIGHT));
+
+end EMIT;
+
+/* ---------------------------------------------------------------------
+/* EMIT_FUNCTION_BEGIN
+/* ------------------------------------------------------------------- */
+
+EMIT_FUNCTION_BEGIN: procedure external (X_EMIT_FUNCTION_BEGIN);
+
+	declare
+		F		type (NID_T),
+		LABEL_VID	type (CXX_VID_T),
+		(FP, SP, CP)	type (POINTER_T),
+		V		type (CXX_VID_T);
+
+	if CURRENT_FUNCTION_SCOPE = NULL_NID then do;
+		/*
+		/* This is to prevent blow ups in case there was an error
+		/* in the declaration portion of this function definition.
+		/**/
+		return;
+	end;
+
+	/* TODO: use CURRENT_FUNCTION! */
+
+	call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, SP);
+	F = SP->SCOPE_NODE.OWNER;
+	call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+	call GET_SYM_NODE_R (F, FP);
+
+	/*
+	/* Emit the standard function prologue code.
+	/* We would call EMIT_STATEMENT_ID here,
+	/* but we need to remember the operator ID.
+	/**/
+
+	V = GET_STATEMENT_ID_AND_EXPAND ();
+	FP->SYM_NODE.FIRST_OPID = EMIT_CPLUS_TREE (V);
+	call COUNT_DOWN_VALUE (V);
+	call EMIT_STATEMENT (GET_PROCEDURE_AND_EXPAND (FP->SYM_NODE.VALUE));
+
+	/* TODO: Maybe this should go after the initialization below */
+
+	call EMIT_STATEMENT_ID ();
+	call EMIT_STATEMENT (GET_ENTRY_AND_EXPAND (F));
+
+	/* If this is "main" then emit a call to the global initializer */
+
+	if (FP->SYM_NODE.NAME = MAIN_NAME) & ^FP->SYM_NODE.IS_MEMBER then
+		call EMIT_CALL_TO_GLOBAL_INITIALIZER ();
+
+	/* Handle base/member initializer bookkeeping */
+
+	call SET_MEMBER_INITIAL_LIST (F);
+
+	/* Emit any special constructor code */
+
+	if FP->SYM_NODE.IS_CONSTRUCTOR_FUNCTION then
+		call EMIT_CONSTRUCTOR_STARTUP_CODE (F);
+
+	/* Emit an special destructor code */
+
+	else if FP->SYM_NODE.IS_DESTRUCTOR_FUNCTION then
+		call EMIT_DESTRUCTOR_STARTUP_CODE (F);
+
+	call RELEASE_SYM_NODE (F);
+
+	CURRENT_CODE_DEAD = FALSE;
+	return;
+
+/* ---------------------------------------------------------------------
+/* EMIT_CALL_TO_GLOBAL_INITIALIZER
+/* ------------------------------------------------------------------- */
+
+EMIT_CALL_TO_GLOBAL_INITIALIZER: procedure internal;
+
+	declare
+		NAME			type (NID_T),
+		SYMBOL			type (NID_T),
+		V			type (CXX_VID_T);
+	declare
+		ALREADY_DONE		type (BOOL_T)
+					static internal initial (FALSE);
+
+	if SW_DO_NOT_MAP_ENTRY_TO_LPI_ENTRY then
+		return;
+	if ALREADY_DONE then
+		return;
+	ALREADY_DONE = TRUE;
+	SYMBOL = DECLARE_MAIN_ENTRY_FUNCTION ();
+	V = GET_VALUE_REF_AND_EXPAND (SYMBOL);
+	V = GET_VALUE_AND_EXPAND_L (ADDR_VO, V);
+	V = GET_VALUE_AND_EXPAND_L (CALL_VO, V);
+	call EMIT_STATEMENT (V);
+
+end EMIT_CALL_TO_GLOBAL_INITIALIZER;
+
+end EMIT_FUNCTION_BEGIN;
+
+/* ---------------------------------------------------------------------
+/* EMIT_FUNCTION_END
+/* ------------------------------------------------------------------- */
+
+EMIT_FUNCTION_END: procedure external (X_EMIT_FUNCTION_END);
+
+	call EMIT_STATEMENT_ID ();
+	call EMIT_STATEMENT (GET_VALUE_AND_EXPAND (BLOCK_END_VO));
+
+end EMIT_FUNCTION_END;
+
+/* ---------------------------------------------------------------------
+/* BRANCH_AROUND_NESTED_FUNCTION
+/* ------------------------------------------------------------------- */
+
+BRANCH_AROUND_NESTED_FUNCTION: procedure
+			       returns   (type (CXX_VID_T))
+			       external  (X_BRANCH_AROUND_NESTED_FUNCTION);
+
+	declare V type (CXX_VID_T);
+
+	V = DECLARE_LABEL_VALUE (2);
+	call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L (BRANCH_VO, V));
+	return (V);
+
+end BRANCH_AROUND_NESTED_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* PUSH_LOOP_INFO
+/* ------------------------------------------------------------------- */
+
+PUSH_LOOP_INFO: procedure (LOOP_TYPE) internal;
+
+	declare LOOP_TYPE type (SHORT_T);
+
+	if LOOP_INFO_STACK_TOP <= 0 then do;
+        	call COMPILER_ERROR (ERR_LOOP_STK_OVER);
+		TOP_LOOP_INFO_STACK_PTR = null ();
+		return;
+	end;
+
+	LOOP_INFO_STACK_TOP = LOOP_INFO_STACK_TOP - 1;
+
+	TOP_LOOP_INFO_STACK_PTR = addr (LOOP_INFO_STACK (LOOP_INFO_STACK_TOP));
+
+        TOP_LOOP_INFO_STACK.TYPE 		= LOOP_TYPE;
+        TOP_LOOP_INFO_STACK.TOP			= NULL_CXX_VID;
+        TOP_LOOP_INFO_STACK.CONTINUE		= NULL_CXX_VID;
+        TOP_LOOP_INFO_STACK.EXIT		= NULL_CXX_VID;
+        TOP_LOOP_INFO_STACK.EXPRESSION		= NULL_CXX_VID;
+	TOP_LOOP_INFO_STACK.DESTRUCTORS		= NULL_CXX_VID;
+	TOP_LOOP_INFO_STACK.CONT_DESTRUCTORS	= NULL_CXX_VID;
+	TOP_LOOP_INFO_STACK.SCOPE		= CURRENT_SCOPE;
+	TOP_LOOP_INFO_STACK.BREAK_FOUND		= FALSE;
+	TOP_LOOP_INFO_STACK.ENTRY_FOUND		= ^CURRENT_CODE_DEAD;
+	TOP_LOOP_INFO_STACK.LINE		= CURRENT_SOURCE.LINE;
+	TOP_LOOP_INFO_STACK.FILE		= CURRENT_SOURCE.FILE;
+
+	CURRENT_CODE_DEAD			= (LOOP_TYPE = SWITCH_LOOP);
+
+end PUSH_LOOP_INFO;
+
+/* ---------------------------------------------------------------------
+/* POP_LOOP_INFO
+/* ------------------------------------------------------------------- */
+
+POP_LOOP_INFO: procedure internal;
+
+	if LOOP_INFO_STACK_TOP >= HB_LOOP_INFO_STACK then do;
+        	call COMPILER_ERROR (ERR_LOOP_STK_UNDER);
+		TOP_LOOP_INFO_STACK_PTR = null ();
+		return;
+	end;
+
+	CURRENT_CODE_DEAD = ^(TOP_LOOP_INFO_STACK.BREAK_FOUND &
+			      TOP_LOOP_INFO_STACK.ENTRY_FOUND);
+
+	if TOP_LOOP_INFO_STACK.TOP ^= NULL_CXX_VID then
+		call FREE_CXX_VALUE_NODE (TOP_LOOP_INFO_STACK.TOP);
+
+	if TOP_LOOP_INFO_STACK.CONTINUE ^= NULL_CXX_VID then
+		call FREE_CXX_VALUE_NODE (TOP_LOOP_INFO_STACK.CONTINUE);
+
+	if TOP_LOOP_INFO_STACK.EXIT ^= NULL_CXX_VID then
+		call FREE_CXX_VALUE_NODE (TOP_LOOP_INFO_STACK.EXIT);
+
+	call POP_DESTRUCTORS (TOP_LOOP_INFO_STACK.DESTRUCTORS);
+
+	LOOP_INFO_STACK_TOP = LOOP_INFO_STACK_TOP + 1;
+
+	if LOOP_INFO_STACK_TOP >= HB_LOOP_INFO_STACK then
+		TOP_LOOP_INFO_STACK_PTR = NULL_CXX_VID;
+	else	TOP_LOOP_INFO_STACK_PTR =
+		addr (LOOP_INFO_STACK (LOOP_INFO_STACK_TOP));
+
+end POP_LOOP_INFO;
+

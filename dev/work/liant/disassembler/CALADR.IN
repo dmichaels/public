@@ -1,0 +1,25 @@
+/* CodeWatch M68 CALADR.IN - Declarations of CALADR */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI Edit History
+ *
+ *  02.08.90  MJF  (010) Original version.
+ *
+ ***********************************************************************/
+
+declare
+    CALADR entry (
+            pointer,            /* Register save area */
+            fixed binary (31),  /* Code address */
+            pointer,            /* Replaced instruction pointer */
+            fixed binary (31)   /* Target address */
+        ) returns ( bit (1) ) external;

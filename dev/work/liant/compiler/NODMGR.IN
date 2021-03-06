@@ -1,0 +1,30 @@
+/* C++ C_NODE_MGR_IN - Node manager interface definitions */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  04.18.90  DGM  005  Added STORE_TOKEN_DCL.
+ *  01.19.90  DGM  004  Updated.
+ *  12.12.89  DGM  003  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include SYMTAB_UTILS_DCL;
+%include STORE_TOKEN_DCL;
+

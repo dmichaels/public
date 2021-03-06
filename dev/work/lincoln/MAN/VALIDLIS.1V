@@ -1,0 +1,35 @@
+.TH VALIDLIST 1V LOCAL
+.SH NAME
+gedlist, xprtlist, xnetlist
+.SH SYNOPSIS
+\fBgedlist\fP [VALID_ged_file]
+.br
+\fBxprtlist\fP [VALID_expanded_parts_list_file]
+.br
+\fBxnetlist\fP [VALID_expanded_net_list_file]
+.SH DESCRIPTION
+These very simplistic utilities merely
+make a formatted listing
+to the standard output
+of some of the pertinent information
+contained in the given VALID files.
+The input files may have any name,
+\fIhowever\fP if they are not actually the
+type of file expected by the program,
+mass confusion may result.
+The usual (and default) names of the files are given below.
+.SH FILES
+.TS
+l l .
+logic.1.1	- VALID graphics editor (\fIged\fP) file
+pstxprt.dat	- VALID expanded parts list file
+pstxnet.dat	- VALID expanded net list file
+.TE
+.SH SEE ALSO
+layout(1V), wirelist(1V)
+.SH AUTHOR
+David Michaels (david@ll-sst)
+.br
+M.I.T. Lincoln Laboratory (Group 24)
+.br
+June 1984

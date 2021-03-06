@@ -1,0 +1,688 @@
+/* C++ dumpvt.pl1 - Dumps a value tree */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  012  New value-node scheme.
+ *  01.13.92  DGM  011  Updated for short enums.
+ *  09.06.91  DGM  010  Updated.
+ *  08.19.91  DGM  009  Updated.
+ *  02.22.91  DGM  008  Support for CPLUS_VAL.ARRAY_DESIGNATOR.
+ *  02.21.91  DGM  007  Totally re-done.
+ *  09.14.90  DGM  006  Changed include file names and VOP names.
+ *  08.08.90  DGM  005  New type-node.
+ *  06.06.90  DGM  004  Updated for the new utilities.
+ *  04.19.90  DGM  003  Fixed up includes.
+ *  02.26.90  TLF  002  Modified to output line number for a
+ *                      STMNT_ID_VO.
+ *  02.12.90  TLF  001  Modified to output offset value for an
+ *                      INTEGER_VO.
+ *                      Modified to use an external procedure to
+ *                      get the spelling of the VOP.
+ *  02.02.90  TLF  000  Original. Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 012 DUMPVT');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_OPERATOR_NAME_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_TYPE_COMPATIBILITY_IN;
+%include CXX_EXPRESSION_COMPATIBILITY_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T			character (512) varying based;
+
+/* ---------------------------------------------------------------------
+/* DUMPVT
+/*
+/* Prints the expression tree represented by the given value-node id.
+/* Preserves current-value-node-id and current-node-id.
+/*
+/* If the V is NULL_CXX_VID, then only the header will be printed.
+/* ------------------------------------------------------------------- */
+
+DUMPVT: procedure (V) external (X_DUMPVT);
+
+	declare
+		V		type (CXX_VID_T);
+	declare
+		LEFT		type (CXX_VID_T),
+		TYPE		type (SHORT_T),
+		SKIP_LEFT	type (BOOL_T);
+	declare
+		NESTING_LEVEL	type (SHORT_T) static initial (0);
+
+	if V = NULL_CXX_VID then do;
+		call DUMPV (NULL_CXX_VID);
+		return;
+	end;
+
+	if NESTING_LEVEL = 0 then
+		call DUMPV (NULL_CXX_VID);
+
+	/* Increment the call level */
+
+	NESTING_LEVEL = NESTING_LEVEL + 1;
+
+	/* Print this value-node */
+
+	call DUMPV (V);
+
+	/* Recursively print the left, right, and third trees */
+
+	SKIP_LEFT = FALSE;
+
+	if (V->CXX_VALUE_NODE.OP = CONSTANT_VO) &
+	   (^V->CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+	    (V->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID)) then do;
+		if DUMP_CONSTANT_V
+		   (V->CXX_VALUE_NODE.LEFT,
+		    V->CXX_VALUE_NODE.RIGHT_SHORT,
+		    rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE)) then
+			SKIP_LEFT = TRUE;
+	end;
+
+	if ^SKIP_LEFT &
+	   (^V->CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+	    (V->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID)) then
+		call DUMPVT (V->CXX_VALUE_NODE.LEFT);
+
+	if (^V->CXX_VALUE_NODE.RIGHT_IS_NOT_VID &
+	    (V->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID)) then
+		call DUMPVT (V->CXX_VALUE_NODE.RIGHT);
+
+	if (^V->CXX_VALUE_NODE.THIRD_IS_NOT_VID &
+	    (V->CXX_VALUE_NODE.THIRD ^= NULL_CXX_VID)) then
+		call DUMPVT (V->CXX_VALUE_NODE.THIRD);
+
+	/* Decrement the nesting level and return */
+
+	NESTING_LEVEL = NESTING_LEVEL - 1;
+	return;
+
+end DUMPVT;
+
+/* ---------------------------------------------------------------------
+/* DUMPV
+/*
+/* Prints the value-node represented by the given value-node id V.
+/* Preserves current-value-node-id and current-node-id.
+/*
+/* If the V is NULL_CXX_VID, then only the header will be printed.
+/* ------------------------------------------------------------------- */
+
+DUMPV: procedure (V) external (X_DUMPV);
+
+	declare
+		V		type (CXX_VID_T);
+	declare
+		S		type (STRING_T);
+	declare
+		HEADER		character (64) varying static initial
+
+	('NODE    OP       LEFT    RIGHT   THIRD    SIZE OFFSET C AT TYPE');
+
+	if V = NULL_CXX_VID then do;
+		call OUTPUT_STRING_AND_RETURN (HEADER);
+		return;
+	end;
+
+	/* NODE field -- the value-node id */
+
+	S = STRING_FIELD (VID_STRING (V), -7) || ' ';
+
+	/* VOP field */
+
+	S = S ||
+	    STRING_FIELD (GET_VOP_NAME (V->CXX_VALUE_NODE.OP), -8) ||
+	    ' ';
+
+	/* LEFT field */
+
+	S = S ||
+	    STRING_FIELD (VID_STRING (V->CXX_VALUE_NODE.LEFT), -7) ||
+	    ' ';
+
+	/* RIGHT field */
+
+	S = S ||
+	    STRING_FIELD (VID_STRING (V->CXX_VALUE_NODE.RIGHT), -7) ||
+	    ' ';
+
+	/* THIRD field */
+
+	S = S ||
+	    STRING_FIELD (VID_STRING (V->CXX_VALUE_NODE.THIRD), -7) ||
+	    ' ';
+
+	/* SIZE field */
+
+	S = S || SIZE_OR_OFFSET_FIELD
+		 (V->CXX_VALUE_NODE.SIZE,
+		  rank (V->CXX_VALUE_NODE.SIZE_UNITS),
+		  5) ||
+	    ' ';
+
+	/* OFFSET field */
+
+	S = S || SIZE_OR_OFFSET_FIELD
+		 (V->CXX_VALUE_NODE.OFFSET,
+		  rank (V->CXX_VALUE_NODE.OFFSET_UNITS),
+		  6) ||
+	    ' ';
+
+	/* C field -- the value-node reference count */
+
+	S = S || STRING_FIELD (trim (char (V->CXX_VALUE_NODE.COUNT)), 1);
+	if ((V->CXX_VALUE_NODE.COUNT > 0) & ^V->CXX_VALUE_NODE.IN_USE) |
+	   ((V->CXX_VALUE_NODE.COUNT = 0) & V->CXX_VALUE_NODE.IN_USE) then
+		S = S || '?';
+	else	S = S || ' ';
+
+	/* AT field -- attributes */
+
+	if V->CXX_VALUE_NODE.FUNCTION_DESIGNATOR |
+	   ^V->CXX_VALUE_NODE.NOT_AN_LVALUE then do;
+		if V->CXX_VALUE_NODE.FUNCTION_DESIGNATOR then
+			S = S || 'F';
+		if ^V->CXX_VALUE_NODE.NOT_AN_LVALUE then
+			S = S || 'L';
+	end;
+	else	S = S || '-';
+
+	if V->CXX_VALUE_NODE.ARRAY_DESIGNATOR |
+	   V->CXX_VALUE_NODE.SIGNED_BIT_FIELD then do;
+		if V->CXX_VALUE_NODE.ARRAY_DESIGNATOR then
+			S = S || 'A';
+		if V->CXX_VALUE_NODE.SIGNED_BIT_FIELD then
+			S = S || 'S';
+	end;
+	else	S = S || '-';
+
+	S = S || ' ';
+
+	/* TYPE field */
+
+	S = S || TYPE_FIELD (V);
+
+	/* Write the line */
+
+	call OUTPUT_STRING_AND_RETURN (S);
+
+	return;
+
+end DUMPV;
+
+/* ---------------------------------------------------------------------
+/* DUMP_CONSTANT_V
+/* ------------------------------------------------------------------- */
+
+DUMP_CONSTANT_V: procedure (V, TOKEN_TYPE, TOP_TYPE)
+		 returns   (type (BOOL_T))
+		 internal;
+	declare
+		V		type (CXX_VID_T),
+		TOKEN_TYPE	type (SHORT_T),
+		TOP_TYPE	type (SHORT_T);
+	declare
+		S		type (STRING_T),
+		FS		type (STRING_T);
+
+	if V->CXX_VALUE_NODE.OP ^= 0 then
+		goto RETURN_FALSE;
+
+	S = STRING_FIELD (VID_STRING (V), -7) || ' ';
+
+	if TOP_TYPE = FLOAT_BT then
+		S = S || STRING_FIELD ('Float', -8) || ' ';
+	else if TOP_TYPE = DOUBLE_BT then
+		S = S || STRING_FIELD ('Double', -8) || ' ';
+	else if TOP_TYPE = LDOUBLE_BT then
+		S = S || STRING_FIELD ('LDouble', -8) || ' ';
+	else if (TOP_TYPE = NULL_BT) & (V->CXX_VALUE_NODE.SPTR ^= null ()) then
+		S = S || STRING_FIELD ('-', -8) || ' ';
+	else	goto RETURN_FALSE;
+
+	S = S ||
+	    STRING_FIELD (trim (char (V->CXX_VALUE_NODE.LEFT_SHORT)), -7) ||
+	    ' ';
+
+	S = S ||
+	    STRING_FIELD (trim (char (V->CXX_VALUE_NODE.RIGHT_SHORT)), -7) ||
+	    ' ';
+
+	S = S ||
+	    STRING_FIELD (trim (char (V->CXX_VALUE_NODE.THIRD_SHORT)), -7) ||
+	    ' ';
+
+	S = S || SIZE_OR_OFFSET_FIELD
+		 (V->CXX_VALUE_NODE.SIZE,
+		  rank (V->CXX_VALUE_NODE.SIZE_UNITS),
+		  5) ||
+	    ' ';
+
+	S = S || STRING_FIELD ('-', 6) || ' ';
+
+	S = S || STRING_FIELD (trim (char (V->CXX_VALUE_NODE.COUNT)), 1);
+
+	if ((V->CXX_VALUE_NODE.COUNT > 0) & ^V->CXX_VALUE_NODE.IN_USE) |
+	   ((V->CXX_VALUE_NODE.COUNT = 0) & V->CXX_VALUE_NODE.IN_USE) then
+		S = S || '?';
+	else	S = S || ' ';
+
+	S = S || '--';
+
+	S = S || ' ';
+
+	if TOP_TYPE = NULL_BT then do;
+		if (TOKEN_TYPE = STRING_LITERAL_TOKEN) |
+		   (TOKEN_TYPE = COOKED_STRING_LITERAL_TOKEN) then
+			S = S || '"';
+		else if (TOKEN_TYPE = WSTRING_LITERAL_TOKEN) |
+			(TOKEN_TYPE = COOKED_WSTRING_LITERAL_TOKEN) then
+			S = S || 'L"';
+		else if (TOKEN_TYPE = CHAR_CONSTANT_TOKEN) |
+			(TOKEN_TYPE = COOKED_CHAR_CONSTANT_TOKEN) then
+			S = S || '''';
+		else if (TOKEN_TYPE = WCHAR_CONSTANT_TOKEN) |
+			(TOKEN_TYPE = COOKED_WCHAR_CONSTANT_TOKEN) then
+			S = S || 'L''';
+		S = S || trim (V->CXX_VALUE_NODE.SPTR->
+				  TOKEN_SPELLING_POD.SPELLING);
+		if (TOKEN_TYPE = STRING_LITERAL_TOKEN) |
+		   (TOKEN_TYPE = COOKED_STRING_LITERAL_TOKEN) |
+		   (TOKEN_TYPE = WSTRING_LITERAL_TOKEN) |
+		   (TOKEN_TYPE = COOKED_WSTRING_LITERAL_TOKEN) then
+			S = S || '"';
+		else if (TOKEN_TYPE = CHAR_CONSTANT_TOKEN) |
+			(TOKEN_TYPE = COOKED_CHAR_CONSTANT_TOKEN) |
+			(TOKEN_TYPE = WCHAR_CONSTANT_TOKEN) |
+			(TOKEN_TYPE = COOKED_WCHAR_CONSTANT_TOKEN) then
+			S = S || '''';
+		goto RETURN_TRUE;
+	end;
+
+	begin;
+		on error begin;
+			revert error;
+			FS = '<floating-point-constant-error?>';
+			goto DONE_CONSTANT;
+		end;
+
+		if TOP_TYPE = FLOAT_BT then
+			FS = V->CXX_VALUE_NODE.FLT23;
+		else	FS = V->CXX_VALUE_NODE.FLT52;
+
+		DONE_CONSTANT:;
+	end;
+
+	S = S || trim (FS);
+
+	RETURN_TRUE:
+	call OUTPUT_STRING_AND_RETURN (S);
+	return (TRUE);
+
+	RETURN_FALSE:
+	return (FALSE);
+
+end DUMP_CONSTANT_V;
+
+/* ---------------------------------------------------------------------
+/* STRING_FIELD
+/* ------------------------------------------------------------------- */
+
+STRING_FIELD: procedure (S, SIZE) returns (type (STRING_T)) internal;
+
+	declare
+		S	type (STRING_T),
+		SIZE	type (SHORT_T);
+	declare
+		SPACES	character (16) static internal
+			initial ('                ');
+
+	if length (S) < abs (SIZE) then do;
+		if SIZE < 0 then
+			S = S || substr (SPACES, 1, (-SIZE) - length (S));
+		else	S = substr (SPACES, 1, SIZE - length (S)) || S;
+	end;
+	return (S);
+
+end STRING_FIELD;
+
+/* ---------------------------------------------------------------------
+/* SIZE_OR_OFFSET_FIELD
+/* ------------------------------------------------------------------- */
+
+SIZE_OR_OFFSET_FIELD: procedure (VALUE, UNITS, SIZE)
+		      returns   (type (STRING_T))
+		      internal;
+	declare
+		VALUE	type (LONG_T),
+		UNITS	type (SHORT_T),
+		SIZE	type (SHORT_T);
+	declare
+		S	type (STRING_T);
+
+	if	UNITS = BITS	     then S = 'b';
+	else if UNITS = BYTES	     then S = 'B';
+	else if UNITS = HALF_WORDS   then S = 'H';
+	else if UNITS = WORDS	     then S = 'W';
+	else if UNITS = DOUBLE_WORDS then S = 'D';
+	else if UNITS ^= 0	     then S = '?';
+	else				  S = '';
+
+	if length (S) <= 0 then
+		S = STRING_FIELD (trim (char (VALUE)), SIZE);
+	else	S = STRING_FIELD (trim (char (VALUE)), SIZE - 1) || S;
+
+	return (S);
+
+end SIZE_OR_OFFSET_FIELD;
+
+/* ---------------------------------------------------------------------
+/* TYPE_FIELD
+/* ------------------------------------------------------------------- */
+
+TYPE_FIELD: procedure (V) returns (type (STRING_T)) internal;
+
+	declare
+		V		type (CXX_VID_T);
+	declare
+		DSM		type (DSM_T),
+		L		type (SHORT_T),
+		(S, NAME, ES)	type (STRING_T),
+		(RTI, STI)	type (TYPE_INFO_T),
+		(P, Q)		type (POINTER_T),
+		SNID		type (SNID_T);
+
+	S = ''; ES = ''; NAME = '';
+
+	/* Get the declaration type string mode */
+
+	DSM = BASE_TYPE_SPECIFIER_DSM |
+	      QUALIFIED_TYPE_NAME_DSM |
+	      DECLARATOR_TYPE_DSM |
+	      DIMENSIONS_DSM |
+	      SIGNATURES_DSM |
+	      DEFAULT_ARGUMENTS_DSM |
+	      INTERNAL_PARAMETERS_DSM |
+	      CONSERVE_SPACE_DSM;
+
+	/* If this is a REF, then include the symbol name */
+
+	if (V->CXX_VALUE_NODE.OP = REF_VO) |
+	   (V->CXX_VALUE_NODE.OP = INITIAL_VO) |
+	   (V->CXX_VALUE_NODE.OP = MEMBER_PTR_VO) then do;
+		if  V->CXX_VALUE_NODE.LEFT_IS_NID &
+		   (V->CXX_VALUE_NODE.LEFT ^= NULL_NID) then do;
+			call SAVE_NODE (SNID);
+			call SET_SYM_NODE_R (V->CXX_VALUE_NODE.LEFT_NID);
+			if SYM_NODE.NAME = NULL_NID then do;
+				if SYM_NODE.IS_DUMMY then
+					NAME = '<dummy>';
+				else	NAME = '<no-name>';
+			end;
+			else if ^SYM_NODE.IS_TAG then do;
+				if V->CXX_VALUE_NODE.OP = MEMBER_PTR_VO then
+					NAME = SYMBOL_NAME
+					       (V->CXX_VALUE_NODE.LEFT_NID);
+				else	NAME = QUALIFIED_SYMBOL_NAME
+					       (V->CXX_VALUE_NODE.LEFT_NID);
+			end;
+			/*
+			/* Don't check the type compatibility of a REF
+			/* and the symbol to which it refers since it does
+			/* in fact legitimately differ from time to time.
+			/*
+			/* call GET_SYMBOL_TYPE (STI);
+			/* call GET_VALUE_TYPE (RTI);
+			/* if ^COMPATIBLE_TYPE_INFO (STI, RTI) then do;
+			/*	ES = 'A(' || QUALIFIED_SYMBOL_TYPE_NAME
+			/*		     (V->CXX_VALUE_NODE.LEFT_NID) ||
+			/*	     ')';
+			/* end;
+			/**/
+			call RESTORE_NODE (SNID);
+		end;
+		else if (V->CXX_VALUE_NODE.OP = REF_VO) &
+			^V->CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+			(V->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then do;
+			if V->CXX_VALUE_NODE.LEFT->
+			      CXX_VALUE_NODE.OP = DECLARE_TEMP_VO then
+				NAME = '<temp>';
+			else	NAME = '<no-symbol>';
+		end;
+		else	NAME = '<no-symbol>';
+	end;
+
+	/* Handle a null type */
+
+	if V->CXX_VALUE_NODE.TYPE = NULL_NID then do;
+		S = S || '<type';
+		if V->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (0) then
+			S = S || '/top=' ||
+			    trim (char (V->CXX_VALUE_NODE.TOP_TYPE.CODE));
+		if V->CXX_VALUE_NODE.DERIVED_TYPE_SKIP ^= 0 then
+			S = S || '/skip=' ||
+			    trim (char (V->CXX_VALUE_NODE.DERIVED_TYPE_SKIP));
+		if V->CXX_VALUE_NODE.EXTRA_PTR_LEVEL then
+			S = S || '/*';
+		S = S || '>';
+		if length (NAME) > 0 then
+			S = S || ' ' || NAME;
+		return (S);
+	end;
+
+	/* If this is a tag type, then include its keyword */
+
+	if IS_TAG_TYPE (rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+		DSM = DSM | TAG_KEYWORD_DSM;
+		if (V->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (ENUM_BT)) &
+		   (V->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL ^= NULL_NID) then do;
+			call GET_SYM_NODE_R
+			     (V->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL, P);
+			if P->SYM_NODE.ENUM_INTEGRAL_TYPE ^=
+			   byte (NULL_BT) then do;
+				DSM = DSM || ' ';
+				if ^P->SYM_NODE.HAS_ENUM_INTEGRAL_TYPE then
+					DSM = DSM || '(';
+				DSM = DSM ||
+				      MAP_TYPE_CODE_NAME
+				      (rank (P->SYM_NODE.ENUM_INTEGRAL_TYPE));
+				if ^P->SYM_NODE.HAS_ENUM_INTEGRAL_TYPE then
+					DSM = DSM || ')';
+			end;
+			else if P->SYM_NODE.HAS_ENUM_INTEGRAL_TYPE then
+				DSM = DSM || ' ?';
+			call RELEASE_SYM_NODE
+			     (V->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL);
+		end;
+	end;
+
+	/* Get the type string */
+
+	if V->CXX_VALUE_NODE.EXTRA_PTR_LEVEL then
+		DSM = DSM | ADD_POINTER_TYPE_DSM;
+
+	call GET_TYPE_NODE_R (V->CXX_VALUE_NODE.TYPE, P);
+	if (P->TYPE_NODE.LEVEL = byte (0)) &
+	   (P->TYPE_NODE.DATA (0).CODE = byte (LOGICAL_BT)) then
+		S = S || '<logical>';
+	else	S = S || ANY_TYPE_NAME
+			 (P, V->CXX_VALUE_NODE.DERIVED_TYPE_SKIP, DSM, NAME);
+	call RELEASE_TYPE_NODE (V->CXX_VALUE_NODE.TYPE);
+
+	/* Put stuff after the type */
+
+	if V->CXX_VALUE_NODE.OP = INITIAL_VO then
+		S = S || ' =';
+
+	else if V->CXX_VALUE_NODE.OP = MEMBER_REF_VO then do;
+		S = S || ' --> ';
+		if  V->CXX_VALUE_NODE.LEFT_IS_NID &
+		   (V->CXX_VALUE_NODE.LEFT ^= NULL_NID) then do;
+			S = S || FULL_QUALIFIED_SYMBOL_NAME
+				 (V->CXX_VALUE_NODE.LEFT_NID);
+			call GET_SYM_NODE_R (V->CXX_VALUE_NODE.LEFT_NID, Q);
+			if Q->SYM_NODE.ENCLOSING_SCOPE_OWNER ^=
+			   V->CXX_VALUE_NODE.RIGHT_NID then
+				S = S || ' ?';
+			call RELEASE_SYM_NODE (V->CXX_VALUE_NODE.LEFT_NID);
+		end;
+		else if  V->CXX_VALUE_NODE.RIGHT_IS_NID &
+			(V->CXX_VALUE_NODE.RIGHT ^= NULL_NID) then do;
+			S = S || '? ';
+			S = S || QUALIFIED_SYMBOL_NAME
+				 (V->CXX_VALUE_NODE.LEFT_NID);
+		end;
+		else	S = S || '?';
+	end;
+
+	/* Do a little sanity checking */
+
+	L = rank (P->TYPE_NODE.LEVEL);
+
+	if V->CXX_VALUE_NODE.DERIVED_TYPE_SKIP ^= 0 then do;
+		if V->CXX_VALUE_NODE.DERIVED_TYPE_SKIP < 0 then
+			ES = ES || 'B';
+		else if V->CXX_VALUE_NODE.DERIVED_TYPE_SKIP > L then do;
+			ES = ES || 'C';
+			L = 0;
+		end;
+		else	L = L - V->CXX_VALUE_NODE.DERIVED_TYPE_SKIP;
+	end;
+	if V->CXX_VALUE_NODE.EXTRA_PTR_LEVEL then do;
+		if V->CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (POINTER_DT) then
+			ES = ES || 'D';
+	end;
+	else do;
+		if V->CXX_VALUE_NODE.TOP_TYPE.CODE ^=
+		   P->TYPE_NODE.DATA (L).CODE then
+			ES = ES || 'E';
+		if V->CXX_VALUE_NODE.TOP_TYPE.VOLATILE ^=
+		   P->TYPE_NODE.DATA (L).VOLATILE then
+			ES = ES || 'F';
+		if V->CXX_VALUE_NODE.TOP_TYPE.CONST ^=
+		   P->TYPE_NODE.DATA (L).CONST then
+			ES = ES || 'G';
+		if V->CXX_VALUE_NODE.TOP_TYPE.NID ^=
+		   P->TYPE_NODE.DATA (L).NID then
+			ES = ES || 'H';
+	end;
+
+	if length (ES) > 0 then
+		S = S || ' ? ' || ES;
+
+	/* Return the type string */
+
+	return (S);
+
+end TYPE_FIELD;
+
+/* ---------------------------------------------------------------------
+/* DVT
+/*
+/* Same as DUMPVT but terminates with a carriage return.
+/* ------------------------------------------------------------------- */
+
+DVT: procedure (V) recursive external (X_DVT);
+
+	declare V type (CXX_VID_T);
+
+	call DUMPVT (V);
+	call OUTPUT_STRING_AND_RETURN ('');
+
+end DVT;
+
+/* ---------------------------------------------------------------------
+/* OUTPUT_STRING_AND_RETURN
+/* ------------------------------------------------------------------- */
+
+OUTPUT_STRING_AND_RETURN: procedure (S) internal;
+
+	declare
+		S	character (*) varying;
+	declare
+		WRITTT	entry (character (*) varying) external;
+
+	if AM_DEBUGGER then
+		call WRITTT (S);
+	else	call WRITE_DEBUG_LINE (S);
+
+end OUTPUT_STRING_AND_RETURN;
+
+/* ---------------------------------------------------------------------
+/* VID_STRING
+/* ------------------------------------------------------------------- */
+
+VID_STRING: procedure (V) returns (type (STRING_T)) internal;
+
+	declare
+		V	type (CXX_VID_T);
+	declare
+		DIGITS	character (32)
+			static internal
+			initial ('0123456789ABCDEFGHIJKLMNOPQRSTUV');
+	declare
+		VALUE	type (CXX_VID_T),
+		NUMBER	type (LONG_T) defined (VALUE);
+	declare
+		N	type (SHORT_T),
+		BASE	type (SHORT_T),
+		S	type (STRING_T);
+
+	VALUE = V;
+	S = '';
+	BASE = 32;
+
+	do until (NUMBER = 0);
+		N = mod (NUMBER, BASE) + 1;
+		S = substr (DIGITS, N, 1) || S;
+		NUMBER = divide (NUMBER, BASE, 31);
+	end;
+
+	return (S);
+
+end VID_STRING;
+

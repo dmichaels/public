@@ -1,0 +1,21 @@
+TROFF =		itroff
+MAN =		-man
+ME =		-me
+
+all:
+	make layout wirelist validlist validlib notes
+
+layout:
+	$(TROFF) $(MAN) layout.1v
+
+wirelist:
+	$(TROFF) $(MAN) wirelist.1v
+
+validlist:
+	$(TROFF) $(MAN) wirelist.1v
+
+validlib:
+	$(TROFF) $(MAN) validlib.3v
+
+notes:
+	$(TBL) notes | $(TROFF) $(ME) notes.3v

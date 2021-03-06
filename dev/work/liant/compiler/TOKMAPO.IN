@@ -1,0 +1,229 @@
+/* C++ CXX_TOKEN_MAP_OPERATOR_IN - Token type to FE operator (VOP) maps */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.12.91  DGM  007  Removed KW_TYPEDEF_TOKEN as overloadable op.
+ *  09.25.90  DGM  006  Preprocessor include file name changes.
+ *  09.17.90  PKT  005  Same as 004; created by slip-up.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  09.12.90  DGM  003  Fix in IS_UNARY_OVERLOAD_OP/IS_BINARY_OVERLOAD_OP.
+ *  08.31.90  DGM  002  Added IS_UNARY_OVERLOAD_OP/IS_BINARY_OVERLOAD_OP.
+ *  09.06.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_PP_TOKEN_TYPE_CODES_IN; */
+/* %include CXX_OPERATOR_CODES_IN;      */
+
+/* ---------------------------------------------------------------------
+/* TOKMAPO
+/*
+/* Keep this in sync with CXX_PP_TOKEN_TYPE_CODES_IN !
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 TOKMAPO			static external,
+
+  2 TOKEN_VOP_MAP		(LB_OP_TOKEN : HB_OP_TOKEN)
+				fixed binary (15) initial (
+
+		/* COLON_COLON_TOKEN	*/	  0
+		/* COLON_TOKEN		*/	, COLON_VO
+		/* SEMICOLON_TOKEN	*/	, 0
+		/* DOT_TOKEN		*/	, DOT_VO
+		/* DOT_STAR_TOKEN	*/	, 0
+		/* QUESTION_TOKEN	*/	, CONDITIONAL_VO
+		/* ELLIPSIS_TOKEN	*/	, 0
+		/* LCURLY_TOKEN		*/	, 0
+		/* RCURLY_TOKEN		*/	, 0
+		/* RSQUARE_TOKEN	*/	, 0
+		/* RPAREN_TOKEN		*/	, 0
+
+		/* LSQUARE_TOKEN	*/	, 0
+		/* LPAREN_TOKEN		*/	, CALL_VO
+		/* COMMA_TOKEN		*/	, COMMA_VO
+		/* POINTER_TOKEN	*/	, 0
+		/* POINTER_STAR_TOKEN	*/	, 0
+		/* PLUS_TOKEN		*/	, ADD_VO
+		/* PLUS_PLUS_TOKEN	*/	, INC_VO
+		/* MINUS_TOKEN		*/	, SUB_VO
+		/* MINUS_MINUS_TOKEN	*/	, DEC_VO
+		/* STAR_TOKEN		*/	, MUL_VO
+		/* SLASH_TOKEN		*/	, DIV_VO
+		/* MOD_TOKEN		*/	, MOD_VO
+		/* AND_TOKEN		*/	, AND_VO
+		/* OR_TOKEN		*/	, OR_VO
+		/* XOR_TOKEN		*/	, XOR_VO
+		/* TILDE_TOKEN		*/	, COMPLEMENT_VO
+		/* NOT_TOKEN		*/	, NOT_VO
+		/* LSHIFT_TOKEN		*/	, LSHIFT_VO
+		/* RSHIFT_TOKEN		*/	, RSHIFT_VO
+		/* AND_AND_TOKEN	*/	, AND_AND_VO
+		/* OR_OR_TOKEN		*/	, OR_OR_VO
+		/* LESS_THAN_TOKEN	*/	, LT_VO
+		/* LESS_EQUAL_TOKEN	*/	, LE_VO
+		/* GREATER_THAN_TOKEN	*/	, GT_VO
+		/* GREATER_EQUAL_TOKEN	*/	, GE_VO
+		/* EQUAL_EQUAL_TOKEN	*/	, EQ_VO
+		/* NOT_EQUAL_TOKEN	*/	, NE_VO
+		/* EQUAL_TOKEN		*/	, ASSIGN_VO
+		/* PLUS_EQUAL_TOKEN	*/	, ADD_ASSIGN_VO
+		/* MINUS_EQUAL_TOKEN	*/	, SUB_ASSIGN_VO
+		/* STAR_EQUAL_TOKEN	*/	, MUL_ASSIGN_VO
+		/* SLASH_EQUAL_TOKEN	*/	, DIV_ASSIGN_VO
+		/* MOD_EQUAL_TOKEN	*/	, MOD_ASSIGN_VO
+		/* AND_EQUAL_TOKEN	*/	, AND_ASSIGN_VO
+		/* OR_EQUAL_TOKEN	*/	, OR_ASSIGN_VO
+		/* XOR_EQUAL_TOKEN	*/	, XOR_ASSIGN_VO
+		/* LSHIFT_EQUAL_TOKEN	*/	, LSHIFT_ASSIGN_VO
+		/* RSHIFT_EQUAL_TOKEN	*/	, RSHIFT_ASSIGN_VO
+    ),
+
+  2 IS_BINARY_OVERLOAD_OP	(LB_OVERLOAD_OP_TOKEN : HB_OVERLOAD_OP_TOKEN)
+				type (BOOL_T) initial (
+
+	/* LSQUARE_TOKEN	*/	  TRUE
+	/* LPAREN_TOKEN		*/	, FALSE
+	/* COMMA_TOKEN		*/	, TRUE
+	/* POINTER_TOKEN	*/	, FALSE
+	/* POINTER_STAR_TOKEN	*/	, TRUE
+	/* PLUS_TOKEN		*/	, TRUE
+	/* PLUS_PLUS_TOKEN	*/	, FALSE
+	/* MINUS_TOKEN		*/	, TRUE
+	/* MINUS_MINUS_TOKEN	*/	, FALSE
+	/* STAR_TOKEN		*/	, TRUE
+	/* SLASH_TOKEN		*/	, TRUE
+	/* MOD_TOKEN		*/	, TRUE
+	/* AND_TOKEN		*/	, TRUE
+	/* OR_TOKEN		*/	, TRUE
+	/* XOR_TOKEN		*/	, TRUE
+	/* TILDE_TOKEN		*/	, FALSE
+	/* NOT_TOKEN		*/	, FALSE
+	/* LSHIFT_TOKEN		*/	, TRUE
+	/* RSHIFT_TOKEN		*/	, TRUE
+	/* AND_AND_TOKEN	*/	, TRUE
+	/* OR_OR_TOKEN		*/	, TRUE
+	/* LESS_THAN_TOKEN	*/	, TRUE
+	/* LESS_EQUAL_TOKEN	*/	, TRUE
+	/* GREATER_THAN_TOKEN	*/	, TRUE
+	/* GREATER_EQUAL_TOKEN	*/	, TRUE
+	/* EQUAL_EQUAL_TOKEN	*/	, TRUE
+	/* NOT_EQUAL_TOKEN	*/	, TRUE
+	/* EQUAL_TOKEN		*/	, TRUE
+	/* PLUS_EQUAL_TOKEN	*/	, TRUE
+	/* MINUS_EQUAL_TOKEN	*/	, TRUE
+	/* STAR_EQUAL_TOKEN	*/	, TRUE
+	/* SLASH_EQUAL_TOKEN	*/	, TRUE
+	/* MOD_EQUAL_TOKEN	*/	, TRUE
+	/* AND_EQUAL_TOKEN	*/	, TRUE
+	/* OR_EQUAL_TOKEN	*/	, TRUE
+	/* XOR_EQUAL_TOKEN	*/	, TRUE
+	/* LSHIFT_EQUAL_TOKEN	*/	, TRUE
+	/* RSHIFT_EQUAL_TOKEN	*/	, TRUE
+	/* KW_NEW_TOKEN		*/	, FALSE
+	/* KW_DELETE_TOKEN	*/	, FALSE
+    ),
+
+  2 IS_UNARY_OVERLOAD_OP	(LB_OVERLOAD_OP_TOKEN : HB_OVERLOAD_OP_TOKEN)
+				type (BOOL_T) initial (
+
+	/* LSQUARE_TOKEN	*/	  FALSE
+	/* LPAREN_TOKEN		*/	, FALSE
+	/* COMMA_TOKEN		*/	, FALSE
+	/* POINTER_TOKEN	*/	, TRUE
+	/* POINTER_STAR_TOKEN	*/	, FALSE
+	/* PLUS_TOKEN		*/	, TRUE
+	/* PLUS_PLUS_TOKEN	*/	, TRUE
+	/* MINUS_TOKEN		*/	, TRUE
+	/* MINUS_MINUS_TOKEN	*/	, TRUE
+	/* STAR_TOKEN		*/	, TRUE
+	/* SLASH_TOKEN		*/	, FALSE
+	/* MOD_TOKEN		*/	, FALSE
+	/* AND_TOKEN		*/	, TRUE
+	/* OR_TOKEN		*/	, FALSE
+	/* XOR_TOKEN		*/	, FALSE
+	/* TILDE_TOKEN		*/	, TRUE
+	/* NOT_TOKEN		*/	, TRUE
+	/* LSHIFT_TOKEN		*/	, FALSE
+	/* RSHIFT_TOKEN		*/	, FALSE
+	/* AND_AND_TOKEN	*/	, FALSE
+	/* OR_OR_TOKEN		*/	, FALSE
+	/* LESS_THAN_TOKEN	*/	, FALSE
+	/* LESS_EQUAL_TOKEN	*/	, FALSE
+	/* GREATER_THAN_TOKEN	*/	, FALSE
+	/* GREATER_EQUAL_TOKEN	*/	, FALSE
+	/* EQUAL_EQUAL_TOKEN	*/	, FALSE
+	/* NOT_EQUAL_TOKEN	*/	, FALSE
+	/* EQUAL_TOKEN		*/	, FALSE
+	/* PLUS_EQUAL_TOKEN	*/	, FALSE
+	/* MINUS_EQUAL_TOKEN	*/	, FALSE
+	/* STAR_EQUAL_TOKEN	*/	, FALSE
+	/* SLASH_EQUAL_TOKEN	*/	, FALSE
+	/* MOD_EQUAL_TOKEN	*/	, FALSE
+	/* AND_EQUAL_TOKEN	*/	, FALSE
+	/* OR_EQUAL_TOKEN	*/	, FALSE
+	/* XOR_EQUAL_TOKEN	*/	, FALSE
+	/* LSHIFT_EQUAL_TOKEN	*/	, FALSE
+	/* RSHIFT_EQUAL_TOKEN	*/	, FALSE
+	/* KW_NEW_TOKEN		*/	, FALSE
+	/* KW_DELETE_TOKEN	*/	, FALSE
+    ),
+
+  2 MANGLED_OPERATOR_NAME	(LB_OVERLOAD_OP_TOKEN : HB_OVERLOAD_OP_TOKEN)
+				character (4) varying initial (
+
+	/* LSQUARE_TOKEN	*/	  '_vc'		/*  []      */
+	/* LPAREN_TOKEN		*/	, '_cl'		/*  ()      */
+	/* COMMA_TOKEN		*/	, '_cm'		/*  ,       */
+	/* POINTER_TOKEN	*/	, '_rf'		/*  ->      */
+	/* POINTER_STAR_TOKEN	*/	, '_rm'		/*  ->*     */
+	/* PLUS_TOKEN		*/	, '_pl'		/*  +       */
+	/* PLUS_PLUS_TOKEN	*/	, '_pp'		/*  ++      */
+	/* MINUS_TOKEN		*/	, '_mi'		/*  -       */
+	/* MINUS_MINUS_TOKEN	*/	, '_mm'		/*  --      */
+	/* STAR_TOKEN		*/	, '_ml'		/*  *       */
+	/* SLASH_TOKEN		*/	, '_dv'		/*  /       */
+	/* MOD_TOKEN		*/	, '_md'		/*  %       */
+	/* AND_TOKEN		*/	, '_ad'		/*  &       */
+	/* OR_TOKEN		*/	, '_or'		/*  |       */
+	/* XOR_TOKEN		*/	, '_er'		/*  ^       */
+	/* TILDE_TOKEN		*/	, '_co'		/*  ~       */
+	/* NOT_TOKEN		*/	, '_nt'		/*  !       */
+	/* LSHIFT_TOKEN		*/	, '_ls'		/*  <<      */
+	/* RSHIFT_TOKEN		*/	, '_rs'		/*  >>      */
+	/* AND_AND_TOKEN	*/	, '_aa'		/*  &&      */
+	/* OR_OR_TOKEN		*/	, '_oo'		/*  ||      */
+	/* LESS_THAN_TOKEN	*/	, '_lt'		/*  <       */
+	/* LESS_EQUAL_TOKEN	*/	, '_le'		/*  <=      */
+	/* GREATER_THAN_TOKEN	*/	, '_gt'		/*  >       */
+	/* GREATER_EQUAL_TOKEN	*/	, '_ge'		/*  >=      */
+	/* EQUAL_EQUAL_TOKEN	*/	, '_eq'		/*  ==      */
+	/* NOT_EQUAL_TOKEN	*/	, '_ne'		/*  !=      */
+	/* EQUAL_TOKEN		*/	, '_as'		/*  =       */
+	/* PLUS_EQUAL_TOKEN	*/	, '_apl'	/*  +=      */
+	/* MINUS_EQUAL_TOKEN	*/	, '_ami'	/*  -=      */
+	/* STAR_EQUAL_TOKEN	*/	, '_amu'	/*  *=      */
+	/* SLASH_EQUAL_TOKEN	*/	, '_adv'	/*  /=      */
+	/* MOD_EQUAL_TOKEN	*/	, '_amd'	/*  %=      */
+	/* AND_EQUAL_TOKEN	*/	, '_aad'	/*  &=      */
+	/* OR_EQUAL_TOKEN	*/	, '_aor'	/*  |=      */
+	/* XOR_EQUAL_TOKEN	*/	, '_aer'	/*  ^=      */
+	/* LSHIFT_EQUAL_TOKEN	*/	, '_als'	/*  <<=     */
+	/* RSHIFT_EQUAL_TOKEN	*/	, '_ars'	/*  >>=     */
+	/* KW_NEW_TOKEN		*/	, '_nw'		/*  new     */
+	/* KW_DELETE_TOKEN	*/	, '_dl'		/*  delete  */
+    );

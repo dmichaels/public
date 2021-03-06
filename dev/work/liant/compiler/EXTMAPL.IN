@@ -1,0 +1,1174 @@
+/* C++ CXX_EXTERNAL_NAME_MAP_IN - External (long) name map */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.09.92  DGM  125	Updated.
+ *  08.31.92  DGM  124	Updated.
+ *  08.19.92  DGM  123	Updated.
+ *  05.29.92  DGM  122	Updated.
+ *  05.19.92  DGM  121	Updated.
+ *  05.12.92  DGM  120	Updated.
+ *  05.05.92  DGM  119R	Updated.
+ *  05.01.92  TLF  119R	Updated.
+ *  05.05.92  DGM  119R	Updated.
+ *  04.17.92  PKT  119	Updated.
+ *  04.30.92  DGM  118	Updated.
+ *  04.17.92  PKT  117	Merged 113->114 with 113->116.
+ *  03.27.92  PKT  116	Updated.
+ *  03.26.92  DGM  115	Updated.
+ *  03.30.92  DGM  114	Updated.
+ *  02.24.92  PKT  113	Updated.
+ *  02.06.92  PKT  112	Updated.
+ *  02.05.92  DGM  111  Updated.
+ *  01.28.92  DGM  110  Updated.
+ *  01.24.92  DGM  109  Updated.
+ *  01.21.92  DGM  108  Updated.
+ *  01.10.92  PKT  107	Updated.
+ *  01.13.92  DGM  106  Updated.
+ *  12.23.91  PKT  105  Updated.
+ *  12.17.91  PKT  104  Updated.
+ *  11.20.91  DGM  103  Merge.
+ *  11.20.91  PKT  102L Updated.
+ *  11.12.91  DGM  101  Merge.
+ *  10.25.91  PKT  100  Updated.
+ *  10.24.91  PKT  099L Updated.
+ *  10.08.91  DGM  099  Updated.
+ *  10.03.91  DGM  098  Updated.
+ *  09.25.91  PKT  097  Updated.
+ *  09.06.91  PKT  096  Updated.
+ *  08.23.91  DGM  095  Updated.
+ *  07.31.91  DGM  094  Updated.
+ *  07.30.91  TLF  093  Updated.
+ *  07.24.91  DGM  092  Updated.
+ *  07.18.91  PKT  091  Updated.
+ *  07.18.91  DGM  090  Updated.
+ *  07.08.91  DGM  089  Updated.
+ *  06.27.91  PKT  088  Updated.
+ *  06.17.91  DGM  087  Updated.
+ *  06.05.91  PKT  086  Updated.
+ *  05.29.91  DGM  085  Updated.
+ *  05.22.91  PKT  084  Updated.
+ *  05.14.91  PKT  083  Updated.
+ *  05.13.91  DGM  082  Updated.
+ *  05.06.91  DGM  081  Updated.
+ *  05.02.91  DGM  080  Updated.
+ *  04.29.91  DGM  079  Updated.
+ *  04.24.91  PKT  078  Updated.
+ *  04.18.91  DGM  077  Updated.
+ *  03.26.91  PKT  076  Updated.
+ *  03.21.91  DGM  075  Ooops.
+ *  03.21.91  DGM  074  Updated.
+ *  03.12.91  DGM  073  Updated.
+ *  03.08.91  PKT  072  Updated.
+ *  03.08.91  DGM  071  Updated.
+ *  02.27.91  DGM  070  Updated.
+ *  02.21.91  DGM  069  Updated.
+ *  02.21.91  PKT  068  Updated.
+ *  02.01.91  DGM  067  Updated.
+ *  01.31.91  DGM  066  Updated.
+ *  01.27.91  PKT  065  Updated.
+ *  01.17.91  DGM  064  Updated.
+ *  01.10.91  DGM  063  Updated.
+ *  12.17.90  PKT  062  Updated.
+ *  12.17.90  DGM  061  Updated.
+ *  12.07.90  DGM  060  Updated.
+ *  11.29.90  DGM  059  Updated.
+ *  11.28.90  TLF  058  Updated.
+ *  11.19.90  TLF  057  Updated.
+ *  11.15.90  DGM  056  Updated.
+ *  11.09.90  PKT  055  Updated.
+ *  11.06.90  DGM  054  Updated.
+ *  11.02.90  TLF  053  Updated.
+ *  11.01.90  PKT  052  Updated.
+ *  10.22.90  DGM  051  Updated.
+ *  10.18.90  TLF  050  Updated.
+ *  10.16.90  PKT  049  Updated.
+ *  10.15.90  DGM  049  Updated.
+ *  10.12.90  DGM  048  Updated.
+ *  10.10.90  DGM  047  Updated.
+ *  09.28.90  PKT  046  Updated.
+ *  09.25.90  DGM  045  Updated.
+ *  09.14.90  DGM  044  Changed include file names and VOP names.
+ *  09.12.90  DGM  043  Updated.
+ *  09.05.90  PKT  042  Updated.
+ *  08.31.90  DGM  040  Updated
+ *  08.29.90  DGM  039  Updated
+ *  08.27.90  TLF  038  Updated
+ *  08.21.90  TLF  037  Updated.
+ *  08.08.90  DGM  036  Updated.
+ *  08.07.90  DGM  035  Updated.
+ *  07.26.90  DGM  034  Updated.
+ *  07.24.90  TLF  033  Updated.
+ *  07.20.90  PKT  032  Updated.
+ *  07.10.90  DGM  031  Updated.
+ *  07.05.90  PKT  030  Updated.
+ *  06.25.90  DGM  028  Updated.
+ *  06.18.90  TLF  027  Updated.
+ *  06.14.90  PKT  026  Updated.
+ *  06.08.90  DGM  025  Updated.
+ *  06.05.90  DGM  024  Updated.
+ *  05.31.90  PKT  023  Updated.
+ *  05.25.90  DGM  021  Updated.
+ *  05.17.90  DGM  020  Updated.
+ *  05.15.90  DGM  019  Updated.
+ *  04.27.90  DGM  018  Updated.
+ *  04.23.90  DGM  017  Updated.
+ *  04.19.90  DGM  016  Updated.
+ *  04.17.90  PKT  015  Updated.
+ *  04.05.90  TLF  014  Updated.
+ *  04.04.90  DGM  013  Updated.
+ *  03.27.90  DGM  012  Updated.
+ *  03.26.90  TLF  011  Updated.
+ *  03.14.90  PKT  010  Updated.
+ *  03.02.90  DGM  009  Updated.
+ *  02.21.90  PKT  006  Updated.
+ *  02.15.90  DGM  004  Updated.
+ *  02.09.90  DGM  003  Updated.
+ *  02.06.90  TLF  002  Updated for expression parser replace constants.
+ *  02.05.90  DGM  001  Updated.
+ *  01.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Definitions
+/* ------------------------------------------------------------------- */
+
+%replace X_ACCESS_DATA_MEMBER             by 'ACCESS_DATA_MEMBER';
+%replace X_ADD_CHECK                      by 'ADD_CHECK';
+%replace X_ADD_POINTER_LEVEL              by 'ADD_POINTER_LEVEL';
+%replace X_ADD_REFERENCE_LEVEL            by 'ADD_REFERENCE_LEVEL';
+%replace X_ADD_TO_GENERATE_LIST           by 'ADD_TO_GENERATE_LIST';
+%replace X_ADD_TOP_TYPE                   by 'ADD_TOP_TYPE';
+%replace X_ADVANCE_DATA_INITIAL_FILE      by 'ADVANCE_DATA_INITIAL_FILE';
+%replace X_ADVANCE_PEEK_TOKEN             by 'ADVANCE_PEEK_TOKEN';
+%replace X_ADVANCE_RAW_PEEK_TOKEN         by 'ADVANCE_RAW_PEEK_TOKEN';
+%replace X_ADVANCE_TOKEN                  by 'ADVANCE_TOKEN';
+%replace X_AFFIX_DESTRUCTORS              by 'AFFIX_DESTRUCTORS';
+%replace X_ALIGN_DATA_INITIAL_FILE        by 'ALIGN_DATA_INITIAL_FILE';
+%replace X_ALL_ASSIGN_PARAM_CONST         by 'ALL_ASSIGN_PARAM_CONST';
+%replace X_ALL_COPY_PARAM_CONST           by 'ALL_COPY_PARAM_CONST';
+%replace X_ALLOCATE_CPLUS_OPERATOR        by 'ALLOCATE_CPLUS_OPERATOR';
+%replace X_ALLOC_CONSTANT_CXX_VALUE_NODE  by 'ALLOC_CONSTANT_CXX_VALUE_NODE';
+%replace X_ALLOC_CXX_VALUE_NODE           by 'ALLOC_CXX_VALUE_NODE';
+%replace X_ALLOC_CXX_VALUE_NODE_L         by 'ALLOC_CXX_VALUE_NODE_L';
+%replace X_ALLOC_CXX_VALUE_NODE_LR        by 'ALLOC_CXX_VALUE_NODE_LR';
+%replace X_ALLOC_CXX_VALUE_NODE_LRT       by 'ALLOC_CXX_VALUE_NODE_LRT';
+%replace X_ALLOC_DATA_INITIAL_FILE        by 'ALLOC_DATA_INITIAL_FILE';
+%replace X_ALLOC_DOT_CXX_VALUE_NODE       by 'ALLOC_DOT_CXX_VALUE_NODE';
+%replace X_ALLOC_ARRAY_NODE               by 'ALLOC_ARRAY_NODE';
+%replace X_ALLOC_AND_COPY_CXX_VALUE_NODE  by 'ALLOC_AND_COPY_CXX_VALUE_NODE';
+%replace X_ALLOC_BASE_CLASS_NODE          by 'ALLOC_BASE_CLASS_NODE';
+%replace X_ALLOC_BASE_MEMBER_NODE         by 'ALLOC_BASE_MEMBER_NODE';
+%replace X_ALLOC_BLOCK_NODE               by 'ALLOC_BLOCK_NODE';
+%replace X_ALLOC_CLASS_NODE               by 'ALLOC_CLASS_NODE';
+%replace X_ALLOC_DATA_INITIAL_NODE        by 'ALLOC_DATA_INITIAL_NODE';
+%replace X_ALLOC_DATA_SECTION_NODE        by 'ALLOC_DATA_SECTION_NODE';
+%replace X_ALLOC_DELETE_CXX_VALUE_NODE    by 'ALLOC_DELETE_CXX_VALUE_NODE';
+%replace X_ALLOC_DERIVED_CLASS_NODE       by 'ALLOC_DERIVED_CLASS_NODE';
+%replace X_ALLOC_DIM_NODE                 by 'ALLOC_DIM_NODE';
+%replace X_ALLOC_EMPTY_CXX_VALUE_NODE     by 'ALLOC_EMPTY_CXX_VALUE_NODE';
+%replace X_ALLOC_FRIEND_NODE              by 'ALLOC_FRIEND_NODE';
+%replace X_ALLOC_INIT_CXX_VALUE_NODE      by 'ALLOC_INIT_CXX_VALUE_NODE';
+%replace X_ALLOC_INIT_REF_CXX_VALUE_NODE  by 'ALLOC_INIT_REF_CXX_VALUE_NODE';
+%replace X_ALLOC_LABEL_REF_CXX_VALUE_NODE by 'ALLOC_LABEL_REF_CXX_VALUE_NODE';
+%replace X_ALLOC_LINK_NODE                by 'ALLOC_LINK_NODE';
+%replace X_ALLOC_LIST_NODE                by 'ALLOC_LIST_NODE';
+%replace X_ALLOC_MEMBER_CXX_VALUE_NODE    by 'ALLOC_MEMBER_CXX_VALUE_NODE';
+%replace X_ALLOC_NEW_CXX_VALUE_NODE       by 'ALLOC_NEW_CXX_VALUE_NODE';
+%replace X_ALLOC_PARAMETER_NODE           by 'ALLOC_PARAMETER_NODE';
+%replace X_ALLOC_REF_CXX_VALUE_NODE       by 'ALLOC_REF_CXX_VALUE_NODE';
+%replace X_ALLOC_SCOPE_NODE               by 'ALLOC_SCOPE_NODE';
+%replace X_ALLOC_SIG_NODE                 by 'ALLOC_SIG_NODE';
+%replace X_ALLOC_SOURCE_NODE              by 'ALLOC_SOURCE_NODE';
+%replace X_ALLOC_SYMBOL_CXX_VALUE_NODE    by 'ALLOC_SYMBOL_CXX_VALUE_NODE';
+%replace X_ALLOC_SYM_NODE                 by 'ALLOC_SYM_NODE';
+%replace X_ALLOC_TOKEN_NODE               by 'ALLOC_TOKEN_NODE';
+%replace X_ALLOC_TYPE_NODE                by 'ALLOC_TYPE_NODE';
+%replace X_ALLOC_VBC_NODE                 by 'ALLOC_VBC_NODE';
+%replace X_ALLOC_XXREF_NODE               by 'ALLOC_XXREF_NODE';
+%replace X_ALREADY_ON_NODE_LIST           by 'ALREADY_ON_NODE_LIST';
+%replace X_ALREADY_ON_NODE_LIST_WITH_CODE by 'ALREADY_ON_NODE_LIST_WITH_CODE';
+%replace X_APPEND_TO_NODE_LIST_WITH_VALUE by 'APPEND_TO_NODE_LIST_WITH_VALUE';
+%replace X_ANY_BIF                        by 'ANY_BIF';
+%replace X_ANY_TYPE_SIZE                  by 'ANY_TYPE_SIZE';
+%replace X_ANY_TYPE_NAME                  by 'ANY_TYPE_NAME';
+%replace X_ANY_VALUE_TYPE_NAME            by 'ANY_VALUE_TYPE_NAME';
+%replace X_APPEND_DATA_INITIAL_FILE       by 'APPEND_DATA_INITIAL_FILE';
+%replace X_APPEND_TO_NODE_LIST            by 'APPEND_TO_NODE_LIST';
+%replace X_APPEND_TO_NODE_LIST_WITH_CODE  by 'APPEND_TO_NODE_LIST_CODE';
+%replace X_ARGUMENT_PROMOTION             by 'ARGUMENT_PROMOTION';
+%replace X_ASSIGN_OPERATOR_OK             by 'ASSIGN_OPERATOR_OK';
+%replace X_AT_DESTRUCTOR_NAME             by 'AT_DESTRUCTOR_NAME';
+%replace X_AT_END_OF_DECLARATION          by 'AT_END_OF_DECLARATION';
+%replace X_AT_END_OF_FUNCTION_DECLARATOR  by 'AT_END_OF_FUNCTION_DECLARATOR';
+%replace X_AT_FUNCTION_DEFINITION         by 'AT_FUNCTION_DEFINITION';
+%replace X_AT_MEMBER_POINTER              by 'AT_MEMBER_POINTER';
+%replace X_AT_START_OF_TAG_DEFINITION     by 'AT_START_OF_TAG_DEFINITION';
+%replace X_AUTO_DEREF                     by 'AUTO_DEREF';
+%replace X_BACK_END_TYPE_BY_REFERENCE     by 'BACK_END_TYPE_BY_REFERENCE';
+%replace X_BACK_END_TYPE_SIZE             by 'BACK_END_TYPE_SIZE';
+%replace X_BASE_CLASS_NAMES               by 'BASE_CLASS_NAMES';
+%replace X_BASE_CLASS_NAME                by 'BASE_CLASS_NAME';
+%replace X_BASE_CLASS_OFFSET              by 'BASE_CLASS_OFFSET';
+%replace X_BASE_MEMBER_NAME               by 'BASE_MEMBER_NAME';
+%replace X_BASE_MEMBER_VALUE              by 'BASE_MEMBER_VALUE';
+%replace X_BASE_TO_DERIVED_CLASS_POINTER  by 'BASE_TO_DERIVED_CLASS_POINTER';
+%replace X_BASED_SYM                      by 'BASED_SYM';
+%replace X_BEFRIEND_SYMBOL                by 'BEFRIEND_SYMBOL';
+%replace X_BEGIN_ARRAY_TYPE               by 'BEGIN_ARRAY_TYPE';
+%replace X_BEGIN_ASM_DECLARATION          by 'BEGIN_ASM_DECLARATION';
+%replace X_BEGIN_BIT_FIELD                by 'BEGIN_BIT_FIELD';
+%replace X_BEGIN_BLOCK_BODY               by 'BEGIN_BLOCK_BODY';
+%replace X_BEGIN_BLOCK_SCOPE              by 'BEGIN_BLOCK_SCOPE';
+%replace X_BEGIN_CLASS_BODY               by 'BEGIN_CLASS_BODY';
+%replace X_BEGIN_CLASS_DECLARATION        by 'BEGIN_CLASS_DECLARATION';
+%replace X_BEGIN_CLASS_DERIVATION         by 'BEGIN_CLASS_DERIVATION';
+%replace X_BEGIN_CLASS_INITIALIZER        by 'BEGIN_CLASS_INITIALIZER';
+%replace X_BEGIN_CLASS_SCOPE              by 'BEGIN_CLASS_SCOPE';
+%replace X_BEGIN_CONVERSION_NAME          by 'BEGIN_CONVERSION_NAME';
+%replace X_BEGIN_ENUM_BODY                by 'BEGIN_ENUM_BODY';
+%replace X_BEGIN_ENUM_DECLARATION         by 'BEGIN_ENUM_DECLARATION';
+%replace X_BEGIN_EXTERN_TAG_DECLARATION   by 'BEGIN_EXTERN_TAG_DECLARATION';
+%replace X_BEGIN_FUNCTION_BODY            by 'BEGIN_FUNCTION_BODY';
+%replace X_BEGIN_FUNCTION_SCOPE           by 'BEGIN_FUNCTION_SCOPE';
+%replace X_BEGIN_FUNCTION_TYPE            by 'BEGIN_FUNCTION_TYPE';
+%replace X_BEGIN_GLOBAL_SCOPE             by 'BEGIN_GLOBAL_SCOPE';
+%replace X_BEGIN_INTERNAL_PARSE           by 'BEGIN_INTERNAL_PARSE';
+%replace X_BEGIN_LEXER                    by 'BEGIN_LEXER';
+%replace X_BEGIN_LEXER_LOOK_AHEAD         by 'BEGIN_LEXER_LOOK_AHEAD';
+%replace X_BEGIN_LEXER_TOKEN_COLLECTION   by 'BEGIN_LEXER_TOKEN_COLLECTION';
+%replace X_BEGIN_LINKAGE_SPECIFIER        by 'BEGIN_LINKAGE_SPECIFIER';
+%replace X_BEGIN_MEMBER_INITIAL_LIST      by 'BEGIN_MEMBER_INITIAL_LIST';
+%replace X_BEGIN_OLD_FUNCTION_TYPE        by 'BEGIN_OLD_FUNCTION_TYPE';
+%replace X_BEGIN_OLD_PARAMETER_LIST       by 'BEGIN_OLD_PARAMETER_LIST';
+%replace X_BEGIN_PAREN_TYPE_NAME          by 'BEGIN_PAREN_TYPE_NAME';
+%replace X_BEGIN_PARSER                   by 'BEGIN_PARSER';
+%replace X_BEGIN_PROTOTYPE_SCOPE          by 'BEGIN_PROTOTYPE_SCOPE';
+%replace X_BEGIN_TAG_NAME                 by 'BEGIN_TAG_NAME';
+%replace X_BEGIN_TAG_DECLARATION          by 'BEGIN_TAG_DECLARATION';
+%replace X_BINARY_CHECKS                  by 'BINARY_CHECKS';
+%replace X_BINARY_OPERATION               by 'BINARY_OPERATION';
+%replace X_BIT_FIELD_TYPE_SIZE            by 'BIT_FIELD_TYPE_SIZE';
+%replace X_BRANCH_AROUND_NESTED_FUNCTION  by 'BRANCH_AROUND_NESTED_FUNCTION';
+%replace X_BUILD_CURRENT_FRIEND_TYPE      by 'BUILD_CURRENT_FRIEND_TYPE';
+%replace X_BUILD_CURRENT_CONVERSION_TYPE  by 'BUILD_CURRENT_CONVERSION_TYPE';
+%replace X_BUILD_CURRENT_NEW_TYPE         by 'BUILD_CURRENT_NEW_TYPE';
+%replace X_BUILD_CURRENT_PARAMETER_TYPE   by 'BUILD_CURRENT_PARAMETER_TYPE';
+%replace X_BUILD_CURRENT_MEMBER_TYPE      by 'BUILD_CURRENT_MEMBER_TYPE';
+%replace X_BUILD_CURRENT_TAG_TYPE         by 'BUILD_CURRENT_TAG_TYPE';
+%replace X_BUILD_CURRENT_TYPE             by 'BUILD_CURRENT_TYPE';
+%replace X_BUILD_CURRENT_TYPEDEF_TYPE     by 'BUILD_CURRENT_TYPEDEF_TYPE';
+%replace X_BUILD_SYMBOL                   by 'BUILD_SYMBOL';
+%replace X_BYPASS_COMMA                   by 'BYPASS_COMMA';
+%replace X_CALL_CONSTRUCTOR               by 'CALL_CONSTRUCTOR';
+%replace X_CALL_USER_CONVERSION           by 'CALL_USER_CONVERSION';
+%replace X_CAN_CONVERT_FROM_CLASS_TO_TYPE by 'CAN_CONVERT_FROM_CLASS_TO_TYPE';
+%replace X_CAST_TO_CLASS_POINTER          by 'CAST_TO_CLASS_POINTER';
+%replace X_CAST_TO_CLASS_POINTER_POINTER  by 'CAST_TO_CLASS_POINTER_POINTER';
+%replace X_CAST_TO_TYPE                   by 'CAST_TO_TYPE';
+%replace X_CAST_TO_SIMPLE_POINTER         by 'CAST_TO_SIMPLE_POINTER';
+%replace X_CAST_TO_SIMPLE_TYPE            by 'CAST_TO_SIMPLE_TYPE';
+%replace X_CERROR                         by 'CERROR';
+%replace X_CHANGE_SYMBOL_NAME             by 'CHANGE_SYMBOL_NAME';
+%replace X_CHECK_ARG_SAVE                 by 'CHECK_ARG_SAVE';
+%replace X_CHECK_ARGUMENTS                by 'CHECK_ARGUMENTS';
+%replace X_CHECK_ARROW_OVERLOAD           by 'CHECK_ARROW_OVERLOAD';
+%replace X_CHECK_BASE_CLASSES             by 'CHECK_BASE_CLASSES';
+%replace X_CHECK_BINARY_OVERLOAD          by 'CHECK_BINARY_OVERLOAD';
+%replace X_CHECK_CALL_OVERLOAD            by 'CHECK_CALL_OVERLOAD';
+%replace X_CHECK_CASE_DEFINITION          by 'CHECK_CASE_DEFINITION';
+%replace X_CHECK_CLASS_SCOPE_QUALIFIER    by 'CHECK_CLASS_SCOPE_QUALIFIER';
+%replace X_CHECK_CTOR_DTOR_ACCESS         by 'CHECK_CTOR_DTOR_ACCESS';
+%replace X_CHECK_DECLARED_DESTRUCTOR      by 'CHECK_DECLARED_DESTRUCTOR';
+%replace X_CHECK_DEFAULT_ARGUMENT         by 'CHECK_DEFAULT_ARGUMENT';
+%replace X_CHECK_DEFAULT_ARGUMENT_ORDER   by 'CHECK_DEFAULT_ARGUMENT_ORDER';
+%replace X_CHECK_DUPLICATE_BASE_CLASSES   by 'CHECK_DUPLICATE_BASE_CLASSES';
+%replace X_CHECK_FLOW_AT_BLOCK_EXIT       by 'CHECK_FLOW_AT_BLOCK_EXIT';
+%replace X_CHECK_GOTO                     by 'CHECK_GOTO';
+%replace X_CHECK_IF_USED_BEFORE_SET       by 'CHECK_IF_USED_BEFORE_SET';
+%replace X_CHECK_NESTED_TYPES             by 'CHECK_NESTED_TYPES';
+%replace X_CHECK_NON_VISIBLE_DECLARATIONS by 'CHECK_NON_VISIBLE_DECLARATIONS';
+%replace X_CHECK_LABEL_DEFINITION         by 'CHECK_LABEL_DEFINITION';
+%replace X_CHECK_LINKAGE_CONFLICT         by 'CHECK_LINKAGE_CONFLICT';
+%replace X_CHECK_MAIN_DECLARATION         by 'CHECK_MAIN_DECLARATION';
+%replace X_CHECK_MEMBER_INITIAL_LIST      by 'CHECK_MEMBER_INITIAL_LIST';
+%replace X_CHECK_NULL_DECLARATOR          by 'CHECK_NULL_DECLARATOR';
+%replace X_CHECK_OVERLOAD                 by 'CHECK_OVERLOAD';
+%replace X_CHECK_SYMBOL_DEFINITION        by 'CHECK_SYMBOL_DEFINITION';
+%replace X_CHECK_TYPE_TAG_SYMBOL          by 'CHECK_TYPE_TAG_SYMBOL';
+%replace X_CHECK_UNARY_OVERLOAD           by 'CHECK_UNARY_OVERLOAD';
+%replace X_CHECK_UNSPECIFIED_BASE_TYPE    by 'CHECK_UNSPECIFIED_BASE_TYPE';
+%replace X_CHECK_USER_CONVERSION          by 'CHECK_USER_CONVERSION';
+%replace X_CLEANUP_DATA_SECTIONS          by 'CLEANUP_DATA_SECTIONS';
+%replace X_CLEANUP_DEFERRED_FUNCTIONS     by 'CLEANUP_DEFERRED_FUNCTIONS';
+%replace X_CLEAR_BASE_TYPE                by 'CLEAR_BASE_TYPE';
+%replace X_CLEAR_DECLARATION              by 'CLEAR_DECLARATION';
+%replace X_CLEAR_DECLARATION_SPECIFIERS   by 'CLEAR_DECLARATION_SPECIFIERS';
+%replace X_CLEAR_LOOKUP_SEQUENCE_RANGE    by 'CLEAR_LOOKUP_SEQUENCE_RANGE';
+%replace X_CLEAR_SCOPE_QUALIFIER          by 'CLEAR_SCOPE_QUALIFIER';
+%replace X_CLEAR_TYPE_SPECIFIERS          by 'CLEAR_TYPE_SPECIFIERS';
+%replace X_CLOSE_DATA_INITIAL_FILE        by 'CLOSE_DATA_INITIAL_FILE';
+%replace X_COLLECT_FUNCTION_BODY          by 'COLLECT_FUNCTION_BODY';
+%replace X_COMMENT_DATA_SECTION           by 'COMMENT_DATA_SECTION';
+%replace X_COMMON_DESTRUCTORS             by 'COMMON_DESTRUCTORS';
+%replace X_COMPARE_MEMBER_POINTERS        by 'COMPARE_MEMBER_POINTERS';
+%replace X_COMPATIBLE_ANY_SPECIAL_TYPES   by 'COMPATIBLE_ANY_SPECIAL_TYPES';
+%replace X_COMPATIBLE_ANY_SPECIAL_TYPES_P by 'COMPATIBLE_ANY_SPECIAL_TYPES_P';
+%replace X_COMPATIBLE_ANY_TYPES           by 'COMPATIBLE_ANY_TYPES';
+%replace X_COMPATIBLE_ANY_TYPES_P         by 'COMPATIBLE_ANY_TYPES_P';
+%replace X_COMPATIBLE_ASSIGNMENT_POINTERS by 'COMPATIBLE_ASSIGNMENT_POINTERS';
+%replace X_COMPATIBLE_CLASSES             by 'COMPATIBLE_CLASSES';
+%replace X_COMPATIBLE_COND_POINTERS       by 'COMPATIBLE_CONDITIONAL_POINTERS';
+%replace X_COMPATIBLE_CONDITIONAL_CLASSES by 'COMPATIBLE_CONDITIONAL_CLASSES';
+%replace X_COMPATIBLE_DIMENSIONS          by 'COMPATIBLE_DIMENSIONS';
+%replace X_COMPATIBLE_ENOUGH_RETURN_TYPES by 'COMPATIBLE_ENOUGH_RETURN_TYPES';
+%replace X_COMPATIBLE_INITIAL_REFERENCES  by 'COMPATIBLE_INITIAL_REFERENCES';
+%replace X_COMPATIBLE_POINTERS            by 'COMPATIBLE_POINTERS';
+%replace X_COMPATIBLE_PROTOTYPED_TYPES    by 'COMPATIBLE_PROTOTYPED_TYPES';
+%replace X_COMPATIBLE_RELATIONAL_POINTERS by 'COMPATIBLE_RELATIONAL_POINTERS';
+%replace X_COMPATIBLE_SIGNATURES          by 'COMPATIBLE_SIGNATURES';
+%replace X_COMPATIBLE_SPECIAL_TYPES       by 'COMPATIBLE_SPECIAL_TYPES';
+%replace X_COMPATIBLE_SPECIAL_TYPE_INFO   by 'COMPATIBLE_SPECIAL_TYPE_INFO';
+%replace X_COMPATIBLE_SPECIAL_TYPES_P     by 'COMPATIBLE_SPECIAL_TYPES_P';
+%replace X_COMPATIBLE_SYMBOLS             by 'COMPATIBLE_SYMBOLS';
+%replace X_COMPATIBLE_TYPE_DATA           by 'COMPATIBLE_TYPE_DATA';
+%replace X_COMPATIBLE_TYPE_INFO           by 'COMPATIBLE_TYPE_INFO';
+%replace X_COMPATIBLE_TYPES               by 'COMPATIBLE_TYPES';
+%replace X_COMPATIBLE_TYPES_P             by 'COMPATIBLE_TYPES_P';
+%replace X_COMPILER_ERROR                 by 'COMPILER_ERROR';
+%replace X_COMPILER_ERROR_AT              by 'COMPILER_ERROR_AT';
+%replace X_COMPILER_ERROR_AT_I            by 'COMPILER_ERROR_AT_I';
+%replace X_COMPILER_ERROR_AT_II           by 'COMPILER_ERROR_AT_II';
+%replace X_COMPILER_ERROR_I               by 'COMPILER_ERROR_I';
+%replace X_COMPILER_ERROR_II              by 'COMPILER_ERROR_II';
+%replace X_COMPILER_ERROR_III             by 'COMPILER_ERROR_III';
+%replace X_COMPILER_ERROR_IIII            by 'COMPILER_ERROR_IIII';
+%replace X_COMPLETE_ARRAY_TYPE            by 'COMPLETE_ARRAY_TYPE';
+%replace X_COMPLETE_ARRAY_SYMBOL          by 'COMPLETE_ARRAY_SYMBOL';
+%replace X_COMPLETE_CURRENT_DECLARATION   by 'COMPLETE_CURRENT_DECLARATION';
+%replace X_COMPLETE_QUALIFIED_SYMBOL_NAME by 'COMPLETE_QUALIFIED_SYMBOL_NAME';
+%replace X_COMPLETE_SYMBOL_NAME           by 'COMPLETE_SYMBOL_NAME';
+%replace X_COMPOSITE_EXPRESSION_TYPE      by 'COMPOSITE_EXPRESSION_TYPE';
+%replace X_CONCATENATE_STATEMENTS         by 'CONCATENATE_STATEMENTS';
+%replace X_CONCATENATE_STRING_LITERALS    by 'CONCATENATE_STRING_LITERALS';
+%replace X_CONSTANT_VALUE                 by 'CONSTANT_VALUE';
+%replace X_CONSTRUCTOR_OF_TYPE            by 'CONSTRUCTOR_OF_TYPE';
+%replace X_CONVERT_CHARACTER_CONSTANT     by 'CONVERT_CHARACTER_CONSTANT';
+%replace X_CONVERT_INTEGER_CONSTANT       by 'CONVERT_INTEGER_CONSTANT';
+%replace X_CONVERT_OVERLOADED             by 'CONVERT_OVERLOADED';
+%replace X_CONVERT_TO_POINTER_VALUE       by 'CONVERT_TO_POINTER_VALUE';
+%replace X_CONVERT_TO_VOID                by 'CONVERT_TO_VOID';
+%replace X_CONVERT_VALUE                  by 'CONVERT_VALUE';
+%replace X_COPY_CONSTRUCTOR_OK            by 'COPY_CONSTRUCTOR_OK';
+%replace X_COPY_SOURCE_STATE              by 'COPY_SOURCE_STATE';
+%replace X_COPY_SYM_NODE                  by 'COPY_SYM_NODE';
+%replace X_COPY_VALUE                     by 'COPY_VALUE';
+%replace X_COUNT_DOWN_DESTRUCTORS         by 'COUNT_DOWN_DESTRUCTORS';
+%replace X_COUNT_DOWN_VALUE               by 'COUNT_DOWN_VALUE';
+%replace X_COUNT_UP_VALUE                 by 'COUNT_UP_VALUE';
+%replace X_CREATE_CONSTANT_DIMENSION      by 'CREATE_CONSTANT_DIMENSION';
+%replace X_CREATE_DIMENSION               by 'CREATE_DIMENSION';
+%replace X_CREATE_SIGNATURE               by 'CREATE_SIGNATURE';
+%replace X_CREATE_SPECIAL_PARAMETERS      by 'CREATE_SPECIAL_PARAMETERS';
+%replace X_CURRENT_DATA_SECTION           by 'CURRENT_DATA_SECTION';
+%replace X_CURRENT_DESTRUCTORS            by 'CURRENT_DESTRUCTORS';
+%replace X_CURRENT_SOURCE_PTR             by 'CURRENT_SOURCE_PTR';
+%replace X_CURRENT_TOKEN_PTR              by 'CURRENT_TOKEN_PTR';
+%replace X_CURRENT_FUNCTION_BASE_ACCESS   by 'CURRENT_FUNCTION_BASE_ACCESS';
+%replace X_CURRENT_FUNCTION_IS_FRIEND_OF  by 'CURRENT_FUNCTION_IS_FRIEND_OF';
+%replace X_CURRENT_FUNCTION_IS_MEMBER_OF  by 'CURRENT_FUNCTION_IS_MEMBER_OF';
+%replace X_CURRENTLY_DOING_INTERNAL_PARSE by 'CURRENTLY_DOING_INTERNAL_PARSE';
+%replace X_CXX_VALUE_NODE_PTR             by 'CXX_VALUE_NODE_PTR';
+%replace X_DATA_SECTION_NAME              by 'DATA_SECTION_NAME';
+%replace X_DECLARE_ARRAY_CONSTRUCTOR      by 'DECLARE_ARRAY_CONSTRUCTOR';
+%replace X_DECLARE_ASSIGN_OPERATOR        by 'DECLARE_ASSIGN_OPERATOR';
+%replace X_DECLARE_ASSIGNMENT_OPERATOR    by 'DECLARE_ASSIGNMENT_OPERATOR';
+%replace X_DECLARE_BUILT_INS              by 'DECLARE_BUILT_INS';
+%replace X_DECLARE_COPY_CONSTRUCTOR       by 'DECLARE_COPY_CONSTRUCTOR';
+%replace X_DECLARE_C_FUNCTION             by 'DECLARE_C_FUNCTION';
+%replace X_DECLARE_DEFAULT_CONSTRUCTOR    by 'DECLARE_DEFAULT_CONSTRUCTOR';
+%replace X_DECLARE_DEFAULT_DESTRUCTOR     by 'DECLARE_DEFAULT_DESTRUCTOR';
+%replace X_DECLARE_FUNCTION               by 'DECLARE_FUNCTION';
+%replace X_DECLARE_IMPLICIT               by 'DECLARE_IMPLICIT';
+%replace X_DECLARE_IMPLICIT_FUNCTION      by 'DECLARE_IMPLICIT_FUNCTION';
+%replace X_DECLARE_LABEL                  by 'DECLARE_LABEL';
+%replace X_DECLARE_LABEL_VALUE            by 'DECLARE_LABEL_VALUE';
+%replace X_DECLARE_MAIN_EXIT_FUNCTION     by 'DECLARE_MAIN_EXIT_FUNCTION';
+%replace X_DECLARE_MAIN_ENTRY_FUNCTION    by 'DECLARE_MAIN_ENTRY_FUNCTION';
+%replace X_DECLARE_PURE_VIRTUAL_FUNCTION  by 'DECLARE_PURE_VIRTUAL_FUNCTION';
+%replace X_DECLARE_VFT                    by 'DECLARE_VFT';
+%replace X_DECLARE_VFT_POINTER            by 'DECLARE_VFT_POINTER';
+%replace X_DECLARE_XROOT_VARIABLE         by 'DECLARE_XROOT_VARIABLE';
+%replace X_DEFAULT_CONSTRUCTOR_OK         by 'DEFAULT_CONSTRUCTOR_OK';
+%replace X_DEFAULT_DESTRUCTOR_OK          by 'DEFAULT_DESTRUCTOR_OK';
+%replace X_DEFAULT_PROCEDURES_TO_GENERATE by 'DEFAULT_PROCEDURES_TO_GENERATE';
+%replace X_DEFINE_SWITCH_CASE             by 'DEFINE_SWITCH_CASE';
+%replace X_DEFINE_SWITCH_DEFAULT          by 'DEFINE_SWITCH_DEFAULT';
+%replace X_DELETE_NODE_LIST               by 'DELETE_NODE_LIST';
+%replace X_DELETE_VFT_QUEUE               by 'DELETE_VFT_QUEUE';
+%replace X_DELETE_VIRTUAL_BASE_CLASS_LIST by 'DELETE_VIRTUAL_BASE_CLASS_LIST';
+%replace X_DEREFERENCE_ARROW              by 'DEREFERENCE_ARROW';
+%replace X_DEREFERENCE_MEMBER             by 'DEREFERENCE_MEMBER';
+%replace X_DEREFERENCE_VALUE              by 'DEREFERENCE_VALUE';
+%replace X_DERIVED_TO_BASE_CLASS_POINTER  by 'DERIVED_TO_BASE_CLASS_POINTER';
+%replace X_DESTROY_DIFFERENCE             by 'DESTROY_DIFFERENCE';
+%replace X_DESTROY_OBJECT                 by 'DESTROY_OBJECT';
+%replace X_DESTRUCTOR_OF_TYPE             by 'DESTRUCTOR_OF_TYPE';
+%replace X_DETACH_COMMA                   by 'DETACH_COMMA';
+%replace X_DETERMINE_SIZE                 by 'DETERMINE_SIZE';
+%replace X_DIRECT_TYPE_ID                 by 'DIRECT_TYPE_ID';
+%replace X_DISTINCT_FUNCTION_TYPES        by 'DISTINCT_FUNCTION_TYPES';
+%replace X_DOT_VALUE                      by 'DOT_VALUE';
+%replace X_DUMPVT                         by 'DUMPVT';
+%replace X_DUMPV                          by 'DUMPV';
+%replace X_DUMP_CLASSES                   by 'DUMP_CLASSES';
+%replace X_DUMP_CURRENT_SCOPE_SYMBOLS     by 'DUMP_CURRENT_SCOPE_SYMBOLS';
+%replace X_DUMP_MAKE_DEPEND               by 'DUMP_MAKE_DEPEND';
+%replace X_DUMP_SOURCE_MAP                by 'DUMP_SOURCE_MAP';
+%replace X_DUMP_SYMBOL                    by 'DUMP_SYMBOL';
+%replace X_DUMP_NODE_STATS                by 'DUMP_NODE_STATS';
+%replace X_DUMP_TYPE_NODE_HASHING_STATS   by 'DUMP_TYPE_NODE_HASHING_STATS';
+%replace X_DUMP_TYPE_COMPATIBILITY_STATS  by 'DUMP_TYPE_COMPATIBILITY_STATS';
+%replace X_DUPLICATE_TEMP                 by 'DUPLICATE_TEMP';
+%replace X_DUPLICATE_VALUE                by 'DUPLICATE_VALUE';
+%replace X_DVT                            by 'DVT';
+%replace X_EFFECT_BEFORE_VALUE            by 'EFFECT_BEFORE_VALUE';
+%replace X_EFFECTIVE_ACCESS               by 'EFFECTIVE_ACCESS';
+%replace X_EFFECTIVELY_NON_VISIBLE        by 'EFFECTIVELY_NON_VISIBLE';
+%replace X_EFFECTIVELY_NON_VISIBLE_C      by 'EFFECTIVELY_NON_VISIBLE_C';
+%replace X_EFFECTIVELY_NON_VISIBLE_P      by 'EFFECTIVELY_NON_VISIBLE_P';
+%replace X_ELSE_HEADER                    by 'ELSE_HEADER';
+%replace X_EMIT_BRANCH_BETWEEN_DTORS      by 'EMIT_BRANCH_BETWEEN_DTORS';
+%replace X_EMIT_BRANCH_CONTINUE           by 'EMIT_BRANCH_CONTINUE';
+%replace X_EMIT_BRANCH_EXIT               by 'EMIT_BRANCH_EXIT';
+%replace X_EMIT_BRANCH_VALUE_WITH_DTORS   by 'EMIT_BRANCH_VALUE_WITH_DTORS';
+%replace X_EMIT_BRANCH_WITH_DTORS         by 'EMIT_BRANCH_WITH_DTORS';
+%replace X_EMIT_COND_REF                  by 'EMIT_COND_REF';
+%replace X_EMIT_CONSTRUCTOR_STARTUP_CODE  by 'EMIT_CONSTRUCTOR_STARTUP_CODE';
+%replace X_EMIT_CPLUS_TREE                by 'EMIT_CPLUS_TREE';
+%replace X_EMIT_DESTRUCTOR_FINISHUP_CODE  by 'EMIT_DESTRUCTOR_FINISHUP_CODE';
+%replace X_EMIT_DESTRUCTOR_STARTUP_CODE   by 'EMIT_DESTRUCTOR_STARTUP_CODE';
+%replace X_EMIT_EXPRESSION                by 'EMIT_EXPRESSION';
+%replace X_EMIT_FUNCTION_BEGIN            by 'EMIT_FUNCTION_BEGIN';
+%replace X_EMIT_FUNCTION_END              by 'EMIT_FUNCTION_END';
+%replace X_EMIT_GOTO                      by 'EMIT_GOTO';
+%replace X_EMIT_IMPLICIT_RETURN           by 'EMIT_IMPLICIT_RETURN';
+%replace X_EMIT_LABEL                     by 'EMIT_LABEL';
+%replace X_EMIT_LABEL_VALUE               by 'EMIT_LABEL_VALUE';
+%replace X_EMIT_LOOP_CONTINUE_LABEL       by 'EMIT_LOOP_CONTINUE_LABEL';
+%replace X_EMIT_RETURN                    by 'EMIT_RETURN';
+%replace X_EMIT_STATEMENT                 by 'EMIT_STATEMENT';
+%replace X_EMIT_STATEMENT_ID              by 'EMIT_STATEMENT_ID';
+%replace X_EMIT_TREE                      by 'EMIT_TREE';
+%replace X_EMIT_VALUE                     by 'EMIT_VALUE';
+%replace X_EXTENDED_LONG_DOUBLE_TYPE_SIZE by 'EXTENDED_LONG_DOUBLE_TYPE_SIZE';
+%replace X_GENERATE_VFTS                  by 'GENERATE_VFTS';
+%replace X_GENERATE_INIT_FINI_PROCEDURES  by 'GENERATE_INIT_FINI_PROCEDURES';
+%replace X_END_BLOCK_BODY                 by 'END_BLOCK_BODY';
+%replace X_END_BLOCK_SCOPE                by 'END_BLOCK_SCOPE';
+%replace X_END_CLASS_BODY                 by 'END_CLASS_BODY';
+%replace X_END_CLASS_INITIALIZER          by 'END_CLASS_INITIALIZER';
+%replace X_END_CLASS_SCOPE                by 'END_CLASS_SCOPE';
+%replace X_END_ENUM_BODY                  by 'END_ENUM_BODY';
+%replace X_END_FUNCTION_BODY              by 'END_FUNCTION_BODY';
+%replace X_END_FUNCTION_SCOPE             by 'END_FUNCTION_SCOPE';
+%replace X_END_GLOBAL_SCOPE               by 'END_GLOBAL_SCOPE';
+%replace X_END_INTERNAL_PARSE             by 'END_INTERNAL_PARSE';
+%replace X_END_LEXER                      by 'END_LEXER';
+%replace X_END_LEXER_LOOK_AHEAD           by 'END_LEXER_LOOK_AHEAD';
+%replace X_END_LEXER_TOKEN_COLLECTION     by 'END_LEXER_TOKEN_COLLECTION';
+%replace X_END_LINKAGE_SPECIFIER          by 'END_LINKAGE_SPECIFIER';
+%replace X_END_PAREN_TYPE_NAME            by 'END_PAREN_TYPE_NAME';
+%replace X_END_PARSER                     by 'END_PARSER';
+%replace X_END_PROTOTYPE_SCOPE            by 'END_PROTOTYPE_SCOPE';
+%replace X_ENTER_DELETE_DIMENSION         by 'ENTER_DELETE_DIMENSION';
+%replace X_ENTER_PLACEMENT                by 'ENTER_PLACEMENT';
+%replace X_ENTER_TYPE_FOR_NEW             by 'ENTER_TYPE_FOR_NEW';
+%replace X_EVALUATE_INTEGER               by 'EVALUATE_INTEGER';
+%replace X_EVALUATE_POINTER               by 'EVALUATE_POINTER';
+%replace X_EXPAND_VALUE                   by 'EXPAND_VALUE';
+%replace X_EXPANDED_SYMBOL_NAME           by 'EXPANDED_SYMBOL_NAME';
+%replace X_EXPANDED_QUALIFIED_SYMBOL_NAME by 'EXPANDED_QUALIFIED_SYMBOL_NAME';
+%replace X_FETCH_VALUE                    by 'FETCH_VALUE';
+%replace X_FIND_BASE_CLASS                by 'FIND_BASE_CLASS';
+%replace X_FIND_CPLUS_VAL                 by 'FIND_CPLUS_VAL';
+%replace X_FIND_OVERLOAD                  by 'FIND_OVERLOAD';
+%replace X_FINISH_CLASS_SIZE              by 'FINISH_CLASS_SIZE';
+%replace X_FINISH_DO_LOOP                 by 'FINISH_DO_LOOP';
+%replace X_FINISH_FOR_LOOP                by 'FINISH_FOR_LOOP';
+%replace X_FINISH_SWITCH_LOOP             by 'FINISH_SWITCH_LOOP';
+%replace X_FINISH_WHILE_LOOP              by 'FINISH_WHILE_LOOP';
+%replace X_FIXUP_DESTRUCTOR_LIST          by 'FIXUP_DESTRUCTOR_LIST';
+%replace X_FIXUP_MEMBER_CALL              by 'FIXUP_MEMBER_CALL';
+%replace X_FIXUP_OVERLOADED_MEMBER        by 'FIXUP_OVERLOADED_MEMBER';
+%replace X_FLUSH_TEMPORARIES              by 'FLUSH_TEMPORARIES';
+%replace X_FOLD_VALUE                     by 'FOLD_VALUE';
+%replace X_FORM_IDENTIFIER_TOKEN          by 'FORM_IDENTIFIER_TOKEN';
+%replace X_FORM_TOKEN                     by 'FORM_TOKEN';
+%replace X_FREE_CPLUS_VAL                 by 'FREE_CPLUS_VAL';
+%replace X_FREE_CURRENT_PROTOTYPE_SCOPE   by 'FREE_CURRENT_PROTOTYPE_SCOPE';
+%replace X_FREE_CXX_VALUE_NODE            by 'FREE_CXX_VALUE_NODE';
+%replace X_FREE_IGNORE_DIAGNOSTIC_LIST    by 'FREE_IGNORE_DIAGNOSTIC_LIST';
+%replace X_FREE_PARAMETER_NODE            by 'FREE_PARAMETER_NODE';
+%replace X_FREE_PARAMETER_NODE_P          by 'FREE_PARAMETER_NODE_P';
+%replace X_FREE_PROTOTYPE_SCOPE           by 'FREE_PROTOTYPE_SCOPE';
+%replace X_FREE_SCOPE_NODE                by 'FREE_SCOPE_NODE';
+%replace X_FREE_SCOPE_NODE_P              by 'FREE_SCOPE_NODE_P';
+%replace X_FREE_SYM_NODE                  by 'FREE_SYM_NODE';
+%replace X_FREE_SYM_NODE_P                by 'FREE_SYM_NODE_P';
+%replace X_FREE_TYPE_NODE                 by 'FREE_TYPE_NODE';
+%replace X_FREE_TYPE_NODE_P               by 'FREE_TYPE_NODE_P';
+%replace X_FUDGE_VFTS                     by 'FUDGE_VFTS';
+%replace X_FULL_SYMBOL_NAME               by 'FULL_SYMBOL_NAME';
+%replace X_FULL_QUALIFIED_SYMBOL_NAME     by 'FULL_QUALIFIED_SYMBOL_NAME';
+%replace X_FUNCTION_SPECIFIER_NAME        by 'FUNCTION_SPECIFIER_NAME';
+%replace X_DECLARATION_STRING             by 'DECLARATION_STRING';
+%replace X_GENERAL_CONVERT_VALUE          by 'GENERAL_CONVERT_VALUE';
+%replace X_GENERAL_VALUE_OF               by 'GENERAL_VALUE_OF';
+%replace X_GENERATE_DEFAULT_PROCEDURES    by 'GENERATE_DEFAULT_PROCEDURES';
+%replace X_GET_ANON_UNION_MEMBER_SCOPE    by 'GET_ANON_UNION_MEMBER_SCOPE';
+%replace X_GET_ARRAY_NODE                 by 'GET_ARRAY_NODE';
+%replace X_GET_ARRAY_NODE_R               by 'GET_ARRAY_NODE_R';
+%replace X_GET_BASE_CLASS_NODE            by 'GET_BASE_CLASS_NODE';
+%replace X_GET_BASE_CLASS_NODE_R          by 'GET_BASE_CLASS_NODE_R';
+%replace X_GET_BASE_MEMBER_FINI           by 'GET_BASE_MEMBER_FINI';
+%replace X_GET_BASE_MEMBER_INIT           by 'GET_BASE_MEMBER_INIT';
+%replace X_GET_BASE_MEMBER_NODE           by 'GET_BASE_MEMBER_NODE';
+%replace X_GET_BASE_MEMBER_NODE_R         by 'GET_BASE_MEMBER_NODE_R';
+%replace X_GET_BASIC_POINTER_TYPE         by 'GET_BASIC_POINTER_TYPE';
+%replace X_GET_BASIC_TYPE                 by 'GET_BASIC_TYPE';
+%replace X_GET_BLOCK_NODE                 by 'GET_BLOCK_NODE';
+%replace X_GET_BLOCK_NODE_R               by 'GET_BLOCK_NODE_R';
+%replace X_GET_BRANCH_REF_AND_EXPAND      by 'GET_BRANCH_REF_AND_EXPAND';
+%replace X_GET_BRANCH_SAVE_AND_EXPAND     by 'GET_BRANCH_SAVE_AND_EXPAND';
+%replace X_GET_CLASS_NODE                 by 'GET_CLASS_NODE';
+%replace X_GET_CLASS_NODE_R               by 'GET_CLASS_NODE_R';
+%replace X_GET_CLASS_POINTER_TYPE         by 'GET_CLASS_POINTER_TYPE';
+%replace X_GET_CLASS_TYPE                 by 'GET_CLASS_TYPE';
+%replace X_GET_CONSTRUCTOR_VALUE          by 'GET_CONSTRUCTOR_VALUE';
+%replace X_GET_CONSTANT_AND_EXPAND        by 'GET_CONSTANT_AND_EXPAND';
+%replace X_GET_CPLUS_VAL                  by 'GET_CPLUS_VAL';
+%replace X_GET_DATA_INITIAL_BYTE_OFFSET   by 'GET_DATA_INITIAL_BYTE_OFFSET';
+%replace X_GET_DATA_INITIAL_NODE          by 'GET_DATA_INITIAL_NODE';
+%replace X_GET_DATA_INITIAL_NODE_R        by 'GET_DATA_INITIAL_NODE_R';
+%replace X_GET_DATA_SECTION_NODE          by 'GET_DATA_SECTION_NODE';
+%replace X_GET_DATA_SECTION_NODE_R        by 'GET_DATA_SECTION_NODE_R';
+%replace X_GET_DERIVED_CLASS_NODE         by 'GET_DERIVED_CLASS_NODE';
+%replace X_GET_DERIVED_CLASS_NODE_R       by 'GET_DERIVED_CLASS_NODE_R';
+%replace X_GET_DIM_NODE                   by 'GET_DIM_NODE';
+%replace X_GET_DIM_NODE_R                 by 'GET_DIM_NODE_R';
+%replace X_GET_DOT_AND_EXPAND             by 'GET_DOT_AND_EXPAND';
+%replace X_GET_ENTRY_AND_EXPAND           by 'GET_ENTRY_AND_EXPAND';
+%replace X_GET_ENUM_INTEGRAL_TYPE         by 'GET_ENUM_INTEGRAL_TYPE';
+%replace X_GET_ENUMERATOR_SCOPE           by 'GET_ENUMERATOR_SCOPE';
+%replace X_GET_FRIEND_NODE                by 'GET_FRIEND_NODE';
+%replace X_GET_FRIEND_NODE_R              by 'GET_FRIEND_NODE_R';
+%replace X_GET_INIT_AND_EXPAND            by 'GET_INIT_AND_EXPAND';
+%replace X_GET_INIT_REF_AND_EXPAND        by 'GET_INIT_REF_AND_EXPAND';
+%replace X_GET_INT_TYPE                   by 'GET_INT_TYPE';
+%replace X_GET_INTEGRAL_CONSTANT_VALUE    by 'GET_INTEGRAL_CONSTANT_VALUE';
+%replace X_GET_INTEGER_VALUE              by 'GET_INTEGER_VALUE';
+%replace X_GET_LABEL_REF_AND_EXPAND       by 'GET_LABEL_REF_AND_EXPAND';
+%replace X_GET_LABEL_TYPE                 by 'GET_LABEL_TYPE';
+%replace X_GET_LINK_NODE                  by 'GET_LINK_NODE';
+%replace X_GET_LINK_NODE_R                by 'GET_LINK_NODE_R';
+%replace X_GET_LIST_NODE                  by 'GET_LIST_NODE';
+%replace X_GET_LIST_NODE_R                by 'GET_LIST_NODE_R';
+%replace X_GET_LOW_LEVEL_TYPE_INFO        by 'GET_LOW_LEVEL_TYPE_INFO';
+%replace X_GET_MAIN_NAME                  by 'GET_MAIN_NAME';
+%replace X_GET_MEMBER_POINTER_TYPE        by 'GET_MEMBER_POINTER_TYPE';
+%replace X_GET_MEMBER_POINTER_VALUE       by 'GET_MEMBER_POINTER_VALUE';
+%replace X_GET_NULL_FUNCTION_TYPE         by 'GET_NULL_FUNCTION_TYPE';
+%replace X_GET_OPERATOR_NAME_TOKEN_CODE   by 'GET_OPERATOR_NAME_TOKEN_CODE';
+%replace X_GET_PARAMETER_NODE             by 'GET_PARAMETER_NODE';
+%replace X_GET_PARAMETER_NODE_R           by 'GET_PARAMETER_NODE_R';
+%replace X_GET_PROCEDURE_AND_EXPAND       by 'GET_PROCEDURE_AND_EXPAND';
+%replace X_GET_REF_AND_EXPAND             by 'GET_REF_AND_EXPAND';
+%replace X_GET_SCOPE_NODE                 by 'GET_SCOPE_NODE';
+%replace X_GET_SCOPE_NODE_R               by 'GET_SCOPE_NODE_R';
+%replace X_GET_SCALAR_TYPE                by 'GET_SCALAR_TYPE';
+%replace X_GET_SIG_NODE                   by 'GET_SIG_NODE';
+%replace X_GET_SIG_NODE_R                 by 'GET_SIG_NODE_R';
+%replace X_GET_SIMPLE_ARRAY_TYPE          by 'GET_SIMPLE_ARRAY_TYPE';
+%replace X_GET_SIMPLE_MEMBER_VALUE        by 'GET_SIMPLE_MEMBER_VALUE';
+%replace X_GET_SIZET_TYPE                 by 'GET_SIZET_TYPE';
+%replace X_GET_WCHAR_T_TYPE               by 'GET_WCHAR_T_TYPE';
+%replace X_GET_WCHAR_T_TYPE_CODE          by 'GET_WCHAR_T_TYPE_CODE';
+%replace X_GET_SOURCE_MAP                 by 'GET_SOURCE_MAP';
+%replace X_GET_SOURCE_NODE                by 'GET_SOURCE_NODE';
+%replace X_GET_SOURCE_NODE_LIST           by 'GET_SOURCE_NODE_LIST';
+%replace X_GET_SOURCE_NODE_R              by 'GET_SOURCE_NODE_R';
+%replace X_GET_SOURCE_STATE               by 'GET_SOURCE_STATE';
+%replace X_GET_STARTUP_INIT_VID           by 'GET_STARTUP_INIT_VID';
+%replace X_GET_STATEMENT_ID_AND_EXPAND    by 'GET_STATEMENT_ID_AND_EXPAND';
+%replace X_GET_SYMBOL_TYPE                by 'GET_SYMBOL_TYPE';
+%replace X_GET_SYM_NODE                   by 'GET_SYM_NODE';
+%replace X_GET_SYM_NODE_R                 by 'GET_SYM_NODE_R';
+%replace X_GET_TEMP_REF                   by 'GET_TEMP_REF';
+%replace X_GET_TEMP_VALUE                 by 'GET_TEMP_VALUE';
+%replace X_GET_TOKEN_NODE                 by 'GET_TOKEN_NODE';
+%replace X_GET_TOKEN_NODE_R               by 'GET_TOKEN_NODE_R';
+%replace X_GET_TOP_LEVEL_TYPE             by 'GET_TOP_LEVEL_TYPE';
+%replace X_GET_TOP_LEVEL_TYPE_INFO        by 'GET_TOP_LEVEL_TYPE_INFO';
+%replace X_GET_TOP_LEVEL_TYPE_P           by 'GET_TOP_LEVEL_TYPE_P';
+%replace X_GET_TOP_TYPE                   by 'GET_TOP_TYPE';
+%replace X_GET_TOP_TYPE_INFO              by 'GET_TOP_TYPE_INFO';
+%replace X_GET_TOP_TYPE_P                 by 'GET_TOP_TYPE_P';
+%replace X_GET_TYPE_NODE                  by 'GET_TYPE_NODE';
+%replace X_GET_TYPE_NODE_R                by 'GET_TYPE_NODE_R';
+%replace X_GET_TYPE_NODE_TYPE             by 'GET_TYPE_NODE_TYPE';
+%replace X_GET_UNION_INIT                 by 'GET_UNION_INIT';
+%replace X_GET_VALUE_AND_EXPAND           by 'GET_VALUE_AND_EXPAND';
+%replace X_GET_VALUE_AND_EXPAND_L         by 'GET_VALUE_AND_EXPAND_L';
+%replace X_GET_VALUE_AND_EXPAND_LR        by 'GET_VALUE_AND_EXPAND_LR';
+%replace X_GET_VALUE_AND_EXPAND_LRT       by 'GET_VALUE_AND_EXPAND_LRT';
+%replace X_GET_VALUE_REF_AND_EXPAND       by 'GET_VALUE_REF_AND_EXPAND';
+%replace X_GET_VALUE_TYPE                 by 'GET_VALUE_TYPE';
+%replace X_GET_VBC_NODE                   by 'GET_VBC_NODE';
+%replace X_GET_VBC_NODE_R                 by 'GET_VBC_NODE_R';
+%replace X_GET_VFT_ENTRY_TYPE             by 'GET_VFT_ENTRY_TYPE';
+%replace X_GET_VFT_POINTER_TYPE           by 'GET_VFT_POINTER_TYPE';
+%replace X_GET_VFT_TYPE                   by 'GET_VFT_TYPE';
+%replace X_GET_VIRTUAL_BASE_CLASS_LIST    by 'GET_VIRTUAL_BASE_CLASS_LIST';
+%replace X_GET_VOID_POINTER_TYPE          by 'GET_VOID_POINTER_TYPE';
+%replace X_GET_VOID_TYPE                  by 'GET_VOID_TYPE';
+%replace X_GET_VOP_NAME                   by 'GET_VOP_NAME';
+%replace X_GET_XLINK_STRUCT_TYPE          by 'GET_XLINK_STRUCT_TYPE';
+%replace X_GET_XXREF_NODE                 by 'GET_XXREF_NODE';
+%replace X_GET_XXREF_NODE_R               by 'GET_XXREF_NODE_R';
+%replace X_GLOBAL_DECLARATION_DATA        by 'GLOBAL_DECLARATION_DATA';
+%replace X_GLOBAL_EXPRESSION_DATA         by 'GLOBAL_EXPRESSION_DATA';
+%replace X_GLOBAL_NAMES                   by 'GLOBAL_NAME_DATA';
+%replace X_GLOBAL_SCOPE_DATA              by 'GLOBAL_SCOPE_DATA';
+%replace X_GLOBAL_SEMANTIC_DATA           by 'GLOBAL_SEMANTIC_DATA';
+%replace X_GLOBAL_STATEMENT_DATA          by 'GLOBAL_STATEMENT_DATA';
+%replace X_GLOBAL_TYPE_DATA               by 'GLOBAL_TYPE_DATA';
+%replace X_GLOBAL_TYPES                   by 'GLOBAL_TYPES';
+%replace X_HAS_ALL_TYPE_QUALIFIERS_OF     by 'HAS_ALL_TYPE_QUALIFIERS_OF';
+%replace X_HAS_CONSTRUCTOR                by 'HAS_CONSTRUCTOR';
+%replace X_HAS_DESTRUCTOR                 by 'HAS_DESTRUCTOR';
+%replace X_HASH_TYPE                      by 'HASH_TYPE';
+%replace X_IDENTICAL_CONDITIONAL_LVALUES  by 'IDENTICAL_CONDITIONAL_LVALUES';
+%replace X_IF_HEADER                      by 'IF_HEADER';
+%replace X_IF_TRAILER                     by 'IF_TRAILER';
+%replace X_IGNORE_DIAGNOSTIC              by 'IGNORE_DIAGNOSTIC';
+%replace X_IMPLICIT_INITIALIZER           by 'IMPLICIT_INITIALIZER';
+%replace X_IN_C_HEADER_MODE               by 'IN_C_HEADER_MODE';
+%replace X_INCOMPATIBLE_POINTER_ERROR     by 'INCOMPATIBLE_POINTER_ERROR';
+%replace X_INCOMPATIBLE_REFERENCE_ERROR   by 'INCOMPATIBLE_REFERENCE_ERROR';
+%replace X_INHERITE_VIRTUAL_FUNCTIONS     by 'INHERITE_VIRTUAL_FUNCTIONS';
+%replace X_INIT_REF_CHECK                 by 'INIT_REF_CHECK';
+%replace X_INITIALIZE_CLASS_SIZE          by 'INITIALIZE_CLASS_SIZE';
+%replace X_INITIALIZE_FROM_ARG_LIST       by 'INITIALIZE_FROM_ARG_LIST';
+%replace X_INITIALIZE_GLOBAL_NAMES        by 'INITIALIZE_GLOBAL_NAMES';
+%replace X_INITIALIZE_MEMBER_VALUE        by 'INITIALIZE_MEMBER_VALUE';
+%replace X_INITIALIZE_NODE_MGR            by 'INITIALIZE_NODE_MGR';
+%replace X_INITIALIZE_OBJECT              by 'INITIALIZE_OBJECT';
+%replace X_INITIALIZE_STRING              by 'INITIALIZE_STRING';
+%replace X_INITIALIZE_VFT_POINTERS        by 'INITIALIZE_VFT_POINTERS';
+%replace X_INSTALL_ANONYMOUS_UNION        by 'INSTALL_ANONYMOUS_UNION';
+%replace X_INSTALL_PARAMETERS             by 'INSTALL_PARAMETERS';
+%replace X_INSTALL_SYMBOL                 by 'INSTALL_SYMBOL';
+%replace X_INSTALL_STRINGS                by 'INSTALL_STRINGS';
+%replace X_INTEGER_VALUE                  by 'CX_INTEGER_VALUE';
+%replace X_INTEGER_VALUE_ONE              by 'INTEGER_VALUE_ONE';
+%replace X_INTEGER_VALUE_ZERO             by 'INTEGER_VALUE_ZERO';
+%replace X_INTEGRAL_PROMOTION             by 'INTEGRAL_PROMOTION';
+%replace X_IS_ACCESSIBLE                  by 'IS_ACCESSIBLE';
+%replace X_IS_ACCESSIBLE_STATIC           by 'IS_ACCESSIBLE_STATIC';
+%replace X_IS_ACCESSIBLE_BASE_CLASS_OF    by 'IS_ACCESSIBLE_BASE_CLASS_OF';
+%replace X_IS_ANY_BASE_CLASS_OF           by 'IS_ANY_BASE_CLASS_OF';
+%replace X_IS_BASE_CLASS_BY_INFO          by 'IS_BASE_CLASS_BY_INFO';
+%replace X_IS_BASE_CLASS_OF               by 'IS_BASE_CLASS_OF';
+%replace X_IS_CAST_VOP                    by 'IS_CAST_VOP';
+%replace X_IS_CLASS_NAME                  by 'IS_CLASS_NAME';
+%replace X_IS_CONSTANT_MEMBER_POINTER     by 'IS_CONSTANT_MEMBER_POINTER';
+%replace X_IS_CURRENT_CLASS_NAME          by 'IS_CURRENT_CLASS_NAME';
+%replace X_IS_FRIEND_OF                   by 'IS_FRIEND_OF';
+%replace X_IS_GENERIC_POINTER             by 'IS_GENERIC_POINTER';
+%replace X_IS_MEMBER_FUNCTION             by 'IS_MEMBER_FUNCTION';
+%replace X_IS_NULL_POINTER_CONSTANT       by 'IS_NULL_POINTER_CONSTANT';
+%replace X_IS_OVERLOADED_VALUE            by 'IS_OVERLOADED_VALUE';
+%replace X_IS_REF_BASE_CLASS_OF           by 'IS_REF_BASE_CLASS_OF';
+%replace X_IS_TD_BASE_CLASS_OF            by 'IS_TD_BASE_CLASS_OF';
+%replace X_IS_TYPE_CLASS                  by 'IS_TYPE_CLASS';
+%replace X_IS_TYPE_NAME                   by 'IS_TYPE_NAME';
+%replace X_IS_UNAMBIGUOUS_BASE_CLASS_OF   by 'IS_UNAMBIGUOUS_BASE_CLASS_OF';
+%replace X_IS_VIRTUAL_BASE_CLASS_OF       by 'IS_VIRTUAL_BASE_CLASS_OF';
+%replace X_LEXICAL_ERROR                  by 'LEXICAL_ERROR';
+%replace X_LEXICAL_ERROR_I                by 'LEXICAL_ERROR_I';
+%replace X_LEXICAL_ERROR_II               by 'LEXICAL_ERROR_II';
+%replace X_LEXICAL_ERROR_III              by 'LEXICAL_ERROR_III';
+%replace X_LEXICAL_ERROR_IIII             by 'LEXICAL_ERROR_IIII';
+%replace X_LOCATE_DATA_INITIAL_NODE       by 'LOCATE_DATA_INITIAL_NODE';
+%replace X_LOOKUP_DOV_BASE_CLASS          by 'LOOKUP_DOV_BASE_CLASS';
+%replace X_LOOKUP_CONSTRUCTOR             by 'LOOKUP_CONSTRUCTOR';
+%replace X_LOOKUP_CTOR_FLAG_PARAMETER     by 'LOOKUP_CTOR_FLAG_PARAMETER';
+%replace X_LOOKUP_DESTRUCTOR              by 'LOOKUP_DESTRUCTOR';
+%replace X_LOOKUP_DTOR_FLAG_PARAMETER     by 'LOOKUP_DTOR_FLAG_PARAMETER';
+%replace X_LOOKUP_LABEL                   by 'LOOKUP_LABEL';
+%replace X_LOOKUP_MEMBER                  by 'LOOKUP_MEMBER';
+%replace X_LOOKUP_NAME                    by 'LOOKUP_NAME';
+%replace X_LOOKUP_NAME_QUIETLY            by 'LOOKUP_NAME_QUIETLY';
+%replace X_LOOKUP_TYPE_NAME_QUIETLY       by 'LOOKUP_TYPE_NAME_QUIETLY';
+%replace X_LOOKUP_RETURN_PARAMETER        by 'LOOKUP_RETURN_PARAMETER';
+%replace X_LOOKUP_THIS_PARAMETER          by 'LOOKUP_THIS_PARAMETER';
+%replace X_LOOKUP_TYPE_NAME               by 'LOOKUP_TYPE_NAME';
+%replace X_LOOKUP_VFT_POINTER             by 'LOOKUP_VFT_POINTER';
+%replace X_LVALUE_TYPE_CLASS              by 'LVALUE_TYPE_CLASS';
+%replace X_MAP_SOURCE_CHARACTERS          by 'MAP_SOURCE_CHARACTERS';
+%replace X_MAP_STRING_LITERAL             by 'MAP_STRING_LITERAL';
+%replace X_MAKE_AUTO_TEMP                 by 'MAKE_AUTO_TEMP';
+%replace X_MAKE_BACK_END_PARAMETER_LIST   by 'MAKE_BACK_END_PARAMETER_LIST';
+%replace X_MAKE_DATA_INITIAL_NODE         by 'MAKE_DATA_INITIAL_NODE';
+%replace X_MAKE_FIRST_TIME_FLAG           by 'MAKE_FIRST_TIME_FLAG';
+%replace X_MAKE_INITIALIZED_STRING        by 'MAKE_INITIALIZED_STRING';
+%replace X_MAKE_NULL_DATA_INITIAL_NODE    by 'MAKE_NULL_DATA_INITIAL_NODE';
+%replace X_MAKE_POINTER_TYPE              by 'MAKE_POINTER_TYPE';
+%replace X_MAKE_SYMBOL                    by 'MAKE_SYMBOL';
+%replace X_MAKE_SYM_NODE                  by 'MAKE_SYM_NODE';
+%replace X_MAKE_SYM_NODE_P                by 'MAKE_SYM_NODE_P';
+%replace X_MANGLED_SYMBOL_NAME            by 'MANGLED_SYMBOL_NAME';
+%replace X_MATCH_OVERLOAD                 by 'MATCH_OVERLOAD';
+%replace X_MATCH_OVERLOAD_FOR_OVERRIDE    by 'MATCH_OVERLOAD_FOR_OVERRIDE';
+%replace X_MATCHED_TOKEN_PTR              by 'MATCHED_TOKEN_PTR';
+%replace X_MATH_BIF                       by 'MATH_BIF';
+%replace X_MAYBE_SYMBOL_DEFINITION        by 'MAYBE_SYMBOL_DEFINITION';
+%replace X_MEMBER_ACCESS_CODE_NAME        by 'MEMBER_ACCESS_CODE_NAME';
+%replace X_MEMBER_ACCESS_NAME             by 'MEMBER_ACCESS_NAME';
+%replace X_MEMBER_FUNCTION_CALL           by 'MEMBER_FUNCTION_CALL';
+%replace X_MEMBER_OF_OBJECT               by 'MEMBER_OF_OBJECT';
+%replace X_MEMBER_POINTER_CONSTANTS       by 'MEMBER_POINTER_CONSTANTS';
+%replace X_MEMBER_POINTER_INFO            by 'MEMBER_POINTER_INFO';
+%replace X_MEMBER_POINTER_TO_LOGICAL      by 'MEMBER_POINTER_TO_LOGICAL';
+%replace X_MEMBER_POINTER_TO_INTEGRAL     by 'MEMBER_POINTER_TO_INTEGRAL';
+%replace X_MULTIPLY_CHECK                 by 'MULTIPLY_CHECK';
+%replace X_MODIFY_TYPE                    by 'MODIFY_TYPE';
+%replace X_MODIFY_TYPE_LEVEL              by 'MODIFY_TYPE_LEVEL';
+%replace X_NEEDS_ARRAY_CONSTRUCTOR        by 'NEEDS_ARRAY_CONSTRUCTOR';
+%replace X_NEW_ARRAY_NODE                 by 'NEW_ARRAY_NODE';
+%replace X_NEW_BASE_CLASS_NODE            by 'NEW_BASE_CLASS_NODE';
+%replace X_NEW_BASE_MEMBER_NODE           by 'NEW_BASE_MEMBER_NODE';
+%replace X_NEW_BLOCK_NODE                 by 'NEW_BLOCK_NODE';
+%replace X_NEW_CLASS_NODE                 by 'NEW_CLASS_NODE';
+%replace X_NEW_DATA_INITIAL_NODE          by 'NEW_DATA_INITIAL_NODE';
+%replace X_NEW_DATA_SECTION_NODE          by 'NEW_DATA_SECTION_NODE';
+%replace X_NEW_DERIVED_CLASS_NODE         by 'NEW_DERIVED_CLASS_NODE';
+%replace X_NEW_DIM_NODE                   by 'NEW_DIM_NODE';
+%replace X_NEW_FRIEND_NODE                by 'NEW_FRIEND_NODE';
+%replace X_NEW_LINK_NODE                  by 'NEW_LINK_NODE';
+%replace X_NEW_LIST_NODE                  by 'NEW_LIST_NODE';
+%replace X_NEW_PARAMETER_NODE             by 'NEW_PARAMETER_NODE';
+%replace X_NEW_SCOPE_NODE                 by 'NEW_SCOPE_NODE';
+%replace X_NEW_SIG_NODE                   by 'NEW_SIG_NODE';
+%replace X_NEW_SOURCE_NODE                by 'NEW_SOURCE_NODE';
+%replace X_NEW_SYM_NODE                   by 'NEW_SYM_NODE';
+%replace X_NEW_TOKEN_NODE                 by 'NEW_TOKEN_NODE';
+%replace X_NEW_TYPE_NODE                  by 'NEW_TYPE_NODE';
+%replace X_NEW_VBC_NODE                   by 'NEW_VBC_NODE';
+%replace X_NEW_XXREF_NODE                 by 'NEW_XXREF_NODE';
+%replace X_NON_VIRTUAL_BASE_CLASS_OFFSET  by 'NON_VIRTUAL_BASE_CLASS_OFFSET';
+%replace X_NULL_VALUE                     by 'NULL_VALUE';
+%replace X_NULL_SIMPLE_POINTER_VALUE      by 'NULL_SIMPLE_POINTER_VALUE';
+%replace X_NOTE_BYPASSING_GOTOS           by 'NOTE_BYPASSING_GOTOS';
+%replace X_NOTE_CURRENT_DESTRUCTOR        by 'NOTE_CURRENT_DESTRUCTOR';
+%replace X_NOTE_DEFERRED_CURRENT_FUNCTION by 'NOTE_DEFERRED_CURRENT_FUNCTION';
+%replace X_NOTE_DEFERRED_MEMBER_FUNCTIONS by 'NOTE_DEFERRED_MEMBER_FUNCTIONS';
+%replace X_NOTE_DESTRUCTOR                by 'NOTE_DESTRUCTOR';
+%replace X_NOTE_RELOCATION_DEPENDENCY     by 'NOTE_RELOCATION_DEPENDENCY';
+%replace X_NOTE_SYMBOL_REFERENCE          by 'NOTE_SYMBOL_REFERENCE';
+%replace X_OVERLOAD                       by 'OVERLOAD';
+%replace X_OVERLOAD_SYMBOL                by 'OVERLOAD_SYMBOL';
+%replace X_OVERRIDING_VIRTUAL_FUNCTION    by 'OVERRIDING_VIRTUAL_FUNCTION';
+%replace X_OPEN_ALIGNED_DATA_INITIAL_FILE by 'OPEN_ALIGNED_DATA_INITIAL_FILE';
+%replace X_OPEN_DATA_INITIAL_FILE         by 'OPEN_DATA_INITIAL_FILE';
+%replace X_PARSE_COMPILATION_UNIT         by 'PARSE_COMPILATION_UNIT';
+%replace X_PARSE_DEFERRED_FUNCTIONS       by 'PARSE_DEFERRED_FUNCTIONS';
+%replace X_PARSER_DRIVER                  by 'PARSER_DRIVER';
+%replace X_PARSE_FUNCTION_BODY            by 'PARSE_FUNCTION_BODY';
+%replace X_PARSE_INITIALIZER              by 'PARSE_INITIALIZER';
+%replace X_PARSE_INITIALIZER_ITEM         by 'PARSE_INITIALIZER_ITEM';
+%replace X_PARSING_DEFERRED_FUNCTION      by 'PARSING_DEFERRED_FUNCTION';
+%replace X_PEEK_TOKEN_PTR                 by 'PEEK_TOKEN_PTR';
+%replace X_PEEK_ANONYMOUS_UNION_BODY      by 'PEEK_ANONYMOUS_UNION_BODY';
+%replace X_PENDING_DATA_INITIAL_NODE      by 'PENDING_DATA_INITIAL_NODE';
+%replace X_PLAIN_VALUE_OF_REF             by 'PLAIN_VALUE_OF_REF';
+%replace X_POKE_DERIVED_TYPE              by 'POKE_DERIVED_TYPE';
+%replace X_POP_ALL_VALUES                 by 'POP_ALL_VALUES';
+%replace X_POP_ARGUMENT_VALUES            by 'POP_ARGUMENT_VALUES';
+%replace X_POP_BOOLEAN                    by 'POP_BOOLEAN';
+%replace X_POP_CLASS_QUALIFIER            by 'POP_CLASS_QUALIFIER';
+%replace X_POP_DELETE                     by 'POP_DELETE';
+%replace X_POP_DERIVED_TYPE               by 'POP_DERIVED_TYPE';
+%replace X_POP_DESTRUCTORS                by 'POP_DESTRUCTORS';
+%replace X_POP_FOR_PRECEDENCE             by 'POP_FOR_PRECEDENCE';
+%replace X_POP_MARKER                     by 'POP_MARKER';
+%replace X_POP_NEW                        by 'POP_NEW';
+%replace X_POP_NODE                       by 'POP_NODE';
+%replace X_POP_PREFIX                     by 'POP_PREFIX';
+%replace X_POP_SOURCE                     by 'POP_SOURCE';
+%replace X_POP_TYPE_QUALIFIER             by 'POP_TYPE_QUALIFIER';
+%replace X_POP_CXX_VALUE_NODE             by 'POP_CXX_VALUE_NODE';
+%replace X_POSTDECREMENT_VALUE            by 'POSTDECREMENT_VALUE';
+%replace X_POSTINCREMENT_VALUE            by 'POSTINCREMENT_VALUE';
+%replace X_PREPEND_TO_NODE_LIST           by 'PREPEND_TO_NODE_LIST';
+%replace X_PROCESS_CONSTANT               by 'PROCESS_CONSTANT';
+%replace X_PROCESS_PRAGMA_WEAK_NAMES      by 'PROCESS_PRAGMA_WEAK_NAMES';
+%replace X_PROCESS_VIRTUAL_FUNCTION       by 'PROCESS_VIRTUAL_FUNCTION';
+%replace X_PRINT_CLASS_CATALOGUE          by 'PRINT_CLASS_CATALOGUE';
+%replace X_PRINT_CLASS_LATTICE            by 'PRINT_CLASS_LATTICE';
+%replace X_PRINT_CLASS_LAYOUT             by 'PRINT_CLASS_LAYOUT';
+%replace X_PRINT_SYMBOL_TYPE              by 'PRINT_SYMBOL_TYPE';
+%replace X_PRINT_VALUE_TYPE               by 'PRINT_VALUE_TYPE';
+%replace X_PURGE_SOURCE_STATE             by 'PURGE_SOURCE_STATE';
+%replace X_PURGE_CXX_VALUE_NODES          by 'PURGE_CXX_VALUE_NODES';
+%replace X_PUSH_BACK_TOKENS               by 'PUSH_BACK_TOKENS';
+%replace X_PUSH_BOOLEAN                   by 'PUSH_BOOLEAN';
+%replace X_PUSH_CLASS_QUALIFIER           by 'PUSH_CLASS_QUALIFIER';
+%replace X_PUSH_DELETE                    by 'PUSH_DELETE';
+%replace X_PUSH_DERIVED_TYPE              by 'PUSH_DERIVED_TYPE';
+%replace X_PUSH_MARKER                    by 'PUSH_MARKER';
+%replace X_PUSH_NEW                       by 'PUSH_NEW';
+%replace X_PUSH_NODE                      by 'PUSH_NODE';
+%replace X_PUSH_PREFIX                    by 'PUSH_PREFIX';
+%replace X_PUSH_SOURCE                    by 'PUSH_SOURCE';
+%replace X_PUSH_TYPE_QUALIFIER            by 'PUSH_TYPE_QUALIFIER';
+%replace X_PUSH_VALUE_WITH_OP             by 'PUSH_VALUE_WITH_OP';
+%replace X_PUSH_CXX_VALUE_NODE            by 'PUSH_CXX_VALUE_NODE';
+%replace X_QUALIFIED_SYMBOL_NAME          by 'QUALIFIED_SYMBOL_NAME';
+%replace X_QUALIFIED_SYMBOL_TYPE_NAME     by 'QUALIFIED_SYMBOL_TYPE_NAME';
+%replace X_QUALIFYING_SYMBOL_NAME         by 'QUALIFYING_SYMBOL_NAME';
+%replace X_QUEUE_VFT                      by 'QUEUE_VFT';
+%replace X_QUIET_USER_CONVERSIONS         by 'QUIET_USER_CONVERSIONS';
+%replace X_REATTACH_COMMA                 by 'REATTACH_COMMA';
+%replace X_RECYCLE_STRING_SYMBOL          by 'RECYCLE_STRING_SYMBOL';
+%replace X_REF_PLUS_OFFSET                by 'REF_PLUS_OFFSET';
+%replace X_REF_VALUE                      by 'REF_VALUE';
+%replace X_REF_WITH_LOCATOR               by 'REF_WITH_LOCATOR';
+%replace X_REGISTER_PRAGMA_DATA_SECTION   by 'REGISTER_PRAGMA_DATA_SECTION';
+%replace X_REGISTER_PRAGMA_WEAK_NAME      by 'REGISTER_PRAGMA_WEAK_NAME';
+%replace X_RELEASE_ARRAY_NODE             by 'RELEASE_ARRAY_NODE';
+%replace X_RELEASE_BASE_CLASS_NODE        by 'RELEASE_BASE_CLASS_NODE';
+%replace X_RELEASE_BASE_MEMBER_NODE       by 'RELEASE_BASE_MEMBER_NODE';
+%replace X_RELEASE_BLOCK_NODE             by 'RELEASE_BLOCK_NODE';
+%replace X_RELEASE_CLASS_NODE             by 'RELEASE_CLASS_NODE';
+%replace X_RELEASE_CPLUS_VALUES           by 'RELEASE_CPLUS_VALUES';
+%replace X_RELEASE_DATA_INITIAL_NODE      by 'RELEASE_DATA_INITIAL_NODE';
+%replace X_RELEASE_DATA_SECTION_NODE      by 'RELEASE_DATA_SECTION_NODE';
+%replace X_RELEASE_DERIVED_CLASS_NODE     by 'RELEASE_DERIVED_CLASS_NODE';
+%replace X_RELEASE_DIM_NODE               by 'RELEASE_DIM_NODE';
+%replace X_RELEASE_FRIEND_NODE            by 'RELEASE_FRIEND_NODE';
+%replace X_RELEASE_FUNCTION_DTORS         by 'RELEASE_FUNCTION_DTORS';
+%replace X_RELEASE_LINK_NODE              by 'RELEASE_LINK_NODE';
+%replace X_RELEASE_LIST_NODE              by 'RELEASE_LIST_NODE';
+%replace X_RELEASE_PARAMETER_NODE         by 'RELEASE_PARAMETER_NODE';
+%replace X_RELEASE_SCOPE_NODE             by 'RELEASE_SCOPE_NODE';
+%replace X_RELEASE_SIG_NODE               by 'RELEASE_SIG_NODE';
+%replace X_RELEASE_SOURCE_NODE            by 'RELEASE_SOURCE_NODE';
+%replace X_RELEASE_SYM_NODE               by 'RELEASE_SYM_NODE';
+%replace X_RELEASE_TOKEN_NODE             by 'RELEASE_TOKEN_NODE';
+%replace X_RELEASE_TYPE_NODE              by 'RELEASE_TYPE_NODE';
+%replace X_RELEASE_VBC_NODE               by 'RELEASE_VBC_NODE';
+%replace X_RELEASE_XXREF_NODE             by 'RELEASE_XXREF_NODE';
+%replace X_REMAKE_PROTOTYPE_SCOPE         by 'REMAKE_PROTOTYPE_SCOPE';
+%replace X_REMOVE_FROM_NODE_LIST          by 'REMOVE_FROM_NODE_LIST';
+%replace X_REMOVE_LAST_FROM_NODE_LIST     by 'REMOVE_LAST_FROM_NODE_LIST';
+%replace X_REMOVE_UNREFERENCED_FUNCTIONS  by 'REMOVE_UNREFERENCED_FUNCTIONS';
+%replace X_REORDER_RELOCATION_SYMBOLS     by 'REORDER_RELOCATION_SYMBOLS';
+%replace X_RESET_PEEK_TOKEN               by 'RESET_PEEK_TOKEN';
+%replace X_RESET_PSECT                    by 'RESET_PSECT';
+%replace X_RESTORE_ARRAY_VALUE            by 'RESTORE_ARRAY_VALUE';
+%replace X_RESTORE_CLASS_STATE            by 'RESTORE_CLASS_STATE';
+%replace X_RESTORE_DECLARATION_STATE      by 'RESTORE_DECLARATION_STATE';
+%replace X_RESTORE_FUNCTION_VALUE         by 'RESTORE_FUNCTION_VALUE';
+%replace X_RESTORE_LINKAGE_STATE          by 'RESTORE_LINKAGE_STATE';
+%replace X_RESTORE_NAME_STATE             by 'RESTORE_NAME_STATE';
+%replace X_RESTORE_SCOPE_STATE            by 'RESTORE_SCOPE_STATE';
+%replace X_RESTORE_SIGNATURE_STATE        by 'RESTORE_SIGNATURE_STATE';
+%replace X_RUMMAGE_QUALIFIED_TAG_NAME     by 'RUMMAGE_QUALIFIED_TAG_NAME';
+%replace X_RUMMAGE_QUALIFIED_TYPE_NAME    by 'RUMMAGE_QUALIFIED_TYPE_NAME';
+%replace X_RUMMAGE_UNQUALIFIED_TAG_NAME   by 'RUMMAGE_UNQUALIFIED_TAG_NAME';
+%replace X_RUMMAGE_UNQUALIFIED_TYPE_NAME  by 'RUMMAGE_UNQUALIFIED_TYPE_NAME';
+%replace X_RUN_PP_ONLY                    by 'RUN_PP_ONLY';
+%replace X_RUN_TIME_ARGS                  by 'RUN_TIME_ARGS';
+%replace X_RUN_TIME_CALL                  by 'RUN_TIME_CALL';
+%replace X_RUN_TIME_SYMBOL                by 'RUN_TIME_SYMBOL';
+%replace X_SAVE_CLASS_STATE               by 'SAVE_CLASS_STATE';
+%replace X_SAVE_CXXFE_GLOBAL_DATA         by 'SAVE_CXXFE_GLOBAL_DATA';
+%replace X_SAVE_DECLARATION_STATE         by 'SAVE_DECLARATION_STATE';
+%replace X_SAVE_FUNCTION_BODY             by 'SAVE_FUNCTION_BODY';
+%replace X_SAVE_LINKAGE_STATE             by 'SAVE_LINKAGE_STATE';
+%replace X_SAVE_MEMBER_FUNCTION_BODY      by 'SAVE_MEMBER_FUNCTION_BODY';
+%replace X_SAVE_NAME_STATE                by 'SAVE_NAME_STATE';
+%replace X_SAVE_SCOPE_STATE               by 'SAVE_SCOPE_STATE';
+%replace X_SAVE_SIGNATURE_STATE           by 'SAVE_SIGNATURE_STATE';
+%replace X_SEARCH_BASE_CLASS_LIST         by 'SEARCH_BASE_CLASS_LIST';
+%replace X_SEARCH_CLASS                   by 'SEARCH_CLASS';
+%replace X_SEARCH_CLASS_FOR_TYPE          by 'SEARCH_CLASS_FOR_TYPE';
+%replace X_SEARCH_CLASS_FOR_TYPE_QUIETLY  by 'SEARCH_CLASS_FOR_TYPE_QUIETLY';
+%replace X_SEARCH_CLASS_QUIETLY           by 'SEARCH_CLASS_QUIETLY';
+%replace X_SEARCH_LOCAL_SCOPE             by 'SEARCH_LOCAL_SCOPE';
+%replace X_SEARCH_SCOPE                   by 'SEARCH_SCOPE';
+%replace X_SEARCH_SCOPE_FOR_TYPE          by 'SEARCH_SCOPE_FOR_TYPE';
+%replace X_SEARCH_VIRTUAL_BASE_CLASS_LIST by 'SEARCH_VIRTUAL_BASE_CLASS_LIST';
+%replace X_SEMERR                         by 'SEMERR';
+%replace X_SEMANTIC_ERROR                 by 'SEMANTIC_ERROR';
+%replace X_SEMANTIC_ERROR_AT              by 'SEMANTIC_ERROR_AT';
+%replace X_SEMANTIC_ERROR_AT_I            by 'SEMANTIC_ERROR_AT_I';
+%replace X_SEMANTIC_ERROR_AT_II           by 'SEMANTIC_ERROR_AT_II';
+%replace X_SEMANTIC_ERROR_I               by 'SEMANTIC_ERROR_I';
+%replace X_SEMANTIC_ERROR_II              by 'SEMANTIC_ERROR_II';
+%replace X_SEMANTIC_ERROR_III             by 'SEMANTIC_ERROR_III';
+%replace X_SEMANTIC_ERROR_IIII            by 'SEMANTIC_ERROR_IIII';
+%replace X_SETUP_ARROW                    by 'SETUP_ARROW';
+%replace X_SET_ADD_OP                     by 'SET_ADD_OP';
+%replace X_SET_ARGUMENT_OP                by 'SET_ARGUMENT_OP';
+%replace X_SET_ARRAY_NODE                 by 'SET_ARRAY_NODE';
+%replace X_SET_ARRAY_NODE_R               by 'SET_ARRAY_NODE_R';
+%replace X_SET_ARRAY_REFERENCE            by 'SET_ARRAY_REFERENCE';
+%replace X_SET_ARRAY_TYPE                 by 'SET_ARRAY_TYPE';
+%replace X_SET_ASM_DECLARATION            by 'SET_ASM_DECLARATION';
+%replace X_SET_BASE_CLASS                 by 'SET_BASE_CLASS';
+%replace X_SET_BASE_CLASS_NODE            by 'SET_BASE_CLASS_NODE';
+%replace X_SET_BASE_CLASS_NODE_R          by 'SET_BASE_CLASS_NODE_R';
+%replace X_SET_BASE_MEMBER_NODE           by 'SET_BASE_MEMBER_NODE';
+%replace X_SET_BASE_MEMBER_NODE_R         by 'SET_BASE_MEMBER_NODE_R';
+%replace X_SET_BASE_TYPE                  by 'SET_BASE_TYPE';
+%replace X_SET_BINARY_OP                  by 'SET_BINARY_OP';
+%replace X_SET_BIT_FIELD                  by 'SET_BIT_FIELD';
+%replace X_SET_BLOCK_NODE                 by 'SET_BLOCK_NODE';
+%replace X_SET_BLOCK_NODE_R               by 'SET_BLOCK_NODE_R';
+%replace X_SET_C_HEADER_MODE              by 'SET_C_HEADER_MODE';
+%replace X_SET_CALL_OP                    by 'SET_CALL_OP';
+%replace X_SET_CAST_OP                    by 'SET_CAST_OP';
+%replace X_SET_CLASS_ALIGNMENT            by 'SET_CLASS_ALIGNMENT';
+%replace X_SET_CLASS_BASE_TYPE            by 'SET_CLASS_BASE_TYPE';
+%replace X_SET_CLASS_DECLARATION          by 'SET_CLASS_DECLARATION';
+%replace X_SET_CLASS_DERIVATION           by 'SET_CLASS_DERIVATION';
+%replace X_SET_CLASS_NODE                 by 'SET_CLASS_NODE';
+%replace X_SET_CLASS_NODE_R               by 'SET_CLASS_NODE_R';
+%replace X_SET_CLASS_SCOPE_QUALIFIER      by 'SET_CLASS_SCOPE_QUALIFIER';
+%replace X_SET_CLEANUP_PSECT              by 'SET_CLEANUP_PSECT';
+%replace X_SET_COMMA_OP                   by 'SET_COMMA_OP';
+%replace X_SET_CONSTANT_EXPRESSION        by 'SET_CONSTANT_EXPRESSION';
+%replace X_SET_CONVERSION_NAME            by 'SET_CONVERSION_NAME';
+%replace X_SET_CURRENT_DATA_SECTION       by 'SET_CURRENT_DATA_SECTION';
+%replace X_SET_CURRENT_SCOPE              by 'SET_CURRENT_SCOPE';
+%replace X_SET_CXXFE_GLOBAL_DATA          by 'SET_CXXFE_GLOBAL_DATA';
+%replace X_SET_DATA_INITIAL_FILE          by 'SET_DATA_INITIAL_FILE';
+%replace X_SET_DATA_INITIAL_NODE          by 'SET_DATA_INITIAL_NODE';
+%replace X_SET_DATA_INITIAL_NODE_R        by 'SET_DATA_INITIAL_NODE_R';
+%replace X_SET_DATA_SECTION               by 'SET_DATA_SECTION';
+%replace X_SET_DATA_SECTION_NODE          by 'SET_DATA_SECTION_NODE';
+%replace X_SET_DATA_SECTION_NODE_R        by 'SET_DATA_SECTION_NODE_R';
+%replace X_SET_DECLARATION                by 'SET_DECLARATION';
+%replace X_SET_DECLARATOR_SCOPE           by 'SET_DECLARATOR_SCOPE';
+%replace X_SET_DEFAULT_STRUCT_ALIGNMENT   by 'SET_DEFAULT_STRUCT_ALIGNMENT';
+%replace X_SET_DERIVED_CLASS_NODE         by 'SET_DERIVED_CLASS_NODE';
+%replace X_SET_DERIVED_CLASS_NODE_R       by 'SET_DERIVED_CLASS_NODE_R';
+%replace X_SET_DERIVED_CLASS_QUALIFIER    by 'SET_DERIVED_CLASS_QUALIFIER';
+%replace X_SET_DERIVED_TYPE_QUALIFIER     by 'SET_DERIVED_TYPE_QUALIFIER';
+%replace X_SET_DESTRUCTOR_NAME            by 'SET_DESTRUCTOR_NAME';
+%replace X_SET_DIM_NODE                   by 'SET_DIM_NODE';
+%replace X_SET_DIM_NODE_R                 by 'SET_DIM_NODE_R';
+%replace X_SET_ELLIPSIS                   by 'SET_ELLIPSIS';
+%replace X_SET_ENUM_BASE_TYPE             by 'SET_ENUM_BASE_TYPE';
+%replace X_SET_ENUM_DECLARATION           by 'SET_ENUM_DECLARATION';
+%replace X_SET_ENUM_TYPE                  by 'SET_ENUM_TYPE';
+%replace X_SET_ENUMERATOR_DECLARATION     by 'SET_ENUMERATOR_DECLARATION';
+%replace X_SET_ENUMERATOR_INITIALIZED     by 'SET_ENUMERATOR_INITIALIZED';
+%replace X_SET_ENUMERATOR_VALUE           by 'SET_ENUMERATOR_VALUE';
+%replace X_SET_FOR_LOOP_INITIALIZER       by 'SET_FOR_LOOP_INITIALIZER';
+%replace X_SET_FRIEND_SPECIFIER           by 'SET_FRIEND_SPECIFIER';
+%replace X_SET_FRIEND_NODE                by 'SET_FRIEND_NODE';
+%replace X_SET_FRIEND_NODE_R              by 'SET_FRIEND_NODE_R';
+%replace X_SET_FUNCTION_TYPE              by 'SET_FUNCTION_TYPE';
+%replace X_SET_FUNCTION_TYPE_QUALIFIER    by 'SET_FUNCTION_TYPE_QUALIFIER';
+%replace X_SET_FUNCTIONAL_CAST_OP         by 'SET_FUNCTIONAL_CAST_OP';
+%replace X_SET_GLOBAL_SCOPE_QUALIFIER     by 'SET_GLOBAL_SCOPE_QUALIFIER';
+%replace X_SET_INCOMPLETE_ARRAY_TYPE      by 'SET_INCOMPLETE_ARRAY_TYPE';
+%replace X_SET_INITIAL_DATA_SECTION       by 'SET_INITIAL_DATA_SECTION';
+%replace X_SET_INITIALIZER_ARGUMENTS      by 'SET_INITIALIZER_ARGUMENTS';
+%replace X_SET_INITIALIZER_BEGIN          by 'SET_INITIALIZER_BEGIN';
+%replace X_SET_INITIALIZER_DELIMITER      by 'SET_INITIALIZER_DELIMITER';
+%replace X_SET_INITIALIZER_END            by 'SET_INITIALIZER_END';
+%replace X_SET_INITIALIZER_EXPRESSION     by 'SET_INITIALIZER_EXPRESSION';
+%replace X_SET_INITIALIZER_UNKNOWN        by 'SET_INITIALIZER_UNKNOWN';
+%replace X_SET_INLINE_SPECIFIER           by 'SET_INLINE_SPECIFIER';
+%replace X_SET_LABEL_DEFINITION           by 'SET_LABEL_DEFINITION';
+%replace X_SET_LABEL_NAME                 by 'SET_LABEL_NAME';
+%replace X_SET_LINK_NODE                  by 'SET_LINK_NODE';
+%replace X_SET_LINK_NODE_R                by 'SET_LINK_NODE_R';
+%replace X_SET_LINKAGE_SPECIFIER_GROUP    by 'SET_LINKAGE_SPECIFIER_GROUP';
+%replace X_SET_LIST_NODE                  by 'SET_LIST_NODE';
+%replace X_SET_LIST_NODE_R                by 'SET_LIST_NODE_R';
+%replace X_SET_LOOKUP_SEQUENCE_RANGE      by 'SET_LOOKUP_SEQUENCE_RANGE';
+%replace X_SET_LOOP_EXPRESSION            by 'SET_LOOP_EXPRESSION';
+%replace X_SET_MEMBER_ACCESS              by 'SET_MEMBER_ACCESS';
+%replace X_SET_MEMBER_BASE_TYPE           by 'SET_MEMBER_BASE_TYPE';
+%replace X_SET_MEMBER_DECLARATION         by 'SET_MEMBER_DECLARATION';
+%replace X_SET_MEMBER_INITIALIZER         by 'SET_MEMBER_INITIALIZER';
+%replace X_SET_MEMBER_INITIAL_LIST        by 'SET_MEMBER_INITIAL_LIST';
+%replace X_SET_MEMBER_INIT_OP             by 'SET_MEMBER_INIT_OP';
+%replace X_SET_MEMBER_POINTER_TYPE        by 'SET_MEMBER_POINTER_TYPE';
+%replace X_SET_NULL_INITIALIZER           by 'SET_NULL_INITIALIZER';
+%replace X_SET_OLD_PARAMETER_DECLARATION  by 'SET_OLD_PARAMETER_DECLARATION';
+%replace X_SET_OLD_PARAMETER_LIST         by 'SET_OLD_PARAMETER_LIST';
+%replace X_SET_OLD_PARAMETER_NAME         by 'SET_OLD_PARAMETER_NAME';
+%replace X_SET_OPERATOR_NAME              by 'SET_OPERATOR_NAME';
+%replace X_SET_OVERLOAD_SPECIFIER         by 'SET_OVERLOAD_SPECIFIER';
+%replace X_SET_PRIVATE_BASE_CLASS         by 'SET_PRIVATE_BASE_CLASS';
+%replace X_SET_PRIVATE_MEMBER_ACCESS      by 'SET_PRIVATE_MEMBER_ACCESS';
+%replace X_SET_PROTECTED_BASE_CLASS       by 'SET_PROTECTED_BASE_CLASS';
+%replace X_SET_PROTECTED_MEMBER_ACCESS    by 'SET_PROTECTED_MEMBER_ACCESS';
+%replace X_SET_PUBLIC_BASE_CLASS          by 'SET_PUBLIC_BASE_CLASS';
+%replace X_SET_PUBLIC_MEMBER_ACCESS       by 'SET_PUBLIC_MEMBER_ACCESS';
+%replace X_SET_PARAMETER_DECLARATION      by 'SET_PARAMETER_DECLARATION';
+%replace X_SET_PARAMETER_INITIALIZER      by 'SET_PARAMETER_INITIALIZER';
+%replace X_SET_PARAMETER_NODE             by 'SET_PARAMETER_NODE';
+%replace X_SET_PARAMETER_NODE_R           by 'SET_PARAMETER_NODE_R';
+%replace X_SET_PEEK_TOKEN                 by 'SET_PEEK_TOKEN';
+%replace X_SET_POINTER_TYPE               by 'SET_POINTER_TYPE';
+%replace X_SET_PSECT                      by 'SET_PSECT';
+%replace X_SET_PSECT_LINK                 by 'SET_PSECT_LINK';
+%replace X_SET_PURE_SPECIFIER             by 'SET_PURE_SPECIFIER';
+%replace X_SET_RAW_PEEK_TOKEN             by 'SET_RAW_PEEK_TOKEN';
+%replace X_SET_REFERENCE_TYPE             by 'SET_REFERENCE_TYPE';
+%replace X_SET_RELOCATION_DATA            by 'SET_RELOCATION_DATA';
+%replace X_SET_SCOPE_NODE                 by 'SET_SCOPE_NODE';
+%replace X_SET_SCOPE_NODE_R               by 'SET_SCOPE_NODE_R';
+%replace X_SET_SIG_NODE                   by 'SET_SIG_NODE';
+%replace X_SET_SIG_NODE_R                 by 'SET_SIG_NODE_R';
+%replace X_SET_SIMPLE_NAME                by 'SET_SIMPLE_NAME';
+%replace X_SET_SIMPLE_REF_VALUE           by 'SET_SIMPLE_REF_VALUE';
+%replace X_SET_SIMPLE_TYPE                by 'SET_SIMPLE_TYPE';
+%replace X_SET_SIZEOF_OP                  by 'SET_SIZEOF_OP';
+%replace X_SET_SOURCE_MAP                 by 'SET_SOURCE_MAP';
+%replace X_SET_SOURCE_NODE                by 'SET_SOURCE_NODE';
+%replace X_SET_SOURCE_NODE_R              by 'SET_SOURCE_NODE_R';
+%replace X_SET_SOURCE_STATE               by 'SET_SOURCE_STATE';
+%replace X_SET_SSADD_OP                   by 'SET_SSADD_OP';
+%replace X_SET_STARTUP_PSECT              by 'SET_STARTUP_PSECT';
+%replace X_SET_STORAGE_CLASS_SPECIFIER    by 'SET_STORAGE_CLASS_SPECIFIER';
+%replace X_SET_STRUCT_ALIGNMENT           by 'SET_STRUCT_ALIGNMENT';
+%replace X_SET_SYM_NODE                   by 'SET_SYM_NODE';
+%replace X_SET_SYM_NODE_R                 by 'SET_SYM_NODE_R';
+%replace X_SET_TAG_NAME                   by 'SET_TAG_NAME';
+%replace X_SET_TAG_EXTERN                 by 'SET_TAG_EXTERN';
+%replace X_SET_THIS_NAME                  by 'SET_THIS_NAME';
+%replace X_SET_TOKEN_NODE                 by 'SET_TOKEN_NODE';
+%replace X_SET_TOKEN_NODE_R               by 'SET_TOKEN_NODE_R';
+%replace X_SET_TYPE_DECLARATION           by 'SET_TYPE_DECLARATION';
+%replace X_SET_TYPE_DESTRUCTOR_NAME       by 'SET_TYPE_DESTRUCTOR_NAME';
+%replace X_SET_TYPE_NAME                  by 'SET_TYPE_NAME';
+%replace X_SET_TYPE_NODE                  by 'SET_TYPE_NODE';
+%replace X_SET_TYPE_NODE_R                by 'SET_TYPE_NODE_R';
+%replace X_SET_TYPE_QUALIFIER             by 'SET_TYPE_QUALIFIER';
+%replace X_SET_TYPE_SCOPE_QUALIFIER       by 'SET_TYPE_SCOPE_QUALIFIER';
+%replace X_SET_UNARY_OP                   by 'SET_UNARY_OP';
+%replace X_SET_VALUE_CLASS_POINTER_TYPE   by 'SET_VALUE_CLASS_POINTER_TYPE';
+%replace X_SET_VALUE_SIMPLE_POINTER_TYPE  by 'SET_VALUE_SIMPLE_POINTER_TYPE';
+%replace X_SET_VALUE_SIMPLE_TYPE          by 'SET_VALUE_SIMPLE_TYPE';
+%replace X_SET_VALUE_SIMPLE_TYPE_DATA     by 'SET_VALUE_SIMPLE_TYPE_DATA';
+%replace X_SET_VALUE_TYPE                 by 'SET_VALUE_TYPE';
+%replace X_SET_VANILLA_NAME               by 'SET_VANILLA_NAME';
+%replace X_SET_VBC_NODE                   by 'SET_VBC_NODE';
+%replace X_SET_VBC_NODE_R                 by 'SET_VBC_NODE_R';
+%replace X_SET_VFT_POINTERS               by 'SET_VFT_POINTERS';
+%replace X_SET_VIRTUAL_BASE_CLASS         by 'SET_VIRTUAL_BASE_CLASS';
+%replace X_SET_VIRTUAL_SPECIFIER          by 'SET_VIRTUAL_SPECIFIER';
+%replace X_SET_XXREF_NODE                 by 'SET_XXREF_NODE';
+%replace X_SET_XXREF_NODE_R               by 'SET_XXREF_NODE_R';
+%replace X_SIMPLE_BACK_END_TYPE_SIZE      by 'SIMPLE_BACK_END_TYPE_SIZE';
+%replace X_SIMPLE_DIAGNOSTIC              by 'SIMPLE_DIAGNOSTIC';
+%replace X_SIMPLE_TYPE_SIZE               by 'SIMPLE_TYPE_SIZE';
+%replace X_SKIP_FUNCTION_BODY             by 'SKIP_FUNCTION_BODY';
+%replace X_START_DO_LOOP                  by 'START_DO_LOOP';
+%replace X_START_FOR_LOOP                 by 'START_FOR_LOOP';
+%replace X_START_IF                       by 'START_IF';
+%replace X_START_SAVING_STRINGS           by 'START_SAVING_STRINGS';
+%replace X_START_SWITCH_LOOP              by 'START_SWITCH_LOOP';
+%replace X_START_WHILE_LOOP               by 'START_WHILE_LOOP';
+%replace X_STATEMENT_START                by 'STATEMENT_START';
+%replace X_STOP_SAVING_STRINGS            by 'STOP_SAVING_STRINGS';
+%replace X_STORAGE_CLASS_CODE_NAME        by 'STORAGE_CLASS_CODE_NAME';
+%replace X_STORAGE_CLASS_NAME             by 'STORAGE_CLASS_NAME';
+%replace X_STRING_BIF                     by 'STRING_BIF';
+%replace X_STRING_VALUE                   by 'STRING_VALUE';
+%replace X_STRIP_TOP_TYPE                 by 'STRIP_RIGHT_TYPE';
+%replace X_SUBTRACT_CHECK                 by 'SUBTRACT_CHECK';
+%replace X_SYM_NODE_SEQUENCE_NUMBER       by 'SYM_NODE_SEQUENCE_NUMBER';
+%replace X_SYMBOL_SEQUENCE_NUMBER         by 'SYMBOL_SEQUENCE_NUMBER';
+%replace X_SYMBOL_NAME                    by 'SYMBOL_NAME';
+%replace X_SYMBOL_TYPE_NAME               by 'SYMBOL_TYPE_NAME';
+%replace X_SYMBOL_LOCATION_NAME           by 'SYMBOL_LOCATION_NAME';
+%replace X_SYNTAX_ERROR                   by 'SYNTAX_ERROR';
+%replace X_SYNTAX_ERROR_I                 by 'SYNTAX_ERROR_I';
+%replace X_SYNTAX_ERROR_II                by 'SYNTAX_ERROR_II';
+%replace X_SYNTAX_ERROR_III               by 'SYNTAX_ERROR_III';
+%replace X_SYNTAX_ERROR_IIII              by 'SYNTAX_ERROR_IIII';
+%replace X_TARGET_CONVERSION              by 'TARGET_CONVERSION';
+%replace X_TEST_DO_LOOP                   by 'TEST_DO_LOOP';
+%replace X_TEST_FOR_LOOP                  by 'TEST_FOR_LOOP';
+%replace X_TEST_SWITCH_LOOP               by 'TEST_SWITCH_LOOP';
+%replace X_TEST_WHILE_LOOP                by 'TEST_WHILE_LOOP';
+%replace X_TOKEN_CONTEXT                  by 'TOKEN_CONTEXT';
+%replace X_TOKEN_CONTEXT_INDEX            by 'TOKEN_CONTEXT_INDEX';
+%replace X_TOKEN_MEMBER_NAME              by 'TOKEN_MEMBER_NAME';
+%replace X_TOKEN_NAME                     by 'TOKEN_NAME';
+%replace X_TOP_CXX_VALUE_NODE             by 'TOP_CXX_VALUE_NODE';
+%replace X_TOP_DERIVED_TYPE               by 'TOP_DERIVED_TYPE';
+%replace X_TOP_DERIVED_TYPE_DATA          by 'TOP_DERIVED_TYPE_DATA';
+%replace X_TRANSMUTE_MEMBER_VALUE         by 'TRANSMUTE_MEMBER_VALUE';
+%replace X_TRANSMUTE_WITH_TEMP            by 'TRANSMUTE_WITH_TEMP';
+%replace X_TYPE_COMPATIBILITY_STATUS      by 'TYPE_COMPATIBILITY_STATUS';
+%replace X_TYPE_HAS_RESTRICTION           by 'TYPE_HAS_RESTRICTION';
+%replace X_TYPE_INFO_NAME                 by 'TYPE_INFO_NAME';
+%replace X_TYPE_INTO_VALUE                by 'TYPE_INTO_VALUE';
+%replace X_TYPE_NAME                      by 'TYPE_NAME';
+%replace X_TYPE_NAME_HIDDEN_BY_NON_TYPE   by 'TYPE_NAME_HIDDEN_BY_NON_TYPE';
+%replace X_TYPE_NAME_HIDES_NON_TYPE       by 'TYPE_NAME_HIDES_NON_TYPE';
+%replace X_TYPE_SIZE                      by 'TYPE_SIZE';
+%replace X_TYPE_VALUE                     by 'TYPE_VALUE';
+%replace X_UNARY_CHECKS                   by 'UNARY_CHECKS';
+%replace X_UNRESTRICTED_TYPE              by 'UNRESTRICTED_TYPE';
+%replace X_UNSET_C_HEADER_MODE            by 'UNSET_C_HEADER_MODE';
+%replace X_UPDATE_CLASS_SIZE              by 'UPDATE_CLASS_SIZE';
+%replace X_UPDATE_SYMBOL_SEQUENCE_NUMBER  by 'UPDATE_SYMBOL_SEQUENCE_NUMBER';
+%replace X_USER_CONVERSIONS               by 'USER_CONVERSIONS';
+%replace X_VALID_BASE_TYPE                by 'VALID_BASE_TYPE';
+%replace X_VALID_COPY_ASSIGNMENT          by 'VALID_COPY_ASSIGNMENT';
+%replace X_VALID_COPY_CONSTRUCTOR         by 'VALID_COPY_CONSTRUCTOR';
+%replace X_VALID_DECLARATOR_NAME          by 'VALID_DECLARATOR_NAME';
+%replace X_VALID_SPECIAL_FUNCTION         by 'VALID_SPECIAL_FUNCTION';
+%replace X_VALUE_BEFORE_EFFECT            by 'VALUE_BEFORE_EFFECT';
+%replace X_VALUE_OF                       by 'VALUE_OF';
+%replace X_VALUE_SYMBOL                   by 'VALUE_SYMBOL';
+%replace X_VAR_ARG_BIF                    by 'VAR_ARG_BIF';
+%replace X_VALUE_TYPE_NAME                by 'VALUE_TYPE_NAME';
+%replace X_WARN_EXTRA_ARGUMENT_COMMA      by 'WARN_EXTRA_ARGUMENT_COMMA';
+%replace X_WARN_EXTRA_ELLIPSIS            by 'WARN_EXTRA_ELLIPSIS';
+%replace X_WARN_EXTRA_ENUM_COMMA          by 'WARN_EXTRA_ENUM_COMMA';
+%replace X_WARN_EXTRA_LINKAGE_SEMICOLON   by 'WARN_EXTRA_LINKAGE_SEMICOLON';
+%replace X_WARN_EXTRA_TEXT                by 'WARN_EXTRA_TEXT';
+%replace X_WRITE_DATA_INITIAL_FILE        by 'WRITE_DATA_INITIAL_FILE';
+%replace X_WRITE_RELOCATION_DATA          by 'WRITE_RELOCATION_DATA';
+%replace X_CHECK_NOT_LOOP_BODY            by 'CHECK_NOT_LOOP_BODY';
+
+
+
+

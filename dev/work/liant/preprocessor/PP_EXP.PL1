@@ -1,0 +1,1065 @@
+/* CPP pp_exp.pl1 - ANSI-C/C++ preprocessor expression handler */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.18.92  DGM  009  Added PP_EVALUATE_EXPRESSION.
+ *  01.21.92  DGM  008  Accept #if sizeof etc.
+ *  11.12.91  DGM  007  Updated.
+ *  07.08.91  DGM  006  Implemented #assert/#unassert/#if #predicate
+ *  04.30.91  DGM  005  New integral consant type (old wary didn't work on
+ *			SPARC due to compiler bug; this way is better anyways)
+ *  09.25.90  DGM  004  Include file name changes.
+ *  07.18.90  DGM  003	Changed MATCH_RAW_TOKEN to call
+ *			GET_NEXT_UNEXPANDED_TOKEN rather
+ *			than GET_NEXT_LEXICAL_TOKEN.
+ *			This causes the following *undefined*
+ *			construct to behave in a reasonable manner:
+ *
+ *				#define DEF_A defined (A)
+ *				#if DEF_A
+ *				...
+ *
+ *  06.13.90  DGM  002	Updated include files.
+ *  06.05.90  DGM  001	First CPP component version.
+ *
+ *  --------------------------------------------------------------------
+ *
+ *  06.26.89  DGM  [002]
+ *  --------------------
+ *  Slightly different handling of overflow/error escape conditions
+ *  in MAP_NUMERIC_ESCAPE.
+ *
+ *  06.05.89  DGM  [001]
+ *  --------------------
+ *  Conditionally recognize only old escape sequences (SW_X_OLD_ESCAPES).
+ *
+ *  04.17.89  DGM  [000]
+ *  --------------------
+ *  Original (yanked out of PREPROCESSOR).
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.18.92 009 PPEXP');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CPP_STANDARD_DEFS_IN;
+%include CPP_EXTERNAL_NAME_MAP_IN;
+%include CPP_COMPILATION_SWITCHES_IN;
+%include CPP_CHARACTER_SET_IN;
+%include CPP_TOKEN_POD_MGR_PKG;
+%include CPP_TOKEN_POD_SPELLING_PKG;
+%include CPP_GLOBAL_IN;
+%include CPP_MACRO_UTL_PKG;
+%include CPP_SOURCE_MGR_PKG;
+%include CPP_EXPRESSION_OP_PKG;
+%include CPP_KEYWORD_PKG;
+%include CPP_FE_EXTERNAL_NAME_MAP_IN;
+%include CPP_CONVERT_CONSTANT_PKG;
+%include CPP_ERROR_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local constant definitions
+/* ------------------------------------------------------------------- */
+
+/* Possible values for the IC.TYPE field */
+
+%replace SIGNED_LONG_ICT	by 0;
+%replace UNSIGNED_LONG_ICT	by 1;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+/*
+ * Layout of the integral constant (IC) data structure; contains
+ * all the data necessary to fully describe an integral constant.
+ */
+
+declare
+
+1 INTEGRAL_CONSTANT_T	based,
+  2 VALUE		type (LONG_T),
+  2 TYPE		type (SHORT_T);
+
+/* ---------------------------------------------------------------------
+/* Local data definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+LOOK_AHEAD_TOKEN	type (POINTER_T) static internal,
+LOOK_AHEAD_TYPE		type (SHORT_T) static internal;
+
+declare
+
+RESULT			type (INTEGRAL_CONSTANT_T) static internal,
+RESULT_ERROR		type (BOOL_T) static internal initial (FALSE);
+
+declare
+
+ALLOW_TRAILING_JUNK	type (BOOL_T) static internal initial (FALSE);
+
+/* =====================================================================
+/* PP_EXPRESSION
+/*
+/* Read/parse the expression in the input token stream up to the end
+/* of the current preprocessing directive (line).  If the expression
+/* evaluates to non-zero, then return 1 (one), otherwise return 0 (zero).
+/* If an error is encountered in the expression, then emit an appropriate
+/* message and return 0 (zero).
+/* ---------------------------------------------------------------------
+/* This recursive decent implementation is based loosly on an example in
+/* section 2.5 of the text "Compilers; Principles, Techniques, and Tools"
+/* by Aho, Sethi, and Ullman (Addison-Wesley, March 1986).
+/* ---------------------------------------------------------------------
+/* The grammar for preprocessor integral constant expressions is
+/* not explicitly given in the Standard, so I derived from sections
+/* 3.8.1, 3.4, and A1.2.1, and here it is:
+/* ---------------------------------------------------------------------
+/* primary_expr ::=
+/*	identifier
+/*	integer_constant
+/*	character_constant
+/*	'(' constant_expr ')'
+/* unary_expr ::=
+/*	primary_expr
+/*	[ '+' | '-' | '~' | '!' ] unary_expr
+/*	'defined' identifier
+/*	'defined' '(' identifier ')'
+/* multiplicative_expr ::=
+/*	unary_expr
+/*	multiplicative_expr [ '*' | '/' | '%' ] unary_expr
+/* additive_expr ::=
+/*	multiplicative_expr
+/*	additive_expr [ '+' | '-' ] multiplicative_expr
+/* shift_expr ::=
+/*	additive_expr
+/*	shift_expr [ '<<' | '>>' ] additive_expr
+/* relational_expr ::=
+/*	shift_expr
+/*	relational_exp [ '<' | '>' | '<=' | '>=' ] shift_expr
+/* equality_expr ::=
+/*	relational_expr
+/*	equality_expr [ '==' | '!=' ] relational_expr
+/* bitwise_and_expr ::=
+/*	equality_expr
+/*	bitwise_and_expr '&' equality_expr
+/* bitwise_xor_expr ::=
+/*	bitwise_and_expr
+/*	bitwise_xor_expr '^' bitwise_and_expr
+/* bitwise_or_expr ::=
+/*	bitwise_xor_expr
+/*	bitwise_or_expr '|' bitwise_xor_expr
+/* logical_and_expr ::=
+/*	bitwise_or_expr
+/*	logical_and_expr '&&' bitwise_or_expr
+/* logical_or_expr ::=
+/*	logical_and_expr
+/*	logical_or_expr '||' logical_and_expr
+/* conditional_expr ::=
+/*	logical_or_expr
+/*	logical_or_expr '?' constant_expr ':' conditional_expr
+/* constant_expr ::=
+/*	conditional_expr
+/* ---------------------------------------------------------------------
+/*	PPEXPR
+/*	|	PRIMARY_EXPR
+/*	|	UNARY_EXPR
+/*	|	MULTIPLICATIVE_EXPR
+/*	|	ADDITIVE_EXPR
+/*	|	SHIFT_EXPR
+/*	|	RELATIONAL_EXPR
+/*	|	EQUALITY_EXPR
+/*	|	BITWISE_AND_EXPR
+/*	|	BITWISE_XOR_EXPR
+/*	|	BITWISE_OR_EXPR
+/*	|	LOGICAL_AND_EXPR
+/*	|	LOGICAL_OR_EXPR
+/*	|	CONDITIONAL_EXPR
+/*	|	CONSTANT_EXPR
+/*	|	MATCH_TOKEN
+/*	|	MATCH_RAW_TOKEN
+/*	|	DO_OP
+/*	|	CONVERT_INTEGER
+/*	|	CONVERT_CHARACTER
+/* =================================================================== */
+
+PP_EXPRESSION: procedure ()
+	       returns   (type (SHORT_T))
+	       external  (X_PP_EXPRESSION);
+
+	/* ---------------------------------
+	 * Initialize & get the first token
+	 * ------------------------------- */
+
+	LOOK_AHEAD_TYPE = 0;
+	call MATCH_TOKEN (LOOK_AHEAD_TYPE);
+
+	/* ------------------------
+	 * Evaluate the expression.
+	 * ---------------------- */
+
+	RESULT = CONSTANT_EXPR ();
+
+	/* ---------------------------
+	 * Check for trailing garbage.
+	 * ------------------------- */
+
+	if LOOK_AHEAD_TYPE ^= NULL_TOKEN then do;
+		if ^ALLOW_TRAILING_JUNK |
+		   ((LOOK_AHEAD_TYPE ^= COMMA_TOKEN) &
+		    (LOOK_AHEAD_TYPE ^= RPAREN_TOKEN)) then
+			goto ERROR_EXPRESSION;
+	end;
+
+	/* --------------------------------------------------
+	 * Return 1 (one) if the value of the constant
+	 * expression is non-zero, otherwise return 0 (zero).
+	 * ------------------------------------------------ */
+
+	if RESULT.VALUE ^= 0 then
+		return (1);
+	else	return (0);
+
+	/* --------------------------
+	 * Expression error handling.
+	 * ------------------------ */
+
+	ERROR_EXPRESSION:
+
+	call PP_ERROR (ERR_PP_EXPRESSION);
+	RESULT_ERROR = TRUE;
+	return (0);
+
+/* =====================================================================
+/* PRIMARY_EXPR
+/*
+/* This routine parses a primary expression from the input token
+/* stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* primary_expr ::=
+/*	'(' constant_expr ')'
+/*	integer_constant
+/*	character_constant
+/*	identifier
+/* =================================================================== */
+
+PRIMARY_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare X type (INTEGRAL_CONSTANT_T);
+
+	if LOOK_AHEAD_TYPE = LPAREN_TOKEN then do;
+		call MATCH_TOKEN (LPAREN_TOKEN);
+		X = CONSTANT_EXPR ();
+		call MATCH_TOKEN (RPAREN_TOKEN);
+		return (X);
+	end;
+	else if (LOOK_AHEAD_TYPE = DECIMAL_CONSTANT_TOKEN) |
+		(LOOK_AHEAD_TYPE = HEX_CONSTANT_TOKEN) |
+		(LOOK_AHEAD_TYPE = OCTAL_CONSTANT_TOKEN) then do;
+		X = CONVERT_INTEGER (LOOK_AHEAD_TOKEN);
+	end;
+	else if (LOOK_AHEAD_TYPE = CHAR_CONSTANT_TOKEN) |
+		(LOOK_AHEAD_TYPE = WCHAR_CONSTANT_TOKEN) then do;
+		X = CONVERT_CHARACTER (LOOK_AHEAD_TOKEN);
+	end;
+	else if LOOK_AHEAD_TYPE = IDENTIFIER_TOKEN then do;
+		X.VALUE = 0;
+		X.TYPE = SIGNED_LONG_ICT;
+	end;
+	else if LOOK_AHEAD_TYPE = FLOAT_CONSTANT_TOKEN then do;
+		X = CONVERT_FLOAT (LOOK_AHEAD_TOKEN);
+	end;
+	else	goto ERROR_EXPRESSION;
+	call MATCH_TOKEN (LOOK_AHEAD_TYPE);
+	return (X);
+
+end PRIMARY_EXPR;
+
+/* =====================================================================
+/* UNARY_EXPR
+/*
+/* This routine parses a unary expression from the input token
+/* stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* unary_expr ::=				[with left recursion]
+/*	primary_expression
+/*	[ '+' | '-' | '~' | '!' ] unary_expr
+/*	'defined' identifier
+/*	'defined' '(' identifier ')'
+/* =================================================================== */
+
+UNARY_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare
+		(X, Y)		type (INTEGRAL_CONSTANT_T);
+	declare
+		PARENTHESIZED	type (BOOL_T),
+		TP		type (POINTER_T),
+		ID		type (NID_T);
+
+	if LOOK_AHEAD_TYPE = PLUS_TOKEN then do;
+		call MATCH_TOKEN (PLUS_TOKEN);
+		X = UNARY_EXPR ();
+	end;
+	else if LOOK_AHEAD_TYPE = MINUS_TOKEN then do;
+		call MATCH_TOKEN (MINUS_TOKEN);
+		X = UNARY_EXPR ();
+		X.VALUE = -X.VALUE;
+		X.TYPE = SIGNED_LONG_ICT;
+	end;
+	else if LOOK_AHEAD_TYPE = TILDE_TOKEN then do;
+		call MATCH_TOKEN (TILDE_TOKEN);
+		X = UNARY_EXPR ();
+		X.VALUE = PPCOMP (X.VALUE);
+	end;
+	else if LOOK_AHEAD_TYPE = NOT_TOKEN then do;
+		call MATCH_TOKEN (NOT_TOKEN);
+		X = UNARY_EXPR ();
+		if X.VALUE = 0 then
+			X.VALUE = 1;
+		else	X.VALUE = 0;
+		X.TYPE = SIGNED_LONG_ICT;
+	end;
+	else if (LOOK_AHEAD_TYPE = IDENTIFIER_TOKEN) &
+		(LOOK_AHEAD_TOKEN->TOKEN_POD.SPELLING = DEFINED_PP_KW_NAME)
+	then do;
+		call MATCH_RAW_TOKEN (IDENTIFIER_TOKEN);
+		if LOOK_AHEAD_TYPE = LPAREN_TOKEN then do;
+			PARENTHESIZED = TRUE;
+			call MATCH_RAW_TOKEN (LPAREN_TOKEN);
+		end;
+		else	PARENTHESIZED = FALSE;
+		if LOOK_AHEAD_TYPE = IDENTIFIER_TOKEN then do;
+			if LOOKUP_MACRO_BY_TOKEN
+			   (LOOK_AHEAD_TOKEN) ^= null() then
+				X.VALUE = 1;
+			else	X.VALUE = 0;
+			X.TYPE = SIGNED_LONG_ICT;
+			call MATCH_RAW_TOKEN (IDENTIFIER_TOKEN);
+		end;
+		if PARENTHESIZED then
+			call MATCH_TOKEN (RPAREN_TOKEN);
+	end;
+	else if (LOOK_AHEAD_TYPE = PP_PREDICATE_TOKEN) then do;
+		/*
+		/* Handle #predicate.
+		/**/
+		call MATCH_RAW_TOKEN (PP_PREDICATE_TOKEN);
+		if LOOK_AHEAD_TYPE ^= IDENTIFIER_TOKEN then
+			goto ERROR_EXPRESSION;
+		ID = LOOK_AHEAD_TOKEN->TOKEN_POD.SPELLING;
+		call MATCH_RAW_TOKEN (IDENTIFIER_TOKEN);
+		call MATCH_RAW_TOKEN (LPAREN_TOKEN);
+		TP = COLLECT_PREDICATE_TOKENS (LOOK_AHEAD_TOKEN);
+		call ADVANCE_TOKEN ();
+		if TP = null () then
+			goto ERROR_EXPRESSION;
+		if LOOKUP_ASSERT (ID, TP) ^= null () then
+			X.VALUE = 1;
+		else	X.VALUE = 0;
+		X.TYPE = SIGNED_LONG_ICT;
+	end;
+	else	X = PRIMARY_EXPR();
+	return (X);
+
+end UNARY_EXPR;
+
+/* =====================================================================
+/* MULTIPLICATIVE_EXPR
+/*
+/* This routine parses a multiplicative expression from the input
+/* token stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* multiplicative_expr ::=			[with left recursion]
+/*	unary_expr
+/*	multiplicative_expr [ '+' | '-' ] unary_expr
+/* ---------------------------------------------------------------------
+/* multiplicative_expr ::=			[sans left recursion]
+/*	unary_expr
+/*	unary_expr TAIL_multiplicative_expr
+/* TAIL_multiplicative_expr ::=
+/*	[ '+' | '-' ] unary_expr
+/*	[ '+' | '-' ] unary_expr TAIL_multiplicative_expr
+/* =================================================================== */
+
+MULTIPLICATIVE_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = UNARY_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = STAR_TOKEN then do;
+			call MATCH_TOKEN (STAR_TOKEN);
+			Y = UNARY_EXPR ();
+			call DO_OP (X, Y, PPMUL, PPUMUL);
+		end;
+		else if LOOK_AHEAD_TYPE = SLASH_TOKEN then do;
+			call MATCH_TOKEN (SLASH_TOKEN);
+			Y = UNARY_EXPR ();
+			if Y.VALUE = 0 then do;
+				call PP_ERROR (ERR_PP_ZERO_DIVIDE);
+				return (Y);
+			end;
+			call DO_OP (X, Y, PPDIV, PPUDIV);
+		end;
+		else if LOOK_AHEAD_TYPE = MOD_TOKEN then do;
+			call MATCH_TOKEN (MOD_TOKEN);
+			Y = UNARY_EXPR ();
+			if Y.VALUE = 0 then do;
+				call PP_ERROR (ERR_PP_ZERO_DIVIDE);
+				return (Y);
+			end;
+			call DO_OP (X, Y, PPMOD, PPUMOD);
+		end;
+		else	return (X);
+	end;
+
+end MULTIPLICATIVE_EXPR;
+
+/* =====================================================================
+/* ADDITIVE_EXPR
+/*
+/* This routine parses an additive expression from the input
+/* token stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* additive_expr ::=				[with left recursion]
+/*	multiplicative_expr
+/*	additive_expr [ '+' | '-' ] multiplicative_expr
+/* ---------------------------------------------------------------------
+/* additive_expr ::=				[sans left recursion]
+/*	multiplicative_expr
+/*	multiplicative_expr TAIL_additive_expr
+/* TAIL_additive_expr ::=
+/*	[ '+' | '-' ] multiplicative_expr
+/*	[ '+' | '-' ] multiplicative_expr TAIL_additive_expr
+/* =================================================================== */
+
+ADDITIVE_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = MULTIPLICATIVE_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = PLUS_TOKEN then do;
+			call MATCH_TOKEN (PLUS_TOKEN);
+			Y = MULTIPLICATIVE_EXPR ();
+			call DO_OP (X, Y, PPADD, PPUADD);
+		end;
+		else if LOOK_AHEAD_TYPE = MINUS_TOKEN then do;
+			call MATCH_TOKEN (MINUS_TOKEN);
+			Y = MULTIPLICATIVE_EXPR ();
+			call DO_OP (X, Y, PPSUB, PPUSUB);
+		end;
+		else	return (X);
+	end;
+
+end ADDITIVE_EXPR;
+
+/* =====================================================================
+/* SHIFT_EXPR
+/*
+/* This routine parses a shift expression from the input token
+/* stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* shift_expr ::=				[with left recursion]
+/*	additive_expr
+/*	shift_expr [ '<<' | '>>' ] additive_expr
+/* ---------------------------------------------------------------------
+/* shift_expr ::=				[sans left recursion]
+/*	additive_expr
+/*	additive_expr TAIL_shift_expr
+/* TAIL_shift_expr ::=
+/*	[ '<<' | '>>' ] additive_expr
+/*	[ '<<' | '>>' ] additive_expr TAIL_shift_expr
+/* =================================================================== */
+
+SHIFT_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = ADDITIVE_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = LSHIFT_TOKEN then do;
+			call MATCH_TOKEN (LSHIFT_TOKEN);
+			Y = ADDITIVE_EXPR ();
+			call DO_OP (X, Y, PPLSH, PPULSH);
+		end;
+		else if LOOK_AHEAD_TYPE = RSHIFT_TOKEN then do;
+			call MATCH_TOKEN (RSHIFT_TOKEN);
+			Y = ADDITIVE_EXPR ();
+			call DO_OP (X, Y, PPRSH, PPURSH);
+		end;
+		else	return (X);
+	end;
+
+end SHIFT_EXPR;
+
+/* =====================================================================
+/* RELATIONAL_EXPR
+/*
+/* This routine parses a relational expression from the input
+/* token stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* relational_expr ::=				[with left recursion]
+/*	shift_expr
+/*	relational_expr [ '<' | '>' | '<=' | '>=' ] shift_expr
+/* ---------------------------------------------------------------------
+/* relational_expr ::=				[sans left recursion]
+/*	shift_expr
+/*	shift_expr TAIL_relational_expr
+/* TAIL_relational_expr ::=
+/*	[ '<' | '>' | '<=' | '>=' ] shift_expr
+/*	[ '<' | '>' | '<=' | '>=' ] shift_expr TAIL_relational_expr
+/* =================================================================== */
+
+RELATIONAL_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = SHIFT_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = LESS_THAN_TOKEN then do;
+			call MATCH_TOKEN (LESS_THAN_TOKEN);
+			Y = SHIFT_EXPR ();
+			call DO_OP (X, Y, PPLT, PPULT);
+		end;
+		else if LOOK_AHEAD_TYPE = GREATER_THAN_TOKEN then do;
+			call MATCH_TOKEN (GREATER_THAN_TOKEN);
+			Y = SHIFT_EXPR ();
+			call DO_OP (X, Y, PPGT, PPUGT);
+		end;
+		else if LOOK_AHEAD_TYPE = LESS_EQUAL_TOKEN then do;
+			call MATCH_TOKEN (LESS_EQUAL_TOKEN);
+			Y = SHIFT_EXPR ();
+			call DO_OP (X, Y, PPLE, PPULE);
+		end;
+		else if LOOK_AHEAD_TYPE = GREATER_EQUAL_TOKEN then do;
+			call MATCH_TOKEN (GREATER_EQUAL_TOKEN);
+			Y = SHIFT_EXPR ();
+			call DO_OP (X, Y, PPGT, PPUGT);
+		end;
+		else	return (X);
+	end;
+
+end RELATIONAL_EXPR;
+
+/* =====================================================================
+/* EQUALITY_EXPR
+/*
+/* This routine parses an equality expression from the input
+/* token stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* equality_expr ::=				[with left recursion]
+/*	relational_expr
+/*	equality_expr [ '==' | '!=' ] relational_expr
+/* ---------------------------------------------------------------------
+/* equality_expr ::=				[sans left recursion]
+/*	equality_expr
+/*	equality_expr TAIL_equality_expr
+/* TAIL_equality_expr ::=
+/*	[ '==' | '!=' ] relational_expr
+/*	[ '==' | '!=' ] relational_expr TAIL_equality_expr
+/* =================================================================== */
+
+EQUALITY_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = RELATIONAL_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = EQUAL_EQUAL_TOKEN then do;
+			call MATCH_TOKEN (EQUAL_EQUAL_TOKEN);
+			Y = RELATIONAL_EXPR ();
+			if X.VALUE = Y.VALUE then
+				X.VALUE = 1;
+			else	X.VALUE = 0;
+			X.TYPE = SIGNED_LONG_ICT;
+		end;
+		else if LOOK_AHEAD_TYPE = NOT_EQUAL_TOKEN then do;
+			call MATCH_TOKEN (NOT_EQUAL_TOKEN);
+			Y = RELATIONAL_EXPR ();
+			if X.VALUE ^= Y.VALUE then
+				X.VALUE = 1;
+			else	X.VALUE = 0;
+			X.TYPE = UNSIGNED_LONG_ICT;
+		end;
+		else	return (X);
+	end;
+
+end EQUALITY_EXPR;
+
+/* =====================================================================
+/* BITWISE_AND_EXPR
+/*
+/* This routine parses a (bit-wise) AND expression from the input
+/* token stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* bitwise_and_expr ::=				[with left recursion]
+/*	equality_expr
+/*	bitwise_and_expr '&' equality_expr
+/* ---------------------------------------------------------------------
+/* bitwise_and_expr ::=				[sans left recursion]
+/*	equality_expr
+/*	equality_expr TAIL_and_expr
+/* TAIL_and_expr ::=
+/*	'&' equality_expr
+/*	'&' equality_expr TAIL_and_expr
+/* =================================================================== */
+
+BITWISE_AND_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = EQUALITY_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = AND_TOKEN then do;
+			call MATCH_TOKEN (AND_TOKEN);
+			Y = EQUALITY_EXPR ();
+			call DO_OP (X, Y, PPAND, PPUAND);
+		end;
+		else	return (X);
+	end;
+
+end BITWISE_AND_EXPR;
+
+/* =====================================================================
+/* BITWISE_XOR_EXPR
+/*
+/* This routine parses an exclusive (bit-wise) OR expression from the
+/* input token stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* bitwise_xor_expr ::=				[with left recursion]
+/*	bitwise_and_expr
+/*	bitwise_xor_expr '^' bitwise_and_expr
+/* ---------------------------------------------------------------------
+/* bitwise_xor_expr ::=				[sans left recursion]
+/*	bitwise_and_expr
+/*	bitwise_and_expr TAIL_xor_expr
+/* TAIL_xor_expr ::=
+/*	'^' bitwise_and_expr
+/*	'^' bitwise_and_expr TAIL_xor_expr
+/* =================================================================== */
+
+BITWISE_XOR_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = BITWISE_AND_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = XOR_TOKEN then do;
+			call MATCH_TOKEN (XOR_TOKEN);
+			Y = BITWISE_AND_EXPR ();
+			call DO_OP (X, Y, PPXOR, PPUXOR);
+		end;
+		else	return (X);
+	end;
+
+end BITWISE_XOR_EXPR;
+
+/* =====================================================================
+/* BITWISE_OR_EXPR
+/*
+/* This routine parses an inclusive (bit-wise) OR expression from the
+/* input token stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* bitwise_or_expr ::=				[with left recursion]
+/*	bitwise_xor_expr
+/*	bitwise_or_expr '|' bitwise_xor_expr
+/* ---------------------------------------------------------------------
+/* bitwise_or_expr ::=				[sans left recursion]
+/*	bitwise_xor_expr
+/*	bitwise_xor_expr TAIL_or_expr
+/* TAIL_or_expr ::=
+/*	'|' bitwise_xor_expr
+/*	'|' bitwise_xor_expr TAIL_or_expr
+/* =================================================================== */
+
+BITWISE_OR_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = BITWISE_XOR_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = OR_TOKEN then do;
+			call MATCH_TOKEN (OR_TOKEN);
+			Y = BITWISE_XOR_EXPR ();
+			call DO_OP (X, Y, PPOR, PPUOR);
+		end;
+		else	return (X);
+	end;
+
+end BITWISE_OR_EXPR;
+
+/* =====================================================================
+/* LOGICAL_AND_EXPR
+/*
+/* This routine parses a logical AND expression from the input token
+/* stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* logical_and_expr ::=				[with left recursion]
+/*	bitwise_or_expr
+/*	logical_and_expr '||' bitwise_or_expr
+/* ---------------------------------------------------------------------
+/* logical_and_expr ::=				[sans left recursion]
+/*	bitwise_or_expr
+/*	bitwise_or_expr TAIL_logical_and_expr
+/* TAIL_logical_and_expr ::=
+/*	'&&' bitwise_or_expr
+/*	'&&' bitwise_or_expr TAIL_logical_and_expr
+/* =================================================================== */
+
+LOGICAL_AND_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = BITWISE_OR_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = AND_AND_TOKEN then do;
+			call MATCH_TOKEN (AND_AND_TOKEN);
+			Y = BITWISE_OR_EXPR ();
+			if (X.VALUE ^= 0) &
+			   (Y.VALUE ^= 0) then
+				X.VALUE = 1;
+			else	X.VALUE = 0;
+			X.TYPE = SIGNED_LONG_ICT;
+		end;
+		else	return (X);
+	end;
+
+end LOGICAL_AND_EXPR;
+
+/* =====================================================================
+/* LOGICAL_OR_EXPR
+/*
+/* This routine parses a logical OR expression from the input token
+/* stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* logical_or_expr ::=				[with left recursion]
+/*	logical_and_expr
+/*	logical_or_expr '||' logical_and_expr
+/* ---------------------------------------------------------------------
+/* logical_or_expr ::=				[sans left recursion]
+/*	logical_and_expr
+/*	logical_and_expr TAIL_logical_or_expr
+/* TAIL_logical_or_expr ::=
+/*	'||' logical_and_expr
+/*	'||' logical_and_expr TAIL_logical_or_expr
+/* =================================================================== */
+
+LOGICAL_OR_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y) type (INTEGRAL_CONSTANT_T);
+
+	X = LOGICAL_AND_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = OR_OR_TOKEN then do;
+			call MATCH_TOKEN (OR_OR_TOKEN);
+			Y = LOGICAL_AND_EXPR ();
+			if (X.VALUE ^= 0) |
+			   (Y.VALUE ^= 0) then
+				X.VALUE = 1;
+			else	X.VALUE = 0;
+			X.TYPE = SIGNED_LONG_ICT;
+		end;
+		else	return (X);
+	end;
+
+end LOGICAL_OR_EXPR;
+
+/* =====================================================================
+/* CONDITIONAL_EXPR
+/*
+/* This routine parses a conditional expression from the input token
+/* stream and returns the integral value of this expression.
+/* ---------------------------------------------------------------------
+/* conditional_expr ::=
+/*	logical_or_expr
+/*	logical_or_expr '?' constant_expr ':' conditional_expr
+/* =================================================================== */
+
+CONDITIONAL_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	declare (X, Y, Z) type (INTEGRAL_CONSTANT_T);
+
+	X = LOGICAL_OR_EXPR (); do while (TRUE);
+		if LOOK_AHEAD_TYPE = QUESTION_TOKEN then do;
+			call MATCH_TOKEN (QUESTION_TOKEN);
+			Y = CONSTANT_EXPR ();
+			call MATCH_TOKEN (COLON_TOKEN);
+			Z = LOGICAL_OR_EXPR ();
+			if X.VALUE ^= 0 then
+				X = Y;
+			else	X = Z;
+		end;
+		else	return (X);
+	end;
+
+end CONDITIONAL_EXPR;
+
+/* =====================================================================
+/* CONSTANT_EXPR
+/* ---------------------------------------------------------------------
+/* constant_expr ::=
+/*	conditional_expr
+/* =================================================================== */
+
+CONSTANT_EXPR: procedure returns (type (INTEGRAL_CONSTANT_T)) internal;
+
+	return (CONDITIONAL_EXPR ());
+
+end CONSTANT_EXPR;
+
+/* =====================================================================
+/* MATCH_RAW_TOKEN
+/*
+/* If the given type matches the type of the current look-ahead token,
+/* then read the next *un-expanded* token from the source into the
+/* current look-ahead token and return.  Otherwise, emit a syntax
+/* error message and end the parsing.  N.B. this is only needed when
+/* parsing a "defined" unary operator and the "#" predicate operator.
+/* =================================================================== */
+
+MATCH_RAW_TOKEN: procedure (EXPECTED_TOKEN_TYPE) internal;
+
+	declare EXPECTED_TOKEN_TYPE type (SHORT_T);
+
+	if LOOK_AHEAD_TYPE ^= 0 then
+		call TFREET (LOOK_AHEAD_TOKEN);
+	if EXPECTED_TOKEN_TYPE = LOOK_AHEAD_TYPE then do;
+		LOOK_AHEAD_TOKEN = GET_NEXT_UNEXPANDED_TOKEN ();
+		if LOOK_AHEAD_TOKEN ^= END_PP_DIRECTIVE_TOKEN then do;
+			if (LOOK_AHEAD_TOKEN->TOKEN_POD.TYPE >= LB_KW_TOKEN) &
+			   (LOOK_AHEAD_TOKEN->TOKEN_POD.TYPE <= HB_KW_TOKEN)
+			then do;
+				if (LOOK_AHEAD_TOKEN->
+				    TOKEN_POD.TYPE = KW_SIZEOF_TOKEN) &
+				   SW_WARN_SIZEOF_IN_PP_EXPRESSION then
+					call PP_ERROR (ERR_PP_SIZEOF_EXPR);
+				LOOK_AHEAD_TOKEN->
+				TOKEN_POD.TYPE = IDENTIFIER_TOKEN;
+			end;
+			LOOK_AHEAD_TYPE = LOOK_AHEAD_TOKEN->TOKEN_POD.TYPE;
+		end;
+		else	LOOK_AHEAD_TYPE = NULL_TOKEN;
+	end;
+	else	goto ERROR_EXPRESSION;
+
+end MATCH_RAW_TOKEN;
+
+/* =====================================================================
+/* MATCH_TOKEN
+/*
+/* If the given type matches the type of the current look-ahead token,
+/* then read the next *expanded* token into the current look-ahead token
+/* and  return.  Otherwise, emit a syntax error message and end the parsing.
+/* =================================================================== */
+
+MATCH_TOKEN: procedure (EXPECTED_TOKEN_TYPE) internal;
+
+	declare EXPECTED_TOKEN_TYPE type (SHORT_T);
+
+	if LOOK_AHEAD_TYPE ^= 0 then
+		call TFREET (LOOK_AHEAD_TOKEN);
+	if EXPECTED_TOKEN_TYPE = LOOK_AHEAD_TYPE then do;
+		LOOK_AHEAD_TOKEN = GET_NEXT_EXPANDED_TOKEN ();
+		if LOOK_AHEAD_TOKEN ^= END_PP_DIRECTIVE_TOKEN then do;
+			if (LOOK_AHEAD_TOKEN->TOKEN_POD.TYPE >= LB_KW_TOKEN) &
+			   (LOOK_AHEAD_TOKEN->TOKEN_POD.TYPE <= HB_KW_TOKEN)
+			then do;
+				if (LOOK_AHEAD_TOKEN->
+				    TOKEN_POD.TYPE = KW_SIZEOF_TOKEN) &
+				   SW_WARN_SIZEOF_IN_PP_EXPRESSION then
+					call PP_ERROR (ERR_PP_SIZEOF_EXPR);
+				LOOK_AHEAD_TOKEN->
+				TOKEN_POD.TYPE = IDENTIFIER_TOKEN;
+			end;
+			LOOK_AHEAD_TYPE = LOOK_AHEAD_TOKEN->TOKEN_POD.TYPE;
+		end;
+		else	LOOK_AHEAD_TYPE = NULL_TOKEN;
+	end;
+	else	goto ERROR_EXPRESSION;
+
+end MATCH_TOKEN;
+
+/* =====================================================================
+/* ADVANCE_TOKEN
+/* =================================================================== */
+
+ADVANCE_TOKEN: procedure internal;
+
+	LOOK_AHEAD_TOKEN = GET_NEXT_EXPANDED_TOKEN ();
+	if LOOK_AHEAD_TOKEN ^= END_PP_DIRECTIVE_TOKEN then do;
+		if (LOOK_AHEAD_TOKEN->TOKEN_POD.TYPE >= LB_KW_TOKEN) &
+		   (LOOK_AHEAD_TOKEN->TOKEN_POD.TYPE <= HB_KW_TOKEN)
+		then do;
+			if (LOOK_AHEAD_TOKEN->
+			    TOKEN_POD.TYPE = KW_SIZEOF_TOKEN) &
+			   SW_WARN_SIZEOF_IN_PP_EXPRESSION then
+				call PP_ERROR (ERR_PP_SIZEOF_EXPR);
+			LOOK_AHEAD_TOKEN->
+			TOKEN_POD.TYPE = IDENTIFIER_TOKEN;
+		end;
+		LOOK_AHEAD_TYPE = LOOK_AHEAD_TOKEN->TOKEN_POD.TYPE;
+	end;
+	else	LOOK_AHEAD_TYPE = NULL_TOKEN;
+
+end ADVANCE_TOKEN;
+
+/* =====================================================================
+/* DO_OP (diddy)
+/*
+/* Perform either the signed operation specified by the given procedure
+/* entry point P or the unsigned operation specifier by the given entry
+/* point UP, on the operands X and Y (in order) depending on whether
+/* both X and Y are signed types, or one or both of them is an unsigned
+/* type.  Place the result in X.
+/* =================================================================== */
+
+DO_OP: procedure (X, Y, P, UP) internal;
+
+	declare
+		(X, Y)	type (INTEGRAL_CONSTANT_T),
+		(P, UP)	entry   (type (LONG_T),
+				 type (LONG_T))
+			returns (type (LONG_T));
+
+	if (X.TYPE = UNSIGNED_LONG_ICT) |
+	   (Y.TYPE = UNSIGNED_LONG_ICT) then do;
+		X.VALUE = UP (X.VALUE, Y.VALUE);
+		X.TYPE = UNSIGNED_LONG_ICT;
+	end;
+	else do;
+		X.VALUE = P (X.VALUE, Y.VALUE);
+		X.TYPE = SIGNED_LONG_ICT;
+	end;
+
+end DO_OP;
+
+/* =====================================================================
+/* CONVERT_INTEGER
+/*
+/* Return in X the integral constant value of the given integer constant
+/* token pod which is assumed to be of either of type HEX_CONSTANT_TOKEN,
+/* DECIMAL_CONSTANT_TOKEN, or OCTAL_CONSTANT_TOKEN.
+/* =================================================================== */
+
+CONVERT_INTEGER: procedure (TP)
+		 returns   (type (INTEGRAL_CONSTANT_T))
+		 internal;
+	declare
+		TP		type (POINTER_T);
+	declare
+		X		type (INTEGRAL_CONSTANT_T);
+
+	/* Convert the string to its corresponding numeric value */
+
+	call CONVERT_INTEGER_CONSTANT
+	     (TP->TOKEN_POD.SPELLING_PTR->TOKEN_SPELLING_POD.SPELLING,
+	      1,
+	      length (TP->TOKEN_POD.SPELLING_PTR->TOKEN_SPELLING_POD.SPELLING),
+	      TP->TOKEN_POD.TYPE,
+	      TRUE,
+	      X.VALUE,
+	      X.TYPE);
+
+	return (X);
+
+end CONVERT_INTEGER;
+
+/* =====================================================================
+/* CONVERT_CHARACTER
+/*
+/* Return in X the integral constant value of the given character
+/* constant token pod which is assumed to be of either of type
+/* CHAR_CONSTANT_TOKEN or WCHAR_CONSTANT_TOKEN.
+/* =================================================================== */
+
+CONVERT_CHARACTER: procedure (TP)
+		   returns   (type (INTEGRAL_CONSTANT_T))
+		   internal;
+	declare
+		TP		type (POINTER_T);
+	declare
+		X		type (INTEGRAL_CONSTANT_T);
+
+	call CONVERT_CHARACTER_CONSTANT
+	     (TP->TOKEN_POD.SPELLING_PTR->TOKEN_SPELLING_POD.SPELLING,
+	      TP->TOKEN_POD.TYPE,
+	      TRUE,
+	      X.VALUE,
+	      X.TYPE);
+
+	return (X);
+
+end CONVERT_CHARACTER;
+
+/* =====================================================================
+/* CONVERT_FLOAT
+/* =================================================================== */
+
+CONVERT_FLOAT: procedure (TP)
+	       returns   (type (INTEGRAL_CONSTANT_T))
+	       internal;
+
+	declare
+		TP		type (POINTER_T);
+	declare
+		X		type (INTEGRAL_CONSTANT_T);
+
+	call PP_ERROR (ERR_PP_FLOAT_EXPRESSION);
+	X.VALUE = 0;
+	X.TYPE  = SIGNED_LONG_ICT;
+	return (X);
+
+end CONVERT_FLOAT;
+
+end PP_EXPRESSION;
+
+/* ---------------------------------------------------------------------
+/* PP_EVALUATE_EXPRESSION
+/*
+/* Read/parse the expression in the input token stream up to the end
+/* of the current preprocessing directive (line) or up to a comma or
+/* right parenthesis (which isn't part of an expression).  Return the
+/* value of the expression.
+/* ------------------------------------------------------------------- */
+
+PP_EVALUATE_EXPRESSION: procedure (VALUE, LA_TOKEN)
+			returns   (type (BOOL_T))
+			external  (X_PP_EVALUATE_EXPRESSION);
+
+	declare
+		VALUE		type (LONG_T),
+		LA_TOKEN	type (POINTER_T);
+	declare
+		VOID_VALUE	type (SHORT_T);
+
+	ALLOW_TRAILING_JUNK = TRUE;
+	VOID_VALUE = PP_EXPRESSION ();
+	ALLOW_TRAILING_JUNK = FALSE;
+
+	LA_TOKEN = LOOK_AHEAD_TOKEN;
+
+	if RESULT_ERROR then do;
+		RESULT_ERROR = FALSE;
+		VALUE = 0;
+		return (FALSE);
+	end;
+	else do;
+		VALUE = RESULT.VALUE;
+		return (TRUE);
+	end;
+
+end PP_EVALUATE_EXPRESSION;
+

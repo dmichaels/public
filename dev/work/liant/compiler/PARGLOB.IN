@@ -1,0 +1,61 @@
+/* C++ PAR_GLOBAL_IN - Global definitions for the C++ parser */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  01.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include C_STANDARD_DEFS_IN;     */
+/* %include C_EXTERNAL_NAME_MAP_IN; */
+/* %include C_TOKEN_POD_CODES_IN;   */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include C_TOKEN_MAP_TERMINAL_IN;
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 PARGLOB		external,
+
+  2 PAR_FOUND		bit (1) aligned initial (FALSE),
+  2 END_PRODUCTION_	character (48) varying initial ('');
+
+/* ---------------------------------------------------------------------
+/* Entry point declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+PARTAB			entry	(type (SHORT_T),
+				 type (SHORT_T),
+				 type (SHORT_T),
+				 type (SHORT_T))
+			external,
+
+PARTABN			entry	(type (SHORT_T),
+				 type (SHORT_T),
+				 type (SHORT_T),
+				 type (SHORT_T),
+				 type (SHORT_T))
+			external;
+

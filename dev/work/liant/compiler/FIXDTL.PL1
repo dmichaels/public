@@ -1,0 +1,127 @@
+/* C++ fixdtl.pl1 - */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  02.25.92  DGM  002  New value-node scheme.
+ *  02.01.91  DGM  001  Updated to new global names scheme.
+ *  11.15.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 002 FIXDTL');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_INTERNAL_PARSE_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_EMIT_DESTRUCTOR_CODE_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_DATA_INITIAL_FILE_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_PROCESS_BASE_MBR_INIT_PKG;
+%include CXX_PSECT_PKG;
+
+/* --------------------------------------------------------------------
+/* FIXUP_DTOR_LIST
+/* 
+/* Fixup the destructor list for the function whose scope-node id
+/* is THIS_SCOPE.
+/*
+/* The fixup consists of:
+/*
+/*  1. Getting the destructor list from the enclosing scope, which
+/*     is assumed to be the global scope.
+/*  2. Setting this destructor list into the scope denoted by 
+/*     THIS_SCOPE.
+/*  3. Walking the destructor list, and defining new labels for the
+/*     save-exit labels in the list so that they are in the
+/*     current function scope.  (When originally defined, the labels
+/*     in the destructor list were defined at global scope.  These
+/*     global labels do not work in this context.)
+/*
+/* ---------------------------------------------------------------------- */
+ 
+FIXUP_DESTRUCTOR_LIST: procedure (THIS_SCOPE)
+                       external  (X_FIXUP_DESTRUCTOR_LIST);
+ 
+	declare
+		THIS_SCOPE	type (NID_T);
+
+	declare
+		DTORV		type (CXX_VID_T),
+		P		type (POINTER_T),
+		EP		type (POINTER_T);
+
+
+	/* Get the destructor list from the enclosing scope */
+
+	call GET_SCOPE_NODE (THIS_SCOPE, P);
+	call GET_SCOPE_NODE (P->SCOPE_NODE.ENCLOSING_SCOPE, EP);
+	DTORV = EP->SCOPE_NODE.DESTRUCTORS;
+
+	/*
+	/* Remove the destructor list from the enclosing scope,
+	/* and place the destructor list into this function scope.
+	/**/
+
+	EP->SCOPE_NODE.DESTRUCTORS = NULL_CXX_VID;
+	call RELEASE_SCOPE_NODE (P->SCOPE_NODE.ENCLOSING_SCOPE);
+	P->SCOPE_NODE.DESTRUCTORS = DTORV;
+	call RELEASE_SCOPE_NODE (THIS_SCOPE);
+
+	/*
+	/* Walk the destructor list, and define new labels at
+	/* the current function scope.
+	/**/
+
+	do while (DTORV ^= NULL_CXX_VID);
+		DTORV->CXX_VALUE_NODE.ID_NID = DECLARE_LABEL (NULL_NID);
+		DTORV->CXX_VALUE_NODE.ID_IS_NID = TRUE;
+		DTORV = DTORV->CXX_VALUE_NODE.RIGHT;
+	end;
+	
+end FIXUP_DESTRUCTOR_LIST;
+

@@ -1,0 +1,87 @@
+/* C++ setscp.pl1 - Set scope routines */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.29.91  DGM  002  Set CURRENT_BLOCK.
+ *  01.25.91  DGM  001  RECHECKOUT -- set CURRENT_FUNCTION.
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  09.13.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.29.91 002 SETSCP');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_NODE_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* SET_CURRENT_SCOPE
+/*
+/* Sets the current scope to the scope represented by the given scope-
+/* node id; it is presumed that the caller (if desired) saves and
+/* restores the scope state using SAVE_SCOPE_STATE/RESTORE_SCOPE_STATE
+/* or saving/restoring CURRENT_SCOPE_DATA or whatever.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SET_CURRENT_SCOPE: procedure (SCOPE) external  (X_SET_CURRENT_SCOPE);
+
+	declare
+		SCOPE	type (NID_T);
+	declare
+		P	type (POINTER_T);
+
+	call GET_SCOPE_NODE_R (SCOPE, P);
+
+	CURRENT_SCOPE_TYPE = rank (P->SCOPE_NODE.TYPE);
+
+	call RELEASE_SCOPE_NODE (SCOPE);
+
+	CURRENT_SCOPE = SCOPE;
+
+	if CURRENT_SCOPE_TYPE = CLASS_SCOPE then
+		CURRENT_CLASS_SCOPE = CURRENT_SCOPE;
+	else if CURRENT_SCOPE_TYPE = FUNCTION_SCOPE then do;
+		CURRENT_FUNCTION_SCOPE = CURRENT_SCOPE;
+		call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, P);
+		CURRENT_FUNCTION = P->SCOPE_NODE.OWNER;
+		CURRENT_BLOCK = P->SCOPE_NODE.BLOCK;
+		call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+	end;
+	else if CURRENT_SCOPE_TYPE = BLOCK_SCOPE then
+		CURRENT_BLOCK_SCOPE = CURRENT_SCOPE;
+	else if CURRENT_SCOPE_TYPE = PROTOTYPE_SCOPE then
+		CURRENT_PROTOTYPE_SCOPE = CURRENT_SCOPE;
+	else if CURRENT_SCOPE_TYPE ^= CLASS_SCOPE then
+		CURRENT_NON_CLASS_SCOPE = CURRENT_SCOPE;
+	else if (CURRENT_SCOPE_TYPE = FUNCTION_SCOPE) |
+		(CURRENT_SCOPE_TYPE = BLOCK_SCOPE) |
+		(CURRENT_SCOPE_TYPE = GLOBAL_SCOPE) then
+		CURRENT_GLOBAL_OR_LOCAL_SCOPE = CURRENT_SCOPE;
+
+end SET_CURRENT_SCOPE;
+

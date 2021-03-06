@@ -1,0 +1,45 @@
+.TH GETLINE 3L LOCAL
+
+.SH NAME
+getline - read a non-trivial line from a file
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+getline(line, maxline, f)
+.br
+char *line;
+.br
+int maxline;
+.br
+FILE *f;
+.ft P
+
+.SH DESCRIPTION
+Reads \fImaxline\fP - 1 characters, or up to a newline, whichever
+comes first, from the given file \fIf\fP into the string \fIline\fP
+after first skipping any leading blanks in the input stream
+(i.e. blanks, tabs, and newlines ala \fIisspace/ctype(3)\fP).
+The last character
+read into \fIline\fP is followed by NULL character.
+The newline
+is \fInot\fP included in the string.
+The IO pointer is set to the
+beginning of the next line (or to EOF if there is no next line. 
+Returns the \fIline\fP pointer or NULL upon EOF, or error.
+
+.SH NOTES
+This is exactly like \fIfgets()\fP except that leading white-space
+is skipped, the newline is not kept, and we skip to the beginning
+of the next line in the file after a line is read.
+.PP
+If \fImaxline\fP = 1, then blanks will be skipped but no characters
+will be read (actually one non-white character will be read, and
+will then be pushed back onto the stream using \fIungetc(3S)\fP).
+
+.SH FILES
+getline.c
+
+.SH SEE ALSO
+gets(3S), scanf(3S), puts(3S)

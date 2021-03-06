@@ -1,0 +1,788 @@
+/* CPP pp_mac.pl1 - Macro related functions */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.25.92  DGM  008  Split TOKEN_NODE into separate space.
+ *  11.12.91  DGM  007  Updated.
+ *  07.08.91  DGM  006  Added DEFINE_ASSERT, et. al.
+ *  03.08.91  DGM  005  Added IS_DEFINED_MACRO.
+ *  09.25.90  DGM  004  Include file name changes.
+ *  07.19.90  DGM  003	Added MACRO_NODE.COUNT.
+ *  06.13.90  DGM  002	Updated include files.
+ *  06.05.90  DGM  001	First CPP component version.
+ *
+ *  --------------------------------------------------------------------
+ *
+ *  06.05.90  DGM  [006]
+ *  --------------------
+ *  Include file changes.
+ *
+ *  08.01.89  DGM  [005]
+ *  --------------------
+ *  Added support for CodeWatch macro evaluation (MAKE_DEBUGGER_MACROS).
+ *
+ *  06.19.89  DGM  [003-004]
+ *  ------------------------
+ *  Miscellaneous.
+ *
+ *  06.13.89  DGM  [002]
+ *  --------------------
+ *  Initialize MACRO_NODE fields FILE and LINE.
+ *
+ *  06.09.89  DGM  [001] 
+ *  --------------------
+ *  Miscellaneous macro dump format changes.
+ *
+ *  04.17.89  DGM  [000]
+ *  --------------------
+ *  Original; yanked out of pp.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.25.92 008 PPMAC');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CPP_UTL_DEFS_IN;
+%include CPP_UTL_SYMBOL_TABLE_PKG;
+%include CPP_UTL_STORE_TOKEN_PKG;
+%include CPP_STANDARD_DEFS_IN;
+%include CPP_EXTERNAL_NAME_MAP_IN;
+%include CPP_TOKEN_POD_SPELLING_PKG;
+%include CPP_TOKEN_POD_MGR_PKG;
+%include CPP_GLOBAL_IN;
+%include CPP_MACRO_DEFS_IN;
+%include CPP_MACRO_TABLES_IN;
+%include CPP_SOURCE_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* HASH_MACRO
+/*
+/* Return the macro definition table hash value for the given name.
+/* This *really* wants to be a macro.
+/* ------------------------------------------------------------------- */
+
+/* Inline for speed ... 
+
+HASH_MACRO: procedure (ID) returns (type (SHORT_T)) internal;
+
+	declare ID type (NID_T);
+
+	return (mod (ID, HB_MACRO_TABLE) + 1);
+
+end HASH_MACRO;
+
+... */
+
+/* ---------------------------------------------------------------------
+/* DEFINE_MACRO
+/*
+/* If the name associated with the given TOKEN_NODE id is already
+/* defined as a macro in the macro definition table, then return a
+/* null pointer.  Otherwise, make a new entry in the table and return
+/* a pointer to the new node; set up the data in the new node to be.
+/* an OBJECT_LIKE_MACRO with a null replacement list.
+/* ------------------------------------------------------------------- */
+
+DEFINE_MACRO: procedure (NAME)
+	      returns   (type (POINTER_T))
+	      external  (X_DEFINE_MACRO);
+
+	declare
+		NAME	type (NID_T);
+	declare
+		HASH	type (SHORT_T),
+		P	type (POINTER_T);
+
+	/* HASH = HASH_MACRO (NAME); ... Inline for speed */
+
+	HASH = (mod (NAME, HB_MACRO_TABLE) + 1);
+
+	do P = MACRO_TABLE (HASH)
+	repeat (P->MACRO_NODE.NEXT) while (P ^= null ());
+		if P->MACRO_NODE.NAME = NAME then
+			return (null ());
+	end;
+
+	allocate MACRO_NODE set (P);
+
+	P->MACRO_NODE.NAME		= NAME;
+	P->MACRO_NODE.KIND		= OBJECT_LIKE_MACRO_MK;
+	P->MACRO_NODE.REPLACEMENT	= null ();
+	P->MACRO_NODE.PARAMETER		= null ();
+	P->MACRO_NODE.INVOCATION_COUNT	= 0;
+	P->MACRO_NODE.FILE		= null ();
+	P->MACRO_NODE.LINE		= 0;
+	P->MACRO_NODE.NEXT		= MACRO_TABLE (HASH);
+
+	MACRO_TABLE (HASH) = P;
+
+	return (P);
+
+end DEFINE_MACRO;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_MACRO_BY_TOKEN
+/* LOOKUP_MACRO
+/*
+/* If the name represented by given identifier token-pod pointer or
+/* given identifier token-node id is currently defined in the macro
+/* definition table, then return a pointer to its macro-node.
+/* Otherwise, return a null pointer.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_MACRO_BY_TOKEN: procedure (TP)
+		       returns   (type (POINTER_T))
+		       external  (X_LOOKUP_MACRO_BY_TOKEN);
+	declare
+		TP	type (POINTER_T);
+	declare
+		ID	type (NID_T),
+		HASH	type (SHORT_T),
+		P	type (POINTER_T);
+
+	ID = TP->TOKEN_POD.SPELLING;
+
+	/* HASH = HASH_MACRO (ID); ... Inline for speed */
+
+	HASH = (mod (ID, HB_MACRO_TABLE) + 1);
+
+	do P = MACRO_TABLE (HASH)
+	repeat (P->MACRO_NODE.NEXT) while (P ^= null ());
+		if P->MACRO_NODE.NAME = ID then
+			return (P);
+	end;
+
+	return (null ());
+
+end LOOKUP_MACRO_BY_TOKEN;
+
+LOOKUP_MACRO: procedure (NAME)
+	      returns   (type (POINTER_T))
+	      external  (X_LOOKUP_MACRO);
+
+	declare
+		NAME	type (NID_T);
+	declare
+		HASH	type (SHORT_T),
+		P	type (POINTER_T);
+
+	/* HASH = HASH_MACRO (NAME); ... Inline for speed */
+
+	HASH = (mod (NAME, HB_MACRO_TABLE) + 1);
+
+	do P = MACRO_TABLE (HASH)
+	repeat (P->MACRO_NODE.NEXT) while (P ^= null ());
+		if P->MACRO_NODE.NAME = NAME then
+			return (P);
+	end;
+
+	return (null ());
+
+end LOOKUP_MACRO;
+
+/* ---------------------------------------------------------------------
+/* IS_DEFINED_MACRO
+/* ------------------------------------------------------------------- */
+
+IS_DEFINED_MACRO: procedure (NAME)
+		  returns   (type (BOOL_T))
+		  external  (X_IS_DEFINED_MACRO);
+	declare
+		NAME	type (NID_T);
+	declare
+		HASH	type (SHORT_T),
+		P	type (POINTER_T);
+
+	/* HASH = HASH_MACRO (NAME); ... Inline for speed */
+
+	HASH = (mod (NAME, HB_MACRO_TABLE) + 1);
+
+	do P = MACRO_TABLE (HASH)
+	repeat (P->MACRO_NODE.NEXT) while (P ^= null ());
+		if P->MACRO_NODE.NAME = NAME then
+			return (TRUE);
+	end;
+
+	return (FALSE);
+
+end IS_DEFINED_MACRO;
+
+/* ---------------------------------------------------------------------
+/* UNDEF_MACRO
+/*
+/* Remove (totally) the definition of the macro name associated with
+/* the given TOKEN_NODE id definition from the macro definition table.
+/* ------------------------------------------------------------------- */
+
+UNDEF_MACRO: procedure (NAME) external (X_UNDEF_MACRO);
+
+	declare
+		NAME	type (NID_T);
+	declare
+		HASH	type (SHORT_T),
+		(P, Q)	type (POINTER_T),
+		LASTP	type (POINTER_T);
+
+	/* HASH = HASH_MACRO (NAMNAME); ... Inline for speed */
+
+	HASH = (mod (NAME, HB_MACRO_TABLE) + 1);
+
+	Q = MACRO_TABLE (HASH);
+
+	do P = Q repeat (P->MACRO_NODE.NEXT) while (P ^= null ());
+		if P->MACRO_NODE.NAME = NAME then do;
+			if P = Q then
+				MACRO_TABLE (HASH) = P->MACRO_NODE.NEXT;
+			else	LASTP->MACRO_NODE.NEXT = P->MACRO_NODE.NEXT;
+			call FREE_MACRO_REPLACEMENT_LIST (P);
+			call FREE_MACRO_PARAMETER_LIST (P);
+			free P->MACRO_NODE;
+			return;
+		end;
+		LASTP = P;
+	end;
+
+end UNDEF_MACRO;
+
+/* ---------------------------------------------------------------------
+/* PURGE_MACROS
+/*
+/* Remove all macro definitions from the macro definition table.
+/* ------------------------------------------------------------------- */
+
+PURGE_MACROS: procedure external (X_PURGE_MACROS);
+
+	declare
+		I	type (SHORT_T),
+		(P, Q)	type (POINTER_T);
+
+	do I = 1 to HB_MACRO_TABLE;
+		do P = MACRO_TABLE(I) while (P ^= null ());
+			Q = P;
+			P = P->MACRO_NODE.NEXT;
+			call UNDEF_MACRO (Q->MACRO_NODE.NAME);
+		end;
+		MACRO_TABLE(I) = null ();
+	end;
+
+end PURGE_MACROS;
+
+/* ---------------------------------------------------------------------
+/* DEFINE_ASSERT
+/*
+/* Enter the name represented by the given token-node id into the
+/* assert macro table with the token list represented by the given
+/* pointer to (null terminated) token-pod list.  Note that multiple
+/* assert macros with the same name are allowed.
+/* ------------------------------------------------------------------- */
+
+DEFINE_ASSERT: procedure (NAME, TPL)
+	       returns   (type (POINTER_T))
+	       external  (X_DEFINE_ASSERT);
+
+	declare
+		NAME		type (NID_T),
+		TPL		type (POINTER_T);
+	declare
+		HASH		type (SHORT_T),
+		(NEWP, P)	type (POINTER_T);
+
+	allocate ASSERT_MACRO_NODE set (NEWP);
+
+	NEWP->ASSERT_MACRO_NODE.NAME	    = NAME;
+	NEWP->ASSERT_MACRO_NODE.REPLACEMENT = TPL;
+	NEWP->ASSERT_MACRO_NODE.LINE	    = CURRENT_SOURCE.PHYSICAL_LINE;
+	NEWP->ASSERT_MACRO_NODE.FILE	    = CURRENT_SOURCE.PHYSICAL_NAME;
+
+	/* HASH = HASH_ASSERT_MACRO (NAME); ... Inline for speed */
+
+	HASH = (mod (NAME, HB_ASSERT_MACRO_TABLE) + 1);
+
+	NEWP->ASSERT_MACRO_NODE.NEXT = ASSERT_MACRO_TABLE (HASH);
+	ASSERT_MACRO_TABLE (HASH) = NEWP;
+
+end DEFINE_ASSERT;
+
+/* ---------------------------------------------------------------------
+/* UNDEF_ASSERT
+/*
+/* Remove (totally) the definition of the assert macro name represented
+/* by the given token-node id from the assert macro definition table.
+/* ------------------------------------------------------------------- */
+
+UNDEF_ASSERT: procedure (NAME, TPL) external (X_UNDEF_ASSERT);
+
+	declare
+		NAME		type (NID_T),
+		TPL		type (POINTER_T);
+	declare
+		HASH		type (SHORT_T),
+		(P, Q)		type (POINTER_T),
+		(NEXTP, LASTP)	type (POINTER_T),
+		MATCH		type (BOOL_T);
+
+	/* HASH = HASH_ASSERT_MACRO (NAME); ... Inline for speed */
+
+	HASH = (mod (NAME, HB_ASSERT_MACRO_TABLE) + 1);
+
+	Q = ASSERT_MACRO_TABLE (HASH);
+
+	do P = Q repeat (NEXTP) while (P ^= null ());
+		NEXTP = P->ASSERT_MACRO_NODE.NEXT;
+		if P->ASSERT_MACRO_NODE.NAME = NAME then do;
+			if TPL = null () then
+				MATCH = TRUE;
+			else if SAME_MACRO_REPLACEMENT_LIST
+				(P->ASSERT_MACRO_NODE.REPLACEMENT, TPL) then
+				MATCH = TRUE;
+			else	MATCH = FALSE;
+			if MATCH then do;
+				if P = Q then
+					ASSERT_MACRO_TABLE (HASH) = NEXTP;
+				else	LASTP->ASSERT_MACRO_NODE.NEXT = NEXTP;
+				call FREE_ASSERT_TOKEN_LIST (P);
+				free P->ASSERT_MACRO_NODE;
+			end;
+		end;
+		else	LASTP = P;
+	end;
+
+/* ---------------------------------------------------------------------
+/* FREE_ASSERT_TOKEN_LIST
+/*
+/* Remove/free the macro replacement list associated with the macro
+/* definition node pointed to by the given pointer argument.
+/* ------------------------------------------------------------------- */
+
+FREE_ASSERT_TOKEN_LIST: procedure (AP) internal;
+
+	declare AP	type (POINTER_T);
+	declare (P, Q)	type (POINTER_T);
+
+	do P = AP->ASSERT_MACRO_NODE.REPLACEMENT while (P ^= null ());
+		Q = P;
+		P = P->TOKEN_POD.NEXT;
+		call TFREET (Q);
+	end;
+	AP->MACRO_NODE.REPLACEMENT = null ();
+
+end FREE_ASSERT_TOKEN_LIST;
+
+end UNDEF_ASSERT;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_ASSERT
+/*
+/* If the name represented by given the token-pod TP is currently defined
+/* in the assert macro definition table with the token list represented
+/* by the given (null terminated) token-pod list, then return a pointer
+/* to its assert-macro-node.  Otherwise, return a null pointer.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_ASSERT: procedure (NAME, TPL)
+	       returns   (pointer)
+	       external  (X_LOOKUP_ASSERT);
+
+	declare
+		NAME	type (NID_T),
+		TPL	type (POINTER_T);
+	declare
+		HASH	type (SHORT_T),
+		(TP, P)	type (POINTER_T);
+
+	/* HASH = HASH_MACRO (NAME); ... Inline for speed */
+
+	HASH = (mod (NAME, HB_ASSERT_MACRO_TABLE) + 1);
+
+	do P = ASSERT_MACRO_TABLE (HASH)
+	repeat (P->ASSERT_MACRO_NODE.NEXT) while (P ^= null ());
+		if P->ASSERT_MACRO_NODE.NAME = NAME then do;
+			if SAME_MACRO_REPLACEMENT_LIST
+			   (P->ASSERT_MACRO_NODE.REPLACEMENT, TPL) then
+				return (P);
+		end;
+	end;
+
+	return (null ());
+
+end LOOKUP_ASSERT;
+
+/* =====================================================================
+/* Miscellaneous utility functions
+/* =================================================================== */
+
+/* ---------------------------------------------------------------------
+/* SAME_MACRO_REPLACEMENT_LIST
+/*
+/* Return TRUE if the two macro replacement lists corresponding to the
+/* two (null terminated) linked list of token pods pointed to by the
+/* given two pointers are identical.  Otherwise, return FALSE.
+/* ---------------------------------------------------------------------
+/* [See] ANSI-C (X3J11/88-090), 3.8.3, Constraints
+/* ------------------------------------------------------------------- */
+
+SAME_MACRO_REPLACEMENT_LIST: procedure (A, B)
+			     returns   (type (BOOL_T))
+			     external  (X_SAME_MACRO_REPLACEMENT_LIST);
+
+	declare (A, B)	type (POINTER_T);
+	declare (P, Q)	type (POINTER_T);
+
+	P = A; Q = B;
+	do while ((P ^= null ()) & (Q ^= null ()));
+		if (P = null ()) | (Q = null ()) then
+			return (FALSE);
+		if ^SAME_TOKEN (P, Q) then
+			return (FALSE);
+		P = P->TOKEN_POD.NEXT;
+		Q = Q->TOKEN_POD.NEXT;
+	end;
+	if (P = null ()) & (Q = null ()) then
+		return (TRUE);
+	else	return (FALSE);
+
+/* ---------------------------------------------------------------------
+/* SAME_TOKEN
+/*
+/* Return TRUE if the given two pointers to token pods refer
+/* to functionally identical tokens.  This comparison *does* take
+/* preceding space (indicated by a negative LINE field) as significant.
+/* Otherwise, return FALSE.
+/* ------------------------------------------------------------------- */
+
+SAME_TOKEN: procedure (A, B) returns (type (BOOL_T)) internal;
+
+	declare
+		(A, B)	type (POINTER_T);
+	declare
+		A_SPELL	character (MAX_TOKEN_SPELLING_LENGTH) varying,
+		B_SPELL	character (MAX_TOKEN_SPELLING_LENGTH) varying;
+
+	if A->TOKEN_POD.TYPE ^= B->TOKEN_POD.TYPE then
+		return (FALSE);
+	else if ((A->TOKEN_POD.LINE < 0) & (B->TOKEN_POD.LINE > 0)) |
+		((A->TOKEN_POD.LINE > 0) & (B->TOKEN_POD.LINE < 0)) then
+		return (FALSE);
+	else if A->TOKEN_POD.TYPE = IDENTIFIER_TOKEN then do;
+		if A->TOKEN_POD.SPELLING ^= B->TOKEN_POD.SPELLING
+		then	return (FALSE);
+		else	return (TRUE);
+	end;
+	else if A->TOKEN_POD.TYPE = PP_MACRO_PARAMETER_TOKEN then do;
+		if A->TOKEN_POD.VALUE ^= B->TOKEN_POD.VALUE
+		then	return (FALSE);
+		else	return (TRUE);
+	end;
+	else if (A->TOKEN_POD.TYPE < LB_SPELLING_TOKEN) |
+	        (A->TOKEN_POD.TYPE > HB_SPELLING_TOKEN) then
+		return (TRUE);
+	else do;
+		A_SPELL = TOKEN_SPELLING (A);
+		B_SPELL = TOKEN_SPELLING (B);
+		if A_SPELL ^= B_SPELL then	
+			return (FALSE);
+		else	return (TRUE);
+	end;
+
+end SAME_TOKEN;
+
+end SAME_MACRO_REPLACEMENT_LIST;
+
+/* ---------------------------------------------------------------------
+/* SAME_MACRO_PARAMETER_LIST
+/*
+/* Return TRUE if the macro parameter lists pointed at by the given two
+/* pointers A and B are identical.  Otherwise, return FALSE.  It is
+/* assumed that both parameter lists have the same number of parameters
+/* and is specified by the N argument.
+/* ---------------------------------------------------------------------
+/* [See] ANSI-C (X3J11/88-090), 3.8.3, Constraints
+/* ------------------------------------------------------------------- */
+
+SAME_MACRO_PARAMETER_LIST: procedure (A, B, N)
+			   returns   (type (BOOL_T))
+			   external  (X_SAME_MACRO_PARAMETER_LIST);
+	declare
+		(A, B)	type (POINTER_T),
+		N	type (SHORT_T);
+	declare
+		I 	type (SHORT_T),
+		SAVE 	type (SHORT_T),
+		SAME	type (BOOL_T);
+
+	SAME = TRUE;
+	SAVE = MACRO_PARAMETER_COUNT;
+	MACRO_PARAMETER_COUNT = N;
+	do I = 1 to MACRO_PARAMETER_COUNT;
+		if A->MACRO_PARAMETER_LIST(I) ^=
+		   B->MACRO_PARAMETER_LIST(I) then do;
+			SAME = FALSE;
+			leave;
+		end;
+	end;
+	MACRO_PARAMETER_COUNT = SAVE;
+	return (SAME);
+
+end SAME_MACRO_PARAMETER_LIST;
+
+/* ---------------------------------------------------------------------
+/* FREE_MACRO_REPLACEMENT_LIST
+/*
+/* Remove/free the macro replacement list associated with the macro
+/* definition node pointed to by the given pointer argument.
+/* ------------------------------------------------------------------- */
+
+FREE_MACRO_REPLACEMENT_LIST: procedure (MP)
+			     external  (X_FREE_MACRO_REPLACEMENT_LIST);
+
+	declare MP	type (POINTER_T);
+	declare (P, Q)	type (POINTER_T);
+
+	if MP->MACRO_NODE.KIND = DYNAMIC_MACRO_MK then return;
+	do P = MP->MACRO_NODE.REPLACEMENT while (P ^= null ());
+		Q = P;
+		P = P->TOKEN_POD.NEXT;
+		call TFREET (Q);
+	end;
+	MP->MACRO_NODE.REPLACEMENT = null ();
+
+end FREE_MACRO_REPLACEMENT_LIST;
+
+/* ---------------------------------------------------------------------
+/* FREE_MACRO_PARAMETER_LIST
+/*
+/* Remove/free the macro parameter list associated with the macro
+/* definition node pointed to by the given pointer argument.
+/* ------------------------------------------------------------------- */
+
+FREE_MACRO_PARAMETER_LIST: procedure (MP)
+			   external  (X_FREE_MACRO_PARAMETER_LIST);
+
+	declare MP	type (POINTER_T);
+	declare SAVE	type (SHORT_T);
+
+	if MP->MACRO_NODE.NPARAMETERS <= 0 then return;
+	SAVE = MACRO_PARAMETER_COUNT;
+	MACRO_PARAMETER_COUNT = MP->MACRO_NODE.NPARAMETERS;
+	free MP->MACRO_NODE.PARAMETER->MACRO_PARAMETER_LIST;
+	MACRO_PARAMETER_COUNT = SAVE;
+
+end FREE_MACRO_PARAMETER_LIST;
+
+/* ---------------------------------------------------------------------
+/* MACRO_NAME
+/* ------------------------------------------------------------------- */
+
+MACRO_NAME: procedure (MP)
+	    returns   (character (MAX_TOKEN_SPELLING_LENGTH) varying)
+	    external  (X_MACRO_NAME);
+
+	declare
+		MP	type (POINTER_T);
+	declare
+		S	character (MAX_TOKEN_SPELLING_LENGTH) varying,
+		P	type (POINTER_T);
+
+	call GET_TOKEN_R (MP->MACRO_NODE.NAME, P);
+	S = substr (P->TOKEN_NODE.SPELLING, 1, P->TOKEN_NODE.SIZE);
+	call RELEASE_TOKEN (MP->MACRO_NODE.NAME);
+	return (S);
+
+end MACRO_NAME;
+
+/* ---------------------------------------------------------------------
+/* ASSERT_MACRO_NAME
+/* ------------------------------------------------------------------- */
+
+ASSERT_MACRO_NAME: procedure (AP)
+		   returns   (character (MAX_TOKEN_SPELLING_LENGTH) varying)
+		   external  (X_ASSERT_MACRO_NAME);
+
+	declare
+		AP	type (POINTER_T);
+	declare
+		S	character (MAX_TOKEN_SPELLING_LENGTH) varying,
+		P	type (POINTER_T);
+
+	call GET_TOKEN_R (AP->ASSERT_MACRO_NODE.NAME, P);
+	S = substr (P->TOKEN_NODE.SPELLING, 1, P->TOKEN_NODE.SIZE);
+	call RELEASE_TOKEN (AP->ASSERT_MACRO_NODE.NAME);
+	return (S);
+
+end ASSERT_MACRO_NAME;
+
+/* ---------------------------------------------------------------------
+/* MAKE_DEBUGGER_MACROS
+/*
+/* For each macro definition (as of the end of the compilation unit),
+/* make a TOKEN_NODE representing its spelling, and put the TOKEN_NODE
+/* id in the .REPLACEMENT field of the TOKEN_NODE of the representing
+/* the name of the macro.  DO THIS ONLY IN DEBUG MODE !!!
+/* ------------------------------------------------------------------- */
+
+MAKE_DEBUGGER_MACROS: procedure external (X_MAKE_DEBUGGER_MACROS);
+
+	declare
+		MP	type (POINTER_T),
+		I	type (SHORT_T),
+		R	type (NID_T),
+		S	character (MAX_SPELLING_SIZE) varying;
+
+	if ^SYMBOL_TABLE then return;
+
+	do I = 1 to HB_MACRO_TABLE;
+		do MP = MACRO_TABLE (I)
+		repeat (MP->MACRO_NODE.NEXT) while (MP ^= null ());
+			call MACRO_DEFINITION_STRING
+			     (MP, S, MAX_SPELLING_SIZE);
+			R = STORE_TOKEN (IDENTIFIER_TOKEN, S);
+			call SET_TOKEN (MP->MACRO_NODE.NAME);
+			TOKEN_NODE.REPLACEMENT = R;
+		end;
+	end;
+
+/* ---------------------------------------------------------------------
+/* MAKE_DEFINITION_STRING
+/* ------------------------------------------------------------------- */
+
+MACRO_DEFINITION_STRING: procedure (MP, S, MAX_STRING_LENGTH) internal;
+
+	declare
+		MP		  	type (POINTER_T),
+		S		  	character (*) varying,
+		MAX_STRING_LENGTH	type (SHORT_T);
+	declare
+		TP			type (POINTER_T),
+		TS			character
+					(MAX_TOKEN_SPELLING_LENGTH + 1)
+					varying;
+
+	if MP->MACRO_NODE.KIND = DYNAMIC_MACRO_MK then do;
+		TS = TOKEN_SPELLING (MP->MACRO_NODE.GET_TOKEN ());
+		S = substr(TS,1,min(length(TS),MAX_STRING_LENGTH));
+		return;
+	end;
+
+	S = '';
+	do TP = MP->MACRO_NODE.REPLACEMENT
+	repeat (TP->TOKEN_POD.NEXT) while (TP ^= null ());
+		TS = '';
+		if TP->TOKEN_POD.LINE < 0 then TS = ' ';
+		TS = TS || TOKEN_SPELLING (TP);
+		if (length (S)+length (TS)) > MAX_STRING_LENGTH then do;
+		    S = S || substr (TS, 1, MAX_STRING_LENGTH - length (S));
+		    return;
+		end;
+		S = S || TOKEN_SPELLING (TP);
+	end;
+
+end MACRO_DEFINITION_STRING;
+
+end MAKE_DEBUGGER_MACROS;
+
+/* =====================================================================
+/* COLLECT_ASSERT_TOKENS -- Put this somewhere else!
+/*
+/* Assuming that we are currently reading within a preprocessing directive,
+/* and assuming that an opening left parenthesis token was just read, and
+/* assuming that the token represented by the given token-pod pointer
+/* FIRST_TP is the first token after that left parenthesis, read and
+/* collect *unexpanded* tokens until the matching right parenthesis is
+/* found and return FIRST_TP.  Note that FIRST_TP may itself be the
+/* matching right parenthesis in which case null is returned.  If the
+/* end of the preprocessing directive is encountered before the matching
+/* right parenthesis, then END_PP_DIRECTIVE_TOKEN is returned.
+/* =================================================================== */
+
+COLLECT_ASSERT_TOKENS:	  procedure (FIRST_TP)
+			  returns   (type (POINTER_T))
+			  external  (X_COLLECT_ASSERT_TOKENS);
+
+COLLECT_PREDICATE_TOKENS: entry     (FIRST_TP)
+			  returns   (type (POINTER_T))
+			  external  (X_COLLECT_PREDICATE_TOKENS);
+	declare
+		FIRST_TP		type (POINTER_T);
+	declare
+		(TP, LAST_TP)		type (POINTER_T),
+		PAREN_LEVEL		type (SHORT_T),
+		PRECEEDING_SPACE	type (BOOL_T);
+	declare
+		SAVE_SCAN_NEXT_CHAR	entry
+					returns (type (SHORT_T))
+					variable;
+	if FIRST_TP = null () then
+		return (null ());
+	else if FIRST_TP = END_PP_DIRECTIVE_TOKEN then
+		return (END_PP_DIRECTIVE_TOKEN);
+	else if FIRST_TP->TOKEN_POD.TYPE = RPAREN_TOKEN then
+		return (null ());
+
+	SAVE_SCAN_NEXT_CHAR	= SCAN_NEXT_CHAR;
+	SCAN_NEXT_CHAR		= SCAND_NEXT_CHAR;
+
+	LAST_TP = FIRST_TP; PAREN_LEVEL = 1;
+
+	do TP = GET_NEXT_UNEXPANDED_TOKEN ()
+	repeat (GET_NEXT_UNEXPANDED_TOKEN ())
+	while (TP ^= END_PP_DIRECTIVE_TOKEN);
+		if TP = WHITE_SPACE_TOKEN then do;
+			PRECEEDING_SPACE = TRUE;
+			goto CONTINUE;
+		end;
+		if TP->TOKEN_POD.TYPE = LPAREN_TOKEN then
+			PAREN_LEVEL = PAREN_LEVEL + 1;
+		else if TP->TOKEN_POD.TYPE = RPAREN_TOKEN then do;
+			PAREN_LEVEL = PAREN_LEVEL - 1;
+			if PAREN_LEVEL <= 0 then do;
+				call TFREET (TP);
+				LAST_TP->TOKEN_POD.NEXT = null ();
+				TP = FIRST_TP;
+				goto DONE_COLLECT_ASSERT_TOKENS;
+			end;
+		end;
+		if PRECEEDING_SPACE then do;
+			TP->TOKEN_POD.LINE = -TP->TOKEN_POD.LINE;
+			PRECEEDING_SPACE = FALSE;
+		end;
+		LAST_TP->TOKEN_POD.NEXT = TP;
+		LAST_TP = TP;
+		CONTINUE:;
+	end;
+
+	/*
+	/* Here, we encountered the end of the directive without
+	/* finding a matching right parenthesis -- syntax error.
+	/**/
+
+	do TP = FIRST_TP repeat (TP->TOKEN_POD.NEXT) while (TP ^= null ());
+		call TFREET (TP);
+	end;
+	TP = END_PP_DIRECTIVE_TOKEN;
+
+	DONE_COLLECT_ASSERT_TOKENS:
+	SCAN_NEXT_CHAR	= SAVE_SCAN_NEXT_CHAR;
+	return (TP);
+
+end COLLECT_ASSERT_TOKENS;
+

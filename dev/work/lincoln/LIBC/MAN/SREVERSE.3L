@@ -1,0 +1,20 @@
+.TH SREVERSE 3L LOCAL
+
+.SH NAME
+sreverse - reverse a string in place
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+sreverse(str)
+.br
+char *str;
+.ft P
+
+.SH DESCRIPTION
+Reverses all of the characters in the
+string \fIstr\fP.  Returns the string \fIstr\fP.
+
+.SH FILES
+sreverse.c

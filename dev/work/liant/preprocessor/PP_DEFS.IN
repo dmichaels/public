@@ -1,0 +1,32 @@
+/* CPP C_PP_STANDARD_DEFS_IN - General programming definitions */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  10.04.91  DGM  002  Removed type definitions; now in GLOBAL_IN.
+ *  09.25.90  DGM  001  Include file name changes.
+ *  06.05.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Definiions
+/* ------------------------------------------------------------------- */
+
+%replace NULL_ID	by 0;	/* Null node id */
+
+/* ...
+
+%replace FALSE	by '0'B;
+%replace TRUE	by '1'B;
+
+... */
+

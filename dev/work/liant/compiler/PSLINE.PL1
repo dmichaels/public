@@ -1,0 +1,104 @@
+/* ANSI-C psline.pl1 - Print a source line to the listing file */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+PSLINE: procedure (LINE_TEXT, LINE_LENGTH);
+
+%include 'incfil' ;
+%include GLOBAL_IN;		/* For SOURCE_FILE_NAME */
+%include C_SOURCE_IN;		/* Source file functions/data */
+%include C_CHARACTER_SET_IN;	/* C character set codes */
+%include C_ENTRIES_IN;
+
+	declare
+		LINE_TEXT	character (*),
+		LINE_LENGTH	fixed binary (15);
+	declare
+		LINE		character (1024) varying,
+		TEMP            character  (256) varying, /* hopefully ok */
+		HEADER		character (80) varying
+				static internal initial
+				('--------------------------------------------------------------------------------'),
+		SPACES		character (10) varying
+				static internal initial ('          ');
+
+
+	/* Check to see if we should even be doing a listing */
+
+	if mod(divide(CURRENT_SOURCE.FLAG,SRC_LISTING,15),2) = 0 then
+		return;
+
+	/* Check for the end of file */
+
+	if LINE_LENGTH <= 0 then do;
+		call PUTLST(HEADER);
+		if CURRENT_SOURCE.INCLUDE_LEVEL <= 0 then
+			LINE = 'END-MAIN-FILE: "';
+		else	LINE = 'END-INCLUDE-FILE: "';
+		TEMP = trim(CURRENT_SOURCE.PHYSICAL_NAME->STR);
+		LINE = LINE || TEMP || '"';
+		call PUTLST(LINE);
+		call PUTLST(HEADER);
+		return;
+	end;
+
+	/* Check for the beginning of file */
+
+	if CURRENT_SOURCE.PHYSICAL_LINE = 1 then do;
+		call PUTLST(HEADER);
+		if CURRENT_SOURCE.INCLUDE_LEVEL <= 0 then
+			LINE = 'MAIN-FILE: "';
+		else	LINE = 'INCLUDE-FILE: "';
+		TEMP = trim(CURRENT_SOURCE.PHYSICAL_NAME->STR) ;
+		LINE = LINE || TEMP || '"';
+		call PUTLST(LINE);
+		call PUTLST(HEADER);
+	end;
+
+	/* Get the excluded or commented source text indicator if any */
+
+	if mod(divide(CURRENT_SOURCE.FLAG,SRC_EXCLUSION,15),2) ^= 0 then
+        	LINE = 'x ';
+	else if mod(divide(CURRENT_SOURCE.FLAG,SRC_COMMENT,15),2) ^= 0 then
+        	LINE = '* ';
+        else	LINE = '  ';
+
+	/* Get the include level number if we're in an include file */
+
+	if CURRENT_SOURCE.INCLUDE_LEVEL > 0 then
+        do;
+		TEMP = trim(char(CURRENT_SOURCE.INCLUDE_LEVEL)) ;
+		LINE = LINE || '[' ||
+		       TEMP || '] ';
+        end;
+
+	/* Get the line number */
+        /*-----
+	LINE = LINE ||
+	       substr(SPACES,1,
+		      4-length(trim(char(CURRENT_SOURCE.PHYSICAL_LINE)))) ||
+	       trim(char(CURRENT_SOURCE.PHYSICAL_LINE)) || ': ';
+        /*-----*/
+	TEMP = trim(char(CURRENT_SOURCE.PHYSICAL_LINE)) ;
+	LINE = LINE ||
+	       substr(SPACES,1,
+		      4-length(TEMP));
+        LINE = LINE || TEMP || ': ';
+
+	/* Get the source line (ignore any trailing end-of-line indicator) */
+
+	if rank(substr(LINE_TEXT,LINE_LENGTH,1)) = NEWLINE_CHAR then
+		LINE = LINE || substr(LINE_TEXT,1,LINE_LENGTH-1);
+	else	LINE = LINE || substr(LINE_TEXT,1,LINE_LENGTH);
+
+	/* Print the line */
+
+	call PUTLST(LINE);
+
+end PSLINE;
+

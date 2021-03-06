@@ -1,0 +1,132 @@
+14d13
+<  *  05.14.91  DGM 009   Changed some strangenesses in BASED_STRUCT_SYM.
+39c38
+< declare	VERSION__	character (31) varying static internal initial
+---
+> declare	VERSION__	character (80) varying static internal initial
+41c40
+< ('@(#)LPI (c) 5/14/91 009 DFTGEN');
+---
+> ('@(#)DFTGEN  008  4/11/91  (c) 1991 Language Processors, Inc.');
+844a844,845
+> 
+> 
+880a882,884
+> 
+> 
+> 
+909a914
+> 
+953a959,960
+> 
+> 
+966a974
+> /*
+1030a1039
+> 
+1112,1113c1121,1123
+< 	/* Make a sym-node a struct of the same size as the array */
+< 
+---
+> 	/* Make a symbol_node and type_node for a struct of the same
+> 	/* size as the array.
+> 	/**/
+1116,1117c1126,1127
+< 	/* Get the type_info from the symbol_node just created */
+< 
+---
+> 	/* Get the type_info from the symbol_node just created. */
+> 	call SET_SYM_NODE_R (BASED_ID);
+1213a1224
+> 
+1216,1219d1226
+< /*
+< /* Return a sym-node id representing a defined dummy struct symbol with
+< /* the indicated SIZE, SIZE_UNITS, and BOUNDARY.  The new sym-node will
+< /* be paged in upon return.
+1223,1230c1230
+< 		  returns   (type (NID_T))
+< 		  internal;
+< 	declare
+< 		SIZE		type (LONG_T),
+< 		SIZE_UNITS	type (SHORT_T),
+< 		BOUNDARY	type (SHORT_T);
+< 	declare
+< 		ID		type (NID_T);
+---
+>  		  returns (type (NID_T));
+1232,1246c1232,1233
+< 	ID = MAKE_SYM_NODE (STRUCT_TAG_SK);
+< 	SYM_NODE.SIZE		= SIZE;
+< 	SYM_NODE.SIZE_UNITS	= byte (SIZE_UNITS);
+< 	SYM_NODE.BOUNDARY	= byte (BOUNDARY);
+< 	SYM_NODE.DEFINED	= TRUE;
+< 	SYM_NODE.TYPE = GET_CLASS_TYPE (STRUCT_BT, ID);
+< 	call GET_TOP_TYPE (SYM_NODE.TYPE, SYM_NODE.TOP_TYPE);
+< 
+< 	/*
+< 	/* N.B. Accidently, this symbol previously never got installed
+< 	/* (as in NEW-C; see lnkdcl), but it worked.  I.e. it seems it
+< 	/* isn't necessary to install it; but I'm not 100% sure yet.
+< 	/* If we need to install it the correct way is:
+< 	/*
+< 	/* call INSTALL_SYMBOL (ID, CURRENT_FUNCTION_SCOPE);
+---
+>         /* Return a struct symbol with the indicated SIZE, SIZE_UNITS, 
+> 	/* and BOUNDARY.
+1249c1236,1238
+<         return (ID);
+---
+> declare SIZE     	        type (LONG_T);
+> declare SIZE_UNITS              type (SHORT_T);
+> declare BOUNDARY                type (SHORT_T);
+1250a1240,1280
+> declare
+> 	RET_NID			type (NID_T),
+> 	TYPE_NID		type (NID_T),
+> 	WK_SZ			type (LONG_T),
+> 	TP			type (POINTER_T),
+>         K                       type (SHORT_T);
+> 
+>         K = BOUNDARY;
+>         if K = 0 then
+> 		K = ADDRESS_UNITS;
+> 
+>         if ^AM_DEBUGGER then do; /* create them as needed */
+>                 RET_NID = MAKE_SYM_NODE (VANILLA_SK);
+>                 SYM_NODE.SIZE		= SIZE;
+>                 SYM_NODE.BOUNDARY	= byte (BOUNDARY);
+>                 SYM_NODE.SIZE_UNITS	= byte (SIZE_UNITS);
+> 		/* -TODO- In ANSI C, STORAGE_CLASS was set to TAG_ST
+> 		   to force code for a based reference.  It probably
+> 		   will not work as defined here. */
+> 		SYM_NODE.IS_TYPE = TRUE;  /* To make it based for the back end  */
+>                 SYM_NODE.STORAGE_CLASS	= byte (TYPEDEF_ST);
+>                 SYM_NODE.TOP_TYPE.CODE	= byte (STRUCT_BT);
+> 		SYM_NODE.DEFINED = '1'B;
+>                 call INSTALL_SYMBOL (0, CURRENT_FUNCTION_SCOPE);
+> 
+> 		/* Make a type node, and set its tag field to the symbol
+> 		/* just created.
+> 		/**/
+> 		TYPE_NID = GET_SIMPLE_TYPE (STRUCT_BT);
+> 		call GET_TYPE_NODE (TYPE_NID, TP);
+> 		TP->TYPE_NODE.DATA(0).TAG_SYMBOL = RET_NID;
+> 
+> 		/* Fix up the symbol node */
+> 		call SET_SYM_NODE (RET_NID);
+> 		SYM_NODE.TYPE  = TYPE_NID;
+> 		SYM_NODE.TOP_TYPE = TP->TYPE_NODE.DATA(0);
+> 		call RELEASE_TYPE_NODE (TYPE_NID);
+> 	end;
+> 
+>         return (RET_NID);
+> 
+1252a1283,1285
+> 
+> 
+> 
+1253a1287
+> /*
+1262a1297
+> /*

@@ -1,0 +1,458 @@
+/* C++ typstr.pl1 - Create a string representing a type-node */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.19.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)TYPSTR  001  12/1/89  (c) 1989 Language Processors, Inc.');
+
+/* ---------------------------------------------------------------------
+/* TYPSTR
+/*
+/* Return a string representing the given type-node TYPE_ID and with
+/* the given name NAME.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+TYPSTR: procedure (TYPE_ID, NAME) returns (character (256) varying);
+
+	%include 'incfil';
+	%include GLOBAL_IN;
+	%include C_STANDARD_DEFS_IN;
+	%include C_SYMBOL_TABLE_IN;
+	%include C_TYPE_MAP_IN;
+	%include C_NODE_MGR_PKG;
+	%include C_TOKEN_SPELLING_PKG;
+
+	declare
+		TYPE_ID			type (NID_T),
+		NAME			character (*) varying;
+	declare
+		SNID			type (NID_T),
+		(I, N)			type (INT_T),
+		(DT, LAST_DT, TQ)	type (INT_T),
+		CLASS			type (NID_T),
+		DIMENSION		type (NID_T),
+		SIGNATURE		type (NID_T),
+		BTS			character (256) varying,
+		BTQS			character (256) varying,
+		TQS			character (256) varying,
+		S			character (256) varying;
+
+	if TYPE_ID = 0 then return ('');
+
+	/* Save the curent-node-id */
+
+        call SAVE_NODE (SNID);
+
+	/* Get the name if any */
+
+	if length (NAME) > 0 then
+		S = NAME;
+	else	S = '';
+
+	/* Get the declarator */
+
+	call FIND_TYPE_NODE_R (TYPE_ID);
+
+	N         = rank (TYPE_NODE.DERIVED_TYPE_LEVEL);
+	SIGNATURE = TYPE_NODE.SIGNATURES;
+	DIMENSION = TYPE_NODE.DIMENSIONS;
+	CLASS     = TYPE_NODE.CLASSES;
+
+	LAST_DT   = 0;
+
+	do I = 1 to N;
+		LAST_DT = DT;
+		DT = rank (TYPE_NODE.DERIVED_TYPE (I));
+		TQ = rank (TYPE_NODE.DERIVED_TYPE_QUALIFIER (I));
+		if      DT = REFERENCE_DT then do;
+			TQS = TYPE_QUALIFIER_NAME (TQ);
+			if length (TQS) > 0 then
+				S = '&' || TQS || ' ' || S;
+			else	S = '&' || S;
+		end;
+		else if DT = POINTER_DT then do;
+			TQS = TYPE_QUALIFIER_NAME (TQ);
+			if length (TQS) > 0 then
+				S = '*' || TQS || ' ' || S;
+			else	S = '*' || S;
+		end;
+		else if DT = MEMBER_POINTER_DT then do;
+			S = CLASS_NAME (CLASS) || '::*' || S;
+			if CLASS ^= NULL_ID then do;
+				call FIND_CLASS_NODE_R (CLASS);
+				CLASS = CLASS_NODE.NEXT;
+				call FIND_TYPE_NODE_R (TYPE_ID);
+			end;
+			TQS = TYPE_QUALIFIER_NAME (TQ);
+			if length (TQS) > 0 then
+				S = S || TQS;
+		end;
+		else do;
+			if (LAST_DT = REFERENCE_DT) |
+			   (LAST_DT = POINTER_DT) |
+			   (LAST_DT = MEMBER_POINTER_DT) then do;
+				S = '(' || S || ')';
+			end;
+			if DT = ARRAY_DT then do;
+				S = S || ARRAY_DIMENSION (DIMENSION);
+				if DIMENSION ^= NULL_ID then do;
+					call FIND_DIM_NODE_R (DIMENSION);
+					DIMENSION = DIM_NODE.NEXT;
+					call FIND_TYPE_NODE_R (TYPE_ID);
+				end;
+			end;
+			else if DT = FUNCTION_DT then do;
+				S = S || FUNCTION_SIGNATURE (SIGNATURE);
+				if SIGNATURE ^= NULL_ID then do;
+					call FIND_SIG_NODE_R (SIGNATURE);
+					SIGNATURE = SIG_NODE.NEXT;
+					call FIND_TYPE_NODE_R (TYPE_ID);
+				end;
+				TQS = TYPE_QUALIFIER_NAME (TQ);
+				if length (TQS) > 0 then
+					S = S || TQS;
+			end;
+		end;
+	end;
+
+	/* Set the base type */
+
+	BTS = BASE_TYPE_NAME ();
+
+	if length (BTS) > 0 then do;
+		if length (S) > 0 then
+			S = BTS || ' ' || S;
+		else	S = BTS;
+	end;
+
+	/* Prepend the base type qualifier if any */
+
+	BTQS = TYPE_QUALIFIER_NAME (rank (TYPE_NODE.BASE_TYPE_QUALIFIER));
+
+	if length (BTQS) > 0 then do;
+		if length (S) > 0 then
+			S = BTQS || ' ' || S;
+		else	S = BTQS;
+	end;
+
+	/* Get the typedef version of this type if any */
+
+	if TYPE_NODE.TYPEDEF_ID ^= NULL_ID then do;
+		S = S || ' <';
+		S = S || TYPSTR (TYPE_NODE.TYPEDEF_ID, NAME);
+		S = S || '>';
+	end;
+
+	call RESTORE_NODE (SNID);
+
+	return (S);
+
+	/* -------------------------------------------------------------
+	/* BASE_TYPE_NAME
+	/*
+	/* Returns a string representing the base type of the type-node
+	/* which is currently paged in.  Preserves current-node-id.
+	/* ----------------------------------------------------------- */
+
+	BASE_TYPE_NAME: procedure returns (character (256) varying);
+
+		declare
+			BT	type (SHORT_T),
+			TID	type (NID_T),
+			S	character (256) varying;
+
+		BT  = rank (TYPE_NODE.BASE_TYPE);
+		TID = TYPE_NODE.BASE_TYPE_ID;
+
+		if      BT = NULL_BT then	S = '';
+		else if BT = VOID_BT then	S = 'void';
+		else if BT = LOGICAL_BT then	S = '<logical>';
+		else if BT = BIT_FIELD_BT then	S = '<bit-field>';
+		else if BT = ENUMERATOR_BT then	S = '<enumerator>';
+		else if BT = CHAR_BT then	S = 'char';
+		else if BT = SCHAR_BT then	S = 'signed char';
+		else if BT = UCHAR_BT then	S = 'unsigned char';
+		else if BT = SHORT_BT then	S = 'short';
+		else if BT = SSHORT_BT then	S = 'signed short';
+		else if BT = USHORT_BT then	S = 'unsigned short';
+		else if BT = INT_BT then	S = 'int';
+		else if BT = SINT_BT then	S = 'signed int';
+		else if BT = UINT_BT then	S = 'unsigned int';
+		else if BT = LONG_BT then	S = 'long';
+		else if BT = SLONG_BT then	S = 'signed long';
+		else if BT = ULONG_BT then	S = 'unsigned long';
+		else if BT = FLOAT_BT then	S = 'float';
+		else if BT = DOUBLE_BT then	S = 'double';
+		else if BT = LDOUBLE_BT then	S = 'long double';
+
+		else if BT = CLASS_BT then do;
+			S = 'class';
+			if TID > 0 then
+				S = S || ' ' || SYMBOL_NAME (TID);
+		end;
+		else if BT = STRUCT_BT then do;
+			S = 'struct';
+			if TID > 0 then
+				S = S || ' ' || SYMBOL_NAME (TID);
+		end;
+		else if BT = UNION_BT then do;
+			S = 'union';
+			if TID > 0 then
+				S = S || ' ' || SYMBOL_NAME (TID);
+		end;
+		else if BT = ENUM_BT then do;
+			S = 'enum';
+			if TID > 0 then
+				S = S || ' ' || SYMBOL_NAME (TID);
+		end;
+		else if BT = TYPEDEF_BT then do;
+			if TID > 0 then
+				S = SYMBOL_NAME (TID);
+			else	S = '<typedef-name>';
+		end;
+
+		else	S = '<type>';
+
+        	return (S);
+
+	end BASE_TYPE_NAME;
+
+	/* -------------------------------------------------------------
+	/* TYPE_QUALIFIER_NAME
+	/*
+	/* Returns a string representing the type qualifer name of the
+	/* given type qualifier code.  Preserves current-node-id.
+	/* ----------------------------------------------------------- */
+
+	TYPE_QUALIFIER_NAME: procedure (TQ)
+			     returns   (character (256) varying);
+
+		declare
+			TQ	type (SHORT_T);
+		declare
+			S	character (256) varying;
+		
+		if IS_CONST (TQ) then do;
+			S = 'const';
+			if IS_VOLATILE (TQ) then
+				S = S || ' volatile';
+		end;
+		else if IS_VOLATILE (TQ) then
+			S = 'volatile';
+		else	S = '';
+
+		return (S);
+
+	end TYPE_QUALIFIER_NAME;
+
+	/* -------------------------------------------------------------
+	/* SYMBOL_NAME
+	/*
+	/* Returns a string representing the name of the given symbol.
+	/* Preserves current-node-id.
+	/* ----------------------------------------------------------- */
+
+	SYMBOL_NAME: procedure (SYM)
+		     returns   (character (256) varying);
+
+		declare
+			SYM	type (NID_T);
+		declare
+			KIND	type (SHORT_T),
+			S	character (256) varying,
+			SNID	type (NID_T);
+
+		if SYM = NULL_ID then
+			return ('');
+
+		call SAVE_NODE (SNID);
+
+		call FIND_SYM_NODE_R (SYM);
+
+		KIND = rank (SYM_NODE.NAME_KIND);
+
+		if KIND = OPERATOR_NAME then do;
+			if SYM_NODE.NAME ^= NULL_ID then do;
+				call FIND_OP_TOKEN_NODE_R (SYM_NODE.NAME);
+				S = 'operator' ||
+				    OP_TOKEN_SPELLING (OP_TOKEN_NODE.CODE);
+			end;
+			else	S = '<operator-name>';
+			goto DONE_SYMBOL_NAME;
+		end;
+
+		else if KIND = CONVERSION_NAME then do;
+			if SYM_NODE.NAME ^= NULL_ID then
+				S = 'operator ' || TYPSTR (SYM_NODE.NAME, '');
+			end;
+			else	S = '<conversion-name>';
+			goto DONE_SYMBOL_NAME;
+		end;
+
+		else if KIND = DESTRUCTOR_NAME then
+			S = '~';
+
+		else if (KIND ^= CONSTRUCTOR_NAME) &
+			(KIND ^= VANILLA_NAME) then do;
+			S = '<name>';
+			goto DONE_SYMBOL_NAME;
+		end;
+
+		else	S = '';
+
+		if SYM_NODE.NAME ^= NULL_ID then do;
+			call FIND_TOKEN_NODE_R (SYM_NODE.NAME);
+			S = S || substr (TOKEN_NODE.SPELLING,
+					 1, TOKEN_NODE.SIZE);
+		end;
+
+		else	S = '';
+	
+		DONE_SYMBOL_NAME:
+
+		call RESTORE_NODE (SNID);
+		return (S);
+
+	end SYMBOL_NAME;
+
+	/* -------------------------------------------------------------
+	/* CLASS_NAME
+	/*
+	/* Returns a string representing the class name of
+	/* given the class-node.  Preserves current-node-id.
+	/* ----------------------------------------------------------- */
+
+	CLASS_NAME: procedure (CLASS)
+		    returns   (character (256) varying);
+
+		declare
+			CLASS	type (NID_T);
+		declare
+			SNID	type (NID_T),
+			S	character (256) varying;
+
+		if CLASS = NULL_ID then
+			return ('');
+
+		call SAVE_NODE (SNID);
+
+		call FIND_CLASS_NODE_R (CLASS);
+		S = SYMBOL_NAME (CLASS_NODE.SYMBOL);
+
+		call RESTORE_NODE (SNID);
+
+		return (S);
+
+	end CLASS_NAME;
+
+	/* -------------------------------------------------------------
+	/* FUNCTION_SIGNATURE
+	/*
+	/* Returns a string representing the signature (parameter
+	/* declaration list) of the given the signature-node.
+	/* Preserves current-node-id.
+	/* ----------------------------------------------------------- */
+
+	FUNCTION_SIGNATURE: procedure (SIGNATURE)
+			    returns  (character (256) varying);
+
+		declare
+			SIGNATURE	type (NID_T);
+		declare
+			SNID		type (NID_T),
+			I		type (INT_T),
+			NP		type (INT_T),
+			PL		type (NID_T),
+			VP		type (BOOL_T),
+			PROTOTYPED	type (BOOL_T),
+			COMMA		character (2) varying,
+			S		character (256) varying;
+
+		S = '(';
+
+		if SIGNATURE > 0 then do;
+			call SAVE_NODE (SNID);
+			call FIND_SIG_NODE_R (SIGNATURE);
+			PROTOTYPED = SIG_NODE.PROTOTYPED;
+			NP	   = SIG_NODE.NPARAMETERS;
+			VP	   = SIG_NODE.ELLIPSIS;
+			PL	   = SIG_NODE.PARAMETERS;
+			if PROTOTYPED then
+				COMMA = ',';
+			else	COMMA = ';';
+			do I = 1 to NP while (PL > 0);
+				call FIND_SYM_NODE_R (PL);
+				PL = SYM_NODE.BROTHER;
+				if I > 1 then S = S || COMMA || ' ';
+				S = S || TYPSTR (SYM_NODE.TYPE,
+						 SYMBOL_NAME (CURRENT_NODE_ID));
+			end;
+			if (NP > 1) & ^PROTOTYPED then
+				S = S || COMMA;
+			if VP then do;
+				if I > 1 then
+					S = S || ', ';
+				S = S || '...';
+			end;
+			call RESTORE_NODE (SNID);
+		end;
+
+		S = S || ')';
+
+		return (S);
+
+	end FUNCTION_SIGNATURE;
+
+	/* -------------------------------------------------------------
+	/* ARRAY_DIMENSION
+	/*
+	/* Returns a string representing the dimension the given
+	/* the dim-node.  Preserves current-node-id.
+	/* ----------------------------------------------------------- */
+
+	ARRAY_DIMENSION: procedure (DIMENSION)
+			 returns   (character (256) varying);
+
+		declare
+			DIMENSION	type (NID_T);
+		declare
+			SNID		type (NID_T),
+			S		character (256) varying;
+
+		S = '[';
+
+		if DIMENSION ^= 0 then do;
+
+			call  SAVE_NODE (SNID);
+
+			/* -TODO- */ ;
+
+			call RESTORE_NODE (SNID);
+
+		end;
+
+		S = S || ']';
+
+		return (S);
+
+	end ARRAY_DIMENSION;
+
+end TYPSTR;

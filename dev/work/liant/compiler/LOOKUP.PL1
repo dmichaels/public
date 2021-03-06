@@ -1,0 +1,2238 @@
+/* C++ lookup.pl1 - Symbol table look-up routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.09.92  DGM  037	Fixed diagnostic for ERR_AMBIG_BASE_MEMBER_REF.
+ *  08.19.92  DGM  036	Added MATCH_OVERLOAD_FOR_OVERRIDE.
+ *  06.15.92  DGM  035	Fix for 034.
+ *  06.11.92  DGM  034	Updated for sequenced lookups
+ *			(for deferred function processing).
+ *  03.13.92  PKT  033	Updated for parameter nodes.
+ *  03.26.92  DGM  032	New value-node scheme.
+ *  01.21.92  DGM  031	Parameter link-node changes.
+ *  11.19.91  DGM  030  Rearrange code to get rid of P$AEQB call.
+ *  08.06.91  DGM  029  Updated CHECK_OVERLOAD.
+ *  08.03.91  PKT  028  Bug fix.
+ *  07.31.91  DGM  027  Updated.
+ *  05.29.91  DGM  026  Moved check for overloading operator delete to
+ *			CHECK_OVERLOAD (from various spots in pardcl).
+ *  05.22.91  PKT  025  Added QUALIFIERS_SIGNIFICANT parameter to
+ *			CHECK_OVERLOAD.
+ *  05.15.91  PKT  024  Minor fix to IS_BASE_CLASS_OF.
+ *  04.24.91  PKT  023  Added LOOKUP_NAME_QUIETLY.
+ *  04.18.91  DGM  022  Fix in SEARCH_SCOPE.MATCH_CONVERSION.
+ *  04.01.91  DGM  021  Fixes in CHECK_BASE_CLASSES.
+ *  03.22.91  PKT  020  Minor fix to previous (019) fix.
+ *  03.08.91  DGM  019  Change to lookup conversion functions by *type*;
+ *			see SEARCH_SCOPE.
+ *  02.01.91  DGM  018  Updated to new global names scheme.
+ *  01.10.91  DGM  017  No inaccessible base class diagnostic for debugger.
+ *			Added SEARCH_CLASS_FOR_TYPE_QUIETLY.
+ *  12.12.90  DGM  016  New algorithms to lookup base classes and class
+ *			members.
+ *  11.06.90  DGM  015  Removed FIND_VIRTUAL_FUNCTION (see procvf.pl1).
+ *  10.22.90  DGM  014  Fix in SEARCH_SCOPE_FOR_TYPE (for Classic C)
+ *  10.12.90  DGM  013  Fix in SEARCH_SCOPE_FOR_TYPE.
+ *  09.14.90  DGM  012  Changed include file names and VOP names.
+ *  09.05.90  PKT  011  Added LOOKUP_RETURN_PARAMTER.  DGM.
+ *  08.29.90  DGM  010  Fix (typo) in CHECK_OVERLOAD.
+ *  08.08 90  DGM  009  New type-node.  And PKT name space changes.
+ *  07.23 90  DGM  008  Changed FIND_VIRTUAL_FUNCTION to save the
+ *			current-node-id.  Moved GET/DELETE_VIRTUAL_BASE_
+ *			CLASS_LIST here from clasiz.pl1 & fixed bugs.
+ *			Added LOOKUP_[C,D]TOR_FLAG_PARAMETER.
+ *  07.23.90  PKT  007  Updated.
+ *  07.09 90  DGM  006  Updated CHECK_OVERLOAD for conversion functions.
+ *			Added CHECK_DUPLICATE_BASE_CLASSES.
+ *  07.05 90  PKT  005  Updated.
+ *  07.03.90  DGM  004  Updated.
+ *  06.29.90  DGM  003  Minor fixes and add IS_xxx_BASE_CLASS_OF.
+ *  06.06.90  DGM  002  Updated for the new utilities.
+ *  05.25.90  DGM  001  Fix in FIND_VIRTUAL_FUNCTION.
+ *  05.15.90  DGM  000  Orignal.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 09.09.92 037 LOOKUP');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_NODE_LIST_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_SYMBOL_TABLE_LOOKUP_IN;
+
+/* ---------------------------------------------------------------------
+/* Local Static Data
+/* ------------------------------------------------------------------- */
+
+declare
+
+LOOKUP_TYPE_SYMBOL_ONLY		type (BOOL_T)
+				static internal initial (FALSE);
+declare
+
+LOOKUP_LOW_SEQUENCE_NUMBER	type (LONG_T)
+				static internal initial (2147483647),
+LOOKUP_HIGH_SEQUENCE_NUMBER	type (LONG_T)
+				static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* SEARCH_SCOPE
+/*
+/* Search the symbol list of the given scope *only* for the given symbol
+/* name, if found then return its sym-node id and with that sym-node
+/* paged in.  Otherwise, return NULL_NID with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+SEARCH_SCOPE: procedure (SCOPE, NAME, KIND)
+	      returns   (type (NID_T))
+	      external  (X_SEARCH_SCOPE);
+
+	declare
+		SCOPE			type (NID_T),
+		NAME			type (NID_T),
+		KIND			type (LONG_BITS_T);
+	declare
+		S			type (NID_T),
+		NEXT_OF_NAME_LIST	type (NID_T),
+		CONVERSION_FUNCTION	type (BOOL_T),
+		SNID			type (SNID_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (NAME = NULL_NID) | (SCOPE = NULL_NID) then
+		return (NULL_NID);
+
+	/* Search only for a tag reference if desired */
+
+	if LOOKUP_TYPE_SYMBOL_ONLY then
+		return (SEARCH_SCOPE_FOR_TYPE (SCOPE, NAME));
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* See if we're looking up a conversion function name */
+
+	if (KIND & CONVERSION_FUNCTION_SK) = CONVERSION_FUNCTION_SK then
+		CONVERSION_FUNCTION = TRUE;
+	else	CONVERSION_FUNCTION = FALSE;
+
+	/* Get the start of next-of-name symbol list for this name */
+
+	if ^CONVERSION_FUNCTION then
+		call SET_TOKEN_NODE_R (NAME);
+	else	call SET_TOKEN_NODE_R (CONVERSION_NAME);
+	NEXT_OF_NAME_LIST = TOKEN_NODE.ADDRESS;
+
+	/* Search the next-of-name list for a symbol in this scope */
+
+	do S = NEXT_OF_NAME_LIST
+	repeat (SYM_NODE.NEXT_OF_NAME) while (S ^= NULL_NID);
+		call SET_SYM_NODE_R (S);
+		if (SYM_NODE.SEQUENCE_NUMBER > LOOKUP_LOW_SEQUENCE_NUMBER) &
+		   (SYM_NODE.SEQUENCE_NUMBER < LOOKUP_HIGH_SEQUENCE_NUMBER) &
+		   ^SYM_NODE.IS_MEMBER
+		then do;
+			/*
+			/* This symbol is outside of the current lookup
+			/* range (due to its being parsed for a deferred
+			/* function body); it is effectively non-visible.
+			/* See if there is a "other" tag symbol and check
+			/* its range.
+			/**/
+			if ^SYM_NODE.IS_TAG & SYM_NODE.IS_ALSO_TAG then do;
+				call SET_SYM_NODE (SYM_NODE.OTHER_SYMBOL);
+				if (SYM_NODE.SEQUENCE_NUMBER >
+				    LOOKUP_LOW_SEQUENCE_NUMBER) &
+				   (SYM_NODE.SEQUENCE_NUMBER <
+				    LOOKUP_HIGH_SEQUENCE_NUMBER) &
+				   ^SYM_NODE.IS_MEMBER then do;
+					call SET_SYM_NODE (S);
+					goto CONTINUE;
+				end;
+				else	S = CURRENT_NODE_ID;
+			end;
+			else	goto CONTINUE;
+		end;
+		if (SYM_NODE.ENCLOSING_SCOPE = SCOPE) &
+		   ((SYM_NODE.KIND & KIND) = KIND) then do;
+			if CONVERSION_FUNCTION then do;
+				/*
+				/* Here, we are looking up a conversion name.
+				/* This is weird; it means that NAME is really
+				/* a type-node id representing the type of the
+				/* conversion rather than a token-node id.
+				/*
+				/* N.B. When we go to new utils, we can look
+				/* at the hidden part of the NAME node to see
+				/* whether it is a sym-node or a token-node &
+				/* do this based on that rather than on KIND &
+				/* CONVERSION_SK. That way, callers don't ever
+				/* have to special case lookup calls based on
+				/* NAME_KIND = CONVERSION_NK.  In fact, we may
+				/* even do away with CONVERSION_NAME and always
+				/* just set NAME fields to the type-node id!
+				/**/
+				S = MATCH_CONVERSION (NAME);
+				if S ^= NULL_NID then
+					return (S);
+
+			end;
+			else	return (S);
+		end;
+		CONTINUE:;
+	end;
+
+	/* Here, not found; restore the current-node-id and return null */
+
+	call RESTORE_NODE (SNID);
+
+	return (NULL_NID);
+
+/* ---------------------------------------------------------------------
+/* MATCH_CONVERSION
+/*
+/* Assuming that the currently paged in sym-node represents a conversion
+/* function, search the overload list of the conversion function for one
+/* whose *conversion* type (i.e. return type) matches (i.e. is *exactly*
+/* compatible with) the type represented by the given type-node id TYPE.
+/* If found, then return the sym-node id of the found conversion function
+/* symbol, otherwise return NULL_NID.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MATCH_CONVERSION: procedure (TYPE) returns (type (NID_T)) internal;
+
+	declare
+		TYPE		type (NID_T);
+	declare
+		(S, NEXT_S)	type (NID_T),
+		P		type (POINTER_T);
+
+	if COMPATIBLE_ANY_TYPES (SYM_NODE.TYPE, 1, TYPE, 0) then
+		return (CURRENT_NODE_ID);
+	do S = SYM_NODE.NEXT_OVERLOAD repeat (NEXT_S) while (S ^= NULL_NID);
+		call GET_SYM_NODE_R (S, P);
+		if (P->SYM_NODE.SEQUENCE_NUMBER > LOOKUP_LOW_SEQUENCE_NUMBER) &
+		   (P->SYM_NODE.SEQUENCE_NUMBER < LOOKUP_HIGH_SEQUENCE_NUMBER) &
+		   ^P->SYM_NODE.IS_MEMBER then
+			goto CONTINUE;
+		if COMPATIBLE_ANY_TYPES (P->SYM_NODE.TYPE, 1, TYPE, 0) then do;
+			call RELEASE_SYM_NODE (S);
+			return (S);
+		end;
+		CONTINUE:
+		NEXT_S = P->SYM_NODE.NEXT_OVERLOAD;
+		call RELEASE_SYM_NODE (S);
+	end;
+	return (NULL_NID);
+
+end MATCH_CONVERSION;
+
+end SEARCH_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_SCOPE_FOR_TYPE
+/*
+/* In C++ mode (SW_X_NAME_SPACE = FALSE), search the scope represented
+/* by the given scope-node id *only* for the name represented by the
+/* given token-node id as a tag or a typedef.  If a typedef symbol is
+/* found which is of tag type, then the sym-node id of tag symbol to
+/* which it refers will be returned, otherwise the sym-node id of the
+/* found tag or typedef symbol will be returned; in both of these cases
+/* the sym-node of the returned sym-node id will be paged in.  If no
+/* tag or typedef symbol of the given name is found in the given scope
+/* then NULL_NID will be returned with the current-node-id preserved.
+/*
+/* In ANSI-C and Classic C mode (SW_X_NAME_SPACE = TRUE), search the
+/* scope represented by the given scope-node id *only* for the name
+/* represented by the given token-node id as a tag.  If a tag symbol
+/* is found then the sym-node id of the found symbol will be returned
+/* and with it paged in.  If no tag symbol of the given name is found
+/* in the given scope then NULL_NID will be returned with the
+/* current-node-id preserved.
+/*
+/* This routine is useful for looking up a class-name which follows a
+/* class, struct, union, or enum keyword, or preceeds a "::" operator,
+/* or which is part of a class derivation list.
+/* ------------------------------------------------------------------- */
+
+SEARCH_SCOPE_FOR_TYPE: procedure (SCOPE, NAME)
+		       returns   (type (NID_T))
+		       external  (X_SEARCH_SCOPE_FOR_TYPE);
+	declare
+		SCOPE			type (NID_T),
+		NAME			type (NID_T);
+	declare
+		NEXT_OF_NAME_LIST	type (NID_T),
+		S			type (NID_T),
+		SNID			type (SNID_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (NAME = NULL_NID) | (SCOPE = NULL_NID) then
+		return (NULL_NID);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* Get the start of next-of-name symbol list for this name */
+
+	call SET_TOKEN_NODE_R (NAME);
+	NEXT_OF_NAME_LIST = TOKEN_NODE.ADDRESS;
+
+	/* Search the next-of-name list for a symbol in this scope */
+
+	do S = NEXT_OF_NAME_LIST
+	repeat (SYM_NODE.NEXT_OF_NAME) while (S ^= NULL_NID);
+		call SET_SYM_NODE_R (S);
+		if (SYM_NODE.SEQUENCE_NUMBER > LOOKUP_LOW_SEQUENCE_NUMBER) &
+		   (SYM_NODE.SEQUENCE_NUMBER < LOOKUP_HIGH_SEQUENCE_NUMBER) &
+		   ^SYM_NODE.IS_MEMBER
+		then do;
+			/*
+			/* This symbol is outside of the current lookup
+			/* range (due to its being parsed for a deferred
+			/* function body); it is effectively non-visible.
+			/* See if there is a "other" tag symbol and check
+			/* its range.
+			/**/
+			if ^SYM_NODE.IS_TAG & SYM_NODE.IS_ALSO_TAG then do;
+				call SET_SYM_NODE (SYM_NODE.OTHER_SYMBOL);
+				if (SYM_NODE.SEQUENCE_NUMBER >
+				    LOOKUP_LOW_SEQUENCE_NUMBER) &
+				   (SYM_NODE.SEQUENCE_NUMBER <
+				    LOOKUP_HIGH_SEQUENCE_NUMBER) &
+				   ^SYM_NODE.IS_MEMBER then do;
+					call SET_SYM_NODE (S);
+					goto CONTINUE;
+				end;
+				else	S = CURRENT_NODE_ID;
+			end;
+			else	goto CONTINUE;
+		end;
+		if SYM_NODE.ENCLOSING_SCOPE = SCOPE then do;
+			/*
+			/* If we found a non-type of this name, then see
+			/* if it was also declared as a type in this scope;
+			/* if so, then use it.  This is for name space
+			/* compatibility with C (see C++ARM, sec.3.1.c).
+			/**/
+			if SYM_NODE.IS_TAG then
+				return (S);
+			else if SYM_NODE.IS_ALSO_TAG then do;
+				/*
+				/* E.g. class x; int x; or typedef class x x;
+				/**/
+				S = SYM_NODE.OTHER_SYMBOL;
+				call SET_SYM_NODE (S);
+				return (S);
+			end;
+			else if SYM_NODE.IS_TYPE then do;
+				if SW_X_NAME_SPACE then
+					;
+				else if IS_TAG_TYPE
+					(rank (SYM_NODE.TOP_TYPE.CODE)) then do;
+					/*
+					/* E.g. class C; typedef class C X; or
+					/* class C; typedef const class C X;
+					/* note that finding X as a reference
+					/* to tag C in the second case is
+					/* dubious (but  CFRONT allows it).
+					/**/
+					S = SYM_NODE.TOP_TYPE.TAG_SYMBOL;
+					call SET_SYM_NODE (S);
+					return (S);
+				end;
+				else	return (S);
+			end;
+		end;
+		CONTINUE:;
+	end;
+
+	/* Here, not found; restore the current-node-id and return null */
+
+	call RESTORE_NODE (SNID);
+
+	return (NULL_NID);
+
+end SEARCH_SCOPE_FOR_TYPE;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_LOCAL_SCOPE
+/*
+/* Assuming that the current scope is either block or function scope,
+/* search for the given name starting at the current scope and continuing
+/* upward until the function scope is reached.  If found then return its
+/* sym-node id and with that sym-node paged in.  Otherwise, return
+/* NULL_NID with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+SEARCH_LOCAL_SCOPE: procedure (SCOPE, NAME, KIND)
+		    returns   (type (NID_T))
+		    external  (X_SEARCH_LOCAL_SCOPE);
+	declare
+		SCOPE		type (NID_T),
+		NAME		type (NID_T),
+		KIND		type (LONG_BITS_T);
+	declare
+		ID		type (NID_T),
+		S		type (NID_T),
+		NEXT_S		type (NID_T),
+		SNID		type (SNID_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (NAME = NULL_NID) | (SCOPE = NULL_NID) then
+		return (NULL_NID);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* Make sure this is a block or function scope */
+
+	call SET_SCOPE_NODE_R (SCOPE);
+
+	if (SCOPE_NODE.TYPE ^= byte (BLOCK_SCOPE)) &
+	   (SCOPE_NODE.TYPE ^= byte (FUNCTION_SCOPE)) then
+		goto DONE_SEARCH_LOCAL_SCOPE;
+	
+	/* Search each (block) scope, up to the function scope */
+
+	do S = SCOPE repeat (NEXT_S) while (S ^= NULL_NID);
+		call SET_SCOPE_NODE_R (S);
+		if (SCOPE_NODE.TYPE ^= byte (BLOCK_SCOPE)) &
+		   (SCOPE_NODE.TYPE ^= byte (FUNCTION_SCOPE)) then
+			leave;
+		NEXT_S = SCOPE_NODE.ENCLOSING_SCOPE;
+		ID = SEARCH_SCOPE (S, NAME, KIND);
+		if ID ^= NULL_NID then
+			return (ID);
+	end;
+
+	/* Here, not found; restore the current-node-id and return null */
+
+	DONE_SEARCH_LOCAL_SCOPE:
+
+	call RESTORE_NODE (SNID);
+
+	return (NULL_NID);
+
+end SEARCH_LOCAL_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_CLASS
+/*
+/* Searches the entire class lattice of the given class symbol for the
+/* given name and symbol kind.  If found the returns the node id of the
+/* found symbol, and with it paged in; if there is an ambguity, then sets
+/* an appropriate diagnostic will be issued.  Otherwise, if not found,
+/* then returns NULL_NID, and with the current-node-id preserved.
+/*
+/* N.B. fashioned after the TauMetric routine "search_class".
+/* ------------------------------------------------------------------- */
+
+SEARCH_CLASS: procedure (CLASS, MEMBER_NAME, MEMBER_KIND)
+	      returns   (type (NID_T))
+	      external  (X_SEARCH_CLASS);
+
+	declare
+		CLASS				type (NID_T),
+		MEMBER_NAME			type (NID_T),
+		MEMBER_KIND			type (LONG_BITS_T);
+	declare
+		ID				type (NID_T),
+		FOUND_AMBIGUOUS_CLASS		type (NID_T),
+		FOUND_MEMBER_IN_VIRTUAL_CLASS	type (BOOL_T);
+
+	ID = SEARCH_CLASS_LATTICE (CLASS,
+				   MEMBER_NAME,
+				   MEMBER_KIND,
+				   FOUND_AMBIGUOUS_CLASS,
+				   FOUND_MEMBER_IN_VIRTUAL_CLASS);
+
+	if FOUND_AMBIGUOUS_CLASS ^= NULL_NID then do;
+		/*
+		/* Error; ambiguous base class (member) reference.
+		/**/
+		if MEMBER_KIND = CONVERSION_FUNCTION_SK then do;
+			call SEMANTIC_ERROR_III
+			     (ERR_AMBIG_BASE_MEMBER_REF,
+			      TOKEN_MEMBER_NAME (CONVERSION_NAME, MEMBER_NAME),
+			      QUALIFYING_SYMBOL_NAME (ID),
+			      SYMBOL_NAME (FOUND_AMBIGUOUS_CLASS));
+		end;
+		else do;
+			call SEMANTIC_ERROR_III
+			     (ERR_AMBIG_BASE_MEMBER_REF,
+			      TOKEN_MEMBER_NAME (MEMBER_NAME, CLASS),
+			      QUALIFYING_SYMBOL_NAME (ID),
+			      SYMBOL_NAME (FOUND_AMBIGUOUS_CLASS));
+		end;
+	end;
+
+	if ID ^= NULL_NID then
+		call SET_SYM_NODE (ID);
+
+	return (ID);
+
+end SEARCH_CLASS;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_CLASS_QUIETLY
+/*
+/* Searches the entire class lattice of the given class symbol for the
+/* given name and symbol kind.  If found the returns the node id of the
+/* found symbol, and with it paged in; if there is an ambguity, it will
+/* be ignored.  Otherwise, if not found, then returns NULL_NID, and with
+/* the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+SEARCH_CLASS_QUIETLY: procedure (CLASS, MEMBER_NAME, MEMBER_KIND)
+		      returns   (type (NID_T))
+		      external  (X_SEARCH_CLASS_QUIETLY);
+	declare
+		CLASS			type (NID_T),
+		MEMBER_NAME		type (NID_T),
+		MEMBER_KIND		type (LONG_BITS_T);
+	declare
+		ID			type (NID_T);
+
+	ID = SEARCH_CLASS_LATTICE (CLASS,
+				   MEMBER_NAME,
+				   MEMBER_KIND,
+				   NULL_NID,
+				   FALSE);
+
+	if ID ^= NULL_NID then
+		call SET_SYM_NODE (ID);
+
+	return (ID);
+
+end SEARCH_CLASS_QUIETLY;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_CLASS_FOR_TYPE
+/*
+/* Searches the entire class lattice represented by the given sym-node
+/* id CLASS for a tag or typedef member of the name represented by the
+/* given token-node id MEMBER_NAME.  If found the returns the node id
+/* of the found symbol, and with it paged in; if there is an ambguity,
+/* an appropriate diagnostice will be emitted.  Otherwise, if not found,
+/* then returns NULL_NID, and with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+SEARCH_CLASS_FOR_TYPE: procedure (CLASS, MEMBER_NAME)
+		       returns   (type (NID_T))
+		       external  (X_SEARCH_CLASS_FOR_TYPE);
+	declare
+		CLASS				type (NID_T),
+		MEMBER_NAME			type (NID_T);
+	declare
+		ID				type (NID_T),
+		FOUND_AMBIGUOUS_CLASS		type (NID_T),
+		FOUND_MEMBER_IN_VIRTUAL_CLASS	type (BOOL_T);
+
+	LOOKUP_TYPE_SYMBOL_ONLY = TRUE;
+
+	ID = SEARCH_CLASS_LATTICE (CLASS,
+				   MEMBER_NAME,
+				   ANY_SK,
+				   FOUND_AMBIGUOUS_CLASS,
+				   FOUND_MEMBER_IN_VIRTUAL_CLASS);
+
+	LOOKUP_TYPE_SYMBOL_ONLY = FALSE;
+
+	if FOUND_AMBIGUOUS_CLASS ^= NULL_NID then do;
+		/*
+		/* Error; ambiguous base class (member) reference.
+		/**/
+		call SEMANTIC_ERROR_III
+		     (ERR_AMBIG_BASE_MEMBER_REF,
+		      TOKEN_MEMBER_NAME (MEMBER_NAME, CLASS),
+		      QUALIFYING_SYMBOL_NAME (ID),
+		      SYMBOL_NAME (FOUND_AMBIGUOUS_CLASS));
+	end;
+
+	if ID ^= NULL_NID then
+		call SET_SYM_NODE (ID);
+
+	return (ID);
+
+end SEARCH_CLASS_FOR_TYPE;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_CLASS_FOR_TYPE_QUIETLY
+/*
+/* Searches the entire class lattice represented by the given sym-node
+/* id CLASS for a tag or typedef member of the name represented by the
+/* given token-node id MEMBER_NAME.  If found the returns the node id
+/* of the found symbol, and with it paged in; if there is an ambguity,
+/* it will be ignored.  Otherwise, if not found, then returns NULL_NID,
+/* and with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+SEARCH_CLASS_FOR_TYPE_QUIETLY: procedure (CLASS, MEMBER_NAME)
+			       returns   (type (NID_T))
+			       external  (X_SEARCH_CLASS_FOR_TYPE_QUIETLY);
+	declare
+		CLASS			type (NID_T),
+		MEMBER_NAME		type (NID_T);
+	declare
+		ID			type (NID_T);
+
+	LOOKUP_TYPE_SYMBOL_ONLY = TRUE;
+
+	ID = SEARCH_CLASS_LATTICE (CLASS,
+				   MEMBER_NAME,
+				   ANY_SK,
+				   NULL_NID,
+				   FALSE);
+
+	LOOKUP_TYPE_SYMBOL_ONLY = FALSE;
+
+	if ID ^= NULL_NID then
+		call SET_SYM_NODE (ID);
+
+	return (ID);
+
+end SEARCH_CLASS_FOR_TYPE_QUIETLY;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_CLASS_LATTICE
+/*
+/* Searches the entire class lattice of the class represented by the
+/* given sym-node id CLASS_SYMBOL, for a member of the name represented
+/* by the given token-node id MEMBER_NAME, and of the given symbol
+/* MEMBER_KIND.  If found then the sym-node id of the found member
+/* symbol is returned.  If there is an ambguity (either a member
+/* ambiguity or a base class ambiguity), then the sym-node id of the
+/* first base class containing the ambiguous member (if it a member
+/* ambiguity) or of the ambiguous class itself (if it is a base class
+/* ambiguity) is returned in FOUND_AMBIGUOUS_CLASS, otherwise it's set
+/* to NULL_NID.  If the found member symbol is in a virtual base class,
+/* then FOUND_MEMBER_IN_VIRTUAL_CLASS is set to TRUE, otherwise it's set
+/* to FALSE.  Otherwise, if a member symbol of the given name and kind
+/* is not found, then NULL_NID is returned (and FOUND_AMBIGUOUS_CLASS is
+/* NULL_NID and FOUND_MEMBER_IN_VIRTUAL_CLASS is FALSE).
+/*
+/* Preserves current-node-id (sic).
+/* ------------------------------------------------------------------- */
+
+SEARCH_CLASS_LATTICE: procedure (DERIVED_CLASS,
+				 MEMBER_NAME,
+				 MEMBER_KIND,
+				 FOUND_AMBIGUOUS_CLASS,
+				 FOUND_MEMBER_IN_VIRTUAL_CLASS)
+		      returns   (type (NID_T))
+		      internal;
+	declare
+		DERIVED_CLASS			type (NID_T),
+		MEMBER_NAME			type (NID_T),
+		MEMBER_KIND			type (LONG_BITS_T),
+		FOUND_AMBIGUOUS_CLASS		type (NID_T),
+		FOUND_MEMBER_IN_VIRTUAL_CLASS	type (BOOL_T);
+	declare
+		FOUND_MEMBER			type (NID_T),
+		FOUND_MEMBER_CLASS		type (NID_T);
+	declare
+		P				type (POINTER_T),
+		SNID				type (SNID_T);
+	
+	/* Initialize (for SEARCH_DAG_FOR_MEMBER) */
+
+	FOUND_MEMBER			= NULL_NID;
+	FOUND_MEMBER_CLASS		= NULL_NID;
+	FOUND_AMBIGUOUS_CLASS		= NULL_NID;
+	FOUND_MEMBER_IN_VIRTUAL_CLASS	= FALSE;
+
+	/*
+	/* Search the given derived class for
+	/* the given name of the given kind.
+	/**/
+
+	call SAVE_NODE (SNID);
+
+	call SEARCH_DAG_FOR_MEMBER (DERIVED_CLASS, FALSE);
+
+	call RESTORE_NODE (SNID);
+
+
+	/* EXPERIMENT (DGM, 5.20.91) ...
+
+	if SW_DISALLOW_NESTED_TYPES &
+	   (FOUND_MEMBER = NULL_NID) then do;
+		if (MEMBER_KIND & TYPE_SK) = TYPE_SK then do;
+			call GET_SYM_NODE_R (DERIVED_CLASS, P);
+			FOUND_MEMBER = LOOKUP_NAME
+				       (MEMBER_NAME,
+					TYPE_SK,
+					P->SYM_NODE.ENCLOSING_SCOPE);
+			call RELEASE_SYM_NODE (DERIVED_CLASS);
+		end;
+	end;
+
+	... EXPERIMENT (DGM, 5.20.91) */
+
+	return (FOUND_MEMBER);
+
+/* ---------------------------------------------------------------------
+/* SEARCH_DAG_FOR_MEMBER
+/*
+/* Search the DAG (directed acyclic graph) of the class represented by
+/* the given sym-node id DERIVED_CLASS for the base class represented by
+/* the sym-node id BASE_CLASS; if IS_VIRTUAL_BASE_CLASS is TRUE, then the
+/* derived class itself represents a virtual base class.  Set FOUND_NPATHS
+/* to be the number of paths found from the derived class to the base class
+/* (iff the base class is a base class of the derived class), and set
+/* FOUND_VIRTUAL to TRUE iff the base class is a virtual base class of the
+/* derived class (along the first path if FOUND_NPATHS is greater than one).
+/*
+/* Note that the caller is expected to set BASE_CLASS to the sym-node id of
+/* the desired base class, FOUND_NPATHS to zero, FOUND_VIRTUAL and to FALSE.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SEARCH_DAG_FOR_MEMBER: procedure (CLASS, IS_VIRTUAL_BASE_CLASS)
+		       recursive
+		       internal;
+	declare
+		CLASS				type (NID_T),
+		IS_VIRTUAL_BASE_CLASS		type (BOOL_T);
+	declare
+		(CP, BCP, VBCP)			type (POINTER_T),
+		(BC, NEXT_BC)			type (NID_T),
+		(VBC, PREV_VBC, LAST_VBC)	type (NID_T),
+		MID				type (NID_T),
+		SEARCH_THIS_VIRTUAL_BASE_CLASS	type (BOOL_T);
+
+	call GET_SYM_NODE_R (CLASS, CP);
+
+	/* Search this class scope for the specified member */
+
+	MID = SEARCH_SCOPE (CP->SYM_NODE.DEFINED_SCOPE,
+			    MEMBER_NAME,
+			    MEMBER_KIND);
+
+	/* Does this class scope contain the specified member ? */
+
+	if MID ^= NULL_NID then do;
+		/*
+		/* Here, this class scope does contain then specified member.
+		/**/
+		if FOUND_MEMBER = NULL_NID then do;
+			/*
+			/* Here, this is the first member we've found.
+			/**/
+			FOUND_MEMBER = MID;
+			FOUND_MEMBER_CLASS = SYM_NODE.ENCLOSING_SCOPE_OWNER;
+			FOUND_MEMBER_IN_VIRTUAL_CLASS = IS_VIRTUAL_BASE_CLASS;
+			goto DONE_SEARCH_DAG_FOR_MEMBER;
+		end;
+		else if FOUND_AMBIGUOUS_CLASS = NULL_NID then do;
+			/*
+			/* Here, this is the first ambiguity.
+			/**/
+			FOUND_AMBIGUOUS_CLASS = SYM_NODE.ENCLOSING_SCOPE_OWNER;
+			goto DONE_SEARCH_DAG_FOR_MEMBER;
+		end;
+		else do;
+			/*
+			/* Here, this is a subsequent ambiguity.
+			/**/
+			goto DONE_SEARCH_DAG_FOR_MEMBER;
+		end;
+	end;
+
+	/*
+	/* Here, the member is not in this class scope;
+	/* search each non-virtual base class (if any).
+	/**/
+
+	do BC = CP->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		if ^BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			call SEARCH_DAG_FOR_MEMBER
+				(BCP->BASE_CLASS_NODE.SYMBOL,
+				 (BCP->BASE_CLASS_NODE.VIRTUAL));
+			if FOUND_AMBIGUOUS_CLASS ^= NULL_NID then do;
+				call RELEASE_BASE_CLASS_NODE (BC);
+				goto DONE_SEARCH_DAG_FOR_MEMBER;
+			end;
+		end;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	/*
+	/* If this is the most derived class, then
+	/* search each virtual base class (if any).
+	/**/
+
+	if (CLASS ^= DERIVED_CLASS) |
+	   (CP->SYM_NODE.VIRTUAL_BASE_CLASSES = NULL_NID) then
+		goto DONE_SEARCH_DAG_FOR_MEMBER;
+
+	call GET_VBC_NODE_R (CP->SYM_NODE.VIRTUAL_BASE_CLASSES, VBCP);
+	LAST_VBC = VBCP->VBC_NODE.PREV;
+	call RELEASE_VBC_NODE (CP->SYM_NODE.VIRTUAL_BASE_CLASSES);
+
+	do VBC = LAST_VBC repeat (PREV_VBC) while (VBC ^= NULL_NID)
+	until (VBC = CP->SYM_NODE.VIRTUAL_BASE_CLASSES);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		if FOUND_MEMBER = NULL_NID then
+			SEARCH_THIS_VIRTUAL_BASE_CLASS = TRUE;
+		else if ^IS_VIRTUAL_BASE_CLASS_OF
+			 (VBCP->VBC_NODE.SYMBOL, FOUND_MEMBER_CLASS) then
+			SEARCH_THIS_VIRTUAL_BASE_CLASS = TRUE;
+		else	SEARCH_THIS_VIRTUAL_BASE_CLASS = FALSE;
+		if SEARCH_THIS_VIRTUAL_BASE_CLASS then do;
+			call SEARCH_DAG_FOR_MEMBER
+				(VBCP->VBC_NODE.SYMBOL, TRUE);
+			if FOUND_AMBIGUOUS_CLASS ^= NULL_NID then do;
+				call RELEASE_BASE_CLASS_NODE (BC);
+				goto DONE_SEARCH_DAG_FOR_MEMBER;
+			end;
+		end;
+		PREV_VBC = VBCP->VBC_NODE.PREV;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+
+	DONE_SEARCH_DAG_FOR_MEMBER:
+	call RELEASE_SYM_NODE (CLASS);
+	return;
+
+end SEARCH_DAG_FOR_MEMBER;
+
+end SEARCH_CLASS_LATTICE;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_NAME
+/*
+/* Search the whole symbol table for the given name starting at
+/* the given scope and moving up appropriately; if found then
+/* return its sym-node id and with that sym-node paged in.
+/* If there is an ambiguity, an appropriate diagnostic will be issued.
+/* Otherwise, return NULL_NID with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_NAME: procedure (NAME, KIND, SCOPE) 
+	     returns   (type (NID_T))
+	     external  (X_LOOKUP_NAME);
+
+	declare
+		NAME		type (NID_T),
+		KIND		type (LONG_BITS_T),
+		SCOPE		type (NID_T);
+	declare
+		S		type (NID_T),
+		NEXT_S		type (NID_T),
+		ID		type (NID_T),
+		SNID		type (SNID_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (NAME = NULL_NID) | (SCOPE = NULL_NID) then
+		return (NULL_NID);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* Loop thru each scope from here on up */
+
+	do S = SCOPE repeat (NEXT_S) while (S ^= NULL_NID);
+
+		call SET_SCOPE_NODE_R (S);
+
+		/* Completely search this scope */
+
+		if SCOPE_NODE.TYPE = byte (CLASS_SCOPE) then
+			ID = SEARCH_CLASS
+			     (SCOPE_NODE.OWNER, NAME, KIND);
+		else	ID = SEARCH_SCOPE (S, NAME, KIND);
+
+		/* If found, then return */
+
+		if ID ^= NULL_NID then
+			return (ID);
+
+		/* Otherwise, go on to enclosing scope */
+
+		NEXT_S = SCOPE_NODE.ENCLOSING_SCOPE;
+	end;
+
+	/* Here, not found; restore the current-node-id and return null */
+
+	call RESTORE_NODE (SNID);
+
+	return (NULL_NID);
+
+end LOOKUP_NAME;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_NAME_QUIETLY
+/*
+/* Search the whole symbol table for the given name starting at
+/* the given scope and moving up appropriately; if found then
+/* return its sym-node id and with that sym-node paged in.
+/* If there is an ambiguity, it will be ignored.
+/* Otherwise, return NULL_NID with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_NAME_QUIETLY: procedure (NAME, KIND, SCOPE) 
+		     returns   (type (NID_T))
+		     external  (X_LOOKUP_NAME_QUIETLY);
+
+	declare
+		NAME		type (NID_T),
+		KIND		type (LONG_BITS_T),
+		SCOPE		type (NID_T);
+	declare
+		S		type (NID_T),
+		NEXT_S		type (NID_T),
+		ID		type (NID_T),
+		SNID		type (SNID_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (NAME = NULL_NID) | (SCOPE = NULL_NID) then
+		return (NULL_NID);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* Loop thru each scope from here on up */
+
+	do S = SCOPE repeat (NEXT_S) while (S ^= NULL_NID);
+
+		call SET_SCOPE_NODE_R (S);
+
+		/* Completely search this scope */
+
+		if SCOPE_NODE.TYPE = byte (CLASS_SCOPE) then
+			ID = SEARCH_CLASS_QUIETLY
+			     (SCOPE_NODE.OWNER, NAME, KIND);
+		else	ID = SEARCH_SCOPE (S, NAME, KIND);
+
+		/* If found, then return */
+
+		if ID ^= NULL_NID then
+			return (ID);
+
+		/* Otherwise, go on to enclosing scope */
+
+		NEXT_S = SCOPE_NODE.ENCLOSING_SCOPE;
+	end;
+
+	/* Here, not found; restore the current-node-id and return null */
+
+	call RESTORE_NODE (SNID);
+
+	return (NULL_NID);
+
+end LOOKUP_NAME_QUIETLY;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_TYPE_NAME_QUIETLY
+/*
+/* Same as LOOKUP_NAME_QUIETLY, except if the name is found and is both a
+/* tag and a non-tag, the tag will be found, contrary to the general
+/* default.  This is for the (two) cases in which we really do want
+/* the tag, i.e. when the name explicitly preceeds a "::" operator,
+/* and when the name is part of a derivation list.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_TYPE_NAME_QUIETLY: procedure (NAME, SCOPE)
+			  returns   (type (NID_T))
+			  external  (X_LOOKUP_TYPE_NAME_QUIETLY);
+	declare
+		NAME	type (NID_T),
+		SCOPE	type (NID_T);
+	declare
+		ID	type (NID_T);
+
+	LOOKUP_TYPE_SYMBOL_ONLY = TRUE;
+	ID = LOOKUP_NAME (NAME, ANY_SK, SCOPE);
+	LOOKUP_TYPE_SYMBOL_ONLY = FALSE;
+	return (ID);
+
+end LOOKUP_TYPE_NAME_QUIETLY;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_CONSTRUCTOR
+/*
+/* Search the given class scope for a constructor symbol; if found then
+/* return its sym-node id and with that sym-node paged in.
+/* Otherwise, return NULL_NID with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_CONSTRUCTOR: procedure (SCOPE) 
+		    returns   (type (NID_T))
+		    external  (X_LOOKUP_CONSTRUCTOR);
+	declare
+		SCOPE	type (NID_T);
+	declare
+		P	pointer,
+		NAME	type (NID_T);
+
+	call GET_SCOPE_NODE_R (SCOPE, P);
+	call GET_SYM_NODE_R (P->SCOPE_NODE.OWNER, P);
+	NAME = P->SYM_NODE.NAME;
+	call RELEASE_SYM_NODE (P->SCOPE_NODE.OWNER);
+	call RELEASE_SCOPE_NODE (SCOPE);
+	return (SEARCH_SCOPE (SCOPE, NAME, AGGREGATE_MEMBER_SK));
+
+end LOOKUP_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_DESTRUCTOR
+/*
+/* Search the given class scope for a destructor symbol; if found then
+/* return its sym-node id and with that sym-node paged in.
+/* Otherwise, return NULL_NID with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_DESTRUCTOR: procedure (SCOPE) 
+		   returns   (type (NID_T))
+		   external  (X_LOOKUP_DESTRUCTOR);
+	declare
+		SCOPE	type (NID_T);
+	declare
+		P	pointer,
+		NAME	type (NID_T);
+
+	call GET_SCOPE_NODE_R (SCOPE, P);
+	call GET_SYM_NODE_R (P->SCOPE_NODE.OWNER, P);
+	NAME = P->SYM_NODE.NAME;
+	call RELEASE_SYM_NODE (P->SCOPE_NODE.OWNER);
+	call RELEASE_SCOPE_NODE (SCOPE);
+	return (SEARCH_SCOPE (SCOPE, NAME, AGGREGATE_MEMBER_SK));
+
+end LOOKUP_DESTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_LABEL
+/*
+/* Look up a label symbol with the given name starting at the given
+/* (function/block) scope; if found then return its sym-node id and
+/* with that sym-node paged in.  Otherwise, return NULL_NID, with the
+/* current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_LABEL: procedure (NAME, SCOPE)
+	      returns   (type (NID_T))
+	      external  (X_LOOKUP_LABEL);
+
+	declare
+		NAME	type (NID_T),
+		SCOPE	type (NID_T);
+	
+	return (SEARCH_LOCAL_SCOPE (SCOPE, NAME, LABEL_SK));
+
+end LOOKUP_LABEL;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_DOV_BASE_CLASS
+/*
+/* If the class represented by the given sym-node id B is a direct or
+/* virtual base class of the class represented by the given sym-node id
+/* D, then return the corresponding base-class-node, otherwise  return
+/* NULL_NID.  Preserves current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "find_base".
+/* ------------------------------------------------------------------- */
+
+LOOKUP_DOV_BASE_CLASS: procedure (B, D)
+		       returns   (type (NID_T))
+		       external  (X_LOOKUP_DOV_BASE_CLASS);
+	declare
+		(B, D)			type (NID_T);
+	declare
+		(DP, BCP, VBCP)		type (POINTER_T),
+		(BC, NEXT_BC)		type (NID_T),
+		(VBC, NEXT_VBC)		type (NID_T),
+		VIRTUAL			type (BOOL_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (B = NULL_NID) | (D = NULL_NID) then
+		return (FALSE);
+
+	call GET_SYM_NODE_R (D, DP);
+
+	/* Search the direct base classes first */
+
+	do BC = DP->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		if BCP->BASE_CLASS_NODE.SYMBOL = B then do;
+			call RELEASE_BASE_CLASS_NODE (BC);
+			call RELEASE_BASE_CLASS_NODE (D);
+			return (BC);
+		end;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	/* -------------------------------
+	/* TODO: Replace the following ...
+	/* -------------------------------
+
+	do VBC = DP->SYM_NODE.VIRTUAL_BASE_CLASSES
+	repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		if VBCP->VBC_NODE.SYMBOL = B then do;
+			BC = VBCP->VBC_NODE.BASE_CLASS_NODE_ID;
+			call RELEASE_VBC_NODE (VBC);
+			call RELEASE_BASE_CLASS_NODE (D);
+			return (BC);
+		end;
+		NEXT_BVC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+
+	/* ------------------------------- */
+
+	/*
+	/* Here, B is not a direct base class of D;
+	/* see if it is an indirect virtual base class.
+	/**/
+
+	do BC = DP->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		VBC = LOOKUP_DOV_BASE_CLASS (B, BCP->BASE_CLASS_NODE.SYMBOL);
+		if VBC ^= NULL_NID then do;
+			call GET_BASE_CLASS_NODE_R (VBC, VBCP);
+			VIRTUAL = VBCP->BASE_CLASS_NODE.VIRTUAL;
+			call RELEASE_BASE_CLASS_NODE (VBC);
+			if VIRTUAL then do;
+				call RELEASE_BASE_CLASS_NODE (D);
+				return (VBC);
+			end;
+		end;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	return (NULL_NID);
+
+end LOOKUP_DOV_BASE_CLASS;
+
+/* ---------------------------------------------------------------------
+/* IS_BASE_CLASS_OF
+/*
+/* If the given symbol B is a base class of the given symbol D, then
+/* return TRUE; in this case the given flag AMBIGUOUS is set TRUE
+/* iff the base class is ambiguous (i.e. there is more than one path
+/* from D to B) otherwise FALSE, the given flag INACCESSIBLE is set TRUE
+/* iff the base class is inaccessible from the current function otherwise
+/* FALSE, and the given flag VIRTUAL is set TRUE iff the found base class
+/* is virtual otherwise FALSE.  Otherwise, if the given B is not a base
+/* class of D then return FALSE; in this case the given flags are
+/* undefined.  Preserves current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "is_base_class".
+/* ------------------------------------------------------------------- */
+
+IS_BASE_CLASS_OF: procedure (B, D, AMBIGUOUS, INACCESSIBLE, VIRTUAL)
+		  returns   (type (BOOL_T))
+		  external  (X_IS_BASE_CLASS_OF);
+	declare
+		B		type (NID_T),
+		D		type (NID_T),
+		AMBIGUOUS	type (BOOL_T),
+		INACCESSIBLE	type (BOOL_T),
+		VIRTUAL		type (BOOL_T);
+	declare
+		ACCESS		type (SHORT_T),
+		NFOUND		type (SHORT_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (B = NULL_NID) | (D = NULL_NID) then
+		return (FALSE);
+
+	if B = D then do;
+		/*
+		/* -TODO- hmmm, some callers of this would dont'
+		/*  want this to be true; maybe just do this if
+		/*  not the top level call.
+		/**/
+		AMBIGUOUS = FALSE;
+		INACCESSIBLE = FALSE;
+		VIRTUAL = FALSE;
+		return (TRUE);
+	end;
+
+	call CHECK_BASE_CLASSES (B, D, NULL_NID, VIRTUAL, NFOUND);
+
+	if NFOUND = 0 then
+		return (FALSE);
+
+	if NFOUND > 1 then
+		AMBIGUOUS = TRUE;
+	else	AMBIGUOUS = FALSE;
+
+	/* Test whether the base class is accessible. */
+
+	ACCESS = EFFECTIVE_ACCESS (NULL_NID, B, D, PUBLIC_ACCESS);
+	INACCESSIBLE = (ACCESS ^= PUBLIC_ACCESS);
+
+	return (TRUE);
+
+end IS_BASE_CLASS_OF;
+
+/* ---------------------------------------------------------------------
+/* IS_ANY_BASE_CLASS_OF
+/*
+/* If the given symbol B is a base class of the given symbol D (regardless
+/* ambiguity, access rights, or virtual-ness), then return TRUE, otherwise
+/* return FALSE.  Preserves current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "is_base_class".
+/* ------------------------------------------------------------------- */
+
+IS_ANY_BASE_CLASS_OF: procedure (B, D)
+		      returns   (type (BOOL_T))
+		      external  (X_IS_ANY_BASE_CLASS_OF);
+	declare
+		B	type (NID_T),
+		D	type (NID_T);
+	declare
+		NFOUND	type (SHORT_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (B = NULL_NID) | (D = NULL_NID) then
+		return (FALSE);
+
+	if B = D then
+		/*
+		/* -TODO- hmmm, some callers of this would dont'
+		/*  want this to be true; maybe just do this if
+		/*  not the top level call.
+		/**/
+		return (TRUE);
+
+	call CHECK_BASE_CLASSES (B, D, NULL_NID, FALSE, NFOUND);
+
+	return (NFOUND > 0);
+
+end IS_ANY_BASE_CLASS_OF;
+
+/* ---------------------------------------------------------------------
+/* IS_ACCESSIBLE_BASE_CLASS_OF
+/*
+/* Returns whether B is any base of D.  In spite of its name, the only
+/* distinction this procedure makes for an _inaccessible_ base class is
+/* to emit a diagnostic prior to returning TRUE.
+/*
+/* If the given symbol B is a base class of the given symbol D, then
+/* return TRUE; in this case if the base class is ambiguous (i.e.
+/* there is more than one path from D to B), or if the base class is
+/* inaccessible from the current function, then an appropriate diagnostic
+/* will be emitted.  Otherwise, if the given B is not a base class of D
+/* then return FALSE.  Preserves current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "is_base_class".
+/* ------------------------------------------------------------------- */
+
+IS_ACCESSIBLE_BASE_CLASS_OF: procedure (B, D, POINTER_CONVERSION)
+			     returns   (type (BOOL_T))
+			     external  (X_IS_ACCESSIBLE_BASE_CLASS_OF);
+	declare
+		B			type (NID_T),
+		D			type (NID_T),
+		POINTER_CONVERSION	type (BOOL_T);
+	declare
+		NFOUND			type (SHORT_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (B = NULL_NID) | (D = NULL_NID) then
+		return (FALSE);
+
+	if B = D then
+		/*
+		/* -TODO- hmmm, some callers of this would dont'
+		/*  want this to be true; maybe just do this if
+		/*  not the top level call.
+		/**/
+		return (TRUE);
+
+	call CHECK_BASE_CLASSES (B, D, NULL_NID, FALSE, NFOUND);
+
+	if NFOUND = 0 then
+		return (FALSE);
+
+	if NFOUND > 1 then do;
+		/*
+		/* Ambiguous base class reference.
+		/**/
+		if POINTER_CONVERSION then do;
+			/*
+			/* Error; cannot convert a pointer to a derived class
+			/* (D) to a pointer to an ambiguous base class (B).
+			/**/
+			call SEMANTIC_ERROR_II (ERR_AMBIG_DERIVED_BASE_PTR_CNV,
+						SYMBOL_NAME (D),
+						SYMBOL_NAME (B));
+		end;
+		else do;
+			/*
+			/* Error; this is an ambiguous reference to a
+			/* base class (B) from a derived class (D).
+			/**/
+			call SEMANTIC_ERROR_II (ERR_AMBIG_BASE_CLASS_REF,
+						SYMBOL_NAME (B),
+						SYMBOL_NAME (D));
+		end;
+		return (TRUE);
+	end;
+
+	/* Test whether the base class is accessible. */
+
+	if EFFECTIVE_ACCESS (NULL_NID, B, D, PUBLIC_ACCESS) = PUBLIC_ACCESS then
+		return (TRUE);
+
+	/* Inaccessible base class reference */
+
+	if POINTER_CONVERSION then do;
+		/*
+		/* Error; cannot convert a pointer to a derived class
+		/* (D) to a pointer to an inaccessible base class (B).
+		/**/
+		call SEMANTIC_ERROR_II (ERR_PRIV_DERIVED_BASE_PTR_CNV,
+					SYMBOL_NAME (D),
+					SYMBOL_NAME (B));
+	end;
+	else do;
+		/*
+		/* Error; this is an illegal reference to a
+		/* base class (B) from a derived class (D) due
+		/* to insufficient access privileges.
+		/**/
+		if ^AM_DEBUGGER then do;
+			call SEMANTIC_ERROR_II (ERR_PRIV_BASE_CLASS_REF,
+						SYMBOL_NAME (B),
+						SYMBOL_NAME (D));
+		end;
+	end;
+
+	return (TRUE);
+
+end IS_ACCESSIBLE_BASE_CLASS_OF;
+
+/* ---------------------------------------------------------------------
+/* IS_UNAMBIGUOUS_BASE_CLASS_OF
+/*
+/* Return TRUE if the given class (sym-node) B is an unambiguous base
+/* class of the given class (sym-node) D, regardless of access rights
+/* or virtual-ness.  Otherwise return FALSE.  Preserves current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "unambig_base".
+/* ------------------------------------------------------------------- */
+
+IS_UNAMBIGUOUS_BASE_CLASS_OF: procedure (B, D)
+			      returns   (type (BOOL_T))
+			      external  (X_IS_UNAMBIGUOUS_BASE_CLASS_OF);
+	declare
+		B		type (NID_T),
+		D		type (NID_T);
+	declare
+		NFOUND		type (SHORT_T);
+
+	/* Check for trivial cases (paranoid) */
+
+	if (B = NULL_NID) | (D = NULL_NID) then
+		return (FALSE);
+
+	if B = D then
+		/*
+		/* -TODO- hmmm, some callers of this would dont'
+		/*  want this to be true; maybe just do this if
+		/*  not the top level call.
+		/**/
+		return (TRUE);
+
+	call CHECK_BASE_CLASSES (B, D, NULL_NID, FALSE, NFOUND);
+
+	return (NFOUND = 1);
+
+end IS_UNAMBIGUOUS_BASE_CLASS_OF;
+
+/* ---------------------------------------------------------------------
+/* IS_VIRTUAL_BASE_CLASS_OF
+/*
+/* Return TRUE if the given class (sym-node) B is a virtual base
+/* class of the given class (sym-node) D.  Otherwise return FALSE.
+/* Preserves current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "non_virt_base".
+/* ------------------------------------------------------------------- */
+
+IS_VIRTUAL_BASE_CLASS_OF: procedure (B, D)
+			  returns   (type (BOOL_T))
+			  external  (X_IS_VIRTUAL_BASE_CLASS_OF);
+	declare
+		B		type (NID_T),
+		D		type (NID_T);
+	declare
+		(DP, VBCP)	type (POINTER_T),
+		(VBC, NEXT_VBC)	type (NID_T);
+
+
+	call GET_SYM_NODE_R (D, DP);
+	do VBC = DP->SYM_NODE.VIRTUAL_BASE_CLASSES
+	repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		if VBCP->VBC_NODE.SYMBOL = B then do;
+			call RELEASE_VBC_NODE (VBC);
+			return (TRUE);
+		end;
+		NEXT_VBC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+	call RELEASE_SYM_NODE (D);
+	return (FALSE);
+
+end IS_VIRTUAL_BASE_CLASS_OF;
+
+/* ---------------------------------------------------------------------
+/* CHECK_BASE_CLASSES
+/*
+/* Searches the class lattice or DAG (directed acyclic graph) of the class
+/* represented by the given sym-node id DERIVED_CLASS for the base class
+/* representd by the sym-node id BASE_CLASS.  Sets FOUND_NPATHS to be the
+/* number of paths found from the derived class to base class (zero if the
+/* the base class is not a base class of the derived class), and sets
+/* FOUND_VIRTUAL to TRUE iff the base class is a virtual base class of the
+/* derived class (along the first path, i.e. if FOUND_NPATHS is greater
+/* than one).
+/*
+/* If INTERMEDIATE_CLASS is not NULL_NID, then it is a sym-node id
+/* representing an intermediate class thru which the search should
+/* be performed; the final results (of FOUND_NPATHS and FOUND_VIRTUAL)
+/* will reflect only paths which include the intermediate class.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_BASE_CLASSES: procedure (BASE_CLASS,
+			       DERIVED_CLASS,
+			       INTERMEDIATE_CLASS,
+			       FOUND_VIRTUAL,
+			       FOUND_NPATHS)
+		    external  (X_CHECK_BASE_CLASSES);
+	declare
+		BASE_CLASS		type (NID_T),
+		DERIVED_CLASS		type (NID_T),
+		INTERMEDIATE_CLASS	type (NID_T),
+		FOUND_VIRTUAL		type (BOOL_T),
+		FOUND_NPATHS		type (SHORT_T);
+	declare
+		IC			type (NID_T);
+	declare
+		VISITED_VBC_LIST	type (POINTER_T);
+	
+	/* Initialize (for SEARCH_DAG_FOR_BASE_CLASS) */
+
+	VISITED_VBC_LIST	= null ();
+	FOUND_VIRTUAL		= FALSE;
+	FOUND_NPATHS		= 0;
+
+	/* See if we have a non-trivial intermediate class */
+
+	if (INTERMEDIATE_CLASS = BASE_CLASS) |
+	   (INTERMEDIATE_CLASS = DERIVED_CLASS) then
+		IC = NULL_NID;
+	else	IC = INTERMEDIATE_CLASS;
+
+	/*
+	/* Search the given derived class for the given base
+	/* class using the given intermediate class (if any).
+	/**/
+
+	call SEARCH_DAG_FOR_BASE_CLASS (DERIVED_CLASS, IC, FALSE);
+
+	/* Delete the "visited" virtual base class list (if any) */
+
+	if VISITED_VBC_LIST ^= null () then
+		call DELETE_NODE_LIST (VISITED_VBC_LIST);
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_DAG_FOR_BASE_CLASS
+/*
+/* Search the DAG (directed acyclic graph) of the class represented by
+/* the given sym-node id DERIVED_CLASS for the base class represented by
+/* the sym-node id BASE_CLASS; if IS_VIRTUAL_BASE_CLASS is TRUE, then the
+/* derived class itself represents a virtual base class.  Set FOUND_NPATHS
+/* to be the number of paths found from the derived class to the base class
+/* (iff the base class is a base class of the derived class), and set
+/* FOUND_VIRTUAL to TRUE iff the base class is a virtual base class of the
+/* derived class (along the first path if FOUND_NPATHS is greater than one).
+/*
+/* Note that the caller is expected to set BASE_CLASS to the sym-node
+/* id of the desired base class, FOUND_NPATHS to zero, FOUND_VIRTUAL
+/* to FALSE, and VISITED_VBC_LIST to null ().
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SEARCH_DAG_FOR_BASE_CLASS: procedure (DERIVED_CLASS,
+				      INTERMEDIATE_CLASS,
+				      IS_VIRTUAL_BASE_CLASS)
+			   recursive
+			   internal;
+	declare
+		DERIVED_CLASS		type (NID_T),
+		INTERMEDIATE_CLASS	type (NID_T),
+		IS_VIRTUAL_BASE_CLASS	type (BOOL_T);
+	declare
+		IC			type (NID_T),
+		(DCP, BCP)		type (POINTER_T),
+		(BC, NEXT_BC)		type (NID_T);
+
+	/*
+	/* See if we've encountered the intermediate class yet if
+	/* any; if so, then null it out for subsequent it calls.
+	/**/
+
+	if INTERMEDIATE_CLASS = DERIVED_CLASS then
+		IC = NULL_NID;
+	else	IC = INTERMEDIATE_CLASS;
+
+	/* See if we've found the base class */
+
+	if BASE_CLASS = DERIVED_CLASS then do;
+		if IC = NULL_NID then do;
+			FOUND_NPATHS = FOUND_NPATHS + 1;
+			if FOUND_NPATHS = 1 then
+				FOUND_VIRTUAL = IS_VIRTUAL_BASE_CLASS;
+		end;
+		return;
+	end;
+
+	/* Here, not found; search each base class of the derived class */
+
+	call GET_SYM_NODE_R (DERIVED_CLASS, DCP);
+	do BC = DCP->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		if BCP->BASE_CLASS_NODE.VIRTUAL & (IC = NULL_NID) then do;
+			if ALREADY_ON_NODE_LIST
+			   (VISITED_VBC_LIST, BCP->BASE_CLASS_NODE.SYMBOL) then
+				goto CONTINUE;
+			call APPEND_TO_NODE_LIST
+			     (VISITED_VBC_LIST, BCP->BASE_CLASS_NODE.SYMBOL);
+		end;
+		call SEARCH_DAG_FOR_BASE_CLASS (BCP->BASE_CLASS_NODE.SYMBOL,
+						IC,
+						(BCP->BASE_CLASS_NODE.VIRTUAL));
+		CONTINUE:
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+	call RELEASE_SYM_NODE (DERIVED_CLASS);
+
+end SEARCH_DAG_FOR_BASE_CLASS;
+
+end CHECK_BASE_CLASSES;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_VFT_POINTER
+/*
+/* Lookup the virtual function table pointer member symbol
+/* associated with the class represented by the given sym-node id.
+/* If found then return its sym-node id, otherwise return NULL_NID.
+/* Preserves current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "virtual_sym".
+/* ------------------------------------------------------------------- */
+
+LOOKUP_VFT_POINTER: procedure (CLASS)
+		    returns   (type (NID_T))
+		    external  (X_LOOKUP_VFT_POINTER);
+	declare
+		CLASS		type (NID_T);
+	declare
+		VFTP_NAME	type (NID_T),
+		(C, VFTP)	type (NID_T),
+		(BC, NEXT_BC)	type (NID_T),
+		(CP, BCP)	type (POINTER_T);
+
+	call GET_SYM_NODE_R (CLASS,  CP);
+
+	if CP->SYM_NODE.VIRTUAL_FUNCTION_COUNT <= 0 then do;
+		call RELEASE_SYM_NODE (CLASS);
+		return (NULL_NID);
+	end;
+
+	C = CLASS;
+	VFTP_NAME = VFT_POINTER_NAME;
+
+	do VFTP = NULL_NID while (TRUE);
+		VFTP = SEARCH_SCOPE
+			(CP->SYM_NODE.DEFINED_SCOPE,
+			 VFTP_NAME,
+			 AGGREGATE_MEMBER_SK | DATA_SK);
+		if VFTP ^= NULL_NID then
+			leave;
+		do BC = CP->SYM_NODE.BASE_CLASSES
+		repeat (NEXT_BC) while (BC ^= NULL_NID);
+			call GET_BASE_CLASS_NODE_R (BC, BCP);
+			if BCP->BASE_CLASS_NODE.HAS_VFT_POINTER then
+				leave;
+			NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+			call RELEASE_BASE_CLASS_NODE (BC);
+		end;
+		call RELEASE_SYM_NODE (C);
+		if BC = NULL_NID then
+			leave;
+		C = BCP->BASE_CLASS_NODE.SYMBOL;
+		call RELEASE_BASE_CLASS_NODE (BC);
+		call GET_SYM_NODE_R (C, CP);
+	end;
+
+	call RELEASE_SYM_NODE (C);
+	return (VFTP);
+
+end LOOKUP_VFT_POINTER;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_THIS_PARAMETER
+/*
+/* Looks up the "this" parameter associated with the (member) function
+/* represented by the given sym-node id, and returns its sym-node id if
+/* found, otherwise returns NULL_NID.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_THIS_PARAMETER: procedure (FUNCTION_SYMBOL)
+		       returns   (type (NID_T))
+		       external  (X_LOOKUP_THIS_PARAMETER);
+	declare
+		FUNCTION_SYMBOL	type (NID_T);
+
+	return (LOOKUP_IMPLICIT_PARAMETER
+		(FUNCTION_SYMBOL, THIS_PARAMETER_NAME));
+
+end LOOKUP_THIS_PARAMETER;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_CTOR_FLAG_PARAMETER
+/*
+/* Looks up the special constructor flag parameter associated with the
+/* (constructor) function represented by the given sym-node id, and
+/* returns its sym-node id if found, otherwise returns NULL_NID.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_CTOR_FLAG_PARAMETER: procedure (FUNCTION_SYMBOL)
+			    returns   (type (NID_T))
+			    external  (X_LOOKUP_CTOR_FLAG_PARAMETER);
+	declare
+		FUNCTION_SYMBOL	type (NID_T);
+
+	return (LOOKUP_IMPLICIT_PARAMETER
+		(FUNCTION_SYMBOL, NOT_MOST_DERIVED_FLAG_NAME));
+
+end LOOKUP_CTOR_FLAG_PARAMETER;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_DTOR_FLAG_PARAMETER
+/*
+/* Looks up the special destructor flag parameter associated with the
+/* (destructor) function represented by the given sym-node id, and
+/* returns its sym-node id if found, otherwise returns NULL_NID.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_DTOR_FLAG_PARAMETER: procedure (FUNCTION_SYMBOL)
+			    returns   (type (NID_T))
+			    external  (X_LOOKUP_DTOR_FLAG_PARAMETER);
+	declare
+		FUNCTION_SYMBOL	type (NID_T);
+
+	return (LOOKUP_IMPLICIT_PARAMETER
+		(FUNCTION_SYMBOL, NOT_MOST_DERIVED_FLAG_NAME));
+
+end LOOKUP_DTOR_FLAG_PARAMETER;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_RETURN_PARAMETER
+/*
+/* Looks up the parameter associated with the return value of a function
+/* whose return type is a class with a non-trivial copy constructor.
+/* The given sym-node id indicates which function.  If found, returns
+/* the parameter's sym-node id, otherwise returns NULL_NID.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_RETURN_PARAMETER: procedure (FUNCTION_SYMBOL)
+			 returns   (type (NID_T))
+			 external  (X_LOOKUP_RETURN_PARAMETER);
+	declare
+		FUNCTION_SYMBOL	type (NID_T);
+
+	return (LOOKUP_IMPLICIT_PARAMETER
+		(FUNCTION_SYMBOL, RETURN_PARAMETER_NAME));
+
+end LOOKUP_RETURN_PARAMETER;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_IMPLICIT_PARAMETER
+/*
+/* Looks up the named implicit parameter associated with the function
+/* represented by the given sym-node id, and returns its sym-node
+/* id if found, otherwise returns NULL_NID.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_IMPLICIT_PARAMETER: procedure (FUNCTION_SYMBOL, PARAMETER_NAME)
+			   returns   (type (NID_T))
+			   internal;
+	declare
+		FUNCTION_SYMBOL		type (NID_T),
+		PARAMETER_NAME		type (NID_T);
+	declare
+		PARAMETER_SYMBOL	type (NID_T),
+		(FP, FSP, LP, SP)	type (POINTER_T),
+		(P, NEXT_P)		type (NID_T),
+		COUNT			type (SHORT_T);
+
+	call GET_SYM_NODE_R (FUNCTION_SYMBOL, FP);
+
+	if ^FP->SYM_NODE.IS_FUNCTION then do;
+		call RELEASE_SYM_NODE (FUNCTION_SYMBOL);
+		return (NULL_NID);
+	end;
+
+	call GET_SIG_NODE_R (FP->SYM_NODE.TOP_TYPE.SIGNATURE, FSP);
+
+	PARAMETER_SYMBOL = NULL_NID;
+
+	COUNT = FSP->SIG_NODE.NPARAMETERS - FSP->SIG_NODE.EXPLICIT_NPARAMETERS;
+
+	do P = FSP->SIG_NODE.PARAMETERS repeat (NEXT_P)
+	while ((P ^= NULL_NID) & (COUNT > 0));
+		call GET_SYM_NODE_R (P, SP);
+		if SP->SYM_NODE.NAME = PARAMETER_NAME then do;
+			PARAMETER_SYMBOL = P;
+			NEXT_P = NULL_NID;
+		end;
+		else	NEXT_P = SP->SYM_NODE.NEXT_PARAMETER;
+		call RELEASE_SYM_NODE (P);
+		COUNT = COUNT - 1;
+	end;
+
+	call RELEASE_SIG_NODE (FP->SYM_NODE.TOP_TYPE.SIGNATURE);
+	call RELEASE_SYM_NODE (FUNCTION_SYMBOL);
+
+	return (PARAMETER_SYMBOL);
+
+end LOOKUP_IMPLICIT_PARAMETER;
+
+/* ---------------------------------------------------------------------
+/* CHECK_OVERLOAD
+/*
+/* Search the overload list of the given function symbol for one
+/* that matches (i.e. is exactly compatible with) the given type.
+/* If found, then return COMPATIBLE_TCS and set ID to the sym-node
+/* id of the found symbol and with it paged in.  Otherwise if the
+/* given type is sufficiently distinct (to be overloaded) from every
+/* function on the overload list return DISTINCT_TCS and with the
+/* current-node-id preserved, otherwise return NOT_DISTINCT_TCS and
+/* with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+CHECK_OVERLOAD: procedure (FUN_SYMBOL, FUN_TYPE, FUN_ID, FUN_OCM)
+		returns   (type (SHORT_T))
+		external  (X_CHECK_OVERLOAD);
+
+	declare
+		FUN_SYMBOL		   type (NID_T),
+		FUN_TYPE		   type (NID_T),
+		FUN_ID			   type (NID_T),
+		FUN_OCM			   type (OCM_T);
+	declare
+		(S, NEXT_S)		   type (NID_T),
+		NAME			   type (NID_T),
+		P			   type (POINTER_T),
+		TOP_QUALIFIERS_SIGNIFICANT type (BOOL_T),
+		OCM			   type (OVERLOAD_COMPATIBILITY_MODE_T);
+
+	OCM.MODE = FUN_OCM;
+
+	do S = FUN_SYMBOL repeat (NEXT_S) while (S ^= NULL_NID);
+		call GET_SYM_NODE_R (S, P);
+		if (P->SYM_NODE.SEQUENCE_NUMBER > LOOKUP_LOW_SEQUENCE_NUMBER) &
+		   (P->SYM_NODE.SEQUENCE_NUMBER < LOOKUP_HIGH_SEQUENCE_NUMBER) &
+		   ^P->SYM_NODE.IS_MEMBER then
+			goto CONTINUE;
+		if OCM.NO_OLD_STYLE_UNDEFINED then do;
+			if ^P->SYM_NODE.PROTOTYPED & ^P->SYM_NODE.DEFINED then
+				goto CONTINUE;
+		end;
+		else if OCM.ONLY_C_LINKAGE then do;
+			if P->SYM_NODE.LINKAGE_KIND ^= byte (C_LINKAGE) then
+				goto CONTINUE;
+		end;
+		if COMPATIBLE_TYPES (P->SYM_NODE.TYPE, FUN_TYPE) then do;
+			call RELEASE_SYM_NODE (S);
+			call SET_SYM_NODE (S);
+			FUN_ID = S;
+			return (COMPATIBLE_TCS);
+		end;
+		else if P->SYM_NODE.IS_CONVERSION_FUNCTION then do;
+			call RELEASE_SYM_NODE (S);
+			return (DISTINCT_TCS);
+		end;
+		if OCM.TOP_QUALIFIERS_SIGNIFICANT &
+		   (P->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST)) then
+			TOP_QUALIFIERS_SIGNIFICANT = TRUE;
+		else	TOP_QUALIFIERS_SIGNIFICANT = FALSE;
+		if ^DISTINCT_FUNCTION_TYPES
+		    (P->SYM_NODE.TYPE,
+		     FUN_TYPE,
+		     TOP_QUALIFIERS_SIGNIFICANT) then do;
+			call RELEASE_SYM_NODE (S);
+			return (NOT_DISTINCT_TCS);
+		end;
+		CONTINUE:
+		NAME = P->SYM_NODE.NAME;
+		NEXT_S = P->SYM_NODE.NEXT_OVERLOAD;
+		call RELEASE_SYM_NODE (S);
+	end;
+
+	if NAME = OPERATOR_DELETE_NAME then
+		call SEMANTIC_ERROR (ERR_OVERLOAD_DELETE);
+
+	return (DISTINCT_TCS);
+
+end CHECK_OVERLOAD;
+
+/* ---------------------------------------------------------------------
+/* MATCH_OVERLOAD
+/*
+/* Search the overload list of the given function symbol for one that
+/* matches (i.e. is *exactly* compatible with) the given type.  If
+/* found, then return the sym-node id of the found symbol and with it
+/* paged in, otherwise return NULL_NID, with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+MATCH_OVERLOAD: procedure (FUN_SYMBOL, FUN_TYPE)
+		returns   (type (NID_T))
+		external  (X_MATCH_OVERLOAD);
+
+	declare
+		FUN_SYMBOL	type (NID_T),
+		FUN_TYPE	type (NID_T);
+	declare
+		(S, NEXT_S)	type (NID_T),
+		P		type (POINTER_T);
+
+	do S = FUN_SYMBOL repeat (NEXT_S) while (S ^= NULL_NID);
+		call GET_SYM_NODE_R (S, P);
+		NEXT_S = P->SYM_NODE.NEXT_OVERLOAD;
+		if (P->SYM_NODE.SEQUENCE_NUMBER > LOOKUP_LOW_SEQUENCE_NUMBER) &
+		   (P->SYM_NODE.SEQUENCE_NUMBER < LOOKUP_HIGH_SEQUENCE_NUMBER) &
+		   ^P->SYM_NODE.IS_MEMBER then
+			goto CONTINUE;
+		if COMPATIBLE_TYPES (P->SYM_NODE.TYPE, FUN_TYPE) then do;
+			call RELEASE_SYM_NODE (S);
+			call SET_SYM_NODE (S);
+			return (S);
+		end;
+		CONTINUE:
+		call RELEASE_SYM_NODE (S);
+	end;
+
+	return (NULL_NID);
+
+end MATCH_OVERLOAD;
+
+/* ---------------------------------------------------------------------
+/* MATCH_OVERLOAD_FOR_OVERRIDE
+/*
+/* Search the overload list of the (derived-class) function symbol
+/* represented by the given sym-node id DF for one that matches the
+/* type of the (base-class) function symbol represented by the given
+/* sym-node pointer BFP, for purposes of virtual function overriding.
+/* If found, then return the sym-node id of the found (overridding)
+/* symbol and with it paged in, otherwise return NULL_NID, and with
+/* the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+MATCH_OVERLOAD_FOR_OVERRIDE: procedure (DF, BFP)
+			     returns   (type (NID_T))
+			     external  (X_MATCH_OVERLOAD_FOR_OVERRIDE);
+	declare
+		DF		type (NID_T),
+		BFP		type (POINTER_T);
+	declare
+		(F, NEXT_F)	type (NID_T),
+		(FP, TP)	type (POINTER_T),
+		FUN_SIGNATURE	type (NID_T),
+		FUN_QUALIFIERS	type (BYTE_BITS_T);
+
+	call GET_TYPE_NODE_R (BFP->SYM_NODE.TYPE, TP);
+	FUN_SIGNATURE = TP->TYPE_NODE.DATA
+			(rank (TP->TYPE_NODE.LEVEL)).SIGNATURE;
+	FUN_QUALIFIERS = (TP->TYPE_NODE.DATA
+			  (rank (TP->TYPE_NODE.LEVEL)).QUALIFIERS & ALL_TQ);
+	call RELEASE_TYPE_NODE (BFP->SYM_NODE.TYPE);
+
+	do F = DF repeat (NEXT_F) while (F ^= NULL_NID);
+		call GET_SYM_NODE_R (F, FP);
+		NEXT_F = FP->SYM_NODE.NEXT_OVERLOAD;
+		if (FP->SYM_NODE.SEQUENCE_NUMBER >
+		    LOOKUP_LOW_SEQUENCE_NUMBER) &
+		   (FP->SYM_NODE.SEQUENCE_NUMBER <
+		    LOOKUP_HIGH_SEQUENCE_NUMBER) &
+		   ^FP->SYM_NODE.IS_MEMBER then
+			goto CONTINUE;
+		if COMPATIBLE_TYPES (FP->SYM_NODE.TYPE, BFP->SYM_NODE.TYPE)
+		then do;
+			/*
+			/* Here, the function types are exactly compatible.
+			/**/
+			call RELEASE_SYM_NODE (F);
+			call SET_SYM_NODE (F);
+			return (F);
+		end;
+		else if COMPATIBLE_SIGNATURES
+			(FP->SYM_NODE.TOP_TYPE.SIGNATURE, FUN_SIGNATURE) &
+			((FP->SYM_NODE.TOP_TYPE.QUALIFIERS & ALL_TQ) =
+			 FUN_QUALIFIERS) then do;
+			/*
+			/* Here, the function signatures are
+			/* compatible but the return types are not.
+			/* See if they are compatible enough though,
+			/* i.e. based on some new rules (8.18.92).
+			/**/
+			if COMPATIBLE_ENOUGH_RETURN_TYPES (BFP, FP) then do;
+				/*
+				/* Here, the function types
+				/* are compatible enough for
+				/* virtual function overriding.
+				/**/
+				call RELEASE_SYM_NODE (F);
+				call SET_SYM_NODE (F);
+				return (F);
+			end;
+		end;
+		CONTINUE:
+		call RELEASE_SYM_NODE (F);
+	end;
+
+	return (NULL_NID);
+
+end MATCH_OVERLOAD_FOR_OVERRIDE;
+
+/* ---------------------------------------------------------------------
+/* CHECK_DUPLICATE_BASE_CLASSES
+/*
+/* Check to see if there are any direct base classes of the given base
+/* class list which are also indirect base classes (on a different path
+/* than the direct base class, since it's impossible for a class to be
+/* a base class of itself).  If so, then emit (one) appropriate diagnostic.
+/* The given class name is assumed to be the name of the class to which
+/* the base class list belongs.
+/*
+/* N.B. fashioned after the TauMetric routine "check_conflict".
+/* ------------------------------------------------------------------- */
+
+CHECK_DUPLICATE_BASE_CLASSES: procedure (BASE_CLASS_LIST, CLASS_NAME)
+			      external  (X_CHECK_DUPLICATE_BASE_CLASSES);
+	declare
+		BASE_CLASS_LIST		type (NID_T),
+		CLASS_NAME		type (NID_T);
+	declare
+		THIS_BASE_CLASS		type (NID_T),
+		THIS_BASE_CLASS_PTR	type (POINTER_T);
+	declare
+		NEXT_THIS_BASE_CLASS	type (NID_T),
+		N			type (NID_T);
+
+	do THIS_BASE_CLASS = BASE_CLASS_LIST
+	repeat (NEXT_THIS_BASE_CLASS)
+	while  (THIS_BASE_CLASS ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (THIS_BASE_CLASS,
+					    THIS_BASE_CLASS_PTR);
+		NEXT_THIS_BASE_CLASS
+			= THIS_BASE_CLASS_PTR->BASE_CLASS_NODE.NEXT;
+		N = FIND_THIS_BASE_CLASS (BASE_CLASS_LIST);
+		if N ^= NULL_NID then do;
+			/*
+			/* Error; THIS_CLASS_BASE_CLASS has been specified as
+			/* both a direct and indirect base class of CLASS_NAME.
+			/**/
+			call SEMANTIC_ERROR_II
+			     (ERR_DIRECT_INDIRECT_BASE,
+			      BASE_CLASS_NAME (THIS_BASE_CLASS),
+			      TOKEN_NAME (CLASS_NAME));
+		end;
+		call RELEASE_BASE_CLASS_NODE (THIS_BASE_CLASS);
+	end;
+	return;
+
+/* ---------------------------------------------------------------------
+/* FIND_THIS_BASE_CLASS
+/*
+/* Go through the given base class list (BASE_CLASS_LIST) to see if
+/* THIS_BASE_CLASS (which is pointed to by THIS_BASE_CLASS_PTR) is a base
+/* class of any of the base classes; it is assumed that THIS_BASE_CLASS
+/* refers to a base-class-node within BASE_CLASS_LIST .  If so, then
+/* return the node id of the found base class, otherwise return NULL_NID.
+/* ------------------------------------------------------------------- */
+
+FIND_THIS_BASE_CLASS: procedure (BASE_CLASS_LIST)
+		      returns   (type (NID_T))
+		      recursive
+		      internal;
+	declare
+		BASE_CLASS_LIST	type (NID_T);
+	declare
+		(BC, NEXT_BC)	type (NID_T),
+		BCP		type (POINTER_T),
+		P		type (POINTER_T),
+		N		type (NID_T);
+
+	/* ------------------------------------------------
+	/* N.B. On entry to this routine, it is assumed
+	/* that THIS_BASE_CLASS and THIS_BASE_CLASS_PTR
+	/* refer to the is the base-class-node id and
+	/* pointer of the base class to be searched for.
+	/* ---------------------------------------------- */
+
+	do BC = BASE_CLASS_LIST repeat (NEXT_BC) while (BC ^= NULL_NID);
+
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+
+		if BC = THIS_BASE_CLASS then
+			goto NEXT_BASE_CLASS;
+
+		if (THIS_BASE_CLASS_PTR->BASE_CLASS_NODE.SYMBOL =
+		    BCP->BASE_CLASS_NODE.SYMBOL) &
+		   ^(THIS_BASE_CLASS_PTR->BASE_CLASS_NODE.VIRTUAL &
+		     BCP->BASE_CLASS_NODE.VIRTUAL) then do;
+			call RELEASE_BASE_CLASS_NODE (BC);
+			return (BC);
+		end;
+
+		call GET_SYM_NODE_R (BCP->BASE_CLASS_NODE.SYMBOL, P);
+		N = FIND_THIS_BASE_CLASS (P->SYM_NODE.BASE_CLASSES);
+		call RELEASE_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL);
+
+		if N ^= NULL_NID then do;
+			call RELEASE_BASE_CLASS_NODE (BC);
+			return (BC);
+		end;
+
+		NEXT_BASE_CLASS:
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	return (NULL_NID);
+
+end FIND_THIS_BASE_CLASS;
+
+end CHECK_DUPLICATE_BASE_CLASSES;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_BASE_CLASS_LIST
+/*
+/* Given the token-node id representing the name of a base class and a
+/* base-class-node id representing a linked list of base-class-nodes,
+/* search for the base class with the given name.  If one is found then
+/* return its base-class-node id, and with it paged in.  Otherwise,
+/* return NULL_NID, with the current-node-id preserved.
+/* ------------------------------------------------------------------- */
+
+SEARCH_BASE_CLASS_LIST: procedure (BASE_CLASS_LIST, BASE_CLASS)
+			returns   (type (NID_T))
+			external  (X_SEARCH_BASE_CLASS_LIST);
+	declare
+		BASE_CLASS_LIST		type (NID_T),
+		BASE_CLASS		type (NID_T);
+	declare
+		(BC, NEXT_BC)		type (NID_T),
+		BCP			type (POINTER_T);
+
+	do BC = BASE_CLASS_LIST repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		if BCP->BASE_CLASS_NODE.SYMBOL = BASE_CLASS then do;
+			call RELEASE_BASE_CLASS_NODE (BC);
+			return (BC);
+		end;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+	return (NULL_NID);
+
+end SEARCH_BASE_CLASS_LIST;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_VIRTUAL_BASE_CLASS_LIST
+/*
+/* Search the virtual base class list represented by the given vbc-node
+/* id VBC_LIST for the virtual base class represented by the given sym-node
+/* id SYMBOL.  If found, then return the virtual base classes corresponding
+/* offset (non-negative), otherwise return a negative number.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SEARCH_VIRTUAL_BASE_CLASS_LIST: procedure (VBC_LIST, SYMBOL)
+				returns   (type (LONG_T))
+				external  (X_SEARCH_VIRTUAL_BASE_CLASS_LIST);
+	declare
+		VBC_LIST	type (NID_T),
+		SYMBOL		type (NID_T);
+	declare
+		(VBC, NEXT_VBC)	type (NID_T),
+		VBCP		type (POINTER_T);
+
+	do VBC = VBC_LIST repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		if VBCP->VBC_NODE.SYMBOL = SYMBOL then do;
+			call RELEASE_VBC_NODE (VBC);
+			return (VBCP->VBC_NODE.OFFSET);
+		end;
+		NEXT_VBC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+	return (-1);
+
+end SEARCH_VIRTUAL_BASE_CLASS_LIST;
+
+/* ---------------------------------------------------------------------
+/* SET_LOOKUP_SEQUENCE_RANGE
+/*
+/* Sets the valid lookup range to be that which is at or below LOW
+/* and at or above HIGH.
+/* ------------------------------------------------------------------- */
+
+SET_LOOKUP_SEQUENCE_RANGE: procedure (LOW, HIGH)
+			   external  (X_SET_LOOKUP_SEQUENCE_RANGE);
+
+	declare
+		LOW	type (LONG_T),
+		HIGH	type (LONG_T);
+
+	LOOKUP_LOW_SEQUENCE_NUMBER	= LOW;
+	LOOKUP_HIGH_SEQUENCE_NUMBER	= HIGH;
+
+end SET_LOOKUP_SEQUENCE_RANGE;
+
+/* ---------------------------------------------------------------------
+/* CLEAR_LOOKUP_SEQUENCE_RANGE
+/* ------------------------------------------------------------------- */
+
+CLEAR_LOOKUP_SEQUENCE_RANGE: procedure ()
+			     external  (X_CLEAR_LOOKUP_SEQUENCE_RANGE);
+
+	LOOKUP_LOW_SEQUENCE_NUMBER	= 2147483647;
+	LOOKUP_HIGH_SEQUENCE_NUMBER	= 0;
+
+end CLEAR_LOOKUP_SEQUENCE_RANGE;
+
+/* ---------------------------------------------------------------------
+/* EFFECTIVELY_NON_VISIBLE
+/* ------------------------------------------------------------------- */
+
+EFFECTIVELY_NON_VISIBLE: procedure (SYMBOL)
+			 returns   (type (BOOL_T))
+			 external  (X_EFFECTIVELY_NON_VISIBLE);
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		P		type (POINTER_T),
+		RESULT		type (BOOL_T);
+
+	if SYMBOL = NULL_NID then
+		return (TRUE);
+	call GET_SYM_NODE_R (SYMBOL, P);
+	RESULT = (P->SYM_NODE.SEQUENCE_NUMBER > LOOKUP_LOW_SEQUENCE_NUMBER) &
+		 (P->SYM_NODE.SEQUENCE_NUMBER < LOOKUP_HIGH_SEQUENCE_NUMBER) &
+		 ^P->SYM_NODE.IS_MEMBER;
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (RESULT);
+
+end EFFECTIVELY_NON_VISIBLE;
+
+/* ---------------------------------------------------------------------
+/* EFFECTIVELY_NON_VISIBLE_P
+/* ------------------------------------------------------------------- */
+
+EFFECTIVELY_NON_VISIBLE_P: procedure (SYMBOL_PTR)
+			   returns   (type (BOOL_T))
+			   external  (X_EFFECTIVELY_NON_VISIBLE_P);
+	declare
+		SYMBOL_PTR	type (POINTER_T);
+
+	return ((SYMBOL_PTR->SYM_NODE.SEQUENCE_NUMBER >
+		 LOOKUP_LOW_SEQUENCE_NUMBER) &
+		(SYMBOL_PTR->SYM_NODE.SEQUENCE_NUMBER <
+		 LOOKUP_HIGH_SEQUENCE_NUMBER) &
+		^SYMBOL_PTR->SYM_NODE.IS_MEMBER);
+
+end EFFECTIVELY_NON_VISIBLE_P;
+
+/* ---------------------------------------------------------------------
+/* EFFECTIVELY_NON_VISIBLE_C
+/* ------------------------------------------------------------------- */
+
+EFFECTIVELY_NON_VISIBLE_C: procedure ()
+			   returns   (type (BOOL_T))
+			   external  (X_EFFECTIVELY_NON_VISIBLE_C);
+
+	return ((SYM_NODE.SEQUENCE_NUMBER >
+		 LOOKUP_LOW_SEQUENCE_NUMBER) &
+		(SYM_NODE.SEQUENCE_NUMBER <
+		 LOOKUP_HIGH_SEQUENCE_NUMBER) &
+		^SYM_NODE.IS_MEMBER);
+
+end EFFECTIVELY_NON_VISIBLE_C;
+

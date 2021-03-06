@@ -1,0 +1,11 @@
+/* C++ C_SET_SHOULD_INLINE_PLI - Temporary old/new utilities hack */
+
+/*
+/* 06.14.90  DGM  000	Temporary hack to set SYM_NODE.SHOULD_INLINE when
+/*			using the new utilities (for the new optimizer).
+/*			Included by cxxbe.pl1 only.
+/**/
+
+SYM_NODE.COMMON.SHOULD_INLINE = SYM_NODE.SHOULD_INLINE;
+SYM_NODE.COMMON.DCL_FILE_ID = SYM_NODE.DCL_FILE_ID;
+

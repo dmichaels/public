@@ -1,0 +1,165 @@
+########################################################################
+# LIBRARY:	Miscellaneous String Manipulation Routines
+# FILE:		Makefile
+# AUTHOR:	David Michaels (david@ll-sst)
+# CREATED:	January 1984
+# LAST MOD:	December 1984
+########################################################################
+
+########################################################################
+#		General Definitions
+########################################################################
+
+CFLAGS =	-O -Ih
+
+HDIR =		h
+
+HEADS =		$(HDIR)/cdef.h
+
+CFILES =\
+		bitmap.c\
+		cindex.c\
+		creplace.c\
+		fcopy.c\
+		fdetab.c\
+		fentab.c\
+		findline.c\
+		fseek_pat.c\
+		fseek_npat.c\
+		fskip.c\
+		ftell_pat.c\
+		getline.c\
+		getstring.c\
+		isint.c\
+		rmchar.c\
+		sdelim.c\
+		settab.c\
+		sindex.c\
+		squish.c\
+		sreverse.c\
+		strlower.c\
+		strsave.c\
+		strupper.c\
+		wordvec.c
+
+OFILES =\
+		bitmap.o\
+		cindex.o\
+		creplace.o\
+		fcopy.o\
+		fdetab.o\
+		fentab.o\
+		findline.o\
+		fseek_pat.o\
+		fseek_npat.o\
+		fskip.o\
+		ftell_pat.o\
+		getline.o\
+		getstring.o\
+		isint.o\
+		rmchar.o\
+		sdelim.o\
+		settab.o\
+		sindex.o\
+		squish.o\
+		sreverse.o\
+		strlower.o\
+		strsave.o\
+		strupper.o\
+		wordvec.o
+
+########################################################################
+#		The Library
+########################################################################
+
+lib.a:		$(OFILES)
+		ar rcv lib.a $?
+		ranlib lib.a
+
+$(OFILES):	$(HDIR)/cdef.h
+
+########################################################################
+#		C Modules
+########################################################################
+
+bitmap.o:	bitmap.c
+		$(CC) $(CFLAGS) -c bitmap.c
+
+creplace.o:	creplace.c
+		$(CC) $(CFLAGS) -c creplace.c
+
+cindex.o:	cindex.c
+		$(CC) $(CFLAGS) -c cindex.c
+
+fcopy.o:	fcopy.c
+		$(CC) $(CFLAGS) -c fcopy.c
+
+fdetab.o:	fdetab.c
+		$(CC) $(CFLAGS) -c fdetab.c
+
+fentab.o:	fentab.c
+		$(CC) $(CFLAGS) -c fentab.c
+
+findline.o:	findline.c
+		$(CC) $(CFLAGS) -c findline.c
+
+fseek_pat.o:	fseek_pat.c
+		$(CC) $(CFLAGS) -c fseek_pat.c
+
+fseek_npat.o:	fseek_npat.c
+		$(CC) $(CFLAGS) -c fseek_npat.c
+
+fskip.o:	fskip.c
+		$(CC) $(CFLAGS) -c fskip.c
+
+ftell_pat.o:	ftell_pat.c
+		$(CC) $(CFLAGS) -c ftell_pat.c
+
+getline.o:	getline.c
+		$(CC) $(CFLAGS) -c getline.c
+
+getstring.o:	getstring.c
+		$(CC) $(CFLAGS) -c getstring.c
+
+isint.o:	isint.c
+		$(CC) $(CFLAGS) -c isint.c
+
+rmchar.o:	rmchar.c
+		$(CC) $(CFLAGS) -c rmchar.c
+
+sdelim.o:	sdelim.c
+		$(CC) $(CFLAGS) -c sdelim.c
+
+settab.o:	settab.c
+		$(CC) $(CFLAGS) -c settab.c
+
+sindex.o:	sindex.c
+		$(CC) $(CFLAGS) -c sindex.c
+
+squish.o:	squish.c
+		$(CC) $(CFLAGS) -c squish.c
+
+sreverse.o:	sreverse.c
+		$(CC) $(CFLAGS) -c sreverse.c
+
+strlower.o:	strlower.c
+		$(CC) $(CFLAGS) -c strlower.c
+
+strsave.o:	strsave.c
+		$(CC) $(CFLAGS) -c strsave.c
+
+strupper.o:	strupper.c
+		$(CC) $(CFLAGS) -c strupper.c
+
+wordvec.o:	wordvec.c
+		$(CC) $(CFLAGS) -c wordvec.c
+
+########################################################################
+#		Utilities
+########################################################################
+
+list:
+		ipf -2 $(CFILES) $(HEADS) Makefile Doc
+
+tape:
+		tar cv $(CFILES) $(HEADS) Makefile

@@ -1,0 +1,49 @@
+/* C++ CXX_PARSER_IN - Declaration of parser interface data */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  04.19.90  DGM  003  PAR_VANILLA_INITIALIER to PAR_INITIALIZER_ITEM.
+ *  12.08.89  DGM  002  Updated.
+ *  01.19.90  DGM  001  Updated.
+ *  10.27.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+/* Parser global data - entry points codes */
+
+declare
+
+PAR_COMPILATION_UNIT		type (SHORT_T)
+				external (X_PAR_COMPILATION_UNIT),
+
+PAR_RAW_FUNCTION_BODY		type (SHORT_T)
+				external (X_PAR_RAW_FUNCTION_BODY),
+
+PAR_INITIALIZER_ITEM		type (SHORT_T)
+				external (X_PAR_INITIALIZER_ITEM);
+

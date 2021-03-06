@@ -1,0 +1,17 @@
+.TH FUNCTION_NAME 3L LOCAL
+
+.SH NAME
+function_name - short function description
+
+.SH SYNOPSIS
+\fBfunction_name\fP [arguments]...
+
+.SH DESCRIPTION
+Descriptions of \fIfunction_name\fP,
+and its \fIarguments\fP.
+
+.SH FILES
+function_name.c
+
+.SH SEE ALSO
+other_functions(3)

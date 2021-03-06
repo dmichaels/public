@@ -1,0 +1,1521 @@
+/* C++ mbrptr.pl1 - Support for pointers to class members. */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  06.25.92  DGM  013  Fix for null member pointer constants.
+ *  03.26.92  DGM  012  New value-node scheme.
+ *  01.13.92  DGM  011  Multi-node space fixes.
+ *  08.21.91  DGM  010  Minor fix for CodeWatch; SYM_NODE.LOCATION may
+ *			be set to some non-zero value by the allocator
+ *			for static data members.
+ *  07.08.91  PKT  009  Stopped setting SYM_NODE.REFERENCED for virtual
+ *			access to member function symbol.
+ *  07.08.91  DGM  008  Call IS_ACCESSIBLE_STATIC instead of IS_ACCESSIBLE.
+ *  06.02.91  PKT  007  Updated IS_CONSTANT_MEMBER_POINTER for DESTRUCTOR_VO.
+ *  05.22.91  PKT  006  Added FIX_OVERLOADED_MEMBER.
+ *  04.24.91  PKT  005  Updated.
+ *  03.27.91  PKT  004  Updated.
+ *  03.08.91  PKT  003  Bug fixes; added support for relational comparison
+ *			of member pointers.
+ *  02.21.91  PKT  002  Added MEMBER_POINTER_CONSTANTS and several
+ *			other important functions.
+ *  02.01.91  DGM  001  Updated to the new global names scheme.
+ *  01.17.91  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.25.92 013 MBRPTR');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_ADD_XREF_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_PP_TOKEN_POD_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_GLOBAL_NAMES_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_CONVERT_CLASS_POINTER_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_BASSYM_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_EXPRESSION_COMPATIBILITY_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+
+/* ---------------------------------------------------------------------
+/* The ARM says the operand of & is a function, an lvalue, or a
+/* qualified name, and that in the latter case the result is a pointer
+/* to member.  We will go along with cfront 2.1, interpreting 
+/* qualified name as a semantic category rather than syntactic.
+/*
+/* Conceptually, such a qualified name can be considered as having type
+/* "reference to member".  VALUE_OF can dereference and insert the
+/* required 'this->'.  We will not have support in our type system
+/* for "reference to member".  Rather, an expression with a MEMBER_REF_VO 
+/* operator and type "pointer to member" represents a reference to
+/* member.  Taking the address of such a thing will stick an ADDR_VO
+/* on top of it.
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* GET_MEMBER_POINTER_VALUE
+/* 
+/* Current node is a member symbol, for which a member pointer
+/* is to be made.  Assumes CLASS is the
+/* explicit qualifier for the symbol, or null.
+/*
+/* Value node is paged in on return.
+/* ------------------------------------------------------------------- */
+GET_MEMBER_POINTER_VALUE: procedure (SYMBOL, CLASS)
+			  returns  (type (CXX_VID_T))
+			  external (X_GET_MEMBER_POINTER_VALUE);
+
+	declare
+		SYMBOL		type (NID_T),
+		CLASS		type (NID_T);
+	declare
+		TOP_TYPE	type (TYPE_DATA_T),
+		TYPE		type (NID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		VALUE		type (CXX_VID_T);
+
+	/* Create the MEMBER_POINTER_VO value node,
+	/* suppressing virtual mechanism if explicit qualifier.
+	/**/
+	VALUE = MAKE_MEMBER_POINTER (SYMBOL, CLASS, CLASS ^= NULL_NID, TRUE);
+	return (VALUE);
+
+end GET_MEMBER_POINTER_VALUE;
+
+/* ---------------------------------------------------------------------
+/* GET_SIMPLE_MEMBER_VALUE
+/* 
+/* Virtual behavior of a member function is not suppressed.
+/* Sets things up so that MEMBER_OF_OBJECT will check access to
+/* the given symbol.
+/*
+/* Value node is paged in on return.
+/* ------------------------------------------------------------------- */
+GET_SIMPLE_MEMBER_VALUE: procedure (MEMBER)
+			 returns  (type (CXX_VID_T))
+			 external (X_GET_SIMPLE_MEMBER_VALUE);
+
+	declare
+		MEMBER		type (NID_T);
+	declare
+		VALUE		type (CXX_VID_T);
+
+	VALUE = MAKE_MEMBER_POINTER (MEMBER, NULL_NID, FALSE, TRUE);
+
+	return (VALUE);
+
+end GET_SIMPLE_MEMBER_VALUE;
+
+/* ---------------------------------------------------------------------
+/* MAKE_MEMBER_POINTER
+/* 
+/* Value node is paged in on return.
+/*
+/* DO_CHECK indicates that checking for access to the member and
+/* ambiguity of the member remain to be done.  It would be true
+/* for a member pointer created the right operand of '.'.
+/* Because of the limitations of the way PKT has defined the meaning
+/* MEMBER_PTR_VO, we can't handle a case with QUALIFIER non-null,
+/* and DO_CHECK false.
+/*
+/* Earlier in the development of member pointers, access was
+/* checked in EXPAND(ADDR_VO) for a member pointer that's the operand
+/* of '&'.  But then I realized that overloading resolution must
+/* take place after EXPAND(ADDR_VO). 
+/* ------------------------------------------------------------------- */
+MAKE_MEMBER_POINTER: procedure (MEMBER, QUALIFIER, SUPPRESS_VIRTUAL,
+						   DO_CHECK)
+		     returns  (type (CXX_VID_T))
+		     internal;
+
+	declare
+		MEMBER		type (NID_T),
+		QUALIFIER	type (NID_T),
+		SUPPRESS_VIRTUAL
+				type (BOOL_T),
+		DO_CHECK	type (BOOL_T);
+	declare
+		TYPE_INFO	type (TYPE_INFO_T),
+		VALUE		type (CXX_VID_T),
+		P		type (POINTER_T),
+		Q		type (NID_T);
+
+	/* Set up member pointer type. */
+	call POINTER_TO_MEMBER_TYPE_INFO (MEMBER, TYPE_INFO);
+
+	/*
+	/* Determine the qualifier to use.  If present,
+	/* access checking will be done.
+	/**/
+	if QUALIFIER ^= NULL_NID then do;
+		if ^DO_CHECK then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		Q = QUALIFIER;
+	end;
+	else if DO_CHECK then do;
+		call GET_SYM_NODE_R (MEMBER, P);
+		Q = P->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+		call RELEASE_SYM_NODE (MEMBER);
+	end;
+
+	/* Create the MEMBER_PTR_VO value node. */
+	VALUE = ALLOC_MEMBER_CXX_VALUE_NODE (MEMBER, Q);
+	/* Offset 0 means to suppress virtual mechanism. */
+	if ^SUPPRESS_VIRTUAL then
+		CXX_VALUE_NODE.OFFSET = 1;
+	call SET_VALUE_TYPE (TYPE_INFO);
+
+	return (VALUE);
+
+end MAKE_MEMBER_POINTER;
+
+/* ---------------------------------------------------------------------
+/* TRANSMUTE_MEMBER_VALUE
+/*
+/* Transmute a member pointer expression for a context in which
+/* its address is not needed.  All CONVERT_VOs and MEMBER_PTR_VOs
+/* must be eliminated.  If the type is member pointer to function
+/* and the leaf operand is a 0, that must be transmuted. 
+/* 
+/* For member pointers to function, only a few operators support
+/* the structure type:  VALUE_VO, CALL_FUNCTION_VO, and CAST_VO.  
+/* The rest demand an object.
+/*
+/* Returns with the result value node paged in.
+/* ------------------------------------------------------------------- */
+TRANSMUTE_MEMBER_VALUE: procedure (VALUE, STORAGE_CLASS)
+			returns   (type (CXX_VID_T))
+			external  (X_TRANSMUTE_MEMBER_VALUE);
+
+	declare
+		VALUE		type (CXX_VID_T),
+		STORAGE_CLASS	type (SHORT_T);
+	declare
+		VOP		type (SHORT_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		(RESULT, LEFT)	type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		TEMP		type (CXX_VID_T),
+		TEMP_REF	type (CXX_VID_T),
+		INITTER		type (CXX_VID_T),
+		TEMP_VALUE	type (CXX_VID_T);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+	VOP = CXX_VALUE_NODE.OP;
+	call GET_TOP_LEVEL_TYPE (CXX_VALUE_NODE.TYPE, 
+				 CXX_VALUE_NODE.DERIVED_TYPE_SKIP + 1, 
+			         TYPE_DATA);
+
+	if rank (TYPE_DATA.CODE) = FUNCTION_DT then do;
+		/*
+		/* For member pointers to function, only a few operators
+		/* support the structure type:  VALUE_VO, CALL_FUNCTION_VO,
+		/* and CAST_VO.  The rest demand an object.
+		/**/
+		if VOP = VALUE_VO | VOP = CALL_FUNCTION_VO then
+			return (VALUE);
+		if VOP = CAST_VO then do;
+			RESULT = COPY_VALUE (VALUE);
+			LEFT = TRANSMUTE_MEMBER_VALUE ((CXX_VALUE_NODE.LEFT),
+						       STORAGE_CLASS);
+			CXX_VALUE_NODE_PTR = RESULT;
+			CXX_VALUE_NODE.LEFT = LEFT;
+			return (RESULT);
+		end;
+
+		/* VALUE is paged in.  Make a temp of its type. */
+		call GET_VALUE_TYPE (TYPE_INFO);
+		TEMP = GET_TEMP_VALUE (TYPE_INFO, STORAGE_CLASS, FALSE);
+		TEMP_REF = GET_TEMP_REF (TEMP);
+		call COUNT_UP_VALUE (TEMP_REF);
+		INITTER = INITIALIZE_OBJECT (TEMP_REF, VALUE);
+		TEMP_VALUE = GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF);
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+		RESULT = EFFECT_BEFORE_VALUE (INITTER, TEMP_VALUE);
+		return (RESULT);
+	end;
+
+	/* member pointer to data */
+
+	RESULT = TRANSMUTE_WITH_OFFSET (VALUE, 0);
+	return (RESULT);
+
+end TRANSMUTE_MEMBER_VALUE;
+
+/* ---------------------------------------------------------------------
+/* TRANSMUTE_WITH_OFFSET
+/*
+/* Transmute an expression of type member pointer to data.
+/*
+/* OFFSET is taken to be an additional substantive adjustment
+/* which the caller requires in producing the desired result.
+/* ------------------------------------------------------------------- */
+TRANSMUTE_WITH_OFFSET: procedure (VALUE, OFFSET)
+		       returns   (type (CXX_VID_T))
+		       internal;
+
+	declare
+		VALUE		type (CXX_VID_T),
+		OFFSET		type (LONG_T);
+	declare
+		THIS_OFFSET	type (LONG_T),
+		KV		type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		LOW_LEVEL_INFO	type (TYPE_INFO_T),
+		HIGH_LEVEL_INFO	type (TYPE_INFO_T),
+		IS_DATA		type (BOOL_T),
+		IS_VIRTUAL	type (BOOL_T),
+		INDEX		type (CXX_VID_T),
+		UNION		type (CXX_VID_T),
+		THIS_VALUE	type (CXX_VID_T),
+		OFFSET_VAL	type (CXX_VID_T);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+	if CXX_VALUE_NODE.OP = CONVERT_VO then do;
+		KV = VALUE;
+		THIS_OFFSET = OFFSET;
+		call ADJUST_FOR_CONVERT (KV, THIS_OFFSET);
+		return (TRANSMUTE_WITH_OFFSET (KV, THIS_OFFSET));
+	end;
+	if CXX_VALUE_NODE.OP = CAST_VO then do;
+		KV = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (KV);
+		call COUNT_DOWN_VALUE (VALUE);
+		return (TRANSMUTE_WITH_OFFSET (KV, OFFSET));
+	end;
+
+	/* Check for any other constant initializer. */
+
+	if (CXX_VALUE_NODE.OP = MEMBER_PTR_VO) |
+	   (CXX_VALUE_NODE.OP = INTEGER_VO) then do;
+		call GET_LOW_LEVEL_TYPE_INFO (VALUE, LOW_LEVEL_INFO, IS_DATA);
+		call MEMBER_POINTER_CONSTANTS (VALUE, IS_DATA, IS_VIRTUAL,
+					       OFFSET_VAL, INDEX, UNION);
+		CXX_VALUE_NODE_PTR = OFFSET_VAL;
+		RESULT = GET_VALUE_AND_EXPAND_LR
+			 (ADD_VO,
+			  OFFSET_VAL,
+			  INTEGER_VALUE (OFFSET,
+					 rank (CXX_VALUE_NODE.TYPE_CODE)));
+		return (RESULT);
+	end;
+
+	/* Apply the offset to a vanilla expression. */
+	if OFFSET = 0 then
+		return (VALUE);
+
+	call GET_LOW_LEVEL_TYPE_INFO (VALUE, LOW_LEVEL_INFO, IS_DATA);
+	call DETERMINE_SIZE (LOW_LEVEL_INFO);
+	LOW_LEVEL_INFO.NOT_AN_LVALUE = FALSE;
+	THIS_VALUE = COPY_VALUE (VALUE);
+	call GET_VALUE_TYPE (HIGH_LEVEL_INFO);
+	call SET_VALUE_TYPE (LOW_LEVEL_INFO);
+
+	call COUNT_UP_VALUE (THIS_VALUE);
+	call COUNT_UP_VALUE (THIS_VALUE);
+	RESULT = INTEGER_VALUE (OFFSET, 
+			        rank (LOW_LEVEL_INFO.TYPE_CODE));
+	RESULT = GET_VALUE_AND_EXPAND_LR (ADD_VO, THIS_VALUE, RESULT);
+	RESULT = GET_VALUE_AND_EXPAND_LR (COLON_VO, RESULT, THIS_VALUE);
+	RESULT = GET_VALUE_AND_EXPAND_LR (CONDITIONAL_VO, THIS_VALUE, RESULT);
+	return (RESULT);
+
+end TRANSMUTE_WITH_OFFSET;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_MEMBER_VALUE
+/*
+/* Initialize the object from the value.  Called from INITIALIZE_OBJECT.
+/* OBJECT is a REF_VO value node.
+/* ------------------------------------------------------------------- */
+INITIALIZE_MEMBER_VALUE: procedure (OBJECT, VALUE)
+			 returns   (type (CXX_VID_T))
+			 external  (X_INITIALIZE_MEMBER_VALUE);
+
+	declare
+		OBJECT		type (CXX_VID_T),
+		VALUE		type (CXX_VID_T);
+
+	return (INITIALIZE_WITH_OFFSET (OBJECT, VALUE, 0));
+
+end INITIALIZE_MEMBER_VALUE;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_WITH_CONSTANT
+/*
+/* Initialize the object from the value.  Must be a constant
+/* member pointer.  If type of OBJECT does not match type of VALUE
+/* perfectly, OFFSET_IN is the only adjustment necessary in order
+/* to reconcile them.
+/* ------------------------------------------------------------------- */
+INITIALIZE_WITH_CONSTANT: procedure (OBJECT, VALUE, OFFSET_IN)
+			  returns   (type (CXX_VID_T))
+			  internal;
+
+	declare
+		OBJECT		type (CXX_VID_T),
+		VALUE		type (CXX_VID_T),
+		OFFSET_IN	type (LONG_T);
+	declare
+		RESULT		type (CXX_VID_T),
+		LOW_LEVEL_INFO	type (TYPE_INFO_T),
+		(INDEX, OFFSET, UNION)
+				type (CXX_VID_T),
+		(IS_DATA, IS_VIRTUAL)
+				type (BOOL_T),
+		THIS_OBJECT	type (CXX_VID_T),
+		MEMBER_NAME	type (NID_T),
+		(KV1, KV2, KV3)	type (CXX_VID_T);
+
+	call GET_LOW_LEVEL_TYPE_INFO (VALUE, LOW_LEVEL_INFO, IS_DATA);
+	LOW_LEVEL_INFO.NOT_AN_LVALUE = FALSE;
+	THIS_OBJECT = COPY_VALUE (OBJECT);
+	call SET_VALUE_TYPE (LOW_LEVEL_INFO);
+
+	call MEMBER_POINTER_CONSTANTS (VALUE, IS_DATA, IS_VIRTUAL,
+				       OFFSET, INDEX, UNION);
+	CXX_VALUE_NODE_PTR = OFFSET;
+	OFFSET = GET_VALUE_AND_EXPAND_LR
+		 (ADD_VO,
+		  OFFSET,
+		  INTEGER_VALUE (OFFSET_IN,
+				 rank (CXX_VALUE_NODE.TYPE_CODE)));
+
+	if IS_DATA then do;
+		/* pointer to data */
+		RESULT = INITIALIZE_OBJECT (THIS_OBJECT, OFFSET);
+		return (RESULT);
+	end;
+
+	/* pointer to function, the hairy case */
+
+	THIS_OBJECT = GET_VALUE_AND_EXPAND_L (VALUE_VO, THIS_OBJECT);
+	call COUNT_UP_VALUE (THIS_OBJECT);
+	call COUNT_UP_VALUE (THIS_OBJECT);
+	
+	/* Form initializing expression for 'this' delta. */
+
+	KV1 = INIT_MEMBER (THIS_OBJECT,
+			   MFP_THIS_DELTA_NAME,
+			   NULL_NID,
+			   OFFSET);
+
+	/* Form initializing expression for virtual table index. */
+
+	KV2 = INIT_MEMBER (THIS_OBJECT,
+			   MFP_VIRTUAL_INDEX_NAME,
+			   NULL_NID,
+			   INDEX);
+
+	/*
+	/* Form initializing expression for vftp offset
+	/* or function address, as the case may be.
+	/**/
+	if IS_VIRTUAL then
+		MEMBER_NAME = MFP_VIRTUAL_DELTA_NAME;
+	else
+		MEMBER_NAME = MFP_ADDRESS_NAME;
+	KV3 = INIT_MEMBER (THIS_OBJECT, MFP_UNION_NAME, MEMBER_NAME, UNION);
+
+	RESULT = CONCATENATE_STATEMENTS (CONCATENATE_STATEMENTS (KV1, KV2),
+					 KV3);
+
+	return (RESULT);
+
+/* ---------------------------------------------------------------------
+/* INIT_MEMBER
+/* ------------------------------------------------------------------- */
+
+INIT_MEMBER: procedure (OBJECT_VALUE, MEMBER1, MEMBER2, VALUE)
+	     returns (type (CXX_VID_T))
+	     internal;
+
+	declare
+		OBJECT_VALUE	type (CXX_VID_T),
+		MEMBER1		type (NID_T),
+		MEMBER2		type (NID_T),
+		VALUE		type (CXX_VID_T);
+	declare
+		MEMBER_VALUE	type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		KV		type (CXX_VID_T);	
+
+	MEMBER_VALUE = GET_DOT_AND_EXPAND (OBJECT_VALUE, MEMBER1);
+	if MEMBER2 ^= NULL_NID then
+		MEMBER_VALUE = GET_DOT_AND_EXPAND (MEMBER_VALUE, MEMBER2);
+	MEMBER_VALUE = TRANSMUTE_WITH_TEMP (MEMBER_VALUE,
+					    NULL_CXX_VID,
+					    FALSE, 
+					    AUTO_ST,
+					    IMPLICIT_ADDR_VO);
+	if CXX_VALUE_NODE.OP ^= VALUE_VO then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	KV = MEMBER_VALUE;		/* VALUE */
+	MEMBER_VALUE = CXX_VALUE_NODE.LEFT;	/* REF */
+	call COUNT_UP_VALUE (MEMBER_VALUE);	
+	call COUNT_DOWN_VALUE (KV);
+	RESULT = INITIALIZE_OBJECT (MEMBER_VALUE, VALUE);
+	return (RESULT);
+
+end INIT_MEMBER;
+
+end INITIALIZE_WITH_CONSTANT;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_WITH_OFFSET
+/*
+/* Initialize the member pointer object from the member pointer value.
+/* Apply the given constant offset to the member pointer value in order
+/* to convert it appropriately to the type of the object.
+/*
+/* OFFSET is taken to be the only substantive conversion required
+/* in order to initialize the given object.
+/* ------------------------------------------------------------------- */
+INITIALIZE_WITH_OFFSET: procedure (OBJECT, VALUE, OFFSET)
+		        returns   (type (CXX_VID_T))
+			internal;
+
+	declare
+		OBJECT		type (CXX_VID_T),
+		VALUE		type (CXX_VID_T),
+		OFFSET		type (LONG_T);
+	declare
+		THIS_OFFSET	type (LONG_T),
+		KV		type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		LOW_LEVEL_INFO	type (TYPE_INFO_T),
+		HIGH_LEVEL_INFO	type (TYPE_INFO_T),
+		IS_DATA		type (BOOL_T),
+		THIS_OBJECT	type (CXX_VID_T),
+		THIS_VALUE	type (CXX_VID_T),
+		OFFSET_VAL	type (CXX_VID_T),
+		MEMBER_VAL	type (CXX_VID_T);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+	if CXX_VALUE_NODE.OP = CONVERT_VO then do;
+		KV = VALUE;
+		THIS_OFFSET = OFFSET;
+		call ADJUST_FOR_CONVERT (KV, THIS_OFFSET);
+		return (INITIALIZE_WITH_OFFSET (OBJECT, KV, THIS_OFFSET));
+	end;
+	if CXX_VALUE_NODE.OP = CAST_VO then do;
+		KV = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (KV);
+		call COUNT_DOWN_VALUE (VALUE);
+		return (INITIALIZE_WITH_OFFSET (OBJECT, KV, OFFSET));
+	end;
+
+	/* Check for any other constant initializer. */
+
+	if (CXX_VALUE_NODE.OP = MEMBER_PTR_VO) |
+	   (CXX_VALUE_NODE.OP = INTEGER_VO) then 
+		return (INITIALIZE_WITH_CONSTANT (OBJECT, VALUE, OFFSET));
+
+	/* Apply the offset to an ordinary initialization. */
+
+	call GET_LOW_LEVEL_TYPE_INFO (VALUE, LOW_LEVEL_INFO, IS_DATA);
+	call DETERMINE_SIZE (LOW_LEVEL_INFO);
+	LOW_LEVEL_INFO.NOT_AN_LVALUE = FALSE;
+	THIS_OBJECT = COPY_VALUE (OBJECT);
+	call SET_VALUE_TYPE (LOW_LEVEL_INFO);
+	CXX_VALUE_NODE.NOT_AN_LVALUE = FALSE;
+
+	if IS_DATA then do;
+		/* pointer to data */
+		THIS_VALUE = TRANSMUTE_WITH_OFFSET (VALUE, OFFSET);
+		THIS_VALUE = COPY_VALUE (THIS_VALUE);
+		call SET_VALUE_TYPE (LOW_LEVEL_INFO);
+		RESULT = INITIALIZE_OBJECT (THIS_OBJECT, THIS_VALUE);
+		return (RESULT);
+	end;
+
+	THIS_VALUE = COPY_VALUE (VALUE);
+	call GET_VALUE_TYPE (HIGH_LEVEL_INFO);
+	call SET_VALUE_TYPE (LOW_LEVEL_INFO);
+
+	/* pointer to function, the hairy case */
+
+	/*
+	/* The first part of the operation is to assign the entire
+	/* structure.
+	/**/
+	call COUNT_UP_VALUE (THIS_OBJECT);
+	RESULT = INITIALIZE_OBJECT (THIS_OBJECT, THIS_VALUE);
+
+	if OFFSET ^= 0 then do;
+
+		/* Next, bump the 'this delta' by the offset. */
+		THIS_OBJECT = GET_VALUE_AND_EXPAND_L (VALUE_VO, THIS_OBJECT);
+		call COUNT_UP_VALUE (THIS_OBJECT);
+		MEMBER_VAL = GET_DOT_AND_EXPAND (THIS_OBJECT,
+						 MFP_THIS_DELTA_NAME);
+		MEMBER_VAL = TRANSMUTE_WITH_TEMP (MEMBER_VAL,
+						  NULL_CXX_VID,
+						  FALSE,
+					          AUTO_ST,
+						  IMPLICIT_ADDR_VO);
+		call COUNT_UP_VALUE (MEMBER_VAL);
+		OFFSET_VAL = INTEGER_VALUE
+			     (OFFSET, (rank (CXX_VALUE_NODE.TOP_TYPE.CODE)));
+		OFFSET_VAL = GET_VALUE_AND_EXPAND_LR
+			     (ADD_VO, MEMBER_VAL, OFFSET_VAL);
+		OFFSET_VAL = GET_VALUE_AND_EXPAND_LR
+			     (COPY_VO, MEMBER_VAL, OFFSET_VAL);
+
+		OFFSET_VAL = GET_VALUE_AND_EXPAND_LR
+			     (COLON_VO,
+			      OFFSET_VAL,
+			      GET_CONSTRUCTOR_VALUE (GET_VOID_TYPE (),
+						     NULL_CXX_VID, 
+						     NULL_NID,
+						     IMPLICIT_CAST_VO));
+		THIS_OBJECT = COPY_VALUE (THIS_OBJECT);
+		call SET_VALUE_TYPE (HIGH_LEVEL_INFO);
+		OFFSET_VAL = GET_VALUE_AND_EXPAND_LR
+			     (CONDITIONAL_VO,THIS_OBJECT, OFFSET_VAL);
+		OFFSET_VAL = INITIALIZE_OBJECT (NULL_CXX_VID, OFFSET_VAL);
+
+		RESULT = CONCATENATE_STATEMENTS (RESULT, OFFSET_VAL);
+	end;
+	else do;
+		call COUNT_DOWN_VALUE (THIS_OBJECT);
+		CXX_VALUE_NODE_PTR = RESULT;
+	end;
+
+	return (RESULT);
+
+end INITIALIZE_WITH_OFFSET;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_POINTER_CONSTANTS
+/*
+/* Given V, a MEMBER_PTR_VO value node, set up expressions
+/* that are needed to represent it at run-time.  Also set up
+/* booleans indicating whether it's a data pointer and whether
+/* it's a virtual function pointer.
+/*
+/* If V is an INTEGER_VO, it must have member pointer type and
+/* it's assumed to be a null pointer.
+/*
+/* If IS_DATA, then OFFSET is set up.
+/* Otherwise, OFFSET is the alteration to 'this' which must
+/* be applied whether virtual or not; INDEX is the index in
+/* the vtable; UNION is suitable for initializing either the
+/* function address or the post-lookup delta as appropriate
+/* to IS_VIRTUAL.
+/*
+/* Overloading must already have been resolved.
+/* ------------------------------------------------------------------- */
+MEMBER_POINTER_CONSTANTS: procedure (V, IS_DATA, IS_VIRTUAL,
+				     OFFSET, INDEX, UNION)
+			  external  (X_MEMBER_POINTER_CONSTANTS);
+
+	declare
+		V		type (CXX_VID_T),	/* in, consumed */
+		IS_DATA		type (BOOL_T),		/* out */
+		IS_VIRTUAL	type (BOOL_T),		/* out */
+		OFFSET		type (CXX_VID_T),	/* out */
+		INDEX		type (CXX_VID_T),	/* out */
+		UNION		type (CXX_VID_T);	/* out */
+	declare
+		TYPE_INFO	type (TYPE_INFO_T),
+		LOW_LEVEL_CLASS_SYM
+				type (NID_T),
+		SYMBOL		type (NID_T),
+		(CONST_OFFSET, CONST_INDEX, CONST_VFTP_OFFSET)
+				type (LONG_T);
+
+	CXX_VALUE_NODE_PTR = V;
+	if CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (MEMBER_POINTER_DT) then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	call GET_LOW_LEVEL_TYPE_INFO (V, TYPE_INFO, IS_DATA);
+
+	call MEMBER_POINTER_INFO (V, TRUE, FALSE, IS_DATA, FALSE,
+			          CONST_OFFSET, CONST_INDEX, 
+				  CONST_VFTP_OFFSET, SYMBOL);
+
+	if IS_DATA then do;
+		/* pointer to data */
+		OFFSET = INTEGER_VALUE (CONST_OFFSET, 
+					rank (TYPE_INFO.TYPE_CODE));
+		return;
+	end;
+
+	/* Pointer to function, the hairy case */
+
+	LOW_LEVEL_CLASS_SYM = TYPE_INFO.TOP_TYPE.TAG_SYMBOL;
+
+	/* Figure virtualness and the value for the virtual index. */
+
+	IS_VIRTUAL = (CONST_INDEX > 0);
+
+	/* Form initializing expression for virtual table index. */
+	INDEX = MEMBER_INITTER (LOW_LEVEL_CLASS_SYM,
+			        MFP_VIRTUAL_INDEX_NAME, 
+			        NULL_NID, 
+				CONST_INDEX);
+
+	/*
+	/* 'this' delta, i.e. offset of function symbol's containing
+	/* class within the class for which this is a member pointer
+	/**/
+	OFFSET = MEMBER_INITTER (LOW_LEVEL_CLASS_SYM, 
+				 MFP_THIS_DELTA_NAME, 
+				 NULL_NID, 
+				 CONST_OFFSET);
+
+	/*
+	/* Form initializing expression for vftp offset
+	/* or function address, as the case may be.
+	/**/
+	if IS_VIRTUAL then
+		UNION = MEMBER_INITTER (LOW_LEVEL_CLASS_SYM,
+					MFP_UNION_NAME, 
+					MFP_VIRTUAL_DELTA_NAME, 
+				        CONST_VFTP_OFFSET);
+	else if SYMBOL = NULL_NID then do;
+		UNION = NULL_SIMPLE_POINTER_VALUE (VOID_BT);
+	end;
+	else
+		/* function address */
+		UNION = POINTER_MEMBER_INITTER (LOW_LEVEL_CLASS_SYM,
+						MFP_UNION_NAME, 
+						MFP_ADDRESS_NAME,
+						SYMBOL);
+	return;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_TYPE_INFO
+/* ------------------------------------------------------------------- */
+MEMBER_TYPE_INFO: procedure (CLASS_SYM, MEMBER1, MEMBER2, TYPE_INFO)
+		  internal;
+
+	declare
+		CLASS_SYM	type (NID_T),
+		MEMBER1		type (NID_T),
+		MEMBER2		type (NID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+	declare
+		N		type (NID_T),
+		CLASS		type (NID_T),
+		SNID		type (SNID_T);
+
+	call SAVE_NODE (SNID);	
+	N = SEARCH_CLASS (CLASS_SYM, MEMBER1, VANILLA_SK);
+	call SET_SYM_NODE (N);
+	if MEMBER2 ^= NULL_NID then do;
+		CLASS = SYM_NODE.TOP_TYPE.TAG_SYMBOL;
+		N = SEARCH_CLASS (CLASS, MEMBER2, VANILLA_SK);
+		call SET_SYM_NODE (N);
+	end;
+	call GET_SYMBOL_TYPE (TYPE_INFO);
+	call RESTORE_NODE (SNID);
+
+end MEMBER_TYPE_INFO;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_INITTER
+/* ------------------------------------------------------------------- */
+MEMBER_INITTER: procedure (CLASS_SYM, MEMBER1, MEMBER2, LONG)
+		returns (type (CXX_VID_T))
+		internal;
+
+	declare
+		CLASS_SYM	type (NID_T),
+		MEMBER1		type (NID_T),
+		MEMBER2		type (NID_T),
+		LONG		type (LONG_T);
+	declare
+		TYPE_INFO	type (TYPE_INFO_T),
+		RESULT		type (CXX_VID_T);
+
+	call MEMBER_TYPE_INFO (CLASS_SYM, MEMBER1, MEMBER2, TYPE_INFO);
+	RESULT = INTEGER_VALUE (LONG, rank (TYPE_INFO.TYPE_CODE));
+	if LONG ^= CXX_VALUE_NODE.OFFSET then
+		call SEMANTIC_ERROR (ERR_MBR_PTR_OVERFLOW);
+	return (RESULT);
+
+end MEMBER_INITTER;
+
+/* ---------------------------------------------------------------------
+/* POINTER_MEMBER_INITTER
+/* ------------------------------------------------------------------- */
+POINTER_MEMBER_INITTER: procedure (CLASS_SYM, MEMBER1, MEMBER2, SYMBOL)
+		        returns (type (CXX_VID_T))
+		        internal;
+
+	declare
+		CLASS_SYM	type (NID_T),
+		MEMBER1		type (NID_T),
+		MEMBER2		type (NID_T),
+		SYMBOL		type (NID_T);
+	declare
+		TYPE_INFO	type (TYPE_INFO_T),
+		V		type (CXX_VID_T),
+		RESULT		type (CXX_VID_T);
+
+	call MEMBER_TYPE_INFO (CLASS_SYM, MEMBER1, MEMBER2, TYPE_INFO);
+	V = GET_VALUE_REF_AND_EXPAND (SYMBOL);
+	V = GET_VALUE_AND_EXPAND_L (ADDR_VO, V);
+	RESULT = GENERAL_CONVERT_VALUE (V, TYPE_INFO, IMPLICIT_CAST_VO);
+	return (RESULT);
+
+end POINTER_MEMBER_INITTER;
+
+end MEMBER_POINTER_CONSTANTS;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_POINTER_INFO
+/*
+/* Given V, a constant member pointer value node, 
+/* extract its vital information and count it down.
+/*
+/* If V is an INTEGER_VO, it must have member pointer type and
+/* it's assumed to be a null pointer.
+/*
+/* If IS_DATA, then OFFSET is set up as 0 (null) or 1+ the actual
+/* member offset in address units.
+/* Otherwise, OFFSET is the alteration to 'this' which must
+/* be applied whether virtual or not; INDEX is the index in
+/* the vtable; UNION is suitable for initializing either the
+/* function address or the post-lookup delta as appropriate
+/* to IS_VIRTUAL.
+/*
+/* ACCESS indicates whether to check access and record reference
+/* to the member.  SUPPRESS_IN indicates to suppress virtualness of
+/* the function call.
+/* ------------------------------------------------------------------- */
+MEMBER_POINTER_INFO: procedure (V, ACCESS, SUPPRESS_IN, IS_DATA, IS_STATIC,
+			        OFFSET, INDEX, VFTP_OFFSET, SYMBOL)
+		     external  (X_MEMBER_POINTER_INFO);
+
+	declare
+		V		type (CXX_VID_T),	/* in, consumed */
+		ACCESS		type (BOOL_T),		/* in */
+		SUPPRESS_IN	type (BOOL_T),		/* in */
+		IS_DATA		type (BOOL_T),		/* out */
+		IS_STATIC	type (BOOL_T),		/* out */
+		OFFSET		type (LONG_T),		/* out */
+		INDEX		type (LONG_T),		/* out */
+		VFTP_OFFSET	type (LONG_T),		/* out */
+		SYMBOL		type (NID_T);		/* out */
+	declare
+		TYPE_INFO	type (TYPE_INFO_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		THIS_CLASS_SYM	type (NID_T),
+		P		type (POINTER_T),
+		SUPPRESS	type (BOOL_T),
+		OFST		type (LONG_T),
+		OFST_UNITS	type (SHORT_T),
+		(KV, KV2)	type (CXX_VID_T),
+		BC		type (NID_T),
+		BCP		pointer;
+
+	OFFSET = 0;
+	KV = V;
+	CXX_VALUE_NODE_PTR = KV;
+	do while (CXX_VALUE_NODE.OP = CONVERT_VO
+		  | CXX_VALUE_NODE.OP = CAST_VO);
+		if CXX_VALUE_NODE.OP = CONVERT_VO then
+			call ADJUST_FOR_CONVERT (KV, OFFSET);
+		else do;
+			KV2 = CXX_VALUE_NODE.LEFT;
+			call COUNT_UP_VALUE (KV2);
+			call COUNT_DOWN_VALUE (KV);
+			KV = KV2;
+			CXX_VALUE_NODE_PTR = KV;
+		end;
+	end;
+
+	THIS_CLASS_SYM = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+	call GET_VALUE_TYPE (TYPE_INFO);
+	call GET_TOP_LEVEL_TYPE_INFO (TYPE_INFO, 1, TYPE_DATA);
+	IS_DATA = (rank (TYPE_DATA.CODE) ^= FUNCTION_DT);
+	IS_STATIC = FALSE;
+
+	if CXX_VALUE_NODE.OP = MEMBER_PTR_VO then do;
+		SYMBOL = CXX_VALUE_NODE.LEFT_NID;
+		SUPPRESS = (CXX_VALUE_NODE.OFFSET = 0);
+		call GET_SYM_NODE (SYMBOL, P);
+		IS_STATIC = rank (P->SYM_NODE.STORAGE_CLASS) = STATIC_ST;
+
+		if ACCESS & ^AM_DEBUGGER then do;
+			if XREF then
+				call ADDXRF ((SYMBOL), FALSE);
+		end;
+		if ACCESS then do;
+			if ^IS_ACCESSIBLE_STATIC (SYMBOL) then do;
+				call SEMANTIC_ERROR_I (
+					ERR_PRIV_BASE_MEMBER_REF,
+					FULL_QUALIFIED_SYMBOL_NAME (SYMBOL));
+			end;
+		end;
+	end;
+	else if CXX_VALUE_NODE.OP = INTEGER_VO then do;
+		SYMBOL = NULL_NID;
+	end;
+	else
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	call COUNT_DOWN_VALUE (KV);
+
+	if IS_DATA then do;
+
+		/* Pointer to data */
+
+		if SYMBOL ^= NULL_NID then do;
+			call NOTE_SYMBOL_REFERENCE (SYMBOL);
+			if ^IS_STATIC then do;
+				OFST = P->SYM_NODE.LOCATION;
+				OFST_UNITS = rank (P->SYM_NODE.OFFSET_UNITS);
+				OFFSET = OFFSET +
+					 ROUNDU (OFST,
+						 OFST_UNITS,
+						 ADDRESS_UNITS) +
+					 1;
+			end;
+			else	OFFSET = 0;  /* DGM 010 */
+		end;
+		else	OFFSET = 0;
+
+		if SYMBOL ^= NULL_NID then
+			call RELEASE_SYM_NODE (SYMBOL);
+
+		return;
+	end;
+
+	/* Pointer to function, the hairy case */
+
+	/* Figure virtualness and the value for the virtual index. */
+	if SYMBOL ^= NULL_NID then do;
+		INDEX = P->SYM_NODE.VIRTUAL_FUNCTION_INDEX;
+		if SUPPRESS_IN | SUPPRESS | INDEX <= 0 then do;
+			INDEX = -1;		/* non-virtual function */
+			call NOTE_SYMBOL_REFERENCE (SYMBOL);
+		end;
+	end;
+	else
+		INDEX = 0;			/* null */
+
+	/*
+	/* 'this' delta, i.e. offset of function symbol's containing
+	/* class within the class for which this is a member pointer
+	/**/
+	if SYMBOL = NULL_NID then
+		OFFSET = 0;
+	else if THIS_CLASS_SYM ^= P->SYM_NODE.ENCLOSING_SCOPE_OWNER then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	if INDEX = 0 then
+		VFTP_OFFSET = 0;
+	else if INDEX > 0 then do;
+		/*
+		/* offset within an object of type base_class of the
+		/* pointer to the vtable for base_class
+		/**/
+		BC = LOOKUP_VFT_POINTER (THIS_CLASS_SYM);
+		call GET_SYM_NODE_R (BC, BCP);
+		OFST = BCP->SYM_NODE.LOCATION;
+		OFST_UNITS = rank (BCP->SYM_NODE.OFFSET_UNITS);
+		VFTP_OFFSET =  ROUNDU (OFST, OFST_UNITS, ADDRESS_UNITS);
+		call RELEASE_SYM_NODE (BC);
+	end;
+
+	if SYMBOL ^= NULL_NID then
+		call RELEASE_SYM_NODE (SYMBOL);
+
+end MEMBER_POINTER_INFO;
+
+/* ---------------------------------------------------------------------
+/* ADJUST_FOR_CONVERT
+/* 
+/* V is a paged in CONVERT_VO value node, for conversion of member
+/* pointer type to member pointer type.  Set V to its own CXX_VALUE_NODE.
+/* LEFT, counting up the new V and down the old V.  Adjust OFFSET by the
+/* amount of the additional 'this delta' required by the old V, in
+/* relation to the new V.  Returns with new V paged in.
+/* ------------------------------------------------------------------- */
+ADJUST_FOR_CONVERT: procedure (V, OFFSET)
+		    internal;
+
+	declare
+		V		type (CXX_VID_T),
+		OFFSET		type (LONG_T);
+	declare
+		THIS_CLASS	type (NID_T),
+		THAT_CLASS	type (NID_T),
+		THIS_TO_CLASS	type (NID_T),
+		THAT_TO_CLASS	type (NID_T),
+		KV		type (CXX_VID_T);
+
+	KV = CXX_VALUE_NODE.LEFT;
+	THIS_CLASS = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+	THIS_TO_CLASS = GET_TO_CLASS ();
+	call COUNT_UP_VALUE (KV);
+	call COUNT_DOWN_VALUE (V);
+	V = KV;
+	CXX_VALUE_NODE_PTR = V;
+	THAT_CLASS = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+	THAT_TO_CLASS = GET_TO_CLASS ();
+	if IS_ANY_BASE_CLASS_OF (THAT_CLASS, THIS_CLASS) then
+		OFFSET = OFFSET + BASE_OFFSET (THAT_CLASS, THIS_CLASS);
+	else
+		OFFSET = OFFSET - BASE_OFFSET (THIS_CLASS, THAT_CLASS);
+	if IS_ANY_BASE_CLASS_OF (THAT_TO_CLASS, THIS_TO_CLASS) then do;
+		OFFSET = OFFSET - BASE_OFFSET (THAT_TO_CLASS, THIS_TO_CLASS);
+	end;
+	else if IS_ANY_BASE_CLASS_OF (THIS_TO_CLASS, THAT_TO_CLASS) then do;
+		OFFSET = OFFSET + BASE_OFFSET (THIS_TO_CLASS, THAT_TO_CLASS);
+	end;
+	else do;
+		/* 
+		/* pointed-to types are not related classes;
+		/* don't change the offset in address units
+		/**/
+	end;
+
+/* --------------------------------------------------------------------
+/* GET_TO_CLASS
+/*
+/* Get the symbol node id of the class pointed to by the paged-in
+/* value node.
+/* Doesn't change paged-in value node.
+/* ------------------------------------------------------------------- */
+GET_TO_CLASS: procedure returns (type (NID_T)) internal;
+
+	declare
+		TYPE_INFO 	type (TYPE_INFO_T),
+		TYPE_DATA	type (TYPE_DATA_T);
+
+	call GET_VALUE_TYPE (TYPE_INFO);
+	call GET_TOP_LEVEL_TYPE_INFO (TYPE_INFO, 1, TYPE_DATA);
+	if IS_AGGREGATE_TAG_TYPE (rank (TYPE_DATA.CODE)) then
+		return (TYPE_DATA.TAG_SYMBOL);
+	else
+		return (NULL_NID);
+
+end GET_TO_CLASS;
+
+end ADJUST_FOR_CONVERT;
+
+/* ---------------------------------------------------------------------
+/* BASE_OFFSET
+/*
+/* Note: this does not check for, or handle, virtual bases.
+/* ------------------------------------------------------------------- */
+BASE_OFFSET: procedure (BASE_CLASS, DERIVED_CLASS)
+	     returns (type (LONG_T))
+	     internal;
+
+	declare
+		BASE_CLASS	type (NID_T),
+		DERIVED_CLASS	type (NID_T);
+	declare
+		DP		type (POINTER_T),
+		OFFSET		type (LONG_T),
+		DONE		type (BOOL_T);
+
+	call GET_SYM_NODE_R (DERIVED_CLASS, DP);
+	DONE = CONVERT_RELATED_CLASS_POINTERS (DP, OFFSET);
+	call RELEASE_SYM_NODE (DERIVED_CLASS);
+	return (OFFSET);
+
+/* ---------------------------------------------------------------------
+/* CONVERT_RELATED_CLASS_POINTERS
+/* ------------------------------------------------------------------- */
+
+CONVERT_RELATED_CLASS_POINTERS: procedure (DP, OFFSET)
+				returns (type (BOOL_T))
+				internal;
+	declare
+		DP		type (POINTER_T),
+		OFFSET		type (LONG_T);
+	declare
+		(BC, NEXT_BC)	type (NID_T),
+		(P, BCP)	type (POINTER_T),
+		DONE		type (BOOL_T);
+
+	if DP->SYM_NODE.TOP_TYPE.TAG_SYMBOL = BASE_CLASS then do;
+		OFFSET = 0;
+		return (TRUE);
+	end;
+
+	do BC = DP->SYM_NODE.BASE_CLASSES repeat (NEXT_BC)
+	while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call GET_SYM_NODE_R (BCP->BASE_CLASS_NODE.SYMBOL, P);
+		DONE = CONVERT_RELATED_CLASS_POINTERS (P, OFFSET);
+		call RELEASE_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL);
+		if DONE then do;
+			OFFSET = OFFSET + BCP->BASE_CLASS_NODE.OFFSET;
+			call RELEASE_BASE_CLASS_NODE (BC);
+			return (TRUE);
+		end;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	return (FALSE);
+
+end CONVERT_RELATED_CLASS_POINTERS;
+
+end BASE_OFFSET;
+
+/* ---------------------------------------------------------------------
+/* IS_CONSTANT_MEMBER_POINTER
+/*
+/* Given V, a member pointer expression, determines whether it's
+/* a compile-time constant, typically either a MEMBER_POINTER_VO
+/* or a CAST of a MEMBER_POINTER_VO.
+/*
+/* If NULL_IS_CONSTANT is set, then a null member pointer is considered
+/* constant.
+/* ------------------------------------------------------------------- */
+IS_CONSTANT_MEMBER_POINTER: procedure (V, NULL_IS_CONSTANT)
+			    returns   (type (BOOL_T))
+			    external  (X_IS_CONSTANT_MEMBER_POINTER);
+
+	declare
+		V		type (CXX_VID_T),	/* in */
+		NULL_IS_CONSTANT
+				type (BOOL_T);		/* in */
+
+	CXX_VALUE_NODE_PTR = V;
+	do while (CXX_VALUE_NODE.OP = CAST_VO
+		  | CXX_VALUE_NODE.OP = CONVERT_VO);
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+	end;
+
+	if CXX_VALUE_NODE.OP = INTEGER_VO then
+		return (NULL_IS_CONSTANT);
+	else 
+		return (  CXX_VALUE_NODE.OP = MEMBER_PTR_VO
+			| CXX_VALUE_NODE.OP = DESTRUCTOR_VO);
+
+end IS_CONSTANT_MEMBER_POINTER;
+
+/* ---------------------------------------------------------------------
+/* GET_LOW_LEVEL_TYPE_INFO
+/*
+/* Determine the low-level type corresponding to the given 
+/* value node that has MEMBER_POINTER_DT type.  Also return
+/* whether it's pointer to data.  NOT_AN_LVALUE in the returned
+/* type data is the same as that in the original value node.
+/* The given value node is paged in on return.
+/* ------------------------------------------------------------------- */
+GET_LOW_LEVEL_TYPE_INFO: procedure (V, TI, IS_DATA)
+			 external (X_GET_LOW_LEVEL_TYPE_INFO);
+
+	declare
+		V		type (CXX_VID_T),
+		TI		type (TYPE_INFO_T),
+		IS_DATA		type (BOOL_T);
+
+	declare
+		TYPE_DATA	type (TYPE_DATA_T),
+		LOW_LEVEL_TYPE	type (NID_T);
+
+	CXX_VALUE_NODE_PTR = V;
+	call GET_VALUE_TYPE (TI);
+	call GET_TOP_LEVEL_TYPE_INFO (TI, 1, TYPE_DATA);
+	LOW_LEVEL_TYPE = GET_MEMBER_POINTER_TYPE (TYPE_DATA);
+	call SET_TYPE_NODE (LOW_LEVEL_TYPE);
+	call GET_TYPE_NODE_TYPE (TI);
+	IS_DATA = (rank (TYPE_DATA.CODE) ^= FUNCTION_DT);
+
+end GET_LOW_LEVEL_TYPE_INFO;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_POINTER_TO_LOGICAL
+/* ------------------------------------------------------------------- */
+MEMBER_POINTER_TO_LOGICAL: procedure (V)
+			   returns   (type (CXX_VID_T))
+			   external  (X_MEMBER_POINTER_TO_LOGICAL);
+
+	declare
+		V		type (CXX_VID_T);
+	declare
+		LOW_LEVEL_INFO	type (TYPE_INFO_T),
+		THIS_V		type (CXX_VID_T),
+		IS_DATA		type (BOOL_T),
+		RESULT		type (CXX_VID_T),
+		M		type (CXX_VID_T);
+
+	if IS_CONSTANT_MEMBER_POINTER (V, TRUE) then do;
+		if IS_CONSTANT_MEMBER_POINTER (V, FALSE) then
+			RESULT = INTEGER_VALUE_ZERO ();
+		else	RESULT = INTEGER_VALUE_ONE ();
+	end;
+	else do;
+		THIS_V = TRANSMUTE_WITH_TEMP (V,
+					      NULL_CXX_VID,
+					      FALSE,
+					      AUTO_ST,
+					      ADDR_VO);
+		call GET_LOW_LEVEL_TYPE_INFO (THIS_V, LOW_LEVEL_INFO, IS_DATA);
+		THIS_V = COPY_VALUE (THIS_V);
+		call SET_VALUE_TYPE (LOW_LEVEL_INFO);
+		if ^IS_DATA then
+			THIS_V = GET_DOT_AND_EXPAND (THIS_V,
+						     MFP_VIRTUAL_INDEX_NAME);
+		RESULT = CONVERT_VALUE (THIS_V, LOGICAL_BT);
+	end;
+	return (RESULT);
+
+end MEMBER_POINTER_TO_LOGICAL;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_POINTER_TO_INTEGRAL
+/* ------------------------------------------------------------------- */
+MEMBER_POINTER_TO_INTEGRAL: procedure (V, TYPE_CODE)
+			    returns   (type (CXX_VID_T))
+			    external  (X_MEMBER_POINTER_TO_INTEGRAL);
+
+	declare
+		V		type (CXX_VID_T),
+		TYPE_CODE	type (SHORT_T);
+
+	/* -TODO- Should return something useful. */
+
+	/* At the moment, return null. */
+
+	call COUNT_DOWN_VALUE (V);
+	return (INTEGER_VALUE (0, TYPE_CODE));
+
+end MEMBER_POINTER_TO_INTEGRAL;
+
+/* ---------------------------------------------------------------------
+ * COMPARE_MEMBER_POINTERS
+ *
+ * Called with LEFT and RIGHT operands, and VOP for a relational
+ * comparison of member pointers.  They have already been checked
+ * for compatibility.  RIGHT may be a null pointer constant, otherwise
+ * the two operands have been converted to a common type if it
+ * exists.
+ *
+ * But we still get here when the operands are incompatible, for
+ * for the sake of recovery, when at least one operand is a pointer
+ * to member.  If both are pointers to data members, or both are
+ * pointers to function members, let it go through (but in these
+ * cases make the severity 3 if they aren't members of the same class).
+ * If LEFT is a pointer to member and RIGHT a null pointer constant,
+ * let it go through.  Otherwise give a severity 3 error message
+ * and set up some arbitrary but workable return values.
+ *
+ * Result is paged in on return.
+ * ------------------------------------------------------------------- */
+
+COMPARE_MEMBER_POINTERS: procedure (LEFT, RIGHT, VOP)
+			 returns   (type (CXX_VID_T))
+		         external  (X_COMPARE_MEMBER_POINTERS);
+
+	declare
+		LEFT		type (CXX_VID_T),
+		RIGHT		type (CXX_VID_T),
+		VOP		type (SHORT_T);
+	declare
+		V		type (CXX_VID_T),
+		LOW_LEVEL_INFO	type (TYPE_INFO_T),
+		IS_DATA		type (BOOL_T),
+		(LTEMP, RTEMP)	type (CXX_VID_T),
+		(LMBR, RMBR)	type (CXX_VID_T),
+		(LREF, RREF)	type (CXX_VID_T),
+		(INITTER, TEST, OFFSET, INDEX, FADDR, VFTP_OFFSET)
+				type (CXX_VID_T),
+		LEFT_TAG	type (NID_T),
+		RIGHT_IS_NULL	type (BOOL_T),
+		RIGHT_IS_DATA	type (BOOL_T);
+
+	if ^(VOP = EQ_VO | VOP = NE_VO) then do;
+		call SEMANTIC_ERROR (ERR_MBR_PTR_COMPARE_OP);
+		if (VOP = GE_VO | VOP = LE_VO) then
+			VOP = EQ_VO;
+		else
+			VOP = NE_VO;
+	end;
+
+	/* Check for the ugly cases. */
+	CXX_VALUE_NODE_PTR = LEFT;
+	if CXX_VALUE_NODE.TYPE_CODE ^= byte (MEMBER_POINTER_DT) then
+		/* Left not a member pointer. */
+		goto SEVERE_RECOVERY;
+	LEFT_TAG = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+	RIGHT_IS_NULL = IS_NULL_POINTER_CONSTANT (RIGHT);
+	CXX_VALUE_NODE_PTR = RIGHT;
+	if ^(RIGHT_IS_NULL |
+	     (CXX_VALUE_NODE.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT) &
+	      CXX_VALUE_NODE.TAG_SYMBOL = LEFT_TAG)) then
+		/*
+		/* Right is neither the same kind of member pointer as left,
+		/* nor a null pointer constant.
+		/**/
+		goto SEVERE_RECOVERY;
+
+
+	if CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (MEMBER_POINTER_DT) then do;
+		/* Handle null constant RIGHT. */
+		call COUNT_DOWN_VALUE (RIGHT);
+		V = MEMBER_POINTER_TO_LOGICAL (LEFT);
+
+		if VOP = EQ_VO then
+			V = GET_VALUE_AND_EXPAND_L (NOT_VO, V);
+	end;
+
+	else do;
+		/* Both are pointers to members; they have the same type. */
+
+		call GET_LOW_LEVEL_TYPE_INFO (RIGHT, LOW_LEVEL_INFO, 
+						     RIGHT_IS_DATA);
+		call GET_LOW_LEVEL_TYPE_INFO (LEFT, LOW_LEVEL_INFO, IS_DATA);
+		if RIGHT_IS_DATA ^= IS_DATA then
+			/*
+			/* It's reasonable that a function member is never
+			/* at the same storage as a data member.
+			/**/
+			goto UNEQUAL_RECOVERY;
+
+		if IS_DATA then do;
+			LEFT = TRANSMUTE_MEMBER_VALUE (LEFT, AUTO_ST);
+			call SET_VALUE_TYPE (LOW_LEVEL_INFO);
+			RIGHT = TRANSMUTE_MEMBER_VALUE (RIGHT, AUTO_ST);
+			call SET_VALUE_TYPE (LOW_LEVEL_INFO);
+			return (GET_VALUE_AND_EXPAND_LR (VOP, LEFT, RIGHT));
+		end;
+
+		/*
+		/* (ltemp = ..., rtemp = ...,
+		/*  (ltemp.offset == rtemp.offset) 
+		/*  && (ltemp.index == rtemp.index)
+		/*  && ltemp.offset > 0
+		/*	 ? (ltemp.vftp_offset == rtemp.vftp_offset)
+		/*	 : (ltemp.faddr == rtemp.faddr))
+		/*
+		/* TM does this a little more easily, because they took care 
+		/* that faddr and vftp_offset exactly match in number of bits.
+		/**/
+
+		LTEMP = GET_TEMP_VALUE (LOW_LEVEL_INFO, AUTO_ST, FALSE);
+		call COUNT_UP_VALUE (LTEMP);
+		LREF = GET_TEMP_REF (LTEMP);
+		INITTER = INITIALIZE_OBJECT (LREF, LEFT);
+		RTEMP = GET_TEMP_VALUE (LOW_LEVEL_INFO, AUTO_ST, FALSE);
+		call COUNT_UP_VALUE (RTEMP);
+		RREF = GET_TEMP_REF (RTEMP);
+		INITTER = CONCATENATE_STATEMENTS (INITTER,
+					      INITIALIZE_OBJECT (RREF, RIGHT));
+
+		/* comparison of offset */
+		LMBR = TEMP_DOT (LTEMP, MFP_THIS_DELTA_NAME, NULL_NID);
+		RMBR = TEMP_DOT (RTEMP, MFP_THIS_DELTA_NAME, NULL_NID);
+		OFFSET = GET_VALUE_AND_EXPAND_LR (EQ_VO, LMBR, RMBR);
+
+		/* comparison of index */
+		LMBR = TEMP_DOT (LTEMP, MFP_VIRTUAL_INDEX_NAME, NULL_NID);
+		RMBR = TEMP_DOT (RTEMP, MFP_VIRTUAL_INDEX_NAME, NULL_NID);
+		INDEX = GET_VALUE_AND_EXPAND_LR (EQ_VO, LMBR, RMBR);
+
+		/* comparison of vftp offset */
+		LMBR = TEMP_DOT (LTEMP, MFP_UNION_NAME,MFP_VIRTUAL_DELTA_NAME);
+		RMBR = TEMP_DOT (RTEMP, MFP_UNION_NAME,MFP_VIRTUAL_DELTA_NAME);
+		VFTP_OFFSET = GET_VALUE_AND_EXPAND_LR (EQ_VO, LMBR, RMBR);
+
+		/* comparison of function address */
+		LMBR = TEMP_DOT (LTEMP, MFP_UNION_NAME, MFP_ADDRESS_NAME);
+		RMBR = TEMP_DOT (RTEMP, MFP_UNION_NAME, MFP_ADDRESS_NAME);
+		FADDR = GET_VALUE_AND_EXPAND_LR (EQ_VO, LMBR, RMBR);
+
+		/* conditional test */
+		LMBR = TEMP_DOT (LTEMP, MFP_VIRTUAL_INDEX_NAME, NULL_NID);
+		TEST = GET_VALUE_AND_EXPAND_LR
+		       (GT_VO,
+			LMBR,
+			INTEGER_VALUE (0,
+				       rank (CXX_VALUE_NODE.TOP_TYPE.CODE)));
+
+		call COUNT_DOWN_VALUE (LTEMP);
+		call COUNT_DOWN_VALUE (RTEMP);
+
+		V = EFFECT_BEFORE_VALUE 
+		    (INITTER,
+		     GET_VALUE_AND_EXPAND_LR
+		     (AND_AND_VO,
+		      OFFSET,
+		      GET_VALUE_AND_EXPAND_LR
+		      (AND_AND_VO,
+		       INDEX,
+		       GET_VALUE_AND_EXPAND_LR
+		       (CONDITIONAL_VO,
+			TEST,
+			GET_VALUE_AND_EXPAND_LR
+			(COLON_VO,
+			 VFTP_OFFSET,
+			 FADDR)))));
+
+		if VOP = NE_VO then
+			V = GET_VALUE_AND_EXPAND_L (NOT_VO, V);
+
+	end;  /* RIGHT not null constant */
+
+	/* Result value is paged in. */
+
+	return (V);
+
+SEVERE_RECOVERY:
+	call SEMANTIC_ERROR (ERR_ILLEGAL_MEMBER_COMPARISON);
+
+UNEQUAL_RECOVERY:
+	/* Return not equal. */
+	call COUNT_DOWN_VALUE (LEFT);
+	call COUNT_DOWN_VALUE (RIGHT);
+	if VOP = EQ_VO then
+		return (INTEGER_VALUE (0, LOGICAL_BT));
+	else
+		return (INTEGER_VALUE (1, LOGICAL_BT));
+
+/* ---------------------------------------------------------------------
+ * TEMP_DOT
+ *
+ * Returns with result value node paged in.
+ * ------------------------------------------------------------------- */
+
+TEMP_DOT: procedure (TEMP, NAME1, NAME2)
+	  returns   (type (CXX_VID_T))
+	  internal;
+
+	declare
+		TEMP		type (CXX_VID_T),
+		NAME1		type (NID_T),
+		NAME2		type (NID_T);
+	declare
+		MBR		type (CXX_VID_T);
+
+	call COUNT_UP_VALUE (TEMP);
+	MBR = GET_DOT_AND_EXPAND
+	      (GET_VALUE_AND_EXPAND_L
+	       (VALUE_VO, GET_TEMP_REF (TEMP)), NAME1);
+	if NAME2 ^= NULL_NID then
+		MBR = GET_DOT_AND_EXPAND (MBR, NAME2);
+	return (MBR);
+
+end TEMP_DOT;
+
+end COMPARE_MEMBER_POINTERS;
+
+/* ---------------------------------------------------------------------
+ * FIXUP_OVERLOADED_MEMBER
+ * 
+ * VALUE is a MEMBER_PTR_VO or MEMBER_REF_VO node.  Its symbol's
+ * overloading has just been resolved, the new symbol being
+ * given by SYMBOL.  Update the type and return a fixed value node.
+ * ------------------------------------------------------------------- */
+
+FIXUP_OVERLOADED_MEMBER: procedure (VALUE, SYMBOL)
+		         returns   (type (CXX_VID_T))
+		         external  (X_FIXUP_OVERLOADED_MEMBER);
+
+	declare
+		VALUE		type (CXX_VID_T),
+		SYMBOL		type (NID_T);
+	declare
+		V		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	if VALUE->CXX_VALUE_NODE.LEFT_NID = SYMBOL then
+		return (VALUE);
+	V = COPY_VALUE (VALUE);
+	V->CXX_VALUE_NODE.LEFT_NID = SYMBOL;	
+
+	/* Set up member pointer type. */
+	call POINTER_TO_MEMBER_TYPE_INFO (SYMBOL, TYPE_INFO);
+	CXX_VALUE_NODE_PTR = V;
+	call SET_VALUE_TYPE (TYPE_INFO);
+
+	return (V);
+
+end FIXUP_OVERLOADED_MEMBER;
+
+/* ---------------------------------------------------------------------
+ * POINTER_TO_MEMBER_TYPE_INFO
+ *
+ * Determine the type of a member pointer to the given member symbol.
+ * ------------------------------------------------------------------- */
+
+POINTER_TO_MEMBER_TYPE_INFO: procedure (SYMBOL, TYPE_INFO) internal;
+
+	declare
+		SYMBOL		type (NID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+	declare
+		SNID		type (SNID_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		P		type (POINTER_T),
+		TYPE		type (NID_T);
+
+	/* Set up member pointer type. */
+	TYPE_DATA.CODE = byte (MEMBER_POINTER_DT);
+	TYPE_DATA.QUALIFIERS = NULL_TQ;
+
+	call GET_SYM_NODE_R (SYMBOL, P);
+	TYPE_DATA.TAG_SYMBOL = P->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+	TYPE = ADD_TOP_TYPE (P->SYM_NODE.TYPE, TYPE_DATA);
+	call RELEASE_SYM_NODE (SYMBOL);
+
+	call SAVE_NODE (SNID);
+	call SET_TYPE_NODE_R (TYPE);
+	call GET_TYPE_NODE_TYPE (TYPE_INFO);
+	call RESTORE_NODE (SNID);
+
+end POINTER_TO_MEMBER_TYPE_INFO;
+

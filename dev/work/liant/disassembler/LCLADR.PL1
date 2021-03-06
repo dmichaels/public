@@ -1,0 +1,50 @@
+/* LPI-DEBUG LCLADR.PL1 - Get address of local data */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/* --------------------------------------------------------------------
+/* LCLADR - Get address of locals in stack frame
+/*
+/*  11.11.91  VTF  (002) Fixed a bug where LCLADR did not find the correct
+/*                       address for the frame prior to a non-debug routine.
+/*
+/* In:     FRAME = Frame pointer
+/* Return: Address of locals
+/**********************************************************************/
+
+LCLADR: procedure (FRAME) returns (fixed binary (31));
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include SYSREADUSER_IN;
+%include TARGET_IN;
+
+    declare 
+        FRAME           fixed binary (31);
+
+    declare
+        LOC             fixed binary (31),
+        L_ADDR          fixed binary (ADDRESS_LENGTH),
+        DUMMY           fixed binary (31),
+        STATUS          fixed binary (15);
+    
+    if FRAME = 0 then
+         return (0);
+    else if FRAME = $FP_BREAK then
+         return (PROGRAM_REGISTER_AREA->REGS.A6);
+    else if FRAME = (PROGRAM_REGISTER_AREA->REGS.A7 - $PC_OFF) then
+        return(PROGRAM_REGISTER_AREA->REGS.A6);
+    else LOC = FRAME;
+
+    call REAUSR (PROCESS_ID, DUMMY, LOC, 4, addr(L_ADDR), STATUS);
+    return (L_ADDR);
+
+end LCLADR;
+

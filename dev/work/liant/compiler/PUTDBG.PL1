@@ -1,0 +1,46 @@
+/* C++ putdbg.pl1 - Write line to diagnostic output file */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.06.90  DGM  003  Updated for the new utilities.
+ *  04.19.90  DGM  002  Fixed up includes
+ *  02.05.90  TLF  001  Modified to use external on procedure definition.
+ *  11.22.89  DGM  000  Original; cloned & modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)PUTDBG  003  6/6/90  (c) 1990 Language Processors, Inc.');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include C_UTL_DEFS_IN;
+%include C_UTL_WRITE_PKG;
+%include C_STANDARD_DEFS_IN;
+%include C_EXTERNAL_NAME_MAP_IN;
+
+PUTDBG: procedure (MSG) external (X_PUTDBG); 
+
+	declare MSG character (*) varying;
+
+        call WRITE_DEBUG_LINE (MSG);
+
+end PUTDBG;
+

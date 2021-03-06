@@ -1,0 +1,978 @@
+/* C++ cnvcon.pl1 - Convert constants (front-end and preprocessor) */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.22.92  DGM  003  SW_ALLOW_ANY_ESCAPE_SEQUENCES.
+ *  11.20.91  DGM  002  Fix in CONVERT_INTEGER_CONSANT.
+ *  11.14.91  DGM  001  Fix in CONVERT_CHARACTER_CONSANT.
+ *  10.25.91  DGM  000  Original; unified from constr.pl1 & pp_exp.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.22.92 003 CNVCON');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PP_EXTERNAL_NAME_MAP_IN;
+%include CXX_PP_ERROR_MGR_PKG;
+%include CXX_PP_CHARACTER_SET_IN;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+/* Result type codes (front-end) */
+
+%replace CHAR_IT			by CHAR_BT;
+%replace INT_IT				by INT_BT;
+%replace UNSIGNED_INT_IT		by UINT_BT;
+%replace LONG_IT			by LONG_BT;
+%replace UNSIGNED_LONG_IT		by ULONG_BT;
+
+/* Result type codes (preprocessor) */
+
+%replace LONG_PP_IT			by 0;
+%replace UNSIGNED_LONG_PP_IT		by 1;
+
+/* Suffix codes */
+
+%replace NULL_SUFFIX		by 0;
+%replace LONG_SUFFIX		by 1;
+%replace UNSIGNED_SUFFIX	by 2;
+%replace UNSIGNED_LONG_SUFFIX	by 3; /* LONG_SUFFIX + UNSIGNED_SUFFIX */
+
+/* ---------------------------------------------------------------------
+/* CONVERT_INTEGER_CONSTANT
+/* ------------------------------------------------------------------- */
+
+CONVERT_INTEGER_CONSTANT: procedure (S,
+				     SINDEX,
+				     SLENGTH,
+				     TYPE,
+				     FROM_PREPROCESSOR,
+				     RESULT,
+				     RESULT_TYPE)
+			  external  (X_CONVERT_INTEGER_CONSTANT);
+	declare
+		S			character (*) varying, /* in */
+		SINDEX			type (SHORT_T),	       /* in */
+		SLENGTH			type (SHORT_T),	       /* in/out */
+		TYPE			type (SHORT_T),	       /* in */
+		FROM_PREPROCESSOR	type (BOOL_T),	       /* in */
+		RESULT			type (LONG_T),	       /* out */
+		RESULT_TYPE		type (SHORT_T);	       /* out */
+	declare
+		C			type (SHORT_T),
+		I			type (SHORT_T),
+		D			type (SHORT_T),
+		BOS			type (SHORT_T),
+		EOS			type (SHORT_T),
+		RADIX			type (SHORT_T),
+		MAX_ULONG_DIV_RADIX	type (LONG_T),
+		MAX_ULONG_MOD_RADIX	type (LONG_T),
+		SUFFIX			type (SHORT_T),
+		ULONG			type (BOOL_T),
+		OVERFLOW		type (BOOL_T),
+		FOR_ESCAPE_SEQUENCE	type (BOOL_T);
+	declare
+		DEC_DIGITS		character (10)
+					varying static initial
+					('0123456789'),
+		HEX_DIGITS		character (22)
+					varying static initial
+					('0123456789abcdefABCDEF'),
+		OCT_DIGITS		character (8)
+					varying static initial
+					('01234567');
+	declare
+		DIGITP			type (POINTER_T),
+		DIGITS			character (22) varying
+					based (DIGITP);
+
+	/* Paranoid sanity checks */
+
+	/*
+	/* if (SLENGTH <= 0) | (SINDEX <= 0) | (length (S) <= 0) then do;
+	/*	SLENGTH = 0;
+	/*	return;
+	/* end;
+	/**/
+
+	RESULT		= 0;
+	OVERFLOW	= FALSE;
+
+	/* See if a suffix is allowed (negative TYPE (yuck)) */
+
+	if TYPE < 0 then do;
+		FOR_ESCAPE_SEQUENCE = TRUE;
+		TYPE = -TYPE;
+	end;
+	else	FOR_ESCAPE_SEQUENCE = FALSE;
+
+	/* Check out the suffix unless this is for an escape sequence */
+
+	if ^FOR_ESCAPE_SEQUENCE then do;
+		SUFFIX = NULL_SUFFIX;
+		do I = 1 to 2;
+			C = rank (substr (S, SINDEX + SLENGTH - 1, 1));
+			if (C = UPPER_L_CHAR) |
+			   (C = LOWER_L_CHAR) then do;
+				SUFFIX = SUFFIX + LONG_SUFFIX;
+				SLENGTH = SLENGTH - 1;
+			end;
+			else if (C = UPPER_U_CHAR) |
+				(C = LOWER_U_CHAR) then do;
+				SUFFIX = SUFFIX + UNSIGNED_SUFFIX;
+				SLENGTH = SLENGTH - 1;
+			end;
+		end;
+	end;
+
+	/* Determine the radix, etc. */
+
+	if TYPE = DECIMAL_CONSTANT_TOKEN then do;
+		RADIX			= 10;
+		DIGITP			= addr (DEC_DIGITS);
+		MAX_ULONG_DIV_RADIX	= MAX_ULONG_DIV_10;
+		MAX_ULONG_MOD_RADIX	= MAX_ULONG_MOD_10;
+		BOS			= SINDEX;
+	end;
+	else if TYPE = HEX_CONSTANT_TOKEN then do;
+		RADIX			= 16;
+		DIGITP			= addr (HEX_DIGITS);
+		MAX_ULONG_DIV_RADIX	= MAX_ULONG_DIV_16;
+		MAX_ULONG_MOD_RADIX	= MAX_ULONG_MOD_16;
+		if FOR_ESCAPE_SEQUENCE then
+			BOS		= SINDEX;
+		else	BOS		= SINDEX + 2;
+	end;
+	else if TYPE = OCTAL_CONSTANT_TOKEN then do;
+		RADIX			= 8;
+		DIGITP			= addr (OCT_DIGITS);
+		MAX_ULONG_DIV_RADIX	= MAX_ULONG_DIV_8;
+		MAX_ULONG_MOD_RADIX	= MAX_ULONG_MOD_8;
+		BOS			= SINDEX;
+	end;
+
+	/* Paranoid sanity check */
+
+	/*
+	/* else do;
+	/*	SLENGTH = 0;
+	/*	return;
+	/* end;
+	/**/
+
+	/* Compute the actual result integer value */
+
+	EOS	= SINDEX + SLENGTH - 1;
+	ULONG	= FALSE;
+
+	do I = BOS to EOS;
+		D = index (DIGITS, substr (S, I, 1)) - 1;
+		if D < 0 then
+			leave;
+		else if D > 15 then
+			D = D - 6;
+		if RESULT >= MAX_ULONG_DIV_RADIX then do;
+			ULONG = TRUE;
+			if ^OVERFLOW then do;
+				if RESULT > MAX_ULONG_DIV_RADIX then
+					OVERFLOW = TRUE;
+				else if D > MAX_ULONG_MOD_RADIX then
+					OVERFLOW = TRUE;
+			end;
+		end;
+		RESULT = RESULT * RADIX + D;
+	end;
+
+	/* Special handling if this conversion is for an escape sequence */
+
+	if FOR_ESCAPE_SEQUENCE then do;
+
+		/* Set the length of the string translated */
+
+		SLENGTH = I - BOS;
+
+		/*
+		/* See if there were no characters to translate;
+		/* this is only possible for hex escape sequences.
+		/**/
+
+		if SLENGTH <= 0 then do;
+			if ^SW_ALLOW_ANY_ESCAPE_SEQUENCES then do;
+				if FROM_PREPROCESSOR then
+					call PP_ERROR (ERR_PP_ILLEGAL_ESCAPE);
+				else	call LEXICAL_ERROR (ERR_BAD_ESCAPE_SEQ);
+			end;
+		end;
+
+		/* Check for overflow (for an escape sequence) */
+
+		if OVERFLOW | (RESULT > MAX_UCHAR) then do;
+			if FROM_PREPROCESSOR then
+				call PP_ERROR (ERR_PP_BIG_ESCAPE);
+			else if TYPE = HEX_CONSTANT_TOKEN then
+				call LEXICAL_ERROR (ERR_BIG_HEX_ESCAPE);
+			else	call LEXICAL_ERROR (ERR_BIG_OCTAL_ESCAPE);
+		end;
+
+		return;
+	end;
+
+	/* Check for overflow (for a non escape sequence) */
+
+	else if OVERFLOW then do;
+		if ^SW_ALLOW_OVERFLOWING_CONSTANTS then do;
+			if FROM_PREPROCESSOR then
+				call PP_ERROR (ERR_PP_BIG_INTEGER);
+			else	call SEMANTIC_ERROR (ERR_BIG_INTEGER);
+		end;
+	end;
+
+	/* Determine the final type */
+
+	/*
+	/* For C++ and ANSI-C, the type of a integer constant is
+	/* the first type in each of the appropriate lists in which
+	/* the constant can be fully represented (ANSI-C 3.1.3.2):
+	/*
+	/*   Unsuffixed decimal:   int, long, unsigned long
+	/*   Unsuffixed octal/hex: int, unsigned, long, unsigned long
+	/*   U suffixed:           unsigned, unsigned long
+	/*   L suffixed:           long, unsigned long
+	/*   U & L suffixed:       unsigned long
+	/*
+	/* For Classic C, the rules are slightly different:
+	/*
+	/*   Unsuffixed decimal:   int, long
+	/*   Unsuffixed octal/hex: int, unsigned, long
+	/*   L suffixed:           long
+	/*
+	/* For the preprocessor only long and unsigned long are used.
+	/**/
+
+	if ULONG then do;
+		if SW_X_INT_CONSTANT_TYPE then
+			RESULT_TYPE = LONG_IT;
+		else	RESULT_TYPE = UNSIGNED_LONG_IT;
+	end;
+
+	else if SUFFIX = NULL_SUFFIX then do;
+		if RESULT <= MAX_INT then
+			RESULT_TYPE = INT_IT;
+		else if TYPE = DECIMAL_CONSTANT_TOKEN then
+			RESULT_TYPE = UNSIGNED_LONG_IT;
+		else if MAX_UINT = MAX_ULONG then
+			RESULT_TYPE = UNSIGNED_INT_IT;
+		else	RESULT_TYPE = LONG_IT;
+	end;
+
+	else if SUFFIX = LONG_SUFFIX then
+		RESULT_TYPE = LONG_IT;
+
+	else if SUFFIX = UNSIGNED_SUFFIX then
+		RESULT_TYPE = UNSIGNED_INT_IT;
+
+	else	RESULT_TYPE = UNSIGNED_LONG_IT;
+
+	if FROM_PREPROCESSOR then do;
+		if (RESULT_TYPE = INT_IT) |
+		   (RESULT_TYPE = LONG_IT) then
+			RESULT_TYPE = LONG_PP_IT;
+		else if (RESULT_TYPE = UNSIGNED_INT_IT) |
+			(RESULT_TYPE = UNSIGNED_LONG_IT) then
+			RESULT_TYPE = UNSIGNED_LONG_PP_IT;
+	end;
+
+end CONVERT_INTEGER_CONSTANT;
+
+/* ---------------------------------------------------------------------
+/* CONVERT_CHARACTER_CONSTANT
+/* ------------------------------------------------------------------- */
+
+CONVERT_CHARACTER_CONSTANT: procedure (S,
+				       TYPE,
+				       FROM_PREPROCESSOR,
+				       RESULT,
+				       RESULT_TYPE)
+			    external  (X_CONVERT_CHARACTER_CONSTANT);
+	declare
+		S			character (*) varying,
+		TYPE			type (SHORT_T),
+		FROM_PREPROCESSOR	type (BOOL_T),
+		RESULT			type (LONG_T),
+		RESULT_TYPE		type (SHORT_T);
+	declare
+		I			type (SHORT_T),
+		SIZE			type (LONG_T),
+		SIZE_UNITS		type (SHORT_T),
+		NBYTES			type (SHORT_T),
+		BOS			type (SHORT_T),
+		EOS			type (SHORT_T),
+		INCREMENT		type (SHORT_T),
+		LEFT_TO_RIGHT		type (BOOL_T);
+	declare
+		MBTOWC			entry	(type (LONG_T),
+						 character (*) varying,
+						 type (SHORT_T) value)
+					returns	(type (LONG_T))
+					external;
+
+	/* Paranoid sanity checks */
+
+	/*
+	/* if (TYPE ^= COOKED_CHAR_CONSTANT_TOKEN) &
+	/*    (TYPE ^= COOKED_WCHAR_CONSTANT_TOKEN) &
+	/*    (TYPE ^= WCHAR_CONSTANT_TOKEN) &
+	/*    (TYPE ^= CHAR_CONSTANT_TOKEN) then
+	/*	return;
+	/**/
+
+	/* Determine the number of bytes in this character constant */
+
+       	NBYTES = length (S);
+
+	/* Paranoid sanity checks */
+
+	/*
+	/* if NBYTES <= 0 then
+	/*	return;
+	/**/
+
+	/* Set the type of this character constant */
+
+	/*
+	/* In C++, a single character constant has type char.
+	/* In C, a single character constant has type int.
+	/* In C and C++, a multi character constant has type int.
+	/* In C and C++, a wide character constant has type wchar_t.
+	/* For preprocessor expressions, everything has type long.
+	/* See ANSI-C, 3.1.3.4 and C++ARM, 2.5.2.
+	/* Satisfies Plum-Hall lang test c31.c.
+	/**/
+
+	if FROM_PREPROCESSOR then do;
+		call MAP_SOURCE_CHARACTERS (S, TRUE);
+		NBYTES = length (S);
+		RESULT_TYPE = LONG_PP_IT;
+	end;
+	else if (TYPE = COOKED_CHAR_CONSTANT_TOKEN) |
+		(TYPE = CHAR_CONSTANT_TOKEN) then do;
+		if (NBYTES > 1) | SW_X_PROMOTE_CHAR then
+			RESULT_TYPE = INT_IT;
+		else	RESULT_TYPE = CHAR_IT;
+	end;
+	else do;
+		/*
+		/* Wide character constant.
+		/* Set the result type to wchar_t.
+		/**/
+		RESULT_TYPE = GET_WIDE_CHAR_TYPE ();
+		if SW_SYSTEM_WCHAR_T then
+			SIZE = MBTOWC (RESULT, S, 1);
+		else	SIZE = MBTOWC (RESULT, S, 0);
+		if SIZE < 0 then do;
+			/*
+			/* Error; wide-character constant error.
+			/**/
+			if FROM_PREPROCESSOR then
+				call PP_ERROR_I (ERR_PP_WCHAR, S);
+			else	call SEMANTIC_ERROR_I (ERR_WCHAR, S);
+		end;
+		else if SIZE > NBYTES then do;
+			/*
+			/* Warning; more than one multi-byte character
+			/* in this wide character constant; we will only
+			/* process the first, and ignore the rest.
+			/**/
+			if FROM_PREPROCESSOR then
+				call PP_ERROR_I (ERR_PP_WCHAR_OVERFLOW, S);
+			else	call SEMANTIC_ERROR_I (ERR_WCHAR_OVERFLOW, S);
+		end;
+		return;
+	end;
+
+	/* Compute the value of the character constant */
+
+	if NBYTES = 1 then do;
+		/*
+		/* Single character constant.
+		/**/
+		BOS = 1;
+		EOS = 1;
+		INCREMENT = 1;
+	end;
+	else do;
+		/*
+		/* Multi character constant.
+		/* Get the size in bytes of the object which will
+		/* contain the character constant, and if there are
+		/* more bytes in the character constant than can be held
+		/* in the object, determine which characters to use.
+		/**/
+
+		call SIMPLE_TYPE_SIZE (RESULT_TYPE, SIZE, SIZE_UNITS, 0);
+		SIZE = ROUNDU (SIZE, SIZE_UNITS, BYTES);
+
+		if SIZE < NBYTES then do;
+			/*
+			/* Here, there are more characters in the
+			/* character constant than can be held in the
+			/* data object; take the right most characters.
+			/**/
+			BOS = NBYTES - SIZE + 1;
+			EOS = NBYTES;
+			if FROM_PREPROCESSOR then
+				call PP_ERROR
+				     (ERR_PP_MULTI_BYTE_CHAR_OVERFLOW);
+			else	call SEMANTIC_ERROR_I
+				     (ERR_MULTI_BYTE_CHAR_OVERFLOW,
+				      MAP_TYPE_CODE_NAME (RESULT_TYPE));
+		end;
+		else do;
+			BOS = 1;
+			EOS = NBYTES;
+			if SW_LINT then do;
+				if FROM_PREPROCESSOR then
+					call PP_ERROR
+					     (ERR_PP_MULTI_BYTE_CHAR);
+				else	call SEMANTIC_ERROR
+					     (ERR_MULTI_BYTE_CHAR);
+			end;
+		end;
+
+		/*
+		/* Figure out the storage order we want.  For
+		/* big-endian machines like SPARC and MC680x0,
+		/* it goes from left to right.  For little-endian
+		/* machines like i80386, it goes from right to left.
+		/* We also have explicit switches to choose either method.
+		/*
+		/*  char c =    SPARC        i386
+		/*  --------    -----        ----
+		/*  'a'         0x61         0x61
+		/*  'ab'        0x62         0x61
+		/*  'abc'       0x63         0x61
+		/*  'abcd'      0x64         0x61
+		/*  'abcde'     0x65         0x62
+		/*
+		/*  int c =     SPARC        i386
+		/*  -------     -----        ----
+		/*  'a'         0x61         0x61
+		/*  'ab'        0x6162       0x6261
+		/*  'abc'       0x616263     0x636261
+		/*  'abcd'      0x61626364   0x64636261
+		/*  'abcde'     0x62636465   0x65646362
+		/**/
+
+		if SW_MULTI_CHAR_LEFT_TO_RIGHT then
+			LEFT_TO_RIGHT = TRUE;
+		else if SW_MULTI_CHAR_RIGHT_TO_LEFT then
+			LEFT_TO_RIGHT = FALSE;
+        	else if TARGET_STORAGE_ORDER = STORAGE_LEFT_TO_RIGHT then
+			LEFT_TO_RIGHT = TRUE;
+		else	LEFT_TO_RIGHT = FALSE;
+
+        	if LEFT_TO_RIGHT then
+			INCREMENT = 1;
+
+		else do;
+			INCREMENT = -1;
+			I = BOS;
+			BOS = EOS;
+			EOS = I;
+		end;
+	end;
+
+	/* Compute the actual character constant value */
+
+	RESULT = rank (substr (S, BOS, 1)) - MIN_ASCII_HOST;
+
+       	if RESULT > MAX_CHAR then 
+       		RESULT = RESULT - (MAX_UCHAR + 1);  /* sign extend */
+
+	do I = BOS + INCREMENT to EOS by INCREMENT;
+		RESULT = RESULT * (MAX_UCHAR + 1) +
+			 (rank (substr (S, I, 1)) - MIN_ASCII_HOST);
+	end;
+
+end CONVERT_CHARACTER_CONSTANT;
+
+/* ---------------------------------------------------------------------
+/* MAP_SOURCE_CHARACTERS
+/*
+/* Map the source character set to the execution character set,
+/* and translate escape sequences in the given character string.
+/* Note that the size (in bytes) of the resultant string is guaranteed
+/* to be equal to or less than that of the original string.
+/* ------------------------------------------------------------------- */
+
+MAP_SOURCE_CHARACTERS: procedure (S, FROM_PREPROCESSOR)
+		       external  (X_MAP_SOURCE_CHARACTERS);
+	declare
+		S			character (*) varying,
+		FROM_PREPROCESSOR	type (BOOL_T);
+	declare
+		I			type (SHORT_T),
+		J			type (SHORT_T),
+		L			type (SHORT_T),
+		N			type (SHORT_T),
+		RANK_C			type (SHORT_T),
+		SIMPLE			type (BOOL_T),
+		C			type (BYTE_T);
+
+	/* Map source character set to execution character set */
+
+	/* A no-op for now */
+
+	/* Translate escape sequences in strings and character constants */
+
+	I = 0;
+	L = length (S);
+
+	do while (L > 0);
+
+		I = I + 1;
+		L = L - 1;
+
+		if (substr (S, I, 1) ^= byte (BACKSLASH_CHAR)) then
+			goto NEXT_CHARACTER_IN_STRING;
+
+		SIMPLE = TRUE;
+		C = substr (S, I + 1, 1);
+
+		if      C = byte (LOWER_N_CHAR) then	/* \n */
+			RANK_C = NEWLINE_CHAR;
+		else if C = byte (LOWER_T_CHAR) then	/* \t */
+			RANK_C = HORIZONTAL_TAB_CHAR;
+		else if C = byte (LOWER_R_CHAR) then	/* \r */
+			RANK_C = RETURN_CHAR;
+		else if C = byte (LOWER_F_CHAR) then	/* \f */
+			RANK_C = FORMFEED_CHAR;
+		else if C = byte (LOWER_B_CHAR) then	/* \b */
+			RANK_C = BACKSPACE_CHAR;
+		else if C = byte (LOWER_V_CHAR) then	/* \v */
+			RANK_C = VERTICAL_TAB_CHAR;
+		else if C = byte (SQUOTE_CHAR) then	/* \' */
+			RANK_C = SQUOTE_CHAR;
+		else if C = byte (DQUOTE_CHAR) then	/* \" */
+			RANK_C = DQUOTE_CHAR;
+		else if C = byte (BACKSLASH_CHAR) then	/* \\ */
+			RANK_C = BACKSLASH_CHAR;
+		else if ^SW_X_OLD_ESCAPES &
+			(C = byte (LOWER_A_CHAR)) then	/* \a */
+			RANK_C = ALERT_CHAR;
+		else if ^SW_X_OLD_ESCAPES &
+			(C = byte (QUESTION_CHAR)) then	/* \? */
+			RANK_C = ALERT_CHAR;
+		else if (C < byte (ZERO_CHAR)) |
+			(C > byte (SEVEN_CHAR)) then do;
+			if ^SW_X_OLD_ESCAPES &
+			    (C = byte (LOWER_X_CHAR)) then do;
+				if L > 1 then	/* must be hex */
+					SIMPLE = FALSE;
+				else do;
+					/*
+					/* L = 1, '\x', \ is ignored
+					/**/
+					RANK_C = rank (C);
+				end;
+			end;
+			else	RANK_C = rank (C); /* \ is ignored */
+
+			if SIMPLE then do;
+				/*
+				/* Error; not hex/oct, unprotected.
+				/**/
+				if ^SW_ALLOW_ANY_ESCAPE_SEQUENCES then do;
+					if FROM_PREPROCESSOR then
+						call PP_ERROR
+						     (ERR_PP_ILLEGAL_ESCAPE);
+					else	call LEXICAL_ERROR
+						     (ERR_BAD_ESCAPE_SEQ);
+				end;
+			end;
+		end;
+		else	SIMPLE = FALSE;                 
+
+		/*
+		/* Translate and shift the string literal
+		/* left to overwrite the backslash.
+		/**/
+
+		if SIMPLE then do;
+			L = L - 1;
+			substr (S, I, 1) = byte (RANK_C);
+			/*
+			/* S = substr (S, 1, I) || substr (S, I + 2, L);
+			/**/
+			call SPLICE_STRING (S, I + 1, 1, L);
+		end;
+		else do;
+			/*
+			/* Not a simple escape sequence.
+			/* I.e. will be \xhex or \octal.
+			/**/
+			if ^SW_X_OLD_ESCAPES &
+			   (C = byte (LOWER_X_CHAR)) then do;
+				/*
+				/* \xhex
+				/**/
+				N = L - 1;
+				RANK_C = MAP_HEX_ESCAPE (S, I + 2, N);
+				J = 2; /* account for \x */
+			end;
+	                else do;
+				/*
+				/* \octal (at most 3 characters)
+				/**/
+				N = min (3, L);
+				RANK_C = MAP_OCT_ESCAPE (S, I + 1, N);
+				J = 1; /* account for \ */
+			end;
+
+			/* Substitute and move left */
+
+			L = L - J - N + 1; /* rest of length */
+
+			substr (S, I, 1) = byte (RANK_C); /* remove \ */
+
+			/*
+			/* S = substr (S, 1, I) || substr (S, I + J + N, L);
+			/**/
+			call SPLICE_STRING (S, I + 1, J + N - 1, L);
+		end;
+
+		NEXT_CHARACTER_IN_STRING:;
+	end;        
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* MAP_HEX_ESCAPE
+/* ------------------------------------------------------------------- */
+
+MAP_HEX_ESCAPE: procedure (S, POSITION, SIZE) returns (type (LONG_T))
+		internal;
+
+	declare
+		S		character (*) varying,
+		POSITION	type (SHORT_T),
+		SIZE		type (SHORT_T);
+	declare
+		RESULT		type (LONG_T);
+
+	call CONVERT_INTEGER_CONSTANT
+	     (S,
+	      POSITION,
+	      SIZE,
+	      -HEX_CONSTANT_TOKEN,
+	      FROM_PREPROCESSOR,
+	      RESULT, 0);
+
+	return (RESULT);
+
+end MAP_HEX_ESCAPE;
+
+/* ---------------------------------------------------------------------
+/* MAP_OCT_ESCAPE
+/* ------------------------------------------------------------------- */
+
+MAP_OCT_ESCAPE: procedure (S, POSITION, SIZE) returns (type (LONG_T))
+		internal;
+
+	declare
+		S		character (*) varying,
+		POSITION	type (SHORT_T),
+		SIZE		type (SHORT_T);
+	declare
+		RESULT		type (LONG_T);
+
+	call CONVERT_INTEGER_CONSTANT
+	     (S,
+	      POSITION,
+	      SIZE,
+	      -OCTAL_CONSTANT_TOKEN,
+	      FROM_PREPROCESSOR,
+	      RESULT, 0);
+
+	return (RESULT);
+
+end MAP_OCT_ESCAPE;
+
+/* ---------------------------------------------------------------------
+/* SPLICE_STRING
+/* ------------------------------------------------------------------- */
+
+SPLICE_STRING: procedure (S, SKIP_POSITION, SKIP_SIZE, REMAINING_SIZE)
+	       internal;
+
+	declare
+		S		character (*) varying,
+		SKIP_POSITION	type (SHORT_T),
+		SKIP_SIZE	type (SHORT_T),
+		REMAINING_SIZE	type (SHORT_T);
+	declare
+		I		type (SHORT_T);
+
+	do I = 0 to REMAINING_SIZE - 1;
+		substr (S, SKIP_POSITION + I, 1)
+			= substr (S, SKIP_POSITION + SKIP_SIZE + I, 1);
+	end;
+	S = substr (S, 1, (SKIP_POSITION - 1) + REMAINING_SIZE);
+
+end SPLICE_STRING;
+
+end MAP_SOURCE_CHARACTERS;
+
+/* ---------------------------------------------------------------------
+/* MAP_STRING_LITERAL
+/* ------------------------------------------------------------------- */
+
+MAP_STRING_LITERAL: procedure (TP, NULL_TERMINATE)
+		    external  (X_MAP_STRING_LITERAL);
+	declare
+		TP		type (POINTER_T),
+		NULL_TERMINATE	type (BOOL_T);
+	declare
+		SP		type (POINTER_T),
+		SIZE		type (SHORT_T),
+		NEW_STRING_PTR	type (POINTER_T),
+		NEW_STRING_SIZE	type (SHORT_T);
+	declare
+		MBSTOWCS	entry	(character (*) varying,
+					 character (*) varying,
+					 type (SHORT_T) value)
+				returns	(type (SHORT_T))
+				external;
+
+	/* Paranoid sanity checks */
+
+	/*
+	/* if TP = null () then
+	/*	return;
+	/* else if (TP->TOKEN_POD.TYPE ^= STRING_LITERAL_TOKEN) &
+	/*	   (TP->TOKEN_POD.TYPE ^= WSTRING_LITERAL_TOKEN) then
+	/*	return;
+	/* else if TP->TOKEN_POD.SPELLING_PTR = null () then
+	/*	return;
+	/**/
+
+	SP = TP->TOKEN_POD.SPELLING_PTR;
+
+	/* Map the source to the corresponding execution characters */
+
+	call MAP_SOURCE_CHARACTERS (SP->TOKEN_SPELLING_POD.SPELLING, FALSE);
+
+	/*
+	/* Append a null byte if desired.  Note that the preprocessor
+	/* gratiously appends allocate enough space for terminating null
+	/* bytes for to string literals (normal as well as wide).
+	/**/
+
+	if NULL_TERMINATE then
+		SP->TOKEN_SPELLING_POD.SPELLING =
+			SP->TOKEN_SPELLING_POD.SPELLING || byte (NULL_CHAR);
+
+	/* Handle wide string literals */
+
+	if TP->TOKEN_POD.TYPE = WSTRING_LITERAL_TOKEN then do;
+		TP->TOKEN_POD.TYPE = COOKED_WSTRING_LITERAL_TOKEN;
+		/*
+		/* At most, the size (in bytes) of the wide string literal
+		/* will be twice that of the original (multi-byte) string
+		/* literal; it could be smaller than that if there are
+		/* N-byte multi-bytes sequences which map into one wide
+		/* character, where N is greater than the size (in bytes)
+		/* of a wide character (i.e. sizeof (wchar_t)).
+		/**/
+		NEW_STRING_SIZE = length (SP->TOKEN_SPELLING_POD.SPELLING) *
+				  GET_WIDE_CHAR_SIZE ();
+		NEW_STRING_PTR = SALLOC (NEW_STRING_SIZE);
+		TP->TOKEN_POD.SPELLING_PTR = NEW_STRING_PTR;
+		if SW_SYSTEM_WCHAR_T then
+			SIZE = MBSTOWCS (NEW_STRING_PTR->
+					 TOKEN_SPELLING_POD.SPELLING,
+					 SP->TOKEN_SPELLING_POD.SPELLING, 0);
+		else	SIZE = MBSTOWCS (NEW_STRING_PTR->
+					 TOKEN_SPELLING_POD.SPELLING,
+					 SP->TOKEN_SPELLING_POD.SPELLING, 1);
+		if SIZE < 0 then do;
+			/*
+			/* Error; wide-character constant error.
+			/**/
+			call SEMANTIC_ERROR (ERR_WSTRING);
+		end;
+		call SFREE (SP);
+		TP->TOKEN_POD.TYPE = COOKED_WSTRING_LITERAL_TOKEN;
+	end;
+
+	/* Handle normal string literals */
+
+	else	TP->TOKEN_POD.TYPE = COOKED_STRING_LITERAL_TOKEN;
+
+end MAP_STRING_LITERAL;
+
+/* ---------------------------------------------------------------------
+/* CONCATENATE_STRING_LITERALS
+/* ------------------------------------------------------------------- */
+
+CONCATENATE_STRING_LITERALS: procedure (LIST_OF_STRINGS,
+					TOTAL_STRING_LENGTH,
+					STRING_KIND)
+			     returns   (type (POINTER_T))
+			     external  (X_CONCATENATE_STRING_LITERALS);
+	declare
+		LIST_OF_STRINGS		type (POINTER_T),
+		TOTAL_STRING_LENGTH	type (SHORT_T),
+		STRING_KIND		type (SHORT_T);
+	declare
+		(SP, P)			type (POINTER_T),
+		SIZEOF_NULL_TERMINATOR	type (SHORT_T),
+		I			type (SHORT_T);
+
+	/*
+	/* Allocate a new string for copying (including a null
+	/* terminator).  Perform the concatenation in reverse order.
+	/**/
+
+	if STRING_KIND = WSTRING_LITERAL_TOKEN then
+		SIZEOF_NULL_TERMINATOR = GET_WIDE_CHAR_SIZE ();
+	else	SIZEOF_NULL_TERMINATOR = 1;
+
+	SP = SALLOC (TOTAL_STRING_LENGTH + SIZEOF_NULL_TERMINATOR);
+
+	if LIST_OF_STRINGS ^= null () then do;
+		SP->TOKEN_SPELLING_POD.SPELLING =
+			LIST_OF_STRINGS->TOKEN_SPELLING_POD.SPELLING;
+		P = LIST_OF_STRINGS;
+		LIST_OF_STRINGS = P->TOKEN_SPELLING_POD.NEXT;
+		call SFREE (P);
+		do while (LIST_OF_STRINGS ^= null ());
+			/*
+			/* The following doesn't work due to
+			/* a PL/I compiler bug (rev.04.05.00),
+			/* so we have to call CONCATENATE_STRINGS.
+			/*
+			/* SP->TOKEN_SPELLING_POD.SPELLING =
+			/* LIST_OF_STRINGS->TOKEN_SPELLING_POD.SPELLING ||
+			/* SP->TOKEN_SPELLING_POD.SPELLING;
+			/**/
+			call CONCATENATE_STRINGS
+			     (LIST_OF_STRINGS->TOKEN_SPELLING_POD.SPELLING,
+			      SP->TOKEN_SPELLING_POD.SPELLING,
+			      SP->TOKEN_SPELLING_POD.SPELLING);
+			P = LIST_OF_STRINGS;
+			LIST_OF_STRINGS = P->TOKEN_SPELLING_POD.NEXT;
+			call SFREE (P);
+		end;
+		do I = 1 to SIZEOF_NULL_TERMINATOR;
+			SP->TOKEN_SPELLING_POD.SPELLING =
+				SP->TOKEN_SPELLING_POD.SPELLING ||
+					byte (NULL_CHAR);
+		end;
+	end;
+	else	SP->TOKEN_SPELLING_POD.SPELLING = '';
+
+	return (SP);
+
+	/* -------------------------------------------------------------
+	/* CONCATENATE_STRINGS
+	/* ----------------------------------------------------------- */
+
+	CONCATENATE_STRINGS: procedure (A, B, TARGET) internal;
+
+		declare
+			A		character (*) varying,
+			B		character (*) varying,
+			TARGET		character (*) varying;
+
+		TARGET = A || B;
+
+	end CONCATENATE_STRINGS;
+
+end CONCATENATE_STRING_LITERALS;
+
+/* ---------------------------------------------------------------------
+/* GET_WIDE_CHAR_TYPE
+/* ------------------------------------------------------------------- */
+
+GET_WIDE_CHAR_TYPE: procedure returns (type (SHORT_T)) internal;
+
+	if WIDE_CHAR_DATA.TYPE = NULL_BT then
+		call SET_WIDE_CHAR_DATA ();
+	return (WIDE_CHAR_DATA.TYPE);
+
+end GET_WIDE_CHAR_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_WIDE_CHAR_SIZE
+/* ------------------------------------------------------------------- */
+
+GET_WIDE_CHAR_SIZE: procedure returns (type (SHORT_T)) internal;
+
+	if WIDE_CHAR_DATA.TYPE = NULL_BT then
+		call SET_WIDE_CHAR_DATA ();
+	return (WIDE_CHAR_DATA.SIZE);
+
+end GET_WIDE_CHAR_SIZE;
+
+/* ---------------------------------------------------------------------
+/* SET_WIDE_CHAR_DATA
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 WIDE_CHAR_DATA	static internal,
+  2 TYPE		type (SHORT_T) initial (NULL_BT),
+  2 SIZE		type (LONG_T) initial (0);
+
+SET_WIDE_CHAR_DATA: procedure internal;
+
+	declare
+		TT		type (TYPE_DATA_T),
+		SIZE_UNITS	type (SHORT_T);
+
+	call GET_TOP_TYPE (GET_WCHAR_T_TYPE (), TT);
+	WIDE_CHAR_DATA.TYPE = rank (TT.CODE);
+	call SIMPLE_TYPE_SIZE
+		(WIDE_CHAR_DATA.TYPE,
+		 WIDE_CHAR_DATA.SIZE, SIZE_UNITS, 0);
+	WIDE_CHAR_DATA.SIZE =
+		ROUNDU (WIDE_CHAR_DATA.SIZE, SIZE_UNITS, BYTES);
+
+end SET_WIDE_CHAR_DATA;
+

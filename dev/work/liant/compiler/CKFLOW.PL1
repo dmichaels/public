@@ -1,0 +1,462 @@
+/* C++ ckflow.pl1 - Checking that gotos don't bypass initialization. */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.26.92  DGM  005  New value-node scheme.
+ *  07.08.91  DGM  004  Allow bypassing of trivial initializations
+ *			in switches if compiling in Cfront mode.
+ *  02.11.91  DGM  003  Minor fix in CHECK_LABEL_DEFINITION.
+ *  11.01.90  PKT  002  Added SW_LAX_INITIALIZATION to permit jump
+ *			past initializer compatibility mode.
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  07.23.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 005 CKFLOW');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_GLOBAL_STATEMENT_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* NOTE_BYPASSING_GOTOS
+/* 
+/* Call this when a declaration in function or block scope has
+/* explicit or implicit initialization.  It will look through
+/* the function's as-yet-undefined labels and annotate them so that
+/* if they end up bypassing this initialization then a diagnostic
+/* message can be produced.
+/* 
+/* The parameter is a symbol to use in the error message, if
+/* there is a problem.
+/* ------------------------------------------------------------------- */
+NOTE_BYPASSING_GOTOS: procedure (BYPASSED_SYMBOL)
+		      external (X_NOTE_BYPASSING_GOTOS);
+
+	declare
+		BYPASSED_SYMBOL	type (NID_T);
+	declare
+		(SP, FP, LP, P)	type (POINTER_T),
+		THIS_LABEL	type (NID_T),
+		NEXT_LABEL	type (NID_T),
+		NEW_MAX_LEVEL	type (SHORT_T);
+
+	if  ((CURRENT_SCOPE_TYPE ^= FUNCTION_SCOPE) &
+	     (CURRENT_SCOPE_TYPE ^= BLOCK_SCOPE)) |
+	    (BYPASSED_SYMBOL = NULL_NID) then
+		return;
+
+	call GET_SCOPE_NODE (CURRENT_SCOPE, SP);
+
+	/* Determine the new maximum level for undefined labels */
+
+	NEW_MAX_LEVEL = SP->SCOPE_NODE.LEVEL - 1;
+	
+	/* Mark the scope as having an initialized declaration */
+
+	SP->SCOPE_NODE.INITIALIZED_SYMBOL = BYPASSED_SYMBOL;
+
+	if ^SP->SCOPE_NODE.INITIALIZED_SYMBOL_NEEDS_INIT then do;
+		call GET_SYM_NODE_R (BYPASSED_SYMBOL, P);
+		if OBJECT_NEEDS_INIT (P) then do;
+			SP->SCOPE_NODE.INITIALIZED_SYMBOL_NEEDS_INIT = TRUE;
+			SP->SCOPE_NODE.INITIALIZED_SYMBOL = BYPASSED_SYMBOL;
+		end;
+		call RELEASE_SYM_NODE (BYPASSED_SYMBOL);
+	end;
+
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+	/* Set up to traverse the function's list of label symbols */
+
+	call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, SP);
+	call GET_SYM_NODE_R (SP->SCOPE_NODE.OWNER, FP);
+
+	NEXT_LABEL = FP->SYM_NODE.FIRST_LABEL;
+
+	call RELEASE_SYM_NODE (SP->SCOPE_NODE.OWNER);
+	call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+
+	do while (NEXT_LABEL ^= NULL_NID);
+		THIS_LABEL = NEXT_LABEL;
+		call GET_SYM_NODE (THIS_LABEL, LP);
+		if ^LP->SYM_NODE.DEFINED 
+		  & LP->SYM_NODE.BLOCK_LEVEL > NEW_MAX_LEVEL then do;
+			LP->SYM_NODE.BLOCK_LEVEL = NEW_MAX_LEVEL;
+		end;
+		NEXT_LABEL = LP->SYM_NODE.NEXT_LABEL;
+		call RELEASE_SYM_NODE (THIS_LABEL);
+	end;
+
+end NOTE_BYPASSING_GOTOS;
+
+/* ---------------------------------------------------------------------
+/* CHECK_FLOW_AT_BLOCK_EXIT
+/*
+/* Call this just before exit from a block scope, 
+/* All as-yet-undefined labels are set so that they may be defined
+/* only in a block outer to the current block.
+/*
+/* Previously-defined labels are checked to see whether the block
+/* being exited contained the initializing declaration nearest
+/* preceding the label definition.  If so, the label is marked
+/* no longer reachable.
+/* ------------------------------------------------------------------- */
+CHECK_FLOW_AT_BLOCK_EXIT: procedure
+			  external (X_CHECK_FLOW_AT_BLOCK_EXIT);
+
+	declare
+		SP		pointer,
+		FP		pointer,
+		THIS_LABEL	type (NID_T),
+		NEXT_LABEL	type (NID_T),
+		LP		pointer,
+		CURRENT_LEVEL	type (SHORT_T);
+
+
+	/* Determine the level */
+	call GET_SCOPE_NODE_R (CURRENT_SCOPE, SP);
+	CURRENT_LEVEL = SP->SCOPE_NODE.LEVEL;
+	call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+
+	/* Set up to traverse the function's list of label symbols. */
+
+	call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, SP);
+	call GET_SYM_NODE_R (SP->SCOPE_NODE.OWNER, FP);
+
+	NEXT_LABEL = FP->SYM_NODE.FIRST_LABEL;
+
+	call RELEASE_SYM_NODE (SP->SCOPE_NODE.OWNER);
+	call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+
+	do while (NEXT_LABEL ^= NULL_NID);
+		THIS_LABEL = NEXT_LABEL;
+		call GET_SYM_NODE (THIS_LABEL, LP);
+		if LP->SYM_NODE.BLOCK_LEVEL = CURRENT_LEVEL then do;
+			if LP->SYM_NODE.DEFINED then
+				LP->SYM_NODE.OK_TO_REACH = FALSE;
+			else
+				LP->SYM_NODE.BLOCK_LEVEL = CURRENT_LEVEL - 1;
+		end;
+		NEXT_LABEL = LP->SYM_NODE.NEXT_LABEL;
+		call RELEASE_SYM_NODE (THIS_LABEL);
+	end;
+
+end CHECK_FLOW_AT_BLOCK_EXIT;
+
+/* ---------------------------------------------------------------------
+/* MOST_RECENT_INITIALIZED
+/* 
+/* Find the most-recently initialized variable, by searching
+/* progressively larger scopes until one is found with a
+/* bypassed symbol.  Return the level of the scope containing
+/* the symbol, or -1 if there are no initialized symbols.
+/* Set INITIALIZED_SYMBOL to the symbol's node id.
+/* ------------------------------------------------------------------- */
+MOST_RECENT_INITIALIZED: procedure (INITIALIZED_SYMBOL,
+				    BYPASSED_SYMBOL_SCOPE_LEVEL,
+				    BYPASSED_SYMBOL_NEEDS_INIT) internal;
+	declare
+		INITIALIZED_SYMBOL		type (NID_T),
+		BYPASSED_SYMBOL_SCOPE_LEVEL	type (SHORT_T),
+		BYPASSED_SYMBOL_NEEDS_INIT	type (BOOL_T);
+	declare
+		SP				type (POINTER_T),
+		THIS_SCOPE			type (NID_T),
+		ENCLOSING_SCOPE			type (NID_T);
+
+	/* Find the most deeply nested block containing initialization. */
+
+	THIS_SCOPE = CURRENT_SCOPE;
+	call GET_SCOPE_NODE_R (THIS_SCOPE, SP);
+	do while (  SP->SCOPE_NODE.INITIALIZED_SYMBOL = NULL_NID
+		  & rank (SP->SCOPE_NODE.TYPE) = BLOCK_SCOPE);
+		ENCLOSING_SCOPE = SP->SCOPE_NODE.ENCLOSING_SCOPE;
+		call RELEASE_SCOPE_NODE (THIS_SCOPE);
+		THIS_SCOPE = ENCLOSING_SCOPE;
+		call GET_SCOPE_NODE_R (THIS_SCOPE, SP);
+	end;
+
+	INITIALIZED_SYMBOL = SP->SCOPE_NODE.INITIALIZED_SYMBOL;
+
+	if INITIALIZED_SYMBOL ^= NULL_NID then do;
+		BYPASSED_SYMBOL_SCOPE_LEVEL
+			= SP->SCOPE_NODE.LEVEL;
+		BYPASSED_SYMBOL_NEEDS_INIT
+			= SP->SCOPE_NODE.INITIALIZED_SYMBOL_NEEDS_INIT;
+	end;
+	else do;
+		/*
+		/* SP->SCOPE_NODE.TYPE = FUNCTION_SCOPE and no initializer.
+		/**/
+		BYPASSED_SYMBOL_SCOPE_LEVEL = -1;
+	end;
+
+	call RELEASE_SCOPE_NODE (THIS_SCOPE);
+
+end MOST_RECENT_INITIALIZED;
+
+/* ---------------------------------------------------------------------
+/* CHECK_LABEL_WITH_DTORS
+/*
+/* PKT doesn't think this error applies anymore, since temporaries are
+/* destroyed whenever we reach a label or a nontrivial declaration.
+/* For now, return without doing anything.
+/* ------------------------------------------------------------------- */
+CHECK_LABEL_WITH_DTORS: procedure
+			internal;
+
+	declare
+		SP		pointer,
+		ESP		pointer;
+
+	return;
+
+	/* Check for label in a block with destructors */
+	if SW_ZOMBIE_TEMP then do;
+		call GET_SCOPE_NODE (CURRENT_SCOPE, SP);
+		call GET_SCOPE_NODE (SP->SCOPE_NODE.ENCLOSING_SCOPE, ESP);
+		if    SP->SCOPE_NODE.DESTRUCTORS 
+		   ^= ESP->SCOPE_NODE.DESTRUCTORS then
+			call SEMANTIC_ERROR (ERR_DESTRUCT_LABEL);
+		call RELEASE_SCOPE_NODE (SP->SCOPE_NODE.ENCLOSING_SCOPE);
+		call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+	end;
+
+end CHECK_LABEL_WITH_DTORS;
+
+/* ---------------------------------------------------------------------
+/* CHECK_LABEL_DEFINITION
+/* 
+/* Diagnose possible gotos around initialization, to the label
+/* currently being defined.
+/* ------------------------------------------------------------------- */
+CHECK_LABEL_DEFINITION: procedure
+			external (X_CHECK_LABEL_DEFINITION);
+
+	declare
+		(LP, SP)	type (POINTER_T),
+		BYPASSED_SYMBOL	type (NID_T),
+		EFFECTIVE_LEVEL	type (SHORT_T),
+		LOOP_LEVEL	type (SHORT_T),
+		LOOP_INFO_P	type (POINTER_T),
+		LOOP_INFO	type (LOOP_INFO_T) based (LOOP_INFO_P),
+		INDEX		type (SHORT_T),
+		DONE_WITH_LOOPS	type (BOOL_T),
+		NEEDS_INIT	type (BOOL_T);
+
+	call MOST_RECENT_INITIALIZED (BYPASSED_SYMBOL,
+				      EFFECTIVE_LEVEL,
+				      NEEDS_INIT);
+
+	call GET_SYM_NODE (CURRENT_SYMBOL, LP);
+		
+	/*
+	/* EFFECTIVE_LEVEL is the effective current
+	/* nesting level at which the label is declared. 
+	/* LP->SYM_NODE.BLOCK_LEVEL is the max level at which it is OK.
+	/**/
+
+	if EFFECTIVE_LEVEL > LP->SYM_NODE.BLOCK_LEVEL then do;
+		if NEEDS_INIT then do;
+			call SEMANTIC_ERROR_II
+			     (ERR_BYPASS_INIT,
+			      SYMBOL_NAME (BYPASSED_SYMBOL),
+			      SYMBOL_LOCATION_NAME (BYPASSED_SYMBOL));
+		end;
+		else if ^SW_LAX_INITIALIZATION then do;
+			call SEMANTIC_ERROR_II
+			     (ERR_BYPASS_INIT,
+			      SYMBOL_NAME (BYPASSED_SYMBOL),
+			      SYMBOL_LOCATION_NAME (BYPASSED_SYMBOL));
+		end;
+	end;
+
+	LP->SYM_NODE.BLOCK_LEVEL = EFFECTIVE_LEVEL;
+	LP->SYM_NODE.OK_TO_REACH = TRUE;
+	LP->SYM_NODE.BYPASSED_SYMBOL = BYPASSED_SYMBOL;
+
+	/* For all applicable loops, record in LOOP_INFO_STACK.ENTRY_FOUND
+	/* that this label provides entry into the loop.
+	/**/
+	INDEX = LOOP_INFO_STACK_TOP;
+
+	DONE_WITH_LOOPS = (INDEX = HB_LOOP_INFO_STACK);
+	do while (^DONE_WITH_LOOPS);
+		LOOP_INFO_P = addr (LOOP_INFO_STACK (INDEX));
+		call GET_SCOPE_NODE_R (LOOP_INFO.SCOPE, SP);
+		LOOP_LEVEL = SP->SCOPE_NODE.LEVEL;
+		call RELEASE_SCOPE_NODE (LOOP_INFO.SCOPE);
+
+		if EFFECTIVE_LEVEL > LOOP_LEVEL then do;
+			/* An object has been declared inside the loop. */
+			DONE_WITH_LOOPS = TRUE;
+		end;
+		else do;
+			/* The label can provide entry into the loop. */
+			LOOP_INFO.ENTRY_FOUND = TRUE;
+
+			/* INDEX = INDEX-1; */
+			INDEX = INDEX + 1;
+			DONE_WITH_LOOPS = (INDEX = HB_LOOP_INFO_STACK);
+		end;
+	end;
+
+	call CHECK_LABEL_WITH_DTORS ();
+
+	call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+
+end CHECK_LABEL_DEFINITION;
+
+/* ---------------------------------------------------------------------
+/* CHECK_CASE_DEFINITION
+/* 
+/* Diagnose possible switch around initialization, to the case label
+/* currently being defined.  LOOP is the LOOP_INFO_T for the switch.
+/* ------------------------------------------------------------------- */
+CHECK_CASE_DEFINITION: procedure (LOOP_INDEX)
+		       external (X_CHECK_CASE_DEFINITION);
+
+	declare
+		LOOP_INDEX	type (SHORT_T);
+
+	declare
+		SSP		type (POINTER_T),
+		BYPASSED_SYMBOL	type (NID_T),
+		EFFECTIVE_LEVEL	type (SHORT_T),
+		NEEDS_INIT	type (BOOL_T);
+
+	call MOST_RECENT_INITIALIZED (BYPASSED_SYMBOL,
+				      EFFECTIVE_LEVEL,
+				      NEEDS_INIT);
+
+	call GET_SCOPE_NODE_R (LOOP_INFO_STACK (LOOP_INDEX).SCOPE, SSP);
+		
+	/*
+	/* EFFECTIVE_LEVEL is the effective current nesting level
+	/* at which the case/default label is declared. 
+	/**/
+
+	if EFFECTIVE_LEVEL > SSP->SCOPE_NODE.LEVEL then do;
+		/*
+		/* If a non-trivial initialization (i.e. vi constructor)
+		/* is needed then give a VIOLATION, otherwise give a
+		/* WARNING except if we're in Cfront mode.
+		/**/
+		if NEEDS_INIT then do;
+			call SEMANTIC_ERROR_II
+			     (ERR_SWITCH_BYPASS_NEEDS_INIT,
+			      SYMBOL_NAME (BYPASSED_SYMBOL),
+			      SYMBOL_LOCATION_NAME (BYPASSED_SYMBOL));
+		end;
+		else if ^SW_ALLOW_INIT_BYPASS_IN_SWITCH then do;
+			call SEMANTIC_ERROR_II
+			     (ERR_SWITCH_BYPASS_INIT,
+			      SYMBOL_NAME (BYPASSED_SYMBOL),
+			      SYMBOL_LOCATION_NAME (BYPASSED_SYMBOL));
+		end;
+	end;
+
+	call CHECK_LABEL_WITH_DTORS ();
+
+	call RELEASE_SCOPE_NODE (LOOP_INFO_STACK (LOOP_INDEX).SCOPE);
+
+end CHECK_CASE_DEFINITION;
+
+/* ---------------------------------------------------------------------
+/* CHECK_GOTO
+/* 
+/* Make sure the goto to CURRENT_SYMBOL does not bypass an initializer.
+/* ------------------------------------------------------------------- */
+
+CHECK_GOTO: procedure external (X_CHECK_GOTO);
+
+	declare LP type (POINTER_T);
+
+	call GET_SYM_NODE_R (CURRENT_SYMBOL, LP);
+	if LP->SYM_NODE.DEFINED & ^LP->SYM_NODE.OK_TO_REACH then do;
+		if OBJECT_NEEDS_INIT (LP) then do;
+			call SEMANTIC_ERROR_II
+			     (ERR_BYPASS_NEEDS_INIT,
+			      SYMBOL_NAME (LP->SYM_NODE.BYPASSED_SYMBOL),
+			      SYMBOL_LOCATION_NAME
+			      (LP->SYM_NODE.BYPASSED_SYMBOL));
+		end;
+		else if ^SW_LAX_INITIALIZATION then do;
+			call SEMANTIC_ERROR_II
+			     (ERR_BYPASS_INIT,
+			      SYMBOL_NAME (LP->SYM_NODE.BYPASSED_SYMBOL),
+			      SYMBOL_LOCATION_NAME
+			      (LP->SYM_NODE.BYPASSED_SYMBOL));
+		end;
+	end;
+	call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+
+end CHECK_GOTO;
+
+/* ---------------------------------------------------------------------
+/* OBJECT_NEEDS_INIT
+/*
+/* If the symbol represented by the given sym-node pointer is an object
+/* which need initialization (i.e. via constructor), then return TRUE,
+/* otherwise return FALSE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+OBJECT_NEEDS_INIT: procedure (SYMBOL_PTR) returns (type (BOOL_T)) internal;
+
+	declare
+		SYMBOL_PTR	type (POINTER_T);
+	declare
+		P		type (POINTER_T),
+		NEEDS_INIT	type (BOOL_T);
+
+	NEEDS_INIT = FALSE;
+	if IS_AGGREGATE_TAG_TYPE
+	   (rank (SYMBOL_PTR->SYM_NODE.TOP_TYPE.CODE)) &
+	   (SYMBOL_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL ^= NULL_NID) then do;
+		call GET_SYM_NODE_R
+		     (SYMBOL_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL, P);
+		if P->SYM_NODE.NEEDS_INIT then
+			NEEDS_INIT = TRUE;
+		call RELEASE_SYM_NODE
+		     (SYMBOL_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL);
+	end;
+	return (NEEDS_INIT);
+
+end OBJECT_NEEDS_INIT;
+
+

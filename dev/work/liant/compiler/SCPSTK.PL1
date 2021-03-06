@@ -1,0 +1,93 @@
+/* C++ scpstk.pl1 - Scope stack manipulation routines */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  02.18.93  DGM  005  Increased size of stack.
+ *  02.04.92  DGM  004  Increased size of stack.
+ *  12.05.90  DGM  002  Oops; same as 001.
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  09.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 02.18.93 005 SCPSTK');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+%replace HB_SCOPE_STATE_STACK	by 512;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+SCOPE_STACK		(1 : HB_SCOPE_STATE_STACK)
+			type (CURRENT_SCOPE_DATA) static internal,
+SCOPE_STACK_TOP		type (SHORT_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* SAVE_SCOPE_STATE
+/*
+/* Save (push) the current scope state data.
+/* ------------------------------------------------------------------- */
+
+SAVE_SCOPE_STATE: procedure external (X_SAVE_SCOPE_STATE);
+
+	if SCOPE_STACK_TOP >= HB_SCOPE_STATE_STACK then do;
+		call COMPILER_ERROR (ERR_SCOPE_STATE_STACK_OVERFLOW);
+		return;
+	end;
+	SCOPE_STACK_TOP = SCOPE_STACK_TOP + 1;
+	SCOPE_STACK (SCOPE_STACK_TOP) = CURRENT_SCOPE_DATA;
+
+end SAVE_SCOPE_STATE;
+
+/* ---------------------------------------------------------------------
+/* RESTORE_SCOPE_STATE
+/*
+/* Restore (pop) the previous scope state data.
+/* ------------------------------------------------------------------- */
+
+RESTORE_SCOPE_STATE: procedure external (X_RESTORE_SCOPE_STATE);
+
+	if SCOPE_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_SCOPE_STATE_STACK_UNDERFLOW);
+		return;
+	end;
+	CURRENT_SCOPE_DATA = SCOPE_STACK (SCOPE_STACK_TOP);
+	SCOPE_STACK_TOP = SCOPE_STACK_TOP - 1;
+
+end RESTORE_SCOPE_STATE;
+
+

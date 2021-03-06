@@ -1,0 +1,43 @@
+/* C++ global.in - Front-end global data */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  07.17.91  DGM  005  Added STANDARD_SYSTEM_HEADER_WRAP_DIR
+ *  03.21.91  DGM  004  Oops.
+ *  03.21.91  DGM  003  Updated for new include file search scheme.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  11.21.89  DGM  001  Original.
+ *
+ ***********************************************************************/
+
+declare
+
+1 CGLOBAL			    static external,
+
+  2 STANDARD_SYSTEM_HEADER_DIR	    character (128) varying
+				    initial (DEFAULT_SYSTEM_HEADER_DIR),
+  2 STANDARD_SYSTEM_HEADER_WRAP_DIR character (128) varying
+				    initial (DEFAULT_SYSTEM_HEADER_WRAP_DIR),
+  2 STANDARD_ANSI_C_HEADER_DIR	    character (128) varying
+				    initial (DEFAULT_ANSI_C_HEADER_DIR),
+  2 STANDARD_CXX_HEADER_DIR	    character (128) varying
+				    initial (DEFAULT_CXX_HEADER_DIR),
+  2 C_HEADER_DIRS		    character (128) varying
+				    initial (''),
+  2 STARTUP_INCLUDE_FILE	    character (128) varying
+				    initial (''),
+  2 DEFINE_LIST,
+    3 HEAD			    type (POINTER_T) initial (null ()),
+    3 TAIL			    type (POINTER_T) initial (null ()),
+
+  2 PP_MAX_TOKENS		    type (LONG_T) initial (0);
+

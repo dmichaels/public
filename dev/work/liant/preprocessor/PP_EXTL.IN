@@ -1,0 +1,81 @@
+/* CPP CPP_EXTERNAL_NAME_MAP_IN - External (long) name map */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  06.18.92  DGM  008  Added X_PP_EVALUATE_EXPRESSION.
+ *  11.12.91  DGM  007  Removed X_IS_DEFINED_PP_KEYWORD.
+ *  07.08.91  DGM  006  Added X_DEFINE_ASSERT_MACRO et.al.
+ *  03.08.91  DGM  005  Added X_IS_DEFINED_MACRO.
+ *  10.10.90  DGM  004  Updated.
+ *  09.25.90  DGM  003  Include file name changes.
+ *  07.18.90  DGM  002  Added X_GET_NEXT_UNEXPANDED_TOKEN.
+ *  06.13.90  DGM  001  Updated.
+ *  06.05.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* External name map
+/*
+/* Note that only the external names which are used *exclusively*
+/* within this ANSI-C/C++ preprocessor component are defined here.
+/* The others (i.e. the interface names, e.g. TGET, TOKEN_SPELLING)
+/* are defined in the appropriate include file (i.e. in
+/* CPP_TOKEN_POD_MGR_IN, CPP_TOKEN_POD_SPELLING_IN, CPP_TOKEN_POD_DEBUG_IN).
+/* ------------------------------------------------------------------- */
+
+%replace X_ASSERT_MACRO_NAME              by 'ASSERT_MACRO_NAME';
+%replace X_COLLECT_ASSERT_TOKENS          by 'COLLECT_ASSERT_TOKENS';
+%replace X_COLLECT_PREDICATE_TOKENS       by 'COLLECT_PREDICATE_TOKENS';
+%replace X_DEFINE_ASSERT                  by 'DEFINE_ASSERT';
+%replace X_DEFINE_MACRO                   by 'DEFINE_MACRO';
+%replace X_END_BUFFER_TOKEN               by 'END_BUFFER_TOKEN';
+%replace X_END_MACRO_ARGUMENT_TOKEN       by 'END_MACRO_ARGUMENT_TOKEN';
+%replace X_END_MACRO_EXPANSION_TOKEN      by 'END_MACRO_EXPANSION_TOKEN';
+%replace X_END_PP_DIRECTIVE_TOKEN         by 'END_PP_DIRECTIVE_TOKEN';
+%replace X_FREE_MACRO_PARAMETER_LIST      by 'FREE_MACRO_PARAMETER_LIST';
+%replace X_FREE_MACRO_REPLACEMENT_LIST    by 'FREE_MACRO_REPLACEMENT_LIST';
+%replace X_GET_NEXT_EXPANDED_TOKEN        by 'GET_NEXT_EXPANDED_TOKEN';
+%replace X_GET_NEXT_LEXICAL_TOKEN         by 'GET_NEXT_LEXICAL_TOKEN';
+%replace X_GET_NEXT_UNEXPANDED_TOKEN      by 'GET_NEXT_UNEXPANDED_TOKEN';
+%replace X_INITIALIZE_KEYWORD_TABLES      by 'INITIALIZE_KEYWORD_TABLES';
+%replace X_IS_DEFINED_MACRO               by 'IS_DEFINED_MACRO';
+%replace X_IS_RESERVED_PP_KEYWORD         by 'IS_RESERVED_PP_KEYWORD';
+%replace X_IS_VASTART_PP_KEYWORD          by 'IS_VASTART_PP_KEYWORD';
+%replace X_LOOKUP_ASSERT                  by 'LOOKUP_ASSERT';
+%replace X_LOOKUP_KEYWORD                 by 'LOOKUP_KEYWORD';
+%replace X_LOOKUP_MACRO                   by 'LOOKUP_MACRO';
+%replace X_LOOKUP_MACRO_BY_TOKEN          by 'LOOKUP_MACRO_BY_TOKEN';
+%replace X_LOOKUP_PP_KEYWORD              by 'LOOKUP_PP_KEYWORD';
+%replace X_MACRO_NAME                     by 'MACRO_NAME';
+%replace X_MAKE_DEBUGGER_MACROS           by 'MAKE_DEBUGGER_MACROS';
+%replace X_SAME_MACRO_REPLACEMENT_LIST    by 'SAME_MACRO_REPLACEMENT_LIST';
+%replace X_SAME_MACRO_PARAMETER_LIST      by 'SAME_MACRO_PARAMETER_LIST';
+%replace X_SCAN_ERROR                     by 'SCAN_ERROR';
+%replace X_SCAN_ERROR_I                   by 'SCAN_ERROR_I';
+%replace X_SCAN_ERROR_ON_LINE             by 'SCAN_ERROR_ON_LINE';
+%replace X_SCAN_ERROR_I_ON_LINE           by 'SCAN_ERROR_I_ON_LINE';
+%replace X_GET_NEXT_CHAR                  by 'GET_NEXT_CHAR';
+%replace X_SCAN_NEXT_CHAR                 by 'SCAN_NEXT_CHAR';
+%replace X_SCAND_NEXT_CHAR                by 'SCAND_NEXT_CHAR';
+%replace X_SCANP_NEXT_CHAR                by 'SCANP_NEXT_CHAR';
+%replace X_PUSH_BACK_CHAR                 by 'PUSH_BACK_CHAR';
+%replace X_PP_ABORT                       by 'PP_ABORT';
+%replace X_PP_ERROR                       by 'PP_ERROR';
+%replace X_PP_ERROR_I                     by 'PP_ERROR_I';
+%replace X_PP_EVALUATE_EXPRESSION         by 'PP_EVALUATE_EXPRESSION';
+%replace X_PP_EXPRESSION                  by 'PP_EXPRESSION';
+%replace X_PP_WARNING                     by 'PP_WARNING';
+%replace X_PURGE_MACROS                   by 'PURGE_MACROS';
+%replace X_UNDEF_ASSERT                   by 'UNDEF_ASSERT';
+%replace X_UNDEF_MACRO                    by 'UNDEF_MACRO';
+%replace X_WHITE_SPACE_TOKEN              by 'WHITE_SPACE_TOKEN';

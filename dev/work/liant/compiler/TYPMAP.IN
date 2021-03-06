@@ -1,0 +1,535 @@
+/* C++ CXX_TYPE_MAP_IN - Type code mappings */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  01.21.92  DGM  017  Updated for MEMBER_REFERENCE_DT.
+ *  05.24.91  PKT  016  Updated.
+ *  05.22.91  PKT  015  Revised categorization of LOGICAL_BT.
+ *  02.01.91  DGM  014  Updated to the new global names scheme.
+ *  01.31.91  DGM  013  Added IS_UNSIGNED_INTEGRAL_TYPE;
+ *			removed MAP_TO_SIGNED_TYPE.
+ *  11.06.90  DGM  012  Changed string name for LOGICAL_BT to "int".
+ *  09.14.90  DGM  011  Changed include file names and VOP names.
+ *  09.04.90  DGM  010  Removed MAP_INTEGRAL_BIT_FIELD_TYPE.
+ *  08.29.90  DGM  009  Added IS_BASIC_TYPE.
+ *  08.17.90  DGM  008  Added MAP_TYPE_CODE_NAME.
+ *  08.16.90  DGM  007  Enlarged IS_SIGNED_TYPE to IS_SIGNED_INTEGRAL_TYPE;
+ *			MAP_INTEGRAL_TYPE & MAP_INTEGRAL_BIT_FIELD_TYPE.
+ *  05.31.90  PKT  006  Added IS_SIGNED_TYPE.
+ *  04.27.90  DGM  005  Updated.
+ *  03.02.90  DGM  004  Updated.
+ *  02.09.90  DGM  003  Updated.
+ *  02.05.90  DGM  002  Updated.
+ *  09.06.89  DGM  000  Original for C++.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+/* %include CXX_SYMBOL_TABLE_DEFS_IN; */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 TYPMAP		static external,
+
+  2 IS_INTEGRAL_TYPE		(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, FALSE
+	/* FLOAT_BT		*/	, FALSE
+	/* DOUBLE_BT		*/	, FALSE
+	/* LDOUBLE_BT		*/	, FALSE
+	/* CHAR_BT		*/	, TRUE
+	/* SCHAR_BT		*/	, TRUE
+	/* UCHAR_BT		*/	, TRUE
+	/* SHORT_BT		*/	, TRUE
+	/* SSHORT_BT		*/	, TRUE
+	/* USHORT_BT		*/	, TRUE
+	/* INT_BT		*/	, TRUE
+	/* SINT_BT		*/	, TRUE
+	/* UINT_BT		*/	, TRUE
+	/* LONG_BT		*/	, TRUE
+	/* SLONG_BT		*/	, TRUE
+	/* ULONG_BT		*/	, TRUE
+	/* LOGICAL_BT		*/	, TRUE
+	/* ENUMERATOR_BT	*/	, TRUE
+	/* ENUM_BT		*/	, TRUE
+	/* CLASS_BT		*/	, FALSE
+	/* STRUCT_BT		*/	, FALSE
+	/* UNION_BT		*/	, FALSE
+	/* REFERENCE_DT		*/	, FALSE
+	/* POINTER_DT		*/	, FALSE
+	/* MEMBER_POINTER_DT	*/	, FALSE
+	/* ARRAY_DT		*/	, FALSE
+	/* FUNCTION_DT		*/	, FALSE
+	/* MEMBER_REFERENCE_DT	*/	, FALSE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+    ),
+
+  2 IS_INT_TYPE			(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, FALSE
+	/* FLOAT_BT		*/	, FALSE
+	/* DOUBLE_BT		*/	, FALSE
+	/* LDOUBLE_BT		*/	, FALSE
+	/* CHAR_BT		*/	, FALSE
+	/* SCHAR_BT		*/	, FALSE
+	/* UCHAR_BT		*/	, FALSE
+	/* SHORT_BT		*/	, FALSE
+	/* SSHORT_BT		*/	, FALSE
+	/* USHORT_BT		*/	, FALSE
+	/* INT_BT		*/	, TRUE
+	/* SINT_BT		*/	, TRUE
+	/* UINT_BT		*/	, TRUE
+	/* LONG_BT		*/	, FALSE
+	/* SLONG_BT		*/	, FALSE
+	/* ULONG_BT		*/	, FALSE
+	/* LOGICAL_BT		*/	, TRUE
+	/* ENUMERATOR_BT	*/	, TRUE
+	/* ENUM_BT		*/	, TRUE
+	/* CLASS_BT		*/	, FALSE
+	/* STRUCT_BT		*/	, FALSE
+	/* UNION_BT		*/	, FALSE
+	/* REFERENCE_DT		*/	, FALSE
+	/* POINTER_DT		*/	, FALSE
+	/* MEMBER_POINTER_DT	*/	, FALSE
+	/* ARRAY_DT		*/	, FALSE
+	/* FUNCTION_DT		*/	, FALSE
+	/* MEMBER_REFERENCE_DT	*/	, FALSE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+    ),
+
+  2 IS_ARITHMETIC_TYPE		(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, FALSE
+	/* FLOAT_BT		*/	, TRUE
+	/* DOUBLE_BT		*/	, TRUE
+	/* LDOUBLE_BT		*/	, TRUE
+	/* CHAR_BT		*/	, TRUE
+	/* SCHAR_BT		*/	, TRUE
+	/* UCHAR_BT		*/	, TRUE
+	/* SHORT_BT		*/	, TRUE
+	/* SSHORT_BT		*/	, TRUE
+	/* USHORT_BT		*/	, TRUE
+	/* INT_BT		*/	, TRUE
+	/* SINT_BT		*/	, TRUE
+	/* UINT_BT		*/	, TRUE
+	/* LONG_BT		*/	, TRUE
+	/* SLONG_BT		*/	, TRUE
+	/* ULONG_BT		*/	, TRUE
+	/* LOGICAL_BT		*/	, TRUE
+	/* ENUMERATOR_BT	*/	, TRUE
+	/* ENUM_BT		*/	, TRUE
+	/* CLASS_BT		*/	, FALSE
+	/* STRUCT_BT		*/	, FALSE
+	/* UNION_BT		*/	, FALSE
+	/* REFERENCE_DT		*/	, FALSE
+	/* POINTER_DT		*/	, FALSE
+	/* MEMBER_POINTER_DT	*/	, FALSE
+	/* ARRAY_DT		*/	, FALSE
+	/* FUNCTION_DT		*/	, FALSE
+	/* MEMBER_REFERENCE_DT	*/	, FALSE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+
+    ),
+
+  2 IS_SCALAR_TYPE		(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, FALSE
+	/* FLOAT_BT		*/	, TRUE
+	/* DOUBLE_BT		*/	, TRUE
+	/* LDOUBLE_BT		*/	, TRUE
+	/* CHAR_BT		*/	, TRUE
+	/* SCHAR_BT		*/	, TRUE
+	/* UCHAR_BT		*/	, TRUE
+	/* SHORT_BT		*/	, TRUE
+	/* SSHORT_BT		*/	, TRUE
+	/* USHORT_BT		*/	, TRUE
+	/* INT_BT		*/	, TRUE
+	/* SINT_BT		*/	, TRUE
+	/* UINT_BT		*/	, TRUE
+	/* LONG_BT		*/	, TRUE
+	/* SLONG_BT		*/	, TRUE
+	/* ULONG_BT		*/	, TRUE
+	/* LOGICAL_BT		*/	, TRUE
+	/* ENUMERATOR_BT	*/	, TRUE
+	/* ENUM_BT		*/	, TRUE
+	/* CLASS_BT		*/	, FALSE
+	/* STRUCT_BT		*/	, FALSE
+	/* UNION_BT		*/	, FALSE
+	/* REFERENCE_DT		*/	, TRUE
+	/* POINTER_DT		*/	, TRUE
+	/* MEMBER_POINTER_DT	*/	, FALSE		/* ? */
+	/* ARRAY_DT		*/	, FALSE
+	/* FUNCTION_DT		*/	, FALSE
+	/* MEMBER_REFERENCE_DT	*/	, FALSE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+    ),
+
+  2 IS_AGGREGATE_TAG_TYPE	(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, FALSE
+	/* FLOAT_BT		*/	, FALSE
+	/* DOUBLE_BT		*/	, FALSE
+	/* LDOUBLE_BT		*/	, FALSE
+	/* CHAR_BT		*/	, FALSE
+	/* SCHAR_BT		*/	, FALSE
+	/* UCHAR_BT		*/	, FALSE
+	/* SHORT_BT		*/	, FALSE
+	/* SSHORT_BT		*/	, FALSE
+	/* USHORT_BT		*/	, FALSE
+	/* INT_BT		*/	, FALSE
+	/* SINT_BT		*/	, FALSE
+	/* UINT_BT		*/	, FALSE
+	/* LONG_BT		*/	, FALSE
+	/* SLONG_BT		*/	, FALSE
+	/* ULONG_BT		*/	, FALSE
+	/* LOGICAL_BT		*/	, FALSE
+	/* ENUMERATOR_BT	*/	, FALSE
+	/* ENUM_BT		*/	, FALSE
+	/* CLASS_BT		*/	, TRUE
+	/* STRUCT_BT		*/	, TRUE
+	/* UNION_BT		*/	, TRUE
+	/* REFERENCE_DT		*/	, FALSE
+	/* POINTER_DT		*/	, FALSE
+	/* MEMBER_POINTER_DT	*/	, FALSE
+	/* ARRAY_DT		*/	, FALSE
+	/* FUNCTION_DT		*/	, FALSE
+	/* MEMBER_REFERENCE_DT	*/	, FALSE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+    ),
+
+  2 IS_TAG_TYPE			(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, FALSE
+	/* FLOAT_BT		*/	, FALSE
+	/* DOUBLE_BT		*/	, FALSE
+	/* LDOUBLE_BT		*/	, FALSE
+	/* CHAR_BT		*/	, FALSE
+	/* SCHAR_BT		*/	, FALSE
+	/* UCHAR_BT		*/	, FALSE
+	/* SHORT_BT		*/	, FALSE
+	/* SSHORT_BT		*/	, FALSE
+	/* USHORT_BT		*/	, FALSE
+	/* INT_BT		*/	, FALSE
+	/* SINT_BT		*/	, FALSE
+	/* UINT_BT		*/	, FALSE
+	/* LONG_BT		*/	, FALSE
+	/* SLONG_BT		*/	, FALSE
+	/* ULONG_BT		*/	, FALSE
+	/* LOGICAL_BT		*/	, FALSE
+	/* ENUMERATOR_BT	*/	, FALSE
+	/* ENUM_BT		*/	, TRUE
+	/* CLASS_BT		*/	, TRUE
+	/* STRUCT_BT		*/	, TRUE
+	/* UNION_BT		*/	, TRUE
+	/* REFERENCE_DT		*/	, FALSE
+	/* POINTER_DT		*/	, FALSE
+	/* MEMBER_POINTER_DT	*/	, FALSE
+	/* ARRAY_DT		*/	, FALSE
+	/* FUNCTION_DT		*/	, FALSE
+	/* MEMBER_REFERENCE_DT	*/	, FALSE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+    ),
+
+  2 IS_DERIVED_TYPE		(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, FALSE
+	/* FLOAT_BT		*/	, FALSE
+	/* DOUBLE_BT		*/	, FALSE
+	/* LDOUBLE_BT		*/	, FALSE
+	/* CHAR_BT		*/	, FALSE
+	/* SCHAR_BT		*/	, FALSE
+	/* UCHAR_BT		*/	, FALSE
+	/* SHORT_BT		*/	, FALSE
+	/* SSHORT_BT		*/	, FALSE
+	/* USHORT_BT		*/	, FALSE
+	/* INT_BT		*/	, FALSE
+	/* SINT_BT		*/	, FALSE
+	/* UINT_BT		*/	, FALSE
+	/* LONG_BT		*/	, FALSE
+	/* SLONG_BT		*/	, FALSE
+	/* ULONG_BT		*/	, FALSE
+	/* LOGICAL_BT		*/	, FALSE
+	/* ENUMERATOR_BT	*/	, FALSE
+	/* ENUM_BT		*/	, FALSE
+	/* CLASS_BT		*/	, FALSE
+	/* STRUCT_BT		*/	, FALSE
+	/* UNION_BT		*/	, FALSE
+	/* REFERENCE_DT		*/	, TRUE
+	/* POINTER_DT		*/	, TRUE
+	/* MEMBER_POINTER_DT	*/	, TRUE
+	/* ARRAY_DT		*/	, TRUE
+	/* FUNCTION_DT		*/	, TRUE
+	/* MEMBER_REFERENCE_DT	*/	, TRUE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+    ),
+
+  2 IS_SIGNED_INTEGRAL_TYPE	(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, FALSE
+	/* FLOAT_BT		*/	, FALSE
+	/* DOUBLE_BT		*/	, FALSE
+	/* LDOUBLE_BT		*/	, FALSE
+	/* CHAR_BT		*/	, TRUE
+	/* SCHAR_BT		*/	, TRUE
+	/* UCHAR_BT		*/	, FALSE
+	/* SHORT_BT		*/	, TRUE
+	/* SSHORT_BT		*/	, TRUE
+	/* USHORT_BT		*/	, FALSE
+	/* INT_BT		*/	, TRUE
+	/* SINT_BT		*/	, TRUE
+	/* UINT_BT		*/	, FALSE
+	/* LONG_BT		*/	, TRUE
+	/* SLONG_BT		*/	, TRUE
+	/* ULONG_BT		*/	, FALSE
+	/* LOGICAL_BT		*/	, TRUE
+	/* ENUMERATOR_BT	*/	, FALSE
+	/* ENUM_BT		*/	, FALSE
+	/* CLASS_BT		*/	, FALSE
+	/* STRUCT_BT		*/	, FALSE
+	/* UNION_BT		*/	, FALSE
+	/* REFERENCE_DT		*/	, FALSE
+	/* POINTER_DT		*/	, FALSE
+	/* MEMBER_POINTER_DT	*/	, FALSE
+	/* ARRAY_DT		*/	, FALSE
+	/* FUNCTION_DT		*/	, FALSE
+	/* MEMBER_REFERENCE_DT	*/	, FALSE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+    ),
+
+  2 MAP_INTEGRAL_TYPE		(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (SHORT_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  NULL_BT
+	/* VOID_BT		*/	, VOID_BT
+	/* FLOAT_BT		*/	, FLOAT_BT
+	/* DOUBLE_BT		*/	, DOUBLE_BT
+	/* LDOUBLE_BT		*/	, LDOUBLE_BT
+	/* CHAR_BT		*/	, SCHAR_BT
+	/* SCHAR_BT		*/	, SCHAR_BT
+	/* UCHAR_BT		*/	, UCHAR_BT
+	/* SHORT_BT		*/	, SSHORT_BT
+	/* SSHORT_BT		*/	, SSHORT_BT
+	/* USHORT_BT		*/	, USHORT_BT
+	/* INT_BT		*/	, SINT_BT
+	/* SINT_BT		*/	, SINT_BT
+	/* UINT_BT		*/	, UINT_BT
+	/* LONG_BT		*/	, SLONG_BT
+	/* SLONG_BT		*/	, SLONG_BT
+	/* ULONG_BT		*/	, ULONG_BT
+	/* LOGICAL_BT		*/	, LOGICAL_BT
+	/* ENUMERATOR_BT	*/	, ENUMERATOR_BT
+	/* ENUM_BT		*/	, ENUM_BT
+	/* CLASS_BT		*/	, CLASS_BT
+	/* STRUCT_BT		*/	, STRUCT_BT
+	/* UNION_BT		*/	, UNION_BT
+	/* REFERENCE_DT		*/	, REFERENCE_DT
+	/* POINTER_DT		*/	, POINTER_DT
+	/* MEMBER_POINTER_DT	*/	, MEMBER_POINTER_DT
+	/* ARRAY_DT		*/	, ARRAY_DT
+	/* FUNCTION_DT		*/	, FUNCTION_DT
+	/* MEMBER_REFERENCE_DT	*/	, MEMBER_REFERENCE_DT
+	/* TYPEDEF_BT		*/	, TYPEDEF_BT
+	/* LABEL_BT		*/	, LABEL_BT
+    ),
+
+  2 MAP_TO_UNSIGNED_TYPE	(LB_BASIC_INTEGRAL_TYPES :
+				 HB_BASIC_INTEGRAL_TYPES)
+				type (SHORT_T) initial (
+
+	/* CHAR_BT		*/	  UCHAR_BT
+	/* SCHAR_BT		*/	, UCHAR_BT
+	/* UCHAR_BT		*/	, UCHAR_BT
+	/* SHORT_BT		*/	, USHORT_BT
+	/* SSHORT_BT		*/	, USHORT_BT
+	/* USHORT_BT		*/	, USHORT_BT
+	/* INT_BT		*/	, UINT_BT
+	/* SINT_BT		*/	, UINT_BT
+	/* UINT_BT		*/	, UINT_BT
+	/* LONG_BT		*/	, ULONG_BT
+	/* SLONG_BT		*/	, ULONG_BT
+	/* ULONG_BT		*/	, ULONG_BT
+    ),
+
+  2 MAP_TAG_KIND		(LB_TAG_TYPES : HB_TAG_TYPES)
+				type (LONG_BITS_T) initial (
+
+	/* ENUM_BT		*/	  ENUM_TAG_SK
+	/* CLASS_BT		*/	, CLASS_TAG_SK
+	/* STRUCT_BT		*/	, STRUCT_TAG_SK
+	/* UNION_BT		*/	, UNION_TAG_SK
+    ),
+
+  2 MAP_MEMBER_KIND		(LB_TAG_TYPES : HB_TAG_TYPES)
+				type (LONG_BITS_T) initial (
+
+	/* ENUM_BT		*/	  ENUM_MEMBER_SK
+	/* CLASS_BT		*/	, CLASS_MEMBER_SK
+	/* STRUCT_BT		*/	, STRUCT_MEMBER_SK
+	/* UNION_BT		*/	, UNION_MEMBER_SK
+    ),
+
+  2 MAP_FUNCTION_KIND		(LB_NAME_KIND : HB_NAME_KIND)
+				type (LONG_BITS_T) initial (
+
+	/* VANILLA_NK		*/	  VANILLA_FUNCTION_SK
+	/* OPERATOR_NK		*/	, OPERATOR_FUNCTION_SK
+	/* CONSTRUCTOR_NK	*/	, CONSTRUCTOR_FUNCTION_SK
+	/* DESTRUCTOR_NK	*/	, DESTRUCTOR_FUNCTION_SK
+	/* CONVERSION_NK	*/	, CONVERSION_FUNCTION_SK
+	/* TYPE_DESTRUCTOR_NK	*/	, DESTRUCTOR_FUNCTION_SK
+    ),
+
+  2 MAP_TYPE_CODE_NAME		(LB_ALL_TYPES : HB_ALL_TYPES)
+				character (18) varying initial (
+
+	/* NULL_BT/NULL_DT	*/	  ''
+	/* VOID_BT		*/	, 'void'
+	/* FLOAT_BT		*/	, 'float'
+	/* DOUBLE_BT		*/	, 'double'
+	/* LDOUBLE_BT		*/	, 'long double'
+	/* CHAR_BT		*/	, 'char'
+	/* SCHAR_BT		*/	, 'signed char'
+	/* UCHAR_BT		*/	, 'unsigned char'
+	/* SHORT_BT		*/	, 'short'
+	/* SSHORT_BT		*/	, 'signed short'
+	/* USHORT_BT		*/	, 'unsigned short'
+	/* INT_BT		*/	, 'int'
+	/* SINT_BT		*/	, 'signed int'
+	/* UINT_BT		*/	, 'unsigned int'
+	/* LONG_BT		*/	, 'long'
+	/* SLONG_BT		*/	, 'signed long'
+	/* ULONG_BT		*/	, 'unsigned long'
+	/* LOGICAL_BT		*/	, 'int'
+	/* ENUMERATOR_BT	*/	, '<enumerator>'
+	/* ENUM_BT		*/	, 'enum'
+	/* CLASS_BT		*/	, 'class'
+	/* STRUCT_BT		*/	, 'struct'
+	/* UNION_BT		*/	, 'union'
+	/* REFERENCE_DT		*/	, '<reference>'
+	/* POINTER_DT		*/	, '<pointer>'
+	/* MEMBER_POINTER_DT	*/	, '<member-pointer>'
+	/* ARRAY_DT		*/	, '<array>'
+	/* FUNCTION_DT		*/	, '<function>'
+	/* MEMBER_REFERENCE_DT	*/	, '<member-reference>'
+	/* TYPEDEF_BT		*/	, '<typedef>'
+	/* LABEL_BT		*/	, '<label>'
+    ),
+
+  2 IS_BASIC_TYPE		(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, TRUE
+	/* FLOAT_BT		*/	, TRUE
+	/* DOUBLE_BT		*/	, TRUE
+	/* LDOUBLE_BT		*/	, TRUE
+	/* CHAR_BT		*/	, TRUE
+	/* SCHAR_BT		*/	, TRUE
+	/* UCHAR_BT		*/	, TRUE
+	/* SHORT_BT		*/	, TRUE
+	/* SSHORT_BT		*/	, TRUE
+	/* USHORT_BT		*/	, TRUE
+	/* INT_BT		*/	, TRUE
+	/* SINT_BT		*/	, TRUE
+	/* UINT_BT		*/	, TRUE
+	/* LONG_BT		*/	, TRUE
+	/* SLONG_BT		*/	, TRUE
+	/* ULONG_BT		*/	, TRUE
+	/* LOGICAL_BT		*/	, FALSE
+	/* ENUMERATOR_BT	*/	, FALSE
+	/* ENUM_BT		*/	, FALSE
+	/* CLASS_BT		*/	, FALSE
+	/* STRUCT_BT		*/	, FALSE
+	/* UNION_BT		*/	, FALSE
+	/* REFERENCE_DT		*/	, FALSE
+	/* POINTER_DT		*/	, FALSE
+	/* MEMBER_POINTER_DT	*/	, FALSE
+	/* ARRAY_DT		*/	, FALSE
+	/* FUNCTION_DT		*/	, FALSE
+	/* MEMBER_REFERENCE_DT	*/	, FALSE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+    ),
+
+  2 IS_UNSIGNED_INTEGRAL_TYPE	(LB_ALL_TYPES : HB_ALL_TYPES)
+				type (BOOL_T) initial (
+
+	/* NULL_BT/NULL_DT	*/	  FALSE
+	/* VOID_BT		*/	, FALSE
+	/* FLOAT_BT		*/	, FALSE
+	/* DOUBLE_BT		*/	, FALSE
+	/* LDOUBLE_BT		*/	, FALSE
+	/* CHAR_BT		*/	, FALSE
+	/* SCHAR_BT		*/	, FALSE
+	/* UCHAR_BT		*/	, TRUE
+	/* SHORT_BT		*/	, FALSE
+	/* SSHORT_BT		*/	, FALSE
+	/* USHORT_BT		*/	, TRUE
+	/* INT_BT		*/	, FALSE
+	/* SINT_BT		*/	, FALSE
+	/* UINT_BT		*/	, TRUE
+	/* LONG_BT		*/	, FALSE
+	/* SLONG_BT		*/	, FALSE
+	/* ULONG_BT		*/	, TRUE
+	/* LOGICAL_BT		*/	, TRUE
+	/* ENUMERATOR_BT	*/	, TRUE
+	/* ENUM_BT		*/	, TRUE
+	/* CLASS_BT		*/	, FALSE
+	/* STRUCT_BT		*/	, FALSE
+	/* UNION_BT		*/	, FALSE
+	/* REFERENCE_DT		*/	, FALSE
+	/* POINTER_DT		*/	, FALSE
+	/* MEMBER_POINTER_DT	*/	, FALSE
+	/* ARRAY_DT		*/	, FALSE
+	/* FUNCTION_DT		*/	, FALSE
+	/* MEMBER_REFERENCE_DT	*/	, FALSE
+	/* TYPEDEF_BT		*/	, FALSE
+	/* LABEL_BT		*/	, FALSE
+    );
+

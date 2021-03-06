@@ -1,0 +1,58 @@
+/* C++ CXX_STANDARD_DEFS_IN - General programming definitions */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.26.92  DGM  008  Added VNID_T & NULL_VNID.
+ *  10.04.91  DGM  007  Changed to include GBL_TYPE_DEFINITIONS_IN.
+ *  09.14.90  DGM  006  Changed include file names and VOP names.
+ *  06.25.90  DGM  005  Added NULL_VID.
+ *  05.15.90  DGM  004  Added type (POINTER_T).
+ *  02.05.90  TLF  003  Added typdef for VID_T, the id of a C++ value.
+ *  12.12.89  DGM  001  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Type definitions and constants
+/* ------------------------------------------------------------------- */
+
+declare
+
+/* Intermediate operator id type */
+
+OID_T			fixed binary (31) based,
+
+/* C++ front-end value-node id */
+
+CXX_VID_T		pointer based,
+
+/* C++ front-end null value-node constant */
+
+NULL_CXX_VID		type (CXX_VID_T) external initial (0);
+
+/* C++ front-end null symbol-table-node constant */
+
+%replace NULL_NID	by 0;
+
+/* C++ front-end null intermediate operator id */
+
+%replace NULL_OID	by 0;
+
+
+
+/* ...
+
+%replace FALSE	by '0'B;
+%replace TRUE	by '1'B;
+
+... */
+

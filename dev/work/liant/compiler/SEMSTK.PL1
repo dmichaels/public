@@ -1,0 +1,146 @@
+/* C++ semstk.pl1 - Semantic stack package */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  02.18.93  DGM  001  Increased stack sizes.
+ *  03.26.92  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 02.18.93 001 SEMSTK');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_SEMANTIC_STACK_IN;
+
+/* ---------------------------------------------------------------------
+/* PUSH_POP_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+%replace HB_CXX_VALUE_NODE_STACK	by 768;
+
+declare
+
+CXX_VALUE_NODE_STACK		(0 : HB_CXX_VALUE_NODE_STACK - 1)
+				type (CXX_VID_T) static internal,
+CXX_VALUE_NODE_STACK_TOP	type (SHORT_T) static internal
+				initial (HB_CXX_VALUE_NODE_STACK);
+
+/* ---------------------------------------------------------------------
+/* PUSH_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+PUSH_CXX_VALUE_NODE: procedure (V) external (X_PUSH_CXX_VALUE_NODE);
+
+	declare V type (CXX_VID_T);
+
+	if CXX_VALUE_NODE_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_VALUE_NODE_STACK_OVERFLOW);
+		return;
+	end;
+	CXX_VALUE_NODE_STACK_TOP = CXX_VALUE_NODE_STACK_TOP - 1;
+	CXX_VALUE_NODE_STACK (CXX_VALUE_NODE_STACK_TOP) = V;
+	TOP_CXX_VALUE_NODE = V;
+
+end PUSH_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* POP_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+POP_CXX_VALUE_NODE: procedure
+		    returns   (type (CXX_VID_T))
+		    external  (X_POP_CXX_VALUE_NODE);
+
+	declare V type (CXX_VID_T);
+
+	if CXX_VALUE_NODE_STACK_TOP >= HB_CXX_VALUE_NODE_STACK then do;
+		call COMPILER_ERROR (ERR_VALUE_NODE_STACK_UNDERFLOW);
+		TOP_CXX_VALUE_NODE = NULL_CXX_VID;
+		return (NULL_CXX_VID);
+	end;
+	V = CXX_VALUE_NODE_STACK (CXX_VALUE_NODE_STACK_TOP);
+	CXX_VALUE_NODE_STACK_TOP = CXX_VALUE_NODE_STACK_TOP + 1;
+	if CXX_VALUE_NODE_STACK_TOP >= HB_CXX_VALUE_NODE_STACK then
+		TOP_CXX_VALUE_NODE = NULL_CXX_VID;
+	else	TOP_CXX_VALUE_NODE = CXX_VALUE_NODE_STACK
+				     (CXX_VALUE_NODE_STACK_TOP);
+	return (V);
+
+end POP_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* PUSH_POP_BOOLEAN
+/* ------------------------------------------------------------------- */
+
+%replace HB_BOOLEAN_STACK	by 512;
+
+declare
+
+BOOLEAN_STACK			(0 : HB_BOOLEAN_STACK - 1)
+				type (BIT_T) static internal,
+BOOLEAN_STACK_TOP		type (SHORT_T) static internal
+				initial (HB_BOOLEAN_STACK);
+
+/* ---------------------------------------------------------------------
+/* PUSH_BOOLEAN
+/* ------------------------------------------------------------------- */
+
+PUSH_BOOLEAN: procedure (B) external (X_PUSH_BOOLEAN);
+
+	declare B type (BOOL_T);
+
+	if BOOLEAN_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_VALUE_NODE_STACK_OVERFLOW);
+		return;
+	end;
+	BOOLEAN_STACK_TOP = BOOLEAN_STACK_TOP - 1;
+	BOOLEAN_STACK (BOOLEAN_STACK_TOP) = B;
+
+end PUSH_BOOLEAN;
+
+/* ---------------------------------------------------------------------
+/* POP_BOOLEAN
+/* ------------------------------------------------------------------- */
+
+POP_BOOLEAN: procedure
+	     returns   (type (BOOL_T))
+	     external  (X_POP_BOOLEAN);
+
+	declare B type (BOOL_T);
+
+	if BOOLEAN_STACK_TOP >= HB_BOOLEAN_STACK then do;
+		call COMPILER_ERROR (ERR_VALUE_NODE_STACK_UNDERFLOW);
+		return (FALSE);
+	end;
+	B = BOOLEAN_STACK (BOOLEAN_STACK_TOP);
+	BOOLEAN_STACK_TOP = BOOLEAN_STACK_TOP + 1;
+	return (B);
+
+end POP_BOOLEAN;
+
+

@@ -1,0 +1,578 @@
+/* C++ emitt.pl1 - Emit a value tree */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.18.92  DGM  027  Rearranged stuff for possible efficiency
+ *			improvements.
+ *  05.12.92  DGM  026  Updated for Sequoia long double support.
+ *  04.17.92  PKT  025	Updated handling of EXIT_VO.  Removed ARG_REF_VO.
+ *			Relinquished DUMP_EMIT_TREE_DATA.
+ *  03.26.92  DGM  024  New value-node scheme.
+ *  09.27.91  PKT  023  Added check for bad input: save aggregate's value.
+ *  09.06.91  PKT  022  Set SYM_NODE.ALIAS for implicit address of array.
+ *  08.19.91  DGM  021  Picked up ANSI-C FE changes (from 06.05.90)
+ *			for floating point constant folding.
+ *  04.08.91  DGM  020  Deleted call to SFREE.
+ *  02.21.91  DGM  019  Updated value tree dumping format.
+ *  01.16.91  PKT  018  Support for UNINITIALIZED_VO.
+ *  11.01.90  PKT  017  Updated for strict INITIALIZE_OBJECT.
+ *  10.16.90  PKT  016  Bug fixes.
+ *  09.25.90  DGM  015  Preprocessor include file name changes.
+ *  09.17.90  PKT  014  Changed handling of CONDITIONAL_VO so that it
+ *			will be counted down correctly.
+ *  09.14.90  DGM  013  Changed include file names and VOP names.
+ *  08.29.90  DGM  012  Changed GET_SIMPLE_TYPE to GET_BASIC_TYPE.
+ *  08.15.90  DGM  011  New type-node.
+ *  08.07.90  PKT  010  Updated; support for LEFT_VALUE_VO.
+ *  07.20.90  PKT  009  Fix to count down with && and ||.
+ *  07.05.90  PKT  008  Updated.
+ *  06.05.90  DGM  007  Updated for the new utilities.
+ *  04.19.90  DGM  006  C_DECLARE_MISCELLANY_PKG to CXX_DECLARE_TYPE_PKG.
+ *			Also, changed GETTOK to STORE_TOKEN.
+ *  04.17.90  PKT  005  Special handling for ADDR of a function.
+ *  04.05.90  TLF  004  Removed comment delimiters that commented out
+ *                      calls to GETTOK and EMITCR (EMITCR is now named
+ *                      EMIT_COND_REF).
+ *  04.02.90  DGM  003  Changed MAKE_SIMPLE_TYPE to GET_SIMPLE_TYPE, and
+ *			CXX_PROCESS_DECLARATION_PKG to C_DECLARE_MISCELLANY_PKG.
+ *  03.14.90  PKT  002  Minor update.
+ *  02.20.90  PKT  001  Put in calls to DEFINE_LABEL.
+ *  01.17.90  TLF  000  Original.  Derived from ANSI-C emitt.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.19.92 027 EMITT');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_STORE_TOKEN_PKG; 
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_EMIT_CONDITIONAL_REF_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_EMIT_VALUE_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_TYPE_MAP_IN;
+
+/* ---------------------------------------------------------------------
+/* EMIT_TREE
+/* ------------------------------------------------------------------- */
+
+EMIT_TREE: procedure (TREE) 
+           returns   (type (OID_T)) 
+	   recursive
+	   external  (X_EMIT_TREE);
+
+	declare
+		TREE				type (CXX_VID_T);
+	declare
+		V				type (CXX_VID_T),
+		PV				type (CXX_VID_T),
+		VOP				type (SHORT_T),
+		LABEL				type (CXX_VID_T),
+		MERGE_LABEL			type (CXX_VID_T),
+		N				type (SHORT_T),
+		T				type (SHORT_T),
+		COUNT				type (SHORT_T),
+		(I, K)				type (LONG_T),
+		(X, Y)				type (LONG_T),
+		(LEFT_OP, RIGHT_OP, VOID_OP)	type (OID_T),
+		RIGHT_TO_LEFT			type (BOOL_T);
+	declare
+		LEFT_IS_VID			type (BOOL_T),
+		RIGHT_IS_VID			type (BOOL_T),
+		THIRD_IS_VID			type (BOOL_T);
+	declare
+		1 LEFT_union			union,
+		  2 LEFT			type (CXX_VID_T),
+		  2 LEFT_OID			type (OID_T),
+		1 RIGHT_union			union,
+		  2 RIGHT			type (CXX_VID_T),
+		  2 RIGHT_OID			type (OID_T),
+		1 THIRD_union			union,
+		  2 THIRD			type (CXX_VID_T),
+		  2 THIRD_OID			type (OID_T),
+		1 OFFSETV_union			union,
+		  2 OFFSETV			type (CXX_VID_T),
+		  2 OFFSETV_OID			type (OID_T);
+	declare
+		S				character (8) based;
+
+	if TREE = NULL_CXX_VID then
+		return (0);
+
+        else if TREE->CXX_VALUE_NODE.ID ^= NULL_OID then do;
+		/*
+		/* We already did this.
+		/**/
+		if TREE->CXX_VALUE_NODE.ID_IS_NID then
+			return (TREE->CXX_VALUE_NODE.ID_NID);
+		else	return (TREE->CXX_VALUE_NODE.ID);
+	end;
+
+	V = TREE; /* CXX_VALUE_NODE_PTR = V; */
+
+        VOP = V->CXX_VALUE_NODE.OP;
+
+	if (VOP = OR_OR_VO) | (VOP = AND_AND_VO) then do;
+		LEFT = V->CXX_VALUE_NODE.LEFT;
+		RIGHT = V->CXX_VALUE_NODE.RIGHT;
+		I = V->CXX_VALUE_NODE.COUNT; /* Save for count on cond */
+		if VOP = OR_OR_VO then
+			VOP = BRANCH_TRUE_VO;
+		else	VOP = BRANCH_FALSE_VO;
+                LABEL = DECLARE_LABEL_VALUE (3);
+		LEFT = CONCATENATE_STATEMENTS
+		       (GET_VALUE_AND_EXPAND_LR (VOP, LABEL, LEFT),
+			GET_VALUE_AND_EXPAND_LR (VOP, LABEL, RIGHT));
+		VOID_OP = EMIT_TREE (LEFT);
+		/*
+		/* Page label. Check its count in case one side logical
+		/* having been folded away. Set count either 2 or 3
+		/* for the count on the COND_REF.
+		/**/
+
+		if LABEL->CXX_VALUE_NODE.COUNT = 1 then do; 
+			call COUNT_DOWN_VALUE (LABEL);
+			LABEL = NULL_CXX_VID;
+			COUNT = 2;
+		end;
+		else	COUNT = 3;
+
+                RIGHT = ALLOC_CXX_VALUE_NODE (CONDITIONAL_VO);
+		RIGHT->CXX_VALUE_NODE.TYPE		  = GET_BASIC_TYPE
+							    (INT_BT);
+                RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE	  = byte (INT_BT);
+                RIGHT->CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS = NULL_TQ;
+                RIGHT->CXX_VALUE_NODE.NULARY		  = TRUE;
+                RIGHT->CXX_VALUE_NODE.COUNT		  = I;
+		/*
+		/* Now, emit the COND_REF using the CONDITIONAL as a 
+		/* type tree with the same count as the LABEL after
+		/* expansion via COMMA (above). If 0 returned, then
+		/* old style ALT/COND (no CREF emitted).
+		/**/
+		K = EMIT_COND_REF (RIGHT, COUNT); /* RIGHT paged on return */
+		RIGHT->CXX_VALUE_NODE.OFFSET = K; /* Save CREF for later */
+
+		V->CXX_VALUE_NODE.OP = COMMA_VO;
+ 		V->CXX_VALUE_NODE.LEFT = LEFT;
+		V->CXX_VALUE_NODE.RIGHT = RIGHT;
+
+		if VOP = BRANCH_TRUE_VO then do;
+			X = 0;
+			Y = 1;
+		end;
+		else do;
+			X = 1;
+			Y = 0;
+		end;
+
+		call EMIT_ALTERNATE (K, INTEGER_VALUE (X, INT_BT));
+
+		MERGE_LABEL = DECLARE_LABEL_VALUE (2);
+		call EMIT_LEFT (BRANCH_VO, MERGE_LABEL);
+
+		if LABEL ^= NULL_CXX_VID then do;
+			call EMIT_LEFT (LABEL_VO, LABEL);
+			call EMIT_ALTERNATE (K, INTEGER_VALUE (Y, INT_BT));
+		end;
+
+		call EMIT_LEFT (LABEL_VO, MERGE_LABEL);
+
+		VOP = V->CXX_VALUE_NODE.OP;
+	end;
+
+	/* ------ */
+
+	if VOP = ADDR_VO then do;
+		if V->CXX_VALUE_NODE.LEFT->
+		   CXX_VALUE_NODE.TOP_TYPE.CODE = byte (FUNCTION_DT) then do;
+			/*
+			/* A function is passed to the back-end with type
+			/* ENTRY. Rather than ADDR(ENTRY), use VALUE(ENTRY).
+			/*
+			/* Should COPY_VALUE be called in order
+			/* to tweak CXX_VALUE_NODE here?  --PKT
+			/**/
+			V->CXX_VALUE_NODE.OP = VALUE_VO;
+		end;
+		else if V->CXX_VALUE_NODE.ARRAY_DESIGNATOR then do;
+			CXX_VALUE_NODE_PTR = V->CXX_VALUE_NODE.LEFT;
+			call BYPASS_COMMA ();
+			/* the REF is paged in */
+			if (CXX_VALUE_NODE.LEFT_IS_NID) &
+			   (CXX_VALUE_NODE.LEFT_NID ^= NULL_NID) then do;
+				call SET_SYM_NODE (CXX_VALUE_NODE.LEFT_NID);
+				SYM_NODE.ALIAS = TRUE;
+			end;
+		end;
+	end;
+	else if VOP = CONSTANT_VO then do;
+		if ^V->CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+		   (V->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then do;
+			/*
+			/* A constant with embedded floating point value.
+			/**/
+			if (V->CXX_VALUE_NODE.TOP_TYPE.CODE =
+			    byte (LDOUBLE_BT)) &
+			   EXTENDED_PRECISION_LONG_DOUBLE then do;
+				V->CXX_VALUE_NODE.LEFT_NID =
+					STORE_TOKEN
+					(FLOAT_CONSTANT_TOKEN,
+					 substr (V->CXX_VALUE_NODE.LEFT->
+						    CXX_VALUE_NODE.SPTR->
+						    TOKEN_SPELLING_POD.SPELLING,
+						 1,
+						 V->CXX_VALUE_NODE.LEFT->
+						    CXX_VALUE_NODE.SIZE));
+			end;
+			else do;
+				K = ROUNDU (V->CXX_VALUE_NODE.SIZE,
+					    rank (V->CXX_VALUE_NODE.SIZE_UNITS),
+					    BYTES);
+				V->CXX_VALUE_NODE.LEFT_NID =
+					STORE_TOKEN
+					(DOPE_,
+					 substr (addr
+						 (V->CXX_VALUE_NODE.LEFT->
+						  CXX_VALUE_NODE.FLTVAL)->S,
+						 1,
+						 K));
+				TOKEN_NODE.SIZE = K;
+			end;
+			V->CXX_VALUE_NODE.LEFT_IS_NID = TRUE;
+			V->CXX_VALUE_NODE.LEFT_IS_NOT_VID = TRUE;
+			TOKEN_NODE.REPLACEMENT =
+				rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE);
+		end;
+	end;
+	else if VOP = BRANCH_COMPUTED_VO then do;
+		X = V->CXX_VALUE_NODE.RIGHT_OID;
+		do PV = V->CXX_VALUE_NODE.RIGHT while (PV ^= NULL_CXX_VID);
+			X = EMIT_TREE (PV->CXX_VALUE_NODE.LEFT);
+			PV->CXX_VALUE_NODE.ID = X;
+			PV = PV->CXX_VALUE_NODE.RIGHT;
+		end;
+		Y = V->CXX_VALUE_NODE.THIRD_OID;
+		return (EMIT_VALUE (V,
+				    V->CXX_VALUE_NODE.OFFSET + 1,
+				    EMIT_TREE (V->CXX_VALUE_NODE.LEFT),
+				    X,
+				    Y,
+				    0));
+	end;
+	else if (VOP = CONDITIONAL_VO) & ^V->CXX_VALUE_NODE.NULARY then do;
+		/*
+		/* First, emit the COND_REF with a count of 3.
+		/* If 0 returned, then:
+		/* 1. Old style ALTERNATE/CONDITONAL (no CREF emitted), or
+		/* 2. Non value producing CONDITIONAL (no alternates)
+		/*    (e.g. (i == 1 ? (void) 0 : (void) f () );
+		/**/
+                K = EMIT_COND_REF (V, 3);
+		/*
+		/* Left is logical, right is COLON.
+		/* Operands of COLON are ALTERNATEs. 
+		/**/
+                LEFT  = V->CXX_VALUE_NODE.LEFT;
+                RIGHT = V->CXX_VALUE_NODE.RIGHT;
+                LABEL = DECLARE_LABEL_VALUE (2);
+                LEFT = GET_VALUE_AND_EXPAND_LR (BRANCH_FALSE_VO, LABEL, LEFT);
+                V->CXX_VALUE_NODE.LEFT = LEFT;
+                VOID_OP = EMIT_TREE (LEFT);
+		/*
+		/* RIGHT is the COLON.
+		/* RIGHT->CXX_VALUE_NODE.LEFT is the true ALTERNATE.
+		/* RIGHT->CXX_VALUE_NODE.RIGHT is the false ALTERNATE.
+		/**/
+		if K ^= 0 then do;
+			if RIGHT->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID then
+				RIGHT->CXX_VALUE_NODE.LEFT->
+					CXX_VALUE_NODE.OFFSET = K;
+			if RIGHT->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID then
+				RIGHT->CXX_VALUE_NODE.RIGHT->
+					CXX_VALUE_NODE.OFFSET = K;
+		end;
+
+		/* Emit the true ALTERNATE */
+
+                LEFT_OP = EMIT_TREE (RIGHT->CXX_VALUE_NODE.LEFT);
+
+                MERGE_LABEL = DECLARE_LABEL_VALUE (2);
+
+                call EMIT_LEFT (BRANCH_VO, MERGE_LABEL);
+
+		if LABEL->CXX_VALUE_NODE.COUNT = 1 then do;
+			/*
+			/* LABEL counted down by
+			/* EXPAND_VALUE because not needed.
+			/**/
+			call COUNT_DOWN_VALUE (LABEL);
+		end;
+		else	call EMIT_LEFT (LABEL_VO, LABEL);
+
+		/* Emit the false ALTERNATE */
+
+		RIGHT_OP = EMIT_TREE (RIGHT->CXX_VALUE_NODE.RIGHT);
+
+		call EMIT_LEFT (LABEL_VO, MERGE_LABEL);
+
+		V->CXX_VALUE_NODE.OFFSET = K;
+		V->CXX_VALUE_NODE.NULARY = TRUE;
+
+		return (EMIT_VALUE (V, 0, LEFT_OP, RIGHT_OP, 0, 0));
+	end;
+	else if VOP = LEFT_VALUE_VO then do;
+		/*
+		/* Emit code like:
+		/*     -1  2  LEFT
+		/*     -2  0  NOP (-1)
+		/*     -3  0  RIGHT
+		/* and return the op id emitted for LEFT (e.g. -1).
+		/*
+		/* We can't EXPAND_VALUE the NOP, because it would
+		/* see the high COUNT and eliminate the whole game.
+		/**/
+		LEFT = ALLOC_CXX_VALUE_NODE_L (NOP_VO, V->CXX_VALUE_NODE.LEFT);
+		LEFT->CXX_VALUE_NODE.UNARY = TRUE;
+		/* Note that CXX_VALUE_NODE_PTR == LEFT */
+		call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+		LEFT->CXX_VALUE_NODE.COUNT = 0;
+		/* CXX_VALUE_NODE_PTR = V; */
+		V->CXX_VALUE_NODE.LEFT = LEFT;
+		/*
+		/* Back end & optimizer can't support
+		/* this for structure values.
+		/**/
+		if ^IS_SCALAR_TYPE (rank (V->CXX_VALUE_NODE.TYPE_CODE)) &
+		    V->CXX_VALUE_NODE.NOT_AN_LVALUE then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	end;
+	else if VOP = UNINITIALIZED_VO then do;
+		if V->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (VOID_BT) then do;
+			/*
+			/* Error; this represents a side-effect free
+			/* expression/statement of type 'void', which has 
+			/* failed to make it through initialize_object.
+			/**/
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+			return (0);
+		end;
+		/*
+		/* This represents an uninitialized value.
+		/*
+                /*  First, emit the COND_REF with a count of 1.
+                /*  Note: If 0 returned, then old style (no CREF emitted).
+                /**/
+                V->CXX_VALUE_NODE.OFFSET = EMIT_COND_REF (V, 1);
+                V->CXX_VALUE_NODE.NULARY = TRUE;
+        	return (EMIT_VALUE (V, 0, 0, 0, 0, 0));
+	end;
+	else if VOP = EXIT_VO then do;
+		LEFT = V->CXX_VALUE_NODE.LEFT;
+                RIGHT = V->CXX_VALUE_NODE.RIGHT;
+		V->CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+		VOID_OP = EMIT_TREE (LEFT);
+		VOID_OP = EMIT_TREE (RIGHT);
+	end;
+	else if VOP = STMNT_ID_VO then do;
+		X = V->CXX_VALUE_NODE.OFFSET;		/* line id */
+		Y = V->CXX_VALUE_NODE.RIGHT_NID;	/* file id */
+        	return (EMIT_VALUE (V, 2, X, Y, 0, 0));
+	end;
+
+	/* ------ */
+
+	if V->CXX_VALUE_NODE.LEFT_IS_NOT_VID then do;
+		LEFT_IS_VID = FALSE;
+		if V->CXX_VALUE_NODE.LEFT_IS_NID then
+			LEFT_OID = V->CXX_VALUE_NODE.LEFT_NID;
+		else	LEFT_OID = V->CXX_VALUE_NODE.LEFT_SHORT;
+	end;
+	else do;
+		LEFT_IS_VID = TRUE;
+		LEFT = V->CXX_VALUE_NODE.LEFT;
+	end;
+
+	if V->CXX_VALUE_NODE.RIGHT_IS_NOT_VID then do;
+		RIGHT_IS_VID = FALSE;
+		if V->CXX_VALUE_NODE.RIGHT_IS_NID then
+			RIGHT_OID = V->CXX_VALUE_NODE.RIGHT_NID;
+		else	RIGHT_OID = V->CXX_VALUE_NODE.RIGHT_SHORT;
+	end;
+	else do;
+		RIGHT_IS_VID = TRUE;
+		RIGHT = V->CXX_VALUE_NODE.RIGHT;
+	end;
+
+	if V->CXX_VALUE_NODE.THIRD_IS_NOT_VID then do;
+		THIRD_IS_VID = FALSE;
+		if V->CXX_VALUE_NODE.THIRD_IS_NID then
+			THIRD_OID = V->CXX_VALUE_NODE.THIRD_NID;
+		else	THIRD_OID = V->CXX_VALUE_NODE.THIRD_SHORT;
+	end;
+	else do;
+		THIRD_IS_VID = TRUE;
+		THIRD = V->CXX_VALUE_NODE.THIRD;
+	end;
+
+	OFFSETV	= NULL_CXX_VID;
+
+	if (VOP = ASSIGN_VO) | (VOP = ARG_VO) | (VOP = ARG_REF_VO) then
+		RIGHT_TO_LEFT = TRUE;
+	else	RIGHT_TO_LEFT = FALSE;
+
+	if (VOP = CALL_VO) | (VOP = CALL_FUNCTION_VO) then
+		N = V->CXX_VALUE_NODE.OFFSET + 1;
+
+	else do;
+
+		if      V->CXX_VALUE_NODE.NULARY  then N = 0;
+		else if V->CXX_VALUE_NODE.UNARY   then N = 1;
+		else if V->CXX_VALUE_NODE.TERNARY then N = 3;
+		else				       N = 2;
+
+		if VOP = REF_VO then do;
+			if V->CXX_VALUE_NODE.OFFSET ^= 0 then do;
+				if (V->CXX_VALUE_NODE.OFFSET <=
+				    MAX_SHORT_INT) &
+				   (V->CXX_VALUE_NODE.OFFSET >=
+				    (-MAX_SHORT_INT - 1)) then
+					T = SHORT_BT;
+				else	T = INT_BT;
+	
+				OFFSETV = INTEGER_VALUE
+					  ((V->CXX_VALUE_NODE.OFFSET), T);
+	
+				/*
+				/* Check for long integer offset.
+				/* REF_PLUS_OFFSET in EXPAND_VALUE
+				/* should guarantee RIGHT is 0.
+				/**/
+	
+				if (T = INT_BT) &
+				   (RIGHT = NULL_CXX_VID) then do;
+					RIGHT = OFFSETV;
+					OFFSETV = NULL_CXX_VID;
+				end;
+			end;
+	
+			if OFFSETV ^= NULL_CXX_VID then
+				N = 4;
+			else if ^V->CXX_VALUE_NODE.THIRD_IS_NOT_VID &
+				(V->CXX_VALUE_NODE.THIRD ^= NULL_CXX_VID) then
+				N = 3;
+			else if RIGHT ^= NULL_CXX_VID then
+				N = 2;
+			else	N = 1;
+		end;
+	end;
+
+	if LEFT_IS_VID & (LEFT ^= NULL_CXX_VID) & ^RIGHT_TO_LEFT then
+		LEFT_OID = EMIT_TREE (LEFT);
+
+	if RIGHT_IS_VID & (RIGHT ^= NULL_CXX_VID) then
+		RIGHT_OID = EMIT_TREE (RIGHT);
+
+	if LEFT_IS_VID & (LEFT ^= NULL_CXX_VID) & RIGHT_TO_LEFT then
+		LEFT_OID = EMIT_TREE (LEFT);
+
+	if THIRD_IS_VID & (THIRD ^= NULL_CXX_VID) then
+		THIRD_OID = EMIT_TREE (THIRD);
+
+	if OFFSETV ^= NULL_CXX_VID then do;
+		PV = OFFSETV;
+		OFFSETV_OID = EMIT_TREE (OFFSETV);
+		call COUNT_DOWN_VALUE (PV);
+	end;
+
+	return (EMIT_VALUE
+		(V, N, LEFT_OID, RIGHT_OID, THIRD_OID, OFFSETV_OID));
+
+/* ---------------------------------------------------------------------
+/* EMIT_LEFT
+/* ------------------------------------------------------------------- */
+
+EMIT_LEFT: procedure (OP, LEFT) internal;
+
+	declare
+		OP	type (SHORT_T),
+		LEFT	type (CXX_VID_T);
+	declare
+		V	type (CXX_VID_T),
+		VOID_OP	type (LONG_T);
+
+        V = GET_VALUE_AND_EXPAND_L (OP, LEFT);
+        VOID_OP = EMIT_TREE (V);
+        call COUNT_DOWN_VALUE (V);
+
+end EMIT_LEFT;
+
+/* ---------------------------------------------------------------------
+/* EMIT_ALTERNATE
+/* ------------------------------------------------------------------- */
+
+EMIT_ALTERNATE: procedure (CREF, A) internal;
+
+	declare
+		CREF	type (LONG_T),
+		A	type (CXX_VID_T);
+	declare
+		V	type (CXX_VID_T),
+		VOID_OP	type (LONG_T);
+
+        V = GET_VALUE_AND_EXPAND_L (ALTERNATE_VO, A);
+        V->CXX_VALUE_NODE.OFFSET = CREF; /* previously emitted COND_REF */
+        VOID_OP = EMIT_TREE (V);
+        call COUNT_DOWN_VALUE (V);
+
+end EMIT_ALTERNATE;
+
+end EMIT_TREE;
+

@@ -1,0 +1,163 @@
+/* C++ cxxfe.pl1 - Main semantic parser module */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.10.92  DGM  021  Added PRINT_CLASS_CATALOGUE.
+ *  07.01.92  DGM  020R Added CLEANUP_DATA_SECTIONS.
+ *  06.25.92  DGM  020  Added SET_INITIAL_DATA_SECTION.
+ *  01.24.92  DGM  019  Changed PAR_DRIVER to PARSE_COMPILATION_UNIT.
+ *  05.29.91  DGM  018  Moved XSTAT call to MAIN.
+ *  03.13.91  DGM  017  Moved XSTAT call to MAIN.
+ *  03.08.91  DGM  016  Call DUMP_SOURCE_MAP.
+ *  02.01.91  DGM  015  Call INITIALIZE_GLOBAL_NAMES.
+ *  09.25.90  DGM  014  Updated.
+ *  09.14.90  DGM  013  Changed include file names and VOP names.
+ *  08.29.90  DGM  012  Updated.
+ *  07.11.90  DGM  011  Added include of CXX_UTL_STATS_PKG.
+ *  06.26.90  DGM  010  Handle the -dbclay (SW_DUMP_CLASS_LAYOUT) switch.
+ *  06.08.90  DGM  009  Replaced hack with call to RUN_PP_ONLY; changed
+ *			INITIALIZE_PARSER to BEGIN_PARSER; added END_PARSER.
+ *  06.05.90  DGM  008  Updated for the new utilities.
+ *  05.25.90  DGM  007  Minor updates; dump type-nodes on separate switch.
+ *  03.02.90  DGM  006  Updated.
+ *  02.22.90  DGM  005  Updated to new dump interface.
+ *  01.31.90  TLF  004  Added calls to open/close the operator file.
+ *  01.04.90  DGM  002  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 09.10.92 021 CXXFE');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include GBL_FILE_NAMES_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_LEXER_PKG;
+%include CXX_PARSER_PKG;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_DEBUG_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_DUMP_SOURCE_MAP_PKG;
+%include CXX_PRINT_TYPE_PKG;
+%include CXX_PRAGMA_DATA_SECTION_PKG;
+
+/* ---------------------------------------------------------------------
+/* CXXFE
+/*
+/* The C++ front-end.
+/* ------------------------------------------------------------------- */
+
+CXXFE: procedure external;
+
+	/* Initialize global names */
+
+	call INITIALIZE_GLOBAL_NAMES ();
+
+	/* Set the initial data section (for #pragma LPI data_section) */
+
+	call SET_INITIAL_DATA_SECTION ();
+
+	/* Open the operator file */
+
+        call CREATE_OPERATOR_LIST (PASS1_FILE_NAME);
+
+	/* Start parsing the compilation unit */
+
+	call PARSE_COMPILATION_UNIT ();
+
+	/* Reached the end of the compilation unit */
+
+	/* Close the operator file */
+
+        call CLOSE_OPERATOR_LIST ();
+
+	/* Cleanup the data sections */
+
+	call CLEANUP_DATA_SECTIONS ();
+
+	/* Dump debugging stats if desired */
+
+	if SW_DEBUGGING_STATS then
+		call DUMP_COMPILER_STATS ();
+
+	/* Dump the declarations if desired */
+
+	if SW_DUMP_DECLARATIONS then do;
+
+		if TOTAL_MESSAGES > 0 then
+			call WRITE_ERROR_LINE ('');
+
+		call WRITE_DEBUG_LINE ('');
+		call WRITE_DEBUG_LINE ('LPI-C++ SOURCE NODES:');
+		call WRITE_DEBUG_LINE ('--------------------');
+		call WRITE_DEBUG_LINE ('');
+		call DUMP_SOURCE_MAP ();
+
+		/* Dump the symbol table */
+
+		call WRITE_DEBUG_LINE ('');
+		call WRITE_DEBUG_LINE ('LPI-C++ SYMBOL NODES:');
+		call WRITE_DEBUG_LINE ('--------------------');
+		call WRITE_DEBUG_LINE ('');
+		call DUMP_CURRENT_SCOPE_SYMBOLS ();
+	end;
+
+	/* Dump the class layouts if desired */
+
+	if SW_DUMP_CLASS_LAYOUT then
+		call DUMP_CLASSES ();
+
+	/* Dump the class layouts if desired */
+
+	if SW_PRINT_CLASS_CATALOGUE then
+		call PRINT_CLASS_CATALOGUE ();
+
+end CXXFE;
+
+/* ---------------------------------------------------------------------
+/* DUMP_COMPILER_STATS
+/* ------------------------------------------------------------------- */
+
+DUMP_COMPILER_STATS: procedure internal;
+
+	%include CXX_HASH_TYPE_PKG;
+	%include CXX_TYPE_COMPATIBILITY_PKG;
+	%include CXX_NODE_MGR_PKG;
+
+	call WRITE_DEBUG_LINE ('');
+	call WRITE_DEBUG_LINE ('LPI-C++ COMPILER STATS:');
+	call WRITE_DEBUG_LINE ('----------------------');
+
+	call DUMP_NODE_STATS ();
+	call DUMP_TYPE_NODE_HASHING_STATS ();
+	call DUMP_TYPE_COMPATIBILITY_STATS ();
+
+end DUMP_COMPILER_STATS;
+
+

@@ -1,0 +1,143 @@
+/* C++ savgbl.pl1 - Save/set pertinent front-end globals for debugger */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.08.91  DGM  005  Save/set CURRENT_GLOBAL_SCOPE.
+ *  05.29.91  DGM  004  Updated.
+ *  03.08.91  DGM  003  Used PROLOGUE_ENTRY rather than ENTRY_ID.
+ *  02.27.91  DGM  002  Used BLOCK_NODE.ENTRY_ID rather than PROLOGUE.
+ *  02.02.91  DGM  001  Updated.
+ *  02.01.91  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.08.91 005 SAVGBL');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_GLOBAL_NAMES_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+
+/* ---------------------------------------------------------------------
+/* Builtin function declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+size		builtin;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+/*
+/* TODO: we want to use the following scheme, but a PL/I bug prevents us:
+/*
+/*	1 GLOBAL_DATA_NODE		based,
+/*	  2 NAMES			type (GLOBAL_NAMES),
+/*	  2 TYPES			type (GLOBAL_TYPES);
+/*
+/*	P->GLOBAL_DATA_NODE.NAME_DATA = GLOBAL_NAME_DATA;
+/*
+/*	GLOBAL_NAME_DATA = P->GLOBAL_DATA_NODE.NAME_DATA;
+/**/
+
+declare
+
+GLOBAL_NAMES_T		(size (GLOBAL_NAMES)) character based,
+GLOBAL_TYPES_T		(size (GLOBAL_TYPES)) character based;
+
+declare
+
+1 GLOBAL_DATA_NODE	based (NODE_PTR),
+  2 NAMES		type (GLOBAL_NAMES_T),
+  2 TYPES		type (GLOBAL_TYPES_T),
+  2 SCOPE		type (NID_T);
+
+/* ---------------------------------------------------------------------
+/* SAVE_CXXFE_GLOBAL_DATA
+/*
+/* Saves pertinent global front-end data in a node GLOBAL_DATA_NODE and
+/* hangs its node id off of a known field (namely PROLOGUE_ENTRY) of the
+/* block-node representing the the outer-most (imaginary) block (referred
+/* to by BLOCK_LIST_ID).  This is routine should be called exactly once
+/* by the front-end at the end of compilation.
+/*
+/* The sole purpose of this is to make pertinent global front-end data
+/* available to the debugger; to do this, the debugger must call the
+/* routine SET_CXXFE_GLOBAL_DATA whenever an environment is initialized.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SAVE_CXXFE_GLOBAL_DATA: procedure external (X_SAVE_CXXFE_GLOBAL_DATA);
+
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_NODE (size (GLOBAL_DATA_NODE), 0, ID, P);
+	P->GLOBAL_DATA_NODE.NAMES = addr (GLOBAL_NAMES)->GLOBAL_NAMES_T;
+	P->GLOBAL_DATA_NODE.TYPES = addr (GLOBAL_TYPES)->GLOBAL_TYPES_T;
+	P->GLOBAL_DATA_NODE.SCOPE = CURRENT_GLOBAL_SCOPE;
+	call RELEASE_NODE (ID);
+	call GET_BLOCK_NODE (BLOCK_LIST_ID, P);
+	P->BLOCK_NODE.PROLOGUE_ENTRY = ID;
+	call RELEASE_BLOCK_NODE (BLOCK_LIST_ID);
+
+end SAVE_CXXFE_GLOBAL_DATA;
+
+/* ---------------------------------------------------------------------
+/* SET_CXXFE_GLOBAL_DATA
+/*
+/* Sets pertinent global front-end data from a GLOBAL_DATA_NODE which is
+/* hanging off of a known field (namely PROLOGUE_ENTRY) of the block-node
+/* representing the the outer-most (imaginary) block (referred to by
+/* BLOCK_LIST_ID).  This routine should be called exactly once by the
+/* debugger each time an environment (i.e. compilation unit, i.e. STB
+/* file) is intialized.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SET_CXXFE_GLOBAL_DATA: procedure external (X_SET_CXXFE_GLOBAL_DATA);
+
+	declare (P, Q) type (POINTER_T);
+
+	call GET_BLOCK_NODE_R (BLOCK_LIST_ID, P);
+	call GET_NODE_R (P->BLOCK_NODE.PROLOGUE_ENTRY, Q);
+	addr (GLOBAL_NAMES)->GLOBAL_NAMES_T = Q->GLOBAL_DATA_NODE.NAMES;
+	addr (GLOBAL_TYPES)->GLOBAL_TYPES_T = Q->GLOBAL_DATA_NODE.TYPES;
+	CURRENT_GLOBAL_SCOPE		    = Q->GLOBAL_DATA_NODE.SCOPE;
+	call RELEASE_NODE (P->BLOCK_NODE.PROLOGUE_ENTRY);
+	call RELEASE_BLOCK_NODE (BLOCK_LIST_ID);
+
+end SET_CXXFE_GLOBAL_DATA;
+

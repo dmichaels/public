@@ -1,0 +1,53 @@
+/* LPI-DEBUG M68 PRNTOP.PL1 - Print an MC68020/68881 opcode */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  12.10.87  DGM  Original
+ *                 For more information, see the MC68020 User's
+ *		   Manual,and the MC68881 User's Manual.
+ *
+ **********************************************************************/
+
+/* ----------------------------------------------------------------
+ * PRNTOP
+ *
+ * Return the string representing the MC68020/MC68881 opcode
+ * given by CODE and whose size attribute is given by SIZE.
+ */
+
+PRNTOP: procedure (CODE, SIZE) returns (character (256) varying);
+
+    %include 'incfil';
+    %include DIS_IN;
+    %include DISOPDEF_IN;
+    %include DISOPNAME_IN;
+    %include DISOPSIZE_IN;
+
+    declare
+	CODE	fixed binary (15),
+	SIZE	fixed binary (15);
+    declare
+	N	fixed binary (15),
+	NAME	character (MAX_STRING_LENGTH) varying;
+
+    %replace NAME_FIELD_WIDTH	by 10;
+
+    NAME = OPCODE_NAME(CODE) || OPCODE_SIZE_NAME(SIZE);
+    N = length(NAME);
+    if N >= NAME_FIELD_WIDTH then
+	NAME = NAME || ' ';
+    else NAME = NAME || copy(' ',NAME_FIELD_WIDTH-N);
+    return (NAME);
+
+end PRNTOP;
+

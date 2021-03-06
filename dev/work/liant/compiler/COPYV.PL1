@@ -1,0 +1,117 @@
+/* C++ copyv.pl1 - Copy a value (or reuse it) */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  005  New value-node scheme.
+ *  01.25.92  PKT  004	Fixed for LEFT_VALUE_VO and CONSTANT_VO quirks.
+ *  11.28.90  TLF  003  Changed a reference to GETV to GET_CPLUS_VAL.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  06.05.90  DGM  001  Updated for the new utilities.
+ *  02.12.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 005 COPYV');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+
+/* ---------------------------------------------------------------------
+/* COPY_VALUE
+/*
+/* If TREE has a count of 1, just return TREE.  Otherwise, return a copy of
+/* value TREE and count down TREE.  Count up any subtrees which are reused,
+/* accounting for quirks in LEFT_VALUE_VO and string constants.
+/* Returns with result value as current value.
+/* ------------------------------------------------------------------- */
+
+COPY_VALUE: procedure (TREE)
+	    returns   (type (CXX_VID_T))
+	    external  (X_COPY_VALUE);
+
+	declare
+		TREE			type (CXX_VID_T);
+	declare
+		LEFT			type (CXX_VID_T),
+		RIGHT			type (CXX_VID_T),
+		THIRD			type (CXX_VID_T),
+		NEWV			type (CXX_VID_T),
+		V			type (CXX_VID_T),
+		(OLDP, NEWP)		type (POINTER_T),
+		SZ			type (SHORT_T);
+
+	if TREE->CXX_VALUE_NODE.COUNT = 1 then do;
+		CXX_VALUE_NODE_PTR = TREE;
+		return (TREE);
+	end;
+ 
+	/* Make a copy and count down input */
+
+	NEWV = ALLOC_AND_COPY_CXX_VALUE_NODE (TREE);
+
+	if NEWV->CXX_VALUE_NODE.COUNT ^= 0 then
+		NEWV->CXX_VALUE_NODE.COUNT = 1;
+
+	if ^NEWV->CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+	   (NEWV->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then
+		call COUNT_UP_VALUE (NEWV->CXX_VALUE_NODE.LEFT);
+
+	if ^NEWV->CXX_VALUE_NODE.RIGHT_IS_NOT_VID &
+	   (NEWV->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID) then
+		call COUNT_UP_VALUE (NEWV->CXX_VALUE_NODE.RIGHT);
+
+	if ^NEWV->CXX_VALUE_NODE.THIRD_IS_NOT_VID &
+	   (NEWV->CXX_VALUE_NODE.THIRD ^= NULL_CXX_VID) then
+		call COUNT_UP_VALUE (NEWV->CXX_VALUE_NODE.THIRD);
+
+	call COUNT_DOWN_VALUE (TREE);
+
+	if (NEWV->CXX_VALUE_NODE.OP = CONSTANT_VO) &
+	   (NEWV->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) &
+	   (NEWV->CXX_VALUE_NODE.TYPE_CODE = byte (NULL_BT)) then do;
+		OLDP = NEWV->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.SPTR;
+		SZ = OLDP->TOKEN_SPELLING_POD.SIZE;
+		NEWP = SALLOC (SZ);
+		substr (NEWP->TOKEN_SPELLING_POD.SPELLING, 1, SZ) =
+			substr (OLDP->TOKEN_SPELLING_POD.SPELLING, 1, SZ);
+		NEWV->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.SPTR = NEWP;
+	end;
+	else if NEWV->CXX_VALUE_NODE.OP = LEFT_VALUE_VO then
+		call COUNT_UP_VALUE (NEWV->CXX_VALUE_NODE.LEFT);
+
+	CXX_VALUE_NODE_PTR = NEWV;
+	return (NEWV);
+
+end COPY_VALUE;
+

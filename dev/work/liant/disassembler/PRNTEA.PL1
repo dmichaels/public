@@ -1,0 +1,249 @@
+/* LPI-DEBUG M68 PRNTEA.PL1 - Print an MC68020 effective address */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   2.13.92  VTF  (005r) For address register indirect with index and
+ *                 memory indirect pre/post indexed modes, the base
+ *                 displacement value is mapped to an external symbol
+ *                 symbol when the base register is omitted.
+ * 
+ *            What this means:
+ *                 The 68020 allows you to use specify a memory address
+ *                 as *(base_register + offset value + index_register).
+ *                 You can omit the base register and/or the index register,
+ *                 leaving only the offset value.  This value, being an 
+ *                 "offset" from address zero is really just another address,
+ *                 and should be displayed as such.   
+ *                 So....where we used to print out something like this:
+ *                    jsr     (33599280,,)
+ *                 We map the offset to a symbol (if possible), or convert it
+ *                 to hex and print out something like:
+ *                    jsr     (RTSGBL,,).
+ *               
+ *   2.12.92  VTF  (005) Immediate data values are now printed in hex.
+ *
+ *  12.04.91  VTF  Enhanced PRNTEA to map an absolute address to the 
+ *                 nearest external symbol name.
+ *
+ *  01.11.88  DGM  Added call to FINADR to map an absolute address
+ *		   to an external symbol name.
+ *
+ *  12.10.87  DGM  Original
+ *                 For more information, see the MC68020 User's Manual.
+ *
+ **********************************************************************/
+
+/* ----------------------------------------------------------------
+ * PRNTEA
+ *
+ * Return the string representing the effective address described
+ * by the EA_DATA structure pointed to by the given EA pointer.
+ */
+
+PRNTEA: procedure (EA) returns (character (256) varying);
+
+    %include 'incfil';
+    %include DIS_IN;
+    %include DISREGDEF_IN;
+    %include DISREGNAME_IN;
+    %include DISOPSIZE_IN;
+    %include DISEA_IN;
+    %include SYSTTY_IN;
+
+    declare
+	EA	pointer;
+    declare
+	OUTPUT	character (MAX_STRING_LENGTH) varying,
+        TEMPSTR character (12) varying;  /* hold 32-bit hex #'s */
+
+    declare
+        I_ADDR_TO_STRING          entry ( fixed binary (31),
+                                        value fixed binary (31) ,
+                                        character (*) varying );
+ 
+
+    OUTPUT = '';
+
+    goto EAMODE(EA->EA_DATA.MODE);
+
+    /* ----------------------------------------------------------------
+     * Data/Address Register Indirect
+     * ------------------------------------------------------------- */
+
+	EAMODE(EA_DREG):;		/* Dn */
+	EAMODE(EA_AREG):;		/* An */
+
+	    OUTPUT = REG_NAME(EA->EA_DATA.BASE_REGISTER);
+	    return (OUTPUT);
+
+	/* ----------------------------------------------------------------
+	 * Address Register Indirect
+	 * ------------------------------------------------------------- */
+
+	EAMODE(EA_AREG_INDIR):		/* (An) */
+
+	    OUTPUT = '(' || REG_NAME(EA->EA_DATA.BASE_REGISTER) || ')';
+	    return (OUTPUT);
+
+	/* ----------------------------------------------------------------
+	 * Address Register Indirect with Postincrement
+	 * ------------------------------------------------------------- */
+
+	EAMODE(EA_AREG_INDIR_INC):	/* (An)+ */
+
+	    OUTPUT = '(' || REG_NAME(EA->EA_DATA.BASE_REGISTER) || ')+';
+	    return (OUTPUT);
+
+	/* ----------------------------------------------------------------
+	 * Address Register Indirect with Predecrement
+	 * ------------------------------------------------------------- */
+
+	EAMODE(EA_AREG_INDIR_DEC):	/* -(An) */
+
+	    OUTPUT = '-(' || REG_NAME(EA->EA_DATA.BASE_REGISTER) || ')';
+	    return (OUTPUT);
+
+	/* ----------------------------------------------------------------
+	 * Address Register or PC Indirect with Displacement
+	 * ------------------------------------------------------------- */
+
+	EAMODE(EA_AREG_INDIR_DISP):;	/* (d16,An) */
+	EAMODE(EA_PC_INDIR_DISP):;	/* (d16,PC) */
+
+	    OUTPUT = '(' || trim(char(EA->EA_DATA.BASE_DISP)) || ',' ||
+		     REG_NAME(EA->EA_DATA.BASE_REGISTER) || ')';
+	    return (OUTPUT);
+
+	/* ----------------------------------------------------------------
+	 * Address Register or PC Indirect with Index (8-Bit Displacement)
+	 * ------------------------------------------------------------- */
+
+	EAMODE(EA_AREG_INDEX_DISP_8):;	/* (d8,An,Xn.SIZE*SCALE) */
+	EAMODE(EA_PC_INDEX_DISP_8):;	/* (d8,PC,Xn.SIZE*SCALE) */
+
+	    OUTPUT = '(' || trim(char(EA->EA_DATA.BASE_DISP)) || ',' ||
+		     REG_NAME(EA->EA_DATA.BASE_REGISTER) || ',' ||
+		     REG_NAME(EA->EA_DATA.INDEX_REGISTER) ||
+		     OPCODE_SIZE_NAME(EA->EA_DATA.INDEX_SIZE) ||
+		     '*' || trim(char(EA->EA_DATA.INDEX_SCALE)) || ')';
+	    return (OUTPUT);
+
+	/* ----------------------------------------------------------------
+	 * Address Register or PC Indirect with Index (Base Displacement)
+	 * ------------------------------------------------------------- */
+
+	EAMODE(EA_AREG_INDEX_BASE_DISP):; /* (bd,An,Xn.SIZE*SCALE) */
+	EAMODE(EA_PC_INDEX_BASE_DISP):;	  /* (bd,PC,Xn.SIZE*SCALE) */
+	    OUTPUT = '(';
+	    if EA->EA_DATA.BASE_DISP_SIZE ^= SIZE_NULL then
+                 if EA->EA_DATA.BASE_REGISTER = NO_REG then do;
+                     call I_ADDR_TO_STRING((EA->EA_DATA.BASE_DISP),0,OUTPUT);
+                     OUTPUT = '(' || OUTPUT;
+                 end;
+                 else
+		     OUTPUT = OUTPUT || trim(char(EA->EA_DATA.BASE_DISP));
+	    OUTPUT = OUTPUT || ',';
+	    if EA->EA_DATA.BASE_REGISTER ^= NO_REG then
+		 OUTPUT = OUTPUT || REG_NAME(EA->EA_DATA.BASE_REGISTER);
+	    OUTPUT = OUTPUT || ',';
+	    if EA->EA_DATA.INDEX_REGISTER ^= NO_REG then
+		OUTPUT = OUTPUT || REG_NAME(EA->EA_DATA.INDEX_REGISTER) ||
+			 OPCODE_SIZE_NAME(EA->EA_DATA.INDEX_SIZE) ||
+			 '*' || trim(char(EA->EA_DATA.INDEX_SCALE));
+	    OUTPUT = OUTPUT || ')';
+	    return (OUTPUT);
+
+	/* ----------------------------------------------------------------
+	 * Memory Indirect Post-Indexed
+	 * ------------------------------------------------------------- */
+
+	EAMODE(EA_MEM_INDIR_POST_INDEX):;    /* ([bd,An],Xn.SIZE*SCALE,od) */
+	EAMODE(EA_PC_MEM_INDIR_POST_INDEX):; /* ([bd,PC],Xn.SIZE*SCALE,od) */
+	    OUTPUT = '([';
+	    if EA->EA_DATA.BASE_DISP_SIZE ^= SIZE_NULL then
+                 if EA->EA_DATA.BASE_REGISTER = NO_REG then do;
+                     call I_ADDR_TO_STRING((EA->EA_DATA.BASE_DISP),0,OUTPUT);
+                     OUTPUT = '([' || OUTPUT;
+                 end;
+                 else
+		     OUTPUT = OUTPUT || trim(char(EA->EA_DATA.BASE_DISP));
+	    OUTPUT = OUTPUT || ',';
+	    if EA->EA_DATA.BASE_REGISTER ^= NO_REG then
+		OUTPUT = OUTPUT || REG_NAME(EA->EA_DATA.BASE_REGISTER);
+	    OUTPUT = OUTPUT || '],';
+	    if EA->EA_DATA.INDEX_REGISTER ^= NO_REG then
+		OUTPUT = OUTPUT || REG_NAME(EA->EA_DATA.INDEX_REGISTER) ||
+			 OPCODE_SIZE_NAME(EA->EA_DATA.INDEX_SIZE) ||
+			 '*' || trim(char(EA->EA_DATA.INDEX_SCALE));
+	    OUTPUT = OUTPUT || ',';
+	    if EA->EA_DATA.OUTER_DISP_SIZE ^= SIZE_NULL then
+		OUTPUT = OUTPUT || trim(char(EA->EA_DATA.OUTER_DISP));
+	    OUTPUT = OUTPUT || ')';
+	    return (OUTPUT);
+
+	/* ------------------------------------------------------------
+	 * Memory Indirect Pre-Indexed
+	 * --------------------------------------------------------- */
+
+	EAMODE(EA_MEM_INDIR_PRE_INDEX):;    /* ([bd,An,Xn.SIZE*SCALE],od) */
+	EAMODE(EA_PC_MEM_INDIR_PRE_INDEX):; /* ([bd,An,Xn.SIZE*SCALE],od) */
+	    OUTPUT = '([';
+	    if EA->EA_DATA.BASE_DISP_SIZE ^= SIZE_NULL then
+                 if EA->EA_DATA.BASE_REGISTER = NO_REG then do;
+                     call I_ADDR_TO_STRING((EA->EA_DATA.BASE_DISP),0,OUTPUT);
+                     OUTPUT = '([' || OUTPUT;
+                 end;
+                 else
+		     OUTPUT = OUTPUT || trim(char(EA->EA_DATA.BASE_DISP));
+	    OUTPUT = OUTPUT || ',';
+	    if EA->EA_DATA.BASE_REGISTER ^= NO_REG then
+		OUTPUT = OUTPUT || REG_NAME(EA->EA_DATA.BASE_REGISTER);
+	    OUTPUT = OUTPUT || ',';
+	    if EA->EA_DATA.INDEX_REGISTER ^= NO_REG then
+		OUTPUT = OUTPUT || REG_NAME(EA->EA_DATA.INDEX_REGISTER) ||
+			 OPCODE_SIZE_NAME(EA->EA_DATA.INDEX_SIZE) ||
+			 '*' || trim(char(EA->EA_DATA.INDEX_SCALE));
+	    OUTPUT = OUTPUT || '],';
+	    if EA->EA_DATA.OUTER_DISP_SIZE ^= SIZE_NULL then
+		OUTPUT = OUTPUT || trim(char(EA->EA_DATA.OUTER_DISP));
+	    OUTPUT = OUTPUT || ')';
+	    return (OUTPUT);
+
+	/* ------------------------------------------------------------
+	 * Absolute Short Address
+	 * --------------------------------------------------------- */
+
+	EAMODE(EA_ABS_WORD):	/* xxx.W */
+
+            call I_ADDR_TO_STRING(EA->EA_DATA.VALUE,0,OUTPUT);
+	    return (OUTPUT);
+
+	/* ------------------------------------------------------------
+	 * Absolute Long Address
+	 * --------------------------------------------------------- */
+
+	EAMODE(EA_ABS_LONG):	/* xxx.L */
+
+            call I_ADDR_TO_STRING(EA->EA_DATA.VALUE,0,OUTPUT);
+	    return (OUTPUT);
+
+	/* ------------------------------------------------------------
+	 * Immediate Data
+	 * --------------------------------------------------------- */
+
+	EAMODE(EA_IMMED):	/* #<data> */
+
+            call GETPTR((EA->EA_DATA.VALUE),TEMPSTR);
+	    OUTPUT = '#' || TEMPSTR;
+	    return (OUTPUT);
+
+end PRNTEA;

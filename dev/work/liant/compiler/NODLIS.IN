@@ -1,0 +1,37 @@
+/* C++ CXX_NODE_LIST_IN - Dynamic node list package */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.06.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN; */
+
+/* ---------------------------------------------------------------------
+/* Type Definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 NODE_DATA		based,
+  2 NEXT		type (POINTER_T),
+  2 PREV		type (POINTER_T),
+  2 ID			type (NID_T),
+  2 node_data_union	union,
+    3 CODE		type (SHORT_T),
+    3 VALUE		type (LONG_T);
+

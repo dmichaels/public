@@ -1,0 +1,29 @@
+/* LPI-DEBUG M68 SGETPC.PL1 - Return user program SP */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  04.02.87  DGM  Moved from UNIX to M68 divergence.
+ *
+ **********************************************************************/
+
+SGETSP: procedure returns (fixed binary (31));
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include TARGET_IN;
+
+     return (PROGRAM_REGISTER_AREA->REGS.A7);
+
+end SGETSP;
+

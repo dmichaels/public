@@ -1,0 +1,67 @@
+.TH GETSTRING 3L LOCAL
+
+.SH NAME
+getstring - read an n length string of given characters
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+getstring(f, fmt, dst, len)
+.br
+FILE *f;
+.br
+char *fmt, *dst;
+.br
+unsigned int len;
+.ft P
+
+.SH DESCRIPTION
+Reads one string from file \fIf\fP into destination string \fIdst\fP.
+A maximum of \fIlen\fP - 1 characters is read, and an end of string (EOS)
+marker is put at the end.  The format string \fIfmt\fP, describes what
+the string to be read is to be delimited by.
+.PP
+If the format string is NULL or is empty, then the string to be
+read will be delimited by white space (blanks, tabs, newlines;
+ala \fIisspace/ctype(3)\fP).
+.PP
+If the first character in the format string is \fInot\fP a caret (^),
+then the input field is all the characters until the first
+character not in the format string.  That is, the format strings
+pecifies the characters making up the string to be read.
+.PP
+If the first character in the format string \fIis\fP a caret (^),
+then the input field is all the characters until the first
+character which is in the remaining set of characters in the
+format string.  That is, the format string describes the set
+of characters that delimit the string to be read.
+.PP
+To use the caret character literally in the format string,
+either make sure it is not the first character in the string,
+or if it must be the first in the string (because its the only
+character wanted in the string for example), then escape it by
+putting a backslash in front of it (the backslash will be ignored).
+.PP
+The backslash itself can be escaped by using two backslashes
+instead of one. The only situation where this will be needed
+is when it is desired to read a string consisting of only
+backslashes and carets, as in:  \fIgetstring(f, "\\^", dst)\fP.
+
+The destination string pointer is returned, or NULL if
+the end of file is reached.
+
+.SH NOTES
+Note that the destination string \fIdst\fP must have at least
+\fIlen\fP characters allocated for its use since the end of
+string character is appended.
+
+This function is like reading a string using the \fIfscanf()\fP
+function (with the \fI%[fmt]\fP mechanism),
+except that a maximum number of characters may be given.
+
+.SH FILES
+getstring.c
+
+.SH SEE ALSO
+scanf(3S), gets(3S)

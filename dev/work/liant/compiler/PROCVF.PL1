@@ -1,0 +1,716 @@
+/* C++ procvf.pl1 - Virtual function declaration processing */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  08.19.92  DGM  009	Implemented new virtual function overriding
+ *			rules which allow return types to differ if
+ *			they are both pointers or references to classes
+ *			and the return class of the overriding function
+ *			is publicly derived from the return class of the
+ *			overriden function.
+ *  03.13.92  PKT  008	Updated for parameter nodes.
+ *  03.26.92  DGM  007	New value-node scheme.
+ *  03.09.92  DGM  006	Fix in OVERRIDING_VIRTUAL_FUNCTION for day-one
+ *			bug which caused pretty basic things not to work:
+ *			    struct X { };
+ *			    struct B { 
+ *				virtual void f (char *);
+ *				virtual void f (int *);
+ *				virtual void f (double *);
+ *			    };
+ *			    struct D : public X, public B {
+ *				void f (char *);
+ *				void f (int *);
+ *				void f (double *);
+ *			    };
+ *			    main ()
+ *			    {
+ *			 	D d;
+ *			 	B& rb = d;
+ *				d.f ((int *)0);
+ *				rb.f ((int *)0); // Called D::f(double *)!
+ *			    }
+ *			The virtual function table was wrong for this case.
+ *  01.21.92  DGM  005	Parameter link-node changes.
+ *			List link-node changes.
+ *  12.28.91  PKT  004	Fixed for overloaded virtual conversion functions.
+ *  11.12.91  DGM  003  Merge.
+ *  10.21.91  PKT  002  Updated for const/volatile 'this'.
+ *  02.01.91  DGM  001  Upated to the new global names scheme.
+ *  11.06.90  DGM  000  Original; yanked out of lookup.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 08.19.92 009 PROCVF');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_NODE_LIST_PKG;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_GLOBAL_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* OVERRIDE_VIRTUAL_FUNCTION
+/*
+/* -TODO- Update these comments; these are TauMetric's! Also, see
+/*        if this routine might better be called from INSTALL_SYMBOL.
+/*        I.e. we would probably change the name of this routine
+/*        to SET_VIRTUAL_FUNCTION_INDEX (or something), and in
+/*        INSTALL_SYMBOL we would do:
+/*
+/*             if SYMBOL_PTR->SYM_NODE.IS_FUNCTION &
+/*                SYMBOL_PTR->SYM_NODE.IS_AGGREGATE_MEMBER then
+/*                     call SET_VIRTUAL_FUNCTION_INDEX
+/*                          (SYMBOL_PTR,
+/*                           SCOPE_PTR->SCOPE_NODE.ENCLOSING_SCOPE_OWNER);
+/*
+/* Checks for a pre-existing virtual function, on the shared vprt
+/* path and takes the number from there if it exists.  Otherwise, if
+/* it is virtual on some other path, or declared virtual here, assign
+/* it a new number by incrementing vcount.
+/*
+/* Preserves current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "get_virt".
+/* ------------------------------------------------------------------- */
+
+PROCESS_VIRTUAL_FUNCTION: procedure (FUNCTION_ID, FUNCTION_PTR, CLASS_PTR)
+			  external  (X_PROCESS_VIRTUAL_FUNCTION);
+	declare
+		FUNCTION_ID			type (NID_T),
+		FUNCTION_PTR			type (POINTER_T),
+		CLASS_PTR			type (POINTER_T);
+	declare
+		L				type (NID_T),
+		LP				type (POINTER_T),
+		SNID				type (SNID_T);
+	declare
+		VIRTUAL_INDEX			type (SHORT_T),
+		NON_SHARED			type (BOOL_T),
+		VIRTUAL_OVERRIDE_ERROR_LIST	type (POINTER_T);
+
+	/*
+	/* Only functions which are neither constructors, operator new, nor
+	/* operator delete are examined, since these may not be virtual.
+	/**/
+
+	if ^FUNCTION_PTR->SYM_NODE.IS_FUNCTION |
+	   FUNCTION_PTR->SYM_NODE.IS_CONSTRUCTOR_FUNCTION |
+	   (FUNCTION_PTR->SYM_NODE.IS_OPERATOR_FUNCTION &
+	    ((FUNCTION_PTR->SYM_NODE.NAME = OPERATOR_NEW_NAME) |
+	     (FUNCTION_PTR->SYM_NODE.NAME = OPERATOR_DELETE_NAME))) then
+		return;
+
+	/* See if this function overrides any virtual function */
+
+	call SAVE_NODE (SNID);
+
+	VIRTUAL_INDEX			= 0;
+	NON_SHARED			= FALSE;
+	VIRTUAL_OVERRIDE_ERROR_LIST	= null ();
+
+	if SEARCH_FOR_VIRTUAL_FUNCTION (CLASS_PTR) then do;
+		if NON_SHARED then do;
+			CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_COUNT
+			= CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_COUNT + 1;
+			FUNCTION_PTR->SYM_NODE.VIRTUAL_FUNCTION_INDEX
+			= CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_COUNT;
+		end;
+		else do;
+			FUNCTION_PTR->SYM_NODE.VIRTUAL_FUNCTION_INDEX
+			= VIRTUAL_INDEX;
+		end;
+		FUNCTION_PTR->SYM_NODE.VIRTUAL = TRUE;
+	end;
+	else if FUNCTION_PTR->SYM_NODE.VIRTUAL then do;
+		CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_COUNT
+			= CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_COUNT + 1;
+		FUNCTION_PTR->SYM_NODE.VIRTUAL_FUNCTION_INDEX
+			= CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_COUNT;
+	end;
+
+	if VIRTUAL_OVERRIDE_ERROR_LIST ^= null () then
+		call EMIT_VIRTUAL_OVERRIDE_ERRORS (FUNCTION_PTR);
+
+	call RESTORE_NODE (SNID);
+
+	/*
+	/* If this is a virtual function (i.e. it is declared virtual or/and
+	/* it was found to override a virtual function above), then place
+	/* it on the class sym-node FIELD2 list of virtual functions (linked
+	/* thru the function sym-node NEXT_VIRTUAL_FUNCTION field); if it is
+	/* also a pure virtual function then place it on the class sym-node
+	/* DOPE_ID link-node list of inherited pure virtual functions (this
+	/* list will be completed in INHERITE_VIRTUAL_FUNCTIONS).
+	/**/
+
+	if FUNCTION_PTR->SYM_NODE.VIRTUAL then do;
+		FUNCTION_PTR->SYM_NODE.NEXT_VIRTUAL_FUNCTION =
+			CLASS_PTR->SYM_NODE.FIELD2;
+		CLASS_PTR->SYM_NODE.FIELD2 = FUNCTION_ID;
+		if FUNCTION_PTR->SYM_NODE.PURE then do;
+			/*
+			/* Link this pure virtual function onto the
+			/* pure virtual function link-node list which
+			/* hangs off of the DOPE_ID field of the tag.
+			/**/
+			call NEW_LIST_NODE (L, LP);
+			LP->LIST_NODE.VALUE = FUNCTION_ID;
+			LP->LIST_NODE.NEXT = CLASS_PTR->SYM_NODE.DOPE_ID;
+			CLASS_PTR->SYM_NODE.DOPE_ID = L;
+			call RELEASE_LIST_NODE (L);
+		end;
+	end;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* SEARCH_FOR_VIRTUAL_FUNCTION
+/*
+/* A recursive routine to through the given class a virtual function with
+/* same name and type as the given function symbol.  If "shared", only
+/* the path with a shared virtual vector will qualify.  If a function is
+/* found which differs only in the return type, an appropriate diagnostic
+/* will be emitted.  Trashes current-node-id.
+/*
+/* N.B. fashioned after the TauMetric routine "find_virt".
+/* ------------------------------------------------------------------- */
+
+SEARCH_FOR_VIRTUAL_FUNCTION: procedure (CLASS_PTR)
+			     returns   (type (BOOL_T))
+			     internal;
+	declare
+		CLASS_PTR		type (POINTER_T);
+	declare
+		(BC, NEXT_BC, S)	type (NID_T),
+		(BCP, SP)		type (POINTER_T),
+		VI			type (SHORT_T),
+		FOUND			type (BOOL_T);
+
+	FOUND = FALSE;
+
+	S = SEARCH_SCOPE (CLASS_PTR->SYM_NODE.DEFINED_SCOPE,
+			  FUNCTION_PTR->SYM_NODE.NAME,
+			  FUNCTION_SK);
+
+	if S ^= NULL_NID then do;
+		VI = CHECK_OVERRIDE (S, FUNCTION_PTR->SYM_NODE.TYPE);
+		if VI ^= 0 then do;
+			if VIRTUAL_INDEX = 0 then do;
+				VIRTUAL_INDEX = VI;
+				FOUND = TRUE;
+			end;
+		end;
+		/*
+		/* If we found a member function with the same name as
+		/* the current member (S ^= NULL_NID) but we didn't find
+		/* a virtual function to override (VI = 0), then strictly
+		/* (i.e. according to the C++ARM and perhaps intuition)
+		/* we should return failure (0) here since the name found
+		/* at this level *hides* any virtual function declaration
+		/* of that name in a base class class.  But CFRONT and
+		/* everyone else doesn't do it that way.  This is still
+		/* an open issue which must be resolved by X3J16.
+		/**/
+		/*
+		/* Virtual function hiding warnings must be given
+		/* at the end of a class definition.
+		/* ...
+		if SW_WARN_HIDDEN_VIRTUAL_FUNCTIONS then do;
+			call SEMANTIC_ERROR_III
+			     (ERR_VIRTUAL_FUN_HIDDEN,
+			      FULL_QUALIFIED_SYMBOL_NAME (FUNCTION_ID),
+			      SYMBOL_NAME (S),
+			      SYMBOL_NAME (CLASS_PTR->
+					   SYM_NODE.TOP_TYPE.TAG_SYMBOL));
+		end;
+		... */
+	end;
+		
+	do BC = CLASS_PTR->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		call GET_SYM_NODE_R (BCP->BASE_CLASS_NODE.SYMBOL, SP);
+		if SEARCH_FOR_VIRTUAL_FUNCTION (SP) then do;
+			if ^BCP->BASE_CLASS_NODE.HAS_VFT_POINTER then
+				NON_SHARED = TRUE;
+			FOUND = TRUE;
+		end;
+		call RELEASE_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	return (FOUND);
+
+/* ---------------------------------------------------------------------
+/* CHECK_OVERRIDE
+/*
+/* Examine the function symbol represented by the given sym-node id
+/* FUN_SYMBOL and any/all function overloaded on it and see if any
+/* are compatible enough with the type represented by the given type-
+/* node id FUN_TYPE for virtual function overriding.  If one is found
+/* then return the (non-zero) virtual index of the found function symbol,
+/* otherwise return zero.
+/*
+/* If a function symbol is found whose type which differs from the given
+/* type *only* in return type, then emit an appropriate error diagnostic,
+/* and return zero.
+/*
+/* If a function symbol is found whose type is compatible but is incomplete
+/* in different part than the given type then emit an appropriate diagnostic
+/* warning, and return the virtual index of the found function.  If the
+/* found function symbol type is incomplete in any part where the given
+/* type is not incomplete, then the diagnostic will be a little more
+/* serious since this opens up a hole in the type system.
+/*
+/* N.B. we do not give any warnings for virtual function hiding here
+/* or anywhere else yet since this whole issue seems to be extremely
+/* unclear.  It will hopefully get resolved by X3J16.
+/* 
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_OVERRIDE: procedure (FUN_SYMBOL, FUN_TYPE)
+		returns   (type (SHORT_T))
+		internal;
+	declare
+		FUN_SYMBOL	type (NID_T),
+		FUN_TYPE	type (NID_T);
+	declare
+		FUN_SIGNATURE	type (NID_T),
+		FUN_QUALIFIERS	type (BYTE_BITS_T),
+		(F, NEXT_F)	type (NID_T),
+		(FP, FTP)	type (POINTER_T),
+		VIRTUAL_INDEX	type (SHORT_T),
+		STATUS		type (SHORT_T);
+
+	call GET_TYPE_NODE_R (FUN_TYPE, FTP);
+	FUN_SIGNATURE = FTP->TYPE_NODE.DATA
+			(rank (FTP->TYPE_NODE.LEVEL)).SIGNATURE;
+	FUN_QUALIFIERS = ( FTP->TYPE_NODE.DATA
+			   (rank (FTP->TYPE_NODE.LEVEL)).QUALIFIERS 
+			 & ALL_TQ);
+	call RELEASE_TYPE_NODE (FUN_TYPE);
+
+	VIRTUAL_INDEX = 0;
+
+	do F = FUN_SYMBOL repeat (NEXT_F) while (F ^= NULL_NID);
+		call GET_SYM_NODE_R (F, FP);
+		if ^FP->SYM_NODE.VIRTUAL then
+			goto CONTINUE;
+		if ^(COMPATIBLE_SIGNATURES (FP->SYM_NODE.TOP_TYPE.SIGNATURE,
+					    FUN_SIGNATURE) &
+		     ((FP->SYM_NODE.TOP_TYPE.QUALIFIERS & ALL_TQ) =
+		      FUN_QUALIFIERS)) then do;
+			/*
+			/* Here, not compatible at all; this is perhaps
+			/* where some hiding analysis could be done.
+			/*
+			/* N.B. FUNCTION_ID is the sym-node id representing
+			/* the overriding function & F is the sym-node id
+			/* representing the overriden function.
+			/**/
+			;
+		end;
+		else if ^COMPATIBLE_TYPES (FP->SYM_NODE.TYPE, FUN_TYPE) then do;
+			if ^FP->SYM_NODE.IS_CONVERSION_FUNCTION then
+				if COMPATIBLE_ENOUGH_RETURN_TYPES
+				   (FP, FUNCTION_PTR) then do;
+					goto DO_OVERRIDE;
+				/*
+				/* Error; incompatible in return type only.
+				/**/
+				call QUEUE_VIRTUAL_OVERRIDE_ERROR
+				     (ERR_VIRT_FUN_RETURN_TYPE, CLASS_PTR);
+			end;
+		end;
+		else do;
+			/*
+			/* Compatible; override.
+			/**/
+			DO_OVERRIDE:
+			STATUS = CHECK_INCOMPLETE_TYPE
+				 (FP->SYM_NODE.TYPE, FUN_TYPE);
+			if STATUS > 0 then do;
+				/*
+				/* Severe warning; this function is more
+				/* complete than the virtual function it
+				/* overrides in the base class.
+				/*
+				/* class A { virtual int f (int (*)[]); };
+				/* class B : A { virtual int f (int (*)[9]); };
+				/**/
+				call QUEUE_VIRTUAL_OVERRIDE_ERROR
+				     (ERR_VIRT_FUN_INCOMPLETE_BASE,
+				      CLASS_PTR);
+			end;
+			else if STATUS < 0 then do;
+				/*
+				/* Warning; this function is less complete
+				/* than the virtual function it overrides
+				/* in the base class.
+				/*
+				/* class A { virtual int f (int (*)[9]); };
+				/* class B : A { virtual int f (int (*)[]); };
+				/**/
+				call QUEUE_VIRTUAL_OVERRIDE_ERROR
+				     (ERR_VIRT_FUN_INCOMPLETE_DERIVED,
+				      CLASS_PTR);
+			end;
+			VIRTUAL_INDEX = FP->SYM_NODE.VIRTUAL_FUNCTION_INDEX;
+		end;
+		CONTINUE:
+		NEXT_F = FP->SYM_NODE.NEXT_OVERLOAD;
+		call RELEASE_SYM_NODE (F);
+	end;
+
+	return (VIRTUAL_INDEX);
+
+/* ---------------------------------------------------------------------
+/* CHECK_INCOMPLETE_TYPE
+/*
+/* Assuming the types represented by the given type-node ids A and B
+/* are compatible, if the A is incomplete at any part where B is not
+/* then return 1, otherwise if B is incomplete at any part where A is
+/* not then return -1, otherwise return 0.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_INCOMPLETE_TYPE: procedure (A, B)
+		       returns   (type (SHORT_T))
+		       internal;
+	declare
+		(A, B)		type (NID_T);
+	declare
+		(AP, BP)	type (POINTER_T),
+		I		type (SHORT_T),
+		STATUS		type (SHORT_T);
+
+	if A = B then
+		return (0);
+
+	call GET_TYPE_NODE_R (A, AP);
+	call GET_TYPE_NODE_R (B, BP);
+
+	STATUS = 0;
+
+	if ^AP->TYPE_NODE.CONTAINS_INCOMPLETE then do;
+		if BP->TYPE_NODE.CONTAINS_INCOMPLETE then
+			STATUS = -1;
+		goto DONE;
+	end;
+	else if ^BP->TYPE_NODE.CONTAINS_INCOMPLETE then do;
+		STATUS = 1;
+		goto DONE;
+	end;
+
+	/* Here, both A and B contain incomplete types */
+
+	do I = rank (AP->TYPE_NODE.LEVEL) to 1;
+		if AP->TYPE_NODE.DATA (I).INCOMPLETE then do;
+			if ^BP->TYPE_NODE.DATA (I).INCOMPLETE then do;
+				STATUS = 1;
+				goto DONE;
+			end;
+			else if AP->TYPE_NODE.DATA (I).CODE =
+				byte (FUNCTION_DT) then do;
+				STATUS = CHECK_INCOMPLETE_SIGNATURE
+					 (AP->TYPE_NODE.DATA (I).SIGNATURE,
+					  BP->TYPE_NODE.DATA (I).SIGNATURE);
+				if STATUS > 0 then
+					goto DONE;
+			end;
+		end;
+		else if BP->TYPE_NODE.DATA (I).INCOMPLETE then do;
+			/*
+			/* Here, B is incomplete where A is complete,
+			/* but we keep going to see if we can find a
+			/* place where A is incomplete where B is complete.
+			/**/
+			STATUS = -1;
+		end;
+	end;
+
+	DONE:
+	call RELEASE_TYPE_NODE (B);
+	call RELEASE_TYPE_NODE (A);
+	return (STATUS);
+
+/* ---------------------------------------------------------------------
+/* CHECK_INCOMPLETE_SIGNATURE
+/*
+/* Assuming the signatures represented by the given sig-node ids A and
+/* B are compatible, if the A is incomplete at any part where B is not
+/* then return 1, otherwise if B is incomplete at any part where A is
+/* not then return -1, otherwise return 0.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_INCOMPLETE_SIGNATURE: procedure (A, B)
+			    returns   (type (SHORT_T))
+			    internal;
+	declare
+		(A, B)				type (NID_T);
+	declare
+		(AP, ASP, BP, BSP)		type (POINTER_T),
+		(AL, NEXT_AL, BL, NEXT_BL)	type (NID_T),
+		STATUS				type (SHORT_T);
+
+	if A = B then
+		return (0);
+
+	call GET_SIG_NODE_R (A, AP);
+	call GET_SIG_NODE_R (B, BP);
+
+	STATUS = 0;
+
+	if ^AP->SIG_NODE.INCOMPLETE then do;
+		if BP->SIG_NODE.INCOMPLETE then
+			STATUS = -1;
+		goto DONE;
+	end;
+	else if ^BP->SIG_NODE.INCOMPLETE then do;
+		STATUS = 1;
+		goto DONE;
+	end;
+
+	/* Here, both A and B either *are* or *contain* incompletes */
+
+	if AP->SIG_NODE.PROTOTYPED |
+	   (AP->SIG_NODE.EXPLICIT_NPARAMETERS > 0) then do;
+		/*
+		/* Here, A is complete.
+		/**/
+		if ^BP->SIG_NODE.PROTOTYPED &
+		   (BP->SIG_NODE.EXPLICIT_NPARAMETERS = 0) then
+			STATUS = -1;
+		goto DONE;
+	end;
+	else if BP->SIG_NODE.PROTOTYPED |
+		(BP->SIG_NODE.EXPLICIT_NPARAMETERS > 0) then do;
+		/*
+		/* Here, A is incomplete and B is complete.
+		/**/
+		STATUS = 1;
+		goto DONE;
+	end;
+
+	/* Here, both A and B *contain* incompletes */
+
+	AL = AP->SIG_NODE.EXPLICIT_PARAMETERS;
+	BL = BP->SIG_NODE.EXPLICIT_PARAMETERS;
+
+	do while ((AL ^= NULL_NID) & (BL ^= NULL_NID) & (STATUS <= 0));
+		call GET_PARAMETER_NODE_R (AL, ASP);
+		call GET_PARAMETER_NODE_R (BL, BSP);
+		STATUS = CHECK_INCOMPLETE_TYPE (ASP->PARAMETER_NODE.TYPE,
+						BSP->PARAMETER_NODE.TYPE);
+		NEXT_AL = ASP->PARAMETER_NODE.NEXT;
+		NEXT_BL = BSP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (BL);
+		call RELEASE_PARAMETER_NODE (AL);
+		AL = NEXT_AL;
+		BL = NEXT_BL;
+	end;
+
+	DONE:
+	call RELEASE_SIG_NODE (B);
+	call RELEASE_SIG_NODE (A);
+	return (STATUS);
+
+end CHECK_INCOMPLETE_SIGNATURE;
+
+end CHECK_INCOMPLETE_TYPE;
+
+end CHECK_OVERRIDE;
+
+end SEARCH_FOR_VIRTUAL_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* QUEUE_VIRTUAL_OVERRIDE_ERROR
+/* ------------------------------------------------------------------- */
+
+QUEUE_VIRTUAL_OVERRIDE_ERROR: procedure (CODE, CLASS_PTR) internal;
+
+	declare
+		CODE		type (SHORT_T),
+		CLASS_PTR	type (POINTER_T);
+
+	if ^ALREADY_ON_NODE_LIST_WITH_CODE
+	    (VIRTUAL_OVERRIDE_ERROR_LIST,
+	     CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL, CODE) then do;
+		call APPEND_TO_NODE_LIST_WITH_CODE
+		     (VIRTUAL_OVERRIDE_ERROR_LIST,
+		      CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL, CODE);
+	end;
+
+end QUEUE_VIRTUAL_OVERRIDE_ERROR;
+
+/* ---------------------------------------------------------------------
+/* EMIT_VIRTUAL_OVERRIDE_ERRORS
+/* ------------------------------------------------------------------- */
+
+EMIT_VIRTUAL_OVERRIDE_ERRORS: procedure (FUNCTION_PTR) internal;
+
+	declare
+		FUNCTION_PTR	type (POINTER_T);
+	declare
+		P		type (POINTER_T);
+
+	do P = VIRTUAL_OVERRIDE_ERROR_LIST
+	repeat (P->NODE_DATA.NEXT) while (P ^= null ());
+		call SEMANTIC_ERROR_II
+		     (P->NODE_DATA.CODE,
+		      TOKEN_NAME (FUNCTION_PTR->SYM_NODE.NAME),
+		      SYMBOL_NAME (P->NODE_DATA.ID));
+	end;
+
+	call DELETE_NODE_LIST (VIRTUAL_OVERRIDE_ERROR_LIST);
+
+end EMIT_VIRTUAL_OVERRIDE_ERRORS;
+
+end PROCESS_VIRTUAL_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* INHERITE_VIRTUAL_FUNCTIONS
+/*
+/* Assuming we have reached the end of the class body for the class
+/* represented by the given sym-node pointer CLASS_PTR, inherite the
+/* any pure virtual functions from the base class(es) which have not
+/* been overridden in this class.  The list of inherited pure virtual
+/* functions is kept as a link-node list hanging off of the DOPE_ID
+/* field of the class sym-node; the only reason we need to do this
+/* is so we can set the ABSTRACT bit for classes properly!
+/* Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+INHERITE_VIRTUAL_FUNCTIONS: procedure (CLASS_PTR)
+			    external  (X_INHERITE_VIRTUAL_FUNCTIONS);
+	declare
+		CLASS_PTR		type (POINTER_T);
+	declare
+		(BC, NEXT_BC)		type (NID_T),
+		(BF, NEXT_BF)		type (NID_T),
+		(BL, NEXT_BL, L)	type (NID_T),
+		(BCP, BFP, BLP, LP, CP)	type (POINTER_T);
+
+	if ^CLASS_PTR->SYM_NODE.HAS_ABSTRACT_BASE then
+		return;
+
+	do BC = CLASS_PTR->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		if ^BCP->BASE_CLASS_NODE.ABSTRACT then
+			goto CONTINUE;
+		call GET_SYM_NODE_R (BCP->BASE_CLASS_NODE.SYMBOL, CP);
+		do BL = CP->SYM_NODE.DOPE_ID
+		repeat (NEXT_BL) while (BL ^= NULL_NID);
+			call GET_LIST_NODE_R (BL, BLP);
+			call GET_SYM_NODE_R (BLP->LIST_NODE.VALUE, BFP);
+			if OVERRIDING_VIRTUAL_FUNCTION
+			   (CLASS_PTR, BFP) = NULL_NID then do;
+			     /*
+			     /* This base class pure virtual function
+			     /* is not overridden in the derived class.
+			     /**/
+			     call NEW_LIST_NODE (L, LP);
+			     LP->LIST_NODE.VALUE = BLP->LIST_NODE.VALUE;
+			     LP->LIST_NODE.NEXT = CLASS_PTR->SYM_NODE.DOPE_ID;
+			     CLASS_PTR->SYM_NODE.DOPE_ID = L;
+			     call RELEASE_LIST_NODE (L);
+			end;
+			call RELEASE_SYM_NODE (BLP->LIST_NODE.VALUE);
+			NEXT_BL = BLP->LIST_NODE.NEXT;
+			call RELEASE_LIST_NODE (BL);
+		end;
+		call RELEASE_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL);
+		CONTINUE:
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	if CLASS_PTR->SYM_NODE.DOPE_ID ^= NULL_NID then
+		CLASS_PTR->SYM_NODE.ABSTRACT = TRUE;
+
+end INHERITE_VIRTUAL_FUNCTIONS;
+
+/* ---------------------------------------------------------------------
+/* OVERRIDING_VIRTUAL_FUNCTION
+/*
+/* Searches only the class represented by the given sym-node pointer
+/* CLASS_PTR for a *virtual* function which overrides (i.e. which
+/* is *exactly* compatible with) the function represented by the given
+/* sym-node pointer FUNCTION_PTR.  If an overriding function is found
+/* then return its sym-node id and with it paged in, otherwise return
+/* NULL_ID and with the current-node-id preserved.  Note that it is
+/* assumed that we have already figured out for each member function
+/* of the class whether or not it has overridden *any* virtual
+/* function in any base class.
+/* ------------------------------------------------------------------- */
+
+OVERRIDING_VIRTUAL_FUNCTION: procedure (CLASS_PTR, FUNCTION_PTR)
+			     returns   (type (NID_T))
+			     external  (X_OVERRIDING_VIRTUAL_FUNCTION);
+	declare
+		CLASS_PTR	type (POINTER_T),
+		FUNCTION_PTR	type (POINTER_T);
+	declare
+		FP		type (POINTER_T),
+		(F, NEXT_F)	type (NID_T);
+
+	/*
+	/* Is is faster to search the virtual function list of the
+	/* class (FIELD2) or to search for the name of the function
+	/* within the class scope in the traditional fashion?
+	/**/
+
+	if CLASS_PTR->SYM_NODE.FIELD2 = NULL_NID then
+		return (FALSE);
+
+	do F = CLASS_PTR->SYM_NODE.FIELD2
+	repeat (NEXT_F) while (F ^= NULL_NID);
+		call GET_SYM_NODE_R (F, FP);
+		if FP->SYM_NODE.NAME = FUNCTION_PTR->SYM_NODE.NAME then do;
+			if MATCH_OVERLOAD_FOR_OVERRIDE
+			   (F, FUNCTION_PTR) ^= NULL_NID then
+				return (CURRENT_NODE_ID);
+		end;
+		NEXT_F = FP->SYM_NODE.NEXT_VIRTUAL_FUNCTION;
+		call RELEASE_SYM_NODE (F);
+	end;
+
+	return (NULL_NID);
+
+end OVERRIDING_VIRTUAL_FUNCTION;
+

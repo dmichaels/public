@@ -1,0 +1,394 @@
+/* CPP CPP_TOKEN_TYPE_CODES_IN - Token type codes & ranges */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+/*
+/*  LPI EDIT HISTORY
+/*
+/*  06.18.92  DGM  010  Added PRAGMA_DATA_SECTION_PK.
+/*  11.12.91  DGM  009  Added PRAGMA_WEAK_PK.
+/*  10.03.91  DGM  008  Added PRAGMA_ALLOW_ASM_PK.
+/*  07.20.91  DGM  007  Added PRAGMA_WRAPPER_REDECLARATIONS_PK.
+/*  07.08.91  DGM  006  Changed PP_PREDICATE_TOKEN.
+/*  03.20.91  DGM  005  Added #assert, #ident, #note, #once, #unassert,
+/*			and #pragmas.
+/*  03.12.91  DGM  004  Added "throw", "try", and "asm".
+/*  09.25.90  DGM  003  Include file name changes.
+/*  06.14.90  DGM  002  Rearranged some token codes.
+/*  06.05.90  DGM  001  First CPP component version.
+/*  --------------------------------------------------------------------
+/*  02.05.90  DGM  010  Updated.
+/*  02.05.90  DGM  010  Updated.
+/*  08.29.89  DGM  008  Updated for C++ (commented with "(C++)"); added
+/*			"cooked" string literal & character constant
+/*			token types (to prevent these tokens from being
+/*			processed more than once during FE look-ahead).
+/*			Some re-ordering; added L/HB_ILLEGAL_FE_TOKEN.
+/*  04.25.89  DGM  007  Added PP_CHARIZE_TOKEN.
+/*  12.14.88  DGM  006  Removed PP_BIM_DEFINED_TOKEN (no longer used).
+/*  10.24.88  DGM  005  Original for ANSI-C.
+/*
+/***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* None */
+
+/* ---------------------------------------------------------------------
+/* This list of tokens is used directly by the ANSI-C preprocessor, the
+/* ANSI-C front-end, and the C++ front-end.  Be very careful when making
+/* changes to not upset the token ranges described by the LB_xxx_TOKEN
+/* HB_xxx_token pairs which are used rather extensively; note that these
+/* ranges may overlap each other.  Also, note that the preprocessor's
+/* lexical analyzer tables use these token names (see lextab.lex).
+/*
+/* After making any changes, the following ANSI-C/C++ preprocessor modules
+/* should be checked/changed for consistency:
+/*
+/*	pp_dmp.pl1
+/*	pp_tsm.in (C_TOKEN_MAP_SPELLING_IN)
+/*
+/* After making any changes, the following C++ modules should be
+/* checked for consistency:
+/*
+/*	tokmapt.in (C_TOKEN_MAP_TERMINAL_IN)
+/*	tokmapd.in (C_TOKEN_MAP_DECLARATION_IN)
+/*	tokmapo.in (C_TOKEN_MAP_OP_IN)
+/*
+/* After making any changes, the following ANSI-C modules should be
+/* checked for consistency:
+/*
+/*	TO BE DETERMINED
+/*
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Preprocessor token codes (used *only* within the preprocessor;
+/* these types of tokens should *never* be sent out by the
+/* preprocessor and should *never* be seen by the front-end).
+/* ------------------------------------------------------------------- */
+
+%replace LB_PP_TOKEN		  by   1; /* Begin preprocessor tokens */
+
+%replace LB_PP_KW_TOKEN		  by   1; /* Begin preprocessor keywords */
+%replace PP_KW_ASSERT_TOKEN	  by   1; /* # assert */
+%replace PP_KW_DEFINE_TOKEN	  by   2; /* # define */
+%replace PP_KW_ELIF_TOKEN	  by   3; /* # elif */
+%replace PP_KW_ELSE_TOKEN	  by   4; /* # else */
+%replace PP_KW_ELSEIF_TOKEN	  by   5; /* # else */
+%replace PP_KW_ENDIF_TOKEN	  by   6; /* # endif */
+%replace PP_KW_ERROR_TOKEN	  by   7; /* # error */
+%replace PP_KW_FILE_TOKEN	  by   8; /* # file */
+%replace PP_KW_IDENT_TOKEN	  by   9; /* # ident */
+%replace PP_KW_IF_TOKEN		  by  10; /* # if */
+%replace PP_KW_IFDEF_TOKEN	  by  11; /* # ifdef */
+%replace PP_KW_IFNDEF_TOKEN	  by  12; /* # ifndef */
+%replace PP_KW_INCLUDE_TOKEN	  by  13; /* # include */
+%replace PP_KW_LINE_TOKEN	  by  14; /* # line */
+%replace PP_KW_NOTE_TOKEN	  by  15; /* # note */
+%replace PP_KW_ONCE_TOKEN	  by  16; /* # once */
+%replace PP_KW_PRAGMA_TOKEN	  by  17; /* # pragma */
+%replace PP_KW_UNASSERT_TOKEN	  by  18; /* # unassert */
+%replace PP_KW_UNDEF_TOKEN	  by  19; /* # undef */
+%replace HB_PP_KW_TOKEN		  by  19; /* End preprocessor keywords */
+
+%replace PP_STRINGIZE_TOKEN	  by  20; /* # */
+%replace PP_PREDICATE_TOKEN	  by  20; /* # */
+%replace PP_CHARIZE_TOKEN	  by  21; /* None */
+%replace PP_TOKEN_PASTE_TOKEN	  by  22; /* ## */
+%replace PP_MACRO_PARAMETER_TOKEN by  23; /* Macro parameter token */
+
+%replace HB_PP_TOKEN		  by  23; /* End preprocessor tokens */
+
+/* ---------------------------------------------------------------------
+/* Front-end token type codes (*any* of these token types may be
+/* sent out by the preprocessor and may be seen by the front-end).
+/* ------------------------------------------------------------------- */
+
+%replace LB_FE_TOKEN		by  24; /* Begin front-end tokens */
+
+%replace LB_SPECIAL_FE_TOKEN	by  24; /* Begin special front-end tokens */
+
+%replace LB_PSEUDO_TOKEN	by  24;	/* Beginning of pseudo tokens */
+%replace BOF_TOKEN		by  24;	/* Beginning of main file */
+%replace EOF_TOKEN		by  25;	/* End of main file */
+%replace LB_CONTROL_TOKEN	by  26; /* Beginning of control tokens */
+%replace BOF_INCLUDE_TOKEN	by  26;	/* Beginning of include file */
+%replace EOF_INCLUDE_TOKEN	by  27;	/* End of include file */
+%replace LINE_FILE_TOKEN	by  28;	/* Change assumed line and/or file */
+%replace PRAGMA_TOKEN		by  29; /* #pragma LPI ... */
+%replace AVAILABLE_1_TOKEN	by  30; /* Available */
+%replace AVAILABLE_2_TOKEN	by  31; /* Available */
+%replace AVAILABLE_3_TOKEN	by  32; /* Available */
+%replace AVAILABLE_4_TOKEN	by  33; /* Available */
+%replace AVAILABLE_5_TOKEN	by  34; /* Available */
+%replace AVAILABLE_6_TOKEN	by  35; /* Available */
+%replace HB_CONTROL_TOKEN	by  35; /* End control tokens */
+%replace HB_PSEUDO_TOKEN	by  35;	/* End pseudo tokens */
+
+%replace LB_ILLEGAL_FE_TOKEN	by  36; /* Begin bad front-end tokens */
+
+%replace NULL_TOKEN       	by  36; /* Null token */
+
+%replace SINGLE_CHAR_TOKEN	by  37; /* Single character token */
+
+%replace LB_SPELLING_TOKEN      by  38; /* End spelling tokens */
+
+%replace PP_NUMBER_TOKEN	by  38; /* Preprocessing number */
+
+%replace HB_ILLEGAL_FE_TOKEN	by  38; /* End bad front-end tokens */
+
+/* --------------------------------
+/* Constant & string literal tokens
+/* ------------------------------ */
+
+/*
+/* N.B. "cooked" string literal and character constant tokens are used
+/* to represent the token after it has been fully processed, i.e. after
+/* character mapping (and adjacent string literal concatenation for string
+/* literals) has been performed; this is not done by the preprocessor.
+/**/
+
+%replace STRING_LITERAL_TOKEN	      by  39; /* String literal */
+%replace WSTRING_LITERAL_TOKEN	      by  40; /* Wide string literal */
+
+%replace LB_CONSTANT_TOKEN	      by  41; /* Begin constant tokens */
+
+%replace CHAR_CONSTANT_TOKEN	      by  41; /* Character constant */
+%replace WCHAR_CONSTANT_TOKEN	      by  42; /* Wide character constant */
+
+%replace HB_SPECIAL_FE_TOKEN	      by  42; /* End special FE tokens */
+
+%replace DECIMAL_CONSTANT_TOKEN	      by  43; /* Decimal integer constant */
+%replace OCTAL_CONSTANT_TOKEN	      by  44; /* Octal integer constant */
+%replace HEX_CONSTANT_TOKEN	      by  45; /* Hex integer constant */
+%replace FLOAT_CONSTANT_TOKEN	      by  46; /* Floating point constant */
+
+%replace COOKED_CHAR_CONSTANT_TOKEN   by  47; /* Cooked character */
+%replace COOKED_WCHAR_CONSTANT_TOKEN  by  48; /* Cooked wide character */
+
+%replace HB_CONSTANT_TOKEN	      by  48; /* End constant tokens */
+
+%replace COOKED_STRING_LITERAL_TOKEN  by  49; /* Cooked string literal */
+%replace COOKED_WSTRING_LITERAL_TOKEN by  50; /* Cooked wide string literal */
+
+/* +---------------------------------------------------------------+ */
+/* | * WARNING * WARNING * WARNING * WARNING * WARNING * WARNING * | */
+/* +---------------------------------------------------------------+ */
+/* |  The value of IDENTIFIER_TOKEN *must* be 51 to coincide with  | */
+/* |  the LPI global symbol table definition of IDENTIFIER_ !!!!!  | */
+/* +---------------------------------------------------------------+ */
+/* | * WARNING * WARNING * WARNING * WARNING * WARNING * WARNING * | */
+/* +---------------------------------------------------------------+ */
+
+%replace IDENTIFIER_TOKEN       by  51; /* Identifier */
+
+%replace HB_SPELLING_TOKEN	by  51; /* End spelling tokens */
+
+/* ----------------------------------------
+/* Operator, punctuator, and keyword tokens
+/* -------------------------------------- */
+
+%replace LB_OP_TOKEN		by  52;	/* Begin operator/punctuator tokens */
+
+%replace COLON_COLON_TOKEN      by  52;	/* ::  */	/* (C++) */
+%replace COLON_TOKEN            by  53;	/* :   */
+%replace SEMICOLON_TOKEN        by  54;	/* ;   */
+%replace DOT_TOKEN              by  55;	/* .   */
+%replace DOT_STAR_TOKEN		by  56;	/* .*  */	/* (C++) */
+%replace QUESTION_TOKEN         by  57;	/* ?   */
+%replace ELLIPSIS_TOKEN		by  58;	/* ... */
+%replace LCURLY_TOKEN           by  59;	/* {   */
+%replace RCURLY_TOKEN           by  60;	/* }   */
+%replace RSQUARE_TOKEN          by  61;	/* ]   */
+%replace RPAREN_TOKEN           by  62;	/* )   */
+
+%replace LB_OVERLOAD_OP_TOKEN	by  63; /* Begin overloadable operator tokens */
+
+%replace LSQUARE_TOKEN          by  63;	/* [   */
+%replace LPAREN_TOKEN           by  64;	/* (   */
+%replace COMMA_TOKEN            by  65;	/* ,   */
+%replace POINTER_TOKEN          by  66;	/* ->  */
+%replace POINTER_STAR_TOKEN	by  67;	/* ->* */	/* (C++) */
+%replace PLUS_TOKEN             by  68;	/* +   */
+%replace PLUS_PLUS_TOKEN        by  69;	/* ++  */
+%replace MINUS_TOKEN            by  70;	/* -   */
+%replace MINUS_MINUS_TOKEN      by  71;	/* --  */
+%replace STAR_TOKEN             by  72;	/* *   */
+%replace SLASH_TOKEN            by  73;	/* /   */
+%replace MOD_TOKEN              by  74;	/* %   */
+%replace AND_TOKEN              by  75;	/* &   */
+%replace OR_TOKEN               by  76;	/* |   */
+%replace XOR_TOKEN              by  77;	/* ^   */
+%replace TILDE_TOKEN            by  78;	/* ~   */
+%replace NOT_TOKEN              by  79;	/* !   */
+%replace LSHIFT_TOKEN           by  80;	/* <<  */
+%replace RSHIFT_TOKEN           by  81;	/* >>  */
+%replace AND_AND_TOKEN          by  82;	/* &&  */
+%replace OR_OR_TOKEN            by  83;	/* ||  */
+%replace LESS_THAN_TOKEN        by  84;	/* <   */
+%replace LESS_EQUAL_TOKEN       by  85;	/* <=  */
+%replace GREATER_THAN_TOKEN     by  86;	/* >   */
+%replace GREATER_EQUAL_TOKEN    by  87;	/* >=  */
+%replace EQUAL_EQUAL_TOKEN      by  88;	/* ==  */
+%replace NOT_EQUAL_TOKEN        by  89;	/* !=  */
+%replace EQUAL_TOKEN            by  90;	/* =   */
+%replace PLUS_EQUAL_TOKEN	by  91;	/* +=  */
+%replace MINUS_EQUAL_TOKEN	by  92;	/* -=  */
+%replace STAR_EQUAL_TOKEN	by  93;	/* *=  */
+%replace SLASH_EQUAL_TOKEN	by  94;	/* /=  */
+%replace MOD_EQUAL_TOKEN	by  95;	/* %=  */
+%replace AND_EQUAL_TOKEN	by  96;	/* &=  */
+%replace OR_EQUAL_TOKEN		by  97;	/* |=  */
+%replace XOR_EQUAL_TOKEN	by  98;	/* ^=  */
+%replace LSHIFT_EQUAL_TOKEN	by  99;	/* <<= */
+%replace RSHIFT_EQUAL_TOKEN	by 100;	/* >>= */
+
+%replace HB_OP_TOKEN		by 100;	/* End operator/punctuator tokens */
+
+/* Keyword tokens */
+
+%replace LB_KW_TOKEN		by 101; /* Begin keyword tokens */
+
+%replace KW_NEW_TOKEN		by 101;	/* new       */	/* (C++) */
+%replace KW_DELETE_TOKEN	by 102;	/* delete    */	/* (C++) */
+
+%replace HB_OVERLOAD_OP_TOKEN	by 102; /* End overloadable operator tokens */
+
+%replace LB_KW_STORAGE_TOKEN	by 103;	/* Begin storage class tokens */
+
+%replace KW_TYPEDEF_TOKEN	by 103;	/* typedef   */
+%replace KW_STATIC_TOKEN	by 104;	/* static    */
+%replace KW_EXTERN_TOKEN	by 105;	/* extern    */
+%replace KW_AUTO_TOKEN		by 106;	/* auto      */
+%replace KW_REGISTER_TOKEN	by 107;	/* register  */
+
+%replace HB_KW_STORAGE_TOKEN	by 107;	/* End storage class tokens */
+
+%replace LB_KW_TYPE_TOKEN	by 108;	/* Begin simple type tokens */
+
+%replace KW_VOID_TOKEN		by 108;	/* void      */
+%replace KW_INT_TOKEN		by 109;	/* int       */
+%replace KW_CHAR_TOKEN		by 110;	/* char      */
+%replace KW_FLOAT_TOKEN		by 111;	/* float     */
+%replace KW_DOUBLE_TOKEN	by 112;	/* double    */
+%replace KW_LONG_TOKEN		by 113;	/* long      */
+%replace KW_SHORT_TOKEN		by 114;	/* short     */
+%replace KW_UNSIGNED_TOKEN	by 115;	/* unsigned  */
+%replace KW_SIGNED_TOKEN	by 116;	/* signed    */
+
+%replace HB_KW_TYPE_TOKEN	by 116;	/* End simple type tokens */
+
+%replace LB_KW_TAG_TOKEN	by 117; /* Begin tag type tokens */
+
+%replace KW_CLASS_TOKEN		by 117;	/* class     */	/* (C++) */
+%replace KW_STRUCT_TOKEN	by 118;	/* struct    */
+%replace KW_UNION_TOKEN		by 119;	/* union     */
+%replace KW_ENUM_TOKEN		by 120;	/* enum      */
+
+%replace HB_KW_TAG_TOKEN	by 120; /* End tag type tokens */
+
+%replace LB_KW_QUALIFIER_TOKEN	by 121;	/* Begin type qualifier tokens */
+
+%replace KW_CONST_TOKEN		by 121;	/* const     */
+%replace KW_VOLATILE_TOKEN	by 122;	/* volatile  */
+
+%replace HB_KW_QUALIFIER_TOKEN	by 122;	/* End type qualifier tokens */
+
+%replace KW_PRIVATE_TOKEN	by 123;	/* private   */	/* (C++) */
+%replace KW_PROTECTED_TOKEN	by 124;	/* protected */	/* (C++) */
+%replace KW_PUBLIC_TOKEN	by 125;	/* public    */	/* (C++) */
+%replace KW_VIRTUAL_TOKEN	by 126;	/* virtual   */	/* (C++) */
+%replace KW_FRIEND_TOKEN	by 127;	/* friend    */	/* (C++) */
+%replace KW_INLINE_TOKEN	by 128;	/* inline    */	/* (C++) */
+%replace KW_OVERLOAD_TOKEN	by 129;	/* overload  */	/* (C++) */
+%replace KW_OPERATOR_TOKEN	by 130;	/* operator  */	/* (C++) */
+%replace KW_TEMPLATE_TOKEN	by 131;	/* template  */	/* (C++) */
+%replace KW_THIS_TOKEN		by 132;	/* this      */	/* (C++) */
+%replace KW_CATCH_TOKEN		by 133;	/* catch     */	/* (C++) */
+%replace KW_THROW_TOKEN		by 134;	/* throw     */	/* (C++) */
+%replace KW_TRY_TOKEN		by 135;	/* try       */	/* (C++) */
+%replace KW_ASM_TOKEN		by 136;	/* asm       */	/* (C++) */
+
+%replace KW_SIZEOF_TOKEN	by 137;	/* sizeof    */
+
+%replace KW_BREAK_TOKEN		by 138;	/* break     */
+%replace KW_CASE_TOKEN		by 139;	/* case      */
+%replace KW_CONTINUE_TOKEN	by 140;	/* continue  */
+%replace KW_DEFAULT_TOKEN	by 141;	/* default   */
+%replace KW_DO_TOKEN		by 142;	/* do        */
+%replace KW_ELSE_TOKEN		by 143;	/* else      */
+%replace KW_FOR_TOKEN		by 144;	/* for       */
+%replace KW_GOTO_TOKEN		by 145;	/* goto      */
+%replace KW_IF_TOKEN		by 146;	/* if        */
+%replace KW_RETURN_TOKEN	by 147;	/* return    */
+%replace KW_SWITCH_TOKEN	by 148;	/* switch    */
+%replace KW_WHILE_TOKEN		by 149;	/* while     */
+
+%replace HB_KW_TOKEN		by 149; /* End keyword tokens */
+
+%replace HB_FE_TOKEN		by 149; /* End front-end tokens */
+
+/* ---------------------------------------------------------------------
+/* Old (obsolete) name compatibility definitions.
+/* ------------------------------------------------------------------- */
+
+%replace INTEGER_TOKEN		by DECIMAL_CONSTANT_TOKEN;
+%replace OCTAL_INTEGER_TOKEN	by OCTAL_CONSTANT_TOKEN;
+%replace HEX_INTEGER_TOKEN	by HEX_CONSTANT_TOKEN;
+%replace FLOAT_TOKEN		by FLOAT_CONSTANT_TOKEN;
+%replace CHAR_TOKEN		by CHAR_CONSTANT_TOKEN;
+%replace STRING_TOKEN		by STRING_LITERAL_TOKEN;
+%replace FIRST_KEYWORD		by LB_KW_TOKEN;
+%replace VOID_TOKEN		by KW_VOID_TOKEN;
+%replace INT_KEYWORD_TOKEN	by KW_INT_TOKEN;
+%replace CHAR_KEYWORD_TOKEN	by KW_CHAR_TOKEN;
+%replace FLOAT_KEYWORD_TOKEN	by KW_FLOAT_TOKEN;
+%replace DOUBLE_TOKEN		by KW_DOUBLE_TOKEN;
+%replace LONG_TOKEN		by KW_LONG_TOKEN;
+%replace SHORT_TOKEN		by KW_SHORT_TOKEN;
+%replace UNSIGNED_TOKEN		by KW_UNSIGNED_TOKEN;
+%replace STRUCT_TOKEN		by KW_STRUCT_TOKEN;
+%replace UNION_TOKEN		by KW_UNION_TOKEN;
+%replace ENUM_TOKEN		by KW_ENUM_TOKEN;
+%replace AUTO_TOKEN		by KW_AUTO_TOKEN;
+%replace EXTERN_TOKEN		by KW_EXTERN_TOKEN;
+%replace REGISTER_TOKEN		by KW_REGISTER_TOKEN;
+%replace TYPEDEF_TOKEN		by KW_TYPEDEF_TOKEN;
+%replace STATIC_TOKEN		by KW_STATIC_TOKEN;
+%replace GOTO_TOKEN		by KW_GOTO_TOKEN;
+%replace RETURN_TOKEN		by KW_RETURN_TOKEN;
+%replace SIZEOF_TOKEN		by KW_SIZEOF_TOKEN;
+%replace BREAK_TOKEN		by KW_BREAK_TOKEN;
+%replace CONTINUE_TOKEN		by KW_CONTINUE_TOKEN;
+%replace IF_TOKEN		by KW_IF_TOKEN;
+%replace ELSE_TOKEN		by KW_ELSE_TOKEN;
+%replace FOR_TOKEN		by KW_FOR_TOKEN;
+%replace DO_TOKEN		by KW_DO_TOKEN;
+%replace WHILE_TOKEN		by KW_WHILE_TOKEN;
+%replace SWITCH_TOKEN		by KW_SWITCH_TOKEN;
+%replace CASE_TOKEN		by KW_CASE_TOKEN;
+%replace DEFAULT_TOKEN		by KW_DEFAULT_TOKEN;
+%replace LAST_KEYWORD		by HB_KW_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* #pragma kind codes
+/* ------------------------------------------------------------------- */
+
+%replace PRAGMA_C_HEADER_PK			by 1;
+%replace PRAGMA_LIST_PK				by 2;
+%replace PRAGMA_PACK_PK				by 3;
+%replace PRAGMA_VARARGS_USED_PK			by 4;
+%replace PRAGMA_WRAPPER_REDECLARATIONS_PK	by 5;
+%replace PRAGMA_ALLOW_ASM_PK			by 6;
+%replace PRAGMA_WEAK_PK				by 7;
+%replace PRAGMA_DATA_SECTION_PK			by 8;
+

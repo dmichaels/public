@@ -1,0 +1,132 @@
+/* CPP CPP_SOURCE_MGR_PKG - Source file state data declarations */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  07.31.91  DGM  005  Added SOURCE_STATE.LINE_OF_FIRST_CHAR.
+ *  07.24.91  DGM  004  Removed SRC_INCLUDE ONCE.
+ *  06.17.91  DGM  003  Added CXX SRC_OLD_TOKEN_PASTING
+ *			to support old-style token-pasting.
+ *  03.08.91  DGM  002  Added SOURCE_STATE.ENCLOSING_MACRO*.
+ *  09.25.90  DGM  001  Include file name changes.
+ *  06.05.90  DGM  000  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  11.21.89  DGM  (008) Added SRC_CXX_COMMENTS.
+ *  10.17.89  PLB  (007) Changes for New Globals/Utilities.
+ *  06.05.89  DGM  (006) Minor reorganization; added SRC_NOTRIGRAPH.
+ *  08.16.88  DGM  (005) Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Type definitions (ACHTUNG! must correspond with typedef in src.h)
+/* ------------------------------------------------------------------- */
+
+declare
+	1 SOURCE_STATE			based,
+	  2 PHYSICAL_NAME		pointer,
+	  2 ASSUMED_NAME		pointer,
+	  2 PHYSICAL_LINE		fixed binary (31),
+	  2 LINE_ADJUSTMENT		fixed binary (31),
+	  2 INCLUDE_LEVEL		fixed binary (15),
+	  2 NEXT_DOWN			pointer,
+	  2 FLAG			fixed binary (15),
+	  2 FILE_POINTER		pointer,
+	  2 FILE_POSITION		fixed binary (31),
+	  2 LINE_OF_FIRST_CHAR		fixed binary (31),
+	  2 ENCLOSING_MACRO		fixed binary (15),
+	  2 ENCLOSING_MACRO_LEVEL	fixed binary (15),
+	  2 ENCLOSING_MACRO_FLAG	fixed binary (15);
+declare
+	1 CURRENT_SOURCE		based (SSRC),
+	  2 PHYSICAL_NAME		pointer,
+	  2 ASSUMED_NAME		pointer,
+	  2 PHYSICAL_LINE		fixed binary (31),
+	  2 LINE_ADJUSTMENT		fixed binary (31),
+	  2 INCLUDE_LEVEL		fixed binary (15),
+	  2 NEXT_DOWN			pointer,
+	  2 FLAG			fixed binary (15),
+	  2 FILE_POINTER		pointer,
+	  2 FILE_POSITION		fixed binary (31),
+	  2 LINE_OF_FIRST_CHAR		fixed binary (31),
+	  2 ENCLOSING_MACRO		fixed binary (15),
+	  2 ENCLOSING_MACRO_LEVEL	fixed binary (15),
+	  2 ENCLOSING_MACRO_FLAG	fixed binary (15);
+
+declare
+	STR			character (32767) varying based;
+
+/* ---------------------------------------------------------------------
+/* External static data declarations (ACHTUNG! definition in src.h)
+/* ------------------------------------------------------------------- */
+
+/*
+/* The SSRC pointer always points to the SOURCE_STATE node on
+/* the top of the source file stack (maintained by src.c).
+/*/
+
+declare
+	SSRC			pointer static external;
+
+/* ---------------------------------------------------------------------
+/* Source state definitions (ACHTUNG! equivalent definitions in src.h)
+/* ------------------------------------------------------------------- */
+
+%replace SRC_INITIAL	       by   0; /* initial state */
+%replace SRC_CLOSED	       by   1; /* currently closed */
+%replace SRC_COMMENT	       by   2; /* in a comment */
+%replace SRC_EXCLUSION	       by   4; /* in conditionally excluded text */
+%replace SRC_LISTING	       by   8; /* do make a listing file */
+%replace SRC_NO_TRIGRAPHS      by  16; /* do not do trigraph mapping */
+%replace SRC_CXX_COMMENTS      by  32; /* allow C++ style comments */
+%replace SRC_OLD_TOKEN_PASTING by  64; /* allow old-style token-pasting */
+
+/* ---------------------------------------------------------------------
+/* External function declarations (ACHTUNG! definitions in scan.c)
+/* ------------------------------------------------------------------- */
+
+declare
+ 	XSOPEN			entry    (character (*) varying,
+					  fixed binary (15))
+				returns  (fixed binary (15))
+				external,
+
+	XSCLOSE			entry
+				returns  (fixed binary (15))
+				external,
+
+	SNEXTC			entry
+				returns  (fixed binary (15))
+				external,
+
+	SSCANC			entry
+				returns  (fixed binary (15))
+				external,
+
+	SSCANP			entry
+				returns  (fixed binary (15))
+				external,
+
+	SSCAND			entry
+				returns  (fixed binary (15))
+				external,
+
+	SSCANA			entry
+				returns  (fixed binary (15))
+				external,
+
+	SSCANX			entry
+				returns  (fixed binary (15))
+				external,
+
+	SBACKC			entry (fixed binary (15))
+				external;
+

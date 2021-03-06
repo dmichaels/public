@@ -1,0 +1,407 @@
+/* C++ prints.pl1 - Print a symbol for the map (called from back-end) */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  011  New value-node scheme.
+ *  04.30.91  DGM  010  Minor update for the new utilities.
+ *  02.01.91  DGM  009  Ignore internal (dummy) symbols.
+ *  09.25.90  DGM  008  Preprocessor include file name changes.
+ *  09.14.90  DGM  007  Changed include file names and VOP names.
+ *  09.13.90  DGM  006  Changed xxx_SC names to xxx_ST.
+ *  08.08.90  DGM  005  New type-node.
+ *  06.06.90  DGM  004  Updated for the new utilities.
+ *  05.01.90  DGM  003  Updated.
+ *  04.25.90  DGM  002  Updated.
+ *  04.20.90  DGM  001  Updated.
+ *  03.02.90  DGM  000  Orignal; adapted from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 011 PRINTS');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include GBL_FILE_NAMES_IN;           /* SOURCE_FILE_NAME */
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_PP_TOKEN_LIMITS_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_SIZE_PKG;
+
+/* ---------------------------------------------------------------------
+/* External declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+HEXSTR		entry    (type (LONG_T))
+		returns  (character (8))
+		external;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+%replace TOTAL_LINE_SIZE		by 79;
+
+%replace NAME_FIELD_SIZE		by 15;
+%replace CLASS_FIELD_SIZE		by 14;
+%replace SIZE_FIELD_SIZE		by  5;
+%replace AUX_SIZE_FIELD_SIZE		by  1;
+%replace LOCATION_FIELD_SIZE		by  8;
+%replace AUX_LOCATION_FIELD_SIZE	by  4;
+%replace ATTRIBUTES_FIELD_SIZE		by 30;
+%replace MAX_FIELD_SIZE			by 30;
+
+%replace NAME_FIELD_POSITION		by  1;
+%replace CLASS_FIELD_POSITION		by 16;
+%replace SIZE_FIELD_POSITION		by 30;
+%replace LOCATION_FIELD_POSITION	by 37;
+%replace ATTRIBUTES_FIELD_POSITION	by 49;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 LINE_T,
+  2 LINE_UNION			union,
+    3 LINE_FIELDS,
+      4 NAME			character (NAME_FIELD_SIZE),
+      4 CLASS			character (CLASS_FIELD_SIZE),
+      4 SIZE_FIELD,
+        5 SIZE			character (SIZE_FIELD_SIZE),
+        5 AUX_SIZE		character (AUX_SIZE_FIELD_SIZE),
+      4 padding_1		character (1),
+      4 LOCATION_FIELD,
+        5 LOCATION		character (LOCATION_FIELD_SIZE),
+        5 AUX_LOCATION		character (AUX_LOCATION_FIELD_SIZE),
+      4 padding_2		character (1),
+      4 ATTRIBUTES		character (ATTRIBUTES_FIELD_SIZE),
+    3 TEXT			character (TOTAL_LINE_SIZE);
+
+/* ---------------------------------------------------------------------
+/* PRINTS
+/* ------------------------------------------------------------------- */
+
+PRINTS: procedure (THIS_SYMBOL);
+
+	declare
+		THIS_SYMBOL	type (NID_T);
+	declare
+		NAME		character (MAX_IDENTIFIER_LENGTH) varying,
+		S		character (512) varying,
+		P               pointer,
+		A		type (LONG_T),
+		(I, N)		type (SHORT_T),
+		STORAGE		type (SHORT_T),
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T),
+		OFFSET_UNITS	type (SHORT_T),
+		FILE		type (NID_T);
+	declare
+		LINE		type (LINE_T),
+		LINE_INDEX	type (SHORT_T);
+	declare
+		SPACES		character (16) static internal
+				initial ('                '),
+		UNITS (0 : 5)	character (1) static internal
+				initial (' ', 'B', 'C', 'H', 'W', 'D');
+
+	/* See if we should just print the header */
+
+	if THIS_SYMBOL = NULL_NID then do;
+		LINE.TEXT		= ' ';
+		LINE.NAME		= 'NAME';
+		LINE.CLASS		= 'CLASS';
+		LINE.SIZE		= ' SIZE';
+		LINE.LOCATION		= 'LOCATION';
+		LINE.ATTRIBUTES		= 'ATTRIBUTES';
+		call PUT_LINE ();
+		LINE.NAME		= '-------------- ';
+		LINE.CLASS		= '------------- ';
+		LINE.SIZE		= '-----';
+		LINE.AUX_SIZE		= '-';
+		LINE.LOCATION		= '--------';
+		LINE.AUX_LOCATION	= '----';
+		LINE.ATTRIBUTES		= '------------------------------';
+		call PUT_LINE ();
+		return;
+	end;
+
+	/* Get the symbol */
+
+	call SET_SYM_NODE_R (THIS_SYMBOL);
+
+	if SYM_NODE.IS_DUMMY then
+		return;
+
+	/* Initialize */
+
+	LINE.TEXT = ' ';
+	LINE_INDEX = 1;
+
+	/* Fill in the name field */
+
+	if SYM_NODE.NAME ^= NULL_NID then do;
+		NAME = SYMBOL_NAME (THIS_SYMBOL);
+		if length (NAME) > length (LINE.NAME) then
+			call WRITE_LIST_LINE (NAME);
+		else	LINE.NAME = NAME;
+	end;
+	else	LINE.NAME = '-';
+
+	/* Fill in the storage-class/symbol-kind field */
+
+	if SYM_NODE.IS_TAG then do;
+		if SYM_NODE.IS_CLASS_TAG then
+			LINE.CLASS = 'CLASS-TAG';
+		else if SYM_NODE.IS_STRUCT_TAG then
+			LINE.CLASS = 'STRUCT-TAG';
+		else if SYM_NODE.IS_UNION_TAG then
+			LINE.CLASS = 'UNION-TAG';
+		else if SYM_NODE.IS_ANON_UNION_TAG then
+			LINE.CLASS = 'AUNION-TAG';
+		else if SYM_NODE.IS_ENUM_TAG then
+			LINE.CLASS = 'ENUM-TAG';
+		else	LINE.CLASS = 'TAG';
+	end;
+	else if SYM_NODE.IS_MEMBER then do;
+		LINE.CLASS = 'MEMBER';
+		if rank (SYM_NODE.STORAGE_CLASS) = STATIC_ST then
+			LINE.CLASS = 'STATIC-' || LINE.CLASS;
+	end;
+	else if SYM_NODE.IS_PARAMETER then do;
+		if SYM_NODE.REGISTER_AT then	
+			LINE.CLASS = 'REG-PARAMETER';
+		else	LINE.CLASS = 'PARAMETER';
+	end;
+	else if SYM_NODE.EXTERNAL_LINKAGE then do;
+		if SYM_NODE.DEFINED then
+			LINE.CLASS = 'EXTERNAL-DEF';
+		else	LINE.CLASS = 'EXTERNAL';
+	end;
+	else if SYM_NODE.INTERNAL_LINKAGE then do;
+		if SYM_NODE.DEFINED then
+			LINE.CLASS = 'INTERNAL-DEF';
+		else	LINE.CLASS = 'INTERNAL';
+	end;
+	else if rank (SYM_NODE.STORAGE_CLASS) = AUTO_ST then do;
+		if SYM_NODE.REGISTER_AT then
+			LINE.CLASS = 'REG-AUTOMATIC';
+		else	LINE.CLASS = 'AUTOMATIC';
+	end;
+	else if rank (SYM_NODE.STORAGE_CLASS) = STATIC_ST then do;
+		LINE.CLASS = 'STATIC-LOCAL';
+	end;
+	else if rank (SYM_NODE.STORAGE_CLASS) = TYPEDEF_ST then do;
+		LINE.CLASS = 'TYPE-DEF';
+	end;
+
+	/* Fill in the size field */
+
+	STORAGE = rank (SYM_NODE.STORAGE); S = '';
+
+	if (STORAGE ^= STO_CONSTANT) &
+	   (STORAGE ^= 0) &
+	   (SYM_NODE.SIZE ^= 0) then do;
+		SIZE = SYM_NODE.SIZE;
+		I = rank (SYM_NODE.SIZE_UNITS);
+		if I = 0 then I = ADDRESS_UNITS;
+		if I < ADDRESS_UNITS then do;
+			S = trim (char (SIZE));
+			LINE.AUX_SIZE = UNITS (I);
+		end;
+		else	S = trim (char (SIZE * ROUND (I, ADDRESS_UNITS)));
+	end;
+
+	if length (S) = 0 then
+		S = '-';
+
+	if length (S) < SIZE_FIELD_SIZE then do;
+		LINE.SIZE = substr
+			    (SPACES,
+			     1, SIZE_FIELD_SIZE - length (S)) || S;
+	end;
+	else do;
+		substr (LINE.TEXT, SIZE_FIELD_POSITION) = S;
+		call PUT_LINE ();
+	end;
+
+	/* Fill in the location field */
+
+	A = SYM_NODE.LOCATION; S = '';
+
+	if (STORAGE = STO_CONSTANT) &
+	   (SYM_NODE.TOP_TYPE.CODE = byte (ENUMERATOR_BT)) then
+		S = trim (char (A));
+	else if SYM_NODE.REGISTER_AT then
+		S = trim (REGNAM (A));
+	else if (STORAGE = STO_STATIC) | (STORAGE = STO_AUTOMATIC) then
+		S = HEXSTR (A);
+	else if STORAGE = STO_MEMBER then do;
+		OFFSET_UNITS = rank (SYM_NODE.OFFSET_UNITS);
+		if rank (SYM_NODE.SIZE_UNITS) = BITS then do;
+			call BIT_FIELD_TYPE_SIZE
+				(rank (SYM_NODE.TOP_TYPE.CODE),
+				 SIZE,
+				 SIZE_UNITS,
+				 BOUNDARY);
+			A = A *
+			    ROUND (OFFSET_UNITS, BITS) +
+			    (SIZE - (SYM_NODE.SIZE + SYM_NODE.FIELD2));
+			OFFSET_UNITS = BITS;
+		end;
+		if OFFSET_UNITS ^= 0  then do;
+			I = 0;
+			if OFFSET_UNITS < ADDRESS_UNITS then do;
+                                I = mod (A, ROUND (OFFSET_UNITS,
+						   ADDRESS_UNITS));
+				A = divide (A, ROUND (OFFSET_UNITS,
+						      ADDRESS_UNITS), 31);
+			end;
+			else	A = A * ROUND (OFFSET_UNITS, ADDRESS_UNITS);
+			S = HEXSTR (A);
+			if I ^= 0 then do;
+				LINE.AUX_LOCATION = '+' ||
+						    trim (char (I)) ||
+						    UNITS (OFFSET_UNITS);
+			end;
+		end;
+		else	S = HEXSTR (A);
+	end;
+
+	if length (S) = 0 then
+		S = '-';
+
+	if length (S) <= LOCATION_FIELD_SIZE then do;
+		LINE.LOCATION = substr
+				(SPACES,
+				 1, LOCATION_FIELD_SIZE - length (S)) || S;
+	end;
+	else do;
+		substr (LINE.TEXT, LOCATION_FIELD_POSITION) = S;
+		call PUT_LINE ();
+	end;
+
+	/* Print the attributes field */
+
+	S = TYPE_NAME (SYM_NODE.TYPE, '');
+
+	if SYM_NODE.INITIAL_AT then
+		S = S || ' =';
+
+	call PUT_ATTRIBUTE (S);
+
+	call PUT_LINE ();
+
+	/* Print the cross-reference data */
+
+	if XREF then do;
+		S = 'LINE ' || trim (char (SYM_NODE.DCL_LINE_ID)) ||
+		    ', "' || TOKEN_NAME (SYM_NODE.DCL_FILE_ID) || '"';
+		call PUT_ATTRIBUTE (S);
+		call PUT_LINE ();
+		if SYM_NODE.X_REF ^= NULL_NID then do;
+			N = SYM_NODE.X_REF;
+			call SET_XXREF_NODE_R (N);
+			N = -XXREF_NODE.NEXT;
+			FILE = FORM_IDENTIFIER_TOKEN
+			       (substr (SOURCE_FILE_NAME, 1, 
+					length (SOURCE_FILE_NAME)));
+			do while (N > 0);
+				call SET_XXREF_NODE_R (N);
+				if FILE ^= XXREF_NODE.FILE_ID then do;
+					FILE = XXREF_NODE.FILE_ID;
+					if LINE_INDEX ^= 1 then
+						call PUT_LINE ();
+					call PUT_ATTRIBUTE (TOKEN_NAME (FILE));
+					call PUT_LINE ();
+				end;
+				do I = 1 to rank (XXREF_NODE.COUNT);
+					S = trim (char (XXREF_NODE.
+							LINE_ID (I)));
+					if XXREF_NODE.FLAG (I) then
+						S = S || '=';
+					call PUT_ATTRIBUTE (S);
+				end;
+				N = XXREF_NODE.NEXT;
+			end;
+			call PUT_LINE ();
+			call SET_SYM_NODE_R (THIS_SYMBOL);
+		end;
+
+	end;
+
+/* ---------------------------------------------------------------------
+/* PUT_ATTRIBUTE
+/* ------------------------------------------------------------------- */
+
+PUT_ATTRIBUTE: procedure (STRING);
+
+	declare
+		STRING		character (*) varying;
+	declare
+		REMAINING	type (SHORT_T),
+		I		type (SHORT_T);
+
+	LINE.ATTRIBUTES = STRING;
+
+	if length (STRING) >= ATTRIBUTES_FIELD_SIZE then do;
+		call PUT_LINE ();
+		REMAINING = length (STRING) - ATTRIBUTES_FIELD_SIZE;
+		do I = ATTRIBUTES_FIELD_SIZE + 1
+		repeat (I + ATTRIBUTES_FIELD_SIZE)
+		while (REMAINING >= ATTRIBUTES_FIELD_SIZE);
+			REMAINING = REMAINING - ATTRIBUTES_FIELD_SIZE;
+			LINE.ATTRIBUTES = substr (STRING, I);
+			call PUT_LINE ();
+		end;
+		LINE.ATTRIBUTES = substr (STRING, I);
+	end;
+
+end PUT_ATTRIBUTE;
+
+/* ---------------------------------------------------------------------
+/* PUT_LINE
+/* ------------------------------------------------------------------- */
+
+PUT_LINE: procedure;
+
+	call WRITE_LIST_LINE ((LINE.TEXT));
+	LINE.TEXT = ' ';
+	LINE_INDEX = 1;
+
+end PUT_LINE;
+
+end PRINTS;
+
+

@@ -1,0 +1,23 @@
+.TH STRUPPER 3L LOCAL
+
+.SH NAME
+strupper - convert string to upper case
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+strupper(str)
+.br
+char *str;
+.ft P
+
+.SH DESCRIPTION
+Converts any lower case alphabetic characters
+in string \fIstr\fP to upper case.  Returns the string.
+
+.SH FILES
+strupper.c
+
+.SH SEE ALSO
+strlower(3L)

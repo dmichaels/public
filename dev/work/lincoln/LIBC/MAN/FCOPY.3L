@@ -1,0 +1,26 @@
+.TH FCOPY 3L LOCAL
+
+.SH NAME
+fcopy - copy a file
+
+.SH SYNOPSIS
+.ft B
+void
+.br
+fcopy(f1, f2)
+.br
+FILE *f1, *f2;
+.br
+.ft P
+
+.SH DESCRIPTION
+Copies the file \fIf1\fP to the file \fIf2\fP.
+\fIf1\fP must be opened for reading,
+and \fIf2\fP must be opened for writing.
+The two files may not be the same.
+
+.SH FILES
+fcopy.c
+
+.SH SEE ALSO
+fopen(3S)

@@ -1,0 +1,339 @@
+/* CPP pp_dmp.pl1 - Macro dumping functions */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.25.92  DGM  009  Split TOKEN_NODE into separate space.
+ *  03.13.92  DGM  008R Updated for C-only version.
+ *  02.06.92  DGM  008  Updated.
+ *  02.05.92  DGM  007  Updated.
+ *  07.31.91  DGM  005  Updated.
+ *  07.18.91  DGM  004  Updated.
+ *  06.08.91  DGM  003  Updated.
+ *  06.17.91  DGM  002  Updated.
+ *  09.25.90  DGM  001  Include file name changes.
+ *  06.11.90  DGM  000  Original; yanked out of pp_mac.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.25.92 009 PPDMP');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include GBL_FILE_NAMES_IN;		/* SOURCE_FILE_NAME */
+%include CPP_UTL_DEFS_IN;
+%include CPP_UTL_SYMBOL_TABLE_PKG;
+%include CPP_STANDARD_DEFS_IN;
+%include CPP_EXTERNAL_NAME_MAP_IN;
+%include CPP_COMPILATION_SWITCHES_IN;
+%include CPP_TOKEN_POD_SPELLING_PKG;
+%include CPP_TOKEN_POD_MGR_PKG;
+%include CPP_GLOBAL_IN;
+%include CPP_MACRO_DEFS_IN;
+%include CPP_MACRO_UTL_PKG;
+%include CPP_MACRO_TABLES_IN;
+%include CPP_SOURCE_MGR_PKG;
+%include CPP_DUMP_MACRO_IN;
+
+/* ---------------------------------------------------------------------
+/* External declarations
+/* ------------------------------------------------------------------- */
+
+declare
+	WRITTT	entry (character (*) varying),
+	WRITNC	entry (character (*) varying),
+	WRITFW	entry (character (*) varying, fixed binary (15)),
+	WRITNO	entry (pointer, fixed binary (15),
+		       fixed binary (15), fixed binary (15));
+
+/* ---------------------------------------------------------------------
+/* DUMP_PP_MACROS
+/*
+/* Dump the macro definition table in proper C format (i.e. #define).
+/* ------------------------------------------------------------------- */
+
+DUMP_PP_MACROS: procedure external (X_DUMP_PP_MACROS);
+
+	declare
+		P	pointer,
+		I	fixed binary (15);
+
+	do I = 1 to HB_MACRO_TABLE;
+		do P = MACRO_TABLE (I)
+		repeat (P->MACRO_NODE.NEXT) while (P ^= null());
+			call DUMP_MACRO_DEFINITION (P);
+		end;
+	end;
+
+	do I = 1 to HB_MACRO_TABLE;
+		do P = MACRO_TABLE (I)
+		repeat (P->MACRO_NODE.NEXT) while (P ^= null());
+			call DUMP_MACRO_REFERENCE (P);
+		end;
+	end;
+
+	do I = 1 to HB_ASSERT_MACRO_TABLE;
+		do P = ASSERT_MACRO_TABLE (I)
+		repeat (P->ASSERT_MACRO_NODE.NEXT) while (P ^= null ());
+			call DUMP_ASSERT_MACRO_DEFINITION (P);
+		end;
+	end;
+
+	do I = 1 to HB_ASSERT_MACRO_TABLE;
+		do P = ASSERT_MACRO_TABLE (I)
+		repeat (P->ASSERT_MACRO_NODE.NEXT) while (P ^= null());
+			call DUMP_ASSERT_MACRO_REFERENCE (P);
+		end;
+	end;
+
+/* ---------------------------------------------------------------------
+/* DUMP_MACRO_DEFINITION
+/*
+/* Dump the macro definition of the macro definition represented
+/* by the MACRO_NODE pointed to by the given pointer.
+/* ------------------------------------------------------------------- */
+
+DUMP_MACRO_DEFINITION: procedure (P) internal;
+
+	declare
+		P		pointer;
+	declare
+		Q		pointer,
+		I		fixed binary (15),
+		S		character (2048) varying;
+	declare
+		FIRST_TIME	bit (1) aligned
+				static internal initial (TRUE);
+
+	if FIRST_TIME then do;
+		call DUMP_PP_HEADER ('Macro Definitions');
+		call WRITTT ('');
+		FIRST_TIME = FALSE;
+	end;
+
+	/* Print the macro name (and any parameter list) */
+
+	S = '#define ' || MACRO_NAME (P);
+	if P->MACRO_NODE.NPARAMETERS >= 0 then do;
+		S = S || '(';
+		do I = 1 to P->MACRO_NODE.NPARAMETERS;
+			call SET_TOKEN_R (P->MACRO_NODE.PARAMETER->
+					  MACRO_PARAMETER_LIST(I));
+			S = S || substr (TOKEN_NODE.SPELLING,
+					 1, TOKEN_NODE.SIZE);
+			if I < P->MACRO_NODE.NPARAMETERS then S = S || ',';
+		end;
+		S = S || ')';
+	end;
+	call WRITFW (S, 32);
+	call WRITNC (' ');
+
+	/* See if this is a dynamic macro */
+
+	if P->MACRO_NODE.KIND = DYNAMIC_MACRO_MK then do;
+		call  WRITNC (TOKEN_SPELLING (P->MACRO_NODE.GET_TOKEN ()));
+		call WRITTT ('');
+		return;
+	end;
+
+	/* Print the replacement list */
+
+	do Q = P->MACRO_NODE.REPLACEMENT
+	repeat (Q->BASED_TOKEN.NEXT_PP) while (Q ^= null());
+		if Q->BASED_TOKEN.LINE < 0 then call WRITNC (' ');
+		if Q->BASED_TOKEN.TYPE = PP_MACRO_PARAMETER_TOKEN then do;
+			I = Q->BASED_TOKEN.VALUE;
+			Q->BASED_TOKEN.TYPE = IDENTIFIER_TOKEN;
+			Q->BASED_TOKEN.SPELLNODE = P->MACRO_NODE.PARAMETER->
+						   MACRO_PARAMETER_LIST(I);
+			call WRITNC (TOKEN_SPELLING (Q));
+			Q->BASED_TOKEN.TYPE = PP_MACRO_PARAMETER_TOKEN;
+			Q->BASED_TOKEN.VALUE = I;
+		end;
+		else	call WRITNC (TOKEN_SPELLING (Q));
+	end;
+	call WRITTT ('');
+
+end DUMP_MACRO_DEFINITION;
+
+/* ---------------------------------------------------------------------
+/* DUMP_MACRO_REFERENCE
+/*
+/* Dump the macro name and the line/file where it was defined.
+/* ------------------------------------------------------------------- */
+
+DUMP_MACRO_REFERENCE: procedure (P) internal;
+
+	declare
+		P		pointer;
+	declare
+		FIRST_TIME	bit (1) aligned
+				static internal initial (TRUE);
+
+	if P->MACRO_NODE.LINE <= 0 then		/* predefined */
+		return;
+
+	if FIRST_TIME then do;
+		call WRITTT ('');
+		call DUMP_PP_HEADER ('Macro Definition Reference');
+		call WRITTT ('');
+		call WRITTT ('Macro                            Line File');
+		call WRITTT ('-----                            ---- ----');
+		FIRST_TIME = FALSE;
+	end;
+
+	call WRITFW (MACRO_NAME (P), 32);
+	call WRITNC (' ');
+	call WRITFW (trim (char (P->MACRO_NODE.LINE)), 4);
+	call WRITNC (' ');
+	call WRITTT (P->MACRO_NODE.FILE->STR);
+
+end DUMP_MACRO_REFERENCE;
+
+/* ---------------------------------------------------------------------
+/* DUMP_ASSERT_MACRO_DEFINITION
+/* ------------------------------------------------------------------- */
+
+DUMP_ASSERT_MACRO_DEFINITION: procedure (P) internal;
+
+	declare
+		P		pointer;
+	declare
+		Q		pointer,
+		I		fixed binary (15),
+		S		character (2048) varying;
+	declare
+		FIRST_TIME	bit (1) aligned
+				static internal initial (TRUE);
+
+	if FIRST_TIME then do;
+		call DUMP_PP_HEADER ('Assert Definitions');
+		call WRITTT ('');
+		FIRST_TIME = FALSE;
+	end;
+
+	/* Print the assert name */
+
+	S = '#assert ' || ASSERT_MACRO_NAME (P);
+
+	call WRITFW (S, 32);
+	call WRITNC (' ');
+
+	/* Print the replacement list */
+
+	call WRITNC ('(');
+	do Q = P->ASSERT_MACRO_NODE.REPLACEMENT
+	repeat (Q->TOKEN_POD.NEXT) while (Q ^= null());
+		if Q->TOKEN_POD.LINE < 0 then
+			call WRITNC (' ');
+		call WRITNC (TOKEN_SPELLING (Q));
+	end;
+	call WRITTT (')');
+
+end DUMP_ASSERT_MACRO_DEFINITION;
+
+/* ---------------------------------------------------------------------
+/* DUMP_ASSERT_MACRO_REFERENCE
+/*
+/* Dump the macro name and the line/file where it was defined.
+/* ------------------------------------------------------------------- */
+
+DUMP_ASSERT_MACRO_REFERENCE: procedure (P) internal;
+
+	declare
+		P		pointer;
+	declare
+		FIRST_TIME	bit (1) aligned
+				static internal initial (TRUE);
+
+	if P->MACRO_NODE.LINE <= 0 then		/* predefined */
+		return;
+
+	if FIRST_TIME then do;
+		call DUMP_PP_HEADER ('Assert Definition Reference');
+		call WRITTT ('');
+		call WRITTT ('Assert                           Line File');
+		call WRITTT ('------                           ---- ----');
+		FIRST_TIME = FALSE;
+	end;
+
+	call WRITFW (ASSERT_MACRO_NAME (P), 32);
+	call WRITNC (' ');
+	call WRITFW (trim (char (P->ASSERT_MACRO_NODE.LINE)), 4);
+	call WRITNC (' ');
+	call WRITTT (P->ASSERT_MACRO_NODE.FILE->STR);
+
+end DUMP_ASSERT_MACRO_REFERENCE;
+
+end DUMP_PP_MACROS;
+
+/* ---------------------------------------------------------------------
+/* DUMP_PP_HEADER
+/* ------------------------------------------------------------------- */
+
+DUMP_PP_HEADER: procedure (S) external (X_DUMP_PP_HEADER);
+
+	declare
+		S	character (*) varying;
+	declare
+		X	character (128) varying;
+
+	%include VERSION_DCL;
+
+	if length (S) <= 0 then do;
+		call WRITTT ('');
+		call DUMP_PP_HEADER_LINE ();
+		if SW_C_ONLY then
+			X = '/* | LPI-C ';
+		else	X = '/* | LPI-C++ ';
+		X = X || trim (LPI_PRODUCT_VERSION);
+		X = X || ' Preprocessor (';
+		X = X || trim (CPP_VERSION);
+		X = X || ')';
+		call WRITTT (X);
+		X = '/* | Copyright (c) 1992 Liant Software Corporation';
+		call WRITTT (X);
+		call DUMP_PP_HEADER_LINE ();
+	end;
+	else do;
+		call DUMP_PP_HEADER_LINE ();
+		X = '/* | ';
+		X = X || S;
+		X = X || ' - ';
+		X = X || SOURCE_FILE_NAME;
+		call WRITTT (X);
+		call DUMP_PP_HEADER_LINE ();
+	end;
+
+/* ---------------------------------------------------------------------
+/* DUMP_PP_HEADER_LINE
+/* ------------------------------------------------------------------- */
+
+DUMP_PP_HEADER_LINE: procedure internal;
+
+	call WRITNC ('/* +----------------------------------');
+	call WRITTT ('-------------------------------------+ */');
+
+end DUMP_PP_HEADER_LINE;
+
+end DUMP_PP_HEADER;
+
+

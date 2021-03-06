@@ -1,0 +1,965 @@
+/* C++ dclsym.pl1 - Miscellaneous symbol declaration routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.03.92  PKT  044	Fixed crash from generated constructor.
+ *  03.26.92  DGM  043	New value-node scheme.
+ *  01.10.92  PKT  042	Revamped for better destructor access checking.
+ *  12.16.91  PKT  041  Accessibility of an automatically-declared copy
+ *			constructor that cannot be generated is NO_ACCESS.
+ *  11.15.91  DGM  040  Obsolete .mpl version.
+ *  11.15.91  DGM  039  Obsolete .mpl version.
+ *  10.26.91  PKT  038  Changed DECLARE_ASSIGNMENT_OPERATOR so that 
+ *			SYM_NODE.ASSIGN is set to the copy assignment.
+ *  07.18.91  PKT  036  Removed call to ADD_TO_GENERATE_LIST to 
+ *			DECLARE_DEFAULT_CONSTRUCTOR/DESTRUCTOR.
+ *  07.18.91  DGM  035  Added DECLARE_MAIN_EXIT_FUNCTION,
+ *			DECLARE_MAIN_ENTRY_FUNCTION, & DECLARE_C_FUNCTION.
+ *  06.14.91  PKT  034  Added support for trivial "operator=".
+ *  05.29.91  DGM  033  Call SET_BASE_TYPE appropriately, etc.
+ *  05.14.91  PKT  032  Added DECLARE_ARRAY_CONSTRUCTOR, to support
+ *			initializing arrays, when the default constructor
+ *			has default arguments.
+ *  05.13.91  DGM  031  Minor fix.
+ *  05.03.91  DGM  030  Added DECLARE_FUNCTION.
+ *  05.02.91  DGM  029  Minor fix for linkage of implicitly declared
+ *			(pure virtual) functions.
+ *  03.26.91  PKT  028  Fixed the setting of SYM_NODE.TRIVIAL for
+ *			generated copy constructor.
+ *  03.12.91  DGM  027  Merged implicit function declaration routines.
+ *  03.08.91  DGM  026  Make implicit special functions "inline".
+ *  02.26.91  TLF  025  Added call to ADD_TO_GENERATE_LIST to 
+ *			DECLARE_DEFAULT_CONSTRUCTOR/DESTRUCTOR.
+ *  02.21.91  DGM  024  Minor fix in DECLARE_VFT.
+ *  01.31.91  DGM  023  Updated.
+ *  01.11.91  DGM  022  Updated.
+ *  12.17.90  PKT  021  Updated for access control.
+ *  11.28.90  TLF  020  Fix in DECLARE_ASSIGN_OPERATOR so that it
+ * 			returns the node_id of the assign operator function.
+ *  10.22.90  DGM  019  Fix in DECLARE_COPY_CONSTRUCTOR.
+ *  10.18.90  TLF  018  Added DECLARE_DEFAULT_CONSTRUCTOR,
+ *                      DECLARE_DEFAULT_DESTRUCTOR, and
+ *                      DECLARE_ASSIGN_OPERATOR.
+ *  10.17.90  DGM  017  Fix in DECLARE_COPY_CONSTRUCTOR.
+ *  10.10.90  DGM  016  Added DECLARE_PURE_VIRTUAL_FUNCTION; fixed minor
+ *			bugs (set CURRENT_BASE_TYPE_UNSPECIFIED properly).
+ *  09.28.90  PKT  015  Bug fixes.
+ *  09.25.90  DGM  014  Save/restore NEEDS_COPY in DECLARE_COPY_CONSTRUCTOR.
+ *  09.17.90  PKT  013  Fix to DECLARE_IMPLICIT_FUNCTION.
+ *  09.14.90  DGM  012  Changed include file names and VOP names.
+ *  09.13.90  DGM  011  Changed xxx_SC names to xxx_ST.
+ *  09.12.90  DGM  010  Added DECLARE_COPY_CONSTRUCTOR.
+ *  09.05.90  PKT  009  Enhanced DECLARE_IMPLICIT[_FUNCTION].
+ *  08.31.90  DGM  007  Fix in DECLARE_VFT.
+ *  08.29.90  DGM  006  Changed GET_SIMPLE_TYPE to GET_LABEL_TYPE.
+ *  08.08.90  DGM  005  New type-node.
+ *  07.10.90  DGM  004  Set the DUMMY_SK sym-node bit for VFT symbols.
+ *  05.25.90  DGM  003  Added DECLARE_VFT/DECLARE_VFT_POINTER etc.
+ *  05.17.90  DGM  002  Added DECLARE_VIRTUAL_FUNCTION_TABLE.
+ *  04.25.90  DGM  001  Fix in DECLARE_LABEL to set name correctly.
+ *  04.19.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.03.92 044 DCLSYM');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_DECLARATION_STACK_PKG;
+%include CXX_INTERNAL_PARSE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_GLOBAL_NAMES_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_CHECK_DECLARATION_PKG;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_IMPLICIT
+/*
+/* Declares a variable of the given name with type "int" in the current
+/* scope; returns its sym-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_IMPLICIT: procedure (NAME)
+		  returns   (type (NID_T))
+		  external  (X_DECLARE_IMPLICIT);
+	declare
+		NAME			type (NID_T);
+	declare
+		SCOPE			type (NID_T),
+		SYMBOL			type (NID_T),
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE), NULL_NID);
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE		= INT_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME			= NAME;
+	call SET_DECLARATION ();
+	SYMBOL = CURRENT_SYMBOL;
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+	return (SYMBOL);
+
+end DECLARE_IMPLICIT;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_IMPLICIT_FUNCTION
+/*
+/* Declares an extern "C" old-style function returning "int" of the
+/* given name in the current scope; returns its sym-node id.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_IMPLICIT_FUNCTION: procedure (NAME, NAME_KIND)
+			   returns   (type (NID_T))
+			   external  (X_DECLARE_IMPLICIT_FUNCTION);
+	declare
+		NAME			type (NID_T),
+		NAME_KIND		type (SHORT_T);
+	declare
+		SYMBOL			type (NID_T),
+		SCOPE			type (NID_T),
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE), NULL_NID);
+	call CLEAR_DECLARATION ();
+	CURRENT_STORAGE_CLASS		= EXTERN_ST;
+	CURRENT_BASE_TYPE		= INT_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME			= NAME;
+	CURRENT_NAME_KIND		= NAME_KIND;
+	call BEGIN_OLD_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE ();
+	call SET_DECLARATION ();
+	SYMBOL = CURRENT_SYMBOL;
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+	return (SYMBOL);
+
+end DECLARE_IMPLICIT_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_C_FUNCTION
+/*
+/* Declares an extern "C" old-style function returning "int" of the
+/* given name at global scope; returns its sym-node id.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_C_FUNCTION: procedure (NAME)
+		    returns   (type (NID_T))
+		    external  (X_DECLARE_C_FUNCTION);
+	declare
+		NAME			type (NID_T);
+	declare
+		SYMBOL			type (NID_T),
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE),
+				   CURRENT_GLOBAL_SCOPE);
+	call CLEAR_DECLARATION ();
+	CURRENT_STORAGE_CLASS		= EXTERN_ST;
+	CURRENT_BASE_TYPE		= VOID_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME			= NAME;
+	call BEGIN_OLD_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE ();
+	call SET_DECLARATION ();
+	SYMBOL = CURRENT_SYMBOL;
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+	return (SYMBOL);
+
+end DECLARE_C_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_FUNCTION
+/*
+/* This is used to declare a very simple C++ function symbol with the
+/* given (vanilla) name on the fly.  The function will will be declared
+/* at global scope as "extern void f ()".  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_FUNCTION: procedure (NAME)
+		  returns   (type (NID_T))
+		  external  (X_DECLARE_FUNCTION);
+	declare
+		NAME			type (NID_T);
+	declare
+		SYMBOL			type (NID_T),
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE),
+				   CURRENT_GLOBAL_SCOPE);
+	call CLEAR_DECLARATION ();
+	CURRENT_STORAGE_CLASS		= EXTERN_ST;
+	CURRENT_BASE_TYPE		= VOID_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME			= NAME;
+	call BEGIN_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE ();
+	call SET_DECLARATION ();
+	SYMBOL = CURRENT_SYMBOL;
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+	return (SYMBOL);
+
+end DECLARE_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_LABEL
+/*
+/* Build a new label symbol-node, based on the current name.  Returns
+/* with the label symbol-node paged in and assigned to CURRENT_SYMBOL.
+/* ------------------------------------------------------------------- */
+
+DECLARE_LABEL: procedure (NAME)
+	       returns   (type (NID_T))
+	       external  (X_DECLARE_LABEL);
+
+	declare
+		NAME		type (NID_T);
+	declare
+		THIS_TYPE	type (NID_T),
+		THIS_SYMBOL	type (NID_T);
+	declare
+		THIS_SIZE	type (LONG_T) static internal initial (0),
+        	THIS_SIZE_UNITS	type (SHORT_T) static internal initial (0),
+		THIS_BOUNDARY	type (SHORT_T) static internal initial (0);
+
+	THIS_SYMBOL = MAKE_SYM_NODE (LABEL_SK);
+
+	SYM_NODE.TYPE 			= GET_LABEL_TYPE ();
+	SYM_NODE.TOP_TYPE.CODE 		= byte (LABEL_BT);
+	SYM_NODE.TOP_TYPE.QUALIFIERS 	= NULL_TQ;
+	SYM_NODE.TOP_TYPE.NID 		= NULL_NID;
+	SYM_NODE.NAME			= NAME;
+
+	/*
+	/* I am not sure we need this size data
+	/* so soon, but ANSI-C did this. PKT.
+	/**/
+
+	if THIS_SIZE = 0 then do;
+		call SIMPLE_TYPE_SIZE (LABEL_BT,
+				       THIS_SIZE,
+				       THIS_SIZE_UNITS,
+				       THIS_BOUNDARY);
+	end;
+
+       	SYM_NODE.SIZE           = THIS_SIZE;
+       	SYM_NODE.SIZE_UNITS     = byte (THIS_SIZE_UNITS);
+       	SYM_NODE.OFFSET_UNITS   = byte (THIS_SIZE_UNITS);
+        SYM_NODE.BOUNDARY       = byte (THIS_BOUNDARY);
+
+	call INSTALL_SYMBOL (THIS_SYMBOL, CURRENT_FUNCTION_SCOPE);
+
+	return (THIS_SYMBOL);
+
+end DECLARE_LABEL;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_VFT
+/*
+/* Declare a virtual function table for the given class (pointer); it
+/* will be declared as a public static member of the class, with a type
+/* returned by GET_VFT_TYPE, and with the name "____lpi_vft".  The
+/* VIRTUAL_FUNCTION_TABLE field of the given class sym-node will be
+/* set to the sym-node of the new virtual function table symbol.
+/* Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_VFT: procedure (CLASS_PTR)
+	     returns   (type (NID_T))
+	     external  (X_DECLARE_VFT);
+
+	declare
+		CLASS_PTR	type (POINTER_T);
+	declare
+		SYMBOL_KIND	type (LONG_BITS_T),
+		VFT_SYMBOL	type (NID_T),
+		P		type (POINTER_T),
+		VFT_TYPE	type (NID_T),
+		VFT_TOP_TYPE	type (TYPE_DATA_T),
+		VFT_SIZE	type (LONG_T),
+		VFT_SIZE_UNITS	type (SHORT_T),
+		VFT_BOUNDARY	type (SHORT_T);
+
+	/*
+	/* Get the virtual function table type, size, and name;
+	/* note that we have to get the type every time (unlike
+	/* the name and size data) since it could be (i.e. is)
+	/* an incomplete type (which cannot be shared).
+	/**/
+
+	VFT_TYPE = GET_VFT_TYPE (VFT_TOP_TYPE);
+	call TYPE_SIZE (VFT_TYPE, VFT_SIZE, VFT_SIZE_UNITS, VFT_BOUNDARY);
+
+	/* Create the virtual function table symbol for this class */
+
+	SYMBOL_KIND =
+		MAP_MEMBER_KIND
+		(rank (CLASS_PTR->SYM_NODE.TOP_TYPE.CODE)) |
+		DATA_SK |
+		DUMMY_SK;
+
+	call MAKE_SYM_NODE_P (SYMBOL_KIND, VFT_SYMBOL, P);
+
+	P->SYM_NODE.NAME		= VFT_NAME;
+	P->SYM_NODE.TYPE		= VFT_TYPE;
+	P->SYM_NODE.TOP_TYPE		= VFT_TOP_TYPE;
+	P->SYM_NODE.SIZE		= VFT_SIZE;
+	P->SYM_NODE.SIZE_UNITS		= byte (VFT_SIZE_UNITS);
+	P->SYM_NODE.BOUNDARY		= byte (VFT_BOUNDARY);
+	P->SYM_NODE.ACCESS		= byte (PUBLIC_ACCESS);
+	P->SYM_NODE.STORAGE_CLASS	= byte (STATIC_ST);
+	P->SYM_NODE.EXTERNAL_LINKAGE	= TRUE;
+
+	/* Install the symbol in the class scope */
+
+	call INSTALL_SYMBOL (VFT_SYMBOL, CLASS_PTR->SYM_NODE.DEFINED_SCOPE);
+
+	/* Set the virtual function table for this class */
+
+	CLASS_PTR->SYM_NODE.VIRTUAL_FUNCTION_TABLE = VFT_SYMBOL;
+
+end DECLARE_VFT;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_VFT_POINTER
+/*
+/* Declare a virtual function table *pointer* for the class represented
+/* by the given sym-node pointer; it will be declared as a public member
+/* of the class, with a type returned by GET_VFT_TYPE_POINTER, and with
+/* the name "____lpi_vft_pointer".  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_VFT_POINTER: procedure (CLASS_PTR)
+		     returns   (type (NID_T))
+		     external  (X_DECLARE_VFT_POINTER);
+	declare
+		CLASS_PTR	type (POINTER_T);
+	declare
+		SYMBOL_KIND	type (LONG_BITS_T),
+		VFTP_SYMBOL	type (NID_T),
+		P		type (POINTER_T);
+	declare
+		VFTP_TYPE	type (NID_T) static internal initial (NULL_NID),
+		VFTP_TOP_TYPE	type (TYPE_DATA_T) static internal,
+		VFTP_SIZE	type (LONG_T) static internal,
+		VFTP_SIZE_UNITS	type (SHORT_T) static internal,
+		VFTP_BOUNDARY	type (SHORT_T) static internal,
+		VFTP_NAME	type (NID_T) static internal;
+
+	/* Get the virtual function table pointer type, size, and name */
+
+	if VFTP_TYPE = NULL_NID then do;
+		VFTP_NAME     = VFT_POINTER_NAME;
+		VFTP_TYPE     = GET_VFT_POINTER_TYPE (VFTP_TOP_TYPE);
+		call TYPE_SIZE (VFTP_TYPE,
+				VFTP_SIZE,
+				VFTP_SIZE_UNITS,
+				VFTP_BOUNDARY);
+	end;
+
+	/* Create the virtual function table pointer symbol for this class */
+
+	SYMBOL_KIND =
+		MAP_MEMBER_KIND
+		(rank (CLASS_PTR->SYM_NODE.TOP_TYPE.CODE)) |
+		NON_STATIC_DATA_MEMBER_SK |
+		DUMMY_SK;
+
+	call MAKE_SYM_NODE_P (SYMBOL_KIND, VFTP_SYMBOL, P);
+
+	P->SYM_NODE.NAME		= VFTP_NAME;
+	P->SYM_NODE.TYPE		= VFTP_TYPE;
+	P->SYM_NODE.TOP_TYPE		= VFTP_TOP_TYPE;
+	P->SYM_NODE.SIZE		= VFTP_SIZE;
+	P->SYM_NODE.SIZE_UNITS		= byte (VFTP_SIZE_UNITS);
+	P->SYM_NODE.BOUNDARY		= byte (VFTP_BOUNDARY);
+	P->SYM_NODE.ACCESS		= byte (PUBLIC_ACCESS);
+
+	/* Install the symbol in the class scope */
+
+	call INSTALL_SYMBOL (VFTP_SYMBOL, CLASS_PTR->SYM_NODE.DEFINED_SCOPE);
+
+end DECLARE_VFT_POINTER;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_PURE_VIRTUAL_FUNCTION
+/* ------------------------------------------------------------------- */
+
+DECLARE_PURE_VIRTUAL_FUNCTION: procedure ()
+			       returns   (type (NID_T))
+			       external  (X_DECLARE_PURE_VIRTUAL_FUNCTION);
+	declare
+		P		type (POINTER_T);
+	declare
+		PVF_SYMBOL	type (NID_T) static initial (NULL_NID);
+
+	if PVF_SYMBOL = NULL_NID then do;
+		PVF_SYMBOL = DECLARE_C_FUNCTION (PURE_VIRTUAL_FUNCTION_NAME);
+		call GET_SYM_NODE (PVF_SYMBOL, P);
+		P->SYM_NODE.REFERENCED = TRUE;
+		call RELEASE_SYM_NODE (PVF_SYMBOL);
+	end;
+	return (PVF_SYMBOL);
+		
+end DECLARE_PURE_VIRTUAL_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_SPECIAL_MEMBER_FUNCTION
+/*
+/* Implicitly declare one of the following special member functions for
+/* class represented by the given sym-node pointer, based on the given
+/* special-function-kind argument:
+/*
+/*	KIND	Function
+/*	----	--------
+/*	1	default destructor   X::~X ()
+/*	2	default constructor  X::X ()
+/*	3	copy constructor     X::X (const X &)
+/*	4	assignment operator  X& X::operator= (const X &)
+/*	5	array constructor    void X::____lpi_array_ctor ()
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+/* Function kind codes */
+
+%replace DEFAULT_DESTRUCTOR_FK	by 1;	/* X::~X () */
+%replace DEFAULT_CONSTRUCTOR_FK	by 2;	/* X::X () */
+%replace COPY_CONSTRUCTOR_FK	by 3;	/* X::X (const X &) */
+%replace DEFAULT_ASSIGNMENT_FK	by 4;	/* X& X::operator= (const X &) */
+%replace ARRAY_CONSTRUCTOR_FK   by 5;	/* void X::___lpi_array_ctor () */
+
+DECLARE_SPECIAL_MEMBER_FUNCTION: procedure (CLASS_PTR, KIND) internal;
+
+	declare
+		CLASS_PTR		type (POINTER_T),
+		KIND			type (SHORT_T);
+	declare
+		SYMBOL			type (NID_T),
+		P			type (POINTER_T),
+		SAVE_NEEDS		type (BIT_T),
+		CONST_PARAM		type (BOOL_T),
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	if KIND = COPY_CONSTRUCTOR_FK then do;
+		/*
+		/* We need to save/restore this class's need-copy indicator
+		/* because it gets set (trashed) while declaring this copy
+		/* constructor (in SET_MEMBER_DECLARATION).
+		/**/
+		SAVE_NEEDS = CLASS_PTR->SYM_NODE.NEEDS_COPY;
+	end;
+	else if KIND = DEFAULT_ASSIGNMENT_FK then do;
+		/*
+		/* We need to save/restore this class's need-copy indicator
+		/* because it gets set (trashed) while declaring this copy
+		/* constructor (in SET_MEMBER_DECLARATION).
+		/**/
+		SAVE_NEEDS = CLASS_PTR->SYM_NODE.NEEDS_ASSIGN;
+	end;
+
+	/* Internally parse a special member function by hand */
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE),
+				   CLASS_PTR->SYM_NODE.DEFINED_SCOPE);
+
+	CURRENT_CLASS		= CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL;
+	CURRENT_CLASS_TYPE	= rank (CLASS_PTR->SYM_NODE.TOP_TYPE.CODE);
+	CURRENT_CLASS_NAME	= CLASS_PTR->SYM_NODE.NAME;
+	CURRENT_MEMBER_ACCESS	= PUBLIC_ACCESS;
+
+	call CLEAR_DECLARATION ();
+
+	CURRENT_INLINE = TRUE;
+
+	if KIND = DEFAULT_ASSIGNMENT_FK then do;
+		CURRENT_BASE_TYPE		= CURRENT_CLASS_TYPE;
+		CURRENT_BASE_TYPE_ID		= CURRENT_CLASS;
+		call SET_BASE_TYPE ();
+		call SET_DERIVED_TYPE_QUALIFIER ();
+		CURRENT_NAME			= OPERATOR_ASSIGNMENT_NAME;
+		CURRENT_NAME_KIND		= OPERATOR_NK;
+	end;
+	else if KIND = ARRAY_CONSTRUCTOR_FK then do;
+		CURRENT_BASE_TYPE = VOID_BT;
+		call SET_BASE_TYPE ();
+		CURRENT_NAME = ARRAY_CONSTRUCTOR_NAME;
+	end;
+	else do;
+		call SET_BASE_TYPE ();
+		if CLASS_NAME_UNUSABLE () then do;
+			/*
+			/* Here, we are a making a special
+			/* function for an unnamed class.
+			/* E.g: class A {}; class B {A a;} x, y; 
+			/*
+			/* Or else we are a making a constructor
+			/* function for a class that already has a
+			/* member with the same name as the class.
+			/* E.g: class A { int A; };
+			/**/
+			if (KIND = DEFAULT_CONSTRUCTOR_FK) |
+			   (KIND = COPY_CONSTRUCTOR_FK) then do;
+				CURRENT_NAME = CONSTRUCTOR_NAME;
+				CURRENT_NAME_KIND = CONSTRUCTOR_NK;
+			end;
+			else if KIND = DEFAULT_DESTRUCTOR_FK then do;
+				CURRENT_NAME = DESTRUCTOR_NAME;
+				CURRENT_NAME_KIND = DESTRUCTOR_NK;
+			end;
+		end;
+		else do;
+			CURRENT_NAME = CURRENT_CLASS_NAME;
+			if KIND = DEFAULT_DESTRUCTOR_FK then
+				CURRENT_NAME_KIND = DESTRUCTOR_NK;
+		end;
+	end;
+
+	call BEGIN_FUNCTION_TYPE ();
+
+	call CLEAR_DECLARATION ();
+
+	if (KIND = COPY_CONSTRUCTOR_FK) |
+	   (KIND = DEFAULT_ASSIGNMENT_FK) then do;
+
+		/*
+		/* If all of the first actual parameters in all of the copy
+		/* constructors in this class are const, and all of the first
+		/* actual paremeters of all copy constructors of all members
+		/* that are classes are const, then this copy constructor
+		/* being declared has a first parameter of const type.
+		/**/
+
+		if KIND = COPY_CONSTRUCTOR_FK then do;
+			if ALL_COPY_PARAM_CONST (CURRENT_CLASS) then
+				CURRENT_TYPE_QUALIFIER = CONST_TQ;
+			else	CURRENT_TYPE_QUALIFIER = NULL_TQ;
+		end;
+		else if ALL_ASSIGN_PARAM_CONST (CURRENT_CLASS) then
+			CURRENT_TYPE_QUALIFIER = CONST_TQ;
+		else	CURRENT_TYPE_QUALIFIER = NULL_TQ;
+
+		CURRENT_BASE_TYPE		= CURRENT_CLASS_TYPE;
+		CURRENT_BASE_TYPE_ID		= CURRENT_CLASS;
+		call SET_BASE_TYPE ();
+
+		call SET_DERIVED_TYPE_QUALIFIER ();
+		call SET_REFERENCE_TYPE ();
+
+		if KIND = COPY_CONSTRUCTOR_FK then
+			CURRENT_NAME = COPY_PARAM_NAME;
+		else	CURRENT_NAME = ASSIGN_PARAM_NAME;
+
+		call SET_PARAMETER_DECLARATION ();
+	end;
+	else	call SET_BASE_TYPE ();
+
+	call SET_FUNCTION_TYPE ();
+
+	if KIND = DEFAULT_ASSIGNMENT_FK then
+		call SET_REFERENCE_TYPE ();
+
+	call SET_MEMBER_DECLARATION ();
+
+	SYMBOL = CURRENT_SYMBOL;
+
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+
+	/* Set the dummy (i.e. implicitly compiler generated) indicator */
+
+	/*
+	/* TODO: somehow, set the IS_DUMMY flag on *all* symbols that get
+	/* generated during this implicit declaration process (global flag?).
+	/**/
+
+	call GET_SYM_NODE (SYMBOL, P);
+
+	P->SYM_NODE.IS_DUMMY = TRUE;
+
+	/* Refer the class to the declared function (etc) */
+
+	if KIND = COPY_CONSTRUCTOR_FK then do;
+		CLASS_PTR->SYM_NODE.COPY_CONSTRUCTOR = SYMBOL;
+		/*
+		/* If this class doesn't need a copy constructor then set
+		/* the trivial flag in the copy constructor just declared.
+		/**/
+		P->SYM_NODE.TRIVIAL = ^SAVE_NEEDS;
+		/*
+		/* If this can't be generated, no access. */
+		/**/
+		if ^COPY_CONSTRUCTOR_OK 
+		    (CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL, FALSE) then
+			P->SYM_NODE.ACCESS = byte (NO_ACCESS);
+		/*
+		/* Restore this class's needs-copy indicator.
+		/**/
+		CLASS_PTR->SYM_NODE.NEEDS_COPY = SAVE_NEEDS;
+	end;
+	else if KIND = DEFAULT_ASSIGNMENT_FK then do;
+		CLASS_PTR->SYM_NODE.ASSIGNMENT = SYMBOL;
+		/*
+		/* If this class doesn't need an assignment operator then set
+		/* the trivial flag in the member function just declared.
+		/**/
+		P->SYM_NODE.TRIVIAL = ^SAVE_NEEDS;
+		/*
+		/* If this can't be generated, no access. */
+		/**/
+		if ^ASSIGN_OPERATOR_OK 
+		    (CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL, FALSE) then
+			P->SYM_NODE.ACCESS = byte (NO_ACCESS);
+		/*
+		/* Restore this class's needs-assign indicator.
+		/**/
+		CLASS_PTR->SYM_NODE.NEEDS_ASSIGN = SAVE_NEEDS;
+	end;
+	else if KIND = DEFAULT_CONSTRUCTOR_FK then do;
+		/*
+		/* If this can't be generated, no access. */
+		/**/
+		if ^DEFAULT_CONSTRUCTOR_OK 
+		    (CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL, TRUE, FALSE) then
+			P->SYM_NODE.ACCESS = byte (NO_ACCESS);
+	end;
+	else if KIND = DEFAULT_DESTRUCTOR_FK then do;
+		/*
+		/* If this can't be generated, no access. */
+		/**/
+		if ^DEFAULT_DESTRUCTOR_OK 
+		    (CLASS_PTR->SYM_NODE.TOP_TYPE.TAG_SYMBOL, FALSE) then
+			P->SYM_NODE.ACCESS = byte (NO_ACCESS);
+	end;
+
+	call RELEASE_SYM_NODE (SYMBOL);
+	return;
+
+/* ---------------------------------------------------------------------
+/* CLASS_NAME_UNUSABLE
+/*
+/* We're attempting to base the name by which we declare this
+/* member function on the class name, because it is a constructor
+/* or a destructor.  This plan runs into trouble if the class
+/* has no name.  It also runs into trouble if the member function
+/* being generated is a constructor and the class already has a
+/* member by this name that's not a constructor.
+/* ------------------------------------------------------------------- */
+CLASS_NAME_UNUSABLE: procedure
+		     returns (type (BOOL_T))
+		     internal;
+
+	declare
+		SYM		type (NID_T),
+		SP		pointer,
+		RESULT		type (BOOL_T);
+
+	if CURRENT_CLASS_NAME = NULL_NID then
+		return (TRUE);
+
+	if KIND = DEFAULT_DESTRUCTOR_FK then
+		return (FALSE);
+
+	SYM = SEARCH_SCOPE (CLASS_PTR->SYM_NODE.DEFINED_SCOPE, 
+			    CURRENT_CLASS_NAME, ANY_SK);
+
+	if SYM = NULL_NID then
+		return (FALSE);
+
+	call GET_SYM_NODE_R (SYM, SP);
+	RESULT = ^SP->SYM_NODE.IS_CONSTRUCTOR_FUNCTION;
+	call RELEASE_SYM_NODE (SYM);
+	return (RESULT);
+
+end CLASS_NAME_UNUSABLE;
+
+end DECLARE_SPECIAL_MEMBER_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_COPY_CONSTRUCTOR
+/*
+/* Declare a copy constructor for the class represented by the given
+/* sym-node pointer.  The copy constructor for a class X is declared as
+/* a public member thus "X::X (const X &)".  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_COPY_CONSTRUCTOR: procedure (CLASS_PTR)
+			  external  (X_DECLARE_COPY_CONSTRUCTOR);
+
+	declare CLASS_PTR type (POINTER_T);
+
+	if CLASS_PTR->SYM_NODE.COPY_CONSTRUCTOR ^= NULL_NID then
+		return;
+	call DECLARE_SPECIAL_MEMBER_FUNCTION
+		(CLASS_PTR, COPY_CONSTRUCTOR_FK);
+
+end DECLARE_COPY_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_DEFAULT_CONSTRUCTOR
+/*
+/* Declare a default constructor for the class represented by the given
+/* sym-node pointer.  The default constructor for a class X is declared as
+/* a public member thus: "X::X ()".  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_DEFAULT_CONSTRUCTOR: procedure (CLASS_PTR)
+			     external  (X_DECLARE_DEFAULT_CONSTRUCTOR);
+
+	declare CLASS_PTR type (POINTER_T);
+
+	call DECLARE_SPECIAL_MEMBER_FUNCTION
+		(CLASS_PTR, DEFAULT_CONSTRUCTOR_FK);
+
+end DECLARE_DEFAULT_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_DEFAULT_DESTRUCTOR
+/*
+/* Declare a default constructor for the class represented by the given
+/* sym-node pointer.  The default constructor for a class X is declared
+/* as a public member thus: "X::~X ()".  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_DEFAULT_DESTRUCTOR: procedure (CLASS_PTR)
+			    external  (X_DECLARE_DEFAULT_DESTRUCTOR);
+
+	declare CLASS_PTR type (POINTER_T);
+
+	if CLASS_PTR->SYM_NODE.DESTRUCTOR ^= NULL_NID then
+		return;
+	call DECLARE_SPECIAL_MEMBER_FUNCTION
+		(CLASS_PTR, DEFAULT_DESTRUCTOR_FK);
+
+end DECLARE_DEFAULT_DESTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_ASSIGN_OPERATOR
+/*
+/* Declare an assign operator for the class represented by the given
+/* sym-node pointer.  The assign operator for a class X is declared as
+/* a public member thus: "X& X::operator=(const X&)".  
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_ASSIGNMENT_OPERATOR: procedure (CLASS)
+			     external  (X_DECLARE_ASSIGNMENT_OPERATOR);
+
+	declare
+		CLASS		type (NID_T);
+
+	declare
+		CLASS_PTR	type (POINTER_T),
+		ASSIGNMENT	type (NID_T);
+
+	call GET_SYM_NODE (CLASS, CLASS_PTR);
+
+	/* Determine copy assignment for CLASS, if present. */
+
+	ASSIGNMENT = SEARCH_SCOPE (CLASS_PTR->SYM_NODE.DEFINED_SCOPE,
+			      OPERATOR_ASSIGNMENT_NAME,
+			      ANY_SK);
+
+	if ASSIGNMENT ^= NULL_NID then do;
+		CLASS_PTR->SYM_NODE.ASSIGNMENT = FIND_DEFAULT_ASSIGN
+						 (ASSIGNMENT);
+	end;
+
+	if   CLASS_PTR->SYM_NODE.ASSIGNMENT = NULL_NID
+	   & ( CLASS_PTR->SYM_NODE.NEEDS_ASSIGN
+	     | ^SW_STRICT_LVALUE ) then do;
+
+		/* No copy assignment declared; make one. */
+
+		call DECLARE_SPECIAL_MEMBER_FUNCTION
+			(CLASS_PTR, DEFAULT_ASSIGNMENT_FK);
+	end;
+
+	/* 
+	/* The class needs assign if it has a user-declared assignment
+	/* operator.  Don't set it before now, because 
+	/* DECLARE_SPECIAL_MEMBER_FUNCTION sets the generated copy 
+	/* assignment's TRIVIAL flag based on its class's NEEDS_ASSIGN.
+	/**/
+
+	if ASSIGNMENT ^= NULL_NID then
+		CLASS_PTR->SYM_NODE.NEEDS_ASSIGN = TRUE;
+
+	call RELEASE_SYM_NODE (CLASS);
+
+end DECLARE_ASSIGNMENT_OPERATOR;
+
+/* ---------------------------------------------------------------------
+/* FIND_DEFAULT_ASSIGN
+/*
+/* Search the overload list starting at SYM_ID for an assign operator
+/* that is the default assign operator, i.e., one whose first actual
+/* parameter is of type of the class of which the assign operator is
+/* a member.  Returns the symbol node id of the assign operator if
+/* found, otherwise NULL_NID.
+/* ------------------------------------------------------------------- */
+
+FIND_DEFAULT_ASSIGN: procedure (SYM_ID)
+			returns (type (NID_T))
+			internal;
+ 
+	declare
+		SYM_ID		type (NID_T);
+
+	declare	
+		RET_ID		type (NID_T),
+		BRO_ID		type (NID_T),
+		FUN_ID		type (NID_T),
+		FOUND		type (BOOL_T);
+ 
+ 
+	FOUND = FALSE;
+	RET_ID = NULL_NID;
+	BRO_ID = SYM_ID;
+ 
+	do while (BRO_ID ^= NULL_NID & ^FOUND);
+		FUN_ID = BRO_ID;
+		call SET_SYM_NODE_R (FUN_ID);
+		BRO_ID = SYM_NODE.NEXT_OVERLOAD;
+		FOUND = VALID_COPY_ASSIGNMENT (FUN_ID);
+	end;
+
+	if FOUND then
+		RET_ID = FUN_ID;
+ 
+	return (RET_ID);
+
+end FIND_DEFAULT_ASSIGN;
+
+/* ---------------------------------------------------------------------
+ * DECLARE_ARRAY_CONSTRUCTOR
+ *
+ * CLASS is the symbol node id of a class which has a default
+ * constructor that takes default arguments.  This constructor
+ * can't be passed to the run-time routine which calls the
+ * default constructor repeatedly for arrays.  So we declare a
+ * dummy, internally-linked function symbol.  This gets its
+ * body generated later.
+ *
+ * This constructor has a special name, not the usual constructor
+ * name, because calls to it occur only as generated for array
+ * initialization.
+ * ------------------------------------------------------------------- */
+
+DECLARE_ARRAY_CONSTRUCTOR: procedure (CLASS_PTR)
+		           external (X_DECLARE_ARRAY_CONSTRUCTOR);
+	declare
+		CLASS_PTR	type (POINTER_T);
+
+	call DECLARE_SPECIAL_MEMBER_FUNCTION
+		(CLASS_PTR, ARRAY_CONSTRUCTOR_FK);
+
+end DECLARE_ARRAY_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_MAIN_EXIT_FUNCTION
+/*
+/* Declare "extern "C" void ____lpi_cxx_exit (int)" at global scope,
+/* and return its sym-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_MAIN_EXIT_FUNCTION: procedure ()
+			    returns   (type (NID_T))
+			    external  (X_DECLARE_MAIN_EXIT_FUNCTION);
+	declare
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+	declare
+		MAIN_EXIT_FUNCTION	type (NID_T)
+					static initial (NULL_NID);
+
+	if MAIN_EXIT_FUNCTION ^= NULL_NID then
+		return (MAIN_EXIT_FUNCTION);
+	call BEGIN_INTERNAL_PARSE
+	     (addr (SAVED_PARSE_STATE), CURRENT_GLOBAL_SCOPE);
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_cxx_exit');
+	call BEGIN_FUNCTION_TYPE ();
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = INT_BT;
+	call SET_BASE_TYPE ();
+	call SET_PARAMETER_DECLARATION ();
+	call SET_FUNCTION_TYPE ();
+	call SET_DECLARATION ();
+	MAIN_EXIT_FUNCTION = CURRENT_SYMBOL;
+	SYM_NODE.LINKAGE_KIND = byte (C_LINKAGE);
+	SYM_NODE.REFERENCED = TRUE;
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+	return (MAIN_EXIT_FUNCTION);
+		
+end DECLARE_MAIN_EXIT_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_MAIN_ENTRY_FUNCTION
+/*
+/* Declare "extern "C" void ____lpi_cxx_entry ()" at global scope,
+/* and return its sym-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DECLARE_MAIN_ENTRY_FUNCTION: procedure ()
+			     returns   (type (NID_T))
+			     external  (X_DECLARE_MAIN_ENTRY_FUNCTION);
+	declare
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+	declare
+		MAIN_ENTRY_FUNCTION	type (NID_T)
+					static initial (NULL_NID);
+
+	if MAIN_ENTRY_FUNCTION ^= NULL_NID then
+		return (MAIN_ENTRY_FUNCTION);
+	call BEGIN_INTERNAL_PARSE
+	     (addr (SAVED_PARSE_STATE), CURRENT_GLOBAL_SCOPE);
+	call CLEAR_DECLARATION ();
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+	CURRENT_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_cxx_entry');
+	call BEGIN_FUNCTION_TYPE ();
+	call SET_FUNCTION_TYPE ();
+	call SET_DECLARATION ();
+	MAIN_ENTRY_FUNCTION = CURRENT_SYMBOL;
+	SYM_NODE.LINKAGE_KIND = byte (C_LINKAGE);
+	SYM_NODE.REFERENCED = TRUE;
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+	return (MAIN_ENTRY_FUNCTION);
+		
+end DECLARE_MAIN_ENTRY_FUNCTION;
+

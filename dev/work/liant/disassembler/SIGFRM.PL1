@@ -1,0 +1,103 @@
+/* LPI-DEBUG M68 SIGFRM.PL1 - Is given FP a signal FP ? */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  04.01.87  DGM  Original.
+ *
+ **********************************************************************/
+
+SIGFRM: procedure (FP,REALFP,SIGADDR,SIGNAME,SIGDAT) returns (bit (1));
+
+/* ---------------------------------------------------------------------
+ * SIGFRM - Determine if the given FP corresponds to a signal frame.
+ *
+ * In:     FRAME   = Frame pointer.
+ * Out:    REALFP  = The "real" saved frame pointer.
+ *         SIGADDR = The address at which the signal occurred.
+ *         SIGNAME = The signal name.
+ *         SIGDAT  = The "detail" signal data.
+ * Return: TRUE if FP is a signal fram pointer, otherwise FALSE.
+ * 
+ **********************************************************************/
+
+    %include 'incfil';
+    %include GLOBAL_IN;
+    %include DBGGLOBAL_IN;
+    %include DBGRTS_IN;
+    %include SYSREADUSER_IN;
+
+    %replace SIGNAME_LENGTH by 32;  /* Bytes */
+
+    declare 
+        FP                  fixed binary (ADDRESS_LENGTH),
+        REALFP              fixed binary (ADDRESS_LENGTH),
+        SIGADDR             fixed binary (ADDRESS_LENGTH),
+        SIGNAME             character (SIGNAME_LENGTH) varying,
+        SIGDAT              fixed binary (ADDRESS_LENGTH);
+    declare
+        DUMMY               fixed binary (ADDRESS_LENGTH),
+        STATUS              fixed binary (15),
+        SIGFRAME_PTR        fixed binary (ADDRESS_LENGTH);
+    declare
+        1 SIGFRAME,
+          2 SIGFRAME_NEXT   fixed binary (ADDRESS_LENGTH),
+          2 SIGFRAME_FP     fixed binary (ADDRESS_LENGTH),
+          2 SIGFRAME_DATA   fixed binary (ADDRESS_LENGTH),
+        1 SIGNAL,
+          2 SIGNAL_NAME     fixed binary (ADDRESS_LENGTH),
+          2 SIGNAL_DETAIL   fixed binary (ADDRESS_LENGTH),
+          2 SIGNAL_FP       fixed binary (ADDRESS_LENGTH),
+          2 SIGNAL_PC       fixed binary (ADDRESS_LENGTH);
+
+    %replace SIGFRAME_SIZE      by 12;  /* Bytes */
+    %replace SIGNAL_SIZE        by 16;  /* Bytes */
+
+    %replace SIGFRAME_OFFSET    by  0;  /* Bytes */
+    %replace SIGNAL_OFFSET      by  0;  /* Bytes */
+
+    if RTS_DATA.ADDRESS(RTSDAT_SIGNAL_LIST_) = 0 then
+        return (FALSE);
+
+    STATUS = 0;
+    SIGFRAME_PTR = RTS_DATA.ADDRESS(RTSDAT_SIGNAL_LIST_);
+
+    do while ((SIGFRAME_PTR ^= 0) & (STATUS = 0));
+
+        call REAUSR (PROCESS_ID, DUMMY,
+                     SIGFRAME_PTR + SIGFRAME_OFFSET,
+                     SIGFRAME_SIZE, addr(SIGFRAME), STATUS);
+
+        if STATUS ^= 0 then
+            return (FALSE);
+
+        if SIGFRAME_FP = FP then do;
+            call REAUSR (PROCESS_ID, DUMMY,
+                         SIGFRAME_DATA + SIGNAL_OFFSET,
+                         SIGNAL_SIZE, addr(SIGNAL), STATUS);
+            if STATUS ^= 0 then
+                return (FALSE);
+            call REAUSR (PROCESS_ID, DUMMY,
+                         SIGNAL_NAME,
+                         SIGNAME_LENGTH + 2, addr(SIGNAME), STATUS);
+            if STATUS ^= 0 then
+                return (FALSE);
+            REALFP = SIGNAL_FP;
+            SIGADDR = SIGNAL_PC;
+            return (TRUE);
+        end;
+    end;
+
+    return (FALSE);
+
+end SIGFRM;
+

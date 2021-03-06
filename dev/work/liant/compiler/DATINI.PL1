@@ -1,0 +1,625 @@
+/* C++ datini.pl1 - Data-initial-file interface */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.20.92  DGM  011  Updated.
+ *  10.06.92  DGM  010  Handle relocation ordering dependencies for
+ *			for deficient UNIX-V output-editor.
+ *  05.12.92  DGM  009  Added MAKE_NULL_DATA_INITIAL_NODE.
+ *  04.30.92  DGM  008  Added OPEN_ALIGNED_DATA_INITIAL_FILE.
+ *  03.26.92  DGM  007	New value-node scheme.
+ *  06.25.91  PKT  006  Removed SET_STRING_RELOCATION_DATA.
+ *			Added PENDING_DATA_INITIAL_NODE and
+ *			LOCATE_DATA_INITIAL_NODE.
+ *  03.01.91  TLF  005  Changed OPEN_DATA_INITIAL_FILE to align the
+ *			data initial file on a pointer boundary instead
+ *			of half-word boundary.
+ *  11.02.90  TLF  004  New entry point: GET_DATA_INITIAL_BYTE_OFFSET.
+ *  09.14.90  DGM  003  Changed include file names and VOP names.
+ *  08.08.90  DGM  002  New type-node.
+ *  06.06.90  DGM  001  Updated for the new utilities.
+ *  04.19.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.20.92 011 DATINI');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_DATA_INITIAL_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_DATA_INITIAL_FILE_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_RELOCATION_DEPENDENCY_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 CURRENT_DIFILE_DATA		static internal,
+  2 CURRENT_DIF			type (DIFILE_T),
+  2 LAST_WRITE_BYTE_POSITION	type (LONG_T),
+  2 LAST_WRITE_NBYTES		type (LONG_T),
+  2 LAST_WRITE_DATA		type (POINTER_T),
+  2 LAST_WRITE_BUFFER		type (LONG_T);
+
+/* ---------------------------------------------------------------------
+/* OPEN_DATA_INITIAL_FILE
+/*
+/* Open the data-initial-file and return in the given argument,
+/* the current position.
+/* ------------------------------------------------------------------- */
+
+OPEN_DATA_INITIAL_FILE: procedure (DIF)
+			external  (X_OPEN_DATA_INITIAL_FILE);
+	declare
+		DIF	type (DIFILE_T);
+
+	call OPEN_ALIGNED_DATA_INITIAL_FILE (DIF, PTR_TYPE_BOUNDARY);
+
+end OPEN_DATA_INITIAL_FILE;
+
+/* ---------------------------------------------------------------------
+/* OPEN_ALIGNED_DATA_INITIAL_FILE
+/* ------------------------------------------------------------------- */
+
+OPEN_ALIGNED_DATA_INITIAL_FILE: procedure (DIF, ALIGNMENT)
+				external  (X_OPEN_ALIGNED_DATA_INITIAL_FILE);
+
+	declare
+		DIF		type (DIFILE_T),
+		ALIGNMENT	type (SHORT_T);
+	declare
+		FIRST	type (BOOL_T) static internal initial (TRUE);
+
+	if FIRST then do;
+		CURRENT_DIF.BYTE_POSITION	= 0;
+		CURRENT_DIF.POSITION		= 0;
+		CURRENT_DIF.POSITION_UNITS	= BYTES;
+		LAST_WRITE_BYTE_POSITION	= 0;
+		LAST_WRITE_NBYTES		= 0;
+		LAST_WRITE_DATA			= addr (LAST_WRITE_BUFFER);
+		FIRST				= FALSE;
+	end;
+
+	if ALIGNMENT > PTR_TYPE_BOUNDARY then
+		call ALIGN_DATA_INITIAL_FILE (CURRENT_DIF, ALIGNMENT);
+	else	call ALIGN_DATA_INITIAL_FILE (CURRENT_DIF, PTR_TYPE_BOUNDARY);
+
+	CURRENT_DIF.BASE_POSITION = CURRENT_DIF.BYTE_POSITION;
+
+	DIF = CURRENT_DIF;
+
+end OPEN_ALIGNED_DATA_INITIAL_FILE;
+
+/* ---------------------------------------------------------------------
+/* CLOSE_DATA_INITIAL_FILE
+/*
+/* Set the current data-initial-file position to that of the given
+/* data-initial-file record, and close the data-initial-file.
+/* ------------------------------------------------------------------- */
+
+CLOSE_DATA_INITIAL_FILE: procedure (DIF)
+			 external  (X_CLOSE_DATA_INITIAL_FILE);
+
+	declare
+		DIF	type (DIFILE_T);
+
+end CLOSE_DATA_INITIAL_FILE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_DATA_INITIAL_FILE
+/*
+/* Allocate (i.e. reserve) space of the given size/size-units in the
+/* data-initial-file starting at the given position.
+/* ------------------------------------------------------------------- */
+
+ALLOC_DATA_INITIAL_FILE: procedure (DIF, SIZE, SIZE_UNITS)
+			 external  (X_ALLOC_DATA_INITIAL_FILE);
+	declare
+		DIF		type (DIFILE_T),
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T);
+	declare
+		TMP_DIF		type (DIFILE_T);
+
+	TMP_DIF = DIF;
+	call ADVANCE_DATA_INITIAL_FILE (TMP_DIF, SIZE, SIZE_UNITS);
+	call SET_DATA_INITIAL_FILE (TMP_DIF);
+
+end ALLOC_DATA_INITIAL_FILE;
+
+/* ---------------------------------------------------------------------
+/* ADVANCE_DATA_INITIAL_FILE
+/*
+/* Advance the data-initial-file position represented by the given
+/* data-initial-file record by the given in size in size-units.
+/* ------------------------------------------------------------------- */
+
+ADVANCE_DATA_INITIAL_FILE: procedure (DIF, SIZE, SIZE_UNITS)
+			   external  (X_ADVANCE_DATA_INITIAL_FILE);
+
+	declare
+		DIF		type (DIFILE_T),
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T);
+
+	if (SIZE = 0) | (SIZE_UNITS = 0) then
+		return;
+
+	call ALIGN_DATA_INITIAL_FILE (DIF, SIZE_UNITS);
+	DIF.POSITION = DIF.POSITION + SIZE;
+
+	if SIZE_UNITS ^= BYTES then
+		DIF.BYTE_POSITION = ROUNDU (DIF.POSITION,
+					    DIF.POSITION_UNITS,
+					    BYTES);
+	else	DIF.BYTE_POSITION = DIF.POSITION;
+
+end ADVANCE_DATA_INITIAL_FILE;
+
+/* ---------------------------------------------------------------------
+/* ALIGN_DATA_INITIAL_FILE
+/*
+/* Align the current position of the data-initial-file pointer
+/* according to the given boundary.
+/* ------------------------------------------------------------------- */
+
+ALIGN_DATA_INITIAL_FILE: procedure (DIF, BOUNDARY)
+			 external  (X_ALIGN_DATA_INITIAL_FILE);
+	declare
+		DIF		type (DIFILE_T),
+		BOUNDARY	type (SHORT_T);
+	declare
+		M		type (SHORT_T);
+
+	if BOUNDARY = 0 then
+		return;
+
+	if BOUNDARY ^= DIF.POSITION_UNITS then do;
+		DIF.POSITION	   = ROUNDU (DIF.POSITION,
+					     DIF.POSITION_UNITS,
+					     BOUNDARY);
+		DIF.POSITION_UNITS = BOUNDARY;
+		DIF.BYTE_POSITION  = ROUNDU (DIF.POSITION,
+					     DIF.POSITION_UNITS,
+					     BYTES);
+	end;
+
+end ALIGN_DATA_INITIAL_FILE;
+
+/*----------------------------------------------------------------------
+/* GET_DATA_INITIAL_BYTE_OFFSET
+/*
+/* Return the current byte offset of the given data-initial-file
+/*
+/*----------------------------------------------------------------------*/
+
+GET_DATA_INITIAL_BYTE_OFFSET: procedure (DIF)
+			      returns (type (LONG_T))
+			      external (X_GET_DATA_INITIAL_BYTE_OFFSET);
+
+	declare
+		DIF		type (DIFILE_T);
+
+	return (DIF.BYTE_POSITION);
+
+end GET_DATA_INITIAL_BYTE_OFFSET;
+
+/* ---------------------------------------------------------------------
+/* WRITE_DATA_INITIAL_FILE
+/*
+/* Write the given number of bytes of data from the given data
+/* location to the the data-initial-file at the position represented
+/* by the given data-initial-file record.
+/* ------------------------------------------------------------------- */
+
+WRITE_DATA_INITIAL_FILE: procedure (DIF, DATA, NBYTES)
+			 external  (X_WRITE_DATA_INITIAL_FILE);
+	declare
+		DIF			type (DIFILE_T),
+		DATA			type (POINTER_T),
+		NBYTES			type (LONG_T);
+	declare
+		I			type (LONG_T);
+	declare
+		BYTE (1:BYTES_PER_WORD)	bit (BITS_PER_BYTE) aligned
+					based;
+
+	/*
+	/* Paranoid checks ...
+	/*
+	/* if (NBYTES <= 0) | (DATA = null ()) then
+	/*	return;
+	/**/
+
+	/*
+	/* If we're about to overwrite the data from a previous
+	/* write, then OR together the previous byte(s) with
+	/* the one(s) about to be written.
+	/**/
+
+	if (DIF.BYTE_POSITION >= LAST_WRITE_BYTE_POSITION) &
+	   (DIF.BYTE_POSITION < (LAST_WRITE_BYTE_POSITION +
+				 LAST_WRITE_NBYTES)) then do;
+		do I = 1 to min (NBYTES, LAST_WRITE_NBYTES);
+			DATA->BYTE (I) =
+			    DATA->BYTE (I) |
+				LAST_WRITE_DATA->BYTE
+				    (I + (DIF.BYTE_POSITION -
+					  LAST_WRITE_BYTE_POSITION));
+		end;
+	end;
+
+	/* Do the actual write */
+
+	call XPUTDI (DIF.BYTE_POSITION, DATA, 1, NBYTES);
+
+	/* Save the last words-worth of bytes just written */
+
+	if DIF.BYTE_POSITION < LAST_WRITE_BYTE_POSITION then
+		return;
+
+	if NBYTES >= BYTES_PER_WORD then do;
+		do I = 1 to BYTES_PER_WORD;
+			LAST_WRITE_DATA->BYTE (I) =
+			    DATA->BYTE
+				(NBYTES - (BYTES_PER_WORD - I));
+		end;
+		LAST_WRITE_NBYTES = BYTES_PER_WORD;
+	end;
+	else do;
+		if NBYTES > (BYTES_PER_WORD - LAST_WRITE_NBYTES) then do;
+			do I = 1 to BYTES_PER_WORD - NBYTES;
+				LAST_WRITE_DATA->BYTE (I) =
+				    LAST_WRITE_DATA->BYTE
+					(I + NBYTES);
+			end;
+		end;
+		do I = 1 to NBYTES;
+			LAST_WRITE_DATA->BYTE
+			    (I + (BYTES_PER_WORD - NBYTES)) =
+				DATA->BYTE (I);
+		end;
+		LAST_WRITE_NBYTES =
+			min (BYTES_PER_WORD, NBYTES + LAST_WRITE_NBYTES);
+	end;
+
+	LAST_WRITE_BYTE_POSITION =
+		DIF.BYTE_POSITION + NBYTES - BYTES_PER_WORD;
+
+end WRITE_DATA_INITIAL_FILE;
+
+/* ---------------------------------------------------------------------
+/* APPEND_DATA_INITIAL_FILE
+/*
+/* Same as: call WRITE_DATA_INITIAL_FILE (DIF, DATA, NBYTES);
+/*          call ADVANCE_DATA_INITIAL_FILE (DIF, NBYTES, BYTES);
+/*
+/* ------------------------------------------------------------------- */
+
+APPEND_DATA_INITIAL_FILE: procedure (DIF, DATA, NBYTES)
+			  external  (X_APPEND_DATA_INITIAL_FILE);
+	declare
+		DIF	type (DIFILE_T),
+		DATA	type (POINTER_T),
+		NBYTES	type (LONG_T);
+
+	call WRITE_DATA_INITIAL_FILE (DIF, DATA, NBYTES);
+	call ADVANCE_DATA_INITIAL_FILE (DIF, NBYTES, BYTES);
+
+end APPEND_DATA_INITIAL_FILE;
+
+/* ---------------------------------------------------------------------
+/* SET_DATA_INITIAL_FILE
+/*
+/* Set the current data-initial-file position
+/* to that of the given data-initial-file record.
+/* ------------------------------------------------------------------- */
+
+SET_DATA_INITIAL_FILE: procedure (DIF)
+		       external  (X_SET_DATA_INITIAL_FILE);
+	declare
+		DIF	type (DIFILE_T);
+
+	CURRENT_DIF = DIF;
+
+end SET_DATA_INITIAL_FILE;
+
+/* ---------------------------------------------------------------------
+/* SET_RELOCATION_DATA
+/* ------------------------------------------------------------------- */
+
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_INITIALIZE_STRING_PKG;
+
+declare
+
+1 RELOC_NODE		based,
+  2 NEXT		type (POINTER_T), /* Next in reloc-node chain */
+  2 IOFFSET		type (LONG_T),    /* Offset for level 1 symbol */
+  2 VOFFSET		type (LONG_T),    /* Variable offset (locator) */
+  2 SYMBOL		type (NID_T);     /* Symbol sym-node id */
+
+declare
+
+RELOC_HEAD      	pointer static internal initial (null()),
+RELOC_TAIL      	pointer static internal initial (null()),
+RELOC_COUNT     	type (LONG_T) static internal initial (0),
+RELOC_FREE_LIST      	pointer static internal initial (null());
+
+/* ---------------------------------------------------------------------
+/* SET_RELOCATION_DATA
+/* ------------------------------------------------------------------- */
+
+SET_RELOCATION_DATA: procedure (SYMBOL, LOCATOR, DIF)
+		     external  (X_SET_RELOCATION_DATA);
+
+	declare
+		SYMBOL		type (NID_T),
+		LOCATOR		type (LONG_T),
+		DIF		type (DIFILE_T);
+	declare
+		P		type (POINTER_T);
+
+	P = GET_RELOC_NODE ();          
+	P->RELOC_NODE.SYMBOL	= SYMBOL;
+	P->RELOC_NODE.IOFFSET	= DIF.BYTE_POSITION - DIF.BASE_POSITION;
+	P->RELOC_NODE.VOFFSET	= LOCATOR; 
+
+end SET_RELOCATION_DATA;
+
+/* ---------------------------------------------------------------------
+/* WRITE_RELOCATION_DATA
+/* ------------------------------------------------------------------- */
+
+WRITE_RELOCATION_DATA: procedure (DIN, FOR_SYMBOL)
+		       external  (X_WRITE_RELOCATION_DATA);
+	declare
+		DIN				type (NID_T),
+		FOR_SYMBOL			type (NID_T);
+	declare
+		OFFSET				type (LONG_T),
+		RN				type (RELOC_INITIAL_NODE),
+		DIF				type (DIFILE_T),
+		XDIF				type (DIFILE_T),
+		(P, Q, R)			type (POINTER_T),
+		PUT_ON_RELOC_SUCCESSOR_LIST	type (BOOL_T);
+	declare
+		size				builtin;
+
+	/* See if we have any reloc-nodes */
+
+	if RELOC_COUNT = 0 then
+		return;
+
+	/* Open the data-initial-file */
+
+	call OPEN_DATA_INITIAL_FILE (DIF);
+
+	/* Set the data-initial-node */
+
+	call GET_DATA_INITIAL_NODE (DIN, P);
+	P->DATA_INITIAL_NODE.RELOC        = TRUE;
+	P->DATA_INITIAL_NODE.RELOC_COUNT  = RELOC_COUNT;
+	P->DATA_INITIAL_NODE.RELOC_OFFSET = DIF.BYTE_POSITION;
+	call RELEASE_DATA_INITIAL_NODE (DIN);
+
+	/* Reserve space for the reloc-nodes (advance data-initial-file) */
+
+	call ALLOC_DATA_INITIAL_FILE (DIF, size (RN) * RELOC_COUNT, BYTES);
+
+	/* Write out each reloc-node to the data-initial file */
+
+	do P = RELOC_HEAD repeat (P->RELOC_NODE.NEXT) while (P ^= null());
+
+		RN.IOFFSET = P->RELOC_NODE.IOFFSET;
+		RN.VOFFSET = P->RELOC_NODE.VOFFSET;
+		RN.SYMBOL  = P->RELOC_NODE.SYMBOL;
+
+		if SW_NEEDS_RELOCATION_ORDERING then
+			call NOTE_RELOCATION_DEPENDENCY
+			     (RN.SYMBOL, FOR_SYMBOL);
+
+		call APPEND_DATA_INITIAL_FILE (DIF, addr (RN), size (RN));
+	end;
+
+	/* Close the data-initial-file */
+
+	call CLOSE_DATA_INITIAL_FILE (DIF);
+
+	/* Free all of the reloc-nodes */
+
+	call FREE_RELOC_NODES ();
+
+end WRITE_RELOCATION_DATA;
+
+/* ---------------------------------------------------------------------
+/* GET_RELOC_NODE
+/* ------------------------------------------------------------------- */
+
+GET_RELOC_NODE: procedure returns (pointer) internal;
+
+	declare P type (POINTER_T);
+
+	/* Allocate new reloc-node if necessary */
+
+        if RELOC_FREE_LIST = null() then do;
+		allocate RELOC_NODE set (P);
+		P->RELOC_NODE.NEXT = RELOC_FREE_LIST;
+		RELOC_FREE_LIST = P;
+	end;
+
+	/* Return the next free reloc-node on the free list */
+
+	P = RELOC_FREE_LIST;
+	RELOC_FREE_LIST = RELOC_FREE_LIST->RELOC_NODE.NEXT;
+	P->RELOC_NODE.NEXT = null();
+	RELOC_COUNT = RELOC_COUNT + 1;
+
+	/* Put the reloc-node onto the tail of our reloc-node list */
+
+	if RELOC_HEAD = null() then
+		RELOC_HEAD = P;
+	else	RELOC_TAIL->RELOC_NODE.NEXT = P;
+	RELOC_TAIL = P;
+        
+	return (P);
+
+end GET_RELOC_NODE;
+
+/* ---------------------------------------------------------------------
+/* FREE_RELOC_NODES
+/* ------------------------------------------------------------------- */
+
+FREE_RELOC_NODES: procedure internal;
+
+	declare
+		P	type (POINTER_T),
+		Q	type (POINTER_T);
+
+	P = RELOC_HEAD; 
+	do while (P ^= null());
+		Q = P->RELOC_NODE.NEXT;
+		P->RELOC_NODE.NEXT = RELOC_FREE_LIST;
+		RELOC_FREE_LIST = P;
+		P = Q;
+	end;
+
+	RELOC_COUNT = 0;
+	RELOC_HEAD  = null();
+	RELOC_TAIL  = null();
+
+end FREE_RELOC_NODES;
+
+/* ---------------------------------------------------------------------
+/* MAKE_DATA_INITIAL_NODE
+/*
+/* Make a data-initial-node and initialize it according to
+/* the information in the given data-initial-file record.
+/* Return the new data-initial-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MAKE_DATA_INITIAL_NODE: procedure (DIF)
+			returns   (type (NID_T))
+			external  (X_MAKE_DATA_INITIAL_NODE);
+
+	declare
+		DIF	type (DIFILE_T);
+	declare
+		DIN	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_DATA_INITIAL_NODE (DIN, P);
+	P->DATA_INITIAL_NODE.DATA_INITIAL = TRUE;
+	P->DATA_INITIAL_NODE.LOCATION     = DIF.BYTE_POSITION;
+	P->DATA_INITIAL_NODE.RELOC        = FALSE;
+	P->DATA_INITIAL_NODE.RELOC_COUNT  = 0;
+	call RELEASE_DATA_INITIAL_NODE (DIN);
+	return (DIN);
+
+end MAKE_DATA_INITIAL_NODE;
+
+/* ---------------------------------------------------------------------
+/* MAKE_NULL_DATA_INITIAL_NODE
+/* ------------------------------------------------------------------- */
+
+MAKE_NULL_DATA_INITIAL_NODE: procedure ()
+			     returns   (type (NID_T))
+			     external  (X_MAKE_NULL_DATA_INITIAL_NODE);
+	declare
+		DIN	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_DATA_INITIAL_NODE (DIN, P);
+	P->DATA_INITIAL_NODE.DATA_INITIAL = TRUE;
+	call RELEASE_DATA_INITIAL_NODE (DIN);
+	return (DIN);
+
+end MAKE_NULL_DATA_INITIAL_NODE;
+
+/* ---------------------------------------------------------------------
+/* PENDING_DATA_INITIAL_NODE
+/*
+/* Make a data-initial-node and initialize the parts that don't
+/* rely on a particular data-initial-file record.
+/* Return the new data-initial-node id.  Preserves current-node-id.
+/*
+/* Use with LOCATE_DATA_INITIAL_NODE.
+/* ------------------------------------------------------------------- */
+
+PENDING_DATA_INITIAL_NODE: procedure
+			   returns   (type (NID_T))
+			   external  (X_PENDING_DATA_INITIAL_NODE);
+
+	declare
+		DIN	type (NID_T),
+		P	type (POINTER_T);
+
+	call NEW_DATA_INITIAL_NODE (DIN, P);
+	P->DATA_INITIAL_NODE.DATA_INITIAL = TRUE;
+	P->DATA_INITIAL_NODE.LOCATION     = -1;
+	P->DATA_INITIAL_NODE.RELOC        = FALSE;
+	P->DATA_INITIAL_NODE.RELOC_COUNT  = 0;
+	call RELEASE_DATA_INITIAL_NODE (DIN);
+	return (DIN);
+
+end PENDING_DATA_INITIAL_NODE;
+
+/* ---------------------------------------------------------------------
+/* LOCATE_DATA_INITIAL_NODE
+/*
+/* Initialize the parts of a data initial node which depend on
+/* the information in the given data-initial-file record.
+/* Preserves current-node-id.
+/*
+/* Use with PENDING_DATA_INITIAL_NODE.
+/* ------------------------------------------------------------------- */
+
+LOCATE_DATA_INITIAL_NODE: procedure (DIN, DIF)
+			  external  (X_LOCATE_DATA_INITIAL_NODE);
+
+	declare
+		DIN	type (NID_T),
+		DIF	type (DIFILE_T);
+	declare
+		P	type (POINTER_T);
+
+	call GET_DATA_INITIAL_NODE (DIN, P);
+	P->DATA_INITIAL_NODE.LOCATION     = DIF.BYTE_POSITION;
+	call RELEASE_DATA_INITIAL_NODE (DIN);
+
+end LOCATE_DATA_INITIAL_NODE;
+

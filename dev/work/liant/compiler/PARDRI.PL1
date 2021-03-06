@@ -1,0 +1,3411 @@
+/* C++ pardri.pl1 - Parser driver */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.15.92  DGM  054  Regression fix in PICK_PARAM_DCLTOR_.
+ *  06.19.92  DGM  053 	Minor fix for %PICK_UNARY_EXPRESSION.
+ *  06.11.92  DGM  052 	A few more performance tweaks.
+ *  06.08.92  DGM  051R	One more %PICK guy.
+ *  06.04.92  DGM  051	Added %PICK_DECLARATION_SPECIFIER and other
+ *			accelerators.
+ *  05.19.92  DGM  050	Added %PEEK_DEFERRABLE_FUNCTION_BODY.
+ *  05.08.92  DGM  049	Added AT_DESTRUCTOR_NAME.
+ *  03.26.92  PKT  048	Updated for reusing prototype scopes.
+ *  03.26.92  DGM  047	New value-node scheme.
+ *  01.31.92  DGM  046  Fix for goof in OPC_CALL in 045.
+ *  01.24.92  DGM  045  Made PAR_ACTION an array of functions; no need
+ *			only to recompile this module when changing the
+ *			grammar (i.e. no longer need to recompiled
+ *			defext.pl1); this plus other coding changes here
+ *			would, I thought, also improve compile-time
+ *			performance, but results were negligible :-(.
+ *  01.21.92  DGM  044  Added SW_CFRONT_LOOKUP_NEW_TYPE_NAME.
+ *			Added AT_MEMBER_POINTER.
+ *  12.23.91  PKT  043  Added PEEK_LAX_INITIALIZATION.
+ *  12.16.91  DGM  042  Fixed bug which caused syntax abort
+ *			for:  struct S { operator S (); };
+ *  11.20.91  DGM  041  Merge.
+ *  11.19.91  PKT  040L Added PEEK_LEFT_BRACE.
+ *  07.31.91  DGM  037  Added AT_FUNCTION_DEFINITION.
+ *  07.17.91  DGM  036  StatementId work for CodeWatch.  Fix in
+ *			START_OF_TAG_DEFINITION (for new struct X).
+ *  07.08.91  DGM  035  Added SKIP_FUNCTION_BODY.
+ *  06.12.91  DGM  034  Fix to PEEK_ANONYMOUS_UNION.
+ *  06.05.91  DGM  033  Added PEEK_TYPE_NAME_QUALIFIER.
+ *  05.29.91  DGM  032  Moved AT_END_OF_xxx here from pardcl; added
+ *			ability to recognize (erroneously) qualified
+ *			type names when compiling with -xnnt;
+ *			see RUMMAGE_QUALIFIED_[TYPE,TAG]_NAME.
+ *  05.13.91  DGM  031  Fix in PEEK_DEFINED_TYPE_SPECIFIER.
+ *  04.29.91  DGM  030  Added PEEK_ANONYMOUS_UNION_BODY.
+ *  03.27.91  PKT  029  Changed lookups to _QUIETLY.
+ *  04.02.91  DGM  028  Updated for New/faster/bigger parse tables.
+ *  02.11.91  DGM  027  Fix for %PEEK_OLD_FUN_DEF.
+ *  01.10.91  DGM  026  Many many changes for C++ ambiguities.
+ *  12.12.90  DGM  025  Fix in PEEK_UNAMBIGUOUS_PAREN_TYPE_NAME; created
+ *			PEEK_TYPE_SPECIFIER ().
+ *  10.24.90  PKT  024  Fixed COLLECT_FUNCTION_BODY for base initializers.
+ *  10.22.90  DGM  022  Fix in PEEK_MEMBER_TYPE_NAME.
+ *  10.16.90  PKT  021  Updated for CXX_PROCESS_BASE_MBR_INIT_PKG.
+ *  09.25.90  DGM  020  Preprocessor include file name changes.
+ *  09.25.90  DGM  019  Bug fix in PEEK_UNAMBIGUOUS_DECLARATION_STATEMENT.
+ *  09.14.90  DGM  018  Changed include file names and VOP names.
+ *  09.05.90  DGM  017  Added "operator ," to  PEEK_OPERATOR_FUN_NAME.
+ *  06.29.90  DGM  016  Enhanced warnings given at syntax abort time.
+ *  06.26.90  DGM  015  Fixed (and broke) PEEK_UNAMBIG_DECLARATION_STATEMENT.
+ *  06.14.90  PKT  014  Fixed bug in which lookahead mode is not exited;
+ *			updates for old-style function changes.
+ *  06.08.90  DGM  013  Changed INITIALIZE_PARSER to BEGIN_PARSER
+ *			and added END_PARSER.
+ *  06.05.90  DGM  012  Updated for the new utilities.
+ *  05.31.90  PKT  011  Mem-initializer considered part of function body.
+ *  04.23.90  DGM  010  Changes/fixes for old-style function declarations.
+ *  04.19.90  DGM  009  Minor change for initialization.
+ *  03.27.90  DGM  008  Minor parsing changes/fixes.
+ *			A fair amount of work (about a week) will need
+ *			to be done to support multiple qualified names.
+ *  02.14.90  DGM  007  Updated.
+ *  02.09.90  DGM  006  Updated.
+ *  02.05.90  DGM  005  Updated.
+ *  01.04.90  DGM  002  Original for C++; thanks to John Kaminski
+ *			for guidance with the look-ahead logistics.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.15.92 054 PARDRI');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_LEXER_PKG;
+%include CXX_PP_TOKEN_POD_SPELLING_PKG;
+%include CXX_PP_TOKEN_POD_DEBUG_PKG;
+%include CXX_PARSE_TOOL_IN;
+%include CXX_PARSE_TABLE_IN;
+%include CXX_PARSE_TABLE_ENTRY_TYPE_IN;
+%include CXX_PARSER_TERMINAL_CODES_IN;
+%include CXX_TOKEN_MAP_TERMINAL_IN;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_PROCESS_INITIALIZER_PKG;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_PROCESS_BASE_MBR_INIT_PKG;
+%include CXX_SCOPE_DECLARATION_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_NODE_LIST_PKG;
+
+/* ---------------------------------------------------------------------
+/* Include Files (which contain executable code!)
+/* ------------------------------------------------------------------- */
+
+%include CXX_PARSE_ACTION_CODE_IN;
+
+/* ---------------------------------------------------------------------
+/* Local Type Definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+PT	(0 : 32676) type (PARSE_TABLE_ENTRY_T) defined (PARTBL);
+
+/* ---------------------------------------------------------------------
+/* Local Definitions
+/* ------------------------------------------------------------------- */
+
+%replace MAX_LOOK_AHEAD_LEVEL	   	by  16;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+	PAR_TABLE_COUNTER		type (SHORT_T)
+					static internal initial (0);
+declare
+	PAR_RAW_FUNCTION_BODY		type (SHORT_T)
+					static internal initial (0),
+	PAR_INITIALIZER_ITEM		type (SHORT_T)
+					static internal initial (0);
+declare
+	PAR_FOUND			type (BOOL_T)
+					static internal initial (FALSE),
+	PAR_NEST_LEVEL			type (INT_T)
+					static internal initial (0),
+	CURRENT_TERMINAL		type (SHORT_T)
+					static internal initial (0),
+	PEEK_TERMINAL			type (SHORT_T)
+					static internal initial (0),
+	THIS_PRODUCTION			character (64) varying
+					static internal initial ('production');
+declare
+	LOOK_AHEAD_LEVEL		type (SHORT_T)
+					static internal initial (0),
+	LOOK_AHEAD_FAILURE		(1 : MAX_LOOK_AHEAD_LEVEL)
+					label variable
+					static internal,
+	LOOK_AHEAD_SUCCESS		(1 : MAX_LOOK_AHEAD_LEVEL)
+					label variable
+					static internal;
+declare
+	LOOKUP_IN_GLOBAL_SCOPE_ONLY	type (BOOL_T)
+					static internal initial (FALSE),
+	LOOKUP_TYPE_NAME_ONLY		type (BOOL_T)
+					static internal initial (FALSE),
+	FOUND_TYPE_NAME_IN_LA_SCOPE	type (BOOL_T)
+					static internal initial (FALSE),
+	HAVE_TYPE_SPECIFIER		type (BOOL_T)
+					static internal initial (FALSE),
+	HAVE_DECLARATION_SPECIFIER	type (BOOL_T)
+					static internal initial (FALSE);
+
+/* ---------------------------------------------------------------------
+/* PARSE_COMPILATION_UNIT
+/* ------------------------------------------------------------------- */
+
+PARSE_COMPILATION_UNIT: procedure external (X_PARSE_COMPILATION_UNIT);
+
+	/* Initialize the various parser entry points */
+
+	PAR_RAW_FUNCTION_BODY	= PENTRY + 2;
+	PAR_INITIALIZER_ITEM	= PENTRY + 4;
+
+	/* Initialize the parse action function table */
+
+	call PAR_ACTION_INIT ();
+
+	/* Initialize the lexer */
+
+        call BEGIN_LEXER ();
+
+        CURRENT_TERMINAL = TOKEN_TO_TERMINAL (CURRENT_TOKEN.TYPE);
+
+	/* Parse the compilation unit */
+
+	PAR_TABLE_COUNTER = PENTRY;
+	call PARSER_DRIVER ();
+
+	/* Done */
+
+	call END_LEXER ();
+
+end PARSE_COMPILATION_UNIT;
+
+/* ---------------------------------------------------------------------
+/* PARSE_INITIALIZER_ITEM
+/* ------------------------------------------------------------------- */
+
+PARSE_INITIALIZER_ITEM: procedure external (X_PARSE_INITIALIZER_ITEM);
+
+	PAR_TABLE_COUNTER = PAR_INITIALIZER_ITEM;
+	call PARSER_DRIVER ();
+
+end PARSE_INITIALIZER_ITEM;
+
+/* ---------------------------------------------------------------------
+/* PARSER_DRIVER
+/* ------------------------------------------------------------------- */
+
+PARSER_DRIVER: procedure () recursive external (X_PARSER_DRIVER);
+
+	declare
+		THIS_COUNTER		type (SHORT_T),
+		THIS_OPERAND		type (SHORT_T),
+		THIS_OPCODE		type (BYTE_T),
+		THIS_ACTION		type (BYTE_T),
+		THIS_EXIT		type (SHORT_T),
+		THIS_PARSER_STATE	type (SHORT_T),
+		THIS_FOUND		type (BOOL_T);
+
+	THIS_COUNTER	= PAR_TABLE_COUNTER;
+	THIS_FOUND	= FALSE;
+
+	/* if TRACE_PAR_CALLS then call PAR_TRACE_ENTRY (); */
+
+	PARSER_DRIVER_LOOP:
+
+	THIS_OPCODE	= PT (THIS_COUNTER).OPCODE;
+	THIS_OPERAND	= PT (THIS_COUNTER).OPERAND;
+	THIS_COUNTER	= THIS_COUNTER + 1;
+
+	PARSER_DRIVER_REPEAT_LOOP:
+
+	PAR_FOUND	= FALSE;
+
+/* ---------------------------------------------------------------------
+/* OPCODE: CALL (1)
+/* ------------------------------------------------------------------- */
+
+if THIS_OPCODE = byte (OPC_CALL) then do;
+
+	PARSER_DRIVER_CALL:
+
+	PAR_TABLE_COUNTER = THIS_OPERAND;
+	call PARSER_DRIVER ();
+	THIS_ACTION = PT (THIS_COUNTER - 1).ACTION;
+	if PAR_FOUND then do;
+		THIS_FOUND = TRUE;
+		if THIS_ACTION ^= byte (ACT_ERROR) then do;
+			if THIS_ACTION = byte (ACT_EXIT) then
+				THIS_COUNTER = THIS_EXIT;
+			else if THIS_ACTION = byte (ACT_REPEAT) then do;
+				PAR_FOUND = FALSE;
+				goto PARSER_DRIVER_CALL;
+			end;
+		end;
+	end;
+	else if THIS_ACTION = byte (ACT_ERROR) then do;
+		if THIS_FOUND then do;
+			if LOOK_AHEAD_LEVEL > 0 then
+				goto LOOK_AHEAD_FAILURE (LOOK_AHEAD_LEVEL);
+			else	call PAR_ERROR ();
+		end;
+		else if LOOK_AHEAD_LEVEL > 0 then do;
+			if LOOK_AHEAD_FAILURE (LOOK_AHEAD_LEVEL) =
+			   LOOK_AHEAD_FAILURE_LABEL then
+				goto LOOK_AHEAD_FAILURE_LABEL;
+		end;
+		/* if TRACE_PAR_CALLS then call PAR_TRACE_RETURN (); */
+		return;
+	end;
+	goto PARSER_DRIVER_LOOP;
+end;
+
+/* ---------------------------------------------------------------------
+/* OPCODE: TERMINAL (7)
+/* ------------------------------------------------------------------- */
+
+else if THIS_OPCODE = byte (OPC_TERMINAL) then do;
+
+	THIS_ACTION  = PT (THIS_COUNTER - 1).ACTION;
+
+	PARSER_DRIVER_TERMINAL:
+
+	if CURRENT_TERMINAL = THIS_OPERAND then do;
+		/* if TRACE_PAR_CALLS then call PAR_TRACE_MATCH (); */
+		call ADVANCE_TOKEN ();
+		CURRENT_TERMINAL = TOKEN_TO_TERMINAL (CURRENT_TOKEN.TYPE);
+		THIS_FOUND = TRUE;
+		if THIS_ACTION ^= byte (ACT_ERROR) then do;
+			if THIS_ACTION = byte (ACT_EXIT) then
+				THIS_COUNTER = THIS_EXIT;
+			else if THIS_ACTION = byte (ACT_REPEAT) then
+				goto PARSER_DRIVER_TERMINAL;
+		end;
+	end;
+	else if THIS_ACTION = byte (ACT_ERROR) then do;
+		if THIS_FOUND then do;
+			if LOOK_AHEAD_LEVEL > 0 then
+				goto LOOK_AHEAD_FAILURE (LOOK_AHEAD_LEVEL);
+			else	call PAR_ERROR ();
+		end;
+		else if LOOK_AHEAD_LEVEL > 0 then do;
+			if LOOK_AHEAD_FAILURE (LOOK_AHEAD_LEVEL) =
+			   LOOK_AHEAD_FAILURE_LABEL then
+				goto LOOK_AHEAD_FAILURE_LABEL;
+		end;
+		/* if TRACE_PAR_CALLS then call PAR_TRACE_RETURN (); */
+		return;
+	end;
+	goto PARSER_DRIVER_LOOP;
+end;
+
+/* ---------------------------------------------------------------------
+/* OPCODE: ACTION (3)
+/* ------------------------------------------------------------------- */
+
+else if THIS_OPCODE = byte (OPC_ACTION) then do;
+
+	if LOOK_AHEAD_LEVEL = 0 then
+		call PAR_ACTION (THIS_OPERAND);
+	goto PARSER_DRIVER_LOOP;
+end;
+
+/* ---------------------------------------------------------------------
+/* OPCODE: RETURN (2)
+/* ------------------------------------------------------------------- */
+
+else if THIS_OPCODE = byte (OPC_RETURN) then do;
+
+	PAR_FOUND = TRUE;
+	/* if TRACE_PAR_CALLS then call PAR_TRACE_RETURN (); */
+	return;
+end;
+
+/* ---------------------------------------------------------------------
+/* OPCODE: SET_SELECT (9)
+/* ------------------------------------------------------------------- */
+
+else if THIS_OPCODE = byte (OPC_SET_SELECT) then  do;
+
+	THIS_EXIT = THIS_OPERAND;
+	goto PARSER_DRIVER_LOOP;
+end;
+
+/* ---------------------------------------------------------------------
+/* OPCODE: BUILTIN (8)
+/* ------------------------------------------------------------------- */
+
+else if THIS_OPCODE = byte (OPC_BUILTIN) then do;
+
+	/* -------------------------------------------------------------
+	/* Builtins  (see the %BUILTINS section of the grammar file)
+	/* ----------------------------------------------------------- */
+
+	%replace BEGIN_LOOK_AHEAD_			by  0;
+	%replace END_LOOK_AHEAD_			by  1;
+	%replace SUCCEED_LOOK_AHEAD_			by  2;
+
+	%replace PEEK_DEFINED_TYPE_SPEC_		by  3;
+	/*%replace PEEK_LINKAGE_SPEC_			by  4;*/
+	%replace PICK_DCL_LIST_ITEM_			by  4;
+	%replace PEEK_NAME_QUALIFIER_			by  5;
+	%replace PEEK_MEMBER_POINTER_			by  6;
+	%replace PEEK_MEMBER_FUN_BODY_			by  7;
+	%replace PEEK_DEFERRABLE_FUN_BODY_		by  8;
+	%replace PEEK_BIT_FIELD_SPEC_			by  9;
+	%replace PEEK_POSSIBLE_FUN_DCLTOR_		by 11;
+	%replace PEEK_POSSIBLE_PAREN_TYPE_NAME_		by 12;
+	%replace PEEK_UNAMBIG_CONSTRUCT_		by 14;
+	%replace PEEK_UNAMBIG_PARAM_DCL_		by 15;
+	%replace PEEK_OLD_FUN_DEF_			by 16;
+	%replace PEEK_ALLOCATION_EXPRESSION_		by 17;
+	%replace PEEK_DEALLOCATION_EXPRESSION_		by 18;
+	%replace PEEK_LEFT_PAREN_			by 20;
+	%replace PEEK_LEFT_BRACE_			by 21;
+	%replace PEEK_LAX_INITIALIZATION_		by 23;
+
+	%replace PICK_BINARY_OP_			by 26;
+	%replace PICK_POSTFIX_OP_			by 27;
+	%replace PICK_OVERLOAD_OP_			by 28;
+	%replace PICK_DCL_SPEC_				by 30;
+	%replace PICK_UNARY_EXPRESSION_			by 31;
+	%replace PICK_CAST_EXPRESSION_			by 33;
+	%replace PICK_POSTFIX_EXPRESSION_		by 34;
+	%replace PICK_MEMBER_DCL_			by 35;
+	%replace PICK_DCLTOR_				by 36;
+	%replace PICK_PTR_OR_REF_DCLTOR_		by 37;
+	%replace PICK_NEW_DCLTOR_			by 38;
+	%replace PICK_ABSTRACT_DCLTOR_			by 39;
+	%replace PICK_PARAM_DCLTOR_			by 40;
+	%replace PICK_INIT_				by 41;
+	%replace PICK_POSTFIX_DCLTOR_			by 42;
+	%replace PICK_DCL_				by 43;
+	%replace PICK_BASE_CLASS_SPEC_			by 44;
+	%replace PICK_INIT_ITEM_			by 45;
+	%replace PICK_PARAM_DCL_			by 46;
+	%replace PICK_STATEMENT_			by 47;
+	%replace PICK_FOR_STATEMENT_INIT_		by 48;
+	%replace PICK_DCLTOR_NAME_			by 49;
+	%replace PICK_NAME_				by 50;
+	%replace PICK_COMP_CLASS_OR_TYPE_NAME_		by 52;
+	%replace PICK_EXTERNAL_DCL_TAIL_		by 53;
+	%replace PICK_DCL_STATEMENT_TAIL_		by 54;
+
+	%replace CLEAR_DCL_SPEC_			by 55;
+	%replace CLEAR_TYPE_SPEC_			by 56;
+	%replace SET_DCL_SPEC_				by 57;
+	%replace SET_TYPE_SPEC_				by 58;
+	%replace SET_DCLTOR_NAME_			by 59;
+	%replace SET_DCLTOR_				by 60;
+	%replace SET_TAG_NAME_				by 61;
+	%replace BEGIN_PROTO_SCOPE_			by 62;
+	%replace END_PROTO_SCOPE_			by 63;
+
+	%replace END_MAIN_PRODUCTION_			by 64;
+
+	goto PERFORM (THIS_OPERAND);
+
+	/* -------------------------------------------------------------
+	/* %BEGIN_LOOK_AHEAD
+	/* -----------------
+	/* Begin look-ahead.
+	/* ----------------------------------------------------------- */
+
+	PERFORM (BEGIN_LOOK_AHEAD_):
+
+	/* Save the current state of the parser */
+
+	call BEGIN_PARSER_LOOK_AHEAD (THIS_PARSER_STATE);
+
+	/* Set the success/failure labels for this look-ahead level */
+
+	LOOK_AHEAD_FAILURE (LOOK_AHEAD_LEVEL) = LOOK_AHEAD_FAILURE_LABEL;
+	LOOK_AHEAD_SUCCESS (LOOK_AHEAD_LEVEL) = LOOK_AHEAD_SUCCESS_LABEL;
+
+	/* Ok, do the look-ahead parse */
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %SUCCESS_LOOK_AHEAD
+	/* -------------------
+	/* End look-ahead explicitly with success.
+	/* ----------------------------------------------------------- */
+
+	PERFORM (SUCCEED_LOOK_AHEAD_):
+
+	goto LOOK_AHEAD_SUCCESS (LOOK_AHEAD_LEVEL);
+
+	/* -------------------------------------------------------------
+	/* %END_LOOK_AHEAD
+	/* ---------------
+	/* End look-ahead naturally (i.e. with success)
+	/* ----------------------------------------------------------- */
+
+	PERFORM (END_LOOK_AHEAD_):
+
+	/* -------------------------------------
+	/* Here, the look-ahead parse SUCCEEDED.
+	/* ----------------------------------- */
+
+	/* Restore the state of the parser */
+
+	call END_PARSER_LOOK_AHEAD (THIS_PARSER_STATE);
+
+	/*
+	/* Here, since the look-ahead parse
+	/* succeeded, do the real parse now.
+	/**/
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* End look-ahead with failure */
+
+	LOOK_AHEAD_FAILURE_LABEL:
+
+	/* -----------------------------------
+	/* Here, the look-ahead parse FAILED.
+	/* --------------------------------- */
+
+	/* Restore the state of the parser */
+
+	call END_PARSER_LOOK_AHEAD (THIS_PARSER_STATE);
+
+	/*
+	/* Here, since the look-ahead parse failed, indicate failure
+	/* (PAR_FOUND=FALSE) and return with failure from the production
+	/* which orignally called %BEGIN_LOOK_AHEAD; i.e. the parser will
+	/* continue as if it returned with failure from the production
+	/* which contained the (matching) %BEGIN_LOOK_AHEAD call.
+	/**/
+
+	/* if TRACE_PAR_CALLS then call PAR_TRACE_RETURN (); */
+	return;
+
+	/* End look-ahead with success (via short-circuit) */
+
+	LOOK_AHEAD_SUCCESS_LABEL:
+
+	/* ---------------------------------------------------------
+	/* Here, the look-ahead parse SUCCEEDED (via short-circuit).
+	/* ------------------------------------------------------- */
+
+	/* Restore the state of the parser */
+
+	call END_PARSER_LOOK_AHEAD (THIS_PARSER_STATE);
+
+	/*
+	/* Here, since the look-ahead parse succeeded, indicate success
+	/* (PAR_FOUND=TRUE) and return successfully from the production
+	/* which orignally called %BEGIN_LOOK_AHEAD; i.e. the parser will
+	/* continue as if it returned success from the production which
+	/* contained the (matching) %BEGIN_LOOK_AHEAD call.
+	/**/
+
+	PAR_FOUND = TRUE;
+	/* if TRACE_PAR_CALLS then call PAR_TRACE_RETURN (); */
+	return;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_DEFINED_TYPE_SPECIFIER
+	/* ----------------------------
+	/* True iff the current token is a (qualified or unqualified)
+	/* user defined type-name (tag or typedef) is suitable for use
+	/* as the type-specifier portion of the declaration-specifiers
+	/* for any declaration.
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_DEFINED_TYPE_SPEC_):
+
+	if (CURRENT_TERMINAL ^= IDENTIFIER_TERMINAL) &
+	   (CURRENT_TERMINAL ^= COLON_COLON_TERMINAL) then
+		goto PAR_BUILTIN_FALSE;
+
+	/*
+	/* Since this builtin is checking declaration-specifiers, if we
+	/* already have a base type, then do not regard this as a typedef
+	/* name even if it is (e.g. "f (int typedefname)).
+	/**/
+
+	if LOOK_AHEAD_LEVEL > 0 then do;
+		if HAVE_TYPE_SPECIFIER then
+			goto PAR_BUILTIN_FALSE;
+	end;
+	else if (CURRENT_BASE_TYPE ^= NULL_BT) |
+		(CURRENT_SIMPLE_TYPES ^= NULL_SIMPLE_TYPES) then
+		goto PAR_BUILTIN_FALSE;
+
+	/*
+	/* Special hack to handle cfront style lookup
+	/* of new-expression type specifiers.
+	/**/
+
+ 	if SW_CFRONT_LOOKUP_NEW_TYPE_NAME then do;
+		if MATCHED_TOKEN.TYPE = KW_NEW_TOKEN then
+			LOOKUP_TYPE_NAME_ONLY = TRUE;
+	end;
+
+	/* Here, we don't already have a type-specifier */
+
+	if ^PEEK_DEFINED_TYPE_SPECIFIER () then
+		goto PAR_BUILTIN_FALSE;
+
+	LOOKUP_TYPE_NAME_ONLY = FALSE;
+
+	/*
+	/* Here, we are looking at a un/qualified defined type-name.
+	/* This may, however, not actually represent a type-specifier.
+	/* If we are at class scope, it may be an member access declaration
+	/* (of a type-name; this may actually be a questionable construct)
+	/* or it may be a (ambiguous) constructor declaration (described
+	/* below); in both of these cases, this type-name actually
+	/* represents a declarator rather than a type-specifier.
+	/**/
+
+	if CURRENT_SCOPE_TYPE ^= CLASS_SCOPE then
+		goto PAR_BUILTIN_TRUE;
+
+	/* Special case hack for: struct S { operator S (); }; */
+
+	if MATCHED_TOKEN.TYPE = KW_OPERATOR_TOKEN then
+		goto PAR_BUILTIN_TRUE;
+
+	/* See if we have an access declaration */
+
+	if ((PEEK_TOKEN.TYPE = SEMICOLON_TOKEN) |
+	    (PEEK_TOKEN.TYPE = COMMA_TOKEN)) then do;
+		if ^HAVE_DECLARATION_SPECIFIER & ^HAVE_TYPE_SPECIFIER then
+			goto PAR_BUILTIN_FALSE;
+	end;
+
+	/*
+	/* See if we have an (ambiguous) constructor declaration.
+	/* There is yet another trickiness here, consider:
+	/*
+	/*      typedef int X;
+	/*      typedef struct B T;
+	/*      struct A {
+	/*              typedef long B;
+	/*      };
+	/*      struct B : public A {
+	/*              B (X);	        // constructor!
+	/*              T (Y);          // not a constructor!
+	/*      };
+	/*
+	/* This is why we check for SYM_NODE.NAME = CURRENT_CLASS_NAME.
+	/**/
+
+	if (PEEK_TOKEN.TYPE ^= LPAREN_TOKEN) |
+	   (FOUND_TYPE_NAME_IN_LA_SCOPE) |
+	   (SYM_NODE.NAME ^= CURRENT_CLASS_NAME) then
+		goto PAR_BUILTIN_TRUE;
+
+	/*
+	/* AMBIGUITY: Constructor vs. Member-Declaration
+	/* ----------
+	/* This language ambiguity occurs only within a class, struct,
+	/* or union definition.  In this context, it is possible for a
+	/* constructor declaration to look like a member declaration. E.g.:
+	/*
+	/*    typedef int T, X;
+	/*    class A { A (T (X)); };
+	/*              ^
+	/* Here, the member declaration could be either for:
+	/*
+	/*    1. A constructor taking one argument of type pointer-to-
+	/*       function-returning-T and taking one argument of type
+	/*       X (in which case the defined-type-specifier just found
+	/*       actually represents a declarator-name, rather than a
+	/*       defined-type-specifier; i.e. return FALSE).
+	/*    2. A member function T taking one argument of type X and
+	/*       returning type A; the declarator in this case is enclosed
+	/*       in (redundant) parentheses (in which case the defined-
+	/*       type-specifier just found does indeed represent a defined-
+	/*       type-specifier; i.e. return TRUE).
+	/*
+	/* Though no decision has yet been reached by the X3J16 (as of
+	/* 12.22.90), I will assume the following disambiguating rule:
+	/*
+	/*    If a member declaration *can* be a constructor declaration
+	/*    then it is assumed to *be* a constructor declaration (e.g.
+	/*    opt for the first alternative in the above example).
+	/*
+	/* To resolve this, note that this reduces to a function-declarator
+	/* vs. parenthesized-declarator ambiguity which further reduces to
+	/* a parameter-declaration vs. declarator ambiguity.  Only limited
+	/* look-ahead is necessary.  If the first "thing" after the "(" is
+	/* a builtin/defined qualified/unqualified type-specifier, or any
+	/* other declaration-specifier, or a ")" or a "...", then it is a
+	/* parameter-declaration implying that we have a constructor dec-
+	/* laration, (in which case the defined-type-specifier found above
+	/* is actually a declarator-name rather than a defined-type-specifier,
+	/* i.e. return FALSE).  Otherwise, if we have some other member
+	/* declaration (in which case the defined-type-specifier found above
+	/* is indeed a defined-type-specifier, i.e. return TRUE).
+	/**/
+
+	call ADVANCE_PEEK_TOKEN ();
+	if (PEEK_TOKEN.TYPE = RPAREN_TOKEN) |
+	   (PEEK_TOKEN.TYPE = ELLIPSIS_TOKEN) then
+		goto PAR_BUILTIN_FALSE;
+	else if PEEK_PEEK_DECLARATION_SPECIFIER () ^= 0 then
+		goto PAR_BUILTIN_FALSE;
+
+	goto PAR_BUILTIN_TRUE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_NAME_QUALIFIER
+	/* --------------------
+	/* True iff the current token is class-name
+	/* or a simple type name followed by a "::".
+	/*
+	/* N.B. for better diagnostics (i.e. to avoid syntax aborts),
+	/* we will actually check that the the current token is simply
+	/* an identifier followed by a "::".
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_NAME_QUALIFIER_):
+
+	if (CURRENT_TERMINAL ^= IDENTIFIER_TERMINAL) &
+	   (CURRENT_TERMINAL ^= TYPE_TERMINAL) then
+		goto PAR_BUILTIN_FALSE;
+
+	call SET_PEEK_TOKEN ();
+
+	if PEEK_TOKEN.TYPE = COLON_COLON_TOKEN then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_MEMBER_POINTER
+	/* --------------------
+	/* A "Q::*" ?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_MEMBER_POINTER_):
+
+	if PEEK_MEMBER_POINTER () then
+		goto PAR_BUILTIN_TRUE;
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_MEMBER_FUNCTION_BODY
+	/* --------------------------
+	/* A "{" or ":" and current scope is class scope ?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_MEMBER_FUN_BODY_):
+
+	if (CURRENT_TERMINAL = LEFT_BRACE_TERMINAL) |
+	   (CURRENT_TERMINAL = COLON_TERMINAL) then
+		goto PAR_BUILTIN_TRUE;
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_DEFERRABLE_FUNCTION_BODY
+	/* ------------------------------
+	/* A "{" or ":" and we are deferring the processing of internal
+	/* linkage functions until the end of the compilation unit?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_DEFERRABLE_FUN_BODY_):
+
+	if (CURRENT_TERMINAL ^= LEFT_BRACE_TERMINAL) &
+	   (CURRENT_TERMINAL ^= COLON_TERMINAL) then
+		goto PAR_BUILTIN_FALSE;
+	if ^SW_DEFER_FUNCTIONS then
+		goto PAR_BUILTIN_FALSE;
+	if CURRENT_SYMBOL = NULL_NID then
+		goto PAR_BUILTIN_FALSE;
+	call SET_SYM_NODE_R (CURRENT_SYMBOL);
+	if ^SYM_NODE.INTERNAL_LINKAGE then
+		goto PAR_BUILTIN_FALSE;
+	if CURRENT_SOURCE.INCLUDED_BY = null () then
+		goto PAR_BUILTIN_FALSE;
+	goto PAR_BUILTIN_TRUE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_BIT_FIELD_SPECIFIER
+	/* -------------------------
+	/* Is the base type suitable for a bit field ?
+	/* This is to distinguish between a bit field member
+	/* and a member function with a member initialization list.
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_BIT_FIELD_SPEC_):
+
+	if CURRENT_TERMINAL ^= COLON_TERMINAL then
+		goto PAR_BUILTIN_FALSE;
+
+	if CURRENT_DERIVED_TYPE_LEVEL = 0 then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_POSSIBLE_FUNCTION_DECLARATOR
+	/* ----------------------------------
+	/* Are we looking at a possible function declarator ?
+	/*
+	/* If so, set PEEK_TERMINAL to 1 iff this is unambiguous,
+	/* otherwise set it to -1; this is for the subsequent
+	/* call to %PEEK_UNAMBIGUOUS_CONSTRUCT.
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_POSSIBLE_FUN_DCLTOR_):
+
+	if CURRENT_TERMINAL ^= LEFT_PAREN_TERMINAL then
+		goto PAR_BUILTIN_FALSE;
+
+	call SET_PEEK_TOKEN ();
+
+	if (PEEK_TOKEN.TYPE = ELLIPSIS_TOKEN) |
+	   (PEEK_TOKEN.TYPE = RPAREN_TOKEN) then do;
+		PEEK_TERMINAL = 1;
+		goto PAR_BUILTIN_TRUE;
+	end;
+	else if (PEEK_TOKEN.TYPE = IDENTIFIER_TOKEN) &
+		(CURRENT_SCOPE_TYPE = GLOBAL_SCOPE) then do;
+		PEEK_TERMINAL = PEEK_PEEK_DECLARATION_SPECIFIER ();
+		if PEEK_TERMINAL = 0 then do;
+			/*
+			/* Here, we have possibly an old-style function
+			/* definition declarator; note that it is always
+			/* ambiguous (i.e. it always looks like it could
+			/* be an object declaration with a function-style
+			/* initializer.  N.B. an empty parameter list "()"
+			/* may be optionally interpreted as an old-style
+			/* (non-prototyped) function declarator on a switch;
+			/* see the semantic routine BEGIN_FUNCTION_DECLARATOR.
+			/**/
+			PEEK_TERMINAL = -1;
+			goto PAR_BUILTIN_TRUE;
+		end;
+	end;
+	else	PEEK_TERMINAL = PEEK_PEEK_DECLARATION_SPECIFIER ();
+
+	if PEEK_TERMINAL ^= 0 then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_POSSIBLE_PAREN_TYPE_NAME
+	/* ------------------------------
+	/* Are we looking at a possible parenthesized type-name ?
+	/*
+	/* If so, set PEEK_TERMINAL to 1 iff this is unambiguous,
+	/* otherwise set it to -1; this is for the subsequent call
+	/* to %PEEK_UNAMBIGUOUS_CONSTRUCT.
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_POSSIBLE_PAREN_TYPE_NAME_):
+
+	if CURRENT_TERMINAL ^= LEFT_PAREN_TERMINAL then
+		goto PAR_BUILTIN_FALSE;
+
+	call SET_PEEK_TOKEN ();
+
+	PEEK_TERMINAL = PEEK_PEEK_DECLARATION_SPECIFIER ();
+
+	if PEEK_TERMINAL ^= 0 then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_UNAMBIGUOUS_CONSTRUCT
+	/* ---------------------------
+	/* Is PEEK_TERMINAL greater than zero ?
+	/*
+	/* This *assumes* an immediately preceeding *successful*
+	/* call to one of the following builtins was just made:
+	/*
+	/*    %PEEK_POSSIBLE_FUNCTION_DECLARATOR
+	/*    %PEEK_POSSIBLE_PAREN_TYPE_NAME
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_UNAMBIG_CONSTRUCT_):
+
+	if PEEK_TERMINAL > 0 then
+		goto PAR_BUILTIN_TRUE;
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_UNAMBIGUOUS_PARAMETER_DECLARATION
+	/* ---------------------------------------
+	/* Unambiguous parameter declaration ?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_UNAMBIG_PARAM_DCL_):
+
+	if (CURRENT_TERMINAL = ELLIPSIS_TERMINAL) |
+	   (CURRENT_TERMINAL = RIGHT_PAREN_TERMINAL) |
+	   ((CURRENT_TERMINAL >= LB_DCL_SPEC_TERMINAL) &
+	    (CURRENT_TERMINAL <= HB_DCL_SPEC_TERMINAL)) then
+		goto PAR_BUILTIN_TRUE;
+
+	if PEEK_DECLARATION_SPECIFIER () > 0 then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_OLD_FUNCTION_DEFINITION
+	/* -----------------------------
+	/* Is the last declarator an old-style function definition ?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_OLD_FUN_DEF_):
+
+	if ((CURRENT_TERMINAL = LEFT_BRACE_TERMINAL) |
+	    (CURRENT_TERMINAL = IDENTIFIER_TERMINAL) |
+	    ((CURRENT_TERMINAL >= LB_DCL_TYPE_SPEC_TERMINAL) &
+	     (CURRENT_TERMINAL <= HB_DCL_TYPE_SPEC_TERMINAL))) &
+	   (CURRENT_OLD_PARAMETERS ^= NULL_NID) then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_ALLOCATION_EXPRESSION
+	/* ---------------------------
+	/* Are we looking at an allocation expression ?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_ALLOCATION_EXPRESSION_):
+
+	if CURRENT_TERMINAL = KW_NEW_TERMINAL then
+		goto PAR_BUILTIN_TRUE;
+
+	else if CURRENT_TERMINAL ^= COLON_COLON_TERMINAL then
+		goto PAR_BUILTIN_FALSE;
+
+	call SET_PEEK_TOKEN ();
+
+	if PEEK_TOKEN.TYPE = KW_NEW_TOKEN then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_DEALLOCATION_EXPRESSION
+	/* -----------------------------
+	/* Are we looking at an deallocation expression ?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_DEALLOCATION_EXPRESSION_):
+
+	if CURRENT_TERMINAL = KW_DELETE_TERMINAL then
+		goto PAR_BUILTIN_TRUE;
+
+	else if CURRENT_TERMINAL ^= COLON_COLON_TERMINAL then
+		goto PAR_BUILTIN_FALSE;
+
+	call SET_PEEK_TOKEN ();
+
+	if PEEK_TOKEN.TYPE = KW_DELETE_TOKEN then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_LEFT_PAREN
+	/* ----------------
+	/* Are we looking at a left parenthesis ?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_LEFT_PAREN_):
+
+	if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_LEFT_BRACE
+	/* ----------------
+	/* Are we looking at a left brace ?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_LEFT_BRACE_):
+
+	if CURRENT_TERMINAL = LEFT_BRACE_TERMINAL then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_LAX_INITIALIZATION
+	/* ------------------------
+	/* Are we being lax about jumping among initializations (as in C)?
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PEEK_LAX_INITIALIZATION_):
+
+	if SW_LAX_INITIALIZATION then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+
+	/* -------------------------------------------------------------
+	/* %PEEK_LINKAGE_SPECIFICATION
+	/* ---------------------------
+	/* Are we looking at a declaration-specifier ?
+	/* ----------------------------------------------------------- */
+
+	/*
+	PERFORM (PEEK_LINKAGE_SPEC_):
+
+	if CURRENT_TOKEN.TYPE ^= KW_EXTERN_TOKEN then
+		goto PAR_BUILTIN_FALSE;
+
+	call SET_PEEK_TOKEN ();
+
+	if TOKEN_TO_TERMINAL (PEEK_TOKEN.TYPE) = STRING_TERMINAL then
+		goto PAR_BUILTIN_TRUE;
+
+	goto PAR_BUILTIN_FALSE;
+	*/
+
+	/* -------------------------------------------------------------
+	/* %PICK_BINARY_OP				  [accelerator]
+	/* ---------------
+	/* Pick out binary operator
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_BINARY_OP_):
+
+	if (CURRENT_TERMINAL < LB_BINARY_OP_TERMINAL) |
+           (CURRENT_TERMINAL > HB_BINARY_OP_TERMINAL) then
+		goto PAR_BUILTIN_FALSE;
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+	THIS_COUNTER = THIS_COUNTER +
+		       (CURRENT_TERMINAL - LB_BINARY_OP_TERMINAL + 1);
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_POSTFIX_OP				  [accelerator]
+	/* ----------------
+	/* Pick out postfix (unary) operator
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_POSTFIX_OP_):
+
+	if (CURRENT_TERMINAL < LB_POSTFIX_OP_TERMINAL) |
+           (CURRENT_TERMINAL > HB_POSTFIX_OP_TERMINAL) then
+		goto PAR_BUILTIN_FALSE;
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+	THIS_COUNTER = THIS_COUNTER +
+		       (CURRENT_TERMINAL - LB_POSTFIX_OP_TERMINAL + 1);
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_OVERLOAD_OP				  [accelerator]
+	/* -----------------
+	/* Pick out overloadable operator
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_OVERLOAD_OP_):
+
+	if (CURRENT_TERMINAL < LB_OVERLOAD_OP_TERMINAL) |
+           (CURRENT_TERMINAL > HB_OVERLOAD_OP_TERMINAL) then
+		goto PAR_BUILTIN_FALSE;
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+	THIS_COUNTER = THIS_COUNTER +
+		       (CURRENT_TERMINAL - LB_OVERLOAD_OP_TERMINAL + 1);
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_DECLARATION_SPECIFIER			 [accelerator]
+	/* ---------------------------
+	/* Pick out a declaration specifier:
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_DCL_SPEC_):
+
+	if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 10;
+	end;
+	else if CURRENT_TERMINAL = TYPE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 7;
+	end;
+	else if CURRENT_TERMINAL = TYPE_QUALIFIER_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 6;
+	end;
+	if CURRENT_TERMINAL = STORAGE_CLASS_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = CLASS_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 8;
+	end;
+	else if CURRENT_TERMINAL = KW_INLINE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = KW_VIRTUAL_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+	else if CURRENT_TERMINAL = KW_ENUM_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 9;
+	end;
+	else if CURRENT_TERMINAL = KW_FRIEND_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = COLON_COLON_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 10;
+	end;
+	else if CURRENT_TERMINAL = KW_OVERLOAD_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 5;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_UNARY_EXPRESSION
+	/* ----------------------
+	/* Pick out a unary expression:
+	/*
+	/*	{ sizeof_expression		-- 1
+	/*	| allocation_expression		-- 2
+	/*	| deallocation_expression	-- 3
+	/*	| postfix_expression		-- 4
+        /*	| PLUS_PLUS cast_expression	-- 5
+        /*	| MINUS_MINUScast_expression
+        /*	| NOT cast_expression
+        /*	| TILDE cast_expression
+        /*	| PLUS cast_expression
+        /*	| MINUS cast_expression
+        /*	| STAR cast_expression
+        /*	| AND cast_expression
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_UNARY_EXPRESSION_):
+
+	if (CURRENT_TERMINAL >= LB_UNARY_OP_TERMINAL) &
+           (CURRENT_TERMINAL <= HB_UNARY_OP_TERMINAL) then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER +
+			       (CURRENT_TERMINAL - LB_UNARY_OP_TERMINAL + 5);
+	end;
+	else if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = CONSTANT_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = STRING_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = KW_THIS_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = KW_SIZEOF_TERMINAL  then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = KW_DELETE_TERMINAL  then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+	else if CURRENT_TERMINAL = KW_NEW_TERMINAL  then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = COLON_COLON_TERMINAL  then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		call SET_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE = IDENTIFIER_TOKEN then
+			THIS_COUNTER = THIS_COUNTER + 4;
+		else if PEEK_TOKEN.TYPE = KW_DELETE_TOKEN  then
+			THIS_COUNTER = THIS_COUNTER + 3;
+		else if PEEK_TOKEN.TYPE = KW_NEW_TOKEN  then
+			THIS_COUNTER = THIS_COUNTER + 2;
+		else if PEEK_TOKEN.TYPE = KW_OPERATOR_TOKEN then
+			THIS_COUNTER = THIS_COUNTER + 4;
+		else if TOKEN_TO_TERMINAL (PEEK_TOKEN.TYPE) = TYPE_TERMINAL then
+			THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = KW_OPERATOR_TERMINAL  then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = TYPE_TERMINAL  then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_CAST_EXPRESSION			 [accelerator]
+	/* ---------------------
+	/* Pick out a cast expression:
+	/*
+	/*	{ ambiguous_paren_type_name	-- 1
+	/*	  cast_expression
+	/*	| unary_expression		-- 2
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_CAST_EXPRESSION_):
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+
+	if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 1;
+	else	THIS_COUNTER = THIS_COUNTER + 2;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_POSTFIX_EXPRESSION
+	/* ------------------------
+	/* Pick out a postfix_expression:
+	/*
+	/*	{ simple_type_specifier function_argument_list	-- 1
+	/*	| CONSTANT					-- 2
+	/*	| STRING					-- 3
+	/*	| KW_THIS					-- 4
+	/*	| global_qualified_name				-- 5
+	/*	| IDENTIFIER					-- 6
+	/*	| qualified_name				-- 7
+	/*	| operator_or_conversion_function_name		-- 8
+	/*	| LEFT_PAREN comma_expression RIGHT_PAREN	-- 9
+	/*	}
+	/*	[ postfix_operator ] ...
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_POSTFIX_EXPRESSION_):
+
+
+	if CURRENT_TERMINAL = CONSTANT_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 9;
+	end;
+	else if (CURRENT_TERMINAL = IDENTIFIER_TERMINAL) |
+		(CURRENT_TERMINAL = TYPE_TERMINAL) then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		if PEEK_DECLARATION_SPECIFIER () >= 0 then do;
+			call SET_PEEK_TOKEN ();
+			if PEEK_TOKEN.TYPE ^= COLON_COLON_TOKEN then
+				THIS_COUNTER = THIS_COUNTER + 6;
+			else	THIS_COUNTER = THIS_COUNTER + 7;
+		end;
+		else	THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = STRING_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+	else if CURRENT_TERMINAL = KW_THIS_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = COLON_COLON_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 5;
+	end;
+	else if CURRENT_TERMINAL = KW_OPERATOR_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 8;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_MEMBER_DECLARATION			 [accelerator]
+	/* ------------------------
+	/* Pick out a member declaration item:
+	/*
+	/*	{
+	/*	| KW_PUBLIC COLON			-- 1
+	/*	| KW_PRIVATE COLON			-- 2
+	/*	| KW_PROTECTED COLON			-- 3
+	/*	| member_declaration			-- 4
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_MEMBER_DCL_):
+
+	if CURRENT_TERMINAL = KW_PUBLIC_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = KW_PRIVATE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = KW_PROTECTED_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+	else if CURRENT_TERMINAL ^= RIGHT_BRACE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_DECLARATOR			 	[accelerator]
+	/* ----------------
+	/* Pick out a postfix expression:
+	/*
+	/*	{ reference declarator			-- 1
+	/*	| pointer declarator			-- 2
+	/*	| member_pointer declarator		-- 3
+	/*	| declarator_name			-- 4
+	/*	| LEFT_PAREN declarator RIGHT_PAREN	-- 5
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_DCLTOR_):
+
+	if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		if PEEK_MEMBER_POINTER () then do;
+			THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+			THIS_COUNTER = THIS_COUNTER + 3;
+		end;
+		else do;
+			THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+			THIS_COUNTER = THIS_COUNTER + 4;
+		end;
+	end;
+	else if CURRENT_TERMINAL = STAR_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 5;
+	end;
+	else if CURRENT_TERMINAL = AND_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = KW_OPERATOR_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = TILDE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_POINTER_OR_REFERENCE_DECLARATOR 	[accelerator]
+	/* -------------------------------------
+	/* Pick out a pointer_or_referenced_declarator
+	/*
+	/*	{ reference			-- 1
+	/*	| pointer			-- 2
+	/*	| member_pointer		-- 3
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_PTR_OR_REF_DCLTOR_):
+
+	if CURRENT_TERMINAL = STAR_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = AND_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		if PEEK_MEMBER_POINTER () then do;
+			THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+			THIS_COUNTER = THIS_COUNTER + 3;
+		end;
+		else	goto PAR_BUILTIN_FALSE;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_NEW_DECLARATOR 			[accelerator]
+	/* --------------------
+	/* Pick out a new_declarator:
+	/*
+	/*	{ reference new_declarator		-- 1
+	/*	| pointer new_declarator		-- 2
+	/*	| member_pointer new_declarator		-- 3
+	/*	| [ array_declarator ] ...		-- 4
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_NEW_DCLTOR_):
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+
+	if CURRENT_TERMINAL = STAR_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 2;
+	else if CURRENT_TERMINAL = AND_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 1;
+	else if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		if PEEK_MEMBER_POINTER () then
+			THIS_COUNTER = THIS_COUNTER + 3;
+		else	THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else	THIS_COUNTER = THIS_COUNTER + 4;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_ABSTRACT_DECLARATOR 			[accelerator]
+	/* -------------------------
+	/* Pick out a abstract_declarator:
+	/*
+	/*	[ reference abstract_declarator		-- 1
+	/*	| pointer abstract_declarator		-- 2
+	/*	| member_pointer abstract_declarator	-- 3
+	/*	| LEFT_PAREN				-- 4
+	/*	  abstract_declarator
+	/*	  RIGHT_PAREN 
+	/*	]
+	/*	[ postfix_declarator ]			-- 5
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_ABSTRACT_DCLTOR_):
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+
+	if CURRENT_TERMINAL = STAR_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 2;
+	else if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then do;
+		call SET_PEEK_TOKEN ();
+		if (PEEK_TOKEN.TYPE = STAR_TOKEN) |
+		   (PEEK_TOKEN.TYPE = AND_TOKEN) |
+		   (PEEK_TOKEN.TYPE = LPAREN_TOKEN) |
+		   (PEEK_TOKEN.TYPE = LSQUARE_TOKEN) then
+			THIS_COUNTER = THIS_COUNTER + 4;
+		else if PEEK_TOKEN.TYPE = IDENTIFIER_TOKEN then do;
+			if PEEK_PEEK_MEMBER_POINTER () then
+				THIS_COUNTER = THIS_COUNTER + 4;
+			else	THIS_COUNTER = THIS_COUNTER + 5;
+		end;
+		else	THIS_COUNTER = THIS_COUNTER + 5;
+	end;
+	else if CURRENT_TERMINAL = AND_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 1;
+	else if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		if PEEK_MEMBER_POINTER () then
+			THIS_COUNTER = THIS_COUNTER + 3;
+		else	THIS_COUNTER = THIS_COUNTER + 5;
+	end;
+	else	THIS_COUNTER = THIS_COUNTER + 5;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_PARAMETER_DECLARATOR 			[accelerator]
+	/* --------------------------
+	/* Pick out a parameter_declarator:
+	/*
+	/*	[ reference parameter_declarator	-- 1
+	/*	| pointer parameter_declarator		-- 2
+	/*	| member_pointer parameter_declarator	-- 3
+        /*	| simple_declarator_name		-- 4
+	/*	| LEFT_PAREN				-- 5
+	/*	  parameter_declarator
+	/*	  RIGHT_PAREN
+	/*	]
+	/*	[ postfix_declarator ]			-- 6
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_PARAM_DCLTOR_):
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+
+	if CURRENT_TERMINAL = STAR_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 2;
+	else if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then do;
+		call SET_PEEK_TOKEN ();
+		if (PEEK_TOKEN.TYPE = STAR_TOKEN) |
+		   (PEEK_TOKEN.TYPE = AND_TOKEN) |
+		   (PEEK_TOKEN.TYPE = LPAREN_TOKEN) |
+		   (PEEK_TOKEN.TYPE = LSQUARE_TOKEN) then
+			THIS_COUNTER = THIS_COUNTER + 5;
+		else if PEEK_TOKEN.TYPE = IDENTIFIER_TOKEN then do;
+			/* ---
+			if PEEK_PEEK_MEMBER_POINTER () then
+				THIS_COUNTER = THIS_COUNTER + 5;
+			else	THIS_COUNTER = THIS_COUNTER + 6;
+			--- */
+			if IS_TYPE_NAME (PEEK_TOKEN.SPELLING) then do;
+				if PEEK_PEEK_MEMBER_POINTER () then
+					THIS_COUNTER = THIS_COUNTER + 5;
+				else	THIS_COUNTER = THIS_COUNTER + 6;
+			end;
+			else	THIS_COUNTER = THIS_COUNTER + 5;
+		end;
+		else	THIS_COUNTER = THIS_COUNTER + 6;
+	end;
+	else if CURRENT_TERMINAL = AND_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 1;
+	else if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		if PEEK_MEMBER_POINTER () then
+			THIS_COUNTER = THIS_COUNTER + 3;
+		else	THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else	THIS_COUNTER = THIS_COUNTER + 6;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_INITIALIZER 				[accelerator]
+	/* -----------------
+	/* Pick out an initializer:
+	/*
+	/*	{ vanilla_initializer		-- 1
+	/*	| class_initializer		-- 2
+	/*	| null_initializer		-- 3
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_INIT_):
+
+	if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = EQUAL_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_POSTFIX_DECLARATOR 			[accelerator]
+	/* ------------------------
+	/* Pick out a postfix_declarator:
+	/*
+	/*	{ function_declarator		-- 1
+	/*	| array_declarator		-- 2
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_POSTFIX_DCLTOR_):
+
+	if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = LEFT_BRACKET_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_DECLARATION 				[accelerator]
+	/* -----------------
+	/* Pick out a declaration:
+	/*
+	/*	{ linkage_specification		-- 1
+	/*	| external_declaration		-- 2
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_DCL_):
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+
+	if CURRENT_TOKEN.TYPE = KW_EXTERN_TOKEN then do;
+		call SET_PEEK_TOKEN ();
+		if TOKEN_TO_TERMINAL (PEEK_TOKEN.TYPE) = STRING_TERMINAL then
+			THIS_COUNTER = THIS_COUNTER + 1;
+		else	THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else	THIS_COUNTER = THIS_COUNTER + 2;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_BASE_CLASS_SPECIFIER 			[accelerator]
+	/* --------------------------
+	/* Pick out a base_class_specifier:
+	/*
+	/*	{ KW_PUBLIC			-- 1
+	/*	| KW_PRIVATE			-- 2
+	/*	| KW_PROTECTED			-- 3
+	/*	| KW_VIRTUAL			-- 4
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_BASE_CLASS_SPEC_):
+
+	if CURRENT_TERMINAL = KW_PUBLIC_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = KW_PRIVATE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = KW_VIRTUAL_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = KW_PROTECTED_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_INITIALIZER_ITEM 			[accelerator]
+	/* ----------------------
+	/* Pick out an initializer_item:
+	/*
+	/*	{ COMMA				-- 1
+	/*	| LEFT_BRACE			-- 2
+	/*	| RIGHT_BRACE			-- 3
+	/*	| expression			-- 4
+	/*	| null_production		-- 5
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_INIT_ITEM_):
+
+	if CURRENT_TERMINAL = COMMA_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = LEFT_BRACE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = RIGHT_BRACE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+	else do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_PARAMETER_DECLARATION	 		[accelerator]
+	/* ---------------------------
+	/* Pick out a parameter_declaration:
+	/*
+	/*	{ ELLIPSIS				-- 1
+	/*	| declaration_specifiers		-- 2
+	/*	  [ parameter_declarator ]
+	/*	  [ parameter_initializer ]
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_PARAM_DCL_):
+
+	if CURRENT_TERMINAL = ELLIPSIS_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL ^= RIGHT_PAREN_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_STATEMENT
+	/* ---------------
+	/* Pick out a statement:
+	/*
+	/*	{ unambiguous_declaration_statement	-- 1
+	/*	| ambiguous_declaration_statement	-- 2
+	/*	| expression_statement			-- 3
+	/*	| labelled_statement			-- 4
+	/*	| break_statement			-- 5
+	/*	| case_statement			-- 6
+	/*	| continue_statement			-- 7
+	/*	| default_statement			-- 8
+	/*	| do_statement				-- 9
+	/*	| for_statement				-- 10
+	/*	| goto_statement			-- 11
+	/*	| if_statement				-- 12
+	/*	| return_statement			-- 13
+	/*	| switch_statement			-- 14
+	/*	| while_statement			-- 15
+	/*	| null_statement			-- 16
+	/*	| compound_statement			-- 17
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_STATEMENT_):
+
+	PEEK_TERMINAL = PEEK_DECLARATION_SPECIFIER ();
+
+	if PEEK_TERMINAL > 0 then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if PEEK_TERMINAL < 0 then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		call SET_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE ^= COLON_TOKEN then
+			THIS_COUNTER = THIS_COUNTER + 3;
+		else	THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if (CURRENT_TERMINAL >= LB_STATEMENT_TERMINAL) &
+		(CURRENT_TERMINAL <= HB_STATEMENT_TERMINAL) then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER +
+			       (CURRENT_TERMINAL -
+				LB_STATEMENT_TERMINAL + 5);
+	end;
+	else if CURRENT_TERMINAL ^= RIGHT_BRACE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_FOR_STATEMENT_INITIALIZER
+	/* -------------------------------
+	/* Pick out a for_statement_initializer:
+	/*
+	/*	{ SEMI_COLON				-- 1
+	/*	| unambiguous_declaration_statement	-- 2
+	/*	| ambiguous_declaration_statement	-- 3
+	/*	| comma_expression SEMI_COLON		-- 4
+	/*	}
+	/*
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_FOR_STATEMENT_INIT_):
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+
+	if CURRENT_TERMINAL ^= SEMI_COLON_TERMINAL then do;
+		PEEK_TERMINAL = PEEK_DECLARATION_SPECIFIER ();
+		if PEEK_TERMINAL > 0 then
+			THIS_COUNTER = THIS_COUNTER + 2;
+		else if PEEK_TERMINAL < 0 then
+			THIS_COUNTER = THIS_COUNTER + 3;
+		else	THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else	THIS_COUNTER = THIS_COUNTER + 1;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_DECLARATOR_NAME
+	/* ---------------------
+	/* Pick out a declarator_name:
+	/*
+	/*	{ simple_declarator_name		-- 1
+	/*	| qualified_name			-- 2
+	/*	| operator_or_conversion_function_name	-- 3
+	/*	| destructor_name			-- 4
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_DCLTOR_NAME_):
+
+	if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		call SET_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE ^= COLON_COLON_TOKEN then
+			THIS_COUNTER = THIS_COUNTER + 1;
+		else	THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = KW_OPERATOR_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+	else if CURRENT_TERMINAL = TILDE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 4;
+	end;
+	else if CURRENT_TERMINAL = TYPE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_NAME
+	/* ----------
+	/* Pick out a name:
+	/*
+	/*	{ simple_name				-- 1
+	/*	| qualified_name			-- 2
+	/*	| operator_or_conversion_function_name	-- 3
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_NAME_):
+
+	if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		call SET_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE ^= COLON_COLON_TOKEN then
+			THIS_COUNTER = THIS_COUNTER + 1;
+		else	THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = TYPE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if CURRENT_TERMINAL = KW_OPERATOR_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 3;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_COMPLETE_CLASS_OR_TYPE_NAME
+	/* ---------------------------------
+	/* Pick out a complete_class_or_type_name:
+	/*
+	/*	{ global_or_class_scope_qualifier	-- 1
+	/*	  vanilla_name
+	/*	| vanilla_name				-- 2
+	/*	}
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_COMP_CLASS_OR_TYPE_NAME_):
+
+	if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		call SET_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE ^= COLON_COLON_TOKEN then
+			THIS_COUNTER = THIS_COUNTER + 2;
+		else	THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = TYPE_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else if CURRENT_TERMINAL = COLON_COLON_TERMINAL then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 1;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_EXTERNAL_DECLARATION_TAIL
+	/* -------------------------------
+	/* Pick out a external_declaration tail:
+	/*
+	/*  { EQUAL					-- 1
+	/*    { COMMA init_declarator_list SEMI_COLON
+	/*    | SEMI_COLON
+	/*    }
+	/*  | LEFT_PAREN expression_list RIGHT_PAREN	-- 2
+	/*    { COMMA init_declarator_list SEMI_COLON
+	/*    | SEMI_COLON
+	/*    }
+	/*  | function_body				-- 3
+	/*  | null_production				-- 4
+	/*    { COMMA init_declarator_list SEMI_COLON
+	/*    | SEMI_COLON
+	/*    }
+	/*  }
+	/*
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_EXTERNAL_DCL_TAIL_):
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+	if CURRENT_TERMINAL = EQUAL_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 1;
+	else if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 2;
+	else if (CURRENT_TERMINAL = COMMA_TERMINAL) |
+		(CURRENT_TERMINAL = SEMI_COLON_TERMINAL) then
+		THIS_COUNTER = THIS_COUNTER + 4;
+	else	THIS_COUNTER = THIS_COUNTER + 3;
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_DECLARATION_STATEMENT_TAIL
+	/* --------------------------------
+	/* Pick out a declaration_statement tail:
+	/*
+	/*  { EQUAL					-- 1
+	/*    { COMMA init_declarator_list SEMI_COLON
+	/*    | SEMI_COLON
+	/*    }
+	/*  | LEFT_PAREN expression_list RIGHT_PAREN	-- 2
+	/*    { COMMA init_declarator_list SEMI_COLON
+	/*    | SEMI_COLON
+	/*    }
+	/*  | null_production				-- 3
+	/*    { COMMA init_declarator_list SEMI_COLON
+	/*    | SEMI_COLON
+	/*    }
+	/*  }
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_DCL_STATEMENT_TAIL_):
+
+	THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+	if CURRENT_TERMINAL = EQUAL_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 1;
+	else if CURRENT_TERMINAL = LEFT_PAREN_TERMINAL then
+		THIS_COUNTER = THIS_COUNTER + 2;
+	else	THIS_COUNTER = THIS_COUNTER + 3;
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %PICK_DECLARATION_LIST_ITEM
+	/*
+	/*	{ linkage_specification		-- 1
+	/*	| external_declaration		-- 2
+	/*	}
+	/* ----------------------------------------------------------- */
+
+	PERFORM (PICK_DCL_LIST_ITEM_):
+
+	if CURRENT_TOKEN.TYPE = KW_EXTERN_TOKEN then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		call SET_PEEK_TOKEN ();
+		if TOKEN_TO_TERMINAL (PEEK_TOKEN.TYPE) = STRING_TERMINAL
+		then	THIS_COUNTER = THIS_COUNTER + 1;
+		else	THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else if (CURRENT_TOKEN.TYPE ^= EOF_TOKEN) &
+		(CURRENT_TERMINAL ^= RIGHT_BRACE_TERMINAL) then do;
+		THIS_EXIT = PT (THIS_COUNTER).OPERAND;
+		THIS_COUNTER = THIS_COUNTER + 2;
+	end;
+	else	goto PAR_BUILTIN_FALSE;
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %CLEAR_DECLARATION_SPECIFIER
+	/* ----------------------------------------------------------- */
+
+	PERFORM (CLEAR_DCL_SPEC_):
+
+	HAVE_DECLARATION_SPECIFIER = FALSE;
+	HAVE_TYPE_SPECIFIER = FALSE;
+	if LOOK_AHEAD_LEVEL = 0 then
+		call CLEAR_DECLARATION ();
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %CLEAR_TYPE_SPECIFIER
+	/* ----------------------------------------------------------- */
+
+	PERFORM (CLEAR_TYPE_SPEC_):
+
+	HAVE_TYPE_SPECIFIER = FALSE;
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %SET_DECLARATION_SPECIFIER
+	/* ----------------------------------------------------------- */
+
+	PERFORM (SET_DCL_SPEC_):
+
+	HAVE_DECLARATION_SPECIFIER = TRUE;
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %SET_TYPE_SPECIFIER
+	/* ----------------------------------------------------------- */
+
+	PERFORM (SET_TYPE_SPEC_):
+
+	HAVE_TYPE_SPECIFIER = TRUE;
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %SET_DECLARATOR_NAME
+	/* ----------------------------------------------------------- */
+
+	PERFORM (SET_DCLTOR_NAME_):
+
+	if LOOK_AHEAD_LEVEL > 0 then
+		call SAVE_LA_SCOPE_NAME (MATCHED_TOKEN.SPELLING);
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %SET_DECLARATOR
+	/* ----------------------------------------------------------- */
+
+	PERFORM (SET_DCLTOR_):
+
+	if LOOK_AHEAD_LEVEL > 0 then
+		call INSTALL_NON_TYPE_INTO_LA_SCOPE (GET_LA_SCOPE_NAME ());
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %SET_TAG_NAME
+	/* ----------------------------------------------------------- */
+
+	PERFORM (SET_TAG_NAME_):
+
+	if LOOK_AHEAD_LEVEL > 0 then
+		call INSTALL_TYPE_INTO_LA_SCOPE (MATCHED_TOKEN.SPELLING);
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %BEGIN_PROTOTYPE_SCOPE
+	/* ----------------------------------------------------------- */
+
+	PERFORM (BEGIN_PROTO_SCOPE_):
+
+	if LOOK_AHEAD_LEVEL > 0 then
+		call BEGIN_LA_SCOPE ();
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %END_PROTOTYPE_SCOPE
+	/* ----------------------------------------------------------- */
+
+	PERFORM (END_PROTO_SCOPE_):
+
+	if LOOK_AHEAD_LEVEL > 0 then
+		call END_LA_SCOPE ();
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* %END_MAIN_PRODUCTION
+	/* ----------------------------------------------------------- */
+
+	PERFORM (END_MAIN_PRODUCTION_):
+
+	PAR_FOUND = TRUE;
+	/* if TRACE_PAR_CALLS then call PAR_TRACE_RETURN (); */
+	return;
+
+	/* %ENDBUILTINS */
+
+	/* -------------------------------------------------------------
+	/* PAR_BUILTIN_TRUE
+	/* ----------------------------------------------------------- */
+
+	PAR_BUILTIN_TRUE:
+
+	if PT (THIS_COUNTER - 1).ACTION = byte (ACT_EXIT) then
+		THIS_COUNTER = THIS_EXIT;
+	goto PARSER_DRIVER_LOOP;
+
+	/* -------------------------------------------------------------
+	/* PAR_BUILTIN_FALSE
+	/* ----------------------------------------------------------- */
+
+	PAR_BUILTIN_FALSE:
+
+	if PT (THIS_COUNTER - 1).ACTION = byte (ACT_ERROR) then do;
+		if THIS_FOUND then do;
+			if LOOK_AHEAD_LEVEL > 0 then
+				goto LOOK_AHEAD_FAILURE (LOOK_AHEAD_LEVEL);
+			else	call PAR_ERROR ();
+		end;
+		else if LOOK_AHEAD_LEVEL > 0 then do;
+			/*
+			/* Look-ahead may fail without finding anything.
+			/**/
+			if LOOK_AHEAD_FAILURE (LOOK_AHEAD_LEVEL) =
+			   LOOK_AHEAD_FAILURE_LABEL then
+				goto LOOK_AHEAD_FAILURE_LABEL;
+		end;
+		/* if TRACE_PAR_CALLS then call PAR_TRACE_RETURN (); */
+		return;
+	end;
+	goto PARSER_DRIVER_LOOP;
+end;
+
+/* if TRACE_PAR_CALLS then call PAR_TRACE_RETURN (); */
+return;
+
+/* ---------------------------------------------------------------------
+/* PAR_ERROR
+/* ------------------------------------------------------------------- */
+
+PAR_ERROR: procedure internal;
+
+	/*
+	/* See if we can find out any more to give additional
+	/* and more useful diagnostic information.
+	/**/
+
+	if MATCHED_TOKEN.TYPE = IDENTIFIER_TOKEN then do;
+		if TYPE_NAME_HIDDEN_BY_NON_TYPE
+		   (MATCHED_TOKEN.SPELLING) then do;
+			/*
+			/* Warning; this type name has been hidden by a
+			/* previous non-type declaration of the same name
+			/* in the same scope; qualify  the name with the
+			/* appropriate class/struct/union/enum keyword
+			/* if the type is to be referenced. For example:
+			/*
+			/*     struct T {};
+			/*     int T;
+			/*     T x;      // error; use "struct T x;"
+			/**/
+			call SEMANTIC_ERROR_I (ERR_TYPE_HIDDEN_BY_NON_TYPE,
+					       TOKEN_NAME
+					       (MATCHED_TOKEN.SPELLING));
+		end;
+		else if TYPE_NAME_HIDES_NON_TYPE
+			(MATCHED_TOKEN.SPELLING) then do;
+			/*
+			/* Warning; this type name hides a previous
+			/* non-type declaration of the same name in
+			/* an enclosing scope. For example:
+			/*
+			/*      int T;
+			/*      f () { struct T;
+			/*             T = 3;     // error; use ::T
+			/*      }
+			/**/
+			call SEMANTIC_ERROR_I (ERR_TYPE_HIDES_NON_TYPE,
+					       TOKEN_NAME
+					       (MATCHED_TOKEN.SPELLING));
+		end;
+	end;
+
+	/* -TODO- Some sort of error recovery ... someday maybe */
+
+	/* Ok, now give our infamous "syntax abort" and die */
+
+	call SYNTAX_ERROR (ERR_SYNTAX);
+
+	if MAX_SEVERITY >= 4 then do;
+		/*
+		/* goto ABORT_EXIT;
+		/**/
+		stop;
+	end;
+
+/* ---------------------------------------------------------------------
+/* TYPE_NAME_HIDDEN_BY_NON_TYPE
+/* ------------------------------------------------------------------- */
+
+TYPE_NAME_HIDDEN_BY_NON_TYPE: procedure (NAME)
+			      returns   (type (BOOL_T))
+			      internal;
+
+	declare NAME type (NID_T);
+
+	/*
+	/* If a name represents both a non-type and a non-type in the
+	/* same scope, the symbol which is visable (via the lookup
+	/* routines) is the non-type.  In this case the type symbol
+	/* has been bumped off of the (next-of-name list of the) symbol
+	/* table and has been hung off of the (OTHER_SYMBOL field of the)
+	/* non-type symbol; IS_ALSO_TAG in the non-type sym-node will
+	/* be TRUE and IS_ALSO_NON_TAG in the type sym-node will be TRUE.
+	/**/
+
+	if LOOKUP_NAME_QUIETLY
+	   (NAME, ANY_SK, CURRENT_SCOPE) ^= NULL_NID then do;
+		if ^SYM_NODE.IS_TYPE & SYM_NODE.IS_ALSO_TAG then
+			return (TRUE);
+	end;
+	return (FALSE);
+
+end TYPE_NAME_HIDDEN_BY_NON_TYPE;
+
+/* ---------------------------------------------------------------------
+/* TYPE_NAME_HIDES_NON_TYPE
+/* ------------------------------------------------------------------- */
+
+TYPE_NAME_HIDES_NON_TYPE: procedure (NAME)
+			  returns   (type (BOOL_T))
+			  internal;
+
+	declare NAME type (NID_T);
+
+	/*
+	/* If a name represents both a non-type and a non-type in the
+	/* same scope, the symbol which is visable (via the lookup
+	/* routines) is the non-type.  In this case the type symbol
+	/* has been bumped off of the (next-of-name list of the) symbol
+	/* table and has been hung off of the (OTHER_SYMBOL field of the)
+	/* non-type symbol; IS_ALSO_TAG in the non-type sym-node will
+	/* be TRUE and IS_ALSO_NON_TAG in the type sym-node will be TRUE.
+	/**/
+
+	if LOOKUP_NAME_QUIETLY
+	   (NAME, TYPE_SK, CURRENT_SCOPE) ^= NULL_NID then do;
+		call SET_SCOPE_NODE_R (SYM_NODE.ENCLOSING_SCOPE);
+		if LOOKUP_NAME_QUIETLY
+		   (NAME,
+		    ANY_SK,
+		    SCOPE_NODE.ENCLOSING_SCOPE) ^= NULL_NID then do;
+			if ^SYM_NODE.IS_TYPE then
+				return (TRUE);
+		end;
+	end;
+	return (FALSE);
+
+end TYPE_NAME_HIDES_NON_TYPE;
+
+end PAR_ERROR;
+
+/* =====================================================================
+/* Debugging/tracing routines
+/* =================================================================== */
+
+/*
+
+declare BLANKS	character (80) static internal initial (' ');
+declare trim	builtin;
+
+PAR_TRACE_ENTRY: procedure internal;
+
+	declare LINE character (256) varying;
+
+	PAR_NEST_LEVEL = PAR_NEST_LEVEL + 1;
+	if DIAG_LINE_ID < DUMP_LINE then return;
+	LINE = substr (BLANKS, 1, min (80, PAR_NEST_LEVEL)) || '.';
+	if LOOK_AHEAD_LEVEL > 0 then
+		LINE = LINE || ' (look-ahead:' ||
+		       trim (char (LOOK_AHEAD_LEVEL)) || ')';
+	call WRITE_DEBUG_LINE (LINE);
+
+end PAR_TRACE_ENTRY;
+
+PAR_TRACE_MATCH: procedure internal;
+
+	declare LINE character (256) varying;
+
+	if DIAG_LINE_ID < DUMP_LINE then return;
+	LINE = substr (BLANKS, 1, min (80, PAR_NEST_LEVEL));
+	LINE = LINE || '[' || TOKEN_SPELLING (CURRENT_TOKEN_PTR) || ']';
+	if LOOK_AHEAD_LEVEL > 0 then
+		LINE = LINE || ' (look-ahead:' ||
+		       trim (char (LOOK_AHEAD_LEVEL)) || ')';
+	call WRITE_DEBUG_LINE (LINE);
+
+end PAR_TRACE_MATCH;
+
+PAR_TRACE_RETURN: procedure internal;
+
+	declare LINE character (256) varying;
+
+	PAR_NEST_LEVEL = PAR_NEST_LEVEL - 1;
+	if DIAG_LINE_ID < DUMP_LINE then return;
+	if ^PAR_FOUND | (THIS_PRODUCTION = '') then return;
+	LINE = substr (BLANKS, 1, min (80, PAR_NEST_LEVEL));
+	LINE = LINE || THIS_PRODUCTION;
+	if LOOK_AHEAD_LEVEL > 0 then
+		LINE = LINE || ' (look-ahead:' ||
+		       trim (char (LOOK_AHEAD_LEVEL)) || ')';
+	THIS_PRODUCTION = '';
+	call WRITE_DEBUG_LINE (LINE);
+
+end PAR_TRACE_RETURN;
+
+*/
+
+/* =====================================================================
+/* Peek-ahead and type-name vs. non-type-name lookup routines
+/* =================================================================== */
+
+/* ---------------------------------------------------------------------
+/* PEEK_DECLARATION_SPECIFIER
+/*
+/* If we are not looking at a declaration-specifier starting at
+/* current-token, then return zero.  Trashes current-node-id.
+/*
+/* Otherwise (we are looking at a declaration-specifier starting at
+/* current-token) return return non-zero; in addition, in this case,
+/* if we are looking at an unambiguous declaration-specifier (i.e.
+/* either a declaration-specifier which is not a type-specifier, or
+/* a type-specifier which is not followed by a "("), then return 1,
+/* otherwise (we are looking at an ambiguous declaration-specifier)
+/* return -1.  Trashes current-node-id.
+/*
+/* Return value summary:
+/* --------------------
+/*   0  iff we are not looking at a declaration-specifier.
+/*   1  iff we are looking at an unambiguous declaration-specifier.
+/*  -1  iff we are looking at an ambiguous declaration-specifier.
+/*
+/* Declaration-specifier definition:
+/* --------------------------------
+/* A declaration-specifier is either a user defined (qualified or
+/* unqualified) type-name (tag or typedef), or one of the (24) following
+/* keywords:
+/*
+/*      void char short int long signed unsigned float double
+/*      const volatile
+/*      auto extern register static typedef
+/*      class struct union enum
+/*      friend inline virtual overload
+/*
+/* N.B. If we are currently at class scope and we have a user defined
+/* type-name which is followed by a ";" or a ",", then we return 0;
+/* this signifies a member access declaration.  TODO: do this only
+/* in the case of a *qualified* user defined type-name.
+/*
+/* Ambiguous declaration-specifier definition:
+/* ------------------------------------------
+/* A declaration-specifier is considered to be ambiguous (for our purposes)
+/* iff it is a user defined (qualifeid or unqualifeid) type-name (tag or
+/* typedef), or one of the following (9) declaration-type-specifier keywords,
+/* and is followed by a left parenthesis ("("):
+/*
+/*      void char short int long signed unsigned float double
+/*
+/* It is ambiguous becauase it could be either the type-specifier
+/* of a declaration or a function-style cast expression.
+/*    
+/* ------------------------------------------------------------------- */
+
+PEEK_DECLARATION_SPECIFIER: procedure returns (type (SHORT_T)) internal;
+
+	declare HAVE_DEFINED_TYPE_SPECIFIER type (BOOL_T);
+
+	if CURRENT_TERMINAL = IDENTIFIER_TERMINAL then do;
+		if PEEK_DEFINED_TYPE_SPECIFIER () then do;
+			if PEEK_TOKEN.TYPE = LPAREN_TOKEN then
+				return (-1);
+			return (1);
+		end;
+	end;
+	else if CURRENT_TERMINAL = TYPE_TERMINAL then do;
+		call SET_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE = LPAREN_TOKEN then
+			return (-1);
+		return (1);
+	end;
+	else if (CURRENT_TERMINAL >= LB_DCL_SPEC_TERMINAL) &
+		(CURRENT_TERMINAL <= HB_DCL_SPEC_TERMINAL) then do;
+		return (1);
+	end;
+	else if CURRENT_TERMINAL = COLON_COLON_TERMINAL then do;
+		call SET_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE = IDENTIFIER_TOKEN then do;
+			LOOKUP_IN_GLOBAL_SCOPE_ONLY = TRUE;
+			HAVE_DEFINED_TYPE_SPECIFIER =
+				PEEK_PEEK_DEFINED_TYPE_SPECIFIER ();
+			LOOKUP_IN_GLOBAL_SCOPE_ONLY = FALSE;
+			if HAVE_DEFINED_TYPE_SPECIFIER then do;
+				if PEEK_TOKEN.TYPE = LPAREN_TOKEN then
+					return (-1);
+				return (1);
+			end;
+		end;
+
+	end;
+	return (0);
+
+end PEEK_DECLARATION_SPECIFIER;
+
+/* ---------------------------------------------------------------------
+/* PEEK_PEEK_DECLARATION_SPECIFIER
+/*
+/* Exactly the same as PEEK_DECLARATION_SPECIFIER except
+/* we start at peek-token rather than at current-token.
+/* ------------------------------------------------------------------- */
+
+PEEK_PEEK_DECLARATION_SPECIFIER: procedure returns (type (SHORT_T)) internal;
+
+	declare
+		T				type (SHORT_T),
+		HAVE_DEFINED_TYPE_SPECIFIER	type (BOOL_T);
+
+	if PEEK_TOKEN.TYPE = IDENTIFIER_TOKEN then do;
+		if PEEK_PEEK_DEFINED_TYPE_SPECIFIER () then do;
+			if PEEK_TOKEN.TYPE = LPAREN_TOKEN then
+				return (-1);
+			return (1);
+		end;
+		return (0);
+	end;
+
+	T = TOKEN_TO_TERMINAL (PEEK_TOKEN.TYPE);
+
+	if T = TYPE_TERMINAL then do;
+		call ADVANCE_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE = LPAREN_TOKEN then
+			return (-1);
+		return (1);
+	end;
+	else if (T >= LB_DCL_SPEC_TERMINAL) &
+		(T <= HB_DCL_SPEC_TERMINAL) then do;
+		return (1);
+	end;
+	else if T = COLON_COLON_TERMINAL then do;
+		call ADVANCE_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE = IDENTIFIER_TOKEN then do;
+			LOOKUP_IN_GLOBAL_SCOPE_ONLY = TRUE;
+			HAVE_DEFINED_TYPE_SPECIFIER =
+				PEEK_PEEK_DEFINED_TYPE_SPECIFIER ();
+			LOOKUP_IN_GLOBAL_SCOPE_ONLY = FALSE;
+			if HAVE_DEFINED_TYPE_SPECIFIER then do;
+				if PEEK_TOKEN.TYPE = LPAREN_TOKEN then
+					return (-1);
+				return (1);
+			end;
+		end;
+		return (0);
+	end;
+
+	return (0);
+
+end PEEK_PEEK_DECLARATION_SPECIFIER;
+
+/* ---------------------------------------------------------------------
+/* PEEK_DEFINED_TYPE_SPECIFIER
+/*
+/* If we are looking at a user-defined type-specifier, either qualified or
+/* unqualified, starting at the current-token, then return TRUE; in this case,
+/* if the type symbol was not found in the look-ahead scope then the global
+/* FOUND_TYPE_NAME_IN_LA_SCOPE will be set FALSE and the sym-node of the type
+/* symbol will be paged in, otherwise if the type symbol was found in the
+/* look-ahead scope then FOUND_TYPE_NAME_IN_LA_SCOPE will be set TRUE and
+/* the current-node-id will be trashed.  Also in this case, peek-token is
+/* guaranteed to represent the token just after the user-defined type-specifier.
+/*
+/* Otherwise, if we are not looking at a user-defined type-specifier,
+/* return FALSE; in this case the global FOUND_TYPE_NAME_IN_LA_SCOPE
+/* will be undefined and the current-node-id will be trashed.
+/* ------------------------------------------------------------------- */
+
+PEEK_DEFINED_TYPE_SPECIFIER: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		NAME				type (NID_T),
+		ID				type (NID_T);
+	declare
+		HAVE_DEFINED_TYPE_SPECIFIER	type (BOOL_T);
+
+	if CURRENT_TOKEN.TYPE ^= IDENTIFIER_TOKEN then do;
+		if CURRENT_TOKEN.TYPE = COLON_COLON_TOKEN then do;
+			call SET_PEEK_TOKEN ();
+			if PEEK_TOKEN.TYPE = IDENTIFIER_TOKEN then do;
+				LOOKUP_IN_GLOBAL_SCOPE_ONLY = TRUE;
+				HAVE_DEFINED_TYPE_SPECIFIER =
+					PEEK_PEEK_DEFINED_TYPE_SPECIFIER ();
+				LOOKUP_IN_GLOBAL_SCOPE_ONLY = FALSE;
+				return (HAVE_DEFINED_TYPE_SPECIFIER);
+			end;
+			else	return (FALSE);
+		end;
+		else	return (FALSE);
+	end;
+
+	NAME = CURRENT_TOKEN.SPELLING;
+	call SET_PEEK_TOKEN ();
+
+	goto X_PEEK_DEFINED_TYPE_SPECIFIER;
+
+/* ---------------------------------------------------------------------
+/* PEEK_PEEK_DEFINED_TYPE_SPECIFIER
+/*
+/* Exactly the same as PEEK_DEFINED_TYPE_SPECIFIER except
+/* we start at the peek-token rather than at current-token.
+/* ------------------------------------------------------------------- */
+
+PEEK_PEEK_DEFINED_TYPE_SPECIFIER: entry returns (type (BOOL_T));
+
+	NAME = PEEK_TOKEN.SPELLING;
+
+	call ADVANCE_PEEK_TOKEN ();
+
+	/* Fall thru to X_PEEK_DEFINED_TYPE_SPECIFIER */
+
+	X_PEEK_DEFINED_TYPE_SPECIFIER:
+
+	/* some-name */
+
+	if PEEK_TOKEN.TYPE ^= COLON_COLON_TOKEN then do;
+		/*
+		/* some-name (not followed by ::)
+		/**/
+		return (IS_TYPE_NAME (NAME));
+	end;
+
+	/* some-name :: */
+
+	FOUND_TYPE_NAME_IN_LA_SCOPE = FALSE;
+
+	/* Performance haque ...
+
+	call SET_SYM_NODE_R (NAME);
+	if TOKEN_NODE.DTYPE ^= byte (1) then
+		return (FALSE);
+
+	... */
+
+	if LOOKUP_IN_GLOBAL_SCOPE_ONLY then
+		ID = LOOKUP_TYPE_NAME_QUIETLY (NAME, CURRENT_GLOBAL_SCOPE);
+	else	ID = LOOKUP_TYPE_NAME_QUIETLY (NAME, CURRENT_SCOPE);
+
+	if ID = NULL_NID then
+		return (FALSE);
+	else if ^SYM_NODE.IS_TAG then
+		return (FALSE);
+
+	/* tag-name :: --> class-qualifier */
+
+	do while (TRUE);
+
+		/* class-qualifier */
+
+		call ADVANCE_PEEK_TOKEN ();
+
+		if PEEK_TOKEN.TYPE ^= IDENTIFIER_TOKEN then
+			return (FALSE);
+
+		/* class-qualifier some-name */
+
+		NAME = PEEK_TOKEN.SPELLING;
+
+		call ADVANCE_PEEK_TOKEN ();
+	
+		if PEEK_TOKEN.TYPE ^= COLON_COLON_TOKEN then do;
+			/*
+			/* class-qualifier some-name (not followed by ::)
+			/**/
+			if LOOKUP_TYPE_NAME_ONLY then do;
+				if SEARCH_CLASS_FOR_TYPE_QUIETLY
+				   (ID, NAME) ^= NULL_NID then
+					return (SYM_NODE.IS_TYPE);
+			end;
+			else if SEARCH_CLASS_QUIETLY
+				(ID, NAME, ANY_SK) ^= NULL_NID then
+				return (SYM_NODE.IS_TYPE);
+			if SYM_NODE.NAME = NAME then
+				return (FALSE);
+			return (RUMMAGE_QUALIFIED_TYPE_NAME (NAME) ^= NULL_NID);
+		end;
+
+		/* class-qualifier some-name :: */
+
+		ID = SEARCH_CLASS_FOR_TYPE_QUIETLY (ID, NAME);
+
+		if ID = NULL_NID then do;
+			if SYM_NODE.NAME ^= NAME then do;
+				ID = RUMMAGE_QUALIFIED_TAG_NAME (NAME);
+				if ID = NULL_NID then
+					return (FALSE);
+			end;
+		end;
+		else if ^SYM_NODE.IS_TAG then
+			return (FALSE);
+
+		/* class-qualifier tag-name :: --> class-qualifier */
+	end;
+
+end PEEK_DEFINED_TYPE_SPECIFIER;
+
+/* ---------------------------------------------------------------------
+/* PEEK_MEMBER_POINTER
+/*
+/* If we are looking at a member pointer, e.g. "A::B::C::*", starting
+/* at the current-token, then return TRUE.  Otherwise return FALSE.
+/* ------------------------------------------------------------------- */
+
+PEEK_MEMBER_POINTER: procedure returns (type (BOOL_T)) internal;
+
+	return (PEEK_NAME_QUALIFIER () = STAR_TERMINAL);
+
+end PEEK_MEMBER_POINTER;
+
+/* ---------------------------------------------------------------------
+/* PEEK_PEEK_MEMBER_POINTER
+/*
+/* Exactly the same as PEEK_MEMBER_POINTER except we
+/* start at peek-token rather than at current-token.
+/* ------------------------------------------------------------------- */
+
+PEEK_PEEK_MEMBER_POINTER: procedure returns (type (BOOL_T)) internal;
+
+	return (PEEK_PEEK_NAME_QUALIFIER () = STAR_TERMINAL);
+
+end PEEK_PEEK_MEMBER_POINTER;
+
+/* ---------------------------------------------------------------------
+/* PEEK_NAME_QUALIFIER
+/*
+/* If we are looking at a simple name qualifier, e.g. "A::B::C::",
+/* starting at the current-token, then return the non-zero terminal-code
+/* of the token following the final "::".  Otherwise return NULL_NID.
+/* ------------------------------------------------------------------- */
+
+PEEK_NAME_QUALIFIER: procedure returns (type (SHORT_T)) internal;
+
+	if CURRENT_TOKEN.TYPE ^= IDENTIFIER_TOKEN then
+		return (NULL_TERMINAL);
+
+	call SET_PEEK_TOKEN ();
+
+	goto X_PEEK_NAME_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* PEEK_PEEK_NAME_QUALIFIER
+/*
+/* Exactly the same as PEEK_NAME_QUALIFIER except we
+/* start at peek-token rather than at current-token.
+/* ------------------------------------------------------------------- */
+
+PEEK_PEEK_NAME_QUALIFIER: entry returns (type (SHORT_T));
+
+	if PEEK_TOKEN.TYPE ^= IDENTIFIER_TOKEN then
+		return (NULL_TERMINAL);
+
+	call ADVANCE_PEEK_TOKEN ();
+
+	/* Fall thru to X_PEEK_NAME_QUALIFIER */
+
+	X_PEEK_NAME_QUALIFIER:
+
+	/* name */
+
+	if PEEK_TOKEN.TYPE ^= COLON_COLON_TOKEN then
+		return (NULL_TERMINAL);
+
+	/* name :: --> name-qualifier */
+
+	do while (TRUE);
+
+		call ADVANCE_PEEK_TOKEN ();
+
+		if PEEK_TOKEN.TYPE ^= IDENTIFIER_TOKEN then
+			return (TOKEN_TO_TERMINAL (PEEK_TOKEN.TYPE));
+
+		/* name-qualifier name */
+
+		call ADVANCE_PEEK_TOKEN ();
+
+		if PEEK_TOKEN.TYPE ^= COLON_COLON_TOKEN then
+			return (NULL_TERMINAL);
+
+		/* name-qualifier name :: --> name-qualifier */
+	end;
+
+end PEEK_NAME_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* IS_TYPE_NAME
+/*
+/* If the name represented by the given token-node id is a type name then
+/* return TRUE; in this case, if the type name was not found in the look-
+/* ahead scope, then the global FOUND_TYPE_NAME_IN_LA_SCOPE will be set
+/* FALSE and the sym-node of the found type name symbol will be paged in,
+/* otherwise, the global FOUND_TYPE_NAME_IN_LA_SCOPE it will be set FALSE
+/* and the current-node-id will be trashed.
+/*
+/* Otherwise, if the name represented by the given token-node id is not
+/* a type name, then return FALSE; in this case, the value of the global
+/* FOUND_TYPE_NAME_IN_LA_SCOPE will be undefined and the current-node-id
+/* will be trashed.
+/* ------------------------------------------------------------------- */
+
+IS_TYPE_NAME: procedure (NAME) returns (type (BOOL_T)) internal;
+
+	declare NAME type (NID_T);
+
+	/*
+	/* Note that in the following example, line 4 should give an
+	/* error since the type-name "s" is hidden by the declaration
+	/* of line 3; it can be accessed however by using "struct s".
+	/*
+	/*       1: struct s;
+	/*       2: f () {
+	/*       3:         int s;
+	/*       4:         s x;
+	/*       5: }
+	/**/
+
+	if LOOK_AHEAD_LEVEL > 0 then do;
+		if IS_LA_SCOPE_NON_TYPE_NAME (NAME) then do;
+			FOUND_TYPE_NAME_IN_LA_SCOPE = FALSE;
+			return (FALSE);
+		end;
+		else if IS_LA_SCOPE_TYPE_NAME (NAME) then do;
+			FOUND_TYPE_NAME_IN_LA_SCOPE = TRUE;
+			return (TRUE);
+		end;
+	end;
+
+	FOUND_TYPE_NAME_IN_LA_SCOPE = FALSE;
+
+	/* Performance haque ...
+
+	call SET_SYM_NODE_R (NAME);
+	if TOKEN_NODE.DTYPE ^= byte (1) then
+		return (FALSE);
+	
+	... */
+
+	if LOOKUP_TYPE_NAME_ONLY then do;
+		if LOOKUP_IN_GLOBAL_SCOPE_ONLY then
+			return (LOOKUP_TYPE_NAME_QUIETLY
+				(NAME, CURRENT_GLOBAL_SCOPE) ^= NULL_NID);
+		else	return (LOOKUP_TYPE_NAME_QUIETLY
+				(NAME, CURRENT_SCOPE) ^= NULL_NID);
+	end;
+	else if LOOKUP_IN_GLOBAL_SCOPE_ONLY then do;
+		if LOOKUP_NAME_QUIETLY
+		   (NAME, ANY_SK, CURRENT_GLOBAL_SCOPE) ^= NULL_NID then
+			return (SYM_NODE.IS_TYPE);
+	end;
+	else if LOOKUP_NAME_QUIETLY
+		(NAME, ANY_SK, CURRENT_SCOPE) ^= NULL_NID then
+		return (SYM_NODE.IS_TYPE);
+
+	return (FALSE);
+	
+end IS_TYPE_NAME;
+
+/* =====================================================================
+/* Look-ahead name-space/scoping routines
+/* =================================================================== */
+
+%replace MAX_LA_SCOPE_LEVEL	by 31;
+%replace N_LA_SCOPE_LEVELS	by 32;
+%replace LA_NON_TYPE_CODE	by  0;
+%replace LA_TYPE_CODE		by  1;
+
+declare
+
+LA_SCOPE_LEVEL			type (SHORT_T)
+				static internal initial (0),
+LA_SCOPE_STACK			(0 : MAX_LA_SCOPE_LEVEL) type (POINTER_T)
+				static internal
+				initial ((N_LA_SCOPE_LEVELS) null ()),
+LA_SCOPE_SAVE_NAME_STACK	(0 : MAX_LA_SCOPE_LEVEL) type (NID_T)
+				static internal
+				initial ((N_LA_SCOPE_LEVELS) NULL_NID);
+
+/* ---------------------------------------------------------------------
+/* SAVE_LA_SCOPE_NAME
+/* ------------------------------------------------------------------- */
+
+SAVE_LA_SCOPE_NAME: procedure (NAME) internal;
+
+	declare NAME	type (NID_T);
+
+	LA_SCOPE_SAVE_NAME_STACK (LA_SCOPE_LEVEL) = NAME;
+
+end SAVE_LA_SCOPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_LA_SCOPE_NAME
+/* ------------------------------------------------------------------- */
+
+GET_LA_SCOPE_NAME: procedure returns (type (NID_T)) internal;
+
+	return (LA_SCOPE_SAVE_NAME_STACK (LA_SCOPE_LEVEL));
+
+end GET_LA_SCOPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* INSTALL_TYPE_INTO_LA_SCOPE
+/*
+/* Install the non-type-name represented by the given token-node
+/* id into the look-ahead scope.  N.B. this assumes that we are
+/* in look-ahead mode (i.e. LOOK_AHEAD_LEVEL > 0).
+/* ------------------------------------------------------------------- */
+
+INSTALL_NON_TYPE_INTO_LA_SCOPE: procedure (NAME) internal;
+
+	declare NAME	type (NID_T);
+
+	if LA_SCOPE_LEVEL > MAX_LA_SCOPE_LEVEL then do;
+		/*
+		/* Error; max look-ahead scope nesting level exceeeded.
+		/**/
+		call COMPILER_ERROR_I (ERR_LOOK_AHEAD_SCOPE_LEVEL,
+				       trim (char (MAX_LA_SCOPE_LEVEL)));
+		return;
+	end;
+
+	if ^ALREADY_ON_NODE_LIST_WITH_CODE
+	    (LA_SCOPE_STACK (LA_SCOPE_LEVEL), NAME, LA_NON_TYPE_CODE) then
+		call APPEND_TO_NODE_LIST_WITH_CODE
+		     (LA_SCOPE_STACK (LA_SCOPE_LEVEL), NAME, LA_NON_TYPE_CODE);
+
+end INSTALL_NON_TYPE_INTO_LA_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* INSTALL_TYPE_INTO_LA_SCOPE
+/*
+/* Install the type-name represented by the given token-node
+/* id into the look-ahead scope.  N.B. this assumes that we
+/* are in look-ahead mode (i.e. LOOK_AHEAD_LEVEL > 0).
+/* ------------------------------------------------------------------- */
+
+INSTALL_TYPE_INTO_LA_SCOPE: procedure (NAME) internal;
+
+	declare NAME	type (NID_T);
+
+	if LA_SCOPE_LEVEL > MAX_LA_SCOPE_LEVEL then do;
+		/*
+		/* Error; max look-ahead scope nesting level exceeeded.
+		/**/
+		call COMPILER_ERROR_I (ERR_LOOK_AHEAD_SCOPE_LEVEL,
+				       trim (char (MAX_LA_SCOPE_LEVEL)));
+		return;
+	end;
+
+	if ^ALREADY_ON_NODE_LIST_WITH_CODE
+	    (LA_SCOPE_STACK (LA_SCOPE_LEVEL), NAME, LA_TYPE_CODE) then
+		call APPEND_TO_NODE_LIST_WITH_CODE
+		     (LA_SCOPE_STACK (LA_SCOPE_LEVEL), NAME, LA_TYPE_CODE);
+
+end INSTALL_TYPE_INTO_LA_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* IS_LA_SCOPE_NON_TYPE_NAME
+/*
+/* Return TRUE iff the name represented by the given token-node id is
+/* a non-type-name in the look-ahead scope, otherwise FALSE.  N.B. this
+/* assumes that we are in look-ahead mode (i.e. LOOK_AHEAD_LEVEL > 0).
+/* ------------------------------------------------------------------- */
+
+IS_LA_SCOPE_NON_TYPE_NAME: procedure (NAME) returns (type (BOOL_T)) internal;
+
+	declare NAME	type (NID_T);
+	declare I	type (SHORT_T);
+
+	if LA_SCOPE_LEVEL <= MAX_LA_SCOPE_LEVEL then do;
+		do I = LA_SCOPE_LEVEL to 0 by -1;
+			if ALREADY_ON_NODE_LIST_WITH_CODE
+			   (LA_SCOPE_STACK (I), NAME, LA_NON_TYPE_CODE) then
+				return (TRUE);
+		end;
+	end;
+	return (FALSE);
+
+end IS_LA_SCOPE_NON_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* IS_LA_SCOPE_TYPE_NAME
+/*
+/* Return TRUE iff the name represented by the given token-node id is
+/* a type-name in the look-ahead scope, otherwise FALSE.  N.B. this
+/* assumes that we are in look-ahead mode (i.e. LOOK_AHEAD_LEVEL > 0).
+/* ------------------------------------------------------------------- */
+
+IS_LA_SCOPE_TYPE_NAME: procedure (NAME) returns (type (BOOL_T)) internal;
+
+	declare NAME	type (NID_T);
+	declare I	type (SHORT_T);
+
+	if LA_SCOPE_LEVEL <= MAX_LA_SCOPE_LEVEL then do;
+		do I = LA_SCOPE_LEVEL to 0 by -1;
+			if ALREADY_ON_NODE_LIST_WITH_CODE
+			   (LA_SCOPE_STACK (I), NAME, LA_TYPE_CODE) then
+				return (TRUE);
+		end;
+	end;
+	return (FALSE);
+
+end IS_LA_SCOPE_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_LA_SCOPE
+/*
+/* Begin a new level of look-ahead scope.
+/* ------------------------------------------------------------------- */
+
+BEGIN_LA_SCOPE: procedure internal;
+
+	LA_SCOPE_LEVEL = LA_SCOPE_LEVEL + 1;
+
+end BEGIN_LA_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* END_LA_SCOPE
+/*
+/* End the top level look-ahead scope
+/* ------------------------------------------------------------------- */
+
+END_LA_SCOPE: procedure internal;
+
+	call DELETE_NODE_LIST (LA_SCOPE_STACK (LA_SCOPE_LEVEL));
+	LA_SCOPE_LEVEL = LA_SCOPE_LEVEL - 1;
+
+end END_LA_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* SAVE_LA_SCOPE
+/*
+/* Return the current level of the look-ahead scope.
+/* ------------------------------------------------------------------- */
+
+SAVE_LA_SCOPE: procedure (STATE) internal;
+
+	declare STATE type (SHORT_T);
+
+	STATE = LA_SCOPE_LEVEL;
+
+end SAVE_LA_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* RESTORE_LA_SCOPE
+/*
+/* Restore the look-ahead scope to the given level.
+/* ------------------------------------------------------------------- */
+
+RESTORE_LA_SCOPE: procedure (STATE) internal;
+
+	declare STATE	type (SHORT_T);
+	declare I	type (SHORT_T);
+
+	if LA_SCOPE_LEVEL > STATE then do;
+		do I = LA_SCOPE_LEVEL to STATE by -1;
+			call DELETE_NODE_LIST (LA_SCOPE_STACK (I));
+		end;
+		LA_SCOPE_LEVEL = STATE;
+	end;
+
+end RESTORE_LA_SCOPE;
+
+/* ---------------------------------------------------------------------
+/* PURGE_LA_SCOPE
+/*
+/* Purge the entire look-ahead scope.
+/* ------------------------------------------------------------------- */
+
+PURGE_LA_SCOPE: procedure internal;
+
+	declare I type (SHORT_T);
+
+	do I = LA_SCOPE_LEVEL to 0 by -1;
+		call DELETE_NODE_LIST (LA_SCOPE_STACK (I));
+	end;
+	LA_SCOPE_LEVEL = 0;
+
+end PURGE_LA_SCOPE;
+
+/* =====================================================================
+/* Parser state save/restore routines
+/* =================================================================== */
+
+/* ---------------------------------------------------------------------
+/* BEGIN_PARSER_LOOK_AHEAD
+/* ------------------------------------------------------------------- */
+
+BEGIN_PARSER_LOOK_AHEAD: procedure (STATE) internal;
+
+	declare STATE type (SHORT_T);
+
+	/* Increment the look-ahead level */
+
+	if LOOK_AHEAD_LEVEL >= MAX_LOOK_AHEAD_LEVEL then do;
+		/*
+		/* Compiler error; max look-ahead nesting level exceeeded.
+		/**/
+		call COMPILER_ERROR_I (ERR_LOOK_AHEAD_LEVEL,
+				       trim (char (MAX_LOOK_AHEAD_LEVEL)));
+		return;
+	end;
+
+	LOOK_AHEAD_LEVEL = LOOK_AHEAD_LEVEL + 1;
+
+	/* Save the current state of the parser */
+
+	call SAVE_LA_SCOPE (STATE);
+
+	/* Save the current state of the lexer */
+
+	call BEGIN_LEXER_LOOK_AHEAD ();
+
+end BEGIN_PARSER_LOOK_AHEAD;
+
+/* ---------------------------------------------------------------------
+/* END_PARSER_LOOK_AHEAD
+/* ------------------------------------------------------------------- */
+
+END_PARSER_LOOK_AHEAD: procedure (STATE) internal;
+
+	declare STATE type (SHORT_T);
+
+	/* Restore the state of the lexer */
+
+	call END_LEXER_LOOK_AHEAD ();
+	CURRENT_TERMINAL = TOKEN_TO_TERMINAL (CURRENT_TOKEN.TYPE);
+
+	/* Restore the state of the parser (i.e. the look-ahead scope) */
+
+	if LOOK_AHEAD_LEVEL = 1 then
+		call PURGE_LA_SCOPE ();
+	else	call RESTORE_LA_SCOPE (STATE);
+
+	/* Decrement the look-ahead level */
+
+	LOOK_AHEAD_LEVEL = LOOK_AHEAD_LEVEL - 1;
+
+end END_PARSER_LOOK_AHEAD;
+
+end PARSER_DRIVER;
+
+/* ---------------------------------------------------------------------
+/* COLLECT_FUNCTION_BODY
+/*
+/* Skip past and collect the tokens of a function body; it is assumed
+/* that the current-token is the opening left curly brace or colon of 
+/* the function body.  Upon return, FIRST will point to a linked list of
+/* token pods constituting the entire function body beginning with the
+/* opening left curly brace token (LEFT_BRACE) and ending  with the
+/* closing right curly brace token (RIGHT_BRACE) which will be pointed
+/* to by LAST.  CURRENT_TERMINAL will be set the RIGHT_BRACE_TERMINAL.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COLLECT_FUNCTION_BODY: procedure (FIRST, LAST, STATE)
+		       external  (X_COLLECT_FUNCTION_BODY);
+	declare
+		FIRST	type (POINTER_T),
+		LAST	type (POINTER_T),
+		STATE	type (POINTER_T);
+	declare
+		LEVEL  	type (INT_T);
+
+	STATE = COPY_SOURCE_STATE ();
+
+	/* Put the lexer in token-collection mode */
+
+	call BEGIN_LEXER_TOKEN_COLLECTION ();
+
+	/*
+	/* Set the first token of the function body 
+	/* (left curly brace or colon).
+	/**/
+
+	FIRST = CURRENT_TOKEN_PTR;
+
+	/*
+	/* Collect the function body till the closing right curly brace,
+	/* first finding the opening left curly brace, ignoring
+	/* those enclosed in parentheses (base/member initializers).
+	/**/
+
+	do LEVEL = 0 while (TRUE);
+		if (CURRENT_TOKEN.TYPE = LCURLY_TOKEN) &
+		    (LEVEL = 0) then
+			leave;
+		else if (CURRENT_TOKEN.TYPE = SEMICOLON_TOKEN) &
+			(LEVEL = 0) then
+			leave;
+		else if CURRENT_TOKEN.TYPE = LPAREN_TOKEN then
+			LEVEL = LEVEL + 1;
+		else if CURRENT_TOKEN.TYPE = RPAREN_TOKEN & LEVEL > 0 then
+			LEVEL = LEVEL - 1;
+		else if CURRENT_TOKEN.TYPE = EOF_TOKEN then
+			leave;
+		call ADVANCE_TOKEN ();
+	end;
+
+	/* Opening left curly brace, semicolon, or eof found; match braces */
+
+	do LEVEL = 0 while (TRUE);
+		if CURRENT_TOKEN.TYPE = LCURLY_TOKEN then
+			LEVEL = LEVEL + 1;
+		else if CURRENT_TOKEN.TYPE = RCURLY_TOKEN then
+			if LEVEL > 1 then
+				LEVEL = LEVEL - 1;
+			else	leave;
+		else if CURRENT_TOKEN.TYPE = EOF_TOKEN then
+			leave;
+		else if (CURRENT_TOKEN.TYPE = SEMICOLON_TOKEN) &
+			(LEVEL = 0) then
+				leave;
+		call ADVANCE_TOKEN ();
+	end;
+
+	if CURRENT_TOKEN.TYPE = EOF_TOKEN then do;
+		/*
+		/* Error; End-of-file encountered while collecting
+		/* a member function body within a class declaration!
+		/**/
+		call SYNTAX_ERROR (ERR_EOF_MEMBER_FUN);
+	end;
+
+	/* Set the last token of the function body (right curly brace) */
+
+	LAST = CURRENT_TOKEN_PTR;
+
+	/* Take the lexer out of token-collection mode */
+
+	call END_LEXER_TOKEN_COLLECTION ();
+
+	/* Set up the current terminal to continue the parse normally */
+
+	call ADVANCE_TOKEN ();
+
+	CURRENT_TERMINAL = TOKEN_TO_TERMINAL (CURRENT_TOKEN.TYPE);
+
+end COLLECT_FUNCTION_BODY;
+
+/* ---------------------------------------------------------------------
+/* PARSE_FUNCTION_BODY
+/*
+/* Given a pointer to the first and last tokens in a (contiguous) token
+/* pod stream which are assumed to comprise a function body (starting with
+/* a LEFT_BRACE or COLON token and ending with a RIGHT_BRACE token), and
+/* a pointer to a source state stack, parse the function body within the
+/* context of the given source state.  Upon return the given token pod
+/* stream as well as the given source stack will have been freed and will
+/* be inaccessible (i.e. assumed FIRST, LAST, and STATE point at garbage).
+/* ------------------------------------------------------------------- */
+
+PARSE_FUNCTION_BODY: procedure (FIRST, LAST, STATE)
+		     external  (X_PARSE_FUNCTION_BODY);
+	declare
+		FIRST		type (POINTER_T),
+		LAST		type (POINTER_T),
+		STATE		type (POINTER_T);
+	declare
+		SAVE_STATE	type (POINTER_T);
+
+	call PUSH_BACK_TOKENS (FIRST, LAST);
+
+	SAVE_STATE = GET_SOURCE_STATE ();
+
+	call SET_SOURCE_STATE (STATE);
+
+	CURRENT_TERMINAL = TOKEN_TO_TERMINAL (FIRST->TOKEN_POD.TYPE);
+
+	PAR_TABLE_COUNTER = PAR_RAW_FUNCTION_BODY;
+	call PARSER_DRIVER ();
+
+	call SET_SOURCE_STATE (SAVE_STATE);
+
+	call PURGE_SOURCE_STATE (STATE);
+
+end PARSE_FUNCTION_BODY;
+
+/* ---------------------------------------------------------------------
+/* SKIP_FUNCTION_BODY
+/*
+/* Skip past tokens of a function body; it is assumed that the matched-
+/* token is the opening left curly brace or colon of the function body.
+/* Upon return CURRENT_TERMINAL will be set the RIGHT_BRACE_TERMINAL.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SKIP_FUNCTION_BODY: procedure () external (X_SKIP_FUNCTION_BODY);
+
+	declare LEVEL type (INT_T);
+
+	if MATCHED_TOKEN.TYPE ^= LCURLY_TOKEN then do;
+		if MATCHED_TOKEN.TYPE ^= COLON_TOKEN then
+			return;
+		do LEVEL = 0 while (TRUE);
+			if (CURRENT_TOKEN.TYPE = LCURLY_TOKEN) &
+			   (LEVEL = 0) then
+				leave;
+			else if (CURRENT_TOKEN.TYPE = SEMICOLON_TOKEN) &
+				(LEVEL = 0) then
+				leave;
+			else if CURRENT_TOKEN.TYPE = LPAREN_TOKEN then
+				LEVEL = LEVEL + 1;
+			else if CURRENT_TOKEN.TYPE = RPAREN_TOKEN &
+				(LEVEL > 0) then
+				LEVEL = LEVEL - 1;
+			else if CURRENT_TOKEN.TYPE = EOF_TOKEN then
+				leave;
+			call ADVANCE_TOKEN ();
+		end;
+	end;
+
+	/* Opening left curly brace, semicolon, or eof found; match braces */
+
+	do LEVEL = 1 while (TRUE);
+		if CURRENT_TOKEN.TYPE = LCURLY_TOKEN then
+			LEVEL = LEVEL + 1;
+		else if CURRENT_TOKEN.TYPE = RCURLY_TOKEN then
+			if LEVEL > 1 then
+				LEVEL = LEVEL - 1;
+			else	leave;
+		else if CURRENT_TOKEN.TYPE = EOF_TOKEN then
+			leave;
+		else if (CURRENT_TOKEN.TYPE = SEMICOLON_TOKEN) &
+			(LEVEL = 0) then
+			leave;
+		call ADVANCE_TOKEN ();
+	end;
+
+	if CURRENT_TOKEN.TYPE = EOF_TOKEN then do;
+		/*
+		/* Error; end-of-file encountered
+		/* while skipping a function body.
+		/**/
+		call SYNTAX_ERROR (ERR_EOF_MEMBER_FUN);
+	end;
+
+	/* Set up the current terminal to continue the parse normally */
+
+	CURRENT_TERMINAL = TOKEN_TO_TERMINAL (CURRENT_TOKEN.TYPE);
+
+end SKIP_FUNCTION_BODY;
+
+/* ---------------------------------------------------------------------
+/* PEEK_ANONYMOUS_UNION_BODY
+/*
+/* Assuming we have just seen a "union" keyword and a "{" token (matched-
+/* token) this routine will return TRUE iff we are looking at an anonymous
+/* union, otherwise return FALSE.  To do this we will peek ahead for the
+/* matching closing "}" token (starting with current-token) and if the next
+/* token after that is a ";" or a "," then we will asssumed we have an
+/* anonymous union (return TRUE), otherwise not.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+PEEK_ANONYMOUS_UNION_BODY: procedure
+			   returns   (type (BOOL_T))
+			   external  (X_PEEK_ANONYMOUS_UNION_BODY);
+
+	declare LEVEL type (SHORT_T);
+
+	call RESET_PEEK_TOKEN ();
+
+	do LEVEL = 0 while (TRUE);
+		if PEEK_TOKEN.TYPE = LCURLY_TOKEN then
+			LEVEL = LEVEL + 1;
+		else if PEEK_TOKEN.TYPE = RCURLY_TOKEN then do;
+			if LEVEL = 0 then do;
+				call ADVANCE_PEEK_TOKEN ();
+				if (PEEK_TOKEN.TYPE = SEMICOLON_TOKEN) |
+				   (PEEK_TOKEN.TYPE = COMMA_TOKEN) then
+					return (TRUE);
+				else	return (FALSE);
+			end;
+			else	LEVEL = LEVEL - 1;
+		end;
+		else if PEEK_TOKEN.TYPE = EOF_TOKEN then
+			return (FALSE);
+		call ADVANCE_PEEK_TOKEN ();
+	end;
+
+	return (FALSE);
+
+end PEEK_ANONYMOUS_UNION_BODY;
+
+/* ---------------------------------------------------------------------
+/* AT_DESTRUCTOR_NAME
+/* ------------------------------------------------------------------- */
+
+AT_DESTRUCTOR_NAME: procedure ()
+		    returns   (type (BOOL_T))
+		    external  (X_AT_DESTRUCTOR_NAME);
+
+	return (CURRENT_TOKEN.TYPE = TILDE_TOKEN);
+
+end AT_DESTRUCTOR_NAME;
+
+/* ---------------------------------------------------------------------
+/* AT_END_OF_DECLARATION
+/* ------------------------------------------------------------------- */
+
+AT_END_OF_DECLARATION: procedure
+		       returns  (type (BOOL_T))
+		       external (X_AT_END_OF_DECLARATION);
+
+	return ((CURRENT_TOKEN.TYPE = SEMICOLON_TOKEN) |
+		(CURRENT_TOKEN.TYPE = COMMA_TOKEN));
+
+end AT_END_OF_DECLARATION;
+
+/* ---------------------------------------------------------------------
+/* AT_END_OF_FUNCTION_DECLARATOR
+/* ------------------------------------------------------------------- */
+
+AT_END_OF_FUNCTION_DECLARATOR: procedure
+			       returns  (type (BOOL_T))
+			       external (X_AT_END_OF_FUNCTION_DECLARATOR);
+
+	return (CURRENT_TOKEN.TYPE = RPAREN_TOKEN);
+
+end AT_END_OF_FUNCTION_DECLARATOR;
+
+/* ---------------------------------------------------------------------
+/* AT_FUNCTION_DEFINITION
+/* ------------------------------------------------------------------- */
+
+AT_FUNCTION_DEFINITION: procedure
+			returns  (type (BOOL_T))
+			external (X_AT_FUNCTION_DEFINITION);
+
+	return ( CURRENT_TOKEN.TYPE = LCURLY_TOKEN
+	       | CURRENT_TOKEN.TYPE = COLON_TOKEN );
+
+end AT_FUNCTION_DEFINITION;
+
+/* ---------------------------------------------------------------------
+/* AT_START_OF_TAG_DEFINITION
+/* ------------------------------------------------------------------- */
+
+AT_START_OF_TAG_DEFINITION: procedure
+			    returns  (type (BOOL_T))
+			    external (X_AT_START_OF_TAG_DEFINITION);
+
+	if (CURRENT_TOKEN.TYPE = LCURLY_TOKEN) |
+	   (CURRENT_TOKEN.TYPE = COLON_TOKEN) then do;
+		return (TRUE);
+	end;
+	else if CURRENT_TOKEN.TYPE = SEMICOLON_TOKEN then do;
+		if IN_NEW_EXPRESSION_LEVEL > 0 then
+			return (FALSE);
+		else	return (TRUE);
+	end;
+	else if CURRENT_TOKEN.TYPE = COMMA_TOKEN then do;
+		if IN_NEW_EXPRESSION_LEVEL > 0 then
+			return (FALSE);
+		else if CURRENT_SCOPE_TYPE = PROTOTYPE_SCOPE then
+			return (FALSE);
+		else	return (TRUE);
+	end;
+	else	return (FALSE);
+
+end AT_START_OF_TAG_DEFINITION;
+
+/* ---------------------------------------------------------------------
+/* AT_MEMBER_POINTER
+/* ------------------------------------------------------------------- */
+
+AT_MEMBER_POINTER: procedure (AFTER_CLASS_QUALIFIER)
+		   returns   (type (BOOL_T))
+		   external  (X_AT_MEMBER_POINTER);
+
+	declare AFTER_CLASS_QUALIFIER type (BOOL_T);
+
+	if AFTER_CLASS_QUALIFIER then do;
+		if MATCHED_TOKEN.TYPE ^= COLON_COLON_TOKEN then
+			return (FALSE);
+		if CURRENT_TOKEN.TYPE ^= STAR_TOKEN then
+			return (FALSE);
+	end;
+	else do;
+		if MATCHED_TOKEN.TYPE ^= IDENTIFIER_TOKEN then
+			return (FALSE);
+		if CURRENT_TOKEN.TYPE ^= COLON_COLON_TOKEN then
+			return (FALSE);
+		call SET_PEEK_TOKEN ();
+		if PEEK_TOKEN.TYPE ^= STAR_TOKEN then
+			return (FALSE);
+	end;
+	return (TRUE);
+
+end AT_MEMBER_POINTER;
+
+

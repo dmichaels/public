@@ -1,0 +1,343 @@
+/* C++ dmpsrc.pl1 - Source map dumping routines */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  008  New value-node scheme.
+ *  02.04.92  DGM  006  Added DUMP_MAKE_DEPEND.
+ *  03.08.91  DGM  005  Updated.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  06.08.90  DGM  003  Changed DMPSRC to DUMP_SOURCES
+ *  06.06.90  DGM  002  Updated for new the utilities.
+ *  01.04.90  DGM  001  Updated.
+ *  01.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 008 DMPSRC');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include GBL_FILE_NAMES_IN;		/* BINARY_FILE_NAME */
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_HOST_SYSTEM_IN;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T	character (512) varying based;
+
+declare
+
+NEST_LEVEL	type (SHORT_T) static initial (-1);
+
+/* ---------------------------------------------------------------------
+/* DUMP_MAKE_DEPEND
+/* ------------------------------------------------------------------- */
+
+DUMP_MAKE_DEPEND: procedure () external (X_DUMP_MAKE_DEPEND);
+
+	declare
+		MAIN_SOURCE_NODE_ID	type (NID_T),
+		MAIN_SOURCE_NODE_PTR	type (POINTER_T);
+	declare
+		PREFIX			type (STRING_T);
+
+	PREFIX = trim (BINARY_FILE_NAME) || ': ';
+	MAIN_SOURCE_NODE_ID = GET_SOURCE_MAP ();
+	call GET_SOURCE_NODE_R (MAIN_SOURCE_NODE_ID, MAIN_SOURCE_NODE_PTR);
+	call DUMP_MAKE_DEPEND_HEADERS (MAIN_SOURCE_NODE_PTR);
+	call RELEASE_SOURCE_NODE (MAIN_SOURCE_NODE_ID);
+	return;
+
+/* ---------------------------------------------------------------------
+/* DUMP_MAKE_DEPEND_HEADERS
+/* ------------------------------------------------------------------- */
+
+DUMP_MAKE_DEPEND_HEADERS: procedure (SOURCE_NODE_PTR) internal;
+
+	declare
+		SOURCE_NODE_PTR	type (POINTER_T);
+	declare
+		(I, NEXT_I)	type (NID_T),
+		IP		type (POINTER_T),
+		WITHIN_WRAPPER	type (BOOL_T);
+	declare
+		FILE_NAME	type (STRING_T),
+		WRAPPED_HEADER	type (STRING_T);
+
+	FILE_NAME = TOKEN_NAME (SOURCE_NODE_PTR->SOURCE_NODE.FILE);
+
+	if ^IS_INTERNAL_HEADER () then do;
+		WITHIN_WRAPPER = IS_INTERNAL_WRAPPER_HEADER ();
+		if ^WITHIN_WRAPPER then
+			call OUTPUT_STRING_AND_RETURN (PREFIX || FILE_NAME);
+		do I = SOURCE_NODE_PTR->SOURCE_NODE.INCLUDES repeat (NEXT_I)
+		while (I ^= NULL_NID);
+			call GET_SOURCE_NODE_R (I, IP);
+			NEXT_I = IP->SOURCE_NODE.NEXT_INCLUDE;
+			if WITHIN_WRAPPER then do;
+				if IS_WRAPPED_HEADER (IP->SOURCE_NODE.FILE)
+				then	NEXT_I = NULL_NID;
+				else	goto CONTINUE;
+			end;
+			call DUMP_MAKE_DEPEND_HEADERS (IP);
+			CONTINUE:
+			call RELEASE_SOURCE_NODE (I);
+		end;
+	end;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* IS_INTERNAL_HEADER
+/* ------------------------------------------------------------------- */
+
+IS_INTERNAL_HEADER: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		SYSDEF_HEADER	type (STRING_T),
+		COMMON_HEADER	type (STRING_T),
+		MACHINE_HEADER	type (STRING_T);
+
+	SYSDEF_HEADER  = STANDARD_ANSI_C_HEADER_DIR ||
+			 HOST_DIR_DELIM || SYSDEF_INCLUDE_FILE;
+	COMMON_HEADER  = STANDARD_ANSI_C_HEADER_DIR ||
+			 HOST_DIR_DELIM || 'common.h';
+	MACHINE_HEADER = STANDARD_ANSI_C_HEADER_DIR ||
+			 HOST_DIR_DELIM || 'machine.h';
+	
+	if FILE_NAME = SYSDEF_HEADER then
+		return (TRUE);
+	else if FILE_NAME = COMMON_HEADER then
+		return (TRUE);
+	else if FILE_NAME = MACHINE_HEADER then
+		return (TRUE);
+	else	return (FALSE);
+
+end IS_INTERNAL_HEADER;
+
+/* ---------------------------------------------------------------------
+/* IS_INTERNAL_WRAPPER_HEADER
+/* ------------------------------------------------------------------- */
+
+IS_INTERNAL_WRAPPER_HEADER: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		I		type (SHORT_T),
+		DOT_INDEX	type (SHORT_T),
+		W_INDEX		type (SHORT_T),
+		S		type (STRING_T);
+
+	if length (FILE_NAME) <= length (STANDARD_SYSTEM_HEADER_WRAP_DIR) then
+		return (FALSE);
+	else if STANDARD_SYSTEM_HEADER_WRAP_DIR ^=
+		substr (FILE_NAME, 1, length (STANDARD_SYSTEM_HEADER_WRAP_DIR))
+	then	return (FALSE);
+
+	/*
+	/* Get the wrapped header name, e.g. if the wrapper header name
+	/* is "/usr/include/LPI/wrappers/w.stdio.h", then the wrapped
+	/* header name is "stdio.h", and if the wrapper header name
+	/* is "/usr/include/LPI/wrappers/sys/w.types.h", then the
+	/* wrapped header name is "sys/types.h".
+	/**/
+
+	S = substr (FILE_NAME, length (STANDARD_SYSTEM_HEADER_WRAP_DIR) + 2);
+
+	DOT_INDEX = 0; W_INDEX = 0;
+
+	do I = length (S) to 1 by -1;
+		if DOT_INDEX ^= 0 then do;
+			if substr (S, I, 1) = 'w' then
+				W_INDEX = I;
+			else	DOT_INDEX = 0;
+		end;
+		else if substr (S, I, 1) = '.' then
+			DOT_INDEX = I;
+		else if substr (S, I, 1) = HOST_DIR_DELIM then
+			leave;
+	end;
+
+	if W_INDEX = 0 then		/* shouldn't happen */
+		return (FALSE);
+
+	else if W_INDEX = 1 then
+		WRAPPED_HEADER = substr (S, 3);
+
+	else	WRAPPED_HEADER = substr (S, 1, W_INDEX - 1) ||
+				 substr (S, W_INDEX + 2);
+
+	return (TRUE);
+
+end IS_INTERNAL_WRAPPER_HEADER;
+
+/* ---------------------------------------------------------------------
+/* IS_WRAPPED_HEADER
+/* ------------------------------------------------------------------- */
+
+IS_WRAPPED_HEADER: procedure (NAME_ID) returns (type (BOOL_T)) internal;
+
+	declare
+		NAME_ID	type (NID_T);
+	declare
+		S	type (STRING_T);
+
+	S = TOKEN_NAME (NAME_ID);
+
+	if length (S) < length (WRAPPED_HEADER) then
+		return (FALSE);
+
+	else if substr (S, length (S) - length (WRAPPED_HEADER) + 1) =
+		WRAPPED_HEADER then
+		return (TRUE);
+
+	else	return (FALSE);
+
+end IS_WRAPPED_HEADER;
+
+end DUMP_MAKE_DEPEND_HEADERS;
+
+end DUMP_MAKE_DEPEND;
+
+/* ---------------------------------------------------------------------
+/* DUMP_SOURCE_MAP
+/* ------------------------------------------------------------------- */
+
+DUMP_SOURCE_MAP: procedure () external (X_DUMP_SOURCE_MAP);
+
+	declare
+		S	type (NID_T),
+		P	type (POINTER_T);
+
+	if AM_DEBUGGER then do;
+		if BLOCK_LIST_ID ^= NULL_NID then do;
+			call GET_BLOCK_NODE_R (BLOCK_LIST_ID, P);
+			S = P->BLOCK_NODE.ENTRY_ID;
+			call RELEASE_BLOCK_NODE (BLOCK_LIST_ID);
+		end;
+	end;
+	else	S = GET_SOURCE_MAP ();
+	call DUMP_SOURCES (S);
+	return;
+
+/* ---------------------------------------------------------------------
+/* DUMP_SOURCES
+/* ------------------------------------------------------------------- */
+
+DUMP_SOURCES: procedure (SRC) internal;
+
+	declare
+		SRC		type (NID_T);
+	declare
+		FILE		type (NID_T),
+		PARENT_FILE	type (NID_T),
+		PARENT_LINE	type (LONG_T),
+		INCLUDES	type (NID_T),
+		(I, NEXT_I)	type (NID_T),
+		S		type (STRING_T),
+		SNID		type (SNID_T);
+
+	call SAVE_NODE (SNID);
+
+	NEST_LEVEL = NEST_LEVEL + 1;
+
+	call SET_SOURCE_NODE_R (SRC);
+
+	FILE		= SOURCE_NODE.FILE;
+	PARENT_FILE	= SOURCE_NODE.PARENT_FILE;
+	PARENT_LINE	= SOURCE_NODE.PARENT_LINE;
+	INCLUDES	= SOURCE_NODE.INCLUDES;
+
+	S = LINE_PREFIX (FILE) || TOKEN_NAME (FILE);
+
+	if PARENT_FILE ^= NULL_NID then
+		S = S || '  (line ' || trim (char (PARENT_LINE)) || ')';
+
+	call OUTPUT_STRING_AND_RETURN (S);
+
+	do I = INCLUDES repeat (NEXT_I) while (I ^= NULL_NID);
+		call SET_SOURCE_NODE_R (I);
+		NEXT_I = SOURCE_NODE.NEXT_INCLUDE;
+		call DUMP_SOURCES (I);
+	end;
+
+	NEST_LEVEL = NEST_LEVEL - 1;
+
+	call RESTORE_NODE (SNID);
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* LINE_PREFIX
+/* ------------------------------------------------------------------- */
+
+LINE_PREFIX: procedure (FILE) returns (type (STRING_T)) internal;
+
+	declare
+		FILE	type (NID_T);
+	declare
+		I	type (INT_T),
+		S	type (STRING_T);
+	declare
+		SPACES	character (8) varying static initial ('        ');
+
+	S = '';
+	do I = 1 to NEST_LEVEL;
+		S = S || '| ';
+	end;
+	return (S);
+
+end LINE_PREFIX;
+
+end DUMP_SOURCES;
+
+end DUMP_SOURCE_MAP;
+
+/* ---------------------------------------------------------------------
+/* OUTPUT_STRING_AND_RETURN
+/* ------------------------------------------------------------------- */
+
+OUTPUT_STRING_AND_RETURN: procedure (S) internal;
+
+	declare
+		S	character (*) varying;
+	declare
+		WRITTT	entry (character (*) varying) external;
+
+	if AM_DEBUGGER then
+		call WRITTT (S);
+	else	call WRITE_DEBUG_LINE (S);
+
+end OUTPUT_STRING_AND_RETURN;
+

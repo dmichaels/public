@@ -1,0 +1,1538 @@
+/* C++ symnam.pl1 - Get various symbol table names */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.09.92  DGM  046	Added TOKEN_MEMBER_NAME.
+ *  05.12.92  DGM  045	Added extern "FORTRAN", "Pascal", "PL/I".
+ *  04.23.92  PKT  044	Updated for 'this' qualifiers in SIG_NODE.
+ *  04.19.92  PKT  043	Merged 039->040 with 039->042.
+ *  03.13.92  PKT  042	Updated for parameter nodes.
+ *  03.26.92  DGM  041	New value-node scheme.
+ *  03.30.92  DGM  040	Added COMPLETE_SYMBOL_NAME.
+ *  01.28.92  DGM  039	Minor fix "f(void...)" to "f(void,...)".
+ *  01.21.92  DGM  038	Parameter link-node changes.
+ *  01.13.92  DGM  037  No more ';' in parameter lists.
+ *  11.12.91  DGM  036  Fix for enum tag names in ANY_TYPE_NAME.
+ *  10.03.91  DGM  035  Updated for enum <integral-type-name>.
+ *  06.04.91  DGM  034  Removed SYM_NODE.NAME_KIND.
+ *  04.29.91  DGM  033  Added EXPANDED_SYMBOL_NAME, EXPANDED_QUALIFIED_
+ *			SYMBOL_NAME &  QUALIFYING_SYMBOL_NAME.
+ *  03.08.91  DGM  032  Updated; new special (operator) name scheme.
+ *  02.27.91  DGM  031  Updated; new special (operator) name scheme.
+ *  02.21.91  DGM  030  Updated.
+ *  02.01.91  DGM  029  Updated to the new global names scheme.
+ *  01.31.91  DGM  028  Minor update.
+ *  01.18.91  DGM  027  Minor fix in NAME_QUALIFIER.
+ *  01.10.91  DGM  026  Updated.
+ *  11.29.90  DGM  025  Updated.
+ *  11.15.90  DGM  024  Updated.
+ *  11.06.90  DGM  023  Updated.
+ *  10.22.90  DGM  022  Updated.
+ *  10.12.90  DGM  021  Updated.
+ *  09.25.90  DGM  020  Preprocessor include file name changes.
+ *  09.25.90  DGM  019  Many changes.
+ *  09.14.90  DGM  018  Changed include file names and VOP names.
+ *  09.13.90  DGM  017  Changed xxx_SC names to xxx_ST.
+ *  09.12.90  DGM  016  Fix for SW_NODE_ID_WITH_NAME and constructors.
+ *  09.05.90  PKT  015  Minor update in ARRAY_DIMENSION.  DGM.
+ *  08.31.90  DGM  014  Minor fix in TOKEN_NAME.
+ *  08.29.90  DGM  013  Added support for SW_NODE_ID_WITH_NAME.
+ *  08.21.90  DGM  012  Changed BASE_TYPE_NAME to use MAP_TYPE_CODE_NAME.
+ *  08.15.90  DGM  011  New type-node.
+ *  07.23.90  DGM  010  Updated to use SYM_NODE.CONVERSION_TYPE.
+ *  06.05.90  DGM  009  Updated for new utilities.
+ *  05.25.90  DGM  008  Added QUALIFIED_SYMBOL_TYPE_NAME.
+ *  05.15.90  DGM  007  Added BASE_CLASS_NAME.
+ *  04.27.90  DGM  006  Removed BIT_FIELD_xxx_BT references.
+ *  04.25.90  DGM  005  Minor format change for function signatures.
+ *  04.20.90  DGM  004  Changed BASE_TYPE_NAME to give the
+ *			enumeration tag name for an enumerator.
+ *  04.04.90  DGM  003  Updated 
+ *  03.27.90  DGM  002  Updated.
+ *  03.02.90  DGM  001  Updated.
+ *  02.21.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 09.09.92 046 SYMNAM');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_PP_TOKEN_POD_SPELLING_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_IN;
+%include CXX_GLOBAL_NAMES_IN;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T		character (512) varying based;
+
+/* ---------------------------------------------------------------------
+/* DECLARATION_STRING
+/*
+/* Return a string representing the name (qualified or not depending on
+/* USE_NAME_QUALIFIER), type, and other declaration specifier data of the
+/* symbol represented by the given sym-node id.  If the given symbol is a
+/* tag type then the corresponding tag keyword *will* be included in the
+/* string (regardless of the value of the USE_TAG_DATA); if the given
+/* symbol is not a tag type but has a tag base type, then the corresponding
+/* tag keyword will be included in the string iff the USE_TAG_DATA is TRUE.
+/* In addition, if the given symbol is a tag type then the corresponding
+/* derivation list (if any) will be included in the string iff USE_TAG_DATA
+/* is TRUE.  If the given symbol is not a tag type but has a nested base
+/* type (i.e. a base type which is a tag or typedef defined within some
+/* class), then the the base type *will* be fully qualified.  The
+/* declarator name (if present) will be be iff USE_NAME_QUALIFIER
+/* is TRUE qualified.
+/* ------------------------------------------------------------------- */
+
+DECLARATION_STRING: procedure (SYMBOL, DSM_FLAGS)
+		    returns   (type (STRING_T))
+		    external  (X_DECLARATION_STRING);
+	declare
+		SYMBOL		type (NID_T),
+		DSM_FLAGS	type (DSM_T);
+	declare
+		DSM		type (DECLARATION_STRING_MODE_T),
+		(P, TP)		type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+
+	DSM.FLAGS = DSM_FLAGS;
+
+	S = '';
+
+	call GET_SYM_NODE_R (SYMBOL, P);
+
+	/*
+	/* Get any member access, friend,
+	/* storage class, and function specifiers.
+	/**/
+
+	if DSM.FRIEND_SPECIFIER then
+		S = S || 'friend     ';
+
+	else if DSM.ACCESS_SPECIFIER then
+		S = S || MEMBER_ACCESS_NAME (P);
+
+	if DSM.STORAGE_CLASS_SPECIFIER then
+		if P->SYM_NODE.STORAGE_CLASS ^= byte (TYPEDEF_ST) then
+			S = S || STORAGE_CLASS_NAME (P);
+
+	if DSM.TYPEDEF_SPECIFIER then
+		if P->SYM_NODE.STORAGE_CLASS = byte (TYPEDEF_ST) then
+			S = S || STORAGE_CLASS_NAME (P);
+
+	if DSM.FUNCTION_SPECIFIER then
+		S = S || FUNCTION_SPECIFIER_NAME (P);
+
+	/* Get the symbol name and its type */
+
+	if DSM.DECLARATOR_NAME | DSM.DECLARATOR_TYPE then do;
+		if ^DSM.DECLARATOR_NAME then do;
+			if P->SYM_NODE.TYPE ^= NULL_NID then do;
+				call GET_TYPE_NODE_R (P->SYM_NODE.TYPE, TP);
+				S = S || ANY_TYPE_NAME (TP, 0, DSM.FLAGS, '');
+				call RELEASE_TYPE_NODE (P->SYM_NODE.TYPE);
+			end;
+		end;
+		else	S = S || ANY_SYMBOL_TYPE_NAME (P, SYMBOL, DSM.FLAGS);
+	end;
+
+
+	/* See if this is a signed short, int, or long bit-field */
+
+	if DSM.BASE_TYPE_SPECIFIER &
+	   P->SYM_NODE.IS_BIT_FIELD & 
+	   P->SYM_NODE.SIGNED_BIT_FIELD &
+	   (P->SYM_NODE.TOP_TYPE.CODE ^= byte (SCHAR_BT)) then
+		S = 'signed ' || S;
+
+	/* Place any pertinent data at the end of the type */
+
+	if P->SYM_NODE.IS_AGGREGATE_TAG then do;
+		if DSM.TAG_DATA | DSM.TAG_DERIVATION_LIST then
+			S = S || BASE_CLASS_NAMES (P);
+	end;
+
+	else if P->SYM_NODE.IS_BIT_FIELD then
+		S = S || ' : ' || trim (char (P->SYM_NODE.SIZE));
+
+	else if P->SYM_NODE.IS_ENUM_MEMBER then
+		S = S || ' = ' || trim (char (P->SYM_NODE.LOCATION));
+
+	if P->SYM_NODE.IS_FUNCTION & P->SYM_NODE.PURE then do;
+		if DSM.PURE_SPECIFIER then
+			S = S || ' = 0';
+	end;
+
+	else if IS_INTEGRAL_TYPE (rank (P->SYM_NODE.TOP_TYPE.CODE)) &
+		P->SYM_NODE.TOP_TYPE.CONST &
+		P->SYM_NODE.INITIAL_AT then
+		S = S || ' = ' || trim (char (P->SYM_NODE.CONST_INITIALIZER));
+
+	call RELEASE_SYM_NODE (SYMBOL);
+
+	return (S);
+
+end DECLARATION_STRING;
+
+/* ---------------------------------------------------------------------
+/* QUALIFIED_SYMBOL_TYPE_NAME
+/*
+/* Return a string representing the name and type of the symbol
+/* represented by the given sym-node id.  If the given symbol is
+/* a tag type then the corresponding tag keyword *will* be included
+/* in the string, *and* will be qualified if it is a nested tag (e.g.
+/* "class A::B"!); if the given symbol is not a tag type but has a tag
+/* base type, then the corresponding tag keyword will *not* be included
+/* in the string; if the given symbol is not a tag type but has a
+/* nested base type (i.e. a base type which is a tag or typedef defined
+/* within some class), then the the base type *will* be fully qualified.
+/* The declarator name (if present) will be be qualified.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+QUALIFIED_SYMBOL_TYPE_NAME: procedure (SYMBOL)
+			    returns   (type (STRING_T))
+			    external  (X_QUALIFIED_SYMBOL_TYPE_NAME);
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		SYMBOL_PTR	type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, SYMBOL_PTR);
+	S = ANY_SYMBOL_TYPE_NAME (SYMBOL_PTR, SYMBOL, QUALIFIED_DEFAULT_DSM);
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end QUALIFIED_SYMBOL_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* SYMBOL_TYPE_NAME
+/*
+/* Return a string representing the name and type of the symbol
+/* represented by the given sym-node id.  If the given symbol is a
+/* tag type then the corresponding tag keyword *will* be included in
+/* the string; if the given symbol is not a tag type, but has a tag base
+/* type, then the corresponding tag keyword will *not* be included in
+/* the string; if the given symbol is not a tag type but has a nested
+/* base type (i.e. a base type which is a tag or typedef defined within
+/* some class), then the the base type *will* be fully qualified.
+/* The declarator name (if present) will be not be qualified.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SYMBOL_TYPE_NAME: procedure (SYMBOL)
+		  returns   (type (STRING_T))
+		  external  (X_SYMBOL_TYPE_NAME);
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		SYMBOL_PTR	type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, SYMBOL_PTR);
+	S = ANY_SYMBOL_TYPE_NAME (SYMBOL_PTR, SYMBOL, DEFAULT_DSM);
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end SYMBOL_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* ANY_SYMBOL_TYPE_NAME
+/*
+/* Return a string representing the name and type of the symbol represented
+/* by the given sym-node pointer.  If the given symbol is a tag type, then
+/* the corresponding tag keyword *will* be included in the string (regardless
+/* of the value of the MODE/USE_TAG_DATA), *and* will be qualified if it is
+/* a nested type (e.g. "class A::B"); if the given symbol is not a tag type
+/* but has a tag base type, then the corresponding tag keyword will be
+/* included in the string iff MODE/USE_TAG_DATA is TRUE; if the given symbol
+/* is not a tag type but has a nested base type (i.e. a base type which is
+/* a tag or typedef defined within some class), then the the base type *will*
+/* be fully qualified.  The declarator (if present) will be qualified iff it
+/* is a member and USE_NAME_QUALIFIER is TRUE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ANY_SYMBOL_TYPE_NAME: procedure (SYMBOL_PTR, SYMBOL_NID, DSM_FLAGS)
+		      returns   (type (STRING_T))
+		      internal;
+	declare
+		SYMBOL_PTR	type (POINTER_T),
+		SYMBOL_NID	type (NID_T),
+		DSM_FLAGS	type (DSM_T);
+	declare
+		DSM		type (DECLARATION_STRING_MODE_T),
+		TP		type (POINTER_T),
+		(NAME, S)	type (STRING_T);
+
+	if SYMBOL_PTR->SYM_NODE.TYPE = NULL_NID then
+		return (ANY_SYMBOL_NAME (SYMBOL_PTR, SYMBOL_NID, DSM_FLAGS));
+
+	DSM.FLAGS = DSM_FLAGS;
+
+	call GET_TYPE_NODE_R (SYMBOL_PTR->SYM_NODE.TYPE, TP);
+
+	if SYMBOL_PTR->SYM_NODE.IS_TAG then do;
+		DSM.TAG_KEYWORD = TRUE;
+		S = ANY_TYPE_NAME (TP, 0, DSM.FLAGS, '');
+		goto DONE_ANY_SYMBOL_TYPE_NAME;
+	end;
+	else if (IS_TAG_TYPE (rank (SYMBOL_PTR->SYM_NODE.TOP_TYPE.CODE)) &
+		 DSM.TAG_DATA) then
+		DSM.TAG_KEYWORD = TRUE;
+
+	NAME = ANY_SYMBOL_NAME (SYMBOL_PTR, SYMBOL_NID, DSM.FLAGS);
+
+	if SYMBOL_PTR->SYM_NODE.IS_CONVERSION_FUNCTION |
+	   SYMBOL_PTR->SYM_NODE.IS_CONSTRUCTOR_FUNCTION |
+	   SYMBOL_PTR->SYM_NODE.IS_DESTRUCTOR_FUNCTION then do;
+		S = NAME || ' ' ||
+		    FUNCTION_SIGNATURE
+		    (TP->TYPE_NODE.DATA
+		     (rank (TP->TYPE_NODE.LEVEL)).NID, DSM.FLAGS);
+	end;
+	else	S = ANY_TYPE_NAME (TP, 0, DSM.FLAGS, NAME);
+
+	DONE_ANY_SYMBOL_TYPE_NAME:
+	call RELEASE_TYPE_NODE (SYMBOL_PTR->SYM_NODE.TYPE);
+	return (S);
+
+end ANY_SYMBOL_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* FULL_QUALIFIED_SYMBOL_NAME
+/*
+/* Returns a string representing the qualified symbol name of the symbol
+/* represented by the given sym-node id as well as its signature if it
+/* is function type.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+FULL_QUALIFIED_SYMBOL_NAME: procedure (SYMBOL)
+			    returns   (type (STRING_T))
+			    external  (X_FULL_QUALIFIED_SYMBOL_NAME);
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = ANY_SYMBOL_NAME (P, SYMBOL, QUALIFIED_DECLARATOR_NAME_DSM);
+	if P->SYM_NODE.IS_FUNCTION then do;
+		S = S || FUNCTION_SIGNATURE
+			 (P->SYM_NODE.TOP_TYPE.SIGNATURE,
+			  TERSE_DSM | CONSERVE_SPACE_DSM);
+	end;
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end FULL_QUALIFIED_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* FULL_SYMBOL_NAME
+/*
+/* Return a string representing the name of the symbol represented by
+/* the given sym-node id as well as its signature if it is function type.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+FULL_SYMBOL_NAME: procedure (SYMBOL)
+		  returns   (type (STRING_T))
+		  external  (X_FULL_SYMBOL_NAME);
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = ANY_SYMBOL_NAME (P, SYMBOL, DECLARATOR_NAME_DSM);
+	if P->SYM_NODE.IS_FUNCTION then do;
+		S = S || FUNCTION_SIGNATURE
+			 (P->SYM_NODE.TOP_TYPE.SIGNATURE,
+			  TERSE_DSM | CONSERVE_SPACE_DSM);
+	end;
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end FULL_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* COMPLETE_QUALIFIED_SYMBOL_NAME
+/*
+/* Returns a string representing the qualified symbol name of the symbol
+/* represented by the given sym-node id as well as its signature if it
+/* is function type *and* if it is overloaded.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COMPLETE_QUALIFIED_SYMBOL_NAME: procedure (SYMBOL)
+			    returns   (type (STRING_T))
+			    external  (X_COMPLETE_QUALIFIED_SYMBOL_NAME);
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = ANY_SYMBOL_NAME (P, SYMBOL, QUALIFIED_DECLARATOR_NAME_DSM);
+	if P->SYM_NODE.IS_FUNCTION & P->SYM_NODE.OVERLOAD then do;
+		S = S || FUNCTION_SIGNATURE
+			 (P->SYM_NODE.TOP_TYPE.SIGNATURE,
+			  TERSE_DSM | CONSERVE_SPACE_DSM);
+	end;
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end COMPLETE_QUALIFIED_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* COMPLETE_SYMBOL_NAME
+/*
+/* Return a string representing the name of the symbol represented by
+/* the given sym-node id as well as its signature if it is function type
+/* *and* if it is overloaded.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+COMPLETE_SYMBOL_NAME: procedure (SYMBOL)
+		  returns   (type (STRING_T))
+		  external  (X_COMPLETE_SYMBOL_NAME);
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = ANY_SYMBOL_NAME (P, SYMBOL, DECLARATOR_NAME_DSM);
+	if P->SYM_NODE.IS_FUNCTION & P->SYM_NODE.OVERLOAD then do;
+		S = S || FUNCTION_SIGNATURE
+			 (P->SYM_NODE.TOP_TYPE.SIGNATURE,
+			  TERSE_DSM | CONSERVE_SPACE_DSM);
+	end;
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end COMPLETE_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* EXPANDED_QUALIFIED_SYMBOL_NAME
+/*
+/* Exactly like FULL_QUALIFIED_SYMBOL_NAME except that typedefs are
+/* expanded in the function signature; CodeWatch needed this.
+/* ------------------------------------------------------------------- */
+
+EXPANDED_QUALIFIED_SYMBOL_NAME: procedure (SYMBOL)
+			    returns   (type (STRING_T))
+			    external  (X_EXPANDED_QUALIFIED_SYMBOL_NAME);
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = ANY_SYMBOL_NAME (P, SYMBOL, QUALIFIED_DECLARATOR_NAME_DSM);
+	if P->SYM_NODE.IS_FUNCTION then do;
+		S = S || FUNCTION_SIGNATURE
+			 (P->SYM_NODE.TOP_TYPE.SIGNATURE,
+			  TERSE_DSM | EXPAND_TYPEDEF_DSM | CONSERVE_SPACE_DSM);
+	end;
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end EXPANDED_QUALIFIED_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* EXPANDED_SYMBOL_NAME
+/*
+/* Exactly like FULL_SYMBOL_NAME except that typedefs are
+/* expanded in the function signature; CodeWatch needed this.
+/* ------------------------------------------------------------------- */
+
+EXPANDED_SYMBOL_NAME: procedure (SYMBOL)
+		      returns   (type (STRING_T))
+		      external  (X_EXPANDED_SYMBOL_NAME);
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = ANY_SYMBOL_NAME (P, SYMBOL, DECLARATOR_NAME_DSM);
+	if P->SYM_NODE.IS_FUNCTION then do;
+		S = S || FUNCTION_SIGNATURE
+			 (P->SYM_NODE.TOP_TYPE.SIGNATURE,
+			  TERSE_DSM | EXPAND_TYPEDEF_DSM | CONSERVE_SPACE_DSM);
+	end;
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end EXPANDED_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* QUALIFIED_SYMBOL_NAME
+/*
+/* Returns a string representing the qualified symbol name of the symbol
+/* represented by the given sym-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+QUALIFIED_SYMBOL_NAME: procedure (SYMBOL)
+		       returns   (type (STRING_T))
+		       external  (X_QUALIFIED_SYMBOL_NAME);
+	declare
+		SYMBOL	type (NID_T);
+	declare
+		P	type (POINTER_T),
+		S	type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = ANY_SYMBOL_NAME (P, SYMBOL, QUALIFIED_DECLARATOR_NAME_DSM);
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end QUALIFIED_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* SYMBOL_NAME
+/*
+/* Return a string representing the name of the symbol represented by
+/* the given sym-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SYMBOL_NAME: procedure (SYMBOL)
+	     returns   (type (STRING_T))
+	     external  (X_SYMBOL_NAME);
+
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = ANY_SYMBOL_NAME (P, SYMBOL, DECLARATOR_NAME_DSM);
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* ANY_SYMBOL_NAME
+/*
+/* Return a string representing the name of the symbol represented by
+/* the given sym-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ANY_SYMBOL_NAME: procedure (SYMBOL_PTR, SYMBOL_NID, DSM_FLAGS)
+		 returns   (type (STRING_T))
+		 internal;
+
+	declare
+		SYMBOL_PTR	type (POINTER_T),
+		SYMBOL_NID	type (NID_T),
+		DSM_FLAGS	type (DSM_T);
+	declare
+		DSM		type (DECLARATION_STRING_MODE_T),
+		TP		type (POINTER_T),
+		S		type (STRING_T);
+
+	DSM.FLAGS = DSM_FLAGS;
+
+	S = '';
+
+	if SYMBOL_PTR->SYM_NODE.IS_CONSTRUCTOR_FUNCTION then do;
+		S = SIMPLE_SYMBOL_NAME (SYMBOL_PTR->SYM_NODE.
+					ENCLOSING_SCOPE_OWNER);
+	end;
+	else if SYMBOL_PTR->SYM_NODE.IS_DESTRUCTOR_FUNCTION then do;
+		S = '~' ||
+		    SIMPLE_SYMBOL_NAME (SYMBOL_PTR->SYM_NODE.
+					ENCLOSING_SCOPE_OWNER);
+	end;
+	else if SYMBOL_PTR->SYM_NODE.IS_CONVERSION_FUNCTION then do;
+		if SYMBOL_PTR->SYM_NODE.TYPE ^= NULL_NID then do;
+			call GET_TYPE_NODE_R (SYMBOL_PTR->SYM_NODE.TYPE, TP);
+			S = 'operator ' ||
+			    ANY_TYPE_NAME (TP, 1, DEFAULT_DSM,'');
+			call RELEASE_TYPE_NODE (SYMBOL_PTR->SYM_NODE.TYPE);
+		end;
+		else	S = '<conversion-name>';
+	end;
+	else if SYMBOL_PTR->SYM_NODE.IS_OPERATOR_FUNCTION then do;
+		if SYMBOL_PTR->SYM_NODE.NAME ^= NULL_NID then
+			S = TOKEN_NAME (SYMBOL_PTR->SYM_NODE.NAME);
+		else	S = '<operator-name>';
+	end;
+	else if SYMBOL_PTR->SYM_NODE.NAME ^= NULL_NID then do;
+		S = TOKEN_NAME (SYMBOL_PTR->SYM_NODE.NAME);
+	end;
+	else if SYMBOL_PTR->SYM_NODE.IS_TAG then do;
+		S = '<tag-' || trim (char (SYMBOL_PTR->SYM_NODE.
+					   TOP_TYPE.TAG_SYMBOL)) || '>';
+	end;
+
+	if DSM.QUALIFIED_DECLARATOR_NAME then
+		S = NAME_QUALIFIER (SYMBOL_PTR) || S;
+
+	if SW_NODE_ID_WITH_NAME then do;
+		if length (S) > 0 then
+			S = S || '-' || trim (char (SYMBOL_NID));
+	end;
+
+	return (S);
+
+end ANY_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* QUALIFYING_SYMBOL_NAME
+/*
+/* Returns a string representing the qualifying symbol name of the symbol
+/* represented by the given sym-node id (note that no "::" is appended to
+/* this name).  If the given symbol is not qualified (i.e. is not a member)
+/* then return an empty string.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+QUALIFYING_SYMBOL_NAME: procedure (SYMBOL)
+			returns   (type (STRING_T))
+			external  (X_QUALIFYING_SYMBOL_NAME);
+	declare
+		SYMBOL	type (NID_T);
+	declare
+		P	type (POINTER_T),
+		S	type (STRING_T);
+
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = NAME_QUALIFIER (P);
+	if length (S) > 0 then
+		S = substr (S, 1, length (S) - 2);
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end QUALIFYING_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* NAME_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+NAME_QUALIFIER: procedure (SYMBOL_PTR) returns (type (STRING_T)) internal;
+
+	declare
+		SYMBOL_PTR	type (POINTER_T);
+	declare
+		(M, NEXT_M)	type (NID_T),
+		MP		type (POINTER_T),
+		S		type (STRING_T);
+
+	if (SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_TYPE ^= byte (CLASS_SCOPE)) |
+	   (SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER = NULL_NID) then
+		return ('');
+
+	S = SYMBOL_NAME (SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER) || '::';
+
+	do M = SYMBOL_PTR->SYM_NODE.ENCLOSING_SCOPE_OWNER
+	repeat (NEXT_M) while (M ^= NULL_NID);
+		call GET_SYM_NODE_R (M, MP);
+		if (MP->SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (CLASS_SCOPE)) &
+		   (MP->SYM_NODE.ENCLOSING_SCOPE_OWNER ^= NULL_NID) then do;
+			S = SYMBOL_NAME
+			    (MP->SYM_NODE.ENCLOSING_SCOPE_OWNER) ||
+			    '::' || S;
+		end;
+		else do;
+			call RELEASE_SYM_NODE (M);
+			return (S);
+		end;
+		NEXT_M = MP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+		call RELEASE_SYM_NODE (M);
+	end;
+	return (S);
+
+end NAME_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* SIMPLE_SYMBOL_NAME
+/* ------------------------------------------------------------------- */
+
+SIMPLE_SYMBOL_NAME: procedure (SYMBOL) returns (type (STRING_T)) internal;
+
+	declare
+		SYMBOL	type (NID_T);
+	declare
+		P	type (POINTER_T),
+		S	type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+	call GET_SYM_NODE_R (SYMBOL, P);
+	if P->SYM_NODE.NAME = NULL_NID then do;
+		if P->SYM_NODE.IS_TAG then
+			S = '<tag-' || trim (char (SYMBOL)) || '>';
+		else	S = '<name>';
+	end;
+	else	S = TOKEN_NAME (P->SYM_NODE.NAME);
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end SIMPLE_SYMBOL_NAME;
+
+/* ---------------------------------------------------------------------
+/* BASE_CLASS_NAME
+/*
+/* Return a string representing the name of the base class
+/* given sym-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BASE_CLASS_NAME: procedure (BASE_CLASS)
+		 returns   (type (STRING_T))
+		 external  (X_BASE_CLASS_NAME);
+
+	declare
+		BASE_CLASS	type (NID_T);
+	declare
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	if BASE_CLASS = NULL_NID then
+		return ('');
+	call GET_BASE_CLASS_NODE_R (BASE_CLASS, P);
+	S = QUALIFIED_SYMBOL_NAME (P->BASE_CLASS_NODE.SYMBOL);
+	call RELEASE_BASE_CLASS_NODE (BASE_CLASS);
+	return (S);
+
+end BASE_CLASS_NAME;
+
+/* ---------------------------------------------------------------------
+/* TOKEN_NAME
+/*
+/* Return a string representing the name or the token represented by
+/* the given token-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+TOKEN_NAME: procedure (ID)
+	    returns   (type (STRING_T))
+	    external  (X_TOKEN_NAME);
+
+	declare
+		ID		type (NID_T);
+	declare
+		S		type (STRING_T),
+		P		type (POINTER_T);
+
+	if ID = NULL_NID then
+		return ('');
+	call GET_TOKEN_NODE_R (ID, P);
+	S = substr (P->TOKEN_NODE.SPELLING, 1, P->TOKEN_NODE.SIZE);
+	call RELEASE_TOKEN_NODE (ID);
+	return (S);
+
+end TOKEN_NAME;
+
+/* ---------------------------------------------------------------------
+/* TOKEN_MEMBER_NAME
+/* ------------------------------------------------------------------- */
+
+TOKEN_MEMBER_NAME: procedure (TOKEN_NID, SYMBOL_OR_TYPE_NID)
+		   returns   (type (STRING_T))
+		   external  (X_TOKEN_MEMBER_NAME);
+	declare
+		TOKEN_NID		type (NID_T),
+		SYMBOL_OR_TYPE_NID	type (NID_T);
+	declare
+		TP			type (POINTER_T),
+		S			type (STRING_T);
+
+	if TOKEN_NID = NULL_NID then
+		return ('');
+	else if SYMBOL_OR_TYPE_NID = NULL_NID then
+		S = TOKEN_NAME (TOKEN_NID);
+	else if TOKEN_NID = CONSTRUCTOR_NAME then
+		S = SYMBOL_NAME (SYMBOL_OR_TYPE_NID);
+	else if TOKEN_NID = DESTRUCTOR_NAME then
+		S = '~' || SYMBOL_NAME (SYMBOL_OR_TYPE_NID);
+	else if TOKEN_NID = CONVERSION_NAME then do;
+		if SYMBOL_OR_TYPE_NID ^= NULL_NID then do;
+			call GET_TYPE_NODE_R (SYMBOL_OR_TYPE_NID, TP);
+			S = 'operator ' ||
+			    ANY_TYPE_NAME (TP, 1, DEFAULT_DSM,'');
+			call RELEASE_TYPE_NODE (SYMBOL_OR_TYPE_NID);
+		end;
+		else	S = TOKEN_NAME (TOKEN_NID);
+	end;
+	else	S = TOKEN_NAME (TOKEN_NID);
+	return (S);
+
+end TOKEN_MEMBER_NAME;
+
+/* ---------------------------------------------------------------------
+/* STORAGE_CLASS_NAME
+/*
+/* Return a string representing the storage class of the symbol
+/* represented by the given sym-node pointer; trailing blank(s)
+/* will be appended to the string.  Preserves current-node-id
+/* ------------------------------------------------------------------- */
+
+STORAGE_CLASS_NAME: procedure (SYMBOL_PTR)
+		    returns   (type (STRING_T))
+		    external  (X_STORAGE_CLASS_NAME);
+	declare
+		SYMBOL_PTR	type (POINTER_T);
+	declare
+		S		type (STRING_T);
+
+/*	if ^SYMBOL_PTR->SYM_NODE.EXTERNAL_LINKAGE |
+/**/
+	if ((SYMBOL_PTR->SYM_NODE.STORAGE_CLASS ^= byte (EXTERN_ST)) &
+	    ^SYMBOL_PTR->SYM_NODE.EXTERNAL_LINKAGE) |
+	    (SYMBOL_PTR->SYM_NODE.LINKAGE_KIND = byte (DEFAULT_LINKAGE)) |
+	    (SYMBOL_PTR->SYM_NODE.LINKAGE_KIND = byte (CXX_LINKAGE)) then
+		return (STORAGE_CLASS_CODE_NAME
+			(rank (SYMBOL_PTR->SYM_NODE.STORAGE_CLASS)));
+
+	if SYMBOL_PTR->SYM_NODE.LINKAGE_KIND = byte (C_LINKAGE) then
+		return ('extern "C" ');
+	if SYMBOL_PTR->SYM_NODE.LINKAGE_KIND = byte (FORTRAN_LINKAGE) then
+		return ('extern "FORTRAN" ');
+	if SYMBOL_PTR->SYM_NODE.LINKAGE_KIND = byte (PASCAL_LINKAGE) then
+		return ('extern "Pascal" ');
+	if SYMBOL_PTR->SYM_NODE.LINKAGE_KIND = byte (PLI_LINKAGE) then
+		return ('extern "PL/I" ');
+	else if SYMBOL_PTR->SYM_NODE.LINKAGE_KIND = byte (CXX_LINKAGE) then
+		return ('extern "C++" ');
+	else 	return ('extern "<language>" ');
+
+end STORAGE_CLASS_NAME;
+
+/* ---------------------------------------------------------------------
+/* STORAGE_CLASS_CODE_NAME
+/*
+/* Return a string representing the storage class of the given
+/* storage-class code; trailing blank(s) will be appended to
+/* the string.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+STORAGE_CLASS_CODE_NAME: procedure (ST)
+			 returns   (type (STRING_T))
+			 external  (X_STORAGE_CLASS_CODE_NAME);
+	declare
+		ST	type (SHORT_T);
+
+	if      ST = NULL_ST     then return ('');
+	else if ST = AUTO_ST     then return ('auto ');
+	else if ST = REGISTER_ST then return ('register ');
+	else if ST = EXTERN_ST   then return ('extern ');
+	else if ST = STATIC_ST   then return ('static ');
+	else if ST = TYPEDEF_ST  then return ('typedef ');
+	else			      return ('<storage> ');
+
+end STORAGE_CLASS_CODE_NAME;
+
+/* ---------------------------------------------------------------------
+/* FUNCTION_SPECIFIER_NAME
+/*
+/* Return a string representing the function of the (function) symbol
+/* represented by the given sym-node id; trailing blanks will be
+/* appended to the string(s).  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+FUNCTION_SPECIFIER_NAME: procedure (SYMBOL_PTR)
+			 returns   (type (STRING_T))
+			 external  (X_FUNCTION_SPECIFIER_NAME);
+	declare
+		SYMBOL_PTR	type (POINTER_T);
+	declare
+		S		type (STRING_T);
+
+	if ^SYMBOL_PTR->SYM_NODE.IS_FUNCTION then
+		return ('');
+
+	S = '';
+	if SYMBOL_PTR->SYM_NODE.OVERLOAD then S = S || 'overload ';
+	if SYMBOL_PTR->SYM_NODE.INLINE   then S = S || 'inline ';
+	if SYMBOL_PTR->SYM_NODE.VIRTUAL  then S = S || 'virtual ';
+	return (S);
+
+end FUNCTION_SPECIFIER_NAME;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_ACCESS_NAME
+/*
+/* Return a string representing the member access rights of the (member)
+/* symbol represented by the given sym-node pointer; trailing blank(s)
+/* will be appended to the string.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MEMBER_ACCESS_NAME: procedure (SYMBOL_PTR)
+		    returns (type (STRING_T))
+		    external (X_MEMBER_ACCESS_NAME);
+	declare
+		SYMBOL_PTR	type (POINTER_T);
+
+	if ^SYMBOL_PTR->SYM_NODE.IS_AGGREGATE_MEMBER then
+		return ('');
+
+	return (MEMBER_ACCESS_CODE_NAME
+		(rank (SYMBOL_PTR->SYM_NODE.ACCESS)));
+
+end MEMBER_ACCESS_NAME;
+
+/* ---------------------------------------------------------------------
+/* MEMBER_ACCESS_CODE_NAME
+/*
+/* Return a string representing the member access rights
+/* of the given member access code; trailing blank(s) will
+/* be appended to the string.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MEMBER_ACCESS_CODE_NAME: procedure (ACCESS)
+			 returns (type (STRING_T))
+			 external (X_MEMBER_ACCESS_CODE_NAME);
+	declare
+		ACCESS	type (SHORT_T);
+
+	if      ACCESS = NULL_ACCESS      then return ('private:   ');
+	else if ACCESS = PUBLIC_ACCESS    then return ('public:    ');
+	else if ACCESS = PRIVATE_ACCESS   then return ('private:   ');
+	else if ACCESS = PROTECTED_ACCESS then return ('protected: ');
+	else                                   return ('<access>:  ');
+
+end MEMBER_ACCESS_CODE_NAME;
+
+/* ---------------------------------------------------------------------
+/* BASE_CLASS_NAMES
+/*
+/* Return a string representing the base class list of the symbol
+/* represented by the given sym-node pointer.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BASE_CLASS_NAMES: procedure (SYMBOL_PTR)
+		  returns   (type (STRING_T))
+		  external  (X_BASE_CLASS_NAMES);
+
+	declare
+		SYMBOL_PTR	type (POINTER_T);
+	declare
+		I		type (SHORT_T),
+		(P, BCP)	type (POINTER_T),
+		(BC, NEXT_BC)	type (NID_T),
+		S		type (STRING_T);
+
+	if ^SYMBOL_PTR->SYM_NODE.IS_TAG |
+	   (SYMBOL_PTR->SYM_NODE.DEFINED_SCOPE = NULL_NID) then
+		return ('');
+
+	S = '';
+
+	BC = SYMBOL_PTR->SYM_NODE.BASE_CLASSES;
+	do I = 1 to SYMBOL_PTR->SYM_NODE.NBASE_CLASSES while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		if I = 1 then
+			S = ': ';
+		else	S = S || ', ';
+		S = S ||
+		    BASE_CLASS_TYPE (BCP) || ' ' ||
+		    QUALIFIED_SYMBOL_NAME (BCP->BASE_CLASS_NODE.SYMBOL);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+		BC = NEXT_BC;
+	end;
+
+	if ((I ^= (SYMBOL_PTR->SYM_NODE.NBASE_CLASSES + 1)) &
+	    (SYMBOL_PTR->SYM_NODE.NBASE_CLASSES > 0)) |
+	   (BC ^= NULL_NID) then
+		S = S || ', ...';
+
+	return (S);
+
+/* ---------------------------------------------------------------------
+/* BASE_CLASS_TYPE
+/*
+/* Return a string representing the base class type of the
+/* base class represented by the given base-class-node pointer.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BASE_CLASS_TYPE: procedure (BASE_CLASS_PTR)
+		 returns   (type (STRING_T))
+		 internal;
+	declare
+		BASE_CLASS_PTR	type (POINTER_T);
+	declare
+		ACCESS		type (SHORT_T),
+		S		type (STRING_T);
+
+	ACCESS  = rank (BASE_CLASS_PTR->BASE_CLASS_NODE.ACCESS);
+
+	if      ACCESS = NULL_ACCESS    then S = 'private';
+	else if ACCESS = PRIVATE_ACCESS then S = 'private';
+	else if ACCESS = PUBLIC_ACCESS  then S = 'public';
+	else				     S = '';
+
+	if BASE_CLASS_PTR->BASE_CLASS_NODE.VIRTUAL then do;
+		if length (S) > 0 then
+			S = S || ' virtual';
+		else	S = S || 'virtual';
+	end;
+
+	return (S);
+
+end BASE_CLASS_TYPE;
+
+end BASE_CLASS_NAMES;
+
+/* ---------------------------------------------------------------------
+/* BASE_MEMBER_NAME
+/*
+/* Return a string representing the base member access declaration
+/* represented by the given base-member-node pointer.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BASE_MEMBER_NAME: procedure (BASE_MEMBER_PTR)
+		  returns   (type (STRING_T))
+		  external  (X_BASE_MEMBER_NAME);
+	declare
+		BASE_MEMBER_PTR	type (POINTER_T);
+
+	return (MEMBER_ACCESS_CODE_NAME
+		(rank (BASE_MEMBER_PTR->BASE_MEMBER_NODE.ACCESS)) ||
+		QUALIFIED_SYMBOL_NAME
+		(BASE_MEMBER_PTR->BASE_MEMBER_NODE.MEMBER));
+
+end BASE_MEMBER_NAME;
+
+/* ---------------------------------------------------------------------
+/* TYPE_NAME
+/*
+/* Return a string representing the type represented by the given
+/* type-node id and with the name represented by the given name string.
+/* If the base type is a tag type, then the appropriate tag keyword
+/* will *not* be used.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+TYPE_NAME: procedure (TYPE, NAME)
+	   returns   (type (STRING_T))
+	   external  (X_TYPE_NAME);
+
+	declare
+		TYPE		type (NID_T),
+		NAME		type (STRING_T);
+	declare
+		TP		type (POINTER_T),
+		S		type (STRING_T);
+	if TYPE = NULL_NID then
+		return ('');
+	call GET_TYPE_NODE_R (TYPE, TP);
+	S = ANY_TYPE_NAME (TP, 0, DEFAULT_DSM, NAME);
+	call RELEASE_TYPE_NODE (TYPE);
+	return (S);
+
+end TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* ANY_TYPE_NAME
+/*
+/* Return a string representing the type represented by the given
+/* type-node pointer, with the specified number of derived type levels
+/* skipped, with an additional top pointer type level if specified,
+/* and with the name represented by the given name string.  If the base
+/* type is a tag type, then the appropriate tag keyword will be included
+/* in the string iff USE_TAG_KEYWORD is TRUE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ANY_TYPE_NAME: procedure (TYPE_PTR, SKIP_NLEVELS, DSM_FLAGS, NAME)
+	       returns   (type (STRING_T))
+	       external  (X_ANY_TYPE_NAME);
+
+	declare
+		TYPE_PTR		type (POINTER_T),
+		SKIP_NLEVELS		type (SHORT_T),
+		DSM_FLAGS		type (DSM_T),
+		NAME			type (STRING_T);
+	declare
+		DSM			type (DECLARATION_STRING_MODE_T),
+		TP			type (POINTER_T),
+		(I, N)			type (SHORT_T),
+		(DT, LAST_DT, BT)	type (SHORT_T),
+		TQ			type (BYTE_BITS_T),
+		TID			type (NID_T),
+		(S, BTS, BTQS, TQS)	type (STRING_T);
+
+	DSM.FLAGS = DSM_FLAGS;
+
+	/* Get the name if any */
+
+	if length (NAME) > 0 then
+		S = NAME;
+	else	S = '';
+
+	/* Get the appropriate type-node pointer */
+
+	if ^DSM.EXPAND_TYPEDEF &
+	   (TYPE_PTR->TYPE_NODE.TYPEDEF ^= NULL_NID) then do;
+		call GET_TYPE_NODE_R (TYPE_PTR->TYPE_NODE.TYPEDEF, TP);
+		if SKIP_NLEVELS > rank (TP->TYPE_NODE.LEVEL) then do;
+			call RELEASE_TYPE_NODE (TYPE_PTR->TYPE_NODE.TYPEDEF);
+			TP = TYPE_PTR;
+		end;
+	end;
+	else	TP = TYPE_PTR;
+
+	/* Get the declarator level */
+
+	N = rank (TP->TYPE_NODE.LEVEL) - SKIP_NLEVELS;
+	if N < 0 then N = 0;
+
+	/* See if we have an extra pointer top type */
+
+	if DSM.ADD_POINTER_TYPE then do;
+		DSM.ADD_POINTER_TYPE = FALSE;
+		S = '*' || S;
+		LAST_DT = POINTER_DT;
+	end;
+	else	LAST_DT = NULL_DT;
+
+	/* Get the declarator */
+
+	do I = N to 1 by -1;
+		DT  = rank (TP->TYPE_NODE.TYPE_CODE (I));
+		TQ  = TP->TYPE_NODE.TYPE_QUALIFIERS (I);
+		TID = TP->TYPE_NODE.TYPE_NID (I);
+		if      DT = REFERENCE_DT then do;
+			TQS = TYPE_QUALIFIER_NAME (TQ);
+			if length (TQS) > 0 then do;
+				if length (S) > 0 then
+					S = ' ' || S;
+				S = '&' || TQS || S;
+			end;
+			else	S = '&' || S;
+		end;
+		else if DT = POINTER_DT then do;
+			TQS = TYPE_QUALIFIER_NAME (TQ);
+			if length (TQS) > 0 then do;
+				if length (S) > 0 then
+					S = ' ' || S;
+				S = '*' || TQS || S;
+			end;
+			else	S = '*' || S;
+		end;
+		else if DT = MEMBER_POINTER_DT then do;
+			S = QUALIFIED_SYMBOL_NAME (TID) || '::*' || S;
+			TQS = TYPE_QUALIFIER_NAME (TQ);
+			if length (TQS) > 0 then
+				S = S || TQS;
+		end;
+		else if DT = MEMBER_REFERENCE_DT then do;
+			S = QUALIFIED_SYMBOL_NAME (TID) || '::' || S;
+		end;
+		else do;
+			if (LAST_DT = REFERENCE_DT) |
+			   (LAST_DT = POINTER_DT) |
+			   (LAST_DT = MEMBER_POINTER_DT) then do;
+				S = '(' || S || ')';
+			end;
+			if DT = FUNCTION_DT then do;
+				if length (NAME) > 0 then do;
+					if ^DSM.CONSERVE_SPACE then
+						S = S || ' ';
+				end;
+				S = S || FUNCTION_SIGNATURE (TID, DSM.FLAGS);
+			end;
+			if DT = ARRAY_DT then
+				S = S || ARRAY_DIMENSION (TID, DSM.FLAGS);
+		end;
+		LAST_DT = DT;
+	end;
+
+	/* Set the base type and base type qualifier if desired */
+
+	if DSM.BASE_TYPE_SPECIFIER then do;
+		BTS = BASE_TYPE_NAME (TP, (DSM.TAG_KEYWORD));
+		if length (BTS) > 0 then do;
+			if length (S) > 0 then
+				S = BTS || ' ' || S;
+			else	S = BTS;
+		end;
+		BTQS = TYPE_QUALIFIER_NAME (TP->TYPE_NODE.TYPE_QUALIFIERS (0));
+		if length (BTQS) > 0 then do;
+			if length (S) > 0 then
+				S = BTQS || ' ' || S;
+			else	S = BTQS;
+		end;
+	end;
+
+	if TP ^= TYPE_PTR then
+		call RELEASE_TYPE_NODE (TYPE_PTR->TYPE_NODE.TYPEDEF);
+
+	return (S);
+
+end ANY_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* BASE_TYPE_NAME
+/*
+/* Returns a string representing the base type of the type represented
+/* by the given type-node pointer.  If the type is a tag type, then
+/* the corresponding tag keyword will be included in the string iff
+/* USE_TAG_KEYWORD is TRUE; if the tag keyword is to be included, then
+/* it will not be qualified, other it will.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BASE_TYPE_NAME: procedure (TYPE_PTR, USE_TAG_KEYWORD)
+		returns   (type (STRING_T))
+		internal;
+	declare
+		TYPE_PTR	type (POINTER_T),
+		USE_TAG_KEYWORD	type (BOOL_T);
+	declare
+		(BT, ET)	type (SHORT_T),
+		TID		type (NID_T),
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	BT  = rank (TYPE_PTR->TYPE_NODE.DATA (0).CODE);
+	TID = TYPE_PTR->TYPE_NODE.DATA (0).NID;
+
+	if (BT < LB_ALL_TYPES) | (BT > HB_ALL_TYPES) then
+		return ('');
+
+	if BT = TYPEDEF_BT then do;
+		if TID ^= NULL_NID then
+			S = QUALIFIED_SYMBOL_NAME (TID);
+		else	S = '<typedef-name>';
+	end;
+
+	else if IS_TAG_TYPE (BT) then do;
+		if TID ^= NULL_NID then do;
+			if USE_TAG_KEYWORD then do;
+				S = MAP_TYPE_CODE_NAME (BT);
+				if BT = ENUM_BT then do;
+					call GET_SYM_NODE_R (TID, P);
+					ET = rank (P->SYM_NODE.
+						   ENUM_INTEGRAL_TYPE);
+					call RELEASE_SYM_NODE (TID);
+					if (ET ^= INT_BT) &
+					   (ET ^= NULL_BT) then do;
+						S = S || ' ' ||
+						    MAP_TYPE_CODE_NAME (ET);
+					end;
+				end;
+				S = S || ' ' || QUALIFIED_SYMBOL_NAME (TID);
+			end;
+			else	S = QUALIFIED_SYMBOL_NAME (TID);
+		end;
+		else	S = ' <tag-name>';
+	end;
+
+	else	S = MAP_TYPE_CODE_NAME (BT);
+
+       	return (S);
+
+end BASE_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* TYPE_QUALIFIER_NAME
+/*
+/* Return a string representing the type qualifer of the
+/* given type qualifier code.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+TYPE_QUALIFIER_NAME: procedure (TQ)
+		     returns   (type (STRING_T))
+		     internal;
+	declare
+		TQ	type (BYTE_BITS_T);
+	declare
+		S	type (STRING_T);
+	
+	if (TQ & CONST_TQ) = CONST_TQ then do;
+		S = 'const';
+		if (TQ & VOLATILE_TQ) = VOLATILE_TQ then
+			S = S || ' volatile';
+	end;
+	else if (TQ & VOLATILE_TQ) = VOLATILE_TQ then
+		S = 'volatile';
+	else	S = '';
+
+	return (S);
+
+end TYPE_QUALIFIER_NAME;
+
+/* ---------------------------------------------------------------------
+/* FUNCTION_SIGNATURE
+/*
+/* Return a string representing the signature (parameter
+/* declaration list) represented by the given sig-node id.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+FUNCTION_SIGNATURE: procedure (SIGNATURE, DSM_FLAGS)
+		    returns   (type (STRING_T))
+		    internal;
+	declare
+		SIGNATURE	type (NID_T),
+		DSM_FLAGS	type (DSM_T);
+	declare
+		DSM		type (DECLARATION_STRING_MODE_T),
+		(SP, P)		type (POINTER_T),
+		(PSP, PTP)	type (POINTER_T),
+		I		type (SHORT_T),
+		PARAMETERS	type (NID_T),
+		NEXT_PARAMETER	type (NID_T),
+		NPARAMETERS	type (SHORT_T),
+		ELLIPSIS	type (BOOL_T),
+		PROTOTYPED	type (BOOL_T),
+		(S, TQS)	type (STRING_T);
+
+	if SIGNATURE = NULL_NID then
+		return ('()');
+
+	DSM.FLAGS = DSM_FLAGS;
+
+	if ^DSM.SIGNATURES then
+		return ('()');
+
+	if ^DSM.BASE_TYPE_SPECIFIER then
+		DSM.BASE_TYPE_SPECIFIER = TRUE;
+
+	call GET_SIG_NODE_R (SIGNATURE, SP);
+
+	TQS = TYPE_QUALIFIER_NAME (SP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS);
+
+	if   DSM.INTERNAL_PARAMETERS 
+	   & (SP->SIG_NODE.PARAMETERS ^= NULL_NID) then do;
+		NPARAMETERS = SP->SIG_NODE.NPARAMETERS;
+		PARAMETERS  = SP->SIG_NODE.PARAMETERS;
+
+		PROTOTYPED  = SP->SIG_NODE.PROTOTYPED;
+		ELLIPSIS    = SP->SIG_NODE.ELLIPSIS;
+
+		call RELEASE_SIG_NODE  (SIGNATURE);
+
+		DSM.TAG_DATA = FALSE;
+		DSM.TAG_KEYWORD = FALSE;
+
+		S = '(';
+
+		if NPARAMETERS = 0 then do;
+			if PROTOTYPED then
+				S = S || 'void';
+		end;
+		else do I = 1 to NPARAMETERS while (PARAMETERS ^= NULL_NID);
+			call GET_SYM_NODE_R (PARAMETERS, P);
+			if I > 1 then do;
+				S = S || ',';
+				if ^DSM.CONSERVE_SPACE then
+					S = S || ' ';
+			end;
+			if ^DSM.PARAMETER_NAMES then do;
+				call GET_TYPE_NODE_R (P->SYM_NODE.TYPE, PTP);
+				S = S || ANY_TYPE_NAME (PTP, 0, DSM.FLAGS, '');
+				call RELEASE_TYPE_NODE (P->SYM_NODE.TYPE);
+			end;
+			else do;
+				S = S || ANY_SYMBOL_TYPE_NAME
+					 (P, PARAMETERS, DSM.FLAGS);
+			end;
+			if P->SYM_NODE.INITIAL_AT then do;
+				if DSM.DEFAULT_ARGUMENTS then
+					S = S || ' = <e>';
+			end;
+			NEXT_PARAMETER = P->SYM_NODE.NEXT_PARAMETER;
+			call RELEASE_SYM_NODE (PARAMETERS);
+			PARAMETERS = NEXT_PARAMETER;
+		end;
+	end;
+	else do;
+		NPARAMETERS = SP->SIG_NODE.EXPLICIT_NPARAMETERS;
+		PARAMETERS  = SP->SIG_NODE.EXPLICIT_PARAMETERS;
+
+		PROTOTYPED  = SP->SIG_NODE.PROTOTYPED;
+		ELLIPSIS    = SP->SIG_NODE.ELLIPSIS;
+
+		call RELEASE_SIG_NODE  (SIGNATURE);
+
+		DSM.TAG_DATA = FALSE;
+		DSM.TAG_KEYWORD = FALSE;
+
+		S = '(';
+
+		if NPARAMETERS = 0 then do;
+			if PROTOTYPED then
+				S = S || 'void';
+		end;
+		else do I = 1 to NPARAMETERS while (PARAMETERS ^= NULL_NID);
+			call GET_PARAMETER_NODE_R (PARAMETERS, P);
+			if I > 1 then do;
+				S = S || ',';
+				if ^DSM.CONSERVE_SPACE then
+					S = S || ' ';
+			end;
+			call GET_TYPE_NODE_R (P->PARAMETER_NODE.TYPE, PTP);
+			S = S || ANY_TYPE_NAME (PTP, 0, DSM.FLAGS, '');
+			call RELEASE_TYPE_NODE (P->PARAMETER_NODE.TYPE);
+			if P->PARAMETER_NODE.VALUE ^= NULL_CXX_VID then do;
+				if DSM.DEFAULT_ARGUMENTS then
+					S = S || ' = <e>';
+			end;
+			NEXT_PARAMETER = P->PARAMETER_NODE.NEXT;
+			call RELEASE_PARAMETER_NODE (PARAMETERS);
+			PARAMETERS = NEXT_PARAMETER;
+		end;
+	end;
+
+	if ELLIPSIS then do;
+		if (I > 1) | PROTOTYPED then do;
+			if DSM.CONSERVE_SPACE then
+				S = S || ',';
+			else	S = S || ', ';
+		end;
+		S = S || '...';
+	end;
+
+	S = S || ')';
+
+	if length (TQS) > 0 then
+		S = S || ' ' || TQS;
+
+	return (S);
+
+end FUNCTION_SIGNATURE;
+
+/* ---------------------------------------------------------------------
+/* ARRAY_DIMENSION
+/*
+/* Return a string representing the dimension represented by
+/* the given the dim-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+ARRAY_DIMENSION: procedure (DIMENSION,  DSM_FLAGS)
+		 returns   (type (STRING_T))
+		 internal;
+
+	declare
+		DIMENSION	type (NID_T),
+		DSM_FLAGS	type (DSM_T);
+	declare
+		DSM		type (DECLARATION_STRING_MODE_T),
+		P		type (POINTER_T),
+		S		type (STRING_T);
+
+	if DIMENSION = NULL_NID then
+		return ('[]');
+
+	DSM.FLAGS = DSM_FLAGS;
+
+	if ^DSM.DIMENSIONS then
+		return ('[]');
+
+	call GET_DIM_NODE_R (DIMENSION, P);
+
+	if P->DIM_NODE.INCOMPLETE then do;
+		if P->DIM_NODE.VALUE_ID = NULL_CXX_VID then
+			S = '[]';
+		else	S = '[<expression>]';
+	end;
+	else	S = '[' || trim (char (P->DIM_NODE.VALUE)) || ']';
+
+	call RELEASE_DIM_NODE (DIMENSION);
+
+	return (S);
+
+end ARRAY_DIMENSION;
+
+/* ---------------------------------------------------------------------
+/* SYMBOL_LOCATION_NAME
+/*
+/* Return a string containing the line number and file name on (in) which
+/* the symbol represented by the given sym-node id SYMBOL was declared.
+/* The format of the string is: 
+/*
+/*     line_number, "file_name"
+/*
+/* ------------------------------------------------------------------- */
+
+SYMBOL_LOCATION_NAME: procedure (SYMBOL)
+		      returns   (type (STRING_T))
+		      external  (X_SYMBOL_LOCATION_NAME);
+	declare
+		SYMBOL	type (NID_T);
+	declare
+		S	type (STRING_T),
+		P	type (POINTER_T);
+
+	%include CXX_SOURCE_MGR_IN;
+
+	if SYMBOL = NULL_NID then
+		return ('');
+
+	call GET_SYM_NODE_R (SYMBOL, P);
+	S = trim (char (P->SYM_NODE.DCL_LINE_ID));
+	if  AM_DEBUGGER |
+	    (((CURRENT_SOURCE.ASSUMED_FILE ^= NULL_NID) &
+	      (CURRENT_SOURCE.ASSUMED_FILE ^= P->SYM_NODE.DCL_FILE_ID)) |
+	     ((CURRENT_SOURCE.ASSUMED_FILE = NULL_NID) &
+	      (CURRENT_SOURCE.FILE ^= P->SYM_NODE.DCL_FILE_ID))) then
+		S = S || ', "' || TOKEN_NAME (P->SYM_NODE.DCL_FILE_ID) || '"';
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end SYMBOL_LOCATION_NAME;
+

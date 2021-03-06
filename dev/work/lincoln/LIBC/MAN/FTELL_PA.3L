@@ -1,0 +1,32 @@
+.TH FTELL_PAT 3L LOCAL
+
+.SH NAME
+ftell_pat - get the offset to a pattern in a file
+
+.SH SYNOPSIS
+.ft B
+long
+.br
+ftell_pat(f, pat)
+.br
+FILE *f;
+.br
+char *pat;
+.ft P
+
+.SH DESCRIPTION
+Returns the offset in the file \fIf\fP to the first character of the
+next occurrence of the given pattern \fIpat\fP.  If the pattern is not
+found, then -1 is returned.
+
+.SH WARNINGS
+This function coordinates with the buffering used by the
+standard C input/output library, and should only be used
+in conjunction with other functions within the library
+(e.g. use \fIfseek(3S)\fP rather than \fIlseek(2)\fP).
+
+.SH FILE
+fstell.c
+
+.SH SEE ALSO
+fseek_pat(3L), fseek_npat(3L), fseek(3), findline(3L)

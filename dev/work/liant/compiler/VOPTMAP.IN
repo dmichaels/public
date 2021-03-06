@@ -1,0 +1,243 @@
+/* C++ CXX_OPERATOR_TOKEN_MAP_IN - maps vop codes to token type codes */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  10.08.91  PKT  012  Added VA_ARG_VO and VA_START_VO.
+ *  07.12.91  PKT  011  Added DBG_RANGE_VO and DBG_SUBSCRIPT_VO.
+ *  06.02.91  PKT  010  Added DESTRUCTOR_VO.
+ *  05.02.91  DGM  009  Added VA_STACK_VO.
+ *  01.27.91  PKT  008  Updated for member pointers.
+ *  12.28.90  PKT  007  Updated for added CAST_TO_BASE_VO.
+ *  11.14.90  TLF  006  Added token code to EXPLICIT_COMMA_VO.
+ *                      (Necessary to allow overloading comma to work.)
+ *			Removed token code from COMMA_VO.
+ *  11.09.90  PKT  005  Added IMPLICIT_STAR_VO and DECLARE_TEMP_VO.
+ *  09.17.90  PKT  004  Added EXPLICIT_COMMA_VO.
+ *  09.14.90  DGM  003  Changed include file names and VOP names.
+ *  08.31.90  TLF  002  Added UNARY_AND_VO.
+ *  08.27.90  TLF  001  Added PTR_STAR_VO and SSADD_VO.
+ *  08.21.90  TLF  000  Original.  DGM.
+ *
+ ***********************************************************************/
+
+declare	
+
+1 VOPTTOK		external,
+  2 VOP_TO_TOKEN	(LB_OPERATOR_CODES : HB_OPERATOR_CODES)
+			type (SHORT_T) initial (
+
+/*  LB_OPERATOR_CODES            */
+
+/*  ASSIGN_VO             */ 	EQUAL_TOKEN,
+/*  IMPLICIT_ASSIGN_VO    */	0,
+/*  COPY_VO               */	0,
+
+/*  INTEGER_VO            */	0,
+/*  CONSTANT_VO           */	0,
+/*  available             */	0,
+/*  REF_VO                */	0,
+/*  PARAM_REF_VO          */	0,
+/*  MEMBER_REF_VO         */	0,
+/*  MEMBER_PTR_VO         */	0,
+/*  VALUE_VO              */	0,
+/*  ADDR_VO               */	0,
+/*  IMPLICIT_ADDR_VO      */	0,
+/*  DOT_VO                */	DOT_TOKEN,
+/*  CAST_TO_BASE_VO	   */	0,
+/*  CAST_VO               */	0,
+/*  FUNCTIONAL_CAST_VO    */	0,
+/*  IMPLICIT_CAST_VO      */	0,
+/*  TYPE_VO               */	0,
+/*  STAR_VO               */	STAR_TOKEN,
+/*  IMPLICIT_STAR_VO	  */	0,
+/*  ARROW_VO              */    POINTER_TOKEN,
+/*  ARROW_STAR_VO         */	POINTER_STAR_TOKEN,
+/*  DOT_STAR_VO           */	0,
+/*  SIZEOF_VO             */	0,
+/*  EXPLICIT_COMMA_VO     */	COMMA_TOKEN,
+/*  COMMA_VO              */	0,
+/*  LEFT_VALUE_VO         */	0,
+
+/*  PLUS_VO               */	PLUS_TOKEN,
+/*  MINUS_VO              */	MINUS_TOKEN,
+/*  COMPLEMENT_VO         */	TILDE_TOKEN,
+
+/*  ADD_VO                */	PLUS_TOKEN,
+/*  ADD_ASSIGN_VO         */	PLUS_EQUAL_TOKEN,
+
+/*  SUB_VO                */	MINUS_TOKEN,
+/*  SUB_ASSIGN_VO         */	MINUS_EQUAL_TOKEN,
+
+/*  MUL_VO                */	STAR_TOKEN,
+/*  MUL_ASSIGN_VO         */	STAR_EQUAL_TOKEN,
+
+/*  DIV_VO                */	SLASH_TOKEN,
+/*  DIV_ASSIGN_VO         */	SLASH_EQUAL_TOKEN,
+
+/*  MOD_VO                */	MOD_TOKEN,
+/*  MOD_ASSIGN_VO         */	MOD_EQUAL_TOKEN,
+
+/*  LSHIFT_VO             */	LSHIFT_TOKEN,
+/*  LSHIFT_ASSIGN_VO      */	LSHIFT_EQUAL_TOKEN,
+
+/*  RSHIFT_VO             */	RSHIFT_TOKEN,
+/*  RSHIFT_ASSIGN_VO      */	RSHIFT_EQUAL_TOKEN,
+
+/*  AND_VO                */	AND_TOKEN,
+/*  AND_ASSIGN_VO         */	AND_EQUAL_TOKEN,
+
+/*  OR_VO                 */	OR_TOKEN,
+/*  OR_ASSIGN_VO          */	OR_EQUAL_TOKEN,
+
+/*  XOR_VO                */	XOR_TOKEN,
+/*  XOR_ASSIGN_VO         */	XOR_EQUAL_TOKEN,
+
+/*  AND_AND_VO            */	AND_AND_TOKEN,
+/*  OR_OR_VO              */	OR_OR_TOKEN,
+
+/*  NOT_VO                */	NOT_TOKEN,
+
+/*  UNARY_AND_VO          */   AND_TOKEN,
+
+/*  EQ_VO                 */	EQUAL_EQUAL_TOKEN,
+/*  GE_VO                 */	GREATER_EQUAL_TOKEN,
+/*  LE_VO                 */	LESS_EQUAL_TOKEN,
+/*  NE_VO                 */	NOT_EQUAL_TOKEN,
+/*  LT_VO                 */	LESS_THAN_TOKEN,
+/*  GT_VO                 */	GREATER_THAN_TOKEN,
+
+/*  LB_BRANCH_VO   	   */
+/*  BRANCH_VO             */	0,
+/*  BRANCH_EQ_VO          */	0,
+/*  BRANCH_GE_VO          */	0,
+/*  BRANCH_LE_VO          */	0,
+/*  BRANCH_NE_VO          */	0,
+/*  BRANCH_LT_VO          */	0,
+/*  BRANCH_GT_VO          */	0,
+/*  BRANCH_TRUE_VO        */	0,
+/*  BRANCH_FALSE_VO       */	0,
+/*  BRANCH_COMPUTED_VO    */	0,
+/*  BRANCH_SWITCH_VO      */	0,
+/*  BRANCH_SAVE_VO	   */	0,
+/*  HB_BRANCH_VO	   */
+
+/*  INC_VO                */	PLUS_PLUS_TOKEN,
+/*  POST_INC_VO           */	PLUS_PLUS_TOKEN,
+
+/*  DEC_VO                */	MINUS_MINUS_TOKEN,
+/*  POST_DEC_VO           */	MINUS_MINUS_TOKEN,
+
+/*  DECLARE_LABEL_VO      */	0,
+/*  LABEL_VO              */	0,
+
+/*  CONDITIONAL_VO        */	0,
+/*  COND_REF_VO           */	0,
+/*  COND_VALUE_VO         */	0,
+/*  ALTERNATE_VO          */	0,
+/*  ALT_VALUE_VO          */	0,
+/*  COLON_VO              */	0,
+/*  UNINITIALIZED_VO      */	0,
+
+/*  CALL_VO               */	0,
+/*  CALL_FUNCTION_VO      */	0,
+/*  ARG_VO                */	0,
+/*  ARG_REF_VO            */	0,
+/*  SREF_VO               */	0,
+/*  RETURN_VO             */	0,
+/*  IMPLICIT_RETURN_VO    */	0,
+
+/*  CONVERT_VO            */	0,
+/*  CONVERT_UNITS_VO      */	0,
+/*  BYTE_VO               */	0,
+/*  RANK_VO               */	0,
+/*  SRANK_VO              */	0,
+/*  FIELD_VO              */	0,
+
+/*  STMNT_ID_VO           */	0,
+/*  PROCEDURE_VO          */	0,
+/*  ENTRY_VO              */	0,
+/*  NOP_VO                */	0,
+/*  BLOCK_END_VO          */	0,
+
+/*  PTR_VO                */	0,
+/*  INITIAL_VO            */	0,
+
+/*  SSADD_VO              */	LSQUARE_TOKEN,
+
+/*  ABS_VO                */ 	0,     /* Math Intrinsics              */
+/*  SQRT_VO               */	0,
+/*  EXP_VO                */	0,
+/*  LOG_VO                */	0,
+/*  LOG10_VO              */	0,
+/*  SIN_VO                */	0,
+/*  COS_VO                */	0,
+/*  TAN_VO                */	0,
+/*  ASIN_VO               */	0,
+/*  ACOS_VO               */	0,
+/*  ATAN_VO               */	0,
+/*  ATAN2_VO              */	0,
+/*  SINH_VO               */	0,
+/*  COSH_VO               */	0,
+/*  TANH_VO               */	0,
+/*  FMOD_VO               */	0,
+/*  POW_VO                */	0,
+/*  CEIL_VO               */	0,
+/*  FLOOR_VO              */	0,
+/*  FABS_VO               */	0,
+
+/*  STRCMP_VO             */ 	0,    /* String Minipulation builtins */
+/*  STRCPY_VO             */	0,
+/*  STRLEN_VO             */	0,
+/*  STRNCMP_VO            */	0,
+/*  STRNCPY_VO            */	0,
+/*  STRCAT_VO             */	0,
+/*  STRNCAT_VO            */	0,
+/*  MEMCPY_VO             */	0,
+/*  MEMCMP_VO             */	0,
+
+/*  SWITCH_VO             */	0,
+
+/*  MEMBER_INIT_VO        */ 	0,    /* a member initializer */
+/*  VEC_INITIAL_VO        */ 	0,    /* virtual member reference */
+/*  NEW_VO                */	0,
+/*  DELETE_VO             */	0,
+/*  DESTROY_VO		   */	0,
+    
+/*  LOOP_TOP_VO           */	0,
+/*  LOOP_BODY_VO          */	0,
+/*  LOOP_EXIT_VO          */	0,
+
+/*  VA_REG_VO             */	0,
+/*  VA_MEM_VO             */	0,
+/*  VA_OFFSET_VO          */	0,
+/*  VA_REGTYP_VO          */	0,
+/*  VA_ALIGN_VO           */	0,
+
+/*  SAVE_VO		   */	0,
+/*  EXIT_VO		   */	0,
+
+/*  DECLARE_TEMP_VO	   */	0,
+
+/*  VA_STACK_VO           */	0,
+
+/*  DESTRUCTOR_VO         */    0,
+
+/*  DBG_RANGE_VO          */    0,
+/*  DBG_SUBSCRIPT_VO      */    LSQUARE_TOKEN,
+
+/*  VA_ARG_VO             */	0,
+/*  VA_START_VO           */	0
+
+				 );
+
+/*  HB_OPERATOR_CODES            */
+

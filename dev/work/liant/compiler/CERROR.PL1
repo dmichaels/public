@@ -1,0 +1,1236 @@
+/* C++ cerror.pl1 - Front-end error reporter e/
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ * 
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  11.11.93  DGM  034  PL/I bug workaround.
+ *  06.22.92  DGM  033  Implemented -nodiag N.
+ *  06.18.92  DGM  032  Fix up so we don't need to call GET_MESSAGE twice.
+ *  03.26.92  DGM  031  New value-node scheme.
+ *  02.12.92  DGM  030  Don't call XABORT if called from XERROR.
+ *  01.13.92  DGM  029  Reformat diagnostic message for XERROR calls.
+ *  12.19.91  DGM  028  Changed XERROR to print INTERNAL diagnostic
+ *			rather than SEMANTIC.
+ *  12.04.91  DGM  027  Minor fix (typo) in SEMANTIC_ERROR_AT.
+ *  11.19.91  TLF  026L Fixed bug in PRINT_ERROR that occurs when no
+ *                      space can be found at which to break up a 
+ *                      long message.
+ *  10.08.91  DGM  023  Changed to use DIAG_LINE_ID and DIAG_FILE_ID
+ *			if called from XERROR.
+ *  08.14.91  DGM  022  Updated.
+ *  08.13.91  DGM  021  Changed SIMPLE_DIAGNOSTIC to print to stdout.
+ *			Check for null token-node id in XERROR.
+ *  07.18.91  DGM  020  Added -nonote.
+ *  07.09.91  DGM  019  Added SIMPLE_DIAGNOSTIC.
+ *  06.17.91  DGM  018  Yet another change, this one sanctioned by PKT
+ *			and TLF; severity 2 ERRORs are now VIOLATIONs .
+ *  05.29.91  DGM  017  Minor format change.
+ *  02.11.91  DGM  016  Call GET_MESSAGE after printing the token context
+ *			list in case the diagnostic text got trashed by
+ *			a GET_MESSAGE call from the preprocessor.
+ *  01.10.91  DGM  015  Minor fix.
+ *  12.17.90  DGM  014  Updated; ERROR_CODE_NAME.
+ *  12.05.90  DGM  013  Update TOTAL_MESSAGES only for severities >= 2.
+ *  11.15.90  DGM  012  More routines!
+ *  11.15.90  DGM  011  Added the SEMANTIC_ERROR_AT routines; these take
+ *			line/file arguments and do not print the token
+ *			context list; this is for use (generally) for
+ *			errors occurring at the end of compilation.
+ *			Updated to new "messages" facility.
+ *  09.14.90  DGM  010  Changed include file names and VOP names.
+ *  06.05.90  DGM  009  Updated for the new utilities.
+ *  05.17.90  DGM  008  Prevent recursive calls from XERROR.
+ *  05.15.90  DGM  007  New interface; CERROR no longer necessary; use
+ *			SEMANTIC_ERROR,SEMANTIC_ERROR_I,SEMANTIC_ERROR_II,
+ *			SYNTAX_ERROR,SYNTAX_ERROR_I,SYNTAX_ERROR_II,
+ *			LEXICAL_ERROR,LEXICAL_ERROR_I,LEXICAL_ERROR_II,
+ *			COMPILER_ERROR,COMPILER_ERROR_I,COMPILER_ERROR_II.
+ *  03.02.90  DGM  006  Updated.
+ *  02.05.90  DGM  005  Updated.
+ *  01.19.90  DGM  004  Updated.
+ *  11.22.89  DGM  001  Original; cloned and modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 11.11.93 034 CERROR');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_MESSAGES_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ABORT_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_HOST_SYSTEM_IN;
+%include CXX_COMPILATION_DATA_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_ERROR_MGR_IN;
+%include CXX_ERROR_CODES_IN;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local Definitions
+/* ------------------------------------------------------------------- */
+
+%replace MAX_MESSAGE_LENGTH		by 1024;
+%replace MAX_LINE_LENGTH		by 79;
+
+%replace INSERT_MARKER			by 127;
+%replace NEWLINE			by CHA_NEWLINE;
+%replace TAB				by CHA_TAB;
+
+/* Error Code Ranges */
+
+%replace ERROR_CODE_OFFSET		by 20000;
+
+%replace LB_CPP_OR_CXXFE_ERROR_CODE	by 20000;
+%replace HB_CPP_OR_CXXFE_ERROR_CODE	by 21999;
+%replace LB_CXXFE_ERROR_CODE		by 20000;
+%replace HB_CXXFE_ERROR_CODE		by 21750;
+%replace LB_CPP_ERROR_CODE		by 21750;
+%replace HB_CPP_ERROR_CODE		by 21999;
+%replace LB_UTIL_ERROR_CODE		by  2000;
+%replace HB_UTIL_ERROR_CODE		by  2999;
+%replace LB_ALLOC_ERROR_CODE		by  6000;
+%replace HB_ALLOC_ERROR_CODE		by  6999;
+%replace LB_OPTIM_ERROR_CODE		by  3000;
+%replace HB_OPTIM_ERROR_CODE		by  3999;
+%replace LB_CGG_ERROR_CODE		by  5000;
+%replace HB_CGG_ERROR_CODE		by  5999;
+%replace LB_OED_ERROR_CODE		by  4000;
+%replace HB_OED_ERROR_CODE		by  4999;
+
+/* Diagnostic severity definitions */
+
+%replace NOTE_DIAGNOSTIC		by 0;
+%replace WARNING_DIAGNOSTIC		by 1;
+%replace VIOLATION_DIAGNOSTIC		by 2;
+%replace ERROR_DIAGNOSTIC		by 3;
+%replace ABORT_DIAGNOSTIC		by 4;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T	character (32767) varying based,
+SHORT_STRING_T	character (16) varying based,
+MESSAGE_T	character (MAX_MESSAGE_LENGTH) varying based;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 CURRENT_ERROR_DATA,
+  2 CURRENT_ERROR_CODE			type (LONG_T),
+  2 CURRENT_ERROR_KIND			type (SHORT_T),
+  2 CURRENT_ERROR_SEVERITY		type (SHORT_T),
+  2 CURRENT_ERROR_INSERT (1 : 9)	type (POINTER_T),
+  2 CURRENT_ERROR_INSERTS		type (SHORT_T),
+  2 CURRENT_ERROR_FROM_XERROR		type (BOOL_T);
+
+declare
+
+SEVERITY_NAME			(0 : 4) character (11) varying
+				static internal initial (
+	  'NOTE ('
+	, 'WARNING ('
+	, 'VIOLATION ('
+	, 'ERROR ('
+	, 'ABORT ('
+),
+
+ERROR_NAME			(0 : 3) character (9) varying
+				static internal initial (
+	  'INTERNAL '
+	, 'LEXICAL '
+	, 'SYNTAX '
+	, 'SEMANTIC '
+),
+
+TERSE_ERROR_NAME		(0 : 3) character (21) varying
+				static internal initial (
+	  'diagnostic #'
+	, 'lexical diagnostic #'
+	, 'syntax diagnostic #'
+	, 'semantic diagnostic #'
+),
+
+
+NO_MESSAGE_MESSAGE		character (29) varying
+				static internal initial (
+
+	'Diagnostic message not found (cannot find lpicxx.msg).'
+);
+
+/* ---------------------------------------------------------------------
+/* CERROR -- OBSOLETE
+/* ------------------------------------------------------------------- */
+
+CERROR: procedure external; end CERROR;
+
+/* ---------------------------------------------------------------------
+/* XERROR
+/*
+/* Called (actually, hopefully not called!) from back-end components.
+/* ------------------------------------------------------------------- */
+
+XERROR: procedure (ERROR, TOKEN_ID) external;
+
+	declare
+		ERROR		type (SHORT_T),
+		TOKEN_ID	type (NID_T);
+	declare
+		MESSAGE		type (MESSAGE_T);
+
+	if CURRENT_ERROR_FROM_XERROR then
+		return;
+	CURRENT_ERROR_FROM_XERROR = TRUE;
+	CURRENT_ERROR_CODE = ERROR;
+	CURRENT_ERROR_KIND = 0;
+	if TOKEN_ID ^= NULL_NID then do;
+		MESSAGE = TOKEN_NAME (TOKEN_ID);
+		CURRENT_ERROR_INSERTS = 1;
+		CURRENT_ERROR_INSERT (1) = addr (MESSAGE);
+	end;
+	else	CURRENT_ERROR_INSERTS = 0;
+	call PRINT_ERROR ();
+	CURRENT_ERROR_FROM_XERROR = FALSE;
+
+end XERROR;
+
+/* ---------------------------------------------------------------------
+/* SEMERR
+/*
+/* Called from the utilities (should be calling XERROR).
+/* ------------------------------------------------------------------- */
+
+SEMERR: procedure (ERROR, SEVERITY, MESSAGE) external;
+
+	declare
+		ERROR		type (SHORT_T),
+		SEVERITY	type (SHORT_T),
+		MESSAGE		character (*) varying;
+
+	if SILENT & (SEVERITY <= 1) then
+		return;
+	else if SW_SILENT_ABOUT_NOTES & (SEVERITY <= 0) then
+		return;
+
+	CURRENT_ERROR_CODE	= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_KIND	= 0;
+	CURRENT_ERROR_SEVERITY	= SEVERITY;
+
+	call PRINT_ERROR_ID_LINE ();
+	call WRITE_ERROR_LINE (MESSAGE);
+	call WRITE_ERROR_LINE ('');
+
+	if CURRENT_ERROR_SEVERITY >= 4 then
+		call XABORT (0);
+
+end SEMERR;
+
+/* ---------------------------------------------------------------------
+/* PRINT_ERROR
+/* ------------------------------------------------------------------- */
+
+PRINT_ERROR: procedure internal;
+
+	declare
+		(I, J, L, N)		type (SHORT_T),
+		C			type (CHAR_T),
+		MESSAGE			type (MESSAGE_T),
+		SEVERITY		type (SHORT_T),
+		SINGLE_INSERT		type (SHORT_T),
+		NUMBERED_INSERTS	type (SHORT_T),
+		THIS_INC        	type (SHORT_T),
+		TEXT_PTR		type (POINTER_T),
+		TEXT			type (STRING_T) based (TEXT_PTR);
+
+	if IGNORE_DIAGNOSTIC_LIST ^= null () then do;
+		if SHOULD_IGNORE_DIAGNOSTIC (CURRENT_ERROR_CODE) then
+			return;
+	end;
+
+	/* See if we want a minimal (very terse) diagnostic */
+
+	if SW_VERY_TERSE_DIAGNOSTICS then do;
+		call PRINT_VERY_TERSE_DIAGNOSTIC ();
+		goto DONE_PRINT_ERROR;
+	end;
+
+	/* Get the error mesage text, its severity code, and insert data */
+
+	call GET_MESSAGE (CURRENT_ERROR_CODE,
+			  TEXT_PTR,
+			  CURRENT_ERROR_SEVERITY, 
+			  SINGLE_INSERT,
+			  NUMBERED_INSERTS);
+
+	/* If this message doesn't exist, print a special message */
+
+	if CURRENT_ERROR_SEVERITY < 0 then do;
+		CURRENT_ERROR_SEVERITY = 2;
+		call WRITE_ERROR_LINE ('');
+		if ^SW_TERSE_DIAGNOSTICS & ^CURRENT_ERROR_FROM_XERROR then
+			call PRINT_ERROR_CONTEXT_AND_MARKER ();
+		call PRINT_ERROR_ID_LINE ();
+		call WRITE_ERROR_LINE (NO_MESSAGE_MESSAGE);
+		goto DONE_PRINT_ERROR;
+	end;
+
+	/* See if we want to ignore this message */
+
+	if CURRENT_ERROR_SEVERITY <= 1 then do;
+		if SILENT then
+			return;
+		else if SW_SILENT_ABOUT_NOTES &
+			(CURRENT_ERROR_SEVERITY <= 0) then
+			return;
+	end;
+
+	/* Prepare to print the error message; first print a blank line */
+
+	call WRITE_ERROR_LINE ('');
+
+	/* Print the context line and marker if desired */
+
+	if ^SW_TERSE_DIAGNOSTICS & ^CURRENT_ERROR_FROM_XERROR then do;
+		N = TOTAL_MESSAGES;
+		call PRINT_ERROR_CONTEXT_AND_MARKER ();
+		if N ^= TOTAL_MESSAGES then do;
+			/*
+			/* Call this again in case the error message text
+			/* was trashed by a preprocessor error message.
+			/**/
+			call GET_MESSAGE (CURRENT_ERROR_CODE,
+					  TEXT_PTR,
+					  CURRENT_ERROR_SEVERITY, 
+					  SINGLE_INSERT,
+					  NUMBERED_INSERTS);
+		end;
+	end;
+
+	/* Print the main error identification line */
+
+	call PRINT_ERROR_ID_LINE ();
+
+	/*
+	/* If there is only a single insert, then SINGLE_INSERT will be
+	/* non-negative and will represent the (0 indexed) position in
+	/* message text where the insert belongs; if there are numbered
+	/* (and probably multiple) inserts, then SINGLED_INSERT will be
+	/* negative and NUMBERED_INSERTS will be non-zero, and the message
+	/* text string will contain occurrences of INSERT_MARKER's followed
+	/* by a single digit insert number.
+	/**/
+
+	/* Handle a single insert if any */
+
+	if SINGLE_INSERT >= 0 then do;
+		if CURRENT_ERROR_INSERTS >= 1 then do;
+			MESSAGE = substr (TEXT, 1, SINGLE_INSERT) ||
+				  CURRENT_ERROR_INSERT (1)->STRING_T ||
+				  substr (TEXT, SINGLE_INSERT + 1);
+		end;
+	end;
+
+	/* Handle numbered inserts if any */
+
+	else if NUMBERED_INSERTS ^= 0 then do;
+		MESSAGE = '';
+		do I = 1 to length (TEXT);
+			C = substr (TEXT, I, 1);
+			if C = byte (INSERT_MARKER) then do;
+				I = I + 1;
+				N = rank (substr (TEXT, I, 1)) - rank ('0');
+				if (N >= 1) &
+				   (N <= CURRENT_ERROR_INSERTS) then do;
+					MESSAGE =
+					MESSAGE ||
+					CURRENT_ERROR_INSERT (N)->STRING_T;
+				end;
+			end;
+			else	MESSAGE = MESSAGE || C;
+		end;
+	end;
+
+	/* Handle no inserts; print message verbatim ... */
+
+	else if ^CURRENT_ERROR_FROM_XERROR then do;
+		call WRITE_ERROR_LINE (TEXT);
+		goto DONE_PRINT_ERROR;
+	end;
+
+	/* ... unless this is from a non-front-end component */
+
+	else	MESSAGE = TEXT;
+
+	/*
+	/* Inserts could cause line wrap and possible embedded new-lines
+	/* to mess things up, so change the new-lines to blanks, and then
+	/* split up lines (i.e. with new-lines) while trying to fit as
+	/* many words on a line as is possible.
+       	/**/
+
+	L = length (MESSAGE);
+
+	do I = 1 to L;
+		C = substr (MESSAGE, I ,1);
+		if (C = byte (NEWLINE)) | (C = byte (TAB)) then
+			substr (MESSAGE, I, 1) = ' ';
+	end;
+
+	MESSAGE = MESSAGE || ' ';
+
+	do I = 1 while (I < L);                   
+		do J = min (I + MAX_LINE_LENGTH, L + 1) to I by -1 
+		while (substr (MESSAGE, J, 1) ^= ' ');
+			;
+		end;                
+		/*  If there are NO blanks in this next chunk, then
+		/*  arbitrarily choose the size of the next chunk as
+		/*  the maximum line length or whatever is left to
+		/*  be written, whichever is smaller.
+		/**/
+		if (J <= I) then do;
+			J = min (MAX_LINE_LENGTH, L - I + 1) + I + 1;
+			THIS_INC = 0;
+		end;
+		else
+			THIS_INC = 1;
+		call WRITE_ERROR_LINE (substr (MESSAGE, I, J - I));
+		I = J + THIS_INC;
+	end;
+
+	DONE_PRINT_ERROR:
+
+	/* Update the error counts */
+
+	if CURRENT_ERROR_SEVERITY <= 1 then
+		TOTAL_SEVERITY_1_ERRORS = TOTAL_SEVERITY_1_ERRORS + 1;
+	else if CURRENT_ERROR_SEVERITY = 2 then
+		TOTAL_SEVERITY_2_ERRORS = TOTAL_SEVERITY_2_ERRORS + 1;
+	else if CURRENT_ERROR_SEVERITY >= 3 then
+		TOTAL_SEVERITY_3_ERRORS = TOTAL_SEVERITY_3_ERRORS + 1;
+	TOTAL_MESSAGES = TOTAL_MESSAGES + 1;
+	if CURRENT_ERROR_SEVERITY > MAX_SEVERITY then
+		MAX_SEVERITY = CURRENT_ERROR_SEVERITY;
+
+	/* Abort if this is a compiler error (severity 4 or greater) */
+
+	if CURRENT_ERROR_SEVERITY >= 4 then do;
+		call WRITE_ERROR_LINE ('');
+		if CURRENT_ERROR_FROM_XERROR then
+			return;
+		call XABORT (0);
+	end;
+
+end PRINT_ERROR;
+
+/* ---------------------------------------------------------------------
+/* PRINT_VERY_TERSE_DIAGNOSTIC
+/*
+/* Construct a very terse diagnostic message.
+/* E.g. ``"file.c", line 45: syntax error #123''
+/* ------------------------------------------------------------------- */
+
+PRINT_VERY_TERSE_DIAGNOSTIC: procedure internal;
+
+	declare
+		S		type (STRING_T),
+		LINE_ID		type (LONG_T),
+		FILE_ID		type (NID_T),
+		FILE_NAME	type (STRING_T);
+
+	call GET_CURRENT_LINE_AND_FILE (LINE_ID, FILE_ID);
+
+	/* Construct the rest of the error string */
+
+	S = '"';
+	S = S || TOKEN_NAME (FILE_ID);
+	S = S || '", line ';
+	S = S || trim (char (LINE_ID));
+	S = S || ': ';
+	S = S || TERSE_ERROR_NAME (CURRENT_ERROR_KIND);
+	S = S || trim (char (CURRENT_ERROR_CODE));
+
+	/* Print the error string */
+
+	call WRITE_ERROR_LINE (S);
+
+end PRINT_VERY_TERSE_DIAGNOSTIC;
+
+/* ---------------------------------------------------------------------
+/* PRINT_ERROR_ID_LINE
+/*
+/* Construct the first line of an error message.
+/* E.g. ``SEMANTIC ERROR (20123): line 45, "file.c"''
+/* ------------------------------------------------------------------- */
+
+PRINT_ERROR_ID_LINE: procedure internal;
+
+	declare
+		S	type (STRING_T),
+		LINE_ID	type (LONG_T),
+		FILE_ID	type (NID_T);
+
+	call GET_CURRENT_LINE_AND_FILE (LINE_ID, FILE_ID);
+
+	/* Construct the rest of the error string */
+
+	S = ERROR_NAME (CURRENT_ERROR_KIND) ||
+	    SEVERITY_NAME (CURRENT_ERROR_SEVERITY) ||
+	    ERROR_CODE_NAME () ||
+	    '): line ' ||
+	    trim (char (LINE_ID)) || ', "' ||
+	    TOKEN_NAME (FILE_ID) || '"';
+
+	/* Print the error string */
+
+	call WRITE_ERROR_LINE (S);
+
+/* ---------------------------------------------------------------------
+/* ERROR_CODE_NAME
+/* ------------------------------------------------------------------- */
+
+ERROR_CODE_NAME: procedure () returns (type (SHORT_STRING_T)) internal;
+
+	declare
+		S	character (MAX_LINE_LENGTH) varying;
+
+	if (CURRENT_ERROR_CODE >= LB_CXXFE_ERROR_CODE) &
+	   (CURRENT_ERROR_CODE <= HB_CXXFE_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_CXXFE_ERROR_CODE));
+	else if (CURRENT_ERROR_CODE >= LB_CPP_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_CPP_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_CPP_ERROR_CODE));
+	else if (CURRENT_ERROR_CODE >= LB_UTIL_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_UTIL_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_UTIL_ERROR_CODE))
+		    || 'U';
+	else if (CURRENT_ERROR_CODE >= LB_ALLOC_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_ALLOC_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_ALLOC_ERROR_CODE))
+		    || 'A';
+	else if (CURRENT_ERROR_CODE >= LB_OPTIM_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_OPTIM_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_OPTIM_ERROR_CODE))
+		    || 'O';
+	else if (CURRENT_ERROR_CODE >= LB_CGG_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_CGG_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_CGG_ERROR_CODE))
+		    || 'G';
+	else if (CURRENT_ERROR_CODE >= LB_OED_ERROR_CODE) &
+		(CURRENT_ERROR_CODE <= HB_OED_ERROR_CODE) then
+		S = trim (char (CURRENT_ERROR_CODE - LB_OED_ERROR_CODE))
+		    || 'E';
+	else	S = trim (char (CURRENT_ERROR_CODE)) || 'X';
+
+	return (S);
+
+end ERROR_CODE_NAME;
+
+end PRINT_ERROR_ID_LINE;
+
+/* ---------------------------------------------------------------------
+/* GET_CURRENT_LINE_AND_FILE
+/* ------------------------------------------------------------------- */
+
+GET_CURRENT_LINE_AND_FILE: procedure (LINE_ID, FILE_ID) internal;
+
+	declare
+		LINE_ID	type (LONG_T),
+		FILE_ID	type (NID_T);
+
+	/* Get the current line number and file name */
+
+	if CURRENT_ERROR_FROM_XERROR then do;
+		FILE_ID = DIAG_FILE_ID;
+		LINE_ID = DIAG_LINE_ID;
+	end;
+	else do;
+		if SW_REAL_LOCATION_IN_ERRORS then do;
+			LINE_ID = CURRENT_SOURCE.LINE;
+			FILE_ID = CURRENT_SOURCE.FILE;
+		end;
+		else do;
+			LINE_ID = CURRENT_SOURCE.LINE +
+				  CURRENT_SOURCE.LINE_ADJUSTMENT;
+			if CURRENT_SOURCE.ASSUMED_FILE ^= NULL_NID then
+				FILE_ID = CURRENT_SOURCE.ASSUMED_FILE;
+			else	FILE_ID = CURRENT_SOURCE.FILE;
+		end;
+	end;
+
+end GET_CURRENT_LINE_AND_FILE;
+
+/* ---------------------------------------------------------------------
+/* PRINT_ERROR_CONTEXT_AND_MARKER
+/* ------------------------------------------------------------------- */
+
+PRINT_ERROR_CONTEXT_AND_MARKER: procedure internal;
+
+	declare
+		POSITION	type (SHORT_T),
+		I		type (SHORT_T),
+		S		character (MAX_LINE_LENGTH) varying;
+	declare
+		BLANKS		character (MAX_LINE_LENGTH)
+				static internal initial (' ');
+	declare
+		PUTCTX		entry   (type (SHORT_T), type (SHORT_T))
+				external;
+
+	call PUTCTX (POSITION, CURRENT_ERROR_KIND);
+	I = max (1, POSITION);
+	S = substr (BLANKS, 1, I);
+	substr (S, I, 1) = '^';
+	call WRITE_ERROR_LINE (S);
+
+end PRINT_ERROR_CONTEXT_AND_MARKER;
+
+/* ---------------------------------------------------------------------
+/* COMPILER_ERROR
+/* LEXICAL_ERROR
+/* SYNTAX_ERROR
+/* SEMANTIC_ERROR
+/* ------------------------------------------------------------------- */
+
+COMPILER_ERROR: procedure (ERROR) external (X_COMPILER_ERROR);
+
+	declare ERROR type (SHORT_T);
+
+	call COMMON_ERROR (0, ERROR);
+
+end COMPILER_ERROR;
+
+LEXICAL_ERROR: procedure (ERROR) external (X_LEXICAL_ERROR);
+
+	declare ERROR type (SHORT_T);
+
+	call COMMON_ERROR (LEXICAL, ERROR);
+
+end LEXICAL_ERROR;
+
+SYNTAX_ERROR: procedure (ERROR) external (X_SYNTAX_ERROR);
+
+	declare ERROR type (SHORT_T);
+
+	call COMMON_ERROR (SYNTAX, ERROR);
+
+end SYNTAX_ERROR;
+
+SEMANTIC_ERROR: procedure (ERROR) external (X_SEMANTIC_ERROR);
+
+	declare ERROR type (SHORT_T);
+
+	call COMMON_ERROR (SEMANTIC, ERROR);
+
+end SEMANTIC_ERROR;
+
+COMMON_ERROR: procedure (KIND, ERROR) internal;
+		   
+	declare
+		KIND	type (SHORT_T),
+		ERROR	type (SHORT_T);
+
+	CURRENT_ERROR_KIND		= KIND;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 0;
+	call PRINT_ERROR ();
+
+end COMMON_ERROR;
+
+/* ---------------------------------------------------------------------
+/* COMPILER_ERROR_I
+/* LEXICAL_ERROR_I
+/* SYNTAX_ERROR_I
+/* SEMANTIC_ERROR_I
+/* ------------------------------------------------------------------- */
+
+COMPILER_ERROR_I: procedure (ERROR, S)
+		   external  (X_COMPILER_ERROR_I);
+	declare
+		ERROR	type (SHORT_T),
+		S	character (*) varying;
+
+	call COMMON_ERROR_I (0, ERROR, S);
+
+end COMPILER_ERROR_I;
+
+LEXICAL_ERROR_I: procedure (ERROR, S)
+		 external  (X_LEXICAL_ERROR_I);
+	declare
+		ERROR	type (SHORT_T),
+		S	character (*) varying;
+
+	call COMMON_ERROR_I (LEXICAL, ERROR, S);
+
+end LEXICAL_ERROR_I;
+
+SYNTAX_ERROR_I: procedure (ERROR, S)
+		external  (X_SYNTAX_ERROR_I);
+	declare
+		ERROR	type (SHORT_T),
+		S	character (*) varying;
+
+	call COMMON_ERROR_I (SYNTAX, ERROR, S);
+
+end SYNTAX_ERROR_I;
+
+SEMANTIC_ERROR_I: procedure (ERROR, S)
+		  external  (X_SEMANTIC_ERROR_I);
+	declare
+		ERROR	type (SHORT_T),
+		S	character (*) varying;
+
+	call COMMON_ERROR_I (SEMANTIC, ERROR, S);
+
+end SEMANTIC_ERROR_I;
+
+COMMON_ERROR_I: procedure (KIND, ERROR, S) internal;
+		   
+	declare
+		KIND	type (SHORT_T),
+		ERROR	type (SHORT_T),
+		S	character (*) varying;
+
+	CURRENT_ERROR_KIND		= KIND;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 1;
+	CURRENT_ERROR_INSERT (1)	= addr (S);
+	call PRINT_ERROR ();
+
+end COMMON_ERROR_I;
+
+/* ---------------------------------------------------------------------
+/* COMPILER_ERROR_II
+/* LEXICAL_ERROR_II
+/* SYNTAX_ERROR_II
+/* SEMANTIC_ERROR_II
+/* ------------------------------------------------------------------- */
+
+COMPILER_ERROR_II: procedure (ERROR, S1, S2)
+		   external  (X_COMPILER_ERROR_II);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying;
+
+	call COMMON_ERROR_II (0, ERROR, S1, S2);
+
+end COMPILER_ERROR_II;
+
+LEXICAL_ERROR_II: procedure (ERROR, S1, S2)
+		  external  (X_LEXICAL_ERROR_II);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying;
+
+	call COMMON_ERROR_II (LEXICAL, ERROR, S1, S2);
+
+end LEXICAL_ERROR_II;
+
+SYNTAX_ERROR_II: procedure (ERROR, S1, S2)
+		 external  (X_SYNTAX_ERROR_II);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying;
+
+	call COMMON_ERROR_II (SYNTAX, ERROR, S1, S2);
+
+end SYNTAX_ERROR_II;
+
+SEMANTIC_ERROR_II: procedure (ERROR, S1, S2)
+		   external  (X_SEMANTIC_ERROR_II);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying;
+
+	call COMMON_ERROR_II (SEMANTIC, ERROR, S1, S2);
+
+end SEMANTIC_ERROR_II;
+
+COMMON_ERROR_II: procedure (KIND, ERROR, S1, S2) internal;
+		   
+	declare
+		KIND	type (SHORT_T),
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying;
+
+	CURRENT_ERROR_KIND		= KIND;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 2;
+	CURRENT_ERROR_INSERT (1)	= addr (S1);
+	CURRENT_ERROR_INSERT (2)	= addr (S2);
+	call PRINT_ERROR ();
+
+end COMMON_ERROR_II;
+
+/* ---------------------------------------------------------------------
+/* COMPILER_ERROR_III
+/* LEXICAL_ERROR_III
+/* SYNTAX_ERROR_III
+/* SEMANTIC_ERROR_III
+/* ------------------------------------------------------------------- */
+
+COMPILER_ERROR_III: procedure (ERROR, S1, S2, S3)
+		    external  (X_COMPILER_ERROR_III);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying;
+
+	call COMMON_ERROR_III (0, ERROR, S1, S2, S3);
+
+end COMPILER_ERROR_III;
+
+LEXICAL_ERROR_III: procedure (ERROR, S1, S2, S3)
+		   external  (X_LEXICAL_ERROR_III);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying;
+
+	call COMMON_ERROR_III (LEXICAL, ERROR, S1, S2, S3);
+
+end LEXICAL_ERROR_III;
+
+SYNTAX_ERROR_III: procedure (ERROR, S1, S2, S3)
+		  external  (X_SYNTAX_ERROR_III);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying;
+
+	call COMMON_ERROR_III (SYNTAX, ERROR, S1, S2, S3);
+
+end SYNTAX_ERROR_III;
+
+SEMANTIC_ERROR_III: procedure (ERROR, S1, S2, S3)
+		    external  (X_SEMANTIC_ERROR_III);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying;
+
+	call COMMON_ERROR_III (SEMANTIC, ERROR, S1, S2, S3);
+
+end SEMANTIC_ERROR_III;
+
+COMMON_ERROR_III: procedure (KIND, ERROR, S1, S2, S3) internal;
+		   
+	declare
+		KIND	type (SHORT_T),
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying;
+
+	CURRENT_ERROR_KIND		= KIND;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 3;
+	CURRENT_ERROR_INSERT (1)	= addr (S1);
+	CURRENT_ERROR_INSERT (2)	= addr (S2);
+	CURRENT_ERROR_INSERT (3)	= addr (S3);
+	call PRINT_ERROR ();
+
+end COMMON_ERROR_III;
+
+/* ---------------------------------------------------------------------
+/* COMPILER_ERROR_IIII
+/* LEXICAL_ERROR_IIII
+/* SYNTAX_ERROR_IIII
+/* SEMANTIC_ERROR_IIII
+/* ------------------------------------------------------------------- */
+
+COMPILER_ERROR_IIII: procedure (ERROR, S1, S2, S3, S4)
+		     external  (X_COMPILER_ERROR_IIII);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying,
+		S4	character (*) varying;
+
+	call COMMON_ERROR_IIII (0, ERROR, S1, S2, S3, S4);
+
+end COMPILER_ERROR_IIII;
+
+LEXICAL_ERROR_IIII: procedure (ERROR, S1, S2, S3, S4)
+		    external  (X_LEXICAL_ERROR_IIII);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying,
+		S4	character (*) varying;
+
+	call COMMON_ERROR_IIII (LEXICAL, ERROR, S1, S2, S3, S4);
+
+end LEXICAL_ERROR_IIII;
+
+SYNTAX_ERROR_IIII: procedure (ERROR, S1, S2, S3, S4)
+		   external  (X_SYNTAX_ERROR_IIII);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying,
+		S4	character (*) varying;
+
+	call COMMON_ERROR_IIII (SYNTAX, ERROR, S1, S2, S3, S4);
+
+end SYNTAX_ERROR_IIII;
+
+SEMANTIC_ERROR_IIII: procedure (ERROR, S1, S2, S3, S4)
+		     external  (X_SEMANTIC_ERROR_IIII);
+	declare
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying,
+		S4	character (*) varying;
+
+	call COMMON_ERROR_IIII (SEMANTIC, ERROR, S1, S2, S3, S4);
+
+end SEMANTIC_ERROR_IIII;
+
+COMMON_ERROR_IIII: procedure (KIND, ERROR, S1, S2, S3, S4) internal;
+		   
+	declare
+		KIND	type (SHORT_T),
+		ERROR	type (SHORT_T),
+		S1	character (*) varying,
+		S2	character (*) varying,
+		S3	character (*) varying,
+		S4	character (*) varying;
+
+	CURRENT_ERROR_KIND		= KIND;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 4;
+	CURRENT_ERROR_INSERT (1)	= addr (S1);
+	CURRENT_ERROR_INSERT (2)	= addr (S2);
+	CURRENT_ERROR_INSERT (3)	= addr (S3);
+	CURRENT_ERROR_INSERT (4)	= addr (S4);
+	call PRINT_ERROR ();
+
+end COMMON_ERROR_IIII;
+
+/* ---------------------------------------------------------------------
+/* COMPILER_ERROR_AT
+/* SEMANTIC_ERROR_AT
+/* ------------------------------------------------------------------- */
+
+COMPILER_ERROR_AT: procedure (ERROR, LINE, FILE)
+		   external  (X_COMPILER_ERROR_AT);
+	declare
+		ERROR	type (SHORT_T),
+		LINE	type (LONG_T),
+		FILE	type (NID_T);
+
+	call COMMON_ERROR_AT (0, ERROR, LINE, FILE);
+
+end COMPILER_ERROR_AT;
+
+SEMANTIC_ERROR_AT: procedure (ERROR, LINE, FILE)
+		   external  (X_SEMANTIC_ERROR_AT);
+	declare
+		ERROR	type (SHORT_T),
+		LINE	type (LONG_T),
+		FILE	type (NID_T);
+
+	call COMMON_ERROR_AT (SEMANTIC, ERROR, LINE, FILE);
+
+end SEMANTIC_ERROR_AT;
+
+COMMON_ERROR_AT: procedure (KIND, ERROR, LINE, FILE) internal;
+
+	declare
+		KIND				type (SHORT_T),
+		ERROR				type (SHORT_T),
+		LINE				type (LONG_T),
+		FILE				type (NID_T);
+	declare
+		SAVE_SW_TERSE_DIAGNOSTICS	type (BOOL_T),
+		SAVE_CURRENT_SOURCE_STATE	type (SOURCE_STATE_DATA);
+
+	SAVE_SW_TERSE_DIAGNOSTICS	= SW_TERSE_DIAGNOSTICS;
+	SAVE_CURRENT_SOURCE_STATE	= CURRENT_SOURCE;
+
+	SW_TERSE_DIAGNOSTICS		= TRUE;
+	CURRENT_SOURCE.LINE		= LINE;
+	CURRENT_SOURCE.FILE		= FILE;
+	CURRENT_SOURCE.LINE_ADJUSTMENT	= 0;
+	CURRENT_SOURCE.ASSUMED_FILE	= NULL_NID;
+
+	CURRENT_ERROR_KIND		= KIND;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 0;
+	call PRINT_ERROR ();
+
+	CURRENT_SOURCE			= SAVE_CURRENT_SOURCE_STATE;
+	SW_TERSE_DIAGNOSTICS		= SAVE_SW_TERSE_DIAGNOSTICS;
+
+end COMMON_ERROR_AT;
+
+/* ---------------------------------------------------------------------
+/* COMPILER_ERROR_AT_I
+/* SEMANTIC_ERROR_AT_I
+/* ------------------------------------------------------------------- */
+
+COMPILER_ERROR_AT_I: procedure (ERROR, LINE, FILE, S)
+		     external  (X_COMPILER_ERROR_AT_I);
+	declare
+		ERROR	type (SHORT_T),
+		LINE	type (LONG_T),
+		FILE	type (NID_T),
+		S	character (*) varying;
+
+	call COMMON_ERROR_AT_I (0, ERROR, LINE, FILE, S);
+
+end COMPILER_ERROR_AT_I;
+
+SEMANTIC_ERROR_AT_I: procedure (ERROR, LINE, FILE, S)
+		     external  (X_SEMANTIC_ERROR_AT_I);
+	declare
+		ERROR	type (SHORT_T),
+		LINE	type (LONG_T),
+		FILE	type (NID_T),
+		S	character (*) varying;
+
+	call COMMON_ERROR_AT_I (SEMANTIC, ERROR, LINE, FILE, S);
+
+end SEMANTIC_ERROR_AT_I;
+
+COMMON_ERROR_AT_I: procedure (KIND, ERROR, LINE, FILE, S) internal;
+
+	declare
+		KIND				type (SHORT_T),
+		ERROR				type (SHORT_T),
+		LINE				type (LONG_T),
+		FILE				type (NID_T),
+		S				character (*) varying;
+	declare
+		SAVE_SW_TERSE_DIAGNOSTICS	type (BOOL_T),
+		SAVE_CURRENT_SOURCE_STATE	type (SOURCE_STATE_DATA);
+
+	SAVE_SW_TERSE_DIAGNOSTICS	= SW_TERSE_DIAGNOSTICS;
+	SAVE_CURRENT_SOURCE_STATE	= CURRENT_SOURCE;
+
+	SW_TERSE_DIAGNOSTICS		= TRUE;
+	CURRENT_SOURCE.LINE		= LINE;
+	CURRENT_SOURCE.FILE		= FILE;
+	CURRENT_SOURCE.LINE_ADJUSTMENT	= 0;
+	CURRENT_SOURCE.ASSUMED_FILE	= NULL_NID;
+
+	CURRENT_ERROR_KIND		= KIND;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 1;
+	CURRENT_ERROR_INSERT (1)	= addr (S);
+	call PRINT_ERROR ();
+
+	CURRENT_SOURCE			= SAVE_CURRENT_SOURCE_STATE;
+	SW_TERSE_DIAGNOSTICS		= SAVE_SW_TERSE_DIAGNOSTICS;
+
+end COMMON_ERROR_AT_I;
+
+/* ---------------------------------------------------------------------
+/* COMPILER_ERROR_AT_II
+/* SEMANTIC_ERROR_AT_II
+/* ------------------------------------------------------------------- */
+
+COMPILER_ERROR_AT_II: procedure (ERROR, LINE, FILE, S1, S2)
+		      external  (X_COMPILER_ERROR_AT_II);
+	declare
+		ERROR	type (SHORT_T),
+		LINE	type (LONG_T),
+		FILE	type (NID_T),
+		S1	character (*) varying,
+		S2	character (*) varying;
+
+	call COMMON_ERROR_AT_II (0, ERROR, LINE, FILE, S1, S2);
+
+end COMPILER_ERROR_AT_II;
+
+SEMANTIC_ERROR_AT_II: procedure (ERROR, LINE, FILE, S1, S2)
+		     external  (X_SEMANTIC_ERROR_AT_II);
+	declare
+		ERROR	type (SHORT_T),
+		LINE	type (LONG_T),
+		FILE	type (NID_T),
+		S1	character (*) varying,
+		S2	character (*) varying;
+
+	call COMMON_ERROR_AT_II (SEMANTIC, ERROR, LINE, FILE, S1, S2);
+
+end SEMANTIC_ERROR_AT_II;
+
+COMMON_ERROR_AT_II: procedure (KIND, ERROR, LINE, FILE, S1, S2) internal;
+
+	declare
+		KIND				type (SHORT_T),
+		ERROR				type (SHORT_T),
+		LINE				type (LONG_T),
+		FILE				type (NID_T),
+		S1				character (*) varying,
+		S2				character (*) varying;
+	declare
+		SAVE_SW_TERSE_DIAGNOSTICS	type (BOOL_T),
+		SAVE_CURRENT_SOURCE_STATE	type (SOURCE_STATE_DATA);
+
+	SAVE_SW_TERSE_DIAGNOSTICS	= SW_TERSE_DIAGNOSTICS;
+	SAVE_CURRENT_SOURCE_STATE	= CURRENT_SOURCE;
+
+	SW_TERSE_DIAGNOSTICS		= TRUE;
+	CURRENT_SOURCE.LINE		= LINE;
+	CURRENT_SOURCE.FILE		= FILE;
+	CURRENT_SOURCE.LINE_ADJUSTMENT	= 0;
+	CURRENT_SOURCE.ASSUMED_FILE	= NULL_NID;
+
+	CURRENT_ERROR_KIND		= KIND;
+	CURRENT_ERROR_CODE		= ERROR + ERROR_CODE_OFFSET;
+	CURRENT_ERROR_INSERTS		= 2;
+	CURRENT_ERROR_INSERT (1)	= addr (S1);
+	CURRENT_ERROR_INSERT (2)	= addr (S2);
+	call PRINT_ERROR ();
+
+	CURRENT_SOURCE			= SAVE_CURRENT_SOURCE_STATE;
+	SW_TERSE_DIAGNOSTICS		= SAVE_SW_TERSE_DIAGNOSTICS;
+
+end COMMON_ERROR_AT_II;
+
+/* ---------------------------------------------------------------------
+/* SIMPLE_DIAGNOSTIC
+/* ------------------------------------------------------------------- */
+
+SIMPLE_DIAGNOSTIC: procedure (ERROR_CODE) external (X_SIMPLE_DIAGNOSTIC);
+
+	declare
+		ERROR_CODE	type (SHORT_T);
+	declare
+		TEXT_PTR	type (POINTER_T),
+		TEXT		type (STRING_T) based (TEXT_PTR);
+
+	call GET_MESSAGE (ERROR_CODE + ERROR_CODE_OFFSET,
+			  TEXT_PTR,
+			  0, 
+			  0,
+			  0);
+
+	call WRITE_CONSOLE_LINE (TEXT);
+
+end SIMPLE_DIAGNOSTIC;
+
+/* ---------------------------------------------------------------------
+/* SHOULD_IGNORE_DIAGNOSTIC
+/* IGNORE_DIAGNOSTIC
+/* IGNORE_DIAGNOSTIC_LIST
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 IGNORE_DIAGNOSTIC_DATA	based,
+  2 DIAGNOSTIC			type (LONG_T),
+  2 NEXT			type (POINTER_T);
+
+declare
+
+IGNORE_DIAGNOSTIC_LIST		type (POINTER_T)
+				static internal initial (null ());
+
+/* ---------------------------------------------------------------------
+/* SHOULD_IGNORE_DIAGNOSTIC
+/* ------------------------------------------------------------------- */
+
+SHOULD_IGNORE_DIAGNOSTIC: procedure (DIAGNOSTIC)
+			  returns   (type (BOOL_T))
+			  internal;
+	declare
+		DIAGNOSTIC	type (LONG_T);
+	declare
+		P		type (POINTER_T);
+
+	do P = IGNORE_DIAGNOSTIC_LIST
+	repeat P->IGNORE_DIAGNOSTIC_DATA.NEXT while (P ^= null ());
+		if P->IGNORE_DIAGNOSTIC_DATA.DIAGNOSTIC = DIAGNOSTIC then
+			return (TRUE);
+	end;
+	return (FALSE);
+
+end SHOULD_IGNORE_DIAGNOSTIC;
+
+/* ---------------------------------------------------------------------
+/* IGNORE_DIAGNOSTIC
+/* ------------------------------------------------------------------- */
+
+IGNORE_DIAGNOSTIC: procedure (DIAGNOSTIC)
+		   returns   (type (BOOL_T))
+		   external  (X_IGNORE_DIAGNOSTIC);
+
+	declare
+		DIAGNOSTIC	type (LONG_T);
+	declare
+		P		type (POINTER_T);
+
+	if ^SHOULD_IGNORE_DIAGNOSTIC (DIAGNOSTIC) then do;
+		allocate IGNORE_DIAGNOSTIC_DATA set (P);
+		P->IGNORE_DIAGNOSTIC_DATA.DIAGNOSTIC = DIAGNOSTIC +
+						       ERROR_CODE_OFFSET;
+		P->IGNORE_DIAGNOSTIC_DATA.NEXT = IGNORE_DIAGNOSTIC_LIST;
+		IGNORE_DIAGNOSTIC_LIST = P;
+	end;
+
+end IGNORE_DIAGNOSTIC;
+
+/* ---------------------------------------------------------------------
+/* FREE_IGNORE_DIAGNOSTIC_LIST
+/* ------------------------------------------------------------------- */
+
+FREE_IGNORE_DIAGNOSTIC_LIST: procedure ()
+			     returns   (type (BOOL_T))
+			     external  (X_FREE_IGNORE_DIAGNOSTIC_LIST);
+
+	declare (P, Q) type (POINTER_T);
+		
+	do P = IGNORE_DIAGNOSTIC_LIST while (P ^= null ());
+		Q = P;
+		P = P->IGNORE_DIAGNOSTIC_DATA.NEXT;
+		free Q->IGNORE_DIAGNOSTIC_DATA; 
+	end;
+
+end FREE_IGNORE_DIAGNOSTIC_LIST;
+

@@ -1,0 +1,159 @@
+/* C++ rtcall.pl1 - Set up call to a run-time library routine */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  010  New value-node scheme.
+ *  07.18.91  PKT  009  Updated for SYM_NODE.REFERENCED change.
+ *  07.18.91  DGM  008  Changed to call DECLARE_C_FUNCTION.
+ *  05.03.91  DGM  007  Changed call from DECLARE_IMPLICIT_FUNCTION
+ *			to DECLARE_FUNCTION.
+ *  02.27.91  DGM  006  Trivial name change.
+ *  02.01.91  DGM  005  Updated to the new global names scheme.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  09.13.90  DGM  003  Changed xxx_SC names to xxx_ST.
+ *  09.05.90  PKT  002  Filled in the stubs; added RUN_TIME_SYMBOL.
+ *  08.08.90  DGM  001  New type-node.
+ *  06.29.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 010 RTCALL');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_CHECK_ARGUMENT_LIST_PKG;
+%include CXX_RUN_TIME_CALL_IN;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+
+/* -TODO- This module should be changed using dclnam stuff. */
+
+/* ---------------------------------------------------------------------
+/* RUN_TIME_SYMBOL
+/*
+/* Return global symbol node representing the run-time function or
+/* procedure with the given entry name.
+/*
+/* If the run-time function has not been declared yet, returns NULL_NID.
+/* ------------------------------------------------------------------- */
+
+RUN_TIME_SYMBOL: procedure (ENTRY_NAME)
+		 returns   (type (NID_T))
+		 external  (X_RUN_TIME_SYMBOL);
+
+	declare ENTRY_NAME type (NID_T);
+
+	return (LOOKUP_NAME (ENTRY_NAME, VANILLA_SK, CURRENT_GLOBAL_SCOPE));
+
+end RUN_TIME_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* RUN_TIME_CALL
+/*
+/* Return an expression which calls the run time library routine 
+/* ENTRY_NAME, with argument expression tree ARGS.
+/* Returns with the expression's value node paged in as CXX_VALUE_NODE.
+/* It's up to the caller to set the type following the call, e.g.
+/* with SET_VALUE_SIMPLE_TYPE.
+/* ------------------------------------------------------------------- */
+
+RUN_TIME_CALL: procedure (ENTRY_NAME, ARGS)
+	       returns   (type (CXX_VID_T))
+	       external  (X_RUN_TIME_CALL);
+
+	declare
+		ENTRY_NAME	type (NID_T),
+		ARGS		type (CXX_VID_T);
+	declare
+		SYMBOL		type (NID_T),
+		LEFT		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		V		type (CXX_VID_T);
+
+	SYMBOL = RUN_TIME_SYMBOL (ENTRY_NAME);
+
+	/* Enter the symbol in the table if it is not there yet */
+
+	if SYMBOL = NULL_NID then
+		SYMBOL = DECLARE_C_FUNCTION (ENTRY_NAME);
+
+	call NOTE_SYMBOL_REFERENCE (SYMBOL);
+
+	LEFT = GET_VALUE_REF_AND_EXPAND (SYMBOL);
+	call GET_VALUE_TYPE (TYPE_INFO);
+	LEFT = GET_VALUE_AND_EXPAND_L (ADDR_VO, LEFT);
+	LEFT->CXX_VALUE_NODE.FUNCTION_DESIGNATOR = TRUE;
+
+	/* Determine the return type */
+
+	call STRIP_TOP_TYPE (TYPE_INFO, TRUE);
+
+	if TYPE_INFO.TOP_TYPE.CODE = byte (VOID_BT) then
+		V = ALLOC_CXX_VALUE_NODE_LR (CALL_VO, LEFT, ARGS);
+	else	V = ALLOC_CXX_VALUE_NODE_LR (CALL_FUNCTION_VO, LEFT, ARGS);
+	
+	call SET_VALUE_TYPE (TYPE_INFO);
+
+	/* Set the argument count for WRITOP */
+
+        V->CXX_VALUE_NODE.OFFSET = CHECK_ARG_SAVE (V);
+
+        if ARGS = NULL_CXX_VID then
+		V->CXX_VALUE_NODE.UNARY = TRUE;
+
+	return (V);
+
+end RUN_TIME_CALL;
+
+/* ---------------------------------------------------------------------
+/* RUN_TIME_ARGS
+/* 
+/* Return an argument expression tree containing the argument THIS
+/* followed by the arguments REST, for use in RUN_TIME_CALL.
+/* No type checking is done -- type must already be set correctly
+/* on THIS.
+/* ------------------------------------------------------------------- */
+
+RUN_TIME_ARGS: procedure (THIS, REST)
+	       returns   (type (CXX_VID_T))
+	       external  (X_RUN_TIME_ARGS);
+
+	declare
+		THIS		type (CXX_VID_T),
+		REST		type (CXX_VID_T);
+
+	return (GET_VALUE_AND_EXPAND_LR (ARG_VO, THIS, REST));
+
+end RUN_TIME_ARGS;
+

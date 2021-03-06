@@ -1,0 +1,1079 @@
+/* C++ emitv.pl1 - Emit a value node */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  07.27.93  DGM  052	Integrate changes from ANSI-C FE (emitv.039.pl1).
+ *						Fixes problem for Intel 386/486 SVR4 port.
+ *  08.31.92  DGM  051	Alias bit fix.
+ *  06.19.92  DGM  050	Rearranged for possible performance improvement.
+ *  05.29.92  DGM  049	Don't emit CONVERT(INTEGER(x))-->POINTER since
+ *			BlackBird CSEs the CONVERT; just emit INTEGER(x)
+ *			(from LPI-C).
+ *  04.17.92  PKT  048	Removed support for ARG_REF_VO.
+ *  04.18.92  PKT  047	Merged 043->044 with 043->046.
+ *  03.13.92  PKT  046	Updated for parameter nodes.
+ *  03.26.92  DGM  045	New value-node scheme.
+ *  03.30.92  DGM  044	Fix to handle shorter enum parameter types.
+ *  03.20.92  DGM  043	Fix for unsigned char compares (only showed up
+ *			on i386 and Sequioa, not on SPARC for some reason);
+ *			we need to set ALIAS bit on *signed* char branch
+ *			comparisons only.
+ *  02.19.92  DGM  042	Applied PLB fix from the ANSI-C FE.
+ *  01.23.92  PKT  041	Fixed for pointers to member functions passed
+ *			by value on hardware that passes by reference.
+ *  01.21.92  DGM  040	Parameter link-node changes.
+ *  12.18.91  DGM  039  Fix for: enum { E = 32768 }; main() { f (E); };
+ *			Set CPLUS_VAL.TOP_TYPE.TAG_SYMBOL in INTEGER_VO.
+ *  11.20.91  DGM  038  Changed byte (OPCODE_TABLE (x)) to just
+ *			OPCODE_TABLE (x) -- this was a typo which
+ *			cause P$x routine to get called!  Also,
+ *			UNITS_TABLE to avoid calling binary ().
+ *  11.12.91  DGM  037  Merge.
+ *  10.08.91  PKT  036  Added VA_ARG_VO and VA_START_VO.
+ *  10.03.91  DGM  035  Asm & compilation-assert support.
+ *  08.23.91  DGM  034  Update setjmp support; TODO, make CURRENT_
+ *			FUNCTION_CALLS_SETJMP a global CURRENT_SCOPE_
+ *			DATA in CXX_GLOBAL_SEMANTIC_DATA_IN.
+ *  07.18.91  PKT  033  Added DBG_RANGE_VO and DBG_SUBSCRIPT_VO
+ *			to OPCODE_TABLE.
+ *  07.18.91  DGM  032  Tranform references to the extern "C" exit (int)
+ *			to ____lpi_cxx_exit.  Added "setjmp" changes.
+ *  06.28.91  PKT  031  Eliminated STRING_VO.
+ *  06.02.91  PKT  030  Added DESTRUCTOR_VO to OPCODE_TABLE.
+ *  05.29.91  DGM  029  Updated to emit REFs and ENTRYs which always
+ *			refer to the *first* external linkage symbol in
+ *			case there are multiple occurrences due to local
+ *			scope external linkage declarations, which is
+ *			fine except if a subsequent internal linkage
+ *			declaration is made (strictly undefined, but
+ *			we will give a warning and act like cc).  See
+ *			SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL and
+ *			SYM_NODE.IS_FIRST_EXTERNAL_LINKAGE_SYMBOL and
+ *			CHECK_NON_VISIBLE_DECLARATIONS (chkdcl.pl1).
+ *  05.01.91  DGM  028  Added VA_STACK_VO to OPCODE_TABLE.
+ *  04.18.91  DGM  027  Added missing checks for SCHAR_BT.
+ *  03.08.91  PKT  026  Inserted a needed COUNT_DOWN_VALUE.
+ *  01.27.91  PKT  025  Updated for member pointers.
+ *  12.28.90  PKT  024  Added CAST_TO_BASE_VO.
+ *  11.09.90  PKT  023  Added DECLARE_TEMP_VO and IMPLICIT_STAR_VO.
+ *			Call to MAKE_AUTO_TEMP for DECLARE_TEMP_VO.
+ *  10.24.90  PKT  022  Changed to support widened parameters.
+ *  10.16.90  PKT  021  Bug fix setting COUNT to 0.
+ *  09.25.90  DGM  020  Preprocessor include file name changes.
+ *  09.17.90  PKT  019  Added EXPLICIT_COMMA_VO.
+ *  09.14.90  DGM  018  Changed include file names and VOP names.
+ *  08.31.90  TLF  017  Added UNARY_AND_VO to OPCODE_TABLE.
+ *  08.27.90  TLF  016  New VOPs in OPCODE_TABLE.
+ *  08.08.90  DGM  015  New type-node.
+ *  08.07.90  PKT  014  Updated; added support for LEFT_VALUE_VO.
+ *  07.20.90  PKT  013  Added support for save, exit, and branch_save.
+ *  07.05.90  PKT  012  Updated.
+ *  06.05.90  DGM  010  Updated for the new utilities.
+ *			Also, replace reference to DIAG_[LINE,FILE]_ID
+ *			to reference to CURRENT_SOURCE.[LINE,FILE].
+ *  04.19.90  DGM  009  C_DECLARE_MISCELLANY_PKG to CXX_DECLARE_SYMBOL_PKG.
+ *			Also, changed GETTOK to STORE_TOKEN.
+ *  04.17.90  PKT  008  Added support for varargs VOPs.
+ *  04.05.90  TLF  007  Removed comment delimiters that commented out
+ *                      calls to GETTOK.
+ *  04.02.90  DGM  006  CXX_PROCESS_DECLARATION_PKG to C_DECLARE_MISCELLANY_PKG.
+ *  03.02.90  DGM  005  Changed MAKE_LABEL to DECLARE_LABEL; do we want
+ *			to pass the scope in which to declare the label?
+ *  02.27.90  PKT  004  Update for CONDITIONAL_VO and call to MAKE_LABEL.
+ *  02.16.90  TLF  003  Changed call to BACK_END_TYPE_SIZE to pass
+ *                      the first argument by value, since the same
+ *                      variable is also used as a return argument.
+ *                      Removed the VOP_NAME table.
+ *  02.09.90  DGM  002  Changed SIZE_FROM_TYPE call to SIMPLE_TYPE_SIZE.
+ *  02.06.90  TLF  001  Added entries to VOP_NAME and OPCODE_TABLE
+ *                      for newly created VOPs.
+ *  01.30.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.27.93 052 EMITV');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_STORE_TOKEN_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_INTEGRAL_PROMOTION_PKG;
+%include CXX_EMIT_VALUE_TREE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_GLOBAL_NAMES_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_DUMP_VALUE_TREE_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+TOTAL_LABELS		type (SHORT_T) static internal initial (0);
+
+declare
+
+UNITS_TABLE (0 : 7)	bit (3) aligned static internal initial
+
+			( '000'B
+			, '001'B
+			, '010'B
+			, '011'B
+			, '100'B
+			, '101'B
+			, '110'B
+			, '111'B );
+
+/* ---------------------------------------------------------------------
+/* EMIT_VALUE
+/* ------------------------------------------------------------------- */
+
+EMIT_VALUE: procedure (V, N, A1, A2, A3, A4) 
+            returns   (type (LONG_T)) 
+	    external  (X_EMIT_VALUE)
+	    recursive;
+declare
+	V					type (CXX_VID_T),
+	N					type (SHORT_T),
+	(A1, A2, A3, A4)			type (LONG_T);
+declare
+	ID					type (LONG_T),
+	K					type (SHORT_T),
+	T					type (SHORT_T),
+	KV					type (CXX_VID_T),
+	K1					type (LONG_T);
+declare
+	VOP					type (SHORT_T),
+	COUNT					type (SHORT_T),
+	OPCODE					type (SHORT_T),
+	BLOCK					type (NID_T),
+	SYMBOL					type (NID_T),
+	TYPE					type (SHORT_T),
+	TYPINF					type (TYPE_INFO_T),
+	TYPE_ID					type (NID_T),
+	TYPE_DATA				type (TYPE_DATA_T),
+	LOW_LEVEL_TYPE				type (SHORT_T),
+	SZ					type (LONG_T),
+	VSIZE					type (BOOL_T),
+	LONG					type (LONG_T),
+	C					character (1),
+	S					character (4) varying;
+declare 
+	BDRY					type (SHORT_T),
+	WIDE_SZ					type (LONG_T),
+	ACTUAL_SZ				type (LONG_T),
+	SIZE_UNITS				type (SHORT_T),
+	OFFSET_UNITS				type (SHORT_T),
+	(P, Q)					type (POINTER_T);
+declare
+	CURRENT_FUNCTION_CALLS_SETJMP		type (BOOL_T),
+	ASM_FUNCTION_CALL			type (BOOL_T),
+	COMPILATION_ASSERT_FUNCTION_CALL	type (BOOL_T);
+declare
+	THE_VALUE				type (CXX_VID_T),
+	THE_NOP					type (CXX_VID_T);
+declare
+	size					builtin;
+
+	/* CXX_VALUE_NODE_PTR = V; */
+
+	VOP = V->CXX_VALUE_NODE.OP;
+
+	if VOP = INTEGER_VO then do;
+		TYPE = rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE);
+		TYPE_ID = V->CXX_VALUE_NODE.TOP_TYPE.NID;
+		LONG = V->CXX_VALUE_NODE.OFFSET;
+/* DGM */
+/*		if (TYPE = LOGICAL_BT) |
+/*		   (TYPE = CHAR_BT) |
+/*		   (TYPE = SCHAR_BT) |
+/*		   (TYPE = UCHAR_BT) |
+/*		   (LONG > 32767) |
+/*		   (LONG < -32768) |
+/*		   ((LONG < 0) &
+/*		    ((TYPE = ULONG_BT) | (TYPE = UINT_BT))) then do;
+/* DGM */
+/* DGM */	if TYPE = LOGICAL_BT then do;
+			COUNT = V->CXX_VALUE_NODE.COUNT;
+/* DGM */
+/*			if TYPE = LOGICAL_BT then do;
+/* DGM */
+				KV = ALLOC_CXX_VALUE_NODE (INTEGER_VO);
+				KV->CXX_VALUE_NODE.OFFSET = LONG;
+				TYPE = INT_BT;
+/* DGM */
+/*			end;
+/* DGM */
+/* DGM */
+/*			else if (TYPE = CHAR_BT) |
+/*				(TYPE = SCHAR_BT) |
+/*				(TYPE = UCHAR_BT) then do;
+/*				C = byte (LONG + MIN_ASCII_HOST);
+/*				S = '''';
+/*				S = S || C;
+/*				if C = '''' then S = S || C;
+/*				S = S || '''';
+/*				KV = ALLOC_SYMBOL_CXX_VALUE_NODE
+/*				     (CONSTANT_VO,
+/*				      STORE_TOKEN (CHAR_CONSTANT_TOKEN, S));
+/*			end;
+/*			else if TYPE = POINTER_DT then do;
+/*				/*
+/*                               /* A pointer with a BIG integer value.
+/*				/**/
+/*                              KV = INTEGER_VALUE (LONG, INT_BT);
+/*                              KV = ALLOC_CXX_VALUE_NODE_L (CONVERT_VO, KV);
+/*			end;
+/*			else	KV = ALLOC_SYMBOL_CXX_VALUE_NODE
+/*				     (CONSTANT_VO,
+/*				      STORE_TOKEN (TYPE, trim (char (LONG))));
+/* DGM */
+			KV->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (TYPE);
+			KV->CXX_VALUE_NODE.TOP_TYPE.NID = TYPE_ID;
+			KV->CXX_VALUE_NODE.UNARY = TRUE;
+			KV->CXX_VALUE_NODE.COUNT = COUNT;
+			ID = EMIT_TREE (KV);
+			KV->CXX_VALUE_NODE.COUNT = 1;
+			call COUNT_DOWN_VALUE (KV);
+			V->CXX_VALUE_NODE.ID = ID;
+			return (V->CXX_VALUE_NODE.ID);
+		end;
+		A1 = LONG;
+	end;
+	else if VOP = CONSTANT_VO then do;
+		/*
+		/* Mark the token so allocator will allocate it.
+		/**/
+		call SET_TOKEN_NODE ((A1));
+		TOKEN_NODE.BLOCK_LIST = -1;
+	end;
+	else if VOP = CONVERT_VO then do;
+		/*
+		/* Eliminate the convert on CONVERT(INTEGER(x))-->POINTER
+		/* since BlackBird CSEs the CONVERT, rather than using the
+		/* immediate constant.  Typically found for REFs to "(void*)0".
+		/**/
+		if (V->CXX_VALUE_NODE.COUNT = 1) &
+		   (V->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (POINTER_DT)) &
+		   (V->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.OP = INTEGER_VO)
+		then do;
+			/*
+			/* Use the previously emitted INTEGER(x).
+			/**/
+			V->CXX_VALUE_NODE.ID = A1;
+			return (V->CXX_VALUE_NODE.ID);
+		end;
+        end;
+	else if (VOP = CAST_VO) | (VOP = IMPLICIT_CAST_VO) then do;
+		V->CXX_VALUE_NODE.ID = A1;
+		return (V->CXX_VALUE_NODE.ID);
+	end;
+	else if VOP = CONDITIONAL_VO then do;
+		if V->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (VOID_BT) then do;
+			/*
+			/* Non-value producing (no alternates).
+			/* E.g. expr ? f1 () : f2; where f1, f2 of type void.
+			/**/
+			return (V->CXX_VALUE_NODE.ID);
+		end;
+	end;
+	else if VOP = COMMA_VO then do;
+		V->CXX_VALUE_NODE.ID = A2;
+		return (V->CXX_VALUE_NODE.ID);
+	end;
+	else if VOP = LEFT_VALUE_VO then do;
+		/*
+		/* Remove the NOP inserted at EMIT_TREE time,
+		/* and yield the value from the NOP's operand.
+		/**/
+		THE_NOP = V->CXX_VALUE_NODE.LEFT;
+		THE_VALUE = THE_NOP->CXX_VALUE_NODE.LEFT;
+		ID = THE_VALUE->CXX_VALUE_NODE.ID;
+		call FREE_CXX_VALUE_NODE (THE_NOP);
+		V->CXX_VALUE_NODE.LEFT = THE_VALUE;
+		V->CXX_VALUE_NODE.ID = ID;
+		return (V->CXX_VALUE_NODE.ID);
+	end;
+	else if VOP = DECLARE_LABEL_VO then do;
+		TOTAL_LABELS = TOTAL_LABELS + 1;
+		V->CXX_VALUE_NODE.ID_NID = DECLARE_LABEL (NULL_NID);
+		V->CXX_VALUE_NODE.ID_IS_NID = TRUE;
+		/* if DEBUG2_LEVEL > 0 then call PRINT_OPERATOR; */
+		return (V->CXX_VALUE_NODE.ID_NID);
+	end;
+	else if VOP = LABEL_VO then do;
+		A3 = V->CXX_VALUE_NODE.OFFSET;
+	end;
+	else if VOP = DECLARE_TEMP_VO then do;
+		V->CXX_VALUE_NODE.ID_NID = MAKE_AUTO_TEMP (V);
+		V->CXX_VALUE_NODE.ID_IS_NID = TRUE;
+		/* if DEBUG2_LEVEL > 0 then call PRINT_OPERATOR; */
+		return (V->CXX_VALUE_NODE.ID_NID);
+	end;
+	else if VOP = BRANCH_COMPUTED_VO then do;     
+		/*
+		/* Loop through its argument list on the right, and
+		/* increment the reference count of the label symbols
+		/**/
+		do KV = V while (^KV->CXX_VALUE_NODE.RIGHT_IS_NOT_VID &
+				  KV->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID);
+			call SET_SYM_NODE (KV->CXX_VALUE_NODE.RIGHT->
+					   CXX_VALUE_NODE.LEFT->
+					   CXX_VALUE_NODE.ID_NID);
+			SYM_NODE.FIELD1 = SYM_NODE.FIELD1 + 1;
+			KV = KV->CXX_VALUE_NODE.RIGHT;
+		end;
+	end;
+	else if ((VOP >= LB_BRANCH_VO) & (VOP <= HB_BRANCH_VO)) &
+		 (VOP ^= BRANCH_SWITCH_VO) then do;
+		/*
+		/* Increment the reference count of the label symbol
+		/**/
+		call SET_SYM_NODE ((A1));
+		SYM_NODE.FIELD1 = SYM_NODE.FIELD1 + 1;
+	end;
+	/*
+	/* Third operand of shift op indicates direction.
+	/**/
+	if VOP = LSHIFT_VO then do;
+		N  = 3;
+		A3 = EMIT_TREE (INTEGER_VALUE_ONE ());
+        end;
+	else if VOP = RSHIFT_VO then do;
+		N  = 3;
+		A3 = EMIT_TREE (INTEGER_VALUE (-1, INT_BT));
+	end;
+	else if VOP = REF_VO then do;
+		call SET_SYM_NODE_R ((A1));
+		SYMBOL = NULL_NID;
+		if SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL ^= NULL_NID then
+			SYMBOL = SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL;
+		else if SYM_NODE.NAME = EXIT_NAME then do;
+			if  SYM_NODE.IS_VANILLA_FUNCTION & ^SYM_NODE.IS_MEMBER &
+			    SYM_NODE.EXTERNAL_LINKAGE &
+			    (SYM_NODE.LINKAGE_KIND = byte (C_LINKAGE)) &
+			    ^SW_DO_NOT_MAP_EXIT_TO_LPI_EXIT then do;
+				call GET_SIG_NODE_R
+				     (SYM_NODE.TOP_TYPE.SIGNATURE, P);
+				if ^P->SIG_NODE.PROTOTYPED &
+				   ^SYM_NODE.DEFINED then do;
+					SYMBOL = DECLARE_MAIN_EXIT_FUNCTION ();
+					call SET_SYM_NODE_R (SYMBOL);
+				end;
+				else if (P->SIG_NODE.
+					    EXPLICIT_NPARAMETERS = 1) &
+					(P->SIG_NODE.
+					    EXPLICIT_PARAMETERS ^= NULL_NID)
+				then do;
+					call GET_PARAMETER_NODE_R
+					     (P->SIG_NODE.
+						 EXPLICIT_PARAMETERS, Q);
+					if IS_INTEGRAL_TYPE
+					   (rank (Q->PARAMETER_NODE.
+						     TOP_TYPE.CODE)) then do;
+						SYMBOL =
+						DECLARE_MAIN_EXIT_FUNCTION ();
+						call SET_SYM_NODE_R (SYMBOL);
+					end;
+					call RELEASE_PARAMETER_NODE
+					     (P->SIG_NODE.EXPLICIT_PARAMETERS);
+				end;
+			end;
+		end;
+		if SYM_NODE.IS_PARAMETER then do;
+			if (TARGET_STORAGE_ORDER = STORAGE_LEFT_TO_RIGHT) &
+			   (IS_INTEGRAL_TYPE (rank (SYM_NODE.TOP_TYPE.CODE)))
+			then do;
+				/*
+				/* REF an integer type which is shorter than
+				/* its "widened" variety with the appropriate
+				/* offset. Note that this does not apply to
+				/* float types!
+				/**/
+				if SYM_NODE.TOP_TYPE.CODE = byte (ENUM_BT) then
+					T = GET_ENUM_INTEGRAL_TYPE
+					    (SYM_NODE.TOP_TYPE);
+				else	T = rank (SYM_NODE.TOP_TYPE.CODE);
+				K = INTEGRAL_PROMOTION (T);
+				if K ^= T then do;
+					/*
+					/* For PARAM_REF, const offset field
+					/* (A4) is emitted ADDRESS_UNITS are
+					/* required on OPERATOR.OFFSET_UNITS
+					/* For REF, var offset field (A2) is
+					/* emitted OFFSET_UNITS  are required
+					/* on OPERATOR.OFFSET_UNITS.
+					/**/
+					if CXX_USING_PHOENIX then
+						/* param-ref */
+						OFFSET_UNITS = ADDRESS_UNITS;
+					else	OFFSET_UNITS =
+						rank (V->CXX_VALUE_NODE.
+						      OFFSET_UNITS);
+					/*
+					/* The following is, system dependent,
+					/* but a typical example is:
+					/*
+					/* For char:
+					/*     ACTUAL_SZ = 1, WIDE_SZ = 4, 
+					/*     OFFSET_UNITS  = BYTES
+					/*     ADDRESS_UNITS = BYTES
+					/* For short:
+					/*     ACTUAL_SZ = 1, WIDE_SZ = 2, 
+					/*     OFFSET_UNITS  = HALF_WORDS
+					/*     ADDRESS_UNITS = BYTES
+					/**/
+					call SIMPLE_TYPE_SIZE
+					     (K, WIDE_SZ, BDRY, 0);
+					WIDE_SZ = ROUNDU
+						  (WIDE_SZ, BDRY, OFFSET_UNITS);
+					call SIMPLE_TYPE_SIZE
+					     (T, ACTUAL_SZ,BDRY, 0);
+					ACTUAL_SZ = ROUNDU
+						    (ACTUAL_SZ,
+						     BDRY, OFFSET_UNITS);
+
+					if CXX_USING_PHOENIX then do;
+						/* param ref */
+						KV = INTEGER_VALUE
+						     (WIDE_SZ-ACTUAL_SZ,
+						      SHORT_BT);
+						A4 = EMIT_TREE (KV);
+						call COUNT_DOWN_VALUE (KV);
+					end;
+					else do;
+						KV = INTEGER_VALUE
+						     (WIDE_SZ-ACTUAL_SZ,
+						      SHORT_BT);
+						A2 = EMIT_TREE (KV);
+						call COUNT_DOWN_VALUE (KV);
+						if N = 1 then
+							N = 2;
+					end;
+				end;
+			end;
+
+			if CXX_USING_PHOENIX then do;
+				/* param ref */
+				VOP = PARAM_REF_VO;
+				/* block number */
+				BLOCK = SYM_NODE.BLOCK;
+				/* parameter number */
+				KV = INTEGER_VALUE
+				     ((SYM_NODE.LOCATION), SHORT_BT);
+				A3 = EMIT_TREE (KV);
+				call COUNT_DOWN_VALUE (KV);
+				if A4 = 0 then do;
+					KV = INTEGER_VALUE (0, SHORT_BT); 
+					A4 = EMIT_TREE (KV); 
+					call COUNT_DOWN_VALUE (KV);
+				end;
+				N = 5;
+			end;
+		end;
+	end;
+
+	if V->CXX_VALUE_NODE.ASM then do;
+		if (VOP ^= CALL_VO) & (VOP ^= CALL_FUNCTION_VO) then do;
+			/*
+			/* This is presumably an ASM function ARG or the
+			/* VALUE(REF(asm-function-sym-node) of an ASM
+			/* function call; do not emit these.  See expv.
+			/**/
+        		V->CXX_VALUE_NODE.ID = LAST_OPERATOR_ID;
+			return (V->CXX_VALUE_NODE.ID);
+		end;
+		else do;
+			ASM_FUNCTION_CALL		 = TRUE;
+			COMPILATION_ASSERT_FUNCTION_CALL = FALSE;
+		end;
+	end;
+	else if V->CXX_VALUE_NODE.COMPILATION_ASSERT then do;
+		if (VOP ^= CALL_VO) & (VOP ^= CALL_FUNCTION_VO) then do;
+			/*
+			/* This is presumably a COMPILATION_ASSERT function
+			/* ARG or the VALUE(REF(compilation-assert-function-
+			/* sym-node) of an COMPILATION_ASSERT function call;
+			/* do not emit these.  See expv.
+			/**/
+        		V->CXX_VALUE_NODE.ID = LAST_OPERATOR_ID;
+			return (V->CXX_VALUE_NODE.ID);
+
+		end;
+		else do;
+			ASM_FUNCTION_CALL		 = FALSE;
+			COMPILATION_ASSERT_FUNCTION_CALL = TRUE;
+		end;
+	end;
+	else do;
+		ASM_FUNCTION_CALL		 = FALSE;
+		COMPILATION_ASSERT_FUNCTION_CALL = FALSE;
+	end;
+
+	TYPE = rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE);
+
+	if TYPE = MEMBER_POINTER_DT then do;
+		/*
+		/* Translated type depends on whether it
+		/* points to member data or member function.
+		/**/
+		CXX_VALUE_NODE_PTR = V;
+		call GET_VALUE_TYPE (TYPINF);		/* member-ptr type */
+		call GET_TOP_LEVEL_TYPE_INFO
+		     (TYPINF, 1, TYPE_DATA);		/* strip */
+		TYPE_ID = GET_MEMBER_POINTER_TYPE
+			  (TYPE_DATA);			/* low level type */
+		call GET_TOP_TYPE (TYPE_ID, TYPE_DATA);	/* low level type */
+		LOW_LEVEL_TYPE = rank (TYPE_DATA.CODE);	/* low level type */
+	end;
+	else	LOW_LEVEL_TYPE = rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE);
+
+        if VOP = ARG_VO then  do;
+		/*
+		/* When passing structs by value, Param_Ref requires
+		/* the size/alignment info of the argument. Since the
+		/* struct may be itself a member, its TID is used rather
+		/* than the top level symbol id.
+		/**/
+		if CXX_USING_PHOENIX then do;
+			if IS_AGGREGATE_TAG_TYPE (LOW_LEVEL_TYPE) then do;
+				/*
+				/* Sym-node id with size/align info
+				/* required as 2nd arg to ARG_IMM op.
+				/**/
+				N = 2;
+				A2 = V->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+			end;
+		end;
+	end;
+
+	/* Translate VOP, TYPE, SIZE, etc. to back-end values */
+
+	if TYPE = MEMBER_POINTER_DT then do;
+		/*
+		/* Translated type depends on whether it
+		/* points to member data or member function.
+		/**/
+		TYPE = LOW_LEVEL_TYPE;	/* low level type */
+        	call SIMPLE_BACK_END_TYPE_SIZE ((TYPE), TYPE, K);
+	end;
+	else	call BACK_END_TYPE_SIZE (V->CXX_VALUE_NODE.TOP_TYPE, TYPE, K);
+
+	VSIZE = FALSE;
+
+	if (TYPE = STRUCTURE_) | (TYPE = ARRAY_) then do;
+		SZ = V->CXX_VALUE_NODE.SIZE;
+		if rank (V->CXX_VALUE_NODE.SIZE_UNITS) ^= ADDRESS_UNITS then
+			SZ = ROUNDU (SZ,
+				     rank (V->CXX_VALUE_NODE.SIZE_UNITS),
+				     ADDRESS_UNITS);
+		if (SZ > 32767) | (SZ < -32768) then do;
+			/*
+			/* Too big for OPERATOR.SIZE.
+			/**/
+			KV = INTEGER_VALUE (SZ, 0);
+			SZ = EMIT_TREE (KV);
+			call COUNT_DOWN_VALUE (KV);
+			VSIZE = TRUE;
+		end;
+	end;
+	else	SZ = K;	/* precision or length */
+
+        /* Emit operator here ... */
+
+        call GET_OPCODE (VOP, OPCODE, A1, A2);
+
+	/*
+	/* We no longer attempt to set CXX_VALUE_NODE.COUNT to 0 for
+	/* expressions which will have no uses in the emitted ops.
+	/* This caused some value nodes to be freed too soon.
+	/* PKT believes (90 Oct 16) that COUNT can be set to 0 based on TYPE.
+	/**/
+
+	if OPCODE = REF_OP then do;
+		TYPE = TYPE + 100;
+		COUNT = V->CXX_VALUE_NODE.COUNT;
+	end;
+	else if V->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (VOID_BT) then
+		COUNT = 0;
+	else	COUNT = V->CXX_VALUE_NODE.COUNT;
+
+	if ASM_FUNCTION_CALL | COMPILATION_ASSERT_FUNCTION_CALL then
+        	call ALLOCATE_NEXT_OPERATOR (OPCODE, N - 1); 
+        else	call ALLOCATE_NEXT_OPERATOR (OPCODE, N); 
+
+        OPERATOR.COUNT = COUNT; 
+
+        V->CXX_VALUE_NODE.ID = LAST_OPERATOR_ID;
+
+/*	/* If this is a "volatile" reference, then set the ALIAS bit */
+/*
+/*
+/*	if (V->CXX_VALUE_NODE.TYPE_QUALIFIERS & VOLATILE_TQ) = VOLATILE_TQ then
+/*		OPERATOR.ALIAS = TRUE;
+/*
+/*	if VOP = VALUE_VO then do;
+/*		if COUNT > 1 then do;
+/*			OPERATOR.ALIAS = TRUE;  /* force a load */
+/*	end;
+/**/
+
+	if SHOULD_SET_ALIAS_BIT (V) then
+		OPERATOR.ALIAS = TRUE;
+
+	OPERATOR.TYPE		= byte(TYPE);
+	OPERATOR.SIZE		= SZ;
+	OPERATOR.VARIABLE_SIZE	= VSIZE;
+
+	if ASM_FUNCTION_CALL then do;
+		/*
+		/* ASM functions will always have at least one argument,
+		/* i.e. the last (default) argument which specifies the
+		/* internal ASM function code used by the back-end;
+		/* this must naturally be coordinated with <asm.h>.
+		/* We put that last argument first for convenience, and
+		/* the VALUE(REF(asm-function)) is not included at all.
+		/**/
+		if size (OPERATOR.OPCODE) = 1 then
+			OPERATOR.OPCODE_BYTE = byte (ASM_OP);
+		else	OPERATOR.OPCODE_INTEGER = ASM_OP;
+		if N > 2 then do;
+			KV = V;
+			do K = 3 to N
+			while (KV->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID);
+				KV = KV->CXX_VALUE_NODE.RIGHT;
+				OPERATOR.OPERAND (K - 2) =
+					KV->CXX_VALUE_NODE.ID;
+			end;
+			if KV->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID then
+				OPERATOR.OPERAND (0) =
+				KV->CXX_VALUE_NODE.RIGHT->CXX_VALUE_NODE.ID;
+		end;
+		else	OPERATOR.OPERAND (0) = A2;
+		return (V->CXX_VALUE_NODE.ID);
+	end;
+	else if COMPILATION_ASSERT_FUNCTION_CALL then do;
+		/*
+		/* The COMPILATION_ASSERT function has one argument.
+		/**/
+		if size (OPERATOR.OPCODE) = 1 then
+			OPERATOR.OPCODE_BYTE = byte (COMPILATION_ASSERT_OP);
+		else	OPERATOR.OPCODE_INTEGER = COMPILATION_ASSERT_OP;
+		OPERATOR.OPERAND (0) = A2;
+		return (V->CXX_VALUE_NODE.ID);
+	end;
+
+	if N >= 1 then
+		OPERATOR.OPERAND (0) = A1;
+
+	if N >= 2 then
+		OPERATOR.OPERAND (1) = A2;
+
+	if N >= 3 then do;
+		if (VOP = CALL_VO) |
+		   (VOP = CALL_FUNCTION_VO) |
+		   (VOP = BRANCH_COMPUTED_VO) then do;
+			/*
+			/* Arguments are strung out on the right.
+			/**/
+			KV = V;
+			do K = 2 to N
+			while (KV->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID);
+				KV = KV->CXX_VALUE_NODE.RIGHT;
+				OPERATOR.OPERAND (K - 1) =
+					KV->CXX_VALUE_NODE.ID;
+			end;
+		end;
+		else	OPERATOR.OPERAND (2) = A3;
+	end;
+
+	if VOP = REF_VO then do;
+		if SYMBOL ^= NULL_NID then
+			OPERATOR.OPERAND(0) = SYMBOL;
+		if N >= 4 then do;
+			OPERATOR.OPERAND(3) = A4;
+			if (OPERATOR.OPERAND(1) ^= 0) |
+			   (OPERATOR.OPERAND(3) ^= 0) then 
+				OPERATOR.OFFSET_UNITS =
+				UNITS_TABLE
+				(rank (V->CXX_VALUE_NODE.OFFSET_UNITS));
+		end;
+		else if N >= 2 then do;
+			if OPERATOR.OPERAND(1) ^= 0 then
+				OPERATOR.OFFSET_UNITS =
+				UNITS_TABLE
+				(rank (V->CXX_VALUE_NODE.OFFSET_UNITS));
+		end;
+	end;
+	else if VOP = LABEL_VO then do;
+		/*
+		/* Record this operator as the defining OP in symbol.
+		/**/
+		call SET_SYM_NODE_R (CURRENT_FUNCTION);
+		CURRENT_FUNCTION_CALLS_SETJMP =
+			SYM_NODE.CONTAINS_CALL_TO_SETJMP;
+		if A1 ^= NULL_NID then do;
+			call SET_SYM_NODE ((A1));
+			/*
+			/* Flag as declared for final front-end phase.
+			/**/
+			SYM_NODE.DEFINED = TRUE;
+			SYM_NODE.DCL_LINE_ID = CURRENT_SOURCE.LINE; /* reset */
+			SYM_NODE.DCL_FILE_ID = CURRENT_SOURCE.FILE; /* reset */
+			if CURRENT_FUNCTION_CALLS_SETJMP then     
+				SYM_NODE.ASSIGNED_OR_PASSED = TRUE;
+		end;
+		else if CURRENT_FUNCTION_CALLS_SETJMP then     
+			OPERATOR.LABEL_ASSIGNED_OR_PASSED = TRUE;
+        end;
+	else if VOP = PARAM_REF_VO then do;
+		OPERATOR.OPERAND(2) = BLOCK;	/* Block list id */
+		OPERATOR.OPERAND(3) = A3;	/* Parameter number */
+		OPERATOR.OPERAND(4) = A4;           
+		if (OPERATOR.OPERAND (1) ^= 0) |
+		   (OPERATOR.OPERAND (4) ^= 0) then 
+			OPERATOR.OFFSET_UNITS =
+				UNITS_TABLE
+				(rank (V->CXX_VALUE_NODE.OFFSET_UNITS));
+	end;
+        else if ((VOP >= GE_VO) & (VOP <= BRANCH_GT_VO)) &
+		 (VOP ^= NE_VO) &
+		 (VOP ^= BRANCH_VO) &
+		 (VOP ^= BRANCH_EQ_VO) &
+		 (VOP ^= BRANCH_NE_VO) then do;
+		if (V->CXX_VALUE_NODE.RIGHT->
+		    CXX_VALUE_NODE.TOP_TYPE.CODE = byte (CHAR_BT)) |
+		   (V->CXX_VALUE_NODE.RIGHT->
+		    CXX_VALUE_NODE.TOP_TYPE.CODE = byte (SCHAR_BT)) then
+			OPERATOR.ALIAS = TRUE;
+	end;
+	else if VOP = ENTRY_VO then do;
+		call SET_SYM_NODE ((A1));
+		if SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL ^= NULL_NID then do;
+			OPERATOR.OPERAND (0) =
+				SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL;
+		end;
+	end;
+
+	return (V->CXX_VALUE_NODE.ID);
+
+/* ---------------------------------------------------------------------
+/* GET_OPCODE
+/* ------------------------------------------------------------------- */
+
+GET_OPCODE: procedure (VOP, OPCODE, OP1, OP2) internal;
+
+	declare
+		VOP		type (SHORT_T), /* in  */
+		OPCODE		type (SHORT_T), /* out */
+		OP1		type (LONG_T),  /* out */
+		OP2		type (LONG_T);  /* out */
+	declare
+		THIS_VOP	type (SHORT_T);
+
+	THIS_VOP = VOP;
+
+	if THIS_VOP = ALTERNATE_VO then do;
+		if V->CXX_VALUE_NODE.OFFSET < 0 then do;
+			N = 2;
+			/* Reverse operands (make like assign) */
+			OP2 = OP1;
+			/* Associated COND_REF */
+			OP1 = V->CXX_VALUE_NODE.OFFSET;
+			THIS_VOP = ALT_VALUE_VO;
+		end;
+	end;
+	else if (VOP = CONDITIONAL_VO) | (VOP = UNINITIALIZED_VO) then do;
+		if V->CXX_VALUE_NODE.OFFSET < 0 then do;
+			N = 1;
+			/* Associated COND_REF  */
+			OP1 = V->CXX_VALUE_NODE.OFFSET;
+			THIS_VOP = COND_VALUE_VO;
+		end;
+	end;
+
+        OPCODE = OPCODE_TABLE (THIS_VOP);
+end;
+
+declare
+
+OPCODE_TABLE	(LB_OPERATOR_CODES : HB_OPERATOR_CODES)
+		type (SHORT_T)
+		static internal initial (
+
+        /* ASSIGN_VO             */ MOVE_OP,
+        /* IMPLICIT_ASSIGN_VO    */ MOVE_OP,
+        /* COPY_VO               */ MOVE_OP,
+        /* INTEGER_VO            */ INTEGER_OP,
+        /* CONSTANT_VO           */ CONSTANT_OP,
+        /*                       */ 0,
+        /* REF_VO                */ REF_OP,
+        /* PARAM_REF_VO          */ PARAM_REF_OP,
+	/* MEMBER_REF_VO         */ 0,
+	/* MEMBER_PTR_VO         */ 0,
+        /* VALUE_VO              */ VALUE_OP,
+        /* ADDR_VO               */ ADDR_OP,
+        /* IMPLICIT_ADDR_VO      */ ADDR_OP,
+        /* DOT_VO                */ 0,
+	/* CAST_TO_BASE_VO       */ 0,
+        /* CAST_VO               */ 0,
+        /* FUNCTIONAL_CAST_VO    */ 0,
+        /* IMPLICIT_CAST_VO      */ 0,
+        /* TYPE_VO               */ 0,
+        /* STAR_VO               */ 0,
+	/* IMPLICIT_STAR_VO      */ 0,
+	/* ARROW_VO              */ 0,
+        /* ARROW_STAR_VO         */ 0,
+	/* DOT_STAR_VO           */ 0,
+        /* SIZEOF_VO             */ 0,
+	/* EXPLICIT_COMMA_VO	 */ 0,
+        /* COMMA_VO              */ 0,
+	/* LEFT_VALUE_VO         */ 0,
+        /* PLUS_VO               */ 0, 
+        /* MINUS_VO              */ MINUS_OP,
+        /* COMPLEMENT_VO         */ NOT_OP,
+        /* ADD_VO                */ ADD_OP,
+        /* ADD_ASSIGN_VO         */ 0,
+        /* SUB_VO                */ SUB_OP,
+        /* SUB_ASSIGN_VO         */ 0,
+        /* MUL_VO                */ MULT_OP,
+        /* MUL_ASSIGN_VO         */ 0,
+        /* DIV_VO                */ DIV_OP,
+        /* DIV_ASSIGN_VO         */ 0,
+        /* MOD_VO                */ FMOD_OP,
+        /* MOD_ASSIGN_VO         */ 0,
+        /* LSHIFT_VO             */ SHIFT_OP,
+        /* LSHIFT_ASSIGN_VO      */ 0,
+        /* RSHIFT_VO             */ SHIFT_OP,
+        /* RSHIFT_ASSIGN_VO      */ 0,
+        /* AND_VO                */ AND_OP,
+        /* AND_ASSIGN_VO         */ 0,
+        /* OR_VO                 */ OR_OP,
+        /* OR_ASSIGN_VO          */ 0,
+        /* XOR_VO                */ XOR_OP,
+        /* XOR_ASSIGN_VO         */ 0,
+        /* AND_AND_VO            */ 0,
+        /* OR_OR_VO              */ 0,
+        /* NOT_VO                */ NOT_OP,
+	/* UNARY_AND_VO          */ 0,
+        /* EQ_VO                 */ EQ_OP,
+        /* GE_VO                 */ GE_OP,
+        /* LE_VO                 */ LE_OP,
+        /* NE_VO                 */ NE_OP,
+        /* LT_VO                 */ LT_OP,
+        /* GT_VO                 */ GT_OP,
+        /* BRANCH_VO             */ BRANCH_OP,
+        /* BRANCH_EQ_VO          */ BRANCH_EQ_OP,
+        /* BRANCH_GE_VO          */ BRANCH_GE_OP,
+        /* BRANCH_LE_VO          */ BRANCH_LE_OP,
+        /* BRANCH_NE_VO          */ BRANCH_NE_OP,
+        /* BRANCH_LT_VO          */ BRANCH_LT_OP,
+        /* BRANCH_GT_VO          */ BRANCH_GT_OP,
+        /* BRANCH_TRUE_VO        */ BRANCH_TRUE_OP,
+        /* BRANCH_FALSE_VO       */ BRANCH_FALSE_OP,
+        /* BRANCH_COMPUTED_VO    */ BRANCH_COMPUTED_OP,
+        /* BRANCH_SWITCH_VO      */ BRANCH_SWITCH_OP,
+	/* BRANCH_SAVE_VO        */ BRANCH_SAVE_OP,
+        /* INC_VO                */ 0,
+        /* POST_INC_VO           */ 0,
+        /* DEC_VO                */ 0,
+        /* POST_DEC_VO           */ 0,
+        /* DECLARE_LABEL_VO      */ 0,
+        /* LABEL_VO              */ LABEL_OP,
+        /* CONDITIONAL_VO        */ CONDITIONAL_OP,
+        /* COND_REF_VO           */ COND_REF_OP,
+        /* COND_VALUE_VO         */ COND_VALUE_OP,
+        /* ALTERNATE_VO          */ ALTERNATE_OP,
+        /* ALT_VALUE_VO          */ ALT_VALUE_OP,
+        /* COLON_VO              */ 0,
+	/* UNINITIALIZED_VO      */ CONDITIONAL_OP,
+        /* CALL_VO               */ CALL_OP,
+        /* CALL_FUNCTION_VO      */ CALL_FUNCTION_OP,
+        /* ARG_VO                */ ARG_IMM_OP,
+        /* ARG_REF_VO            */ ARG_REF_OP,
+        /* SREF_VO               */ SREF_OP,
+        /* RETURN_VO             */ RETURN_OP,
+	/* IMPLICIT_RETURN_VO    */ RETURN_OP,
+        /* CONVERT_VO            */ CONVERT_OP,
+        /* CONVERT_UNITS_VO      */ 0,
+        /* BYTE_VO               */ BYTE_OP,
+        /* RANK_VO               */ RANK_OP,
+        /* SRANK_VO              */ SRANK_OP,
+        /* FIELD_VO              */ 0,
+        /* STMNT_ID_VO           */ STMNT_ID_OP,
+        /* PROCEDURE_VO          */ PROCEDURE_OP,
+        /* ENTRY_VO              */ ENTRY_OP,
+        /* NOP_VO                */ NOP_OP,
+        /* BLOCK_END_VO          */ BLOCK_END_OP,
+        /* PTR_VO                */ 0,
+        /* INITIAL_VO            */ 0,
+	/* SSAD_VOP              */ 0,
+        /* ABS_VO                */ ABS_OP,
+        /* SQRT_VO               */ SQRT_OP,
+        /* EXP_VO                */ EXP_OP,
+        /* LOG_VO                */ LOG_OP,
+        /* LOG10_VO              */ LOG10_OP,
+        /* SIN_VO                */ SIN_OP,
+        /* COS_VO                */ COS_OP,
+        /* TAN_VO                */ TAN_OP,
+        /* ASIN_VO               */ ASIN_OP,
+        /* ACOS_VO               */ ACOS_OP,
+        /* ATAN_VO               */ ATAN_OP,
+        /* ATAN2_VO              */ ATAN2_OP,
+        /* SINH_VO               */ SINH_OP,
+        /* COSH_VO               */ COSH_OP,
+        /* TANH_VO               */ TANH_OP,
+        /* FMOD_VO               */ FMOD_OP,
+        /* POW_VO                */ POWER_OP,               
+        /* CEIL_VO               */ CEIL_OP,               
+        /* FLOOR_VO              */ FLOOR_OP,              
+        /* FABS_VO               */ ABS_OP,
+
+        /* STRCMP_VO             */ STRCMP_OP, 
+        /* STRCPY_VO             */ STRCPY_OP, 
+        /* STRLEN_VO             */ STRLEN_OP, 
+        /* STRNCMP_VO            */ STRNCMP_OP,
+        /* STRNCPY_VO            */ STRNCPY_OP,
+        /* STRCAT_VO             */ STRCAT_OP, 
+        /* STRNCAT_VO            */ STRNCAT_OP,
+        /* MEMCPY_VO             */ MEMCPY_OP,   
+        /* MEMCMP_VO             */ MEMCMP_OP,
+
+        /* SWITCH_VO             */ 0,
+	/* MEMBER_INIT_VO        */ 0,
+	/* VEC_INITIAL_VO        */ 0,
+	/* NEW_VO                */ 0,
+	/* DELETE_VO             */ 0,
+	/* DESTROY_VO            */ 0,
+	/* LOOP_TOP_VO           */ LOOP_TOP_OP,
+	/* LOOP_BODY_VO          */ LOOP_BODY_OP,
+	/* LOOP_EXIT_VO          */ LOOP_BOTTOM_OP,
+
+        /* VA_REG_VO             */ 0,
+        /* VA_MEM_VO             */ 0,
+        /* VA_OFFSET_VO          */ 0,
+        /* VA_REGTYP_VO          */ 0,
+        /* VA_ALIGN_VO           */ 0,
+
+	/* SAVE_VO               */ SAVE_OP,
+	/* EXIT_VO               */ EXIT_OP,
+
+        /* DECLARE_TEMP_VO       */ 0,
+
+        /* VA_STACK_VO           */ 0,
+
+	/* DESTRUCTOR_VO         */ 0,
+
+	/* DBG_RANGE_VO          */ 0,
+	/* DBG_SUBSCRIPT_VO      */ 0,
+
+        /* VA_ARG_VO             */ 0,
+        /* VA_START_VO           */ 0
+
+);
+
+end EMIT_VALUE;
+
+SHOULD_SET_ALIAS_BIT: procedure (V) returns (type (BOOL_T)) internal;
+
+	declare
+		V	type (CXX_VID_T);
+	declare
+		PV	type (CXX_VID_T);
+
+	if (V->CXX_VALUE_NODE.TYPE_QUALIFIERS & VOLATILE_TQ) = VOLATILE_TQ then
+		return (TRUE);
+	
+	if V->CXX_VALUE_NODE.OP ^= VALUE_VO then
+		return (FALSE);
+
+	if V->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (VOID_BT) then
+		return (FALSE);
+
+	if V->CXX_VALUE_NODE.COUNT > 1 then
+		return (TRUE);
+
+	/*
+	/* Check for a VALUE of a REF with a THIRD which refers to a
+	/* VALUE which had ALIAS set; note that there may be COMMAs
+	/* and/or LEFT_VALUEs separating the VALUEs and REFs.
+	/**/
+
+	do PV = V->CXX_VALUE_NODE.LEFT while (PV ^= NULL_CXX_VID);
+		if PV->CXX_VALUE_NODE.OP = COMMA_VO then
+			PV = PV->CXX_VALUE_NODE.RIGHT;
+		else if PV->CXX_VALUE_NODE.OP = LEFT_VALUE_VO then
+			PV = PV->CXX_VALUE_NODE.LEFT;
+		else	leave;
+	end;
+
+	if PV = NULL_CXX_VID then
+		return (FALSE);
+
+	if PV->CXX_VALUE_NODE.OP ^= REF_VO then
+		return (FALSE);
+
+	do PV = PV->CXX_VALUE_NODE.THIRD while (PV ^= NULL_CXX_VID);
+		if PV->CXX_VALUE_NODE.OP = COMMA_VO then
+			PV = PV->CXX_VALUE_NODE.RIGHT;
+		else if PV->CXX_VALUE_NODE.OP = LEFT_VALUE_VO then
+			PV = PV->CXX_VALUE_NODE.LEFT;
+		else	leave;
+	end;
+
+	if PV = NULL_CXX_VID then
+		return (FALSE);
+
+	if PV->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (VOID_BT) then
+		return (FALSE);
+
+	if PV->CXX_VALUE_NODE.COUNT > 1 then
+		return (TRUE);
+
+	return (FALSE);
+
+end SHOULD_SET_ALIAS_BIT;
+

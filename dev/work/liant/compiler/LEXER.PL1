@@ -1,0 +1,951 @@
+/* C++ lexer.pl1 - Front-end lexer; calls preprocessor; converts tokens */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.22.92  DGM  028	Pass along #line directives if macro expansion.
+ *  06.18.92  DGM  027	#pragma LPI data_section.
+ *  06.11.92  DGM  026	#pragma LPI C-header ( on | off ).
+ *  05.19.92  DGM  025	Enabled #pragma weak.
+ *  03.26.92  DGM  024	New value-node scheme.
+ *  03.19.92  DGM  023	Changed to pass illegal tokens on after setting
+ *			their type to null.
+ *  12.16.91  DGM  022	Changed name to SET_STRUCT_ALIGNMENT name.
+ *  11.12.91  DGM  022	Factored out some string-literal processing
+ *			into cnvcon.pl1
+ *  10.19.91  DGM  021	Support for #pragma allow_asm.
+ *  07.24.91  DGM  020	Support for #pragma wrapper_redeclarations.
+ *  07.17.91  DGM  019	Moved SW_VERBOSE functionality to CPP
+ *			(now called SW_PRINT_FILE_NAME_AS_WE_GO).
+ *  07.13.91  PKT  018	Bit the time/space bullet and went back to
+ *			calling TFREET in FREE_TOKEN.  CONSTANT_VALUE
+ *			must make its own copy of the token spelling.
+ *  07.08.91  DGM  017  #pragma changes.
+ *  04.08.91  DGM  016  Print the name of each file being compiled as it
+ *			is encountered is SW_VERBOSE is set.  Also, call
+ *			TFREE rather than TFREET in FREE_TOKEN, so that
+ *			the spelling (if any) does not get freed; the
+ *			spelling gets freed in EMIT_TREE or COUNT_DOWN_
+ *			VALUE for tokens which have spellings; this is
+ *			really a but of mess which I must clean up.
+ *  02.21.91  DGM  015  #pragma LPI C-header.
+ *  02.13.91  DGM  014  Work-around for PL/I compiler bug (rev.04.05.00).
+ *  09.25.90  DGM  013  Preprocessor include file name changes.
+ *  09.14.90  DGM  012  Changed include file names and VOP names.
+ *  07.18.90  DGM  011  Changed to not censor or warn about illegal
+ *			tokens when SW_MACRO_EXPANSION is set.
+ *  06.14.90  DGM  010  Changed to take advantage of new
+ *			token code range LB/HB_SPECIAL_TOKEN.
+ *  06.08.90  DGM  009  Updated.
+ *  06.08.90  DGM  008  Changed to INTIALIZE_LEXER to BEGIN_LEXER,
+ *			added END_LEXER, and calls to
+ *			OPEN_TOKEN_POD_STREAM & CLOSE_TOKEN_POD_STREAM.
+ *  06.05.90  DGM  007  Set DIAG_LINE_ID.
+ *  02.22.90  DGM  006  Updated.
+ *  01.04.90  DGM  005  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.22.92 028 LEXER');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_STATS_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_PP_CHARACTER_SET_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_LEXER_IN;
+%include CXX_PP_TOKEN_POD_SPELLING_PKG;
+%include CXX_PP_TOKEN_POD_DEBUG_PKG;
+%include CXX_C_HEADER_MODE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_CONVERT_CONSTANT_PKG;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_PRAGMA_WEAK_PKG;
+%include CXX_PRAGMA_DATA_SECTION_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T	character (32767) varying based;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+%replace MAX_LEXER_LOOK_AHEAD_LEVEL by 16;  /* Max nested look-ahead */
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+MATCHED_TOKEN_STACK			(1 : MAX_LEXER_LOOK_AHEAD_LEVEL)
+					type (POINTER_T)
+					static internal,
+CURRENT_TOKEN_STACK			(1 : MAX_LEXER_LOOK_AHEAD_LEVEL)
+					type (POINTER_T)
+					static internal,
+LEXER_LOOK_AHEAD_LEVEL			type (INT_T)
+					static internal initial (0);
+declare
+
+LEXER_DOING_TOKEN_COLLECTION		type (BOOL_T)
+					static internal initial (FALSE),
+LEXER_TOKEN_COLLECTION_DELIMITER	type (BOOL_T)
+					static internal initial (FALSE);
+declare
+
+GIVE_LEXER_STATS			type (BOOL_T)
+					static internal initial (FALSE);
+
+/* ---------------------------------------------------------------------
+/* BEGIN_LEXER 
+/* ------------------------------------------------------------------- */
+
+BEGIN_LEXER: procedure external (X_BEGIN_LEXER);
+
+	/*
+	/* If we're running the preprocessor/lexer all
+	/* at once; then we'll want to give stats below.
+	/**/
+
+	if PP_MAX_TOKENS < 0 then
+		GIVE_LEXER_STATS = TRUE;
+
+	/* Initialize the token pod stream manager */
+
+	call OPEN_TOKEN_POD_STREAM ();
+
+	/* Get a dummy matched-token */
+
+	MATCHED_TOKEN_PTR = TALLOC ();
+	MATCHED_TOKEN.TYPE = NULL_TOKEN;
+
+	/* Get the first current-token */
+
+	call GET_NEXT_TOKEN ();
+
+	/* Give preprocessor/lexer stats if desired */
+
+	if GIVE_LEXER_STATS then
+		call XSTAT ('LEXER');
+
+end BEGIN_LEXER;
+
+/* ---------------------------------------------------------------------
+/* END_LEXER 
+/* ------------------------------------------------------------------- */
+
+END_LEXER: procedure external (X_END_LEXER);
+
+	call CLOSE_TOKEN_POD_STREAM ();
+
+end END_LEXER;
+
+/* ---------------------------------------------------------------------
+/* ADVANCE_TOKEN 
+/*
+/* Free the current matched-token (if in normal mode), set matched-token
+/* to current-token, set current-token to the next fully processed token
+/* (i.e. string literal and character constant tokens are process;
+/* mapped and concatenated if necessary), and initialize peek-token
+/* to the current-token (for calls to ADVANCE_PEEK_TOKEN).
+/*
+/* When in look-ahead mode (LEXER_LOOK_AHEAD_LEVEL > 0), tokens are
+/* *never* freed, control tokens are *never* processed (just skipped),
+/* global data is not updated (except of course for matched-token and
+/* current-token), and illegal-token diagnostics are not emitted; but
+/* string literal and character constant tokens *are* processed.
+/*
+/* When in token-collection mode (LEXER_DOING_TOKEN_COLLECTION), tokens
+/* are *never* freed, and illegal-token diagnostics are not emitted;
+/* but control tokens *are* processed, global data *is* updated, and
+/* string literal and character constant tokens *are* processed.
+/* ------------------------------------------------------------------- */
+
+ADVANCE_TOKEN: procedure external (X_ADVANCE_TOKEN);
+
+	if LEXER_LOOK_AHEAD_LEVEL = 0 then
+		call FREE_TOKEN (MATCHED_TOKEN_PTR);
+
+	MATCHED_TOKEN_PTR = CURRENT_TOKEN_PTR;
+
+	/* Fall-thru to GET_NEXT_TOKEN ! */
+
+/* ---------------------------------------------------------------------
+/* GET_NEXT_TOKEN 
+/*
+/* Set current-token to the next fully processed token, and initialize
+/* peek-token to current-token (for calls to ADVANCE_PEEK_TOKEN).
+/* ------------------------------------------------------------------- */
+
+GET_NEXT_TOKEN: entry;
+
+	BEGIN_GET_NEXT_TOKEN:    
+
+	/* Get the next token from the token pod stream */
+
+	CURRENT_TOKEN_PTR = TGET ();
+
+	/*
+	/* Handle tokens which need any sort of special processing;
+	/* i.e. file control (bof-include, eof-include, line-file),
+	/* (uncooked) character constants, (uncooked) string literals
+	/* and illegal tokens.
+	/**/
+
+	/* ------
+	if (CURRENT_TOKEN.TYPE >= LB_SPECIAL_FE_TOKEN) &
+	   (CURRENT_TOKEN.TYPE <= HB_SPECIAL_FE_TOKEN) then do;
+	------ */
+
+	if CURRENT_TOKEN.TYPE <= HB_SPECIAL_FE_TOKEN then do;
+
+		/* Process (and skip past) control tokens */
+
+		if (CURRENT_TOKEN.TYPE >= LB_CONTROL_TOKEN) &
+		   (CURRENT_TOKEN.TYPE <= HB_CONTROL_TOKEN) then do;
+			if PROCESS_CONTROL_TOKEN () then
+				goto BEGIN_GET_NEXT_TOKEN;
+		end;
+
+		/* Process a character constant token */
+
+		else if (CURRENT_TOKEN.TYPE = CHAR_CONSTANT_TOKEN) |
+			(CURRENT_TOKEN.TYPE = WCHAR_CONSTANT_TOKEN) then
+			call PROCESS_CHAR_CONSTANT_TOKEN (CURRENT_TOKEN_PTR);
+				
+
+		/* Process a string literal token */
+
+		else if (CURRENT_TOKEN.TYPE = STRING_LITERAL_TOKEN) |
+			(CURRENT_TOKEN.TYPE = WSTRING_LITERAL_TOKEN) then
+			call PROCESS_STRING_LITERAL_TOKEN (CURRENT_TOKEN_PTR);
+
+		/* Check for illegal front-end tokens */
+
+		else if ((CURRENT_TOKEN.TYPE >= LB_ILLEGAL_FE_TOKEN) &
+			 (CURRENT_TOKEN.TYPE <= HB_ILLEGAL_FE_TOKEN)) |
+			(CURRENT_TOKEN.TYPE < LB_FE_TOKEN) |
+			(CURRENT_TOKEN.TYPE > HB_FE_TOKEN) then do;
+			if ^SW_MACRO_EXPANSION then do;
+				if PROCESS_ILLEGAL_TOKEN () then
+					goto BEGIN_GET_NEXT_TOKEN;
+			end;
+		end;
+	end;
+
+	/* Ok, we have a real token; set the current global data */
+
+	if LEXER_LOOK_AHEAD_LEVEL = 0 then do;
+		CURRENT_SOURCE.LINE = CURRENT_TOKEN.LINE;
+		DIAG_LINE_ID	    = CURRENT_TOKEN.LINE;
+	end;
+
+	/* Initialize the peek-token */
+
+	PEEK_TOKEN_PTR = CURRENT_TOKEN_PTR;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* FREE_TOKEN 
+/*
+/* Place the given token on the saved token (left) context list, other
+/* tokens slide on over ("roll-over, roll-over, so they all rolled over
+/* and one fell out ..."), tokens are freed as they fall off the end of
+/* this list, unless the token is part of a token collection.
+/* ------------------------------------------------------------------- */
+
+FREE_TOKEN: procedure (TP) internal;
+
+	declare
+		TP		type (POINTER_T);
+	declare
+		LAST_INDEX	type (INT_T),
+		SAVE_TOKEN	(MAX_TOKEN_CONTEXT) type (BOOL_T)
+				static internal
+				initial ((MAX_TOKEN_CONTEXT) (FALSE));
+
+	/* Adjust the saved token context list index; wrap around */
+
+	LAST_INDEX = TOKEN_CONTEXT_INDEX;
+
+	TOKEN_CONTEXT_INDEX = TOKEN_CONTEXT_INDEX + 1;
+	if TOKEN_CONTEXT_INDEX > MAX_TOKEN_CONTEXT then
+		TOKEN_CONTEXT_INDEX = 1;
+	
+	/*
+	/* If this token is marked as the first or the last of a token
+	/* collection (via BEGIN/END_LEXER_TOKEN_COLLECTION), then toggle
+	/* the FREE_OK switch, otherwise if this this token is part of a
+	/* token collection, then mark it so it so it won't be freed.
+	/**/
+
+	if LEXER_TOKEN_COLLECTION_DELIMITER then do;
+		SAVE_TOKEN (TOKEN_CONTEXT_INDEX) = TRUE;
+		LEXER_TOKEN_COLLECTION_DELIMITER = FALSE;
+	end;
+	else if SAVE_TOKEN (LAST_INDEX) then
+		SAVE_TOKEN (TOKEN_CONTEXT_INDEX) = TRUE;
+
+	/*
+	/* Actually free a token that is falling off the end of list;
+	/* but not if the token is marked as being from a token collection.
+	/**/
+
+	if TOKEN_CONTEXT (TOKEN_CONTEXT_INDEX) ^= null() then do;
+		if ^SAVE_TOKEN (TOKEN_CONTEXT_INDEX) then
+			call TFREET (TOKEN_CONTEXT (TOKEN_CONTEXT_INDEX));
+	end;
+
+	/* Place this token into the saved token context list */
+
+	TOKEN_CONTEXT (TOKEN_CONTEXT_INDEX) = TP;
+
+end FREE_TOKEN;
+
+end ADVANCE_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* RESET_PEEK_TOKEN
+/*
+/* (Re)Sets the peek-token to the current-token.
+/* ------------------------------------------------------------------- */
+
+RESET_PEEK_TOKEN: procedure external (X_RESET_PEEK_TOKEN);
+
+	call TSPEEK ();
+	PEEK_TOKEN_PTR = CURRENT_TOKEN_PTR;
+
+end RESET_PEEK_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* SET_PEEK_TOKEN
+/* ADVANCE_PEEK_TOKEN
+/*
+/* SET_PEEK_TOKEN sets the peek-token to the first fully processed
+/* non-control token after the current-token in the token pod stream.
+/* This equivalent to "call RESET_PEEK_TOKEN;call ADVANCE_PEEK_TOKEN;".
+/*
+/* ADVANCE_PEEK_TOKEN advances the peek-token from its current position to
+/* the next fully processed non-control token in the token pod stream (this
+/* means that control tokens are skipped but *not* processed, but string-
+/* literal and character-constant tokens *are* processed).
+/*
+/* The peek-token is reinitialized (to current-token) at each ADVANCE_TOKEN,
+/* GET_NEXT_TOKEN, PUSH_BACK, END_LEXER_LOOK_AHEAD, or SET_PEEK_TOKEN call.
+/*
+/* For example, typical usage would be:
+/*
+/*	call SET_PEEK_TOKEN ();
+/*	if PEEK_TOKEN.TYPE = LPAREN_TOKEN then
+/*		return (TRUE);
+/* or:
+/*	call SET_PEEK_TOKEN ();
+/*	do while (PEEK_TOKEN.TYPE ^= RIGHT_PAREN_TOKEN);
+/*		call ADVANCE_PEEK_TOKEN ();
+/*	end;
+/*
+/* ------------------------------------------------------------------- */
+
+SET_PEEK_TOKEN: procedure external (X_SET_PEEK_TOKEN);
+
+	call TSPEEK ();
+
+	/* FALL-THRU */
+
+/* ---------------------------------------------------------------------
+/* ADVANCE_PEEK_TOKEN
+/* ------------------------------------------------------------------- */
+
+ADVANCE_PEEK_TOKEN: entry external (X_ADVANCE_PEEK_TOKEN);
+
+	PEEK_TOKEN_PTR = PEEK_REAL_RAW_TOKEN ();
+
+	if (PEEK_TOKEN.TYPE = STRING_LITERAL_TOKEN) |
+	   (PEEK_TOKEN.TYPE = WSTRING_LITERAL_TOKEN) then
+		call PROCESS_STRING_LITERAL_TOKEN (PEEK_TOKEN_PTR);
+
+	else if (PEEK_TOKEN.TYPE = CHAR_CONSTANT_TOKEN) |
+		(PEEK_TOKEN.TYPE = WCHAR_CONSTANT_TOKEN) then
+		call PROCESS_CHAR_CONSTANT_TOKEN (PEEK_TOKEN_PTR);
+
+	/* end ADVANCE_PEEK_TOKEN */
+
+end SET_PEEK_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* SET_RAW_PEEK_TOKEN
+/* ADVANCE_RAW_PEEK_TOKEN
+/*
+/* Same as SET_PEEK_TOKEN/ADVANCE_PEEK_TOKEN except that string-literals
+/* are not processed.  These are (currently) called by the routine which
+/* prints the token context list for diagnostics.
+/* ------------------------------------------------------------------- */
+
+SET_RAW_PEEK_TOKEN: procedure external (X_SET_RAW_PEEK_TOKEN);
+
+	call TSPEEK ();
+
+	/* FALL-THRU */
+
+/* ---------------------------------------------------------------------
+/* ADVANCE_RAW_PEEK_TOKEN
+/* ------------------------------------------------------------------- */
+
+ADVANCE_RAW_PEEK_TOKEN: entry external (X_ADVANCE_RAW_PEEK_TOKEN);
+
+	PEEK_TOKEN_PTR = PEEK_REAL_RAW_TOKEN ();
+
+end SET_RAW_PEEK_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* PEEK_REAL_RAW_TOKEN
+/*
+/* Return a pointer to the next non-control *and* non-processed
+/* (e.g. no adjacent string literal concatenation) token in the
+/* token stream.  A TGET() or TUNGET() will reinitialize the
+/* token stream peeker.
+/* ------------------------------------------------------------------- */
+
+PEEK_REAL_RAW_TOKEN: procedure returns  (pointer) internal;
+
+	declare P type (POINTER_T);
+
+	do  P = TPEEK ()
+	repeat (TPEEK ())
+	while (((P->TOKEN_POD.TYPE >= LB_CONTROL_TOKEN) &
+		(P->TOKEN_POD.TYPE <= HB_CONTROL_TOKEN)) |
+	       (P->TOKEN_POD.TYPE = NULL_TOKEN));
+	       ;
+	end;
+	return (P);
+
+end PEEK_REAL_RAW_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_LEXER_LOOK_AHEAD 
+/*
+/* This is used when the parser needs to do look-ahead to see what's
+/* what (i.e. which parse path to go down), and then restore the
+/* original state of the lexer.  Note that nested look-ahead is not
+/* only allowed, but is *required* to parse correctly ! I love C++ !
+/* ------------------------------------------------------------------- */
+
+BEGIN_LEXER_LOOK_AHEAD: procedure external (X_BEGIN_LEXER_LOOK_AHEAD);
+
+	/* Push a level of look-ahead (ignore overflow for now) */
+
+	if LEXER_LOOK_AHEAD_LEVEL >= MAX_LEXER_LOOK_AHEAD_LEVEL then
+		return;
+
+	LEXER_LOOK_AHEAD_LEVEL = LEXER_LOOK_AHEAD_LEVEL + 1;
+	MATCHED_TOKEN_STACK (LEXER_LOOK_AHEAD_LEVEL) = MATCHED_TOKEN_PTR;
+	CURRENT_TOKEN_STACK (LEXER_LOOK_AHEAD_LEVEL) = CURRENT_TOKEN_PTR;
+
+end BEGIN_LEXER_LOOK_AHEAD;
+
+/* ---------------------------------------------------------------------
+/* END_LEXER_LOOK_AHEAD 
+/* ------------------------------------------------------------------- */
+
+END_LEXER_LOOK_AHEAD: procedure external (X_END_LEXER_LOOK_AHEAD);
+
+	declare THIS_TOKEN_PTR type (POINTER_T);
+
+	/* Check for look-ahead stack underflow (ignore for now) */
+
+	if LEXER_LOOK_AHEAD_LEVEL <= 0 then
+		return;
+
+	/* Save the now-current token */
+
+	THIS_TOKEN_PTR = CURRENT_TOKEN_PTR;
+
+	/* Restore the previous matched and current tokens */
+
+	MATCHED_TOKEN_PTR = MATCHED_TOKEN_STACK (LEXER_LOOK_AHEAD_LEVEL);
+	CURRENT_TOKEN_PTR = CURRENT_TOKEN_STACK (LEXER_LOOK_AHEAD_LEVEL);
+
+	/* Push back the look-ahead tokens (carefully) */
+
+	call TUNGET (CURRENT_TOKEN_PTR->TOKEN_POD.NEXT, THIS_TOKEN_PTR);
+
+	/* Pop a level of look-ahead */
+
+	LEXER_LOOK_AHEAD_LEVEL = LEXER_LOOK_AHEAD_LEVEL - 1;
+
+end END_LEXER_LOOK_AHEAD;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_LEXER_TOKEN_COLLECTION
+/*
+/* This is used when collecting a sequence of tokens for parsing later.
+/* In this case, we must guarantee that we are maintaining a consistent
+/* continuous token pod stream; i.e. we can't free any tokens, even
+/* control tokens as we go along.  But, control should be processed
+/* normally.  Unlike look-ahead, token-collection mode does not nest.
+/* ------------------------------------------------------------------- */
+
+BEGIN_LEXER_TOKEN_COLLECTION: procedure
+			      external  (X_BEGIN_LEXER_TOKEN_COLLECTION);
+
+	LEXER_DOING_TOKEN_COLLECTION = TRUE;
+
+	/* Mark this (first) token as part of the caller's collection */
+
+	LEXER_TOKEN_COLLECTION_DELIMITER = TRUE;
+
+end BEGIN_LEXER_TOKEN_COLLECTION;
+
+/* ---------------------------------------------------------------------
+/* END_LEXER_TOKEN_COLLECTION
+/* ------------------------------------------------------------------- */
+
+END_LEXER_TOKEN_COLLECTION: procedure
+			    external  (X_END_LEXER_TOKEN_COLLECTION);
+
+	LEXER_DOING_TOKEN_COLLECTION = FALSE;
+
+	/* Mark this (last) token as part of the caller's collection */
+
+	LEXER_TOKEN_COLLECTION_DELIMITER = TRUE;
+
+end END_LEXER_TOKEN_COLLECTION;
+
+/* ---------------------------------------------------------------------
+/* PUSH_BACK_TOKENS
+/*
+/* Push back the list of token beginning with FIRST and ending with
+/* LAST onto the lexer's token stream in front of the current token.
+/* ------------------------------------------------------------------- */
+
+PUSH_BACK_TOKENS: procedure (FIRST, LAST) external (X_PUSH_BACK_TOKENS);
+
+	declare
+		FIRST	type (POINTER_T),
+		LAST	type (POINTER_T);
+
+	call TUNGET (CURRENT_TOKEN_PTR, CURRENT_TOKEN_PTR);
+	call TUNGET (FIRST, LAST);
+        call GET_NEXT_TOKEN ();
+
+end PUSH_BACK_TOKENS;
+
+/* ---------------------------------------------------------------------
+/* PROCESS_ILLEGAL_TOKEN 
+/*
+/* Assuming that the current-token is an illegal front-end token, and
+/* we are normal mode (i.e. not in token-collection or look-ahead mode),
+/* emit an appropriate diagnostic message (if we are in token-collection
+/* of look-ahead mode, the simply return TRUE).  If the token is a null
+/* token (which can result from the concatenation of string literals),
+/* then free the token and return TRUE, otherwise (we have a real illegal
+/* token) emit a diagnostic, free the token, and return FALSE.
+/* ------------------------------------------------------------------- */
+
+PROCESS_ILLEGAL_TOKEN: procedure returns (type (BOOL_T)) internal;
+
+	declare ERROR_CODE type (SHORT_T);
+
+	if LEXER_LOOK_AHEAD_LEVEL > 0 then
+		return (TRUE);
+
+	if LEXER_DOING_TOKEN_COLLECTION then
+		return (TRUE);
+
+	/*
+	/* Ignore null tokens; these can be created in the concatenation
+	/* of adjacent string literals; see PROCESS_STRING_LITERAL_TOKEN.
+	/**/
+
+	if CURRENT_TOKEN.TYPE = NULL_TOKEN then do;
+		call TFREE (CURRENT_TOKEN_PTR);
+		return (TRUE);
+	end;
+
+	/*
+	/* X3.159-1098: "Each preprocessing token that is converted to a
+	/* token shall have the lexical form of a keyword, an identifier,
+	/* a constant, a string literal, an operator, or a punctuator."
+	/**/
+
+	else if CURRENT_TOKEN.TYPE = PP_NUMBER_TOKEN then do;
+		/*
+		/* A preprocessing-number which is not a valid constant.
+		/**/
+		ERROR_CODE = ERR_PREPROCESSOR_NUMBER;
+	end;
+	else if (CURRENT_TOKEN.TYPE = PP_STRINGIZE_TOKEN) |
+		(CURRENT_TOKEN.TYPE = PP_TOKEN_PASTE_TOKEN) then do;
+		/*
+		/* A preprocessing-operator (i.e. stringize or token-paste).
+		/**/
+		ERROR_CODE = ERR_PREPROCESSOR_OPERATOR;
+	end;
+	else do;
+		/*
+		/* A single non-white-space character (or something else).
+		/**/
+		ERROR_CODE = ERR_PREPROCESSOR_TOKEN;
+	end;
+
+	call LEXICAL_ERROR (ERROR_CODE);
+
+	CURRENT_TOKEN.TYPE = NULL_TOKEN;
+
+	return (FALSE);
+
+end PROCESS_ILLEGAL_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* PROCESS_CONTROL_TOKEN 
+/*
+/* Process the current-token which is assumed to be BOF_INCLUDE_TOKEN
+/* or EOF_INCLUDE_TOKEN (indicating the beginning or end of an include
+/* file), LINE_FILE_TOKEN (indicating a #line directive), or PRAGMA_
+/* TOKEN (indicating some #pragma).  Note that BOF_TOKEN and EOF_TOKEN
+/* (indicating the beginning and the end of the main file) are not treated
+/* specially; they are returned normally for processing by the caller.
+/*
+/* If we are not in token-collection mode, then also throw the control
+/* token away after processing; it will *not* be put onto the saved
+/* token context list.
+/* 
+/* If we are in look-ahead mode, then do no processing; simply return.
+/*
+/* If this control token is to be considered processed and should *not*
+/* be passed out of the lexer, then return TRUE (this is the normal
+/* situation).  Otherwise, if this token should be passed out of the
+/* lexer (i.e. it needs further processing from the caller of the lexer),
+/* then return FALSE -- this is the case when a (preprocessed) macro
+/* expanded listing is desired (SW_MACRO_EXPANSION), since the caller
+/* would like to know where/when include files begin and end.
+/* ------------------------------------------------------------------- */
+
+PROCESS_CONTROL_TOKEN: procedure returns (type (BOOL_T)) internal;
+
+	if LEXER_LOOK_AHEAD_LEVEL > 0 then
+		return (TRUE);
+
+	/* Beginning-of-include-file */
+
+	if CURRENT_TOKEN.TYPE = BOF_INCLUDE_TOKEN then do;
+		call PUSH_SOURCE
+		     (FORM_IDENTIFIER_TOKEN
+		      (substr (CURRENT_TOKEN.SPELLING_PTR->
+			       TOKEN_SPELLING_POD.SPELLING, 1, 
+			       length (CURRENT_TOKEN.SPELLING_PTR->
+				       TOKEN_SPELLING_POD.SPELLING))),
+		      CURRENT_TOKEN.LINE);
+		if ^LEXER_DOING_TOKEN_COLLECTION then
+			call TFREET (CURRENT_TOKEN_PTR);
+		if SW_MACRO_EXPANSION then
+			return (FALSE);
+		return (TRUE);
+	end;
+
+	/* End-of-include-file */
+
+	else if CURRENT_TOKEN.TYPE = EOF_INCLUDE_TOKEN then do;
+		call POP_SOURCE (CURRENT_TOKEN.LINE);
+		if ^LEXER_DOING_TOKEN_COLLECTION then
+			call TFREET (CURRENT_TOKEN_PTR);
+		if SW_MACRO_EXPANSION then
+			return (FALSE);
+		return (TRUE);
+	end;
+
+	/* Assumed-line-file-change (#line directive) */
+
+	else if CURRENT_TOKEN.TYPE = LINE_FILE_TOKEN then do;
+		CURRENT_SOURCE.LINE_ADJUSTMENT = CURRENT_TOKEN.LINE;
+		if CURRENT_TOKEN.SPELLING_PTR ^= null() then do;
+			CURRENT_SOURCE.ASSUMED_FILE = 
+			FORM_IDENTIFIER_TOKEN
+			(substr (CURRENT_TOKEN.SPELLING_PTR->
+			 	 TOKEN_SPELLING_POD.SPELLING, 1, 
+			 	 length (CURRENT_TOKEN.SPELLING_PTR->
+				 	 TOKEN_SPELLING_POD.SPELLING)));
+		end;
+		if ^LEXER_DOING_TOKEN_COLLECTION then
+			call TFREET (CURRENT_TOKEN_PTR);
+		else	CURRENT_TOKEN.TYPE = NULL_TOKEN;
+		if SW_MACRO_EXPANSION then
+			return (FALSE);
+		return (TRUE);
+	end;
+
+	/* #pragma handling */
+
+	else if CURRENT_TOKEN.TYPE = PRAGMA_TOKEN then do;
+
+		if SW_MACRO_EXPANSION then
+			return (FALSE);
+
+		/* #pragma LPI C-header */
+
+		if CURRENT_TOKEN.VALUE_ONE =
+		   byte (PRAGMA_C_HEADER_PK) then do;
+			if CURRENT_TOKEN.VALUE_TWO = byte (0) then
+				call UNSET_C_HEADER_MODE ();
+			else	call SET_C_HEADER_MODE ();
+		end;
+
+		/* #pragma LPI wrapper_redeclarations ( on | off ) */
+
+		else if CURRENT_TOKEN.VALUE_ONE =
+			byte (PRAGMA_WRAPPER_REDECLARATIONS_PK) then do;
+			if CURRENT_TOKEN.VALUE_TWO = byte (0) then
+				SW_PRAGMA_WRAPPER_REDECLARATIONS = FALSE;
+			else if CURRENT_TOKEN.VALUE_TWO = byte (1) then
+				SW_PRAGMA_WRAPPER_REDECLARATIONS = TRUE;
+		end;
+
+		/* #pragma LPI allow_asm ( on | off ) */
+
+		else if CURRENT_TOKEN.VALUE_ONE =
+			byte (PRAGMA_ALLOW_ASM_PK) then do;
+			if CURRENT_TOKEN.VALUE_TWO = byte (0) then
+				SW_ALLOW_ASM = FALSE;
+			else if CURRENT_TOKEN.VALUE_TWO = byte (1) then
+				SW_ALLOW_ASM = TRUE;
+		end;
+
+		/* #pragma pack ( 1 | 2 | 4 ) */
+
+		else if CURRENT_TOKEN.VALUE_ONE =
+			byte (PRAGMA_PACK_PK) then do;
+			call SET_STRUCT_ALIGNMENT
+			     (rank (CURRENT_TOKEN.VALUE_TWO));
+		end;
+
+		/* #pragma LPI varargs_used -- internal only */
+
+		else if CURRENT_TOKEN.VALUE_ONE =
+			byte (PRAGMA_VARARGS_USED_PK) then do;
+			call DO_NOT_INLINE_CURRENT_FUNCTION ();
+		end;
+
+		/* #pragma weak identifier1 [ = identifier2 ] */
+
+		else if CURRENT_TOKEN.VALUE_ONE =
+			byte (PRAGMA_WEAK_PK) then do;
+			call REGISTER_PRAGMA_WEAK_NAME
+			     (CURRENT_TOKEN.VALUE_FIVE,
+			      CURRENT_TOKEN.VALUE_SIX);
+		end;
+
+		/*
+		/* #pragma LPI data_section
+		/*	       (name[, attributes[, alignment[, address]]])
+		/**/
+
+		else if CURRENT_TOKEN.VALUE_ONE =
+			byte (PRAGMA_DATA_SECTION_PK) then do;
+			call REGISTER_PRAGMA_DATA_SECTION
+			     (CURRENT_TOKEN.VALUE_SEVEN);
+		end;
+
+		/* Unknown #pragma; just skip it ... silently */
+
+		call TFREET (CURRENT_TOKEN_PTR);
+		return (TRUE);
+	end;
+
+	/* Unknown token; just skip it ... silently */
+
+	else do;
+		call TFREET (CURRENT_TOKEN_PTR);
+		return (TRUE);
+	end;
+
+/* ---------------------------------------------------------------------
+/* DO_NOT_INLINE_CURRENT_FUNCTION 
+/*
+/* Mark the current function (if any) as being non-inline-able.
+/* Preserves current-node-id.
+/*
+/* TODO: put this procedure somewhere else.
+/* ------------------------------------------------------------------- */
+
+DO_NOT_INLINE_CURRENT_FUNCTION: procedure internal;
+
+	%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+	%include CXX_SYMBOL_TABLE_IN;
+
+	declare P type (POINTER_T);
+
+	if ((CURRENT_SCOPE_TYPE = FUNCTION_SCOPE) |
+	    (CURRENT_SCOPE_TYPE = BLOCK_SCOPE)) &
+	   (CURRENT_FUNCTION ^= NULL_NID) then do;
+		call GET_SYM_NODE_R (CURRENT_FUNCTION, P);
+		P->SYM_NODE.DO_NOT_INLINE = TRUE;
+		call RELEASE_SYM_NODE (CURRENT_FUNCTION);
+	end;
+
+end DO_NOT_INLINE_CURRENT_FUNCTION;
+
+end PROCESS_CONTROL_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* PROCESS_STRING_LITERAL_TOKEN
+/*
+/* Map the characters in the given string literal token in the token
+/* stream, and do adjacent string literal concatenation with any
+/* subsequent string literal tokens in the token stream, the type of
+/* the resulting token (still pointed to by THIS_TOKEN) will be set 
+/* to the corresponding COOKED_xxx type code to indicate it has been
+/* mapped and concantenated; if concatenation did occur then the type
+/* of the subsequent string literal tokens will be set to NULL_TOKEN;
+/* this is to prevent multiple/erroneous mappings which could occur
+/* with the look-ahead scheme.
+/* ------------------------------------------------------------------- */
+
+PROCESS_STRING_LITERAL_TOKEN: procedure (THIS_TOKEN) internal;
+
+	declare
+		THIS_TOKEN	type (POINTER_T);
+	declare
+		(TP, SP, P)	type (POINTER_T),
+		LIST		type (POINTER_T),
+		TOTAL_LENGTH	type (SHORT_T),
+		TYPE		type (SHORT_T);
+
+	if SW_MACRO_EXPANSION then
+		return;
+
+	/* Paranoid sanity checks */
+
+	/*
+	/* if (THIS_TOKEN->TOKEN_POD.TYPE ^= STRING_LITERAL_TOKEN) &
+	/*    (THIS_TOKEN->TOKEN_POD.TYPE ^= WSTRING_LITERAL_TOKEN) then
+	/*	return;
+	/**/
+
+	/* See if we have just a single string literal token */
+
+	TP = PEEK_REAL_RAW_TOKEN ();
+
+	if (TP->TOKEN_POD.TYPE ^= STRING_LITERAL_TOKEN) &
+	   (TP->TOKEN_POD.TYPE ^= WSTRING_LITERAL_TOKEN) then do;
+		/*
+		/* Map the character in this single string.
+		/**/
+		call MAP_STRING_LITERAL (THIS_TOKEN, TRUE);
+		return;
+	end;
+
+	/*
+	/* Here, we have more than one (adjacent) string literals.
+	/* First, collect the string literals into a list
+	/* (in reverse order for convenience) pointed to by LIST.
+	/**/
+
+	TYPE = THIS_TOKEN->TOKEN_POD.TYPE;
+
+	/* Map the first string & initialize the list & the total length */
+
+	call MAP_STRING_LITERAL (THIS_TOKEN, FALSE);
+	LIST = THIS_TOKEN->TOKEN_POD.SPELLING_PTR;
+	TOTAL_LENGTH = length (LIST->TOKEN_SPELLING_POD.SPELLING);
+
+	do while (TRUE);
+
+		/* Map the next string & determine the new total length */
+
+		call MAP_STRING_LITERAL (TP, FALSE);
+		SP = TP->TOKEN_POD.SPELLING_PTR;
+		TOTAL_LENGTH = TOTAL_LENGTH +
+			       length (SP->TOKEN_SPELLING_POD.SPELLING);
+
+		/* Link this string onto the front of our list */
+
+		SP->TOKEN_SPELLING_POD.NEXT = LIST;
+		LIST = SP;
+
+		/* Mark this token as having been processed */
+
+		TP->TOKEN_POD.TYPE = NULL_TOKEN;
+
+		/* Get the next token; exit if it's not a string */
+
+		TP = PEEK_REAL_RAW_TOKEN ();
+
+		if (TP->TOKEN_POD.TYPE ^= STRING_LITERAL_TOKEN) &
+		   (TP->TOKEN_POD.TYPE ^= WSTRING_LITERAL_TOKEN) then
+			leave;
+
+		else if TP->TOKEN_POD.TYPE ^= TYPE then do;
+			/*
+			/* Error; adjacent string-literals and
+			/* wide string-literals are undefined.
+			/**/
+			call SEMANTIC_ERROR (ERR_ADJACENT_WIDE_AND_THIN);
+		end;
+	end;
+
+	/* Set this token to contain the new string & finish */
+
+	THIS_TOKEN->TOKEN_POD.SPELLING_PTR =
+		CONCATENATE_STRING_LITERALS (LIST, TOTAL_LENGTH, TYPE);
+
+end PROCESS_STRING_LITERAL_TOKEN;
+
+/* ---------------------------------------------------------------------
+/* PROCESS_CHAR_CONSTANT_TOKEN
+/*
+/* Process the given character constant token (i.e. map the character
+/* set and escape sequences), and set the type of the resulting token
+/* to the corresponding COOKED_xxx type code to indicate it has been
+/* mapped; this is to prevent multiple/erroneous mappings which could
+/* occur with the look-ahead scheme.
+/* ------------------------------------------------------------------- */
+
+PROCESS_CHAR_CONSTANT_TOKEN: procedure (TP) internal;
+
+	declare TP type (POINTER_T);
+
+	if SW_MACRO_EXPANSION then
+		return;
+	call MAP_SOURCE_CHARACTERS
+	     (TP->TOKEN_POD.SPELLING_PTR->TOKEN_SPELLING_POD.SPELLING,
+	      FALSE);
+	if TP->TOKEN_POD.TYPE = CHAR_CONSTANT_TOKEN then
+		TP->TOKEN_POD.TYPE = COOKED_CHAR_CONSTANT_TOKEN;
+	else	TP->TOKEN_POD.TYPE = COOKED_WCHAR_CONSTANT_TOKEN;
+
+end PROCESS_CHAR_CONSTANT_TOKEN;

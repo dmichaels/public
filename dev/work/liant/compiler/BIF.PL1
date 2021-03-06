@@ -1,0 +1,229 @@
+/* C++ bif.pl1 - Identify Built-in Functions */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  10.08.91  PKT  004  Added VA_ARG_VO and VA_START_VO.
+ *  05.02.91  DGM  003  Added VA_STACK_VO.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  06.06.90  DGM  001  Updated for the new utilities.
+ *  03.27.90  PKT  000  Original, from the ANSI C compiler.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.08.91 004 BIF');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_OPERATOR_CODES_IN;
+
+/* ---------------------------------------------------------------------
+ * ANY_BIF  
+ * ------------------------------------------------------------------- */
+
+ANY_BIF: procedure (S) returns (type (SHORT_T)) external (X_ANY_BIF);
+
+	declare 
+		S	character (512) varying;
+
+	declare
+		K	type (SHORT_T);
+
+	K = STRING_BIF (S);
+
+	if K = 0 then
+		K = MATH_BIF (S);
+
+	if K = 0 then
+		K = VAR_ARG_BIF (S);
+
+	return (K);
+
+ end ANY_BIF;
+
+/* ---------------------------------------------------------------------
+ * STRING_BIF  
+ * ------------------------------------------------------------------- */
+
+STRING_BIF: procedure (S) returns (type (SHORT_T)) external (X_STRING_BIF);
+
+	declare
+		S		character (512) varying;
+
+	%replace NSTRING_BIFS	by 9;
+
+	declare
+
+		1 STRG_BIF_TBL	static internal,
+		  2 NAME	(NSTRING_BIFS) varying character (7) initial
+				( 'strcmp'
+				, 'strcpy'
+				, 'strlen' 
+				, 'strncmp'
+				, 'strncpy'
+				, 'memcpy'
+				, 'strcat'
+				, 'strncat'
+				, 'memcmp'
+				),
+		  2 VOP		(NSTRING_BIFS) type (SHORT_T) initial
+				( STRCMP_VO
+				, STRCPY_VO
+				, STRLEN_VO
+				, STRNCMP_VO
+				, STRNCPY_VO
+				, MEMCPY_VO
+				, STRCAT_VO
+				, STRNCAT_VO
+				, MEMCMP_VO
+				);
+	declare
+		I		type (SHORT_T);
+
+	if SW_ISTRING then do;
+		do I = 1 to NSTRING_BIFS;
+			if S = STRG_BIF_TBL.NAME(I) then
+				return (STRG_BIF_TBL.VOP (I));
+		end;
+	end;
+	return (0);
+
+end STRING_BIF;
+
+/* ---------------------------------------------------------------------
+ * MATH_BIF  
+ * ------------------------------------------------------------------- */
+
+MATH_BIF: procedure (S) returns (type (SHORT_T)) external (X_MATH_BIF);
+
+	declare
+		S		character (512) varying;
+
+	%replace NMATH_BIFS	by 20;
+
+	declare
+		1 MATH_BIF_TBL	static internal,
+  		  2 NAME	(NMATH_BIFS) varying character (5) initial
+				( 'abs'
+				, 'acos'
+				, 'asin'
+				, 'atan'
+				, 'atan2'
+				, 'cos'
+				, 'cosh'
+				, 'exp'
+				, 'log'
+				, 'log10'
+				, 'sin'
+				, 'sinh'
+				, 'sqrt'
+				, 'tan'
+				, 'tanh'
+				, 'fmod'
+				, 'pow'
+				, 'ceil'
+				, 'floor'
+				, 'fabs'
+				),
+		  2 VOP	(NMATH_BIFS) type (SHORT_T) initial
+				( ABS_VO
+				, ACOS_VO
+				, ASIN_VO
+				, ATAN_VO
+				, ATAN2_VO
+				, COS_VO
+				, COSH_VO
+				, EXP_VO
+				, LOG_VO
+				, LOG10_VO
+				, SIN_VO
+				, SINH_VO
+				, SQRT_VO
+				, TAN_VO
+				, TANH_VO
+				, FMOD_VO
+				, POW_VO
+				, CEIL_VO
+				, FLOOR_VO
+				, FABS_VO
+				);
+	declare
+		I		type (SHORT_T);
+
+	if SW_IMATH then do;
+		do I = 1 to NMATH_BIFS;
+			if S = MATH_BIF_TBL.NAME (I) then
+				return (MATH_BIF_TBL.VOP (I));
+		end;
+	end;
+	return (0);
+
+ end MATH_BIF;
+
+/* ---------------------------------------------------------------------
+ * VAR_ARG_BIF  
+ * ------------------------------------------------------------------- */
+
+VAR_ARG_BIF: procedure (S)
+	     returns   (type (SHORT_T))
+	     external  (X_VAR_ARG_BIF);
+
+	declare
+		S		character (512) varying;
+
+	%replace NVARG_BIFS	by 8;
+
+	declare
+		1 VARG_BIF_TBL	static internal,
+		  2 NAME	(NVARG_BIFS) character (13) varying initial
+				( '__va_reg__'
+				, '__va_mem__'
+				, '__va_offset__'
+				, '__va_regtyp__'
+				, '__va_align__'
+				, '__va_stack__'
+				, '__va_arg__'
+				, '__va_start__'
+				),
+		  2 VOP		(NVARG_BIFS) type (SHORT_T) initial
+				( VA_REG_VO
+				, VA_MEM_VO
+				, VA_OFFSET_VO
+				, VA_REGTYP_VO
+				, VA_ALIGN_VO
+				, VA_STACK_VO
+				, VA_ARG_VO
+				, VA_START_VO
+				);
+	declare
+		I		type (SHORT_T);
+
+	do I = 1 to NVARG_BIFS;
+		if S = VARG_BIF_TBL.NAME (I) then
+			return (VARG_BIF_TBL.VOP (I));
+	end;
+	return (0);
+
+end VAR_ARG_BIF;
+

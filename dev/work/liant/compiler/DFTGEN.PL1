@@ -1,0 +1,2423 @@
+/* C++ dftgen.pl1 - Default procedure generation routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.15.92  DGM  026R	Minor fix.
+ *  06.11.92  DGM  026 	Minor fix.
+ *  06.09.92  DGM  025R	Fix for 025.
+ *  06.01.92  DGM  025R	Fix for 025.
+ *  05.29.92  DGM  025	Fix for including anonymous union members in the
+ *			copying, assigning
+ *  03.14.92  PKT  024	Updated for reusing nodes from prototype scope.
+ *  03.26.92  DGM  023	New value-node scheme.
+ *  01.28.92  DGM  022  Fixes which showed up when the paged version
+ *			of the symbol table was used.
+ *  01.21.92  DGM  021	Parameter link-node changes.
+ *  01.10.92  PKT  020	Revamped for better destructor access checking.
+ *  01.13.92  DGM  019  Multi-node space fixes.
+ *  12.16.91  PKT  018  Added REPORT_REASON parameter to
+ *			COPY_CONSTRUCTOR_OK and ASSIGN_OPERATOR_OK.
+ *  11.19.91  DGM  017	Obsolete .mpl version.
+ *  11.19.91  DGM  016  Rearrange code to get rid of P$AEQB call.
+ *  10.31.91  PKT  015R Bug fix ASSIGN_OPERATOR_OK.
+ *  10.26.91  PKT  015  Better use of SYM_NODE.ASSIGNMENT, more precise
+ *			determination of ASSIGN_OPERATOR_OK.
+ *  09.26.91  PKT  014  Diagnose class's lack of assignment at point
+ *			of assignment, rather than class definition.
+ *			Improved diagnostics for constructorless class
+ *			that has const or reference member.
+ *			Added CHECK_TYPE_TAG_SYMBOL.
+ *  08.14.91  DGM  013  Changed BASED_STRUCT_SYM to do INSTALL_SYMBOL.
+ *  07.24.91  DGM  012	Updated.
+ *  06.17.91  PKT  011	Improved error recovery.
+ *  05.29.91  DGM  010	Changed some strangeness in BASED_STRUCT_SYM.
+ *  05.14.91  PKT  009	Added NEEDS_ARRAY_CONSTRUCTOR, and support for
+ *			generating the array constructor function which
+ *			supports initializing arrays, when the default
+ *			constructor takes default arguments.
+ *  04.11.91  PKT  008	Fixed EMIT_COPY_CONSTRUCTOR for virtual bases.
+ *  03.22.91  PKT  007	Fixed COPY_OR_ASSIGN_CLASS for virtual bases.
+ *  02.01.91  DGM  006	Updated to new global name scheme.
+ *  01.11.91  PKT  005	Improved access control diagnostics.
+ *  12.20.90  PKT  004	Bug fix.
+ *  12.12.90  TLF  003	Changed the way the access of a default function
+ *                      was checked.  No longer use IS_ACCESSIBLE; now
+ *                      use internal procedure IS_PRIVATE_FUNC.
+ *  11.27.90  TLF  002 	Added hack to EMIT_COPY_CONSTRUCTOR so that 
+ * 		      	constructor startup code is not emitted by
+ *		      	EMIT_FUNCTION_BEGIN.
+ *		      	Several changes throughout to use the field
+ *			SYM_NODE.ASSIGNMENT to access the default
+ *			assign operator.
+ *  11.15.90  TLF  001 	Updated to save/restore the parse state for each
+ *                   	 'internal' parse.
+ *  09.18.90  TLF  000 	Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.15.92 026 DFTGEN');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_BUILD_TYPE_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_CLASS_SIZE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_DATA_INITIAL_FILE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_INTERNAL_PARSE_PKG;
+%include CXX_SCOPE_DECLARATION_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_BASSYM_PKG;
+%include CXX_PROCESS_BASE_MBR_INIT_PKG;
+%include CXX_RUN_TIME_CALL_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_DECLARATION_STACK_PKG;
+%include CXX_SEMANTIC_STACK_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 GENERATE_DATA	based,
+  2 NEXT	type (POINTER_T),
+  2 FNID	type (NID_T);   	/* Function symnode id */
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+GENERATE_LIST			type (POINTER_T)
+				static internal initial (null ());
+
+/* ---------------------------------------------------------------------
+/* DEFAULT_PROCEDURES_TO_GENERATE
+/* ------------------------------------------------------------------- */
+
+DEFAULT_PROCEDURES_TO_GENERATE: procedure ()
+				returns   (type (BOOL_T))
+				external  (X_DEFAULT_PROCEDURES_TO_GENERATE);
+
+	return (GENERATE_LIST ^= null ());
+
+end DEFAULT_PROCEDURES_TO_GENERATE;
+
+/* ---------------------------------------------------------------------
+/* GENERATE_DEFAULT_PROCEDURES
+/*
+/* Scan once through the current GENERATE_LIST, and emit all procs
+/* on the list.  This is an iterative process, because more entries
+/* may be added to the global GENERATE_LIST as the default procs
+/* are being generated.
+/*
+/* N.B. Based on TM's emit_inline.
+/* ------------------------------------------------------------------- */
+
+GENERATE_DEFAULT_PROCEDURES: procedure ()
+			     external  (X_GENERATE_DEFAULT_PROCEDURES);
+
+	declare
+		WORK_LIST	type (POINTER_T),
+		CROAK_PTR 	type (POINTER_T);
+ 
+	WORK_LIST = GENERATE_LIST;
+
+	GENERATE_LIST = null ();  /* More entries may be added */
+
+	do while (WORK_LIST ^= null());
+		call EMIT_ONE_DEFAULT_PROCEDURE
+		     (WORK_LIST->GENERATE_DATA.FNID);
+		CROAK_PTR = WORK_LIST;
+		WORK_LIST = WORK_LIST->GENERATE_DATA.NEXT;
+		free CROAK_PTR->GENERATE_DATA;
+	end;
+
+end GENERATE_DEFAULT_PROCEDURES;
+
+/* ---------------------------------------------------------------------
+/* EMIT_ONE_DEFAULT_PROCEDURE
+/*
+/* Determines what kind of default procedure to emit, given SYM_NID,
+/* the symbol id of the function to be emitted, and calls the
+/* appropriate emitting routine.
+/*
+/* Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+EMIT_ONE_DEFAULT_PROCEDURE: procedure (SYM_NID) internal;
+ 
+	declare
+		SYM_NID		type (NID_T);
+	declare
+		CLASS_NID	type (NID_T);
+
+	call SET_SYM_NODE_R (SYM_NID);
+
+	if SYM_NODE.DEFINED then do;
+		/*
+		/* Already defined by the user;
+		/* diagnostic already emitted.
+		/**/
+		return;
+	end;
+ 
+	if SYM_NODE.IS_DESTRUCTOR_FUNCTION then do;
+		/*
+		/* Get the symbol_node id of the class
+		/* of which this function is a member.
+		/**/
+		call SET_SCOPE_NODE_R (SYM_NODE.ENCLOSING_SCOPE);
+		CLASS_NID = SCOPE_NODE.OWNER;
+		/*
+		/* Emit a default destructor.
+		/**/
+		if DEFAULT_DESTRUCTOR_OK (CLASS_NID, TRUE) then
+			call EMIT_DEFAULT_DESTRUCTOR (SYM_NID);
+ 
+	end;
+	else if SYM_NODE.IS_OPERATOR_FUNCTION then do;
+		/*
+		/* Get the symbol_node id of the class
+		/* of which this function is a member.
+		/**/
+		call SET_SCOPE_NODE_R (SYM_NODE.ENCLOSING_SCOPE);
+		CLASS_NID = SCOPE_NODE.OWNER;
+		/*
+		/* Emit a default assignment operator function.
+		/**/
+		if ASSIGN_OPERATOR_OK (CLASS_NID, TRUE) then
+			call EMIT_ASSIGN_OPERATOR (SYM_NID);
+	end;
+	else if SYM_NODE.NAME = ARRAY_CONSTRUCTOR_NAME then do;
+		/*
+		/* Emit an array constructor.
+		/**/
+		call EMIT_ARRAY_CONSTRUCTOR (SYM_NID);
+	end;
+	else do;
+		/*
+		/* Get the symbol_node id of the class
+		/* of which this function is a member.
+		/**/
+		call SET_SCOPE_NODE_R (SYM_NODE.ENCLOSING_SCOPE);
+		CLASS_NID = SCOPE_NODE.OWNER;
+		/*
+		/* Must determine if a copy or default constructor.
+		/**/
+		call SET_SYM_NODE_R (SYM_NID);
+		call SET_SIG_NODE_R (SYM_NODE.TOP_TYPE.SIGNATURE);
+ 		if SIG_NODE.EXPLICIT_NPARAMETERS = 0 then do;
+			/*
+			/* Emit a default constructor.
+			/**/
+			if DEFAULT_CONSTRUCTOR_OK (CLASS_NID, TRUE, TRUE) then
+				call EMIT_DEFAULT_CONSTRUCTOR (SYM_NID);
+		end;
+		else do;
+			/*
+			/* Emit a default copy constructor.
+			/**/
+			if COPY_CONSTRUCTOR_OK (CLASS_NID, TRUE) then
+				call EMIT_COPY_CONSTRUCTOR (SYM_NID);
+		end;
+	end;
+ 
+end EMIT_ONE_DEFAULT_PROCEDURE;
+
+/* ---------------------------------------------------------------------
+/* EMIT_COPY_CONSTRUCTOR
+/*
+/* Emit a copy constructor for the function whose symbol_node id is SYM_NID.
+/* 
+/* Here we finally see some benefit from the rule proscribing the same
+/* class being both a direct and an indirect base class.  This enables
+/* us to handle this with an internal parse, because 
+/* EMIT_CONSTRUCTOR_STARTUP_CODE will intialize everything if we just
+/* have the right initializer ready for each member and base.
+/* ------------------------------------------------------------------- */
+
+EMIT_COPY_CONSTRUCTOR: procedure (SYM_NID)
+		       internal;
+
+	declare
+		SYM_NID		type (NID_T);
+
+	declare
+		CLASS_ID	type (NID_T),
+		FUN_ID		type (NID_T),
+		THIS_ID		type (NID_T),
+		PARM_ID		type (NID_T),
+		BCP		type (POINTER_T),
+		(P, CP, SP)	pointer,
+		NEXT		type (NID_T),
+		BASE_CLASS	type (NID_T),
+		SYM		type (NID_T);
+	declare
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+ 
+	call REMAKE_PROTOTYPE_SCOPE (SYM_NID, COPY_PARAM_NAME, FALSE);
+
+	CURRENT_SYMBOL = SYM_NID;
+	FUN_ID = CURRENT_SYMBOL;
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE), 
+				   CURRENT_GLOBAL_SCOPE);
+	call BEGIN_FUNCTION_BODY ();
+	call BEGIN_MEMBER_INITIAL_LIST ();
+
+	/*
+	/* Set up initializers for explicit members,
+	/* virtual and direct base classes.
+	/**/
+
+	/* Get the symbol_ids of the 'this' parameter
+	/* and the ref parameter for the copy constructor
+	/**/
+	call GET_THIS_AND_PARM (FUN_ID, THIS_ID, PARM_ID);
+
+	/* Get the symbol_node id of the class of which this
+	/* function is a member.
+	/**/
+	call GET_SYM_NODE_R (FUN_ID, P);
+	call GET_SCOPE_NODE_R ((P->SYM_NODE.ENCLOSING_SCOPE), SP);
+	CLASS_ID = SP->SCOPE_NODE.OWNER;
+	call RELEASE_SCOPE_NODE (P->SYM_NODE.ENCLOSING_SCOPE);
+	call RELEASE_SYM_NODE (FUN_ID);
+
+	/* Get pointer to the class sym-node. */
+
+	call GET_SYM_NODE_R (CLASS_ID, CP);
+
+	/* Initialize each virtual base class */
+
+	NEXT = CP->SYM_NODE.VIRTUAL_BASE_CLASSES;
+
+	do BASE_CLASS = NEXT repeat (NEXT) while (BASE_CLASS ^= NULL_NID);
+
+		call GET_VBC_NODE_R (BASE_CLASS, BCP);
+
+		/* Initialize this virtual base class */
+
+		call SET_BASE_MEMBER_INIT
+			(BCP->VBC_NODE.SYMBOL,
+			 BCP->VBC_NODE.OFFSET,
+			 BYTES, CLASS_ID);
+
+		NEXT = BCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (BASE_CLASS);
+	end;
+
+	/* Initialize the non-virtual immediate base classes */
+
+	NEXT = CP->SYM_NODE.BASE_CLASSES;
+	do BASE_CLASS = NEXT repeat (NEXT) while (BASE_CLASS ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BASE_CLASS, BCP);
+		NEXT = BCP->BASE_CLASS_NODE.NEXT;
+
+		if ^BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			call SET_BASE_MEMBER_INIT (BCP->BASE_CLASS_NODE.SYMBOL,
+						  BCP->BASE_CLASS_NODE.OFFSET,
+						  BYTES,
+						  CLASS_ID);
+			end;
+
+		call RELEASE_BASE_CLASS_NODE (BASE_CLASS);
+	end;
+
+	/* Initialize the members */
+
+	NEXT = CP->SYM_NODE.FIELD1;	/* first non-static data member */
+	do SYM = NEXT repeat NEXT while (SYM ^= NULL_NID);
+		call GET_SYM_NODE (SYM, P);
+		NEXT = P->SYM_NODE.NEXT_SYMBOL;
+		if ^P->SYM_NODE.IS_NON_STATIC_DATA_MEMBER then do;
+			if  P->SYM_NODE.IS_ANON_UNION_TAG &
+			   (P->SYM_NODE.ANON_UNION_MEMBER ^= NULL_NID) then do;
+				call RELEASE_SYM_NODE (SYM);
+				SYM = P->SYM_NODE.ANON_UNION_MEMBER;
+				call GET_SYM_NODE_R (SYM, P);
+			end;
+			else	goto NEXT_SYMBOL;
+		end;
+
+		call SET_BASE_MEMBER_INIT (SYM, P->SYM_NODE.LOCATION,
+					  rank (P->SYM_NODE.OFFSET_UNITS),
+					  NULL_NID);
+
+		NEXT_SYMBOL:
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+	call RELEASE_SYM_NODE (CLASS_ID);
+	
+	call EMIT_FUNCTION_BEGIN ();
+
+	call END_FUNCTION_BODY();
+
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+
+/* ---------------------------------------------------------------------
+ * SET_BASE_MEMBER_INIT
+ *
+ * SYM is the symbol node of one of the following:
+ * an immediate base class of the class being constructed,
+ * a virtual base class of the class being constructed,
+ * or a non-inherited, non-static data member of class.
+ *
+ * MOST_DERIVED is the symbol node id of the most derived class
+ * of the object being constructed, if SYM is a base class.
+ * Otherwise it may be NULL_NID.
+ *
+ * Sets up the initializer of the given subobject, copying it from
+ * the corresponding subobject of the copy constructor's parameter.
+ * It is set up for later processing by GET_BASE_MEMBER_INIT.
+ * ------------------------------------------------------------------- */
+
+SET_BASE_MEMBER_INIT: procedure (SYM, OFFSET, OFFSET_UNITS, MOST_DERIVED)
+		      internal;
+
+	declare
+		SYM		type (NID_T),
+		OFFSET		type (LONG_T),
+		OFFSET_UNITS	type (SHORT_T),
+		MOST_DERIVED	type (NID_T);
+	declare
+		VALUE		type (CXX_VID_T),
+		TID		type (NID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	/* Reference to initializing subobject of copy ctor's parameter. */
+
+	VALUE = SUBOBJECT_REF (SYM, PARM_ID, OFFSET, OFFSET_UNITS);
+	
+	/*
+	/* Don't expand VALUE_VO here, because that would convert
+	/* an array to a pointer.
+	/**/
+        call GET_VALUE_TYPE (TYPE_INFO);
+	VALUE = ALLOC_CXX_VALUE_NODE_L (VALUE_VO, VALUE);
+        call SET_VALUE_TYPE (TYPE_INFO);
+        VALUE->CXX_VALUE_NODE.UNARY = TRUE;
+
+	VALUE = GET_VALUE_AND_EXPAND_L (ARG_VO, VALUE);
+
+	/* VALUE is the initializing argument list. */
+
+	call SET_SYM_NODE (SYM);
+	call GET_SYMBOL_TYPE (TYPE_INFO);   /* type of subobject */
+	call DETERMINE_SIZE (TYPE_INFO);    /* eliminate bit-field */
+
+	/* Convert right argument list to type of symbol. */
+	TID = DIRECT_TYPE_ID (TYPE_INFO);
+	VALUE = GET_CONSTRUCTOR_VALUE (TID, VALUE, MOST_DERIVED, INITIAL_VO);
+
+	/* Leave symbol on top of stack;
+	/* initializing expression just under it.
+	/**/
+	call PUSH_CXX_VALUE_NODE (VALUE);
+	call PUSH_NODE (SYM);
+
+end SET_BASE_MEMBER_INIT;
+
+end EMIT_COPY_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* SUBOBJECT_REF
+/*
+/* SYM is the symbol of a member or unambiguous base of CLASS_ID.
+/* Returns a ref for the symbol, based on the given BASE_SYM,
+/* which must be a pointer or reference, at the given offset.
+/* The value node is paged in upon return.
+/* ------------------------------------------------------------------- */
+SUBOBJECT_REF: procedure (SYM, BASE_SYM, OFFSET, OFFSET_UNITS)
+	       internal
+	       returns (type (CXX_VID_T));
+
+	declare
+		SYM		type (NID_T),
+		BASE_SYM	type (NID_T),
+		OFFSET		type (LONG_T),
+		OFFSET_UNITS	type (SHORT_T);
+	declare
+		BASE_REF	type (CXX_VID_T),
+		BASE_VAL	type (CXX_VID_T),
+		SP		pointer,
+		RESULT		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	BASE_REF = GET_REF_AND_EXPAND (BASE_SYM);
+	if BASE_REF->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (REFERENCE_DT) then do;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		call STRIP_TOP_TYPE (TYPE_INFO, FALSE);
+		call ADD_POINTER_LEVEL (TYPE_INFO);
+		call SET_VALUE_TYPE (TYPE_INFO);
+	end;
+	BASE_VAL = GET_VALUE_AND_EXPAND_L (VALUE_VO, BASE_REF);
+
+	/* Set up ref with base as locator. */
+	RESULT = ALLOC_REF_CXX_VALUE_NODE (SYM);
+        RESULT->CXX_VALUE_NODE.THIRD = BASE_VAL; /* locator */
+
+	/* Set type of ref node according to subobject symbol. */
+	call SET_SYM_NODE_R (SYM);
+	call GET_SYMBOL_TYPE (TYPE_INFO);
+	call SET_VALUE_TYPE (TYPE_INFO);
+
+	RESULT->CXX_VALUE_NODE.NOT_AN_LVALUE = FALSE;
+
+	/* Set up offset from base. */
+        RESULT->CXX_VALUE_NODE.OFFSET = OFFSET;
+        RESULT->CXX_VALUE_NODE.OFFSET_UNITS = byte (OFFSET_UNITS);
+
+	return (RESULT);
+
+end SUBOBJECT_REF;
+
+/* ---------------------------------------------------------------------
+/*
+/* EMIT_DEFAULT_CONSTRUCTOR
+/*
+/* Emit a default constructor for the function whose symbol_node id
+/* is SYM_NID.
+/*
+/* ------------------------------------------------------------------- */
+
+EMIT_DEFAULT_CONSTRUCTOR: procedure (SYM_NID)
+		       internal;
+
+	declare
+		SYM_NID		type (NID_T);
+ 
+	declare
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	call REMAKE_PROTOTYPE_SCOPE (SYM_NID, NULL_NID, FALSE);
+
+	CURRENT_SYMBOL = SYM_NID;
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE), 
+				   CURRENT_GLOBAL_SCOPE);
+	call BEGIN_FUNCTION_BODY ();
+	call BEGIN_MEMBER_INITIAL_LIST ();
+	call EMIT_FUNCTION_BEGIN ();
+	call END_FUNCTION_BODY();
+
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+
+end EMIT_DEFAULT_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* EMIT_ASSIGN_OPERATOR
+/*
+/* Emit an assign operator for the function whose symbol_node id
+/* is SYM_NID.
+/* ------------------------------------------------------------------- */
+
+EMIT_ASSIGN_OPERATOR: procedure (SYM_NID) internal;
+
+	declare
+		SYM_NID		type (NID_T);
+	declare
+		CLASS_ID	type (NID_T),
+		FUN_ID		type (NID_T),
+		THIS_ID		type (NID_T),
+		PARM_ID		type (NID_T),
+		BRO_ID		type (NID_T),
+		NEXT_BC         type (NID_T),
+		BCP		type (POINTER_T),
+		T_LEFT		type (CXX_VID_T),
+		T_RIGHT		type (CXX_VID_T);
+
+	declare
+		BC		type (NID_T);
+
+	declare
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	call REMAKE_PROTOTYPE_SCOPE (SYM_NID, ASSIGN_PARAM_NAME, FALSE);
+
+	CURRENT_SYMBOL = SYM_NID;
+	FUN_ID = CURRENT_SYMBOL;
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE), 
+				   CURRENT_GLOBAL_SCOPE);
+
+	call BEGIN_FUNCTION_BODY ();
+	call BEGIN_MEMBER_INITIAL_LIST ();
+	call EMIT_FUNCTION_BEGIN ();
+
+	/* Get the symbol_ids of the 'this' parameter
+	/* and the ref parameter for the copy constructor
+	/**/
+	call GET_THIS_AND_PARM (FUN_ID, THIS_ID, PARM_ID);
+
+	/* Get the symbol_node id of the class of which this
+	/* function is a member.
+	/**/
+	call SET_SYM_NODE_R (FUN_ID);
+	call SET_SCOPE_NODE_R ((SYM_NODE.ENCLOSING_SCOPE));
+	CLASS_ID = SCOPE_NODE.OWNER;
+	call SET_SYM_NODE_R (CLASS_ID);
+	
+	/*
+	/* Walk the base class list, and emit operators
+	/* to assign from the source to the target.
+	/**/
+
+	do BC = SYM_NODE.BASE_CLASSES while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		call COPY_OR_ASSIGN_CLASS (THIS_ID,
+					   PARM_ID,
+			 	 	   BCP->BASE_CLASS_NODE.SYMBOL,
+				 	   BCP->BASE_CLASS_NODE.OFFSET,
+					   (BCP->BASE_CLASS_NODE.VIRTUAL),
+				  	   ASSIGN_VO);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+		BC = NEXT_BC;
+	end;
+
+	/* Emit operators to assign all data members. */
+	call EMIT_MEMBER_ASSIGNS (CLASS_ID, THIS_ID, PARM_ID, ASSIGN_VO);
+
+	/* Emit a return of '*this' */
+	CURRENT_VALUE = GET_VALUE_AND_EXPAND_L
+			(STAR_VO,
+			 GET_VALUE_REF_AND_EXPAND (THIS_ID));
+	call EMIT_RETURN ();
+
+	call END_FUNCTION_BODY();
+
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+
+end EMIT_ASSIGN_OPERATOR;
+
+/* ---------------------------------------------------------------------
+/* EMIT_DEFAULT_DESTRUCTOR
+/*
+/* Emit a default destructor for the function whose symbol_node id
+/* is SYM_NID.
+/* Note that the calls to the default destructors must be generated
+/* in the reverse order of the calls to the constructors.  This makes
+/* this procedure a little trickier than the one that calls the 
+/* constructors.
+/* ------------------------------------------------------------------- */
+
+EMIT_DEFAULT_DESTRUCTOR: procedure (SYM_NID)
+		       internal;
+
+	declare
+		SYM_NID		type (NID_T);
+
+	declare	SIZE		builtin;
+
+	declare
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+	
+ 
+	call REMAKE_PROTOTYPE_SCOPE (SYM_NID, NULL_NID, FALSE);
+
+	CURRENT_SYMBOL = SYM_NID;
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE), 
+				   CURRENT_GLOBAL_SCOPE);
+	call BEGIN_FUNCTION_BODY ();
+	call BEGIN_MEMBER_INITIAL_LIST ();
+	call EMIT_FUNCTION_BEGIN ();
+	call END_FUNCTION_BODY();
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+
+end EMIT_DEFAULT_DESTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* FIND_DEFAULT_CTOR
+/*
+/* Find in the overload list, the constructor that is the default
+/* constructor.  The default constructor has 0 explicitly declared
+/* arguments, or was declared with just ellipses, or if all of its
+/* arguments are default arguments..
+/* ------------------------------------------------------------------- */
+
+FIND_DEFAULT_CTOR: procedure (CTOR_NID)
+		   returns (type (NID_T))
+		   internal;
+
+	declare
+		CTOR_NID		type (NID_T);
+
+	declare
+		WORK_ID		type (NID_T),
+		NEXT_ID		type (NID_T),
+		SP 		type (POINTER_T),
+		FOUND		type (BOOL_T);
+ 
+	FOUND = FALSE;
+	NEXT_ID = CTOR_NID;
+
+	do WORK_ID = CTOR_NID repeat NEXT_ID 
+		while (NEXT_ID ^= NULL_NID & ^FOUND);
+
+		call GET_SYM_NODE_R (WORK_ID, SP);
+		call SET_SIG_NODE_R (SP->SYM_NODE.TOP_TYPE.SIGNATURE);
+ 
+		FOUND = SIG_NODE.EXPLICIT_NPARAMETERS = 0;
+		
+		/* If this constructor has more than zero arguments,
+		/* and they all have default arguments, then it is a
+		/* valid default constructor.
+		/**/
+		if ^FOUND & (SIG_NODE.EXPLICIT_NPARAMETERS > 0) then do;
+			call SET_PARAMETER_NODE_R (SIG_NODE.EXPLICIT_PARAMETERS);
+			FOUND = (PARAMETER_NODE.VALUE ^= NULL_CXX_VID);
+		end;
+ 
+		if ^FOUND then
+			NEXT_ID = SP->SYM_NODE.NEXT_OVERLOAD;
+ 
+		call RELEASE_SYM_NODE (WORK_ID);
+	end;
+ 
+	if ^FOUND then
+		WORK_ID = NULL_NID;
+
+	return (WORK_ID);
+ 
+
+end FIND_DEFAULT_CTOR;
+
+/* ---------------------------------------------------------------------
+/* ADD_TO_GENERATE_LIST
+/*
+/* Add a symbol id to the generate list.
+/* ------------------------------------------------------------------- */
+
+ADD_TO_GENERATE_LIST: procedure (FNID)
+		      external (X_ADD_TO_GENERATE_LIST);
+ 
+	declare
+		FNID  		type (NID_T);
+
+	declare
+		SP		type (POINTER_T),
+		GP		type (POINTER_T);
+
+	call GET_SYM_NODE_R (FNID, SP);
+ 
+	if SP->SYM_NODE.IS_DUMMY then
+		if ^SP->SYM_NODE.ON_GENERATE_LIST then do;
+			SP->SYM_NODE.ON_GENERATE_LIST = TRUE;
+			allocate GENERATE_DATA set (GP);
+			GP->GENERATE_DATA.FNID = FNID;
+			GP->GENERATE_DATA.NEXT = GENERATE_LIST;
+			GENERATE_LIST = GP;
+		end;
+ 
+	call RELEASE_SYM_NODE (FNID);
+
+end ADD_TO_GENERATE_LIST;
+
+/* ---------------------------------------------------------------------
+/* COPY_OR_ASSIGN_CLASS 
+/*
+/* For COPY:
+/* Emit the operators to do a copy of one class to another.  If there
+/* is a copy constructor, the copy constructor is called, otherwise
+/* a structure copy is generated.
+/*
+/* For ASSIGN:
+/* Emit the operators to do an assign of one class to another.  If there
+/* is an assignment operator, the assignment operator is called, otherwise
+/* a structure assignment is generated.
+/*
+/* If VIRTUAL, then OFFSET is the offset of the virtual base class 
+/* pointer, rather than the offset of the class itself.
+/* ------------------------------------------------------------------- */
+
+COPY_OR_ASSIGN_CLASS: procedure (THIS_ID, REF_ID, CLASS_ID, OFFSET, 
+				 VIRTUAL, VOP)
+	    	      internal;
+ 
+	declare
+		THIS_ID			type (NID_T),
+		REF_ID			type (NID_T),
+		CLASS_ID		type (NID_T),
+		OFFSET			type (LONG_T),
+		VIRTUAL			type (BOOL_T),
+		VOP   			type (SHORT_T);
+ 
+	declare
+		LEFT			type (CXX_VID_T),
+		RIGHT 			type (CXX_VID_T),
+		TYPE_INFO		type (TYPE_INFO_T);
+
+	call SET_SYM_NODE_R (CLASS_ID);
+	call GET_SYMBOL_TYPE (TYPE_INFO);
+
+	/*
+	/* If it's a virtual base class, then offset gives the
+	/* offset of the pointer to the base class.
+	/**/
+	if VIRTUAL then
+		call ADD_POINTER_LEVEL (TYPE_INFO);
+
+	/*
+	/* The offset is the offset of the base class or base class pointer
+	/* from the derived class, measured in bytes, so fix the type info
+	/* record accordingly.
+	/**/
+	TYPE_INFO.SIZE = ROUNDU (TYPE_INFO.SIZE, TYPE_INFO.SIZE_UNITS,
+				 BYTES);
+	TYPE_INFO.SIZE_UNITS = BYTES;
+	TYPE_INFO.BOUNDARY = BYTES;
+	TYPE_INFO.NOT_AN_LVALUE = FALSE;
+	LEFT  = BASED_ITEM_REF_VALUE (THIS_ID, TYPE_INFO, OFFSET);
+	RIGHT = BASED_ITEM_REF_VALUE (REF_ID, TYPE_INFO, OFFSET);
+
+	if VIRTUAL then do;
+		LEFT = GET_VALUE_AND_EXPAND_L (STAR_VO, LEFT);
+		RIGHT = GET_VALUE_AND_EXPAND_L (STAR_VO, RIGHT);
+	end;
+
+	CURRENT_VALUE = GET_VALUE_AND_EXPAND_LR (VOP, LEFT, RIGHT);
+	call EMIT_EXPRESSION ();
+
+end COPY_OR_ASSIGN_CLASS;
+
+/* ---------------------------------------------------------------------
+/* BASED_ITEM_REF
+/*
+/* Return a reference to the item described by TYPE_INFO,
+/* based on the pointer PTR_ID, with offset OFFSET.
+/* ------------------------------------------------------------------- */
+
+BASED_ITEM_REF: procedure (PTR_ID, TYPE_INFO, OFFSET)
+		returns   (type (CXX_VID_T))
+		internal;
+ 
+	declare
+		PTR_ID			type (NID_T),
+		TYPE_INFO		type (TYPE_INFO_T),
+		OFFSET			type (LONG_T);
+
+	return (REF_PLUS_OFFSET
+		(REF_WITH_LOCATOR
+		 (GET_VALUE_REF_AND_EXPAND (PTR_ID), TYPE_INFO),
+		  OFFSET,
+		  TYPE_INFO.SIZE_UNITS,
+		  TYPE_INFO));
+	
+end BASED_ITEM_REF;
+
+/* ---------------------------------------------------------------------
+/* BASED_ITEM_REF_VALUE
+/*
+/* Emit a VALUE_VO expression tree that references the item described by
+/* TYPE_INFO based on the pointer PTR_ID, with offset OFFSET.
+/* ------------------------------------------------------------------- */
+
+BASED_ITEM_REF_VALUE: procedure (PTR_ID, TYPE_INFO, OFFSET)	
+		      returns   (type (CXX_VID_T))
+		      internal;
+	declare
+		PTR_ID		type (NID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		OFFSET		type (LONG_T);
+
+	return (GET_VALUE_AND_EXPAND_L
+		(VALUE_VO,
+		 BASED_ITEM_REF (PTR_ID, TYPE_INFO, OFFSET)));
+	
+end BASED_ITEM_REF_VALUE;
+
+/* ---------------------------------------------------------------------
+/* GET_THIS_AND_PARM
+/*
+/* Get the symbol ids of the 'this' parameter and first parameter
+/* of the function whose symbol id is FUN_ID.  Returns 'this' in
+/* THIS_ID, and first parameter in PARM_ID.
+/* ------------------------------------------------------------------- */
+
+GET_THIS_AND_PARM: procedure (FUN_ID, THIS_ID, PARM_ID) internal;
+
+	declare
+		FUN_ID			type (NID_T),
+		THIS_ID			type (NID_T),
+		PARM_ID			type (NID_T),
+		HAS_FLAG		type (BOOL_T);
+
+	call SET_SYM_NODE_R (FUN_ID);
+	HAS_FLAG = SYM_NODE.HAS_FLAG;
+	call SET_SIG_NODE_R (SYM_NODE.TOP_TYPE.SIGNATURE);
+ 
+	/*
+	/* SIG_NODE.PARAMETERS is the 1st actual parameter.
+	/* For a member function, it is 'this'.
+	/**/
+
+	THIS_ID = SIG_NODE.PARAMETERS;
+
+	/*
+	/* The first explicit parameter is the one right after 'this'
+	/* unless a special flag has been added for constructor/destructor.
+	/* For the copy constructor, X::X(X&), set PARM_ID to the X&.
+	/**/
+
+	PARM_ID = NULL_NID;
+	if THIS_ID ^= NULL_NID then do;
+		call SET_SYM_NODE_R (THIS_ID);
+		if HAS_FLAG then
+			call SET_SYM_NODE_R ((SYM_NODE.NEXT_PARAMETER));
+		/* current node is parameter preceding explicit parameters */
+		PARM_ID = SYM_NODE.NEXT_PARAMETER;
+	end;
+
+end GET_THIS_AND_PARM;
+
+/* ---------------------------------------------------------------------
+/* EMIT_MEMBER_ASSIGNS
+/*
+/* Walk the data member list, and generate COPY/ASSIGN of the
+/* parameter PARM_ID qualified source to the 'this' qualified targets.
+/* The argument CLASS_ID is the symbol id of the class (NOT class object)
+/* which is being assigned to.  The argument PARM_ID is the symbol id
+/* of the symbol node of the first actual parameter for a COPY or ASSIGN
+/* member function.  This argument is a pointer or ref of the source
+/* of the COPY/ASSIGN.
+/* The argument ARG_VOP is a VOP that specifies whether to
+/* move via COPY (for initializations via a copy constructor) 
+/* or ASSIGN (for assigns via an assign operator).
+/* ------------------------------------------------------------------- */
+
+EMIT_MEMBER_ASSIGNS: procedure (CLASS_ID, THIS_ID, PARM_ID, ARG_VOP)
+		     internal;
+ 
+	declare
+		CLASS_ID		type (NID_T),
+		THIS_ID			type (NID_T),
+		PARM_ID			type (NID_T),
+		ARG_VOP			type (SHORT_T);
+ 
+	declare
+		BRO_ID			type (NID_T),
+		T_NID			type (NID_T),
+		T_LEFT			type (CXX_VID_T),
+		T_RIGHT			type (CXX_VID_T),
+		MEMB_NAME		type (SHORT_T);
+
+	
+	/* Emit operators to assign all data members. */
+
+	call SET_SYM_NODE_R (CLASS_ID);
+
+	if SYM_NODE.DEFINED_SCOPE = NULL_NID then
+		return;
+
+	call SET_SCOPE_NODE_R (SYM_NODE.DEFINED_SCOPE);
+
+	BRO_ID = SCOPE_NODE.SYMBOLS;
+
+	/* Walk the data member list, and emit COPY/ASSIGN operators */
+
+	do while ( BRO_ID ^= NULL_NID );
+		call SET_SYM_NODE_R (BRO_ID);
+		T_NID = BRO_ID;
+		BRO_ID = SYM_NODE.NEXT_SYMBOL;
+		if ^SYM_NODE.IS_NON_STATIC_DATA_MEMBER then do;
+			if  SYM_NODE.IS_ANON_UNION_TAG &
+			   (SYM_NODE.ANON_UNION_MEMBER ^= NULL_NID) then do;
+				T_NID = SYM_NODE.ANON_UNION_MEMBER;
+				call SET_SYM_NODE_R (T_NID);
+			end;
+			else	goto NEXT_SYMBOL;
+		end;
+
+		if rank (SYM_NODE.TOP_TYPE.CODE) = ARRAY_DT then
+			call ARRAY_MEMBER_ASSIGN (T_NID, THIS_ID, PARM_ID, 
+						ARG_VOP);
+	
+		else do;
+			/* Get a ref-val of <data_member>.
+			/* Because we are in a member function, ref-val
+			/* will be implicitly 'this'-qualified.
+			/**/
+			CURRENT_NAME_SCOPE = NULL_NID;
+			CURRENT_NAME_SCOPE_NAME = NULL_NID;
+			CURRENT_NAME_SCOPE_SYMBOL = NULL_NID;
+			CURRENT_NAME_KIND = VANILLA_NK;
+			CURRENT_NAME = SYM_NODE.NAME;
+			MEMB_NAME = CURRENT_NAME;
+			call REF_VALUE ();
+			T_LEFT = CURRENT_VALUE;
+		
+			/* Get a ref-val of 'X&' */
+			call SET_SYM_NODE_R (PARM_ID);
+			CURRENT_NAME = SYM_NODE.NAME;
+			call REF_VALUE ();
+	
+			/* Do a dot as follows: X&.<data_member> */
+			CURRENT_NAME = MEMB_NAME;
+			call DOT_VALUE ();
+			T_RIGHT = CURRENT_VALUE;
+	
+			/* Assign the X&.<data_member> to the 'this'
+			/* qualified <data_member>.
+			/**/
+			CURRENT_VALUE = GET_VALUE_AND_EXPAND_LR
+					(ARG_VOP, T_LEFT, T_RIGHT);
+			call EMIT_EXPRESSION ();
+		end;
+		NEXT_SYMBOL:;
+	end;
+
+end EMIT_MEMBER_ASSIGNS;
+
+/* -------------------------------------------------------------------
+/* ARRAY_MEMBER_ASSIGN
+/*
+/* Emit operators to do assign or copy of an array member of a class.
+/* For an array that is not an array of class objects, this is done
+/* by doing a move of structures based on the 'this' pointer
+/* and the 'parameter 1' pointer.
+/* SYM_ID is the symbol node id of the array.
+/* THIS_ID is the symbol node id of the 'this' pointer.
+/* PARM_ID is the symbol node id of the 1st parameter, i.e., the source
+/* of the assign.
+/* ARG_VOP is either COPY_VOP (for initializations) or ASSIGN_VOP
+/* (for assigns).
+/* ------------------------------------------------------------------- */
+
+ARRAY_MEMBER_ASSIGN: procedure (SYM_ID, THIS_ID, PARM_ID, ARG_VOP) internal;
+ 
+	declare
+		SYM_ID			type (NID_T),
+		THIS_ID			type (NID_T),
+		PARM_ID			type (NID_T),
+		ARG_VOP			type (SHORT_T);
+	declare
+		SNID			type (SNID_T),
+		SU			type (SHORT_T),
+		BDRY			type (SHORT_T),
+		SZ			type (LONG_T),
+		OFFSET			type (LONG_T),
+		ELEMENT_SIZE		type (LONG_T),
+		CTOR_FLAG   		type (LONG_T),
+		T_LEFT			type (CXX_VID_T),
+		T_RIGHT			type (CXX_VID_T),
+		COUNT_VID		type (CXX_VID_T),
+		FUNC_ARG		type (CXX_VID_T),
+		SIZE_ARG		type (CXX_VID_T),
+		CTOR_FLAG_ARG		type (CXX_VID_T),
+		ARGS			type (CXX_VID_T),
+		WORK_TYPE		type (TYPE_INFO_T),
+		FUNC_ID			type (NID_T),
+		BASED_ID		type (NID_T);
+
+	call SAVE_NODE (SNID);
+	
+	/* Get the symbol node of the array, and get its
+	/* size information, and offset from the base of the class.
+	/**/
+	call SET_SYM_NODE_R (SYM_ID);
+
+	FUNC_ID = CHECK_COPY_OR_ASSIGN (SYM_NODE.TYPE, ARG_VOP);
+	if FUNC_ID ^= NULL_NID then do;
+		/* There is a copy constructor or an assignment operator. */
+		call GET_ELEMENT_INFO (SYM_ID, COUNT_VID, ELEMENT_SIZE);
+		if LOOKUP_CTOR_FLAG_PARAMETER (FUNC_ID) = NULL_NID then
+			CTOR_FLAG = -1;
+		else
+			CTOR_FLAG = 0;  /* Most derived */
+		CTOR_FLAG_ARG = INTEGER_VALUE (CTOR_FLAG, INT_BT);
+		FUNC_ARG = GET_VALUE_AND_EXPAND_L
+			   (ADDR_VO, GET_VALUE_REF_AND_EXPAND (FUNC_ID));
+		SIZE_ARG = INTEGER_VALUE (ELEMENT_SIZE, INT_BT);
+		ARGS = RUN_TIME_ARGS (SIZE_ARG,
+			RUN_TIME_ARGS (COUNT_VID,
+			 RUN_TIME_ARGS (FUNC_ARG,
+			  RUN_TIME_ARGS (CTOR_FLAG_ARG,
+			   NULL_CXX_VID))));
+	end;
+
+	call SET_SYM_NODE_R (SYM_ID);
+	SZ = SYM_NODE.SIZE;
+	SU = rank (SYM_NODE.SIZE_UNITS);
+	BDRY = rank (SYM_NODE.BOUNDARY);
+	OFFSET = SYM_NODE.LOCATION;
+	/* OFFSET = ROUNDU (OFFSET, rank (SYM_NODE.OFFSET_UNITS), BYTES); */
+ 
+	/*
+	/* Make a sym-node and type-node for a
+	/* struct of the same size as the array.
+	/**/
+
+	BASED_ID = BASED_STRUCT_SYM (SZ, SU, BDRY);
+
+	/* Get the type-info from the symbol_node just created */
+
+	call GET_SYMBOL_TYPE (WORK_TYPE);
+	WORK_TYPE.NOT_AN_LVALUE = FALSE;
+
+	/*
+	/* Make ref-values of the based structure,
+	/* based on "this" and the source pointer.
+	/**/
+
+	T_LEFT  = BASED_ITEM_REF_VALUE (THIS_ID, WORK_TYPE, OFFSET);
+	T_RIGHT = BASED_ITEM_REF_VALUE (PARM_ID, WORK_TYPE, OFFSET);
+
+	/* Emit the copy/assign of the based structures
+	/* or the call to the runtime to do copy/assign.
+	/**/
+	if FUNC_ID = NULL_NID then
+		CURRENT_VALUE = GET_VALUE_AND_EXPAND_LR
+				(ARG_VOP, T_LEFT, T_RIGHT);
+	else do;
+		T_LEFT = GET_VALUE_AND_EXPAND_L (ADDR_VO, T_LEFT);
+		T_RIGHT = GET_VALUE_AND_EXPAND_L (ADDR_VO, T_RIGHT);
+		ARGS = RUN_TIME_ARGS (T_LEFT, 
+			RUN_TIME_ARGS (T_RIGHT, ARGS));
+		CURRENT_VALUE = RUN_TIME_CALL (ARRAY_APPLY_NAME, ARGS);
+	end;
+		
+	call EMIT_EXPRESSION ();
+
+	call RESTORE_NODE (SNID);
+
+end ARRAY_MEMBER_ASSIGN;
+
+/* ---------------------------------------------------------------------
+/* CALL_DEFAULT_CTOR
+/*
+/* Emit operators to call the default constructor, passing the
+/* address of the current class as the argument.
+/* CTOR_ID is the symbol id of the constructor to call.
+/* THIS_ID is the symbol id of the 'this' for the derived class.
+/* CLASS_ID is the symbol id of the base class being constructed.
+/* OFFSET is the offset of this base class within the derived class.
+/* MOST_DERIVED_ID is the symbol id of the most derived class of the
+/* object being constructed.
+/*
+/* ------------------------------------------------------------------- */
+
+CALL_DEFAULT_CTOR: procedure (CTOR_ID, THIS_ID, CLASS_ID, OFFSET,
+						MOST_DERIVED_ID)
+			returns (type (CXX_VID_T))
+		        internal;
+
+	declare
+		CTOR_ID			type (NID_T),
+		THIS_ID			type (NID_T),
+		CLASS_ID		type (NID_T),
+		OFFSET			type (LONG_T),
+		MOST_DERIVED_ID		type (NID_T);
+
+	declare
+		VALUE			type (CXX_VID_T),
+		OBJECT			type (CXX_VID_T),
+		T_VID			type (CXX_VID_T),
+		CALL_VID		type (CXX_VID_T),
+		ARG_VID			type (CXX_VID_T),
+		TYPE_INFO		type (TYPE_INFO_T);
+ 
+
+	/* TODO
+	/* If the constructor has default arguments, then 
+	/* build an argument list for the default arguments,
+	/* and pass that to GET_CONSTRUCTOR_VALUE.
+	/**/
+
+	call SET_SYM_NODE_R (CLASS_ID);
+
+	VALUE = GET_CONSTRUCTOR_VALUE (SYM_NODE.TYPE,
+				       NULL_CXX_VID,
+				       MOST_DERIVED_ID,
+				       INITIAL_VO);
+ 
+	/* Emit a REF to the base class in this derived class */
+	call SET_SYM_NODE_R (CLASS_ID);
+	call GET_SYMBOL_TYPE (TYPE_INFO);
+	/* The offset is the offset of the base class from the 
+	/* derived class, measured in bytes, so fix the type info
+	/* record accordingly.
+	/**/
+	TYPE_INFO.SIZE_UNITS = BYTES;
+	TYPE_INFO.BOUNDARY = BYTES;
+	TYPE_INFO.NOT_AN_LVALUE = FALSE;
+	OBJECT = BASED_ITEM_REF (THIS_ID, TYPE_INFO, OFFSET);
+ 
+	VALUE = INITIALIZE_OBJECT (OBJECT, VALUE);
+ 
+	return (VALUE);
+ 
+end CALL_DEFAULT_CTOR;
+
+/* ---------------------------------------------------------------------
+/* BASED_STRUCT_SYM
+/*
+/* Return a sym-node id representing a defined dummy struct symbol with
+/* the indicated SIZE, SIZE_UNITS, and BOUNDARY.  The new sym-node will
+/* be paged in upon return.
+/* ------------------------------------------------------------------- */
+
+BASED_STRUCT_SYM: procedure (SIZE, SIZE_UNITS, BOUNDARY)     
+		  returns   (type (NID_T))
+		  internal;
+	declare
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T);
+	declare
+		ID		type (NID_T);
+
+	ID = MAKE_SYM_NODE (STRUCT_TAG_SK);
+	SYM_NODE.SIZE		= SIZE;
+	SYM_NODE.SIZE_UNITS	= byte (SIZE_UNITS);
+	SYM_NODE.BOUNDARY	= byte (BOUNDARY);
+	SYM_NODE.DEFINED	= TRUE;
+	SYM_NODE.TYPE = GET_CLASS_TYPE (STRUCT_BT, ID);
+	call GET_TOP_TYPE (SYM_NODE.TYPE, SYM_NODE.TOP_TYPE);
+
+	/*
+	/* N.B. Accidently, this symbol previously never got installed
+	/* (as in NEW-C; see lnkdcl), but it worked.  I.e. it seems it
+	/* isn't necessary to install it; but I'm not 100% sure yet.
+	/* If we need to install it the correct way is:
+	/**/
+
+	call INSTALL_SYMBOL (ID, CURRENT_FUNCTION_SCOPE);
+
+        return (ID);
+
+end BASED_STRUCT_SYM;
+
+/* ---------------------------------------------------------------------
+ * EMIT_ARRAY_CONSTRUCTOR
+ *
+ * Emit the definition of the array constructor with the given
+ * symbol node id.  Of course, this does not construct an array,
+ * it is passed to the function which initializes arrays.
+ *
+ * In effect, this is:
+ *
+ *	void C::____lpi_array_ctor () { new (this) C(); }
+ * ------------------------------------------------------------------- */
+
+EMIT_ARRAY_CONSTRUCTOR: procedure (AC_SYM)
+			internal;
+
+	declare
+		AC_SYM		type (NID_T);
+
+	declare
+		CLASS_SYM	type (NID_T),
+		THIS_ID		type (NID_T),
+		PARM_ID		type (NID_T),
+		(SP, CLASS_P)	pointer,
+		(V, OBJ)	type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	declare	SIZE		builtin;
+
+	declare
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+ 
+	call REMAKE_PROTOTYPE_SCOPE (AC_SYM, NULL_NID, FALSE);
+
+	CURRENT_SYMBOL = AC_SYM;
+
+	call BEGIN_INTERNAL_PARSE (addr (SAVED_PARSE_STATE), 
+				   CURRENT_GLOBAL_SCOPE);
+	call BEGIN_FUNCTION_BODY ();
+	call BEGIN_MEMBER_INITIAL_LIST ();
+	call EMIT_FUNCTION_BEGIN ();
+
+	call GET_THIS_AND_PARM ((AC_SYM), THIS_ID, PARM_ID);
+	call GET_SYM_NODE_R (AC_SYM, SP);
+	CLASS_SYM = SP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+	call GET_SYM_NODE_R (CLASS_SYM, CLASS_P);
+
+	/*
+	/* Emit code to initialize *this with the default
+	/* constructor, i.e. constructor with no arguments.
+	/* If we get here, it's because the constructor taking
+	/* no arguments in fact has default arguments which will
+	/* be filled in by GET_CONSTRUCTOR_VALUE.
+	/**/
+	
+	V = GET_CONSTRUCTOR_VALUE (CLASS_P->SYM_NODE.TYPE,
+				   NULL_CXX_VID, CLASS_SYM, INITIAL_VO);
+	OBJ = GET_REF_AND_EXPAND (THIS_ID);
+	call GET_VALUE_TYPE (TYPE_INFO);
+	call STRIP_TOP_TYPE (TYPE_INFO, TRUE);
+	OBJ = REF_WITH_LOCATOR (GET_VALUE_AND_EXPAND_L (VALUE_VO, OBJ),
+			        TYPE_INFO);
+	V = INITIALIZE_OBJECT (OBJ, V);
+	call EMIT_STATEMENT (V);
+
+	call RELEASE_SYM_NODE (CLASS_SYM);
+	call RELEASE_SYM_NODE (AC_SYM);
+
+	call END_FUNCTION_BODY();
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+
+end EMIT_ARRAY_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* DEFAULT_CONSTRUCTOR_OK
+/*
+/* Walk the class member list and data member list for the class whose
+/* symbol_node id it CLASS_NID, and determine if any default constructors
+/* that exist are accessible to the class.  If not (i.e., a default
+/* constructor is PRIVATE or absent), then a default constructor cannot be 
+/* generated for this class.
+/* Returns TRUE if it is OK to generate a default constructor, and
+/* FALSE otherwise.
+/*
+/* This is called only if the class has no explicit constructor.
+/* If the class cannot be initialized as an aggregate, and we find
+/* here that a default constructor is not permitted either, then 
+/* no object of the class can be created.  This is an error;
+/* a diagnostic is issued giving the reason.
+/*
+/* If CHECK_ACCESS, then checks accessibility of bases and members
+/* and constness of members.  Otherwise, checks only that each member
+/* and base has a legitimate default constructor.
+/* ------------------------------------------------------------------- */
+
+DEFAULT_CONSTRUCTOR_OK: procedure (CLASS_NID, CHECK_ACCESS, REPORT_REASON)
+			returns   (type (BOOL_T))
+		       	external  (X_DEFAULT_CONSTRUCTOR_OK);
+
+	declare
+		CLASS_NID	type (NID_T),
+		CHECK_ACCESS	type (BOOL_T),
+		REPORT_REASON	type (BOOL_T);
+	declare
+		BRO_ID		type (NID_T),
+		WORK_ID		type (NID_T),
+		MEMB_ID		type (NID_T),
+		TEMP_ID		type (NID_T),
+		NEXT_BC         type (NID_T),
+		SYMP		type (POINTER_T),
+		CLASSP		type (POINTER_T),
+		SYM		type (NID_T),
+		BCP		type (POINTER_T),
+		BC		type (NID_T),
+		DEFAULT_CTOR	type (NID_T),
+		NEEDS_INIT	type (BOOL_T),
+		CLASS_LIST_OK	type (BOOL_T),
+		MEM_LIST_OK	type (BOOL_T),
+		OK		type (BOOL_T),
+		DIAGNOSE	type (BOOL_T);
+
+	call SET_SYM_NODE_R (CLASS_NID);
+	OK = TRUE;
+	CLASS_LIST_OK = TRUE;
+	MEM_LIST_OK = TRUE;
+	BC = SYM_NODE.BASE_CLASSES;
+	BRO_ID = SYM_NODE.FIELD1;
+	DIAGNOSE = ^SYM_NODE.PERMITS_AGGREGATE_INIT & REPORT_REASON;
+ 
+	do while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		SYM = BCP->BASE_CLASS_NODE.SYMBOL;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+		BC = NEXT_BC;
+		call GET_SYM_NODE_R (SYM, SYMP);
+
+		if SYMP->SYM_NODE.NEEDS_INIT then do;
+			DEFAULT_CTOR = FIND_DEFAULT_CTOR (
+				       SYMP->SYM_NODE.CONSTRUCTOR);
+
+			if DEFAULT_CTOR = NULL_NID then do;
+				CLASS_LIST_OK = FALSE;
+				if DIAGNOSE then
+					/* Issue a diagnostic */
+					call SEMANTIC_ERROR_II (
+						ERR_DFTGEN_CTOR_CLASS_ABSENT,
+						SYMBOL_NAME (SYM),
+						SYMBOL_NAME (CLASS_NID));
+			end;
+			else if CHECK_ACCESS then do;
+				if IS_PRIVATE_FUNC (DEFAULT_CTOR) then do;
+					CLASS_LIST_OK = FALSE;
+					if DIAGNOSE then
+						/* Issue a diagnostic */
+						call SEMANTIC_ERROR_III (
+							ERR_DFTGEN_CTOR_CLASS_INACCESS,
+							FULL_SYMBOL_NAME (DEFAULT_CTOR),
+							QUALIFIED_SYMBOL_NAME (CLASS_NID),
+							QUALIFIED_SYMBOL_NAME (SYM));
+				end;
+			end;
+		end;
+
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+
+	/* Walk the member list, checking for members that are class objects.
+	/* If such members have default constructors, they must be accessible
+	/* to the class identified by CLASS_NID.
+	/**/
+	do while (BRO_ID ^= NULL_NID);
+		WORK_ID = BRO_ID;
+		MEMB_ID = BRO_ID;
+		call GET_SYM_NODE_R (WORK_ID, SYMP);
+		BRO_ID = SYMP->SYM_NODE.BROTHER;
+
+		NEEDS_INIT = FALSE;
+		TEMP_ID = CHECK_TAG_SYMBOL (WORK_ID);
+		if TEMP_ID ^= NULL_NID then do;
+			call GET_SYM_NODE_R (TEMP_ID, CLASSP);
+			NEEDS_INIT = CLASSP->SYM_NODE.NEEDS_INIT;
+			if NEEDS_INIT then do;
+				DEFAULT_CTOR = FIND_DEFAULT_CTOR (
+				               CLASSP->SYM_NODE.CONSTRUCTOR);
+
+				if DEFAULT_CTOR = NULL_NID then do;
+					MEM_LIST_OK = FALSE;
+					if DIAGNOSE then
+						/* Issue a diagnostic */
+						call SEMANTIC_ERROR_II (
+							ERR_DFTGEN_CTOR_MEMBER_ABSENT,
+							SYMBOL_NAME (TEMP_ID),
+							SYMBOL_NAME (MEMB_ID));
+				end;
+				else if CHECK_ACCESS then do;
+					if IS_PRIVATE_FUNC (DEFAULT_CTOR) 
+					then do;
+						MEM_LIST_OK = FALSE;
+						if DIAGNOSE then
+							/* Issue a diagnostic */
+							call SEMANTIC_ERROR_III (
+								ERR_DFTGEN_CTOR_MEMBER_INACCESS,
+								FULL_SYMBOL_NAME (DEFAULT_CTOR),
+								SYMBOL_NAME (MEMB_ID),
+								QUALIFIED_SYMBOL_NAME (CLASS_NID));
+					end;
+				end;
+			end;
+			call RELEASE_SYM_NODE (TEMP_ID);
+		end;
+		else if rank (SYMP->SYM_NODE.TOP_TYPE.CODE) = REFERENCE_DT then
+		do;
+			/*
+			/* Non-static member is reference.
+			/* Nothing to initialize it with; can't be
+			/* given a good value later.
+			/**/
+			MEM_LIST_OK = FALSE;
+			if DIAGNOSE then
+				call SEMANTIC_ERROR_II (
+					ERR_NO_CTOR_FOR_REF_CLASS,
+					SYMBOL_NAME (CLASS_NID),
+					SYMBOL_NAME (MEMB_ID));
+		end;
+
+		if   rank (SYMP->SYM_NODE.TOP_TYPE.CODE) ^= FUNCTION_DT
+		   & SYMP->SYM_NODE.TOP_TYPE.CONST
+		   & SW_C_PLUS_PLUS
+		   & CHECK_ACCESS
+		   & ^NEEDS_INIT then do;
+			/*
+			/* Non-static data member is const.
+			/* Nothing to initialize it with; can't be
+			/* given a good value later.
+			/* TODO: in this case, also make sure that a defined
+			/* constructor initializes the non-static const member.
+			/**/
+			MEM_LIST_OK = FALSE;
+			if DIAGNOSE then
+				/*
+				/* Error; a class containing a non-static
+				/* const data member must have a constructor.
+				/**/
+				call SEMANTIC_ERROR_II (
+					ERR_NO_CTOR_FOR_CONST_CLASS,
+					QUALIFIED_SYMBOL_NAME (CLASS_NID),
+					SYMBOL_NAME (MEMB_ID));
+		end;
+
+		call RELEASE_SYM_NODE (WORK_ID);
+	end;
+
+	return (CLASS_LIST_OK & MEM_LIST_OK);
+
+end DEFAULT_CONSTRUCTOR_OK;
+
+/* ---------------------------------------------------------------------
+/* DEFAULT_DESTRUCTOR_OK
+/*
+/* Walk the class member list and data member list for the class whose
+/* symbol_node id it CLASS_NID, and determine if any default destructors
+/* that exist are accessible to the class.  If not (i.e., a default
+/* destructor is PRIVATE), then a default destructor cannot be 
+/* generated for this class.
+/* Returns TRUE if it is OK to generate a default destructor, and
+/* FALSE otherwise.
+/* ------------------------------------------------------------------- */
+
+DEFAULT_DESTRUCTOR_OK: procedure (CLASS_NID, REPORT_REASON)
+			returns (type (BOOL_T))
+		       	external (X_DEFAULT_DESTRUCTOR_OK);
+
+	declare
+		CLASS_NID	type (NID_T),
+		REPORT_REASON	type (BOOL_T);
+	declare
+		BRO_ID		type (NID_T),
+		WORK_ID		type (NID_T),
+		MEMB_ID		type (NID_T),
+		TEMP_ID		type (NID_T),
+		NEXT_BC         type (NID_T),
+		SYMP		type (POINTER_T),
+		SYM		type (NID_T),
+		BCP		type (POINTER_T),
+		BC		type (NID_T),
+		DEFAULT_DTOR	type (NID_T),
+		CLASS_LIST_OK	type (BOOL_T),
+		MEM_LIST_OK	type (BOOL_T),
+		OK		type (BOOL_T);
+
+	call SET_SYM_NODE_R (CLASS_NID);
+	OK = TRUE;
+	CLASS_LIST_OK = TRUE;
+	MEM_LIST_OK = TRUE;
+	BC = SYM_NODE.BASE_CLASSES;
+	BRO_ID = SYM_NODE.FIELD1;
+ 
+	do while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		SYM = BCP->BASE_CLASS_NODE.SYMBOL;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+		BC = NEXT_BC;
+		call GET_SYM_NODE_R (SYM, SYMP);
+
+		if SYMP->SYM_NODE.NEEDS_DESTRUCTION then do;
+			DEFAULT_DTOR = SYMP->SYM_NODE.DESTRUCTOR;
+
+			if DEFAULT_DTOR ^= NULL_NID then do;
+				if IS_PRIVATE_FUNC (DEFAULT_DTOR) then do;
+					CLASS_LIST_OK = FALSE;
+					if REPORT_REASON then
+						/* Issue a diagnostic */
+						call SEMANTIC_ERROR_III (
+							ERR_DFT_DTOR_CLASS_INACCESS,
+							FULL_SYMBOL_NAME (DEFAULT_DTOR),
+							QUALIFIED_SYMBOL_NAME (SYM),
+							QUALIFIED_SYMBOL_NAME (CLASS_NID));
+				end;
+			end;
+		end;
+
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+
+	/* Walk the member list, checking for members that are class objects.
+	/* If such members have default destructors, they must be accessible
+	/* to the class identified by CLASS_NID.
+	/**/
+	do while (BRO_ID ^= NULL_NID);
+		WORK_ID = BRO_ID;
+		MEMB_ID = BRO_ID;
+		call GET_SYM_NODE_R (WORK_ID, SYMP);
+		BRO_ID = SYMP->SYM_NODE.BROTHER;
+
+		TEMP_ID = CHECK_TAG_SYMBOL (WORK_ID);
+		if TEMP_ID ^= NULL_NID then do;
+			call RELEASE_SYM_NODE (WORK_ID);
+			WORK_ID = TEMP_ID;
+			call GET_SYM_NODE_R (WORK_ID, SYMP);
+			if SYMP->SYM_NODE.NEEDS_DESTRUCTION then do;
+				DEFAULT_DTOR = SYMP->SYM_NODE.DESTRUCTOR;
+
+				IF DEFAULT_DTOR ^= NULL_NID then do;
+					if IS_PRIVATE_FUNC (DEFAULT_DTOR) 
+					 then do;
+						MEM_LIST_OK = FALSE;
+						if REPORT_REASON then
+							/* Issue a diagnostic */
+							call SEMANTIC_ERROR_III (
+								ERR_DFT_DTOR_MEMBER_INACCESS,
+								FULL_SYMBOL_NAME (DEFAULT_DTOR),
+								SYMBOL_NAME (MEMB_ID),
+								QUALIFIED_SYMBOL_NAME (CLASS_NID));
+					end;
+				end;
+			end;
+		end;
+
+		call RELEASE_SYM_NODE (WORK_ID);
+	end;
+
+	return (CLASS_LIST_OK & MEM_LIST_OK);
+
+end DEFAULT_DESTRUCTOR_OK;
+
+/* ---------------------------------------------------------------------
+/* COPY_CONSTRUCTOR_OK
+/*
+/* Walk the class member list and data member list for the class whose
+/* symbol_node id it CLASS_NID, and determine if any copy constructors
+/* that exist are accessible to the class.  If not (i.e., a copy
+/* constructor is PRIVATE), then a default copy constructor cannot be 
+/* generated for this class.
+/* Returns TRUE if it is OK to generate a default copy constructor, and
+/* FALSE otherwise.
+/* ------------------------------------------------------------------- */
+
+COPY_CONSTRUCTOR_OK: procedure (CLASS_NID, REPORT_REASON)
+		     returns   (type (BOOL_T))
+		     external  (X_COPY_CONSTRUCTOR_OK);
+
+	declare
+		CLASS_NID	type (NID_T),
+		REPORT_REASON	type (BOOL_T);
+
+	declare
+		BRO_ID		type (NID_T),
+		WORK_ID		type (NID_T),
+		MEMB_ID		type (NID_T),
+		TEMP_ID		type (NID_T),
+		NEXT_BC         type (NID_T),
+		SYMP		type (POINTER_T),
+		SYM		type (NID_T),
+		BCP		type (POINTER_T),
+		BC		type (NID_T),
+		DEFAULT_COPY	type (NID_T),
+		CLASS_LIST_OK	type (BOOL_T),
+		MEM_LIST_OK	type (BOOL_T),
+		OK		type (BOOL_T);
+
+
+
+	call SET_SYM_NODE_R (CLASS_NID);
+	OK = TRUE;
+	CLASS_LIST_OK = TRUE;
+	MEM_LIST_OK = TRUE;
+	BC = SYM_NODE.BASE_CLASSES;
+	BRO_ID = SYM_NODE.FIELD1;
+ 
+	do while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		SYM = BCP->BASE_CLASS_NODE.SYMBOL;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+		BC = NEXT_BC;
+		call GET_SYM_NODE_R (SYM, SYMP);
+
+		if SYMP->SYM_NODE.NEEDS_COPY then do;
+			DEFAULT_COPY = SYMP->SYM_NODE.COPY_CONSTRUCTOR;
+
+			if DEFAULT_COPY ^= NULL_NID then do;
+				if IS_PRIVATE_FUNC (DEFAULT_COPY) then do;
+					CLASS_LIST_OK = FALSE;
+					/* Issue a diagnostic */
+					if REPORT_REASON then
+						call SEMANTIC_ERROR_III (
+							ERR_DFT_COPY_CLASS_INACCESS,
+							FULL_SYMBOL_NAME (DEFAULT_COPY),
+							SYMBOL_NAME (CLASS_NID),
+							QUALIFIED_SYMBOL_NAME (SYM));
+				end;
+			end;
+		end;
+
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+
+	/* Walk the member list, checking for members that are class objects.
+	/* If such members have default destructors, they must be accessible
+	/* to the class identified by CLASS_NID.
+	/**/
+	do while (BRO_ID ^= NULL_NID);
+		WORK_ID = BRO_ID;
+		MEMB_ID = BRO_ID;
+		call GET_SYM_NODE_R (WORK_ID, SYMP);
+		BRO_ID = SYMP->SYM_NODE.BROTHER;
+
+		TEMP_ID = CHECK_TAG_SYMBOL (WORK_ID);
+		if TEMP_ID ^= NULL_NID then do;
+			call RELEASE_SYM_NODE (WORK_ID);
+			WORK_ID = TEMP_ID;
+			call GET_SYM_NODE_R (WORK_ID, SYMP);
+			if SYMP->SYM_NODE.NEEDS_COPY then do;
+				DEFAULT_COPY = SYMP->SYM_NODE.COPY_CONSTRUCTOR;
+
+				IF DEFAULT_COPY ^= NULL_NID then do;
+					if IS_PRIVATE_FUNC (DEFAULT_COPY) 
+					then do;
+						MEM_LIST_OK = FALSE;
+						/* Issue a diagnostic */
+						if REPORT_REASON then
+							call SEMANTIC_ERROR_III (
+								ERR_DFT_COPY_MEMBER_INACCESS,
+								FULL_SYMBOL_NAME (DEFAULT_COPY),
+								QUALIFIED_SYMBOL_NAME (MEMB_ID),
+								SYMBOL_NAME (CLASS_NID));
+					end;
+				end;
+			end;
+		end;
+
+		call RELEASE_SYM_NODE (WORK_ID);
+	end;
+
+	return (CLASS_LIST_OK & MEM_LIST_OK);
+
+end COPY_CONSTRUCTOR_OK;
+
+
+/* ---------------------------------------------------------------------
+/*
+/* ASSIGN_OPERATOR_OK
+/*
+/* Walk the class member list and data member list for the class whose
+/* symbol_node id it CLASS_NID, and determine if any assign operators
+/* that exist are accessible to the class.  If not (i.e., a assign
+/* operator is PRIVATE), then a default assign operator cannot be 
+/* generated for this class.
+/*
+/* There are also other semantic checks to be done:
+/*  1. If a class has a constant member, then the default assignment
+/*     operator cannot be generated.
+/*  2. If a class has a areference member, then the default assignment
+/*     operator cannot be generated.
+/*
+/* Returns TRUE if it is OK to generate a default assign operator, and
+/* FALSE otherwise.
+/*
+/* ------------------------------------------------------------------- */
+
+ASSIGN_OPERATOR_OK: procedure (CLASS_NID, REPORT_REASON)
+			returns (type (BOOL_T))
+		       	external (X_ASSIGN_OPERATOR_OK);
+
+	declare
+		CLASS_NID	type (NID_T),
+		REPORT_REASON	type (BOOL_T);
+
+	declare
+		BRO_ID		type (NID_T),
+		WORK_ID		type (NID_T),
+		MEMB_ID		type (NID_T),
+		TEMP_ID		type (NID_T),
+		SYMP		type (POINTER_T),
+		SYM		type (NID_T),
+		BCP		type (POINTER_T),
+		BC		type (NID_T),
+		DEFAULT_ASSIGN	type (NID_T),
+		CLASS_LIST_OK	type (BOOL_T),
+		MEM_LIST_OK	type (BOOL_T),
+		SEMANTICS_OK	type (BOOL_T),
+		OK		type (BOOL_T);
+
+
+
+	call SET_SYM_NODE_R (CLASS_NID);
+	OK = TRUE;
+	CLASS_LIST_OK = TRUE;
+	MEM_LIST_OK = TRUE;
+	SEMANTICS_OK = TRUE;
+	BC = SYM_NODE.BASE_CLASSES;
+	BRO_ID = SYM_NODE.FIELD1;
+ 
+	do while (BC ^= NULL_NID);
+		WORK_ID = BC;
+		call GET_BASE_CLASS_NODE_R (WORK_ID, BCP);
+		BC = BCP->BASE_CLASS_NODE.NEXT;
+		SYM = BCP->BASE_CLASS_NODE.SYMBOL;
+		call RELEASE_BASE_CLASS_NODE (WORK_ID);
+
+		if ^SUBOBJECT_ASSIGN_OK (SYM, DEFAULT_ASSIGN) then do;
+			CLASS_LIST_OK = FALSE;
+			/* Issue a diagnostic */
+			if REPORT_REASON then
+				call SEMANTIC_ERROR_III (
+					ERR_DFT_ASSIGN_CLASS_INACCESS,
+					FULL_SYMBOL_NAME (DEFAULT_ASSIGN),
+					SYMBOL_NAME (CLASS_NID),
+					QUALIFIED_SYMBOL_NAME (SYM));
+		end;
+	end;
+
+
+	/* Walk the member list, checking for members that are class objects.
+	/* If such members have default destructors, they must be accessible
+	/* to the class identified by CLASS_NID.
+	/**/
+	do while (BRO_ID ^= NULL_NID);
+		WORK_ID = BRO_ID;
+		MEMB_ID = BRO_ID;
+		call GET_SYM_NODE_R (WORK_ID, SYMP);
+		BRO_ID = SYMP->SYM_NODE.BROTHER;
+
+		TEMP_ID = CHECK_TAG_SYMBOL (WORK_ID);
+		if TEMP_ID ^= NULL_NID then do;
+			if ^SUBOBJECT_ASSIGN_OK (TEMP_ID, DEFAULT_ASSIGN) then do;
+				MEM_LIST_OK = FALSE;
+				/* Issue a diagnostic */
+				if REPORT_REASON then
+					call SEMANTIC_ERROR_III (
+						ERR_DFT_ASSIGN_MEMBER_INACCESS,
+						FULL_SYMBOL_NAME (DEFAULT_ASSIGN),
+						QUALIFIED_SYMBOL_NAME (MEMB_ID),
+						SYMBOL_NAME (CLASS_NID));
+			end;
+		end;
+		else if rank(SYMP->SYM_NODE.TOP_TYPE.CODE) = REFERENCE_DT 
+		then do;
+			SEMANTICS_OK = FALSE;
+			/* Cannot generate a default assignment operator 
+			/* for <class-name> because the class contains a
+			/* reference member.
+			/**/
+			if REPORT_REASON then
+				call SEMANTIC_ERROR_II (
+					ERR_DFT_ASSIGN_SEMERR,
+					SYMBOL_NAME (CLASS_NID),
+					'reference');
+		end;
+
+		if SYMP->SYM_NODE.TOP_TYPE.CONST then do;
+			SEMANTICS_OK = FALSE;
+			/* Cannot generate a default assignment operator 
+			/* for <class-name> because the class contains a
+			/* const member.
+			/**/
+			if REPORT_REASON then
+				call SEMANTIC_ERROR_II (
+					ERR_DFT_ASSIGN_SEMERR,
+					SYMBOL_NAME (CLASS_NID),
+					'const');
+		end;
+
+		call RELEASE_SYM_NODE (WORK_ID);
+	end;
+
+	return (CLASS_LIST_OK & MEM_LIST_OK & SEMANTICS_OK);
+
+/* ---------------------------------------------------------------------
+/* SUBOBJECT_ASSIGN_OK
+/*
+/* For the class whose symbol is SYM, tell whether that class can
+/* be assigned as a subobject of the class under investigation.
+/* The class SYM must have an accessible copy assignment.
+/* Sets DEFAULT_ASSIGN to the assignment symbol for SYM, or NULL_NID.
+/* ------------------------------------------------------------------- */
+SUBOBJECT_ASSIGN_OK: procedure (SYM, DEFAULT_ASSIGN)
+		     returns   (type (BOOL_T))
+		     internal;
+
+	declare
+		SYM		type (NID_T),
+		DEFAULT_ASSIGN	type (NID_T);
+
+	declare
+		SYMP		pointer,
+		RESULT		type (BOOL_T);
+
+	RESULT = TRUE;
+	DEFAULT_ASSIGN = NULL_NID;
+
+	call GET_SYM_NODE_R (SYM, SYMP);
+
+	if SYMP->SYM_NODE.NEEDS_ASSIGN | ^SW_STRICT_LVALUE then do;
+		DEFAULT_ASSIGN = SYMP->SYM_NODE.ASSIGNMENT;
+
+		if DEFAULT_ASSIGN = NULL_NID then
+			RESULT = FALSE;
+		else if IS_PRIVATE_FUNC (DEFAULT_ASSIGN) then
+			RESULT = FALSE;
+	end;
+	/*
+	/* In C mode (SW_STRICT_LVALUE) we don't attempt to create an
+	/* assignment symbol for every class.  So we can't tell for
+	/* sure whether the class is assignable without an explicit
+	/* checking HAS_CONST_MEMBER>
+	/**/
+	else if SYMP->SYM_NODE.HAS_CONST_MEMBER then
+		RESULT = FALSE;
+
+	call RELEASE_SYM_NODE (SYM);
+
+	return (RESULT);
+
+end SUBOBJECT_ASSIGN_OK;
+
+end ASSIGN_OPERATOR_OK;
+
+
+
+/* ---------------------------------------------------------------------
+/* CHECK_TAG_SYMBOL
+/*
+/* Check if the input symbol is of tag type, or if it is an array
+/* whose element is of tag type.  If so, return the symbol_node id
+/* of the tag symbol.  If not, return NULL_NID.
+/* ------------------------------------------------------------------- */
+
+CHECK_TAG_SYMBOL: procedure (SYM_ID)
+		  returns (type (NID_T))
+		  internal;
+ 
+	declare
+		SYM_ID		type (NID_T);
+ 
+	declare	
+		SNID		type (SNID_T),
+		WORK_SYM	type (NID_T),
+		TYPE		type (NID_T),
+		TP		type (POINTER_T),
+		LEVEL		type (SHORT_T);
+ 
+
+	call SAVE_NODE (SNID);
+	call SET_SYM_NODE_R (SYM_ID);
+	
+	if IS_AGGREGATE_TAG_TYPE (rank (SYM_NODE.TOP_TYPE.CODE)) then
+		WORK_SYM = SYM_NODE.TOP_TYPE.TAG_SYMBOL;
+	else
+		WORK_SYM = CHECK_TYPE_TAG_SYMBOL ((SYM_NODE.TYPE));
+
+	call RESTORE_NODE (SNID);
+ 
+	return (WORK_SYM);
+
+end CHECK_TAG_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* CHECK_TYPE_TAG_SYMBOL
+/*
+/* Check if the input type is of tag type, or if it is an array
+/* whose element is of tag type.  If so, return the symbol_node id
+/* of the tag symbol.  If not, return NULL_NID.
+/* ------------------------------------------------------------------- */
+
+CHECK_TYPE_TAG_SYMBOL: procedure (TYPE_ID)
+		       returns (type (NID_T))
+		       external (X_CHECK_TYPE_TAG_SYMBOL);
+ 
+	declare
+		TYPE_ID		type (NID_T);
+ 
+	declare	
+		WORK_SYM	type (NID_T),
+		TP		type (POINTER_T),
+		LEVEL		type (SHORT_T),
+		TYPE_CODE	type (SHORT_T);
+ 
+	/*
+	/* Get the type_node, and strip away the 
+	/* array information.
+	/**/
+	call GET_TYPE_NODE_R (TYPE_ID, TP);
+	LEVEL = rank (TP->TYPE_NODE.LEVEL);
+	TYPE_CODE = rank (TP->TYPE_NODE.CODE(LEVEL));
+	do while ( TYPE_CODE = ARRAY_DT );
+		LEVEL = LEVEL - 1;
+		TYPE_CODE = rank (TP->TYPE_NODE.CODE(LEVEL));
+	end;
+	
+	if IS_AGGREGATE_TAG_TYPE (TYPE_CODE) then
+		WORK_SYM = TP->TYPE_NODE.TAG_SYMBOL(LEVEL);
+	else
+		WORK_SYM = NULL_NID;
+ 
+	call RELEASE_TYPE_NODE (TYPE_ID);
+ 
+	return (WORK_SYM);
+
+end CHECK_TYPE_TAG_SYMBOL;
+
+/*-----------------------------------------------------------------------
+/* ALL_ASSIGN_PARAM_CONST
+/*
+/* Walk the base class list and member list looking for assign operators.
+/* Return TRUE if all assign operators found have a CONST first actual
+/* parameter (the parameter that is NOT the 'this' parameter), otherwise
+/* return FALSE.
+/*-----------------------------------------------------------------------*/
+
+ALL_ASSIGN_PARAM_CONST: procedure (CLASS_NID)
+			returns (type (BOOL_T))
+		       	external (X_ALL_ASSIGN_PARAM_CONST);
+
+	declare
+		CLASS_NID	type (NID_T);
+	declare
+		BRO_ID		type (NID_T),
+		WORK_ID		type (NID_T),
+		MEMB_ID		type (NID_T),
+		TEMP_ID		type (NID_T),
+		THIS_ID		type (NID_T),
+		PARM_ID		type (NID_T),
+		NEXT_BC         type (NID_T),
+		SYMP		type (POINTER_T),
+		SYM		type (NID_T),
+		BCP		type (POINTER_T),
+		BC		type (NID_T),
+		ASSN		type (NID_T),
+		CONST_FLAG	type (BOOL_T);
+
+
+
+	call SET_SYM_NODE_R (CLASS_NID);
+	CONST_FLAG = TRUE;
+	BC = SYM_NODE.BASE_CLASSES;
+	BRO_ID = SYM_NODE.FIELD1;
+	
+	/* Walk the base class list, checking for assign operators.
+	/* For each assign operator, determine if the first actual
+	/* parameter is CONST or not.  Exit the loop when the first
+	/* non const first actual parameter is found.
+	/**/
+
+	do while (BC ^= NULL_NID & CONST_FLAG);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		SYM = BCP->BASE_CLASS_NODE.SYMBOL;
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+		BC = NEXT_BC;
+		call GET_SYM_NODE_R (SYM, SYMP);
+		if SYMP->SYM_NODE.NEEDS_ASSIGN then do;
+			ASSN = SYMP->SYM_NODE.ASSIGNMENT;
+			if ASSN ^= NULL_NID then
+				CONST_FLAG = FIRST_PARAM_CONST (ASSN) &
+					     CONST_FLAG;
+		end;
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+
+	/* Walk the member list, checking for members that are class objects.
+	/* If such members have assign operators, then determine if the first
+	/* actual parameter is CONST or not.  Exit the loop when the first
+	/* non-const first actual parameter is found.
+	/**/
+
+	do while (BRO_ID ^= NULL_NID & CONST_FLAG);
+		WORK_ID = BRO_ID;
+		MEMB_ID = BRO_ID;
+		call GET_SYM_NODE_R (WORK_ID, SYMP);
+		BRO_ID = SYMP->SYM_NODE.BROTHER;
+
+		TEMP_ID = CHECK_TAG_SYMBOL (WORK_ID);
+		if TEMP_ID ^= NULL_NID then do;
+			call RELEASE_SYM_NODE (WORK_ID);
+			WORK_ID = TEMP_ID;
+			call GET_SYM_NODE_R (WORK_ID, SYMP);
+			if SYMP->SYM_NODE.NEEDS_ASSIGN then do;
+
+				ASSN = SYMP->SYM_NODE.ASSIGNMENT;
+
+				if ASSN ^= NULL_NID then
+					CONST_FLAG = 
+						FIRST_PARAM_CONST (ASSN)
+						& CONST_FLAG;
+			end;
+		end;
+
+		call RELEASE_SYM_NODE (WORK_ID);
+	end;
+
+	return (CONST_FLAG);
+
+end ALL_ASSIGN_PARAM_CONST;
+
+/*-----------------------------------------------------------------------
+/* ALL_COPY_PARAM_CONST
+/*
+/* Walk the base class list and member list looking for copy constructors.
+/* Return TRUE if all copy constructors found have a CONST first actual
+/* parameter (the parameter that is NOT the 'this' parameter), otherwise
+/* return FALSE.
+/*-----------------------------------------------------------------------*/
+
+ALL_COPY_PARAM_CONST: procedure (CLASS_NID)
+			returns (type (BOOL_T))
+		       	external (X_ALL_COPY_PARAM_CONST);
+
+	declare
+		CLASS_NID	type (NID_T);
+
+	declare
+		BRO_ID		type (NID_T),
+		MEMB_ID		type (NID_T),
+		TEMP_ID		type (NID_T),
+		NEXT_BC         type (NID_T),
+		SYMP		type (POINTER_T),
+		SYM		type (NID_T),
+		BCP		type (POINTER_T),
+		BC		type (NID_T),
+		WORK_ID		type (NID_T),
+		IS_CONST	type (BOOL_T);
+
+	call SET_SYM_NODE_R (CLASS_NID);
+	IS_CONST = TRUE;
+	BC = SYM_NODE.BASE_CLASSES;
+	BRO_ID = SYM_NODE.FIELD1;
+	
+	/* Walk the base class list, checking for copy constructors.
+	/* For each copy constructor, determine if the first actual
+	/* parameter is CONST or not.  Exit the loop when the first
+	/* non const first actual parameter is found.
+	/**/
+
+	do while ((BC ^= NULL_NID) & IS_CONST);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		call GET_SYM_NODE_R (BCP->BASE_CLASS_NODE.SYMBOL, SYMP);
+		if SYMP->SYM_NODE.NEEDS_COPY then do;
+			IS_CONST = FIRST_PARAM_CONST
+				   (SYMP->SYM_NODE.COPY_CONSTRUCTOR) &
+				   IS_CONST;
+		end;
+		call RELEASE_SYM_NODE (BCP->BASE_CLASS_NODE.SYMBOL);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BC);
+		BC = NEXT_BC;
+	end;
+
+	/* Walk the member list, checking for members that are class objects.
+	/* If such members have copy constructors, then determine if the first
+	/* actual parameter is CONST or not.  Exit the loop when the first
+	/* non-const first actual parameter is found.
+	/**/
+
+	do while (BRO_ID ^= NULL_NID & IS_CONST);
+		WORK_ID = BRO_ID;
+		MEMB_ID = BRO_ID;
+		call GET_SYM_NODE_R (WORK_ID, SYMP);
+		BRO_ID = SYMP->SYM_NODE.BROTHER;
+
+		TEMP_ID = CHECK_TAG_SYMBOL (WORK_ID);
+		if TEMP_ID ^= NULL_NID then do;
+			call RELEASE_SYM_NODE (WORK_ID);
+			WORK_ID = TEMP_ID;
+			call GET_SYM_NODE_R (WORK_ID, SYMP);
+			if SYMP->SYM_NODE.NEEDS_COPY then
+				IS_CONST = FIRST_PARAM_CONST 
+					   (SYMP->SYM_NODE.COPY_CONSTRUCTOR)
+					   & IS_CONST;
+		end;
+
+		call RELEASE_SYM_NODE (WORK_ID);
+	end;
+
+	return (IS_CONST);
+
+end ALL_COPY_PARAM_CONST;
+
+/* ---------------------------------------------------------------------
+/* FIRST_PARAM_CONST
+/*
+/* Determines if the first actual parameter of the function MEMBER_FUNCTION
+/* if of type const.  Returns TRUE if so, and FALSE otherwise.
+/* Note: cloned from VALID_COPY_CONSTRUCTOR
+/* ------------------------------------------------------------------- */
+
+FIRST_PARAM_CONST: procedure (MEMBER_FUNCTION)
+		   returns   (type (BOOL_T))
+		   internal;
+	declare
+		MEMBER_FUNCTION		type (NID_T);
+	declare
+		(MFP, P)		type (POINTER_T),
+		FIRST_PARAMETER		type (NID_T),
+		PARAMETER_TYPE		type (NID_T),
+		PARAMETER_TOP_TYPE	type (TYPE_DATA_T),
+		TOP_REFERENCE_TYPE	type (BOOL_T);
+
+	call GET_SYM_NODE_R (MEMBER_FUNCTION, MFP);
+	call GET_SIG_NODE_R (MFP->SYM_NODE.TOP_TYPE.SIGNATURE, P);
+	FIRST_PARAMETER = P->SIG_NODE.EXPLICIT_PARAMETERS;
+	call RELEASE_SIG_NODE (MFP->SYM_NODE.TOP_TYPE.SIGNATURE);
+	call RELEASE_SYM_NODE (MEMBER_FUNCTION);
+
+	/*
+	/* Here, we have the first actual parameter.
+	/* See if it is a const type.
+	/**/
+
+	call GET_PARAMETER_NODE_R (FIRST_PARAMETER, P);
+	PARAMETER_TOP_TYPE = P->PARAMETER_NODE.TOP_TYPE;
+	PARAMETER_TYPE	   = P->PARAMETER_NODE.TYPE;
+	call RELEASE_SYM_NODE (FIRST_PARAMETER);
+
+	if PARAMETER_TOP_TYPE.CODE = byte (REFERENCE_DT) then  do;
+		call GET_TOP_LEVEL_TYPE
+			(PARAMETER_TYPE, 1, PARAMETER_TOP_TYPE);
+	end;
+
+	return (PARAMETER_TOP_TYPE.CONST);
+
+end FIRST_PARAM_CONST;
+
+/* ---------------------------------------------------------------------
+/* CHECK_COPY_OR_ASSIGN
+/*
+/* Given the node_id of a type_node, determine if it represents an
+/* array of aggregates, and if so, return the symbol_node id of the
+/* default copy constructor if VOP is COPY_VO, or the symbol_node
+/* id of the default assign operator if VOP is ASSIGN_VO.
+/* If none of the above is true, return NULL_CXX_VID.
+/* ------------------------------------------------------------------- */
+
+CHECK_COPY_OR_ASSIGN: procedure (TYPE, VOP)
+		      returns   (type (NID_T))
+		      internal;
+	declare
+		TYPE		type (NID_T),
+		VOP      	type (SHORT_T);
+	declare
+		(TP, SP)	type (POINTER_T),
+		LEVEL		type (SHORT_T),
+		RET_FUNCTION	type (NID_T);
+	
+	if TYPE = NULL_NID then return (NULL_NID);
+
+	call GET_TYPE_NODE_R (TYPE, TP);
+
+	LEVEL = rank (TP->TYPE_NODE.LEVEL);
+
+	do while ((LEVEL >= 0) &
+		  (TP->TYPE_NODE.TYPE_CODE (LEVEL) = byte (ARRAY_DT)));
+		LEVEL = LEVEL - 1;
+	end;
+
+	if (LEVEL = 0) &
+	   IS_AGGREGATE_TAG_TYPE (rank (TP->TYPE_NODE.TYPE_CODE (0))) then do;
+		call GET_SYM_NODE_R (TP->TYPE_NODE.TYPE_NID (0), SP);
+		if VOP = COPY_VO then
+			RET_FUNCTION = SP->SYM_NODE.COPY_CONSTRUCTOR;
+		else if VOP = ASSIGN_VO then
+			RET_FUNCTION = SP->SYM_NODE.ASSIGNMENT;
+		call RELEASE_SYM_NODE (TP->TYPE_NODE.TYPE_NID (0));
+	end;
+	else	RET_FUNCTION = NULL_NID;
+
+
+	call RELEASE_TYPE_NODE (TYPE);
+	return (RET_FUNCTION);
+
+end CHECK_COPY_OR_ASSIGN;
+
+/* -----------------------------------------------------------------
+/* GET_ELEMENT_INFO
+/*
+/* Given the symbol_node id of an array, return a value_id of an
+/* expression that is the count of the total number of elements 
+/* in the array, and the size of an element in address units.
+/* ------------------------------------------------------------------ */
+
+GET_ELEMENT_INFO: procedure (SYM, ELEMENT_VALUE, ELEMENT_SIZE) internal;
+ 
+	declare	SYM		type (NID_T),
+		ELEMENT_VALUE   type (CXX_VID_T),
+		ELEMENT_SIZE	type (LONG_T);
+
+	declare
+		COUNT		type (CXX_VID_T),
+		SKIP		type (SHORT_T),
+		MEMBERS		type (LONG_T),
+		NEW_MEMBERS	type (LONG_T),
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T),
+		TP		type (POINTER_T),
+		DP		type (POINTER_T),
+		CONTINUE	type (BOOL_T),
+		CLASS_TYPE	type (NID_T),
+		SYM_TYPE	type (NID_T),
+		THIS_TOP_TYPE 	type (TYPE_DATA_T);
+
+				
+
+	COUNT = NULL_CXX_VID;
+	MEMBERS = 1;
+	CONTINUE = TRUE;
+	SKIP = 0;
+	
+	call SET_SYM_NODE_R (SYM);
+	SYM_TYPE = SYM_NODE.TYPE;
+	call GET_TYPE_NODE_R (SYM_TYPE, TP);
+
+	do while (CONTINUE);
+		call GET_TOP_LEVEL_TYPE_P (TP, SKIP, 
+					   THIS_TOP_TYPE);
+		if THIS_TOP_TYPE.CODE ^= byte (ARRAY_DT) then
+			leave;
+		SKIP = SKIP + 1;
+		call GET_DIM_NODE_R (THIS_TOP_TYPE.DIMENSION, DP);
+		if ^DP->DIM_NODE.INCOMPLETE then do;
+			NEW_MEMBERS = MEMBERS * DP->DIM_NODE.VALUE;
+			if NEW_MEMBERS > 0 then
+				MEMBERS = NEW_MEMBERS;
+			else
+				call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		end;
+		else if DP->DIM_NODE.VALUE_ID = NULL_CXX_VID then do;
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		end;
+		else do;
+			COUNT = DP->DIM_NODE.VALUE_ID;
+			call COUNT_UP_VALUE (COUNT);
+		end;
+		call RELEASE_DIM_NODE (THIS_TOP_TYPE.DIMENSION);
+	end;
+
+	call RELEASE_TYPE_NODE (SYM_TYPE);
+
+	if COUNT = NULL_CXX_VID then
+		COUNT = INTEGER_VALUE (MEMBERS, INT_BT);
+	else
+		COUNT = GET_VALUE_AND_EXPAND_LR
+			(MUL_VO, COUNT, INTEGER_VALUE (MEMBERS, INT_BT));
+	ELEMENT_VALUE = COUNT;
+
+	/* Now get the element size. */
+	call SET_SYM_NODE_R (THIS_TOP_TYPE.TAG_SYMBOL);
+	CLASS_TYPE = SYM_NODE.TYPE;
+	call TYPE_SIZE (CLASS_TYPE, SIZE, SIZE_UNITS, BOUNDARY);
+	ELEMENT_SIZE = ROUNDU (SIZE, SIZE_UNITS, ADDRESS_UNITS);
+
+
+
+end GET_ELEMENT_INFO;
+
+/* ------------------------------------------------------------------
+/*
+/* IS_PRIVATE_FUNC
+/*
+/* Returns TRUE if the function denoted by SYMBOL has protected access.
+/* Trashes current_node_id.
+/*
+/* ------------------------------------------------------------------- */
+
+IS_PRIVATE_FUNC: procedure (SYMBOL) 
+		   returns   (type (BOOL_T))
+		   internal;
+ 
+	declare
+		SYMBOL		type (NID_T);
+
+	call SET_SYM_NODE_R (SYMBOL);
+
+	return (rank (SYM_NODE.ACCESS) >= PRIVATE_ACCESS);
+
+end IS_PRIVATE_FUNC;
+
+
+/* ---------------------------------------------------------------------
+ * NEEDS_ARRAY_CONSTRUCTOR
+ *
+ * For a given class, returns whether it needs an array constructing
+ * member function declared.
+ * ------------------------------------------------------------------- */
+
+NEEDS_ARRAY_CONSTRUCTOR: procedure (CLASS)
+			 returns   (type (BOOL_T))
+			 external  (X_NEEDS_ARRAY_CONSTRUCTOR);
+
+	declare
+		CLASS		type (NID_T);
+	declare
+		(CP, SP, SIGP)	pointer,
+		DEFAULT_CTOR	type (NID_T),
+		NEEDS		type (BOOL_T);
+
+
+	call GET_SYM_NODE_R (CLASS, CP);
+	if CP->SYM_NODE.NEEDS_INIT then do;
+		DEFAULT_CTOR = FIND_DEFAULT_CTOR (
+			       CP->SYM_NODE.CONSTRUCTOR);
+	end;
+	else 
+		DEFAULT_CTOR = NULL_NID;
+	call RELEASE_SYM_NODE (CLASS);
+	
+	if DEFAULT_CTOR ^= NULL_NID then do;
+		call GET_SYM_NODE_R (DEFAULT_CTOR, SP);
+		call GET_SIG_NODE_R (SP->SYM_NODE.TOP_TYPE.SIGNATURE, SIGP);
+ 
+		/*
+		/* If this default constructor has other than just
+		/* plain zero arguments, it can't be used with the
+		/* array initializing run-time routine.
+		/**/
+
+		NEEDS = ( SIGP->SIG_NODE.EXPLICIT_NPARAMETERS > 0
+			| SIGP->SIG_NODE.ELLIPSIS );
+ 
+		call RELEASE_SIG_NODE (SP->SYM_NODE.TOP_TYPE.SIGNATURE);
+		call RELEASE_SYM_NODE (DEFAULT_CTOR);
+	end;
+	else
+		/* No default constructor; doesn't need array constructor. */
+		NEEDS = FALSE;
+
+	return (NEEDS);
+	
+
+end NEEDS_ARRAY_CONSTRUCTOR;
+

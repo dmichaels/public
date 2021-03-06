@@ -1,0 +1,46 @@
+/* C++ CXX_DATA_INITIAL_FILE_IN - Data-initial-file data/types */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  10.20.92  DGM  002  Added LAST_LONG_WORD_WRITTEN & LAST_BYTE_POSITION.
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  04.19.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN; */
+
+/* ---------------------------------------------------------------------
+/* Type declarations
+/* ------------------------------------------------------------------- */
+
+/*
+/* This DIFILE_T type contains all of the information necessary
+/* to represent a position within the data-initial-file.
+/**/
+
+declare
+
+1 DIFILE_T				based,
+  2 BASE_POSITION			type (LONG_T),
+  2 BYTE_POSITION			type (LONG_T),
+  2 POSITION				type (LONG_T),
+  2 POSITION_UNITS			type (SHORT_T),
+  2 available_01			type (SHORT_T),
+  2 available_02			type (LONG_T),
+  2 available_03			type (LONG_T),
+  2 available_04			type (POINTER_T);
+

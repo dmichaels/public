@@ -1,0 +1,1147 @@
+/* LPI-DEBUG M68 DIS881.PL1 - Disassemble an MC68881 instruction */
+
+/**********************************************************************
+ * This product is the property of Language Processors, Inc.          *
+ * and is licensed pursuant to a written license agreement.           *
+ * No portion of this product may be reproduced without the written   *
+ * permission of Language Processors, Inc. except pursuant to the     *
+ * license agreement.                                                 *
+ *********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   2.12.92  VTF  (003) Fixed up FMOVEM (move multiple floating pt) to
+ *                       display a list of registers, rather than the
+ *                       register code.
+ *                       Fixed code for the FSAVE instruction.
+ *
+ *  12.04.91  VTF  Added 68040 floating point instructions
+ *                 Modified code for the branch instructions so that
+ *                 the destination address appears rather than the offset
+ *                 from the current instruction.  This required a new
+ *                 parameter:  IADDRESS (address of instruction).
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68881 User's Manual.
+ *
+ *********************************************************************/
+
+/* --------------------------------------------------------------------
+ * DIS881
+ *
+ * Disassemble one MC68881 instruction given in the array of (not less
+ * than) MAX_INSTRUCTION_WORDS 16-bit words (in INSTRUCTION_WORDS).
+ * If successful, then put the string representing the disassembled
+ * instruction in STRING and return the total number of bytes in the 
+ * instruction, otherwise return zero.
+ */
+
+DIS881: procedure (INSTRUCTION_WORDS, IADDRESS, STRING)
+        returns (fixed binary (15));
+
+    %include 'incfil';
+    %include DIS_IN;
+    %include DISOPDEF_IN;
+    %include DISOPSIZE_IN;
+    %include DISREGDEF_IN;
+    %include DISREGNAME_IN;
+    %include DISEA_IN;
+    %include SYSTTY_IN;
+
+    declare
+	INSTRUCTION_WORDS     (MAX_INSTRUCTION_WORDS) fixed binary (15),
+        IADDRESS              fixed bin (31),
+	STRING		      character (MAX_STRING_LENGTH) varying,
+        TEMPSTR               character (12) varying; /* holds 32-bit hex #s */
+
+    declare
+	DISEA		entry	(fixed binary (15),
+				 fixed binary (15),
+				 fixed binary (15),
+				 pointer,
+				 fixed binary (15),
+				 pointer)
+			returns	(fixed binary (15))
+			external,
+        ITOABS          entry     (pointer, fixed bin(31)) external,
+	PRNTEA		entry	(pointer)
+			returns (character (MAX_STRING_LENGTH) varying)
+			external,
+	PRNTOP		entry	(fixed binary (15), fixed binary (15))
+			returns (character (MAX_STRING_LENGTH) varying)
+			external,
+        FREGLIST        entry     (fixed binary (15), bit (1) aligned,
+                                   bit (1) aligned)
+                        returns   (character (96) varying)
+                        external;
+
+    declare
+	EA_DATA_BUFFER	character (SIZEOF_EA_DATA),
+	EAP		pointer,
+	IP		pointer,
+	NWORDS		fixed binary (15);
+
+    IP = addr(INSTRUCTION_WORDS);
+    EAP = addr(EA_DATA_BUFFER);
+    NWORDS = 0;
+    STRING = '';
+
+    NWORDS = FARITH_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FBCC_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FDBCC_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FMOVE_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FMOVE_CONTROL_INSTRUCTION ();  if NWORDS > 0 then goto DONE;
+    NWORDS = FMOVE_REG_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FMOVECR_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FMOVEM_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FMOVEM_CONTROL_INSTRUCTION (); if NWORDS > 0 then goto DONE;
+    NWORDS = FNOP_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FRESTORE_FSAVE_INSTRUCTION (); if NWORDS > 0 then goto DONE;
+    NWORDS = FSCC_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FSINCOS_INSTRUCTION ();	    if NWORDS > 0 then goto DONE;
+    NWORDS = FTRAPCC_INSTRUCTION ();	    goto DONE;
+
+    DONE:
+
+    return (2 * NWORDS);
+
+
+    /* --------------------------------------------------------------------
+     * FARITH_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FABS, FACOS, FADD, FASIN, FATAN, FATANH, FCMP, FCOS, FCOSH, FDIV,
+     * FETOX, FETOXM1, FGETEXP, FETMAN, FINT, FINTRZ, FLOG10, FLOG2, FLOGN,
+     * FLOGNP1, FMOD, FMUL, FNEG, FREM, FSCALE, FSGLDIV, FSGLMUL, FSIN,
+     * FSINH, FSQRT, FSUB, FTAN, FTANH, FTENTOX, FTST, or FTWOTOX instruction.
+     * If so, then return the disassembled instruction in STRING and return
+     * the size in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    FARITH_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 FARITH_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_12	bit (4),
+	        3 CPID		bit (3),
+	        3 BITS_8_6	bit (3),
+	        3 MODE		bit (3),
+	        3 REG		bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_15	bit (1),
+	        3 RM		bit (1),
+	        3 BITS_13_13	bit (1),
+	        3 SRC		bit (3),
+	        3 DST		bit (3),
+	        3 BITS_6_0	bit (7);
+
+	%replace FARITH_BITS_15_12	by '1111'B;
+	%replace FARITH_BITS_15_15	by '0'B;
+	%replace FARITH_BITS_13_13	by '0'B;
+	%replace FARITH_BITS_8_6	by '000'B;
+
+	%replace FABS_BITS_6_0		by '0011000'B;
+        %replace FSABS_BITS_6_0         by '1011000'B;  /* 68040 */
+        %replace FDABS_BITS_6_0         by '1011100'B;  /* 68040 */
+	%replace FACOS_BITS_6_0		by '0011100'B;
+	%replace FADD_BITS_6_0		by '0100010'B;
+	%replace FSADD_BITS_6_0		by '1100010'B;  /* 68040 */
+	%replace FDADD_BITS_6_0		by '1100110'B;  /* 68040 */
+	%replace FASIN_BITS_6_0		by '0001100'B;
+	%replace FATAN_BITS_6_0		by '0001010'B;
+	%replace FATANH_BITS_6_0	by '0001101'B;
+	%replace FCMP_BITS_6_0		by '0111000'B;	/* * */
+	%replace FCOS_BITS_6_0		by '0011101'B;
+	%replace FCOSH_BITS_6_0		by '0011001'B;
+	%replace FDIV_BITS_6_0		by '0100000'B;	/* * */
+	%replace FSDIV_BITS_6_0		by '1100000'B;  /* 68040 */
+	%replace FDDIV_BITS_6_0		by '1100100'B;  /* 68040 */
+	%replace FETOX_BITS_6_0		by '0010000'B;
+	%replace FETOM1_BITS_6_0	by '0001000'B;
+	%replace FGETEXP_BITS_6_0	by '0011110'B;
+	%replace FGETMAN_BITS_6_0	by '0011111'B;
+	%replace FINT_BITS_6_0		by '0000001'B;
+	%replace FINTRZ_BITS_6_0	by '0000011'B;
+	%replace FLOG10_BITS_6_0	by '0010101'B;
+	%replace FLOG2_BITS_6_0		by '0010110'B;
+	%replace FLOGN_BITS_6_0		by '0010100'B;
+	%replace FLOGNP1_BITS_6_0	by '0000110'B;
+	%replace FNEG_BITS_6_0		by '0011010'B;
+	%replace FSNEG_BITS_6_0		by '1011010'B;  /* 68040 */
+	%replace FDNEG_BITS_6_0		by '1011110'B;  /* 68040 */
+	%replace FMOD_BITS_6_0		by '0100001'B;	/* * */
+	%replace FMUL_BITS_6_0		by '0100011'B;	/* * */
+	%replace FSMUL_BITS_6_0		by '1100011'B;  /* 68040 */
+	%replace FDMUL_BITS_6_0		by '1100111'B;  /* 68040 */
+	%replace FREM_BITS_6_0		by '0100101'B;	/* * */
+	%replace FSCALE_BITS_6_0	by '0100110'B;	/* * */
+	%replace FSGLDIV_BITS_6_0	by '0100100'B;	/* * */
+	%replace FSGLMUL_BITS_6_0	by '0100111'B;	/* * */
+	%replace FSIN_BITS_6_0		by '0001110'B;
+	%replace FSINH_BITS_6_0		by '0000010'B;
+	%replace FSQRT_BITS_6_0		by '0000100'B;
+	%replace FSSQRT_BITS_6_0	by '1000001'B;  /* 68040 */
+	%replace FDSQRT_BITS_6_0	by '1000101'B;  /* 68040 */
+	%replace FSUB_BITS_6_0		by '0101000'B;	/* * */
+	%replace FSSUB_BITS_6_0		by '1101000'B;  /* 68040 */
+	%replace FDSUB_BITS_6_0		by '1101100'B;  /* 68040 */
+	%replace FTAN_BITS_6_0		by '0001111'B;
+	%replace FTANH_BITS_6_0		by '0001001'B;
+	%replace FTENTOX_BITS_6_0	by '0010010'B;
+	%replace FTST_BITS_6_0		by '0111010'B;	/* * */
+	%replace FTWOTOX_BITS_6_0	by '0010001'B;
+
+	%replace SIZE_FARITH		by 2;
+
+	if (IP->FARITH_OPCODE.BITS_15_12 ^= FARITH_BITS_15_12) |
+	   (IP->FARITH_OPCODE.BITS_8_6   ^= FARITH_BITS_8_6)   |
+	   (IP->FARITH_OPCODE.BITS_15_15 ^= FARITH_BITS_15_15) |
+	   (IP->FARITH_OPCODE.BITS_13_13 ^= FARITH_BITS_13_13) then
+	    return (0);
+
+	if IP->FARITH_OPCODE.BITS_6_0 = FABS_BITS_6_0         then
+	     CODE = OP_FABS;
+        else if IP->FARITH_OPCODE.BITS_6_0 = FSABS_BITS_6_0   then
+             CODE = OP_FSABS;
+        else if IP->FARITH_OPCODE.BITS_6_0 = FDABS_BITS_6_0   then
+             CODE = OP_FDABS;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FACOS_BITS_6_0   then
+	     CODE = OP_FACOS;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FADD_BITS_6_0    then
+	     CODE = OP_FADD;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSADD_BITS_6_0   then
+	     CODE = OP_FSADD;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FDADD_BITS_6_0   then
+	     CODE = OP_FDADD;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FASIN_BITS_6_0   then
+	     CODE = OP_FASIN;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FATAN_BITS_6_0   then
+	     CODE = OP_FATAN;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FATANH_BITS_6_0  then
+	     CODE = OP_FATANH;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FCMP_BITS_6_0    then
+	     CODE = OP_FCMP;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FCOS_BITS_6_0    then
+	     CODE = OP_FCOS;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FCOSH_BITS_6_0   then
+	     CODE = OP_FCOSH;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FDIV_BITS_6_0    then
+	     CODE = OP_FDIV;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSDIV_BITS_6_0   then
+	     CODE = OP_FSDIV;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FDDIV_BITS_6_0   then
+	     CODE = OP_FDDIV;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FETOX_BITS_6_0   then
+	     CODE = OP_FETOX;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FETOM1_BITS_6_0  then
+	     CODE = OP_FETOXM1;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FGETEXP_BITS_6_0 then
+	     CODE = OP_FGETEXP;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FGETMAN_BITS_6_0 then
+	     CODE = OP_FGETMAN;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FINT_BITS_6_0    then
+	     CODE = OP_FINT;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FINTRZ_BITS_6_0  then
+	     CODE = OP_FINTRZ;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FLOG10_BITS_6_0  then
+	     CODE = OP_FLOG10;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FLOG2_BITS_6_0   then
+	     CODE = OP_FLOG2;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FLOGN_BITS_6_0   then
+	     CODE = OP_FLOGN;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FLOGNP1_BITS_6_0 then
+	     CODE = OP_FLOGNP1;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FMOD_BITS_6_0    then
+	     CODE = OP_FMOD;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FMUL_BITS_6_0    then
+	     CODE = OP_FMUL;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSMUL_BITS_6_0   then
+	     CODE = OP_FSMUL;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FDMUL_BITS_6_0   then
+	     CODE = OP_FDMUL;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FNEG_BITS_6_0    then
+	     CODE = OP_FNEG;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSNEG_BITS_6_0   then
+	     CODE = OP_FSNEG;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FDNEG_BITS_6_0   then
+	     CODE = OP_FDNEG;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FREM_BITS_6_0    then
+	     CODE = OP_FREM;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSCALE_BITS_6_0  then
+	     CODE = OP_FSCALE;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSGLDIV_BITS_6_0 then
+	     CODE = OP_FSGLDIV;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSGLMUL_BITS_6_0 then
+	     CODE = OP_FSGLMUL;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSIN_BITS_6_0    then
+	     CODE = OP_FSIN;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSINH_BITS_6_0   then
+	     CODE = OP_FSINH;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSQRT_BITS_6_0   then
+	     CODE = OP_FSQRT;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSSQRT_BITS_6_0  then
+	     CODE = OP_FSSQRT;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FDSQRT_BITS_6_0  then
+	     CODE = OP_FDSQRT;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSUB_BITS_6_0    then
+	     CODE = OP_FSUB;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FSSUB_BITS_6_0    then
+	     CODE = OP_FSSUB;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FDSUB_BITS_6_0    then
+	     CODE = OP_FDSUB;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FTAN_BITS_6_0    then
+	     CODE = OP_FTAN;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FTANH_BITS_6_0   then
+	     CODE = OP_FTANH;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FTENTOX_BITS_6_0 then
+	     CODE = OP_FTENTOX;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FTST_BITS_6_0    then
+	     CODE = OP_FTST;
+	else if IP->FARITH_OPCODE.BITS_6_0 = FTWOTOX_BITS_6_0 then
+	     CODE = OP_FTWOTOX;
+	else return (0);
+	if IP->FARITH_OPCODE.RM = '0'B then do;
+	    if (binary(IP->FARITH_OPCODE.MODE) ^= 0) |
+	       (binary(IP->FARITH_OPCODE.REG) ^= 0) then
+		return (0);
+	    STRING = PRNTOP(CODE,SIZE_EXTENDED) ||
+		     FREG_NAME(binary(IP->FARITH_OPCODE.SRC));
+	    if IP->FARITH_OPCODE.SRC ^= IP->FARITH_OPCODE.DST then
+		STRING = STRING || ',' ||
+			 FREG_NAME(binary(IP->FARITH_OPCODE.DST));
+	    return (SIZE_FARITH);
+	end;
+	SIZE = FOPSIZE_CODE(binary(IP->FARITH_OPCODE.SRC));
+	if SIZE = SIZE_PACKED_DYN then
+	    return (0);
+	if (SIZE = SIZE_DOUBLE) | (SIZE = SIZE_EXTENDED) |
+	   (SIZE = SIZE_PACKED) then
+	     TYPE = EATYPE_MEMORY;
+	else TYPE = EATYPE_DATA;
+	NWORDS = DISEA (binary(IP->FARITH_OPCODE.MODE),
+			binary(IP->FARITH_OPCODE.REG),
+			SIZE,
+			addr(IP->INSTRUCTION.WORD(3)),
+			TYPE,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP) || ',' ||
+		 FREG_NAME(binary(IP->FARITH_OPCODE.DST));
+	return (SIZE_FARITH + NWORDS);
+
+    end FARITH_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FBCC_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FBcc instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FBCC_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            INDEX		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 FBCC_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 CPID		bit (3),
+	      2 BITS_8_7	bit (2),
+	      2 SIZE		bit (1),
+	      2 COND		bit (6);
+
+	%replace FBCC_BITS_15_12	by '1111'B;
+	%replace FBCC_BITS_8_7		by '01'B;
+	%replace SIZE_FBCC		by 1;
+
+	if (IP->FBCC_OPCODE.BITS_15_12 ^= FBCC_BITS_15_12) |
+	   (IP->FBCC_OPCODE.BITS_8_7 ^= FBCC_BITS_8_7) then
+	    return (0);
+	if IP->FBCC_OPCODE.SIZE = '0'B then
+	     SIZE = SIZE_WORD;
+	else SIZE = SIZE_LONG;
+	NWORDS = DISEA (EAMODE_IMMED,
+			EAREG_IMMED,
+			SIZE,
+			addr(IP->INSTRUCTION.WORD(2)),
+			EATYPE_ALL,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+
+        /* convert offset to absolute address */
+        call ITOABS(EAP,IADDRESS+2);
+
+	CODE = OP_FBRA_COND + binary(IP->FBCC_OPCODE.COND);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP);
+	return (SIZE_FBCC + NWORDS);
+
+    end FBCC_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FDBCC_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FDBcc instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FDBCC_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            INDEX		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 FDBCC_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_12	bit (4),
+	        3 CPID		bit (3),
+	        3 BITS_8_3	bit (6),
+	        3 COUNT		bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_6	bit (10),
+	        3 COND		bit (6);
+
+	%replace FDBCC_BITS_15_12	by '1111'B;
+	%replace FDBCC_BITS_8_3		by '001001'B;
+	%replace FDBCC_BITS_15_6	by '0000000000'B;
+	%replace SIZE_FDBCC		by 2;
+
+	if (IP->FDBCC_OPCODE.BITS_15_12 ^= FDBCC_BITS_15_12) |
+	   (IP->FDBCC_OPCODE.BITS_8_3   ^= FDBCC_BITS_8_3)   |
+	   (IP->FDBCC_OPCODE.BITS_15_6  ^= FDBCC_BITS_15_6) then
+	    return (0);
+	NWORDS = DISEA (EAMODE_IMMED,
+			EAREG_IMMED,
+			SIZE_WORD,
+			addr(IP->INSTRUCTION.WORD(3)),
+			EATYPE_ALL,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+
+        /* convert offset to absolute address */
+        call ITOABS(EAP,IADDRESS+4);
+
+	CODE = OP_FDBRA_COND + binary(IP->FDBCC_OPCODE.COND);
+	STRING = PRNTOP(CODE,SIZE_NULL) ||
+		 FREG_NAME(binary(IP->FDBCC_OPCODE.COUNT)) ||
+		 ',' || PRNTEA(EAP);
+	return (SIZE_FDBCC + NWORDS);
+
+    end FDBCC_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FMOVE_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FMOVE-to-register instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FMOVE_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            SIZE		fixed binary (15),
+            THIS_OP             fixed binary (15),
+            TYPE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+            1 FMOVE_OPCODE	based,
+	      2 FIRST_WORD,
+                3 BITS_15_12	bit (4),
+                3 CPID		bit (3),
+                3 BITS_8_6	bit (3),
+                3 MODE		bit (3),
+                3 REG		bit (3),
+	      2 SECOND_WORD,
+                3 BITS_15_15	bit (1),
+                3 RM		bit (1),
+                3 BITS_13_13	bit (1),
+                3 SRC		bit (3),
+                3 DST		bit (3),
+                3 BITS_6_0	bit (7);
+
+        %replace FMOVE_BITS_15_12	by '1111'B;
+        %replace FMOVE_BITS_8_6		by '000'B;
+        %replace FMOVE_BITS_15_15	by '0'B;
+        %replace FMOVE_BITS_13_13	by '0'B;
+        %replace FMOVE_BITS_6_0		by '0000000'B;
+        %replace FSMOVE_BITS_6_0	by '1000000'B;
+        %replace FDMOVE_BITS_6_0	by '1000100'B;
+        %replace SIZE_FMOVE		by 2;
+
+        if (IP->FMOVE_OPCODE.BITS_15_12 ^= FMOVE_BITS_15_12) |
+	   (IP->FMOVE_OPCODE.BITS_8_6   ^= FMOVE_BITS_8_6)   |
+	   (IP->FMOVE_OPCODE.BITS_15_15 ^= FMOVE_BITS_15_15) |
+	   (IP->FMOVE_OPCODE.BITS_13_13 ^= FMOVE_BITS_13_13) then
+	    return (0);
+
+        if (IP->FMOVE_OPCODE.BITS_6_0 = FMOVE_BITS_6_0) then
+           THIS_OP = OP_FMOVE;
+        else if (IP->FMOVE_OPCODE.BITS_6_0 = FSMOVE_BITS_6_0) then /* 68040 */
+           THIS_OP = OP_FSMOVE;
+        else if (IP->FMOVE_OPCODE.BITS_6_0 = FDMOVE_BITS_6_0) then /* 68040 */
+           THIS_OP = OP_FDMOVE;
+        else
+           return (0);
+
+        if IP->FMOVE_OPCODE.RM = '0'B then do;
+	    if (binary(IP->FMOVE_OPCODE.MODE) ^= 0) |
+	       (binary(IP->FMOVE_OPCODE.REG) ^= 0) then
+	        return (0);
+	    STRING = PRNTOP(THIS_OP,SIZE_EXTENDED) ||
+		     FREG_NAME(binary(IP->FMOVE_OPCODE.SRC)) || ',' ||
+		     FREG_NAME(binary(IP->FMOVE_OPCODE.DST));
+	    return (SIZE_FMOVE);
+	end;
+	SIZE = FOPSIZE_CODE(binary(IP->FMOVE_OPCODE.SRC));
+	if SIZE = SIZE_PACKED_DYN then
+	    return (0);
+	if (SIZE = SIZE_DOUBLE) | (SIZE = SIZE_EXTENDED) |
+	   (SIZE = SIZE_PACKED) then
+	     TYPE = EATYPE_MEMORY;
+	else TYPE = EATYPE_DATA;
+        NWORDS = DISEA (binary(IP->FMOVE_OPCODE.MODE),
+                        binary(IP->FMOVE_OPCODE.REG),
+                        SIZE,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        TYPE,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	STRING = PRNTOP(THIS_OP,SIZE) || PRNTEA(EAP) || ',' ||
+		 FREG_NAME(binary(IP->FMOVE_OPCODE.DST));
+        return (SIZE_FMOVE + NWORDS);
+
+    end FMOVE_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FMOVE_CONTROL_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FMOVE-system-control-register instruction.  If so, then return the
+     * disassembled instruction in STRING and return the size in bytes of
+     * the instruction.  Otherwise, return zero.
+     */
+
+    FMOVE_CONTROL_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            REG		fixed binary (15),
+            TYPE	fixed binary (15),
+            NWORDS	fixed binary (15);
+        declare
+            1 FMOVE_CONTROL_OPCODE	based,
+	      2 FIRST_WORD,
+                3 BITS_15_12		bit (4),
+                3 CPID			bit (3),
+                3 BITS_8_6		bit (3),
+                3 MODE			bit (3),
+                3 REG			bit (3),
+	      2 SECOND_WORD,
+                3 BITS_15_14		bit (2),
+                3 DIRECTION		bit (1),
+                3 REGSELECT		bit (3),
+                3 BITS_9_0		bit (10);
+
+        %replace FMOVE_CONTROL_BITS_15_12	by '1111'B;
+        %replace FMOVE_CONTROL_BITS_8_6		by '000'B;
+        %replace FMOVE_CONTROL_BITS_15_14	by '10'B;
+        %replace FMOVE_CONTROL_BITS_9_0		by '0000000000'B;
+        %replace SIZE_FMOVE_CONTROL		by 2;
+
+        if (IP->FMOVE_CONTROL_OPCODE.BITS_15_12 ^= FMOVE_CONTROL_BITS_15_12) |
+	   (IP->FMOVE_CONTROL_OPCODE.BITS_8_6   ^= FMOVE_CONTROL_BITS_8_6)   |
+           (IP->FMOVE_CONTROL_OPCODE.BITS_15_14 ^= FMOVE_CONTROL_BITS_15_14) |
+	   (IP->FMOVE_CONTROL_OPCODE.BITS_9_0   ^= FMOVE_CONTROL_BITS_9_0) then
+	    return (0);
+	REG = IP->FMOVE_CONTROL_OPCODE.REGSELECT;
+	if      REG = 1 then REG = REG_FPIAR;
+	else if REG = 2 then REG = REG_FPSR;
+	else if REG = 4 then REG = REG_FPCR;
+	else return (0);
+	if REG = REG_FPIAR then
+	     TYPE = EATYPE_ALTER;
+	else TYPE = EATYPE_DATA_ALTER;
+        NWORDS = DISEA (binary(IP->FMOVE_CONTROL_OPCODE.MODE),
+                        binary(IP->FMOVE_CONTROL_OPCODE.REG),
+                        SIZE_LONG,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        TYPE,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	STRING = PRNTOP(OP_FMOVE,SIZE_LONG);
+	if IP->FMOVE_CONTROL_OPCODE.DIRECTION = '0'B then
+	     STRING = STRING || PRNTEA(EAP) || ',' || REG_NAME(REG);
+	else STRING = STRING || REG_NAME(REG) || ',' || PRNTEA(EAP);
+        return (SIZE_FMOVE_CONTROL + NWORDS);
+
+    end FMOVE_CONTROL_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FMOVE_REG_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FMOVE-from-register instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FMOVE_REG_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+            1 FMOVE_REG_OPCODE	based,
+	      2 FIRST_WORD,
+                3 BITS_15_12	bit (4),
+                3 CPID		bit (3),
+                3 BITS_8_6	bit (3),
+                3 MODE		bit (3),
+                3 REG		bit (3),
+	      2 SECOND_WORD,
+                3 BITS_15_13	bit (3),
+                3 DST		bit (3),
+                3 SRC		bit (3),
+                3 KFACTOR	bit (7);
+
+        %replace FMOVE_REG_BITS_15_12	by '1111'B;
+        %replace FMOVE_REG_BITS_8_6	by '000'B;
+        %replace FMOVE_REG_BITS_15_13	by '011'B;
+        %replace SIZE_FMOVE_REG		by 2;
+
+        if (IP->FMOVE_REG_OPCODE.BITS_15_12 ^= FMOVE_REG_BITS_15_12) |
+	   (IP->FMOVE_REG_OPCODE.BITS_8_6   ^= FMOVE_REG_BITS_8_6)   |
+	   (IP->FMOVE_REG_OPCODE.BITS_15_13 ^= FMOVE_REG_BITS_15_13) then
+	    return (0);
+	SIZE = FOPSIZE_CODE(binary(IP->FMOVE_REG_OPCODE.SRC));
+	if (SIZE = SIZE_DOUBLE) | (SIZE = SIZE_EXTENDED) |
+	   (SIZE = SIZE_PACKED) | (SIZE = SIZE_PACKED_DYN) then
+	     TYPE = EATYPE_MEMORY_ALTER;
+	else TYPE = EATYPE_DATA_ALTER;
+        NWORDS = DISEA (binary(IP->FMOVE_REG_OPCODE.MODE),
+                        binary(IP->FMOVE_REG_OPCODE.REG),
+                        SIZE,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        TYPE,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	STRING = PRNTOP(OP_FMOVE,SIZE) ||
+		 FREG_NAME(binary(IP->FMOVE_REG_OPCODE.SRC)) || ',' ||
+		 PRNTEA(EAP);
+	if SIZE = SIZE_PACKED then
+	     STRING = STRING || '{#' ||
+		      trim(char(binary(IP->FMOVE_REG_OPCODE.KFACTOR))) || '}';
+	else if SIZE = SIZE_PACKED_DYN then
+	     STRING = STRING || '{#' ||
+		      DREG_NAME(divide(binary
+		       (IP->FMOVE_REG_OPCODE.KFACTOR),16,15)) || '}';
+        return (SIZE_FMOVE_REG + NWORDS);
+
+    end FMOVE_REG_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FMOVECR_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FMOVECR instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FMOVECR_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            1 FMOVECR_OPCODE	based,
+	      2 FIRST_WORD,
+                3 BITS_15_12	bit (4),
+                3 CPID		bit (3),
+                3 BITS_8_0	bit (9),
+	      2 SECOND_WORD,
+                3 BITS_15_10	bit (6),
+                3 DST		bit (3),
+                3 ROMOFFSET	bit (7);
+
+        %replace FMOVECR_BITS_15_12	by '1111'B;
+        %replace FMOVECR_BITS_8_0	by '000000000'B;
+        %replace FMOVECR_BITS_15_10	by '010111'B;
+        %replace SIZE_FMOVECR		by 2;
+
+        if (IP->FMOVECR_OPCODE.BITS_15_12 ^= FMOVECR_BITS_15_12) |
+	   (IP->FMOVECR_OPCODE.BITS_8_0   ^= FMOVECR_BITS_8_0)   |
+	   (IP->FMOVECR_OPCODE.BITS_15_10 ^= FMOVECR_BITS_15_10) then
+	    return (0);
+
+        call GETPTR(binary(IP->FMOVECR_OPCODE.ROMOFFSET),TEMPSTR);
+	STRING = PRNTOP(OP_FMOVECR,SIZE_EXTENDED) || '#' || TEMPSTR || ',' ||
+		 FREG_NAME(binary(IP->FMOVECR_OPCODE.DST));
+        return (SIZE_FMOVECR);
+
+    end FMOVECR_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FMOVEM_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FMOVEM instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     *
+     * --TODO-- Decode the register list mask.
+     */
+
+    FMOVEM_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            EAMODE		fixed binary (15),
+            MODE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+            1 FMOVEM_OPCODE	based,
+	      2 FIRST_WORD,
+                3 BITS_15_12	bit (4),
+                3 CPID		bit (3),
+                3 BITS_8_6	bit (3),
+                3 MODE		bit (3),
+                3 REG		bit (3),
+	      2 SECOND_WORD,
+                3 BITS_15_14	bit (2),
+                3 DIRECTION	bit (1),
+                3 MODE		bit (2),
+                3 BITS_10_8	bit (3),
+                3 REGLIST	bit (8);
+
+        %replace FMOVEM_BITS_15_12	by '1111'B;
+        %replace FMOVEM_BITS_8_6	by '000'B;
+        %replace FMOVEM_BITS_15_14	by '11'B;
+        %replace FMOVEM_BITS_10_8	by '000'B;
+        %replace SIZE_FMOVEM		by 2;
+
+        if (IP->FMOVEM_OPCODE.BITS_15_12 ^= FMOVEM_BITS_15_12) |
+	   (IP->FMOVEM_OPCODE.BITS_8_6   ^= FMOVEM_BITS_8_6)   |
+	   (IP->FMOVEM_OPCODE.BITS_15_14 ^= FMOVEM_BITS_15_14) |
+	   (IP->FMOVEM_OPCODE.BITS_10_8  ^= FMOVEM_BITS_10_8)  then
+	    return (0);
+	EAMODE = binary(IP->FMOVEM_OPCODE.FIRST_WORD.MODE);
+        if (IP->FMOVEM_OPCODE.DIRECTION = '0'B) &
+	   (EAMODE = EAMODE_AREG_INDIR_INC) then
+	     TYPE = EATYPE_ALL;
+        else if (IP->FMOVEM_OPCODE.DIRECTION = '1'B) &
+	        (EAMODE = EAMODE_AREG_INDIR_DEC) then
+	     TYPE = EATYPE_ALL;
+	else TYPE = EATYPE_CONTROL_ALTER;
+	MODE = binary(IP->FMOVEM_OPCODE.SECOND_WORD.MODE);
+        NWORDS = DISEA (EAMODE,
+                        binary(IP->FMOVEM_OPCODE.REG),
+                        SIZE_EXTENDED,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        TYPE,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	STRING = PRNTOP(OP_FMOVEM,SIZE_EXTENDED);
+	if IP->FMOVEM_OPCODE.DIRECTION = '0'B then do;
+	    STRING = STRING || PRNTEA(EAP) || ',';
+	    if (MODE = 0)  | (MODE = 2) then
+		 STRING = STRING || '<' ||
+			  FREGLIST(binary(IP->FMOVEM_OPCODE.REGLIST),FALSE,
+                                   FALSE)
+                          || '>';
+	    else STRING = STRING ||
+			  REG_NAME(REG_D0 +
+                                   divide(binary(IP->FMOVEM_OPCODE.REGLIST),
+                                                 16,15));
+                                 
+	end;
+	else do;
+	    if (MODE = 0)  | (MODE = 2) then
+		 STRING = STRING || '<' ||
+			  FREGLIST(binary(IP->FMOVEM_OPCODE.REGLIST),TRUE,
+                                   FALSE)
+                          || '>';
+	    else STRING = STRING ||
+			  REG_NAME(REG_D0 +
+                                   divide(binary(IP->FMOVEM_OPCODE.REGLIST),
+                                                 16,15));
+	    STRING = STRING || ',' || PRNTEA(EAP);
+	end;
+        return (SIZE_FMOVEM + NWORDS);
+
+    end FMOVEM_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FMOVEM_CONTROL_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FMOVE-system-control-register instruction.  If so, then return the
+     * disassembled instruction in STRING and return the size in bytes of
+     * the instruction.  Otherwise, return zero.
+     */
+
+    FMOVEM_CONTROL_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            REG		fixed binary (15),
+            TYPE	fixed binary (15),
+            NWORDS	fixed binary (15);
+        declare
+            1 FMOVEM_CONTROL_OPCODE	based,
+	      2 FIRST_WORD,
+                3 BITS_15_12		bit (4),
+                3 CPID			bit (3),
+                3 BITS_8_6		bit (3),
+                3 MODE			bit (3),
+                3 REG			bit (3),
+	      2 SECOND_WORD,
+                3 BITS_15_14		bit (2),
+                3 DIRECTION		bit (1),
+                3 REGLIST		bit (3),
+                3 BITS_9_0		bit (10);
+
+        %replace FMOVEM_CONTROL_BITS_15_12	by '1111'B;
+        %replace FMOVEM_CONTROL_BITS_8_6	by '000'B;
+        %replace FMOVEM_CONTROL_BITS_15_14	by '10'B;
+        %replace FMOVEM_CONTROL_BITS_9_0	by '0000000000'B;
+        %replace SIZE_FMOVEM_CONTROL		by 2;
+
+        if (IP->FMOVEM_CONTROL_OPCODE.BITS_15_12 ^= FMOVEM_CONTROL_BITS_15_12) |
+	   (IP->FMOVEM_CONTROL_OPCODE.BITS_8_6 ^= FMOVEM_CONTROL_BITS_8_6)   |
+           (IP->FMOVEM_CONTROL_OPCODE.BITS_15_14 ^= FMOVEM_CONTROL_BITS_15_14) |
+	   (IP->FMOVEM_CONTROL_OPCODE.BITS_9_0 ^= FMOVEM_CONTROL_BITS_9_0) then
+	    return (0);
+	REG = binary(IP->FMOVEM_CONTROL_OPCODE.REGLIST);
+	if      REG = 1 then REG = REG_FPIAR;
+	else if REG = 2 then REG = REG_FPSR;
+	else if REG = 4 then REG = REG_FPCR;
+	else REG = NO_REG;
+	if ((binary(IP->FMOVEM_CONTROL_OPCODE.MODE) = EAMODE_DREG) &
+	    (REG = NO_REG)) |
+	   ((binary(IP->FMOVEM_CONTROL_OPCODE.MODE) = EAMODE_AREG) &
+	    (REG ^= REG_FPIAR)) then
+	    return (0);
+	if IP->FMOVEM_CONTROL_OPCODE.DIRECTION = '0'B then
+	     TYPE = EATYPE_ALL;
+	else TYPE = EATYPE_ALTER;
+        NWORDS = DISEA (binary(IP->FMOVEM_CONTROL_OPCODE.MODE),
+                        binary(IP->FMOVEM_CONTROL_OPCODE.REG),
+                        SIZE_LONG,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        TYPE,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	STRING = PRNTOP(OP_FMOVEM,SIZE_LONG);
+        
+	if IP->FMOVEM_CONTROL_OPCODE.DIRECTION = '0'B then
+	     STRING = STRING || PRNTEA(EAP) || ',<' || 
+              FREGLIST(binary(IP->FMOVEM_CONTROL_OPCODE.REGLIST),FALSE,TRUE) ||
+             '>';
+	else STRING = STRING || '<' || 
+              FREGLIST(binary(IP->FMOVEM_CONTROL_OPCODE.REGLIST),FALSE,TRUE) ||
+              '>,' || PRNTEA(EAP);
+        return (SIZE_FMOVEM_CONTROL + NWORDS);
+
+    end FMOVEM_CONTROL_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FNOP_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FNOP instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FNOP_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+	    1 FNOP_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_12	bit (4),
+	        3 CPID		bit (3),
+	        3 BITS_8_0	bit (9),
+	      2 SECOND_WORD,
+	        3 BITS_15_0	bit (16);
+
+	%replace FNOP_BITS_15_12	by '1111'B;
+	%replace FNOP_BITS_8_0		by '010000000'B;
+	%replace FNOP_BITS_15_0		by '0000000000000000'B;
+	%replace SIZE_FNOP		by 2;
+
+	if (IP->FNOP_OPCODE.BITS_15_12 = FNOP_BITS_15_12) &
+	   (IP->FNOP_OPCODE.BITS_8_0   = FNOP_BITS_8_0)   &
+	   (IP->FNOP_OPCODE.BITS_15_0  = FNOP_BITS_15_0) then do;
+	     STRING = PRNTOP(OP_FNOP,SIZE_NULL);
+	     return (SIZE_FNOP);
+	end;
+	return (0);
+
+    end FNOP_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FRESTORE_FSAVE_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FRESTORE or FSAVE instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FRESTORE_FSAVE_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            TYPE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 FRESTORE_FSAVE_OPCODE	based,
+	      2 BITS_15_12		bit (4),
+	      2 CPID			bit (3),
+	      2 BITS_8_6		bit (3),
+	      2 MODE			bit (3),
+	      2 REG			bit (3);
+
+	%replace FRESTORE_BITS_15_12	by '1111'B;
+	%replace FRESTORE_BITS_8_6	by '101'B;
+	%replace FSAVE_BITS_15_12	by '1111'B;
+	%replace FSAVE_BITS_8_6		by '100'B;
+	%replace SIZE_FRESTORE_FSAVE	by 1;
+
+	if (IP->FRESTORE_FSAVE_OPCODE.BITS_15_12 = FRESTORE_BITS_15_12) &
+	   (IP->FRESTORE_FSAVE_OPCODE.BITS_8_6   = FRESTORE_BITS_8_6)
+	then do;
+	     CODE = OP_FRESTORE;
+	     TYPE = EATYPE_CONTROL;
+	end;
+	else if (IP->FRESTORE_FSAVE_OPCODE.BITS_15_12 = FSAVE_BITS_15_12) &
+	        (IP->FRESTORE_FSAVE_OPCODE.BITS_8_6   = FSAVE_BITS_8_6)
+	then do;
+	     CODE = OP_FSAVE;
+	     if binary(IP->FRESTORE_FSAVE_OPCODE.MODE) = EAMODE_AREG_INDIR_DEC
+	     then TYPE = EATYPE_ALL;
+	     else TYPE = EATYPE_CONTROL_ALTER;
+	end;
+	else return (0);
+	NWORDS = DISEA (binary(IP->FRESTORE_FSAVE_OPCODE.MODE),
+			binary(IP->FRESTORE_FSAVE_OPCODE.REG),
+			SIZE_NULL,
+			addr(IP->INSTRUCTION.WORD(2)),
+			TYPE,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE_NULL) || PRNTEA(EAP);
+	return (SIZE_FRESTORE_FSAVE + NWORDS);
+
+    end FRESTORE_FSAVE_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FSCC_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FScc instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FSCC_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 FSCC_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_12	bit (4),
+	        3 CPID		bit (3),
+	        3 BITS_8_6	bit (6),
+	        3 MODE		bit (3),
+	        3 REG		bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_6	bit (10),
+	        3 COND		bit (6);
+
+	%replace FSCC_BITS_15_12	by '1111'B;
+	%replace FSCC_BITS_8_6		by '001'B;
+	%replace FSCC_BITS_15_6		by '0000000000'B;
+	%replace SIZE_FSCC		by 2;
+
+	if (IP->FSCC_OPCODE.BITS_15_12 ^= FSCC_BITS_15_12) |
+	   (IP->FSCC_OPCODE.BITS_8_6   ^= FSCC_BITS_8_6)   |
+	   (IP->FSCC_OPCODE.BITS_15_6  ^= FSCC_BITS_15_6) then
+	    return (0);
+	NWORDS = DISEA (binary(IP->FSCC_OPCODE.MODE),
+			binary(IP->FSCC_OPCODE.REG),
+			SIZE_BYTE,
+			addr(IP->INSTRUCTION.WORD(3)),
+			EATYPE_DATA_ALTER,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	CODE = OP_FSET_COND + binary(IP->FSCC_OPCODE.COND);
+	STRING = PRNTOP(CODE,SIZE_BYTE) || PRNTEA(EAP);
+	return (SIZE_FSCC + NWORDS);
+
+    end FSCC_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FSINCOS_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FSINCOS instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FSINCOS_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 FSINCOS_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_12	bit (4),
+	        3 CPID		bit (3),
+	        3 BITS_8_6	bit (3),
+	        3 MODE		bit (3),
+	        3 REG		bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_15	bit (1),
+	        3 RM		bit (1),
+	        3 BITS_13_13	bit (1),
+	        3 SRC		bit (3),
+	        3 DSTFPS	bit (3),
+	        3 BITS_6_3	bit (4),
+	        3 DSTFPC	bit (3);
+
+	%replace FSINCOS_BITS_15_12	by '1111'B;
+	%replace FSINCOS_BITS_8_6	by '000'B;
+	%replace FSINCOS_BITS_15_15	by '0'B;
+	%replace FSINCOS_BITS_13_13	by '0'B;
+	%replace FSINCOS_BITS_6_3	by '0110'B;
+	%replace SIZE_FSINCOS		by 2;
+
+	if (IP->FSINCOS_OPCODE.BITS_15_12 ^= FSINCOS_BITS_15_12) |
+	   (IP->FSINCOS_OPCODE.BITS_8_6   ^= FSINCOS_BITS_8_6)   |
+	   (IP->FSINCOS_OPCODE.BITS_15_15 ^= FSINCOS_BITS_15_15) |
+	   (IP->FSINCOS_OPCODE.BITS_13_13 ^= FSINCOS_BITS_13_13) |
+	   (IP->FSINCOS_OPCODE.BITS_6_3   ^= FSINCOS_BITS_6_3) then
+	    return (0);
+	if IP->FSINCOS_OPCODE.RM = '0'B then do;
+	    if (binary(IP->FSINCOS_OPCODE.MODE) ^= 0) |
+	       (binary(IP->FSINCOS_OPCODE.REG) ^= 0) then
+		return (0);
+	    STRING = PRNTOP(OP_FSINCOS,SIZE_EXTENDED) ||
+		     FREG_NAME(binary(IP->FSINCOS_OPCODE.SRC)) ||
+		     ',' || FREG_NAME(binary(IP->FSINCOS_OPCODE.DSTFPC)) ||
+		     ':' || FREG_NAME(binary(IP->FSINCOS_OPCODE.DSTFPS));
+	    return (SIZE_FSINCOS);
+	end;
+	SIZE = FOPSIZE_CODE(binary(IP->FSINCOS_OPCODE.SRC));
+	if SIZE = SIZE_PACKED_DYN then
+	    return (0);
+	if (SIZE = SIZE_DOUBLE) | (SIZE = SIZE_EXTENDED) |
+	   (SIZE = SIZE_PACKED) then
+	     TYPE = EATYPE_MEMORY;
+	else TYPE = EATYPE_DATA;
+	NWORDS = DISEA (binary(IP->FSINCOS_OPCODE.MODE),
+			binary(IP->FSINCOS_OPCODE.REG),
+			SIZE,
+			addr(IP->INSTRUCTION.WORD(3)),
+			TYPE,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(OP_FSINCOS,SIZE) || PRNTEA(EAP) || ',' ||
+		 FREG_NAME(binary(IP->FSINCOS_OPCODE.DSTFPC)) ||
+		 ':' || FREG_NAME(binary(IP->FSINCOS_OPCODE.DSTFPS));
+	return (SIZE_FSINCOS + NWORDS);
+
+    end FSINCOS_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * FTRAPCC_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68881
+     * FTRAPcc instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    FTRAPCC_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 FTRAPCC_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_12	bit (4),
+	        3 CPID		bit (3),
+	        3 BITS_8_3	bit (6),
+	        3 SIZE		bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_6	bit (10),
+	        3 COND		bit (6);
+
+	%replace FTRAPCC_BITS_15_12	by '1111'B;
+	%replace FTRAPCC_BITS_8_3	by '001111'B;
+	%replace FTRAPCC_BITS_15_6	by '0000000000'B;
+	%replace SIZE_FTRAPCC		by 2;
+
+	if (IP->FTRAPCC_OPCODE.BITS_15_12 ^= FTRAPCC_BITS_15_12) |
+	   (IP->FTRAPCC_OPCODE.BITS_8_3   ^= FTRAPCC_BITS_8_3)   |
+	   (IP->FTRAPCC_OPCODE.BITS_15_6  ^= FTRAPCC_BITS_15_6) then
+	    return (0);
+	CODE = OP_FTRAP_COND + binary(IP->FTRAPCC_OPCODE.COND);
+	SIZE = binary(IP->FTRAPCC_OPCODE.SIZE);
+	if SIZE = 4 then do;
+	    STRING = PRNTOP(CODE,SIZE_NULL);
+	    return (SIZE_FTRAPCC);
+	end;
+	else if SIZE = 2 then SIZE = SIZE_WORD;
+	else if SIZE = 3 then SIZE = SIZE_LONG;
+	else return (0);
+	NWORDS = DISEA (EAMODE_IMMED,
+			EAREG_IMMED,
+			SIZE,
+			addr(IP->INSTRUCTION.WORD(2)),
+			EATYPE_ALL,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP);
+	return (SIZE_FTRAPCC + NWORDS);
+
+    end FTRAPCC_INSTRUCTION;
+
+end DIS881;
+

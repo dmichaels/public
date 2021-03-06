@@ -1,0 +1,268 @@
+/* C++ valnam.pl1 - Get a value-node type-name */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  011  New value-node scheme.
+ *  11.20.91  DGM  010  Updated.
+ *  03.08.91  DGM  009  Updated.
+ *  02.21.91  DGM  008  Updated.
+ *  01.10.91  DGM  007  Updated.
+ *  11.29.90  DGM  006  Updated.
+ *  11.15.90  DGM  005  Updated.
+ *  10.12.90  DGM  004  Updated.
+ *  09.25.90  DGM  003  Updated.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  09.15.90  DGM  001  Updated.
+ *  09.14.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 011 VALNAM');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T	character (512) varying based;
+
+/* ---------------------------------------------------------------------
+/* VALUE_TYPE_NAME
+/*
+/* Return a string representing the type of the expression represented
+/* by the given value-node id; the name and other declaration specifier
+/* data will be included in the type if at all possible.
+/* Trashes current-value-node-id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+VALUE_TYPE_NAME: procedure (V)
+		 returns   (type (STRING_T))
+		 external  (X_VALUE_TYPE_NAME);
+	declare
+		V		type (CXX_VID_T);
+	declare
+		DSM		type (DSM_T);
+		
+	if AM_DEBUGGER then
+		DSM = QUALIFIED_DEFAULT_CW_DSM;
+	else	DSM = QUALIFIED_DEFAULT_DSM;
+
+	return (ANY_VALUE_TYPE_NAME  (V, DSM));
+
+end VALUE_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* ANY_VALUE_TYPE_NAME
+/* ------------------------------------------------------------------- */
+
+ANY_VALUE_TYPE_NAME: procedure (V, MODE)
+		     returns   (type (STRING_T))
+		     external  (X_ANY_VALUE_TYPE_NAME);
+	declare
+		V			type (CXX_VID_T),
+		MODE			type (DSM_T);
+	declare
+		TP			type (POINTER_T),
+		(TYPE, SYMBOL)		type (NID_T),
+		(SKIP_NLEVELS, I)	type (SHORT_T),
+		DSM			type (DSM_T),
+		S			type (STRING_T);
+
+	if V = NULL_CXX_VID then
+		return ('');
+
+	CXX_VALUE_NODE_PTR = V;
+
+	SYMBOL = CURRENT_VALUE_SYMBOL ();
+
+	if SYMBOL ^= NULL_NID then do;
+		if AM_DEBUGGER then
+			DSM = QUALIFIED_DEFAULT_CW_DSM;
+		else	DSM = QUALIFIED_DEFAULT_DSM;
+		return (DECLARATION_STRING (SYMBOL, DSM | TAG_DATA_DSM));
+	end;
+
+	if CXX_VALUE_NODE.TYPE = NULL_NID then
+		return ('');
+
+	/* Here, we can only get the type of the value, not the symbol */
+
+	TYPE		  = CXX_VALUE_NODE.TYPE;
+	SKIP_NLEVELS	  = CXX_VALUE_NODE.DERIVED_TYPE_SKIP;
+
+	if CXX_VALUE_NODE.EXTRA_PTR_LEVEL then
+		MODE = MODE | ADD_POINTER_TYPE_DSM;
+
+	call GET_TYPE_NODE_R (TYPE, TP);
+	S = ANY_TYPE_NAME (TP, SKIP_NLEVELS, MODE, '');
+	call RELEASE_TYPE_NODE (TYPE);
+
+	return (S);
+
+end ANY_VALUE_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* VALUE_SYMBOL
+/*
+/* If the value represented by the given value-node id represents
+/* a simple reference to a symbol, then return the sym-node of
+/* that referenced symbol, otherwise return NULL_NID.
+/* Trashes current-value-node-id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+VALUE_SYMBOL: procedure (V)
+	      returns   (type (NID_T))
+	      external  (X_VALUE_SYMBOL);
+
+	declare V type (CXX_VID_T);
+
+	if V = NULL_CXX_VID then
+		return (NULL_NID);
+
+	CXX_VALUE_NODE_PTR = V;
+
+	return (CURRENT_VALUE_SYMBOL ());
+
+end VALUE_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* CURRENT_VALUE_SYMBOL
+/*
+/* Exactly the same as VALUE_SYMBOL, except it acts on the
+/* current-value-node-id.  Trashes current-value-node-id.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CURRENT_VALUE_SYMBOL: procedure
+		      returns   (type (NID_T))
+		      internal;
+	declare
+		P	type (POINTER_T);
+	/*
+	/* Currently, the following two special constructs
+	/* are considered simple references to a symbol:
+	/*
+	/*   REF (sym-node-id)				  //
+	/*   MEMBER_REF (type-sym-node-id)		  //
+	/*   MEMBER_REF (constructor-sym-node-id)	  //
+	/*   MEMBER_REF (destructor-sym-node-id)	  //
+	/*   MEMBER_REF (non-static-function-sym-node-id) //
+	/*   VALUE (REF (sym-node-id))			  // lvalue
+	/*   ADDR (REF (function-sym-node-id)		  //
+	/*   ADDR (REF (array-sym-node-id)		  //
+	/*   TYPE (typedef-or-tag-sym-node-id)		  //
+	/*   TYPE ()					  // tag type
+	/*   INTEGER (enumerator)
+	/**/
+
+	if CXX_VALUE_NODE.OP = TYPE_VO then do;
+		if CXX_VALUE_NODE.UNARY &
+		   (CXX_VALUE_NODE.LEFT ^= NULL_NID) then do;
+			if ^CXX_VALUE_NODE.EXTRA_PTR_LEVEL &
+			   (CXX_VALUE_NODE.DERIVED_TYPE_SKIP <= 0) then
+				return (CXX_VALUE_NODE.LEFT_NID);
+		end;
+		else if IS_TAG_TYPE
+			(rank (CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+			if ^CXX_VALUE_NODE.EXTRA_PTR_LEVEL &
+			   (CXX_VALUE_NODE.DERIVED_TYPE_SKIP <= 0) then do;
+				/*
+				/* Check for lvalue here?  If so then must
+				/* special case enumerators (INTEGER_VO).
+				/**/
+				return (CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL);
+			end;
+		end;
+	end;
+
+	else if CXX_VALUE_NODE.OP = INTEGER_VO then do;
+		if CXX_VALUE_NODE.TOP_TYPE.CODE = byte (ENUM_BT) then
+			return (CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL);
+	end;
+
+
+	/* Now, either VALUE, ADDR, REF, or MEMBER_REF; all need a LEFT */
+
+	else if CXX_VALUE_NODE.LEFT = NULL_CXX_VID then
+		return (NULL_NID);
+
+	else if CXX_VALUE_NODE.OP = VALUE_VO then do;
+		if ^CXX_VALUE_NODE.NOT_AN_LVALUE then do;
+			CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+			if CXX_VALUE_NODE.OP = REF_VO then
+				return (CXX_VALUE_NODE.LEFT_NID);
+		end;
+	end;
+
+	else if CXX_VALUE_NODE.OP = ADDR_VO then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+		if (CXX_VALUE_NODE.OP = REF_VO) &
+		   ((CXX_VALUE_NODE.TOP_TYPE.CODE = byte (FUNCTION_DT)) |
+		    (CXX_VALUE_NODE.TOP_TYPE.CODE = byte (ARRAY_DT))) then
+			return (CXX_VALUE_NODE.LEFT_NID);
+	end;
+
+	else if CXX_VALUE_NODE.OP = REF_VO then
+		return (CXX_VALUE_NODE.LEFT_NID);
+
+	else if CXX_VALUE_NODE.OP = MEMBER_REF_VO then do;
+		/*
+		/* If this is a member-pointer to a type,
+		/* to a constructor, or to a destructor,
+		/* then discard the member-pointer.
+		/**/
+		call GET_SYM_NODE_R (CXX_VALUE_NODE.LEFT_NID, P);
+		if ^P->SYM_NODE.IS_NON_STATIC_DATA_MEMBER then do;
+		/* ...
+		if P->SYM_NODE.IS_TYPE |
+		   P->SYM_NODE.IS_CONSTRUCTOR_FUNCTION |
+		   P->SYM_NODE.IS_DESTRUCTOR_FUNCTION then do;
+		   (P->SYM_NODE.IS_FUNCTION &
+		    (P->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST))) then do;
+		... */
+			call RELEASE_SYM_NODE (CXX_VALUE_NODE.LEFT_NID);
+			return (CXX_VALUE_NODE.LEFT_NID);
+		end;
+		call RELEASE_SYM_NODE (CXX_VALUE_NODE.LEFT_NID);
+	end;
+
+	return (NULL_NID);
+
+end CURRENT_VALUE_SYMBOL;
+
+

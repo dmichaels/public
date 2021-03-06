@@ -1,0 +1,119 @@
+//	cv.rc
+//
+//	Allegris Foundation library resource definitions/declarations.
+//
+//  Allegris Foundation 1.1.00
+//	Copyright (c) 1997 by INTERSOLV, Inc.
+//	+-----------------------------------------------------------------+
+//	| This product is the property of INTERSOLV, Inc. and is licensed |
+//	| pursuant to a written license agreement.  No portion of  this   |
+//	| product may be reproduced without the written permission of     |
+//	| INTERSOLV, Inc. except pursuant to the license agreement.       |
+//	+-----------------------------------------------------------------+
+//
+//	Revision History:
+//	-----------------
+//	04/01/96 dgm	Original.
+// --------------------------------------------------------------------------
+
+#ifndef CV_CVRC_H
+#define CV_CVRC_H
+
+// --------------------------------------------------------------------------
+//
+#include "rcdef.h"
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// Description of the standard bitmap images usable by VImage & VImageButton.
+//
+// o Allegris resource name:         CvRcStdImage1
+//   Number of images:               15
+//   Bitmap size:                    240x16
+//   Number of colors:               16
+//   Transparent color (upper-left): light-gray = rgb(192,192,192)
+//   Image # 0:                      cut
+//   Image # 1:                      paste
+//   Image # 2:                      copy
+//   Image # 3:                      undo
+//   Image # 4:                      redo
+//   Image # 5:                      delete
+//   Image # 6:                      new
+//   Image # 7:                      open
+//   Image # 8:                      save
+//   Image # 9:                      find
+//   Image #10:                      properties
+//   Image #11:                      context help
+//   Image #12:                      magnify
+//   Image #13:                      magnify toggle
+//   Image #14:                      print
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// o Allegris resource name:         CvRcStdImage2
+//   Number of images:               14
+//   Bitmap size:                    224x16
+//   Number of colors:               16
+//   Transparent color (upper-left): magenta = rgb(255,0,255)
+//   Image # 0:                      open folder
+//   Image # 1:                      closed folder
+//   Image # 2:                      lock
+//   Image # 3:                      executable file
+//   Image # 4:                      notepad file
+//   Image # 5:                      plain file
+//   Image # 6:                      MS/Windows file
+//   Image # 7:                      help book
+//   Image # 8:                      desktop
+//   Image # 9:                      computer system
+//   Image #10:                      hard drive
+//   Image #11:                      floppy drive
+//   Image #12:                      network drive
+//   Image #13:                      computer
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// o Allegris resource name:         CvRcStdImage3
+//   Number of images:               8
+//   Bitmap size:                    128x15
+//   Number of colors:               16
+//   Transparent color (upper-left): light-gray = rgb(192,192,192)
+//   Image # 0:                      play
+//   Image # 1:                      pause
+//   Image # 2:                      stop
+//   Image # 3:                      previous frame
+//   Image # 4:                      rewind
+//   Image # 5:                      fast-forward
+//   Image # 6:                      next frame
+//   Image # 7:                      eject
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+cvLibraryBitmap	(CvRcStdImage1,				9101, ., stdim1.bmp)
+cvLibraryBitmap	(CvRcStdImage2,				9102, ., stdim2.bmp)
+cvLibraryBitmap	(CvRcStdImage3,				9102, ., stdim3.bmp)
+cvLibraryBitmap	(CvRcPanNsewBitmap,			9103, ., pannsew.bmp)
+cvLibraryBitmap	(CvRcPanNsBitmap,			9104, ., panns.bmp)
+cvLibraryBitmap	(CvRcPanEwBitmap,			9104, ., panew.bmp)
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+cvLibraryIcon	(CvRcStdAppIcon,			9201, ., stdapp.ico)
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+cvLibraryCursor	(CvRcHorSashCursor,			9301, ., sashh.cur)
+cvLibraryCursor	(CvRcVerSashCursor,			9302, ., sashv.cur)
+
+cvLibraryCursor	(CvRcPanNsewCursor,			9303, ., pannsew.cur)
+cvLibraryCursor	(CvRcPanNsCursor,			9304, ., panns.cur)
+cvLibraryCursor	(CvRcPanEwCursor,			9305, ., panew.cur)
+cvLibraryCursor	(CvRcPanNeCursor,			9306, ., panne.cur)
+cvLibraryCursor	(CvRcPanNwCursor,			9307, ., pannw.cur)
+cvLibraryCursor	(CvRcPanSeCursor,			9308, ., panse.cur)
+cvLibraryCursor	(CvRcPanSwCursor,			9309, ., pansw.cur)
+cvLibraryCursor	(CvRcPanNCursor,			9310, ., pann.cur)
+cvLibraryCursor	(CvRcPanSCursor,			9311, ., pans.cur)
+cvLibraryCursor	(CvRcPanECursor,			9312, ., pane.cur)
+cvLibraryCursor	(CvRcPanWCursor,			9313, ., panw.cur)
+
+cvLibraryCursor	(CvRcDragMoveCursor,		9314, ., dragmv.cur)
+cvLibraryCursor	(CvRcDragCopyCursor,		9315, ., dragcp.cur)
+cvLibraryCursor	(CvRcDragMultiMoveCursor,	9316, ., dragmmv.cur)
+cvLibraryCursor	(CvRcDragMultiCopyCursor,	9317, ., dragmcp.cur)
+cvLibraryCursor	(CvRcDragDoNotEnterCursor,	9318, ., dragnot.cur)
+
+#endif // CV_CVRC_H

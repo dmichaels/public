@@ -1,0 +1,1585 @@
+/* C++ foldv.pl1 - Fold and transform a value */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  08.19.92  DGM  026  Fix for when CXX_USE_LONG_OPERATIONS is set
+ *			and processing a relational operation.
+ *  05.29.92  DGM  025  Added CXX_USE_LONG_OPERATIONS for AND/OR/XOR
+ *			from LPI-C.
+ *  05.12.92  DGM  024  Updated for Sequoia long double support.
+ *  03.26.92  DGM  023  New value-node scheme.
+ *  03.18.92  DGM  022  Bug fix for PlumHall error test m33064.c; set
+ *			the type of the result of a folded conditional
+ *			to the type of the conditional, not to the type
+ *			of the left or right (whichever was chosen).
+ *  11.12.91  DGM  021  Merge.
+ *  10.31.91  PKT  020R Fix comparison of mixed-sign chars,
+ *			also comparison of mixed type w/ long double. 
+ *  10.30.91  DGM  020  Updated for ^CXX_ALLOWS_BYTE_COMPARES.
+ *  10.21.91  DGM  019L Changed EXPAND_VALUE (COMMA_VO, X, Y) to
+ *			CONCATENATE_STATEMENTS (X, Y); this fixed:
+ *			char z; if (!((z == 0) && (z == 128))) ;
+ *  10.31.91  DGM  019  Changed EXPAND_VALUE (COMMA_VO, X, Y) to
+ *			CONCATENATE_STATEMENTS (X, Y); this fixed:
+ *			char z; if (!((z == 0) && (z == 128))) ;
+ *  10.03.91  DGM  018  Updated for short enums.
+ *  08.19.91  DGM  017  Picked up ANSI-C FE changes (from 06.05.90)
+ *			for floating point constant folding.
+ *  07.12.91  PKT  016  Fix for ARRAY_DESIGNATOR, FUNCTION_DESIGNATOR,
+ *			and NOT_AN_LVALUE for CONDITIONAL_VO.
+ *  04.09.91  DGM  015  Fix at FINISH_INTEGER for signed char; also,
+ *			similar fix in FINISH_RELATIONAL; note that we
+ *			have to be careful to check *both* SCHAR_BT and
+ *			CHAR_BT since they are distinct types, and not
+ *			synonyms (like signed int vs. int).
+ *  10.16.90  PKT  014  Bug fix.
+ *  09.25.90  DGM  013  Preprocessor include file name changes.
+ *  09.14.90  DGM  012  Changed include file names and VOP names.
+ *  08.08.90  DGM  011  New type-node.
+ *  08.07.90  PKT  010  Updated.
+ *  07.20.90  PKT  009  Fixed to work with COUNT_DOWN_VALUE_0.
+ *  06.15.90  TLF  008  Updated; allowed reassociation of float constants.
+ *  06.14.90  PKT  007  Updated; fixed bug causing CONVERSION error.
+ *  06.05.90  DGM  006  Updated for the new utilities.
+ *  05.01.90  TLF  005  Added folding of float constants.
+ *  04.19.90  DGM  004  Fixed up includes.
+ *  04.04.90  TLF  003  Removed comments on calls to CERROR.
+ *                      Changed references to FINDV and GETV to
+ *                      FIND_CPLUS_VAL and GET_CPLUS_VAL.
+ *                      Changed declarations of appropriate variables
+ *                      from fixed bin(15) to type (VID_T).
+ *  02.27.90  PKT  002  Added call to DEFINE_LABEL.
+ *  02.09.90  DGM  001  Changed SIZE_FROM_TYPE call to SIMPLE_TYPE_SIZE.
+ *  01.17.90  TLF  000  Original.  Derived from ANSI-C foldv.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 08.19.92 026 FOLDV');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_CHECK_ARITHMETIC_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_UNSIGNED_LONG_DIVISION_PKG;
+%include CXX_CLASS_UTL_PKG;
+
+/* ---------------------------------------------------------------------
+/* FOLD_VALUE
+/* ------------------------------------------------------------------- */
+
+FOLD_VALUE: procedure (THIS) 
+	    returns   (type (CXX_VID_T))
+            external  (X_FOLD_VALUE);
+declare
+	THIS			type (CXX_VID_T);
+declare
+	V               	type (CXX_VID_T),
+        VOP             	type (SHORT_T),
+        (J, K)           	type (SHORT_T),
+        (JV, KV)           	type (CXX_VID_T),
+        (T, T1, T2)       	type (SHORT_T),
+        (LEFT, RIGHT)    	type (CXX_VID_T),
+        (MAX_VAL, MIN_VAL)	type (LONG_T),
+	BOTH_CONSTANT		type (BOOL_T),
+	BOTH_INTEGER_CONSTANT	type (BOOL_T),
+	BOTH_FLOAT_CONSTANT	type (BOOL_T),
+	INTEGER_CONSTANT_LEFT	type (BOOL_T),
+	INTEGER_CONSTANT_RIGHT	type (BOOL_T),
+	FLOAT_CONSTANT		type (BOOL_T),
+	FLOAT_CONSTANT_LEFT	type (BOOL_T),
+	FLOAT_CONSTANT_RIGHT	type (BOOL_T),
+	CONSTANT_LEFT		type (BOOL_T),
+	CONSTANT_RIGHT		type (BOOL_T),
+	NOT_AN_LVALUE		type (BOOL_T),
+	ARRAY_DESIGNATOR	type (BOOL_T),
+	FUNCTION_DESIGNATOR	type (BOOL_T);
+declare
+	(F52_RESULT,
+	 F52_LEFT_VALUE,
+	 F52_RIGHT_VALUE)	float binary (52),
+	F23_RESULT		float binary (23) defined (F52_RESULT),
+	F23_LEFT_VALUE		float binary (23) defined (F52_LEFT_VALUE),
+	F23_RIGHT_VALUE		float binary (23) defined (F52_RIGHT_VALUE),
+	RESULT			type (LONG_T) defined (F52_RESULT),
+       	LEFT_VALUE		type (LONG_T) defined (F52_LEFT_VALUE),
+	RIGHT_VALUE		type (LONG_T) defined (F52_RIGHT_VALUE),
+        RESULT_BITS     	bit (32) defined (RESULT),
+        LEFT_BITS       	bit (32) defined (LEFT_VALUE),
+        RIGHT_BITS      	bit (32) defined (RIGHT_VALUE),
+	RESULT_15		type (SHORT_T),
+	RIGHT_IS_VID		type (BOOL_T),
+	LEFT_IS_VID		type (BOOL_T);
+declare
+	TYPE			type (SHORT_T),
+        BS1			type (SHORT_T),
+        BS2			type (SHORT_T),
+        SIZE			type (LONG_T),
+        SIZE_UNITS		type (SHORT_T);
+declare
+	LABEL           	type (CXX_VID_T),
+        NEW_LABEL       	type (CXX_VID_T);
+declare
+	TI			type (TYPE_INFO_T);
+
+	CXX_VALUE_NODE_PTR = THIS;
+        V = THIS;
+
+        /*
+        /* "The operand of sizeof shall not be evaluated." 
+        /*
+        /* This is actually intended for expr's like "sizeof(i++)". But
+        /* note that "sizeof(MAX_INT+1)" contains an constant expression 
+        /* which does not evaluate to a constant which fits in its type.
+        /* But since it's not evaluated, it doesn't get diagnosed. 
+        /* 
+        /* Note that EXPAND(SIZEOF_VO) depends upon constant folding being 
+        /* turned off. See related comments in expv.pl1.
+        /**/
+
+/*****
+/*      if IN_SIZEOF then
+/*          goto RETURN_V;
+*****/
+        
+REFOLD:
+	SIZE       = CXX_VALUE_NODE.SIZE;
+	SIZE_UNITS = rank (CXX_VALUE_NODE.SIZE_UNITS);
+	TYPE       = rank (CXX_VALUE_NODE.TOP_TYPE.CODE);
+
+	if TYPE = ENUM_BT then
+		TYPE = GET_ENUM_INTEGRAL_TYPE (CXX_VALUE_NODE.TOP_TYPE);
+
+	VOP = CXX_VALUE_NODE.OP;
+
+        if (VOP = CONSTANT_VO) | (VOP = ADDR_VO) | CXX_VALUE_NODE.NULARY then
+		goto RETURN_V;
+
+	if VOP = INTEGER_VO then do;
+		RESULT = CXX_VALUE_NODE.OFFSET;
+		goto FINISH_INTEGER;
+	end;
+
+	CONSTANT_LEFT		= FALSE;
+	CONSTANT_RIGHT		= FALSE;
+	BOTH_CONSTANT		= FALSE;
+	INTEGER_CONSTANT_LEFT	= FALSE;
+	INTEGER_CONSTANT_RIGHT	= FALSE;
+	BOTH_INTEGER_CONSTANT	= FALSE;
+	FLOAT_CONSTANT_LEFT	= FALSE;
+	FLOAT_CONSTANT_RIGHT	= FALSE;
+	BOTH_FLOAT_CONSTANT	= FALSE;
+
+	LEFT			= CXX_VALUE_NODE.LEFT;
+	LEFT_IS_VID		= ^CXX_VALUE_NODE.LEFT_IS_NOT_VID;
+	RIGHT			= CXX_VALUE_NODE.RIGHT;
+	RIGHT_IS_VID		= ^CXX_VALUE_NODE.RIGHT_IS_NOT_VID;
+
+	if RIGHT_IS_VID & (RIGHT ^= NULL_CXX_VID) &
+	   ^CXX_VALUE_NODE.UNARY then do;
+                if RIGHT->CXX_VALUE_NODE.OP = INTEGER_VO then do;
+                        RIGHT_VALUE = RIGHT->CXX_VALUE_NODE.OFFSET;
+                        INTEGER_CONSTANT_RIGHT = TRUE;
+                        CONSTANT_RIGHT = TRUE;
+                end;
+		else if RIGHT->CXX_VALUE_NODE.OP = CONSTANT_VO then do;
+			if (RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE =
+			    byte (FLOAT_BT)) |
+			   (RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE =
+			    byte (DOUBLE_BT)) |
+			   ((RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE =
+			     byte (LDOUBLE_BT)) &
+			    ^EXTENDED_PRECISION_LONG_DOUBLE) then do;
+				FLOAT_CONSTANT_RIGHT = TRUE;
+				CONSTANT_RIGHT = TRUE;
+			end;
+		end;
+	end;
+
+	if LEFT_IS_VID & (LEFT ^= NULL_CXX_VID) then do;
+		if LEFT->CXX_VALUE_NODE.OP = INTEGER_VO then do;
+			LEFT_VALUE = LEFT->CXX_VALUE_NODE.OFFSET;
+			INTEGER_CONSTANT_LEFT = TRUE;
+			CONSTANT_LEFT = TRUE;
+			BOTH_INTEGER_CONSTANT = INTEGER_CONSTANT_RIGHT;
+			BOTH_CONSTANT = CONSTANT_RIGHT;
+		end;
+		else if LEFT->CXX_VALUE_NODE.OP = CONSTANT_VO then do;
+			if (LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE =
+			    byte (FLOAT_BT)) |
+			   (LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE =
+			    byte (DOUBLE_BT)) |
+			   ((LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE =
+			     byte (LDOUBLE_BT)) &
+			    ^EXTENDED_PRECISION_LONG_DOUBLE) then do;
+				FLOAT_CONSTANT_LEFT = TRUE;
+				CONSTANT_LEFT = TRUE;
+				BOTH_FLOAT_CONSTANT = FLOAT_CONSTANT_RIGHT;
+				BOTH_CONSTANT = CONSTANT_RIGHT;
+			end;
+		end;
+	end;
+
+	/*
+	/* Here, all floating point operations will have been reduced to
+	/* floating point point operands (any conversions performed, if
+	/* required). Check if constants involved:
+	/**/
+
+	FLOAT_CONSTANT		= FALSE;
+	FLOAT_CONSTANT_LEFT	= FALSE;
+	FLOAT_CONSTANT_RIGHT	= FALSE; 
+
+	if (TYPE ^= FLOAT_BT) &
+	   (TYPE ^= DOUBLE_BT) &
+	   (TYPE ^= LDOUBLE_BT) then
+		goto FOLD (VOP);
+
+	if RIGHT_IS_VID &
+	   (RIGHT ^= NULL_CXX_VID) &
+	   ^CXX_VALUE_NODE.UNARY then do;
+		CXX_VALUE_NODE_PTR = RIGHT;
+		if RIGHT->CXX_VALUE_NODE.OP = CONSTANT_VO then do;
+			if (TYPE ^= LDOUBLE_BT) |
+			   ^EXTENDED_PRECISION_LONG_DOUBLE then do;
+				CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+				if TYPE = FLOAT_BT then
+					F23_RIGHT_VALUE = CXX_VALUE_NODE.FLT23;
+				else	F52_RIGHT_VALUE = CXX_VALUE_NODE.FLT52;
+				FLOAT_CONSTANT_RIGHT = TRUE;
+			end;
+		end;
+        end;
+
+	if LEFT_IS_VID & (LEFT ^= NULL_CXX_VID) then do;
+		CXX_VALUE_NODE_PTR = LEFT;
+		if CXX_VALUE_NODE.OP = CONSTANT_VO then do;
+			if (TYPE ^= LDOUBLE_BT) |
+			   ^EXTENDED_PRECISION_LONG_DOUBLE then do;
+				CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+				if TYPE = FLOAT_BT then
+					F23_LEFT_VALUE = CXX_VALUE_NODE.FLT23;
+				else	F52_LEFT_VALUE = CXX_VALUE_NODE.FLT52;
+				FLOAT_CONSTANT_LEFT = TRUE;
+				FLOAT_CONSTANT = FLOAT_CONSTANT_RIGHT;
+			end;
+		end;
+	end;
+
+	if FLOAT_CONSTANT then do;
+		on error goto RETURN_FLOAT_ERROR;
+	end;
+            
+	CXX_VALUE_NODE_PTR = V;
+
+        goto FOLD (VOP);
+
+/*--------------------------------------*/
+
+REASSOCIATE:
+
+        /* Get here for ADD, MUL, AND, OR, XOR, and some cases of SUB. */
+
+	CXX_VALUE_NODE_PTR = LEFT;
+
+	if (CXX_VALUE_NODE.OP = VOP) & (CONSTANT_RIGHT | CONSTANT_LEFT) then do;
+                /* This is "((e op c1) op e2)".
+                   If c1 is a constant, then want to transform
+                   in one of two ways depending on whether e2
+                   is also a constant:
+                    (1) e2 is a constant, c2.
+                        Transform to "(e op (c1 op c2))".
+                        Expanding "(c1 op c2)" will fold to a new
+                        constant, c.  Hence the result will be
+                        "(e op c)".
+                    (2) e2 is not a constant.
+                        Transform to "((e op e2) op c1)".
+                        This collects the variable parts of an expression
+                        on the left and folds the constant parts together
+                        on the right.
+                */
+                JV = CXX_VALUE_NODE.LEFT; /* e */
+                KV = CXX_VALUE_NODE.RIGHT; /* c1 */
+		CXX_VALUE_NODE_PTR = KV;
+                if (CXX_VALUE_NODE.OP = INTEGER_VO) |
+		   ((CXX_VALUE_NODE.OP = CONSTANT_VO) &
+		    (CXX_VALUE_NODE.TOP_TYPE.CODE = byte (FLOAT_BT)) |
+		    (CXX_VALUE_NODE.TOP_TYPE.CODE = byte (DOUBLE_BT)) |
+		    (CXX_VALUE_NODE.TOP_TYPE.CODE = byte (LDOUBLE_BT))) then do;
+                        call COUNT_UP_VALUE(JV);
+                        call COUNT_UP_VALUE(KV);
+                        call COUNT_DOWN_VALUE(LEFT); /* (e op c1) */
+                        if CONSTANT_RIGHT then do;
+				/* case (1) above */
+				LEFT = JV; /* e */
+				/*(c1 op c2)-->c */
+				RIGHT = GET_VALUE_AND_EXPAND_LR
+					(VOP, KV, RIGHT);
+			end;
+			else do;
+				/* case (2) */
+				/*(e op e2)*/
+				LEFT = GET_VALUE_AND_EXPAND_LR
+				       (VOP, JV, RIGHT);
+				RIGHT = KV; /* c1 */
+			end;
+			CXX_VALUE_NODE_PTR = V;
+			CXX_VALUE_NODE.OP = VOP;
+			CXX_VALUE_NODE.LEFT = LEFT; /* e or (e + e2) */
+			CXX_VALUE_NODE.RIGHT = RIGHT; /* c or c1 */
+			goto REFOLD;
+		end;
+	end;
+
+	CXX_VALUE_NODE_PTR = V;
+	goto RETURN_V;
+
+RETURN_TRUE:
+
+        RESULT = 1;
+        goto RETURN_INTEGER;
+
+RETURN_FALSE:
+
+        RESULT = 0;
+
+RETURN_INTEGER:
+
+        call COUNT_DOWN_VALUE(LEFT);
+        call COUNT_DOWN_VALUE(RIGHT);
+	CXX_VALUE_NODE_PTR = V;
+        CXX_VALUE_NODE.OP = INTEGER_VO;
+
+FINISH_INTEGER:
+	/*
+        /* V is current value;
+        /* zero or sign extend on left.
+	/*/
+	BS1 = ROUNDU (SIZE, SIZE_UNITS, BYTES);
+	if BS1 = 2 then do;
+		/* RESULT = binary (RESULT, 15);  /* ignores SIZE condition */
+		RESULT_15 = RESULT;
+		RESULT    = RESULT_15;
+		if (RESULT < 0) &
+		   ((TYPE = UINT_BT) |
+		    (TYPE = USHORT_BT) |
+		    (TYPE = ULONG_BT)) then do;
+			/*
+			/* Zero extend.
+			/**/
+			RESULT = RESULT + (MAX_SHORT_INT + 1) * 2;
+		end;
+	end;
+        else if BS1 = 1 then do;
+		RESULT = rank (byte (RESULT));	/* Ok if < 0 or > MAX_UCHAR */
+		if (RESULT > MAX_CHAR) &
+		   ((TYPE = CHAR_BT) | (TYPE = SCHAR_BT)) then do;
+			/*
+			/* Sign extend.
+			/**/
+			RESULT = RESULT - (MAX_CHAR + 1) * 2;
+		end;
+	end;
+	CXX_VALUE_NODE.OFFSET = RESULT;
+	CXX_VALUE_NODE.LEFT  = NULL_CXX_VID;
+	CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+	CXX_VALUE_NODE.UNARY = TRUE;
+	goto RETURN_V;
+
+RETURN_RIGHT:
+        LEFT = RIGHT;
+
+RETURN_LEFT:
+        call COUNT_UP_VALUE(LEFT);
+        call COUNT_DOWN_VALUE(V);
+        V = LEFT;
+	CXX_VALUE_NODE_PTR = V;
+
+RETURN_V:
+        return (V);
+
+RETURN_FLOAT:
+	KV = ALLOC_EMPTY_CXX_VALUE_NODE ();
+
+	if TYPE = FLOAT_BT then
+		CXX_VALUE_NODE.FLT23 = F23_RESULT;
+	else	CXX_VALUE_NODE.FLT52 = F52_RESULT;
+
+	call COUNT_DOWN_VALUE (LEFT);
+	call COUNT_DOWN_VALUE (RIGHT);
+
+	CXX_VALUE_NODE_PTR = V;
+	CXX_VALUE_NODE.OP			= CONSTANT_VO;
+	CXX_VALUE_NODE.LEFT			= KV;
+	CXX_VALUE_NODE.RIGHT			= NULL_CXX_VID;
+	CXX_VALUE_NODE.TYPE			= GET_BASIC_TYPE (TYPE);
+	CXX_VALUE_NODE.TOP_TYPE.CODE		= byte (TYPE);
+	CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS	= NULL_TQ;
+	CXX_VALUE_NODE.TOP_TYPE.NID		= NULL_NID;
+	CXX_VALUE_NODE.DERIVED_TYPE_SKIP	= 0;
+	CXX_VALUE_NODE.EXTRA_PTR_LEVEL		= FALSE;
+
+       	goto RETURN_V;
+
+RETURN_FLOAT_ERROR:
+	/* A floating point exception occurred while performing an arithmetic 
+	/* operation. This expression cannot be evaluated during compilation; 
+	/* it will be deferred to execution-time, if possible.
+	/**/
+	call SEMANTIC_ERROR (ERR_ARITHMETIC_EXCEPTION);
+	goto RETURN_V;
+
+/*-------------------------------*/
+
+FOLD(COMMA_VO):
+
+/*
+/* Disabled COMMA_VO as a candidate for folding since 
+/* Comma operators are not allowed in initial expressions 
+/* for static data and auto aggregates. Folding (1,2) 
+/* "reduces away" needed info for EVALI to determine if this is
+/* a constant expression for static initialization. 
+/* This folding may produce simpler expr trees, but there 
+/* are no other inherent advantages since "EMITT" is equipped 
+/* to toss away constant expressions which are essentially nop's.
+/*
+/* EXPV: EXPAND(COMMA_VO) no longer does folding: Old code remains
+/* only for possible future use. May be omitted later.
+/*-------*/
+
+        goto RETURN_V;
+
+/*
+/* Old Code ...
+/*
+/*        if LEFT = 0 then 
+/*        do;
+/*            call FIND_CPLUS_VAL(RIGHT);
+/*            /* If this is an array [looks like ADDR(REF(array))] then
+/*               then leave the COMMA as is; do not fold in case COMMA 
+/*               is an argument to SIZEOF, in which case the size info
+/*               on the COMMA is needed rather than the ADDR(REF->array).
+/*               e.g. sizeof(0, arr) results in 4, not sizeof(arr).
+/*            */
+/*            if CPLUS_VAL.VOP = ADDR_VO then 
+/*            do;
+/*                call FIND_CPLUS_VAL(CPLUS_VAL.LEFT);    /* the REF */
+/*                call GET_VALUE_TYPE(TYPE_INFO_T);
+/*		if TYPE_INFO_T.TOP_TYPE.CODE = byte (ARRAY_DT) then do;
+/*                    call FIND_CPLUS_VAL(V);
+/*                    goto RETURN_V;
+/*                end;
+/*            end;
+/*            
+/*            call FIND_CPLUS_VAL(V);
+/*
+/*            CPLUS_VAL.RIGHT = 0;
+/*            call COUNT_DOWN_VALUE(V);
+/*            V = RIGHT;
+/*            call FIND_CPLUS_VAL(V);
+/*        end;
+/*
+/*        goto RETURN_V;
+/**/
+
+FOLD(LEFT_VALUE_VO):
+
+        goto RETURN_V;
+
+FOLD(MINUS_VO):
+
+	if FLOAT_CONSTANT_LEFT then do;
+		if TYPE = FLOAT_BT then
+			F23_RESULT = -F23_LEFT_VALUE;
+		else	F52_RESULT = -F52_LEFT_VALUE;
+		goto RETURN_FLOAT;
+	end;
+	else if INTEGER_CONSTANT_LEFT then do;
+       		RESULT = -LEFT_VALUE;
+		goto RETURN_INTEGER;
+	end;
+        else	goto RETURN_V;
+
+FOLD(COMPLEMENT_VO):
+
+        if INTEGER_CONSTANT_LEFT
+           then do;
+                RESULT = -(LEFT_VALUE+1);
+                goto RETURN_INTEGER;
+                end;
+
+        goto RETURN_V;
+
+
+FOLD(ADD_VO):
+
+	if FLOAT_CONSTANT then do;
+		if TYPE = FLOAT_BT then
+			F23_RESULT = F23_LEFT_VALUE + F23_RIGHT_VALUE;
+		else	F52_RESULT = F52_LEFT_VALUE + F52_RIGHT_VALUE;
+		goto RETURN_FLOAT;
+	end;
+
+        if BOTH_INTEGER_CONSTANT
+           then do;
+                if ^ADD_CHECK(LEFT_VALUE, RIGHT_VALUE, TYPE) then
+                    call SEMANTIC_ERROR (ERR_BAD_CONSTANT_EXPR);
+                RESULT = LEFT_VALUE + RIGHT_VALUE;
+                goto RETURN_INTEGER;
+                end;
+
+	if BOTH_CONSTANT
+	   then do;
+		V = FOLD_FLOAT (LEFT, RIGHT, ADD_VO);
+		goto RETURN_V;
+		end;
+
+        if INTEGER_CONSTANT_RIGHT
+           then do;
+                if RIGHT_VALUE = 0
+                   then goto RETURN_LEFT;
+
+                goto REASSOCIATE;
+                end;
+
+	CXX_VALUE_NODE_PTR = RIGHT;
+        if CXX_VALUE_NODE.OP = MINUS_VO then do;
+                KV = CXX_VALUE_NODE.LEFT;
+                call COUNT_UP_VALUE(KV);
+                call COUNT_DOWN_VALUE(RIGHT);
+		CXX_VALUE_NODE_PTR = V;
+                CXX_VALUE_NODE.RIGHT = KV;
+                CXX_VALUE_NODE.OP = SUB_VO;
+                goto REFOLD;
+                end;
+                
+	CXX_VALUE_NODE_PTR = LEFT;
+        if CXX_VALUE_NODE.OP = MINUS_VO then do;
+                KV = CXX_VALUE_NODE.LEFT;
+                call COUNT_UP_VALUE(KV);
+                call COUNT_DOWN_VALUE(LEFT);
+		CXX_VALUE_NODE_PTR = V;
+                CXX_VALUE_NODE.LEFT = RIGHT;
+                CXX_VALUE_NODE.RIGHT = KV;
+                CXX_VALUE_NODE.OP = SUB_VO;
+                goto REFOLD;
+                end;
+                
+        goto REASSOCIATE;
+
+FOLD(SUB_VO):
+
+	if FLOAT_CONSTANT then do;
+		if TYPE = FLOAT_BT then
+			F23_RESULT = F23_LEFT_VALUE - F23_RIGHT_VALUE;
+		else	F52_RESULT = F52_LEFT_VALUE - F52_RIGHT_VALUE;
+		goto RETURN_FLOAT;
+	end;
+
+        if BOTH_INTEGER_CONSTANT
+           then do;
+                if ^SUBTRACT_CHECK(LEFT_VALUE, RIGHT_VALUE, TYPE) then
+                    call SEMANTIC_ERROR (ERR_BAD_CONSTANT_EXPR);
+                RESULT = LEFT_VALUE - RIGHT_VALUE;
+                goto RETURN_INTEGER;
+                end;
+
+	if BOTH_CONSTANT
+	   then do;
+		V = FOLD_FLOAT (LEFT, RIGHT, SUB_VO);
+		goto RETURN_V;
+		end;
+
+        if INTEGER_CONSTANT_RIGHT
+           then do;
+                RIGHT = GET_VALUE_AND_EXPAND_L (MINUS_VO, RIGHT);
+                goto MAKE_ADD_NEW_RIGHT;
+                end;
+
+	CXX_VALUE_NODE_PTR = RIGHT;
+
+        if CXX_VALUE_NODE.OP = MINUS_VO then do;
+                KV = CXX_VALUE_NODE.LEFT;
+                call COUNT_UP_VALUE(KV);
+                call COUNT_DOWN_VALUE(RIGHT);
+                RIGHT = KV;
+                goto MAKE_ADD_NEW_RIGHT;
+                end;
+
+	CXX_VALUE_NODE_PTR = LEFT;
+
+        if CXX_VALUE_NODE.OP = ADD_VO then do;
+                JV = CXX_VALUE_NODE.LEFT;
+                KV = CXX_VALUE_NODE.RIGHT;
+		CXX_VALUE_NODE_PTR = KV;
+                if CXX_VALUE_NODE.OP = INTEGER_VO then do;
+                        /* Transform ((e + c) - e2)
+                           to        ((e - e2) + c).
+                        */
+                        call COUNT_UP_VALUE (JV);
+                        call COUNT_UP_VALUE (KV);
+                        call COUNT_DOWN_VALUE (LEFT);
+                        LEFT = GET_VALUE_AND_EXPAND_LR (VOP, JV, RIGHT);
+                        RIGHT = KV;
+			CXX_VALUE_NODE_PTR = V;
+			CXX_VALUE_NODE.OP = ADD_VO;
+			CXX_VALUE_NODE.LEFT = LEFT;
+			CXX_VALUE_NODE.RIGHT = RIGHT;
+			goto REFOLD;
+		end;
+	end;
+
+	CXX_VALUE_NODE_PTR = V;
+        goto RETURN_V;
+
+MAKE_ADD_NEW_RIGHT:
+	CXX_VALUE_NODE_PTR = V;
+        CXX_VALUE_NODE.OP = ADD_VO;
+        CXX_VALUE_NODE.RIGHT = RIGHT;
+        goto REFOLD;
+
+
+FOLD(MUL_VO):
+
+	if FLOAT_CONSTANT then do;
+		if TYPE = FLOAT_BT then
+			F23_RESULT = F23_LEFT_VALUE * F23_RIGHT_VALUE;
+		else	F52_RESULT = F52_LEFT_VALUE * F52_RIGHT_VALUE;
+		goto RETURN_FLOAT;
+	end;
+
+        if BOTH_INTEGER_CONSTANT
+           then do;
+                if ^MULTIPLY_CHECK(LEFT_VALUE, RIGHT_VALUE, TYPE) then
+                    call SEMANTIC_ERROR (ERR_BAD_CONSTANT_EXPR);
+                RESULT = LEFT_VALUE * RIGHT_VALUE;
+                goto RETURN_INTEGER;
+                end;
+
+	if BOTH_CONSTANT
+	   then do;
+		V = FOLD_FLOAT (LEFT, RIGHT, MUL_VO);
+		goto RETURN_V;
+		end;
+
+        if INTEGER_CONSTANT_RIGHT
+           then if RIGHT_VALUE = 1
+                   then goto RETURN_LEFT;
+                   else
+                if RIGHT_VALUE = -1
+                   then do;
+                        call COUNT_DOWN_VALUE(RIGHT);
+			CXX_VALUE_NODE_PTR = V;
+                        CXX_VALUE_NODE.LEFT = LEFT;
+                        CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+                        CXX_VALUE_NODE.OP = MINUS_VO;
+                        goto REFOLD;
+                        end;
+
+        goto REASSOCIATE;
+
+FOLD(DIV_VO):
+
+	if FLOAT_CONSTANT then do;
+		if TYPE = FLOAT_BT then
+			F23_RESULT = F23_LEFT_VALUE / F23_RIGHT_VALUE;
+		else	F52_RESULT = F52_LEFT_VALUE / F52_RIGHT_VALUE;
+		goto RETURN_FLOAT;
+	end;
+
+        if BOTH_INTEGER_CONSTANT
+           then do;
+                if RIGHT_VALUE = 0
+                   then RESULT = LEFT_VALUE; /* undefined, but something */
+                   else
+                if (LEFT_VALUE < 0 | RIGHT_VALUE < 0) &
+                   (TYPE = UINT_BT | TYPE = ULONG_BT)
+                   then RESULT = UDIV32(LEFT_VALUE,RIGHT_VALUE);
+                   else RESULT = divide(LEFT_VALUE,RIGHT_VALUE,31);
+                goto RETURN_INTEGER;
+                end;
+
+	if BOTH_CONSTANT
+	   then do;
+		V = FOLD_FLOAT (LEFT, RIGHT, DIV_VO);
+		goto RETURN_V;
+		end;
+
+        if INTEGER_CONSTANT_RIGHT
+           then if RIGHT_VALUE = 1
+                   then goto RETURN_LEFT;
+                   else
+                if RIGHT_VALUE = -1 & ^(TYPE = UINT_BT | TYPE = ULONG_BT)
+                   then do;
+                        call COUNT_DOWN_VALUE(RIGHT);
+			CXX_VALUE_NODE_PTR = V;
+                        CXX_VALUE_NODE.LEFT = LEFT;
+                        CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+                        CXX_VALUE_NODE.OP = MINUS_VO;
+                        goto REFOLD;
+                        end;
+
+        goto RETURN_V;
+
+FOLD(MOD_VO):
+
+        if BOTH_INTEGER_CONSTANT
+           then do;
+                if RIGHT_VALUE = 0
+                   then RESULT = LEFT_VALUE; /* undefined, but something */
+                   else
+                if (LEFT_VALUE < 0 | RIGHT_VALUE < 0) &
+                   (TYPE = UINT_BT | TYPE = ULONG_BT)
+                   then RESULT = UDIV32(LEFT_VALUE,RIGHT_VALUE);
+                   else RESULT = divide(LEFT_VALUE,RIGHT_VALUE,31);
+                RESULT = LEFT_VALUE - RESULT*RIGHT_VALUE;
+                goto RETURN_INTEGER;
+                end;
+
+        goto RETURN_V;
+
+
+FOLD(LSHIFT_VO):
+
+        if INTEGER_CONSTANT_RIGHT & RIGHT_VALUE = 0
+           then goto RETURN_LEFT;
+
+        if ^BOTH_INTEGER_CONSTANT
+           then goto RETURN_V;
+
+        if RIGHT_VALUE < 0
+           then /* undefined, but do something */
+                goto RETURN_LEFT;
+
+        RESULT = LEFT_VALUE;            /* (003) */
+        do J = 1 to min(RIGHT_VALUE,32);
+           RESULT = RESULT * 2;
+        end;
+
+        goto RETURN_INTEGER;
+
+
+FOLD(RSHIFT_VO):
+
+        if INTEGER_CONSTANT_RIGHT & RIGHT_VALUE = 0
+           then goto RETURN_LEFT;
+
+        if ^BOTH_INTEGER_CONSTANT
+           then goto RETURN_V;
+
+        if RIGHT_VALUE < 0
+           then /* undefined, but do something */
+                goto RETURN_LEFT;
+
+        RESULT = LEFT_VALUE;            /* (003) */
+        if LEFT_VALUE >= 0 | TYPE = UINT_BT | TYPE = ULONG_BT
+           then LEFT_VALUE = 0;              /* sign bit = 0 */
+           else LEFT_VALUE = -MAX_INTEGER-1; /* sign bit = 1 */
+        do J = 1 to min(RIGHT_VALUE,32);
+           RESULT = UDIV32(RESULT,2) + LEFT_VALUE; /* (+ sign bit) */
+        end;
+           
+        goto RETURN_INTEGER;
+
+
+FOLD(OR_VO):
+
+        if BOTH_INTEGER_CONSTANT
+           then do;
+                RESULT_BITS = LEFT_BITS | RIGHT_BITS;
+                goto RETURN_INTEGER;
+                end;
+
+        T2 = rank (RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE);
+        T1 = rank (LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE);
+
+	if INTEGER_CONSTANT_RIGHT then do;
+
+                /* LEFT is non-constant, RIGHT is constant */
+
+                /* If RIGHT is all 0's, result is LEFT with no change */
+                if RIGHT_VALUE = 0 then
+			goto RETURN_LEFT;
+
+                /* If RIGHT is all 1's, result is just all 1's */
+                if RIGHT_VALUE = -1 then
+			goto RETURN_RIGHT;
+
+                /* Result is just the constant RIGHT value independent
+                   of the LEFT value in either of these two cases:
+                   (1) LEFT and RIGHT are same byte size (2) and all
+                       significant bits of RIGHT are 1's
+                       [4-byte case already covered above].
+                   (2) LEFT is unsigned and RIGHT is longer than
+                       or same size as LEFT, and all the low-order bits 
+                       of RIGHT are 1's for the length of LEFT.
+                   I.e., the 1's in RIGHT totally mask any contribution
+                   by LEFT in the RESULT.
+                */
+                /* Get byte size of LEFT */
+                BS1 = ROUNDU (LEFT->CXX_VALUE_NODE.SIZE,
+			      rank (LEFT->CXX_VALUE_NODE.SIZE_UNITS),
+			      BYTES);
+		if (BS1 = 2) & (binary (RIGHT_VALUE, 15) = -1) then do;
+			if (T1 = USHORT_BT) | (T1 = UINT_BT) then
+				goto RETURN_RIGHT;
+			if ROUNDU (RIGHT->CXX_VALUE_NODE.SIZE,
+				   rank (RIGHT->CXX_VALUE_NODE.SIZE_UNITS),
+				   BYTES) = 2 then
+				goto RETURN_RIGHT;
+		end;
+
+		/*
+		/* If LEFT is unsigned and shorter or same as RIGHT
+		/* and casting RIGHT to same type as LEFT followed
+		/* by a conversion to INT_BT would not change its value,
+		/* then convert the RIGHT to the type of LEFT and do the
+		/* operation in a possibly narrower type avoiding any
+		/* widening conversion.
+		/**/
+
+		if CXX_USE_LONG_OPERATIONS then
+			goto FINISH_AND_OR;
+
+		if (T1 = USHORT_BT) &
+                   (RIGHT_VALUE > 0) & 
+                   (RIGHT_VALUE <= (2 * MAX_SHORT_INT + 1)) then
+			T2 = USHORT_BT;
+		else if (T1 = SHORT_BT) &
+			(RIGHT_VALUE >= -(MAX_SHORT_INT + 1)) &
+			(RIGHT_VALUE <= MAX_SHORT_INT) then
+			T2 = SHORT_BT;
+	end;
+
+	if ((T1 = SHORT_BT)  & (T2 = SHORT_BT)) |
+           ((T1 = USHORT_BT) & (T2 = USHORT_BT)) then
+		TYPE = T1;
+
+	goto FINISH_AND_OR;
+
+FOLD(XOR_VO):
+
+        if BOTH_INTEGER_CONSTANT then do;
+		RESULT_BITS = bool (LEFT_BITS, RIGHT_BITS, '0110'b);
+		goto RETURN_INTEGER;
+	end;
+
+	T2 = rank (RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE);
+	T1 = rank (LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE);
+
+	if INTEGER_CONSTANT_RIGHT then do;
+
+                /* LEFT is non-constant, RIGHT is constant */
+
+                /* If RIGHT is all 0's, result is just the LEFT unchanged */
+                if RIGHT_VALUE = 0
+                   then goto RETURN_LEFT;
+
+                /* Get byte size of LEFT & RIGHT */
+                BS1 = ROUNDU (LEFT->CXX_VALUE_NODE.SIZE,
+			      rank (LEFT->CXX_VALUE_NODE.SIZE_UNITS),
+			      BYTES);
+                BS2 = ROUNDU (RIGHT->CXX_VALUE_NODE.SIZE,
+			      rank(RIGHT->CXX_VALUE_NODE.SIZE_UNITS),
+			      BYTES);
+
+                /* In some cases, result is just the complement of left */
+                if /* Right is all 1's and either
+                      (1) both are 4 bytes, or
+                      (2) left is 2 bytes signed  */
+                   RIGHT_VALUE = -1
+                    & (BS1=4 & BS2=4
+                       |
+                       BS1=2 & (T1=SHORT_BT | T1=INT_BT)
+                      )
+                   |
+                   /* Left is 2 bytes unsigned
+                      and right 4 bytes and equal to max 2 byte unsigned */
+                   RIGHT_VALUE = (MAX_SHORT_INT*2+1) /* i.e., 0x0000ffff */
+                    & BS2 = 4
+                    & BS1 = 2 & (T1=USHORT_BT | T1=UINT_BT)
+                   |
+                   /* Both are 2 bytes, right is all 1's,
+                      and both are signed/unsigned        */
+                   BS1=2 & BS2=2 & binary(RIGHT_VALUE,15)=-1 &
+                    (
+                     (T1=SHORT_BT  | T1=INT_BT)  & (T2=SHORT_BT  | T2=INT_BT)
+                      |
+                     (T1=USHORT_BT | T1=UINT_BT) & (T2=USHORT_BT | T2=UINT_BT)
+                    )
+                   then do;
+                        /* Result is just complement of Left */
+                        call COUNT_UP_VALUE(LEFT);
+                        call COUNT_DOWN_VALUE(V);
+                        V = GET_VALUE_AND_EXPAND_L (COMPLEMENT_VO, LEFT);
+                        goto RETURN_V;
+			end;
+		/*
+		/* Do operation short if widening to INT
+		/* before vs. after doesn't affect result.
+		/**/
+
+		if CXX_USE_LONG_OPERATIONS then
+			goto FINISH_AND_OR;
+
+                if (T1 = USHORT_BT) &
+                   (RIGHT_VALUE > 0) &
+		   (RIGHT_VALUE <= (2 * MAX_SHORT_INT + 1)) then
+			T2 = USHORT_BT;
+		else if (T1 = SHORT_BT) &
+			(RIGHT_VALUE >= -(MAX_SHORT_INT + 1)) &
+			(RIGHT_VALUE <= MAX_SHORT_INT) then
+			T2 = SHORT_BT;
+	end;
+
+        if T1 = SHORT_BT  & T2 = SHORT_BT |
+           T1 = USHORT_BT & T2 = USHORT_BT
+           then TYPE = T1;
+
+        goto FINISH_AND_OR;
+
+FOLD(AND_VO):
+
+        if BOTH_INTEGER_CONSTANT
+           then do;
+                RESULT_BITS = LEFT_BITS & RIGHT_BITS;
+                goto RETURN_INTEGER;
+                end;
+
+        T2 = rank (RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE);
+        T1 = rank (LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE);
+
+	if INTEGER_CONSTANT_RIGHT then do;
+
+                if RIGHT_VALUE = 0
+                   then goto RETURN_RIGHT;
+
+                if RIGHT_VALUE = -1
+                   then goto RETURN_LEFT;
+
+                /* Byte size of Left */
+                BS1 = ROUNDU (LEFT->CXX_VALUE_NODE.SIZE,
+			      rank(LEFT->CXX_VALUE_NODE.SIZE_UNITS),
+			      BYTES);
+
+                if BS1=2 & binary(RIGHT_VALUE,15)=-1 /* 0x????ffff */
+                then do;
+                        if T1 = USHORT_BT | T1=UINT_BT then
+				goto RETURN_LEFT;
+
+                        /* T1 is either SHORT or INT */
+                        if RIGHT_VALUE = -(MAX_SHORT_INT*2+1) /* 0x0000ffff */
+                        then do;
+                                if T1 = SHORT_BT then
+					LEFT = CONVERT_VALUE (LEFT, USHORT_BT);
+                                   else	LEFT = CONVERT_VALUE (LEFT, UINT_BT);
+                                goto RETURN_LEFT;
+			end;
+		end;
+
+		if CXX_USE_LONG_OPERATIONS then
+			goto FINISH_AND_OR;
+
+		if (RIGHT_VALUE > 0) &
+		   (RIGHT_VALUE <= (2 * MAX_SHORT_INT + 1)) then
+			T2 = USHORT_BT;
+		else if (RIGHT_VALUE >= -(MAX_SHORT_INT + 1)) then
+			T2 = SHORT_BT;
+	end;
+
+        if T1 = USHORT_BT | T2 = USHORT_BT
+           then TYPE = USHORT_BT;
+           else
+        if T1 = SHORT_BT  & T2 = SHORT_BT
+           then TYPE = SHORT_BT;
+
+        goto FINISH_AND_OR;
+
+FINISH_AND_OR:
+        LEFT  = CONVERT_VALUE (LEFT, TYPE);
+        RIGHT = CONVERT_VALUE (RIGHT, TYPE);
+
+	CXX_VALUE_NODE_PTR = V;
+        CXX_VALUE_NODE.LEFT = LEFT;
+        CXX_VALUE_NODE.RIGHT = RIGHT;
+	call SET_VALUE_SIMPLE_TYPE (TYPE);
+        goto REASSOCIATE;
+
+
+FOLD(AND_AND_VO):
+
+        if INTEGER_CONSTANT_LEFT
+           then if LEFT_VALUE ^= 0
+                   then goto RETURN_RIGHT;
+                   else goto RETURN_FALSE;
+
+        if INTEGER_CONSTANT_RIGHT & RIGHT_VALUE ^= 0
+           then goto RETURN_LEFT;
+
+        goto RETURN_V;
+
+
+FOLD(OR_OR_VO):
+
+        if INTEGER_CONSTANT_LEFT
+           then if LEFT_VALUE = 0
+                   then goto RETURN_RIGHT;
+                   else goto RETURN_TRUE;
+
+        if INTEGER_CONSTANT_RIGHT & RIGHT_VALUE = 0
+           then goto RETURN_LEFT;
+
+        goto RETURN_V;
+
+FOLD(CONDITIONAL_VO):
+
+        if INTEGER_CONSTANT_LEFT then do;
+		CXX_VALUE_NODE_PTR = RIGHT;	/* COLON */
+		call GET_VALUE_TYPE (TI);
+                if LEFT_VALUE ^= 0 then
+			LEFT = CXX_VALUE_NODE.LEFT;
+		else	LEFT = CXX_VALUE_NODE.RIGHT;
+
+		NOT_AN_LVALUE = CXX_VALUE_NODE.NOT_AN_LVALUE;
+		FUNCTION_DESIGNATOR = CXX_VALUE_NODE.FUNCTION_DESIGNATOR;
+		ARRAY_DESIGNATOR = CXX_VALUE_NODE.ARRAY_DESIGNATOR;
+
+		LEFT = LEFT->CXX_VALUE_NODE.LEFT;  /* ALTERNATE/VALUE */
+		CXX_VALUE_NODE_PTR = LEFT;
+		if  (CXX_VALUE_NODE.ARRAY_DESIGNATOR = ARRAY_DESIGNATOR)
+		  & (CXX_VALUE_NODE.FUNCTION_DESIGNATOR = FUNCTION_DESIGNATOR)
+		  & (CXX_VALUE_NODE.NOT_AN_LVALUE = NOT_AN_LVALUE) then do;
+			call SET_VALUE_TYPE (TI);
+                       	goto RETURN_LEFT;
+                end;
+        end;
+
+        goto RETURN_V;
+
+
+FOLD(RANK_VO): ;
+FOLD(SRANK_VO): ;
+FOLD(BYTE_VO): ;
+
+        if INTEGER_CONSTANT_LEFT
+           then do;
+                RESULT = LEFT_VALUE;
+                goto RETURN_INTEGER;
+                end;
+
+        goto RETURN_V;
+
+FOLD(NOT_VO):
+
+        if INTEGER_CONSTANT_LEFT
+           then if LEFT_VALUE = 0
+                   then goto RETURN_TRUE;
+                   else goto RETURN_FALSE;
+
+        /* see if we can just reverse the sense of another logical */
+
+	CXX_VALUE_NODE_PTR = LEFT;
+
+        VOP = CXX_VALUE_NODE.OP;
+
+        if VOP = NOT_VO then do;
+                LEFT = CXX_VALUE_NODE.LEFT;
+                goto RETURN_LEFT;
+	end;
+
+        if VOP < EQ_VO |
+           VOP > GT_VO
+           then do;
+		CXX_VALUE_NODE_PTR = V;
+                goto RETURN_V;
+                end;
+
+        /* reverse test */
+        if VOP < (EQ_VO+3)
+           then VOP = VOP + 3;
+           else VOP = VOP - 3;
+
+        KV = LEFT;
+        LEFT  = CXX_VALUE_NODE.LEFT;
+        RIGHT = CXX_VALUE_NODE.RIGHT;
+        call COUNT_UP_VALUE(LEFT);
+        call COUNT_UP_VALUE(RIGHT);
+        call COUNT_DOWN_VALUE(KV);
+
+	CXX_VALUE_NODE_PTR = V;
+        CXX_VALUE_NODE.OP = VOP;
+        CXX_VALUE_NODE.LEFT = LEFT;
+        CXX_VALUE_NODE.RIGHT = RIGHT;
+        CXX_VALUE_NODE.UNARY = FALSE;   /* bug 004 */
+        goto RETURN_V;
+
+
+FOLD(EQ_VO): ;
+FOLD(NE_VO): ;
+FOLD(GT_VO): ;
+FOLD(GE_VO): ;
+FOLD(LT_VO): ;
+FOLD(LE_VO): ;
+
+	if ^IS_DERIVED_TYPE (rank (LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE)) then
+		T1 = rank (LEFT->CXX_VALUE_NODE.TOP_TYPE.CODE);
+	else	T1 = 0;
+
+	if ^BOTH_INTEGER_CONSTANT then
+		goto FINISH_RELATIONAL;
+
+	if VOP = EQ_VO then do;
+		if LEFT_VALUE = RIGHT_VALUE then
+			goto RETURN_TRUE;
+		else	goto RETURN_FALSE;
+	end;
+	else if VOP = NE_VO then do;
+		if LEFT_VALUE = RIGHT_VALUE then
+			goto RETURN_FALSE;
+		else	goto RETURN_TRUE;
+	end;
+	else if (VOP = GT_VO) | (VOP = GE_VO) then do;
+		/*
+                /* Swap; transpose test; do LT or LE
+		/**/
+		RESULT = LEFT_VALUE;
+		LEFT_VALUE = RIGHT_VALUE;
+		RIGHT_VALUE = RESULT;
+		if VOP = GT_VO then
+			VOP = LT_VO;
+		else	VOP = LE_VO;
+	end;
+
+	if (T1 = UINT_BT) |
+	   (T1 = ULONG_BT) |
+	   (RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (UINT_BT)) |
+	   (RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE = byte (ULONG_BT)) then do;
+		/*
+		/* Adjust the values so that the signed
+		/* compare produces the result an unsigned
+		/* compare would have produced.
+		/**/
+                if (LEFT_VALUE >= 0) & (RIGHT_VALUE < 0) then do;
+			LEFT_VALUE = 0;
+			RIGHT_VALUE = 1;
+		end;
+		else if (LEFT_VALUE < 0) & (RIGHT_VALUE < 0) then do;
+			LEFT_VALUE = -LEFT_VALUE;
+			RIGHT_VALUE = -RIGHT_VALUE;
+		end;
+		else if (LEFT_VALUE < 0) & (RIGHT_VALUE >= 0) then do;
+			LEFT_VALUE = 1;
+			RIGHT_VALUE = 0;
+		end;
+	end;
+
+	if (VOP = LT_VO) & (LEFT_VALUE <  RIGHT_VALUE) |
+           (VOP = LE_VO) & (LEFT_VALUE <= RIGHT_VALUE) then
+		goto RETURN_TRUE;
+	goto RETURN_FALSE;
+
+FINISH_RELATIONAL:
+
+        /* VOP is one of the six relational ops and ^BOTH_CONSTANT */
+
+	T2 = rank (RIGHT->CXX_VALUE_NODE.TOP_TYPE.CODE);
+
+	if INTEGER_CONSTANT_RIGHT & T1 ^= 0 then do;
+
+                /* LEFT is non-constant, RIGHT is constant */
+                if (T1 = CHAR_BT) | (T1 = SCHAR_BT)
+                   then do;
+                        MAX_VAL = MAX_CHAR;
+                        MIN_VAL = - MAX_VAL - 1;
+                        end;
+                   else
+                if T1 = UCHAR_BT
+                   then do;
+                        MAX_VAL = MAX_UCHAR;
+                        MIN_VAL = 0;
+                        end;
+                   else
+                if T1 = SHORT_BT
+                   then do;
+                        MAX_VAL = MAX_SHORT_INT;
+                        MIN_VAL = - MAX_VAL - 1;
+                        end;
+                   else
+                if T1 = USHORT_BT
+                   then do;
+                        MAX_VAL = MAX_SHORT_INT + MAX_SHORT_INT + 1;
+                        MIN_VAL = 0;
+                        end;
+                   else
+                /* T1 = INT_BT or bigger */
+                        do;
+                        MAX_VAL = MAX_INTEGER;
+                        MIN_VAL = - MAX_VAL - 1;
+                        end;
+
+                /* If value of RIGHT is out of range for type of LEFT,
+                   then we can determine the result without
+                   knowing the value of LEFT. */
+                if RIGHT_VALUE < MIN_VAL
+                   then if VOP = EQ_VO | VOP = LT_VO | VOP = LE_VO
+                           then goto RETURN_FALSE;
+                           else goto RETURN_TRUE;
+                   else
+                if RIGHT_VALUE > MAX_VAL
+                   then if VOP = EQ_VO | VOP = GT_VO | VOP = GE_VO
+                           then goto RETURN_FALSE;
+                           else goto RETURN_TRUE;
+
+                /* RIGHT is in range for LEFT type */
+            
+		if ^CXX_ALLOWS_BYTE_COMPARES then do;
+			/*
+                	/* On some architectures (m68, i386, n32, 3b2),
+			/* the CG will do signed one-byte comparisons if
+			/* EMIT_VALUE sets ALIAS in BRANCH_rel operator.
+                	/**/
+			if ((T1 = CHAR_BT) | (T1 = SCHAR_BT)) &
+			   (VOP ^= EQ_VO) & (VOP ^= NE_VO) then do;
+				LEFT = CONVERT_VALUE (LEFT, SHORT_BT);
+				T1 = SHORT_BT;
+			end;
+		end;
+            
+                if T2 ^= T1 then
+			RIGHT = CONVERT_VALUE (RIGHT, T1);
+
+                V->CXX_VALUE_NODE.LEFT = LEFT;
+                V->CXX_VALUE_NODE.RIGHT = RIGHT;
+
+		CXX_VALUE_NODE_PTR = V;
+                goto RETURN_V;
+	end;
+
+        /* Both are non-constant */
+
+        if T1 = 0 | /* pointer */
+           T1 = LDOUBLE_BT |
+           T1 = DOUBLE_BT |
+           T1 = ULONG_BT |
+           T1 = LONG_BT |
+           T1 = UINT_BT
+           then do;
+                /* EXPV converted both sides to correct common type.
+                   Do nothing more here.
+                */
+		CXX_VALUE_NODE_PTR = V;
+                goto RETURN_V;
+                end;
+
+        /* Both are one of these (but not converted to a common type yet):
+                char, uchar, short, ushort, int
+        */
+
+	CXX_VALUE_NODE_PTR = RIGHT;
+        T2 = rank (CXX_VALUE_NODE.TOP_TYPE.CODE);
+        if T1 = INT_BT | T2 = INT_BT |
+           T1 = SHORT_BT  & T2 = USHORT_BT |
+           T1 = USHORT_BT & T2 = SHORT_BT
+		then T = INT_BT;
+        else if T1 = USHORT_BT | T2 = USHORT_BT
+		then T = USHORT_BT;
+	else if T1 = SHORT_BT | T2 = SHORT_BT
+		then T = SHORT_BT;
+	else
+	/* both are CHAR, SCHAR, or UCHAR at this point */
+	if T1 = T2 then
+		/* both are same: char/char, schar/schar, or uchar/uchar */
+		T = T1;
+	else
+		/* we have char/uchar, schar/char, or etc. at this point */
+		T = SHORT_BT; /* all other char/uchar relations */
+
+        if T1 ^= T then
+		LEFT  = CONVERT_VALUE (LEFT ,T);
+        if T2 ^= T then
+		RIGHT = CONVERT_VALUE (RIGHT, T);
+
+	CXX_VALUE_NODE_PTR = V;
+        CXX_VALUE_NODE.LEFT = LEFT;
+        CXX_VALUE_NODE.RIGHT = RIGHT;
+        goto RETURN_V;
+
+
+FOLD(BRANCH_TRUE_VO): ;
+FOLD(BRANCH_FALSE_VO): ;
+
+        if INTEGER_CONSTANT_RIGHT
+           then do;
+                if VOP = BRANCH_TRUE_VO & RIGHT_VALUE ^= 0 |
+                   VOP = BRANCH_FALSE_VO & RIGHT_VALUE = 0
+                   then do;
+                        call COUNT_DOWN_VALUE(RIGHT);
+			CXX_VALUE_NODE_PTR = V;
+                        CXX_VALUE_NODE.OP = BRANCH_VO;
+                        CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+                        CXX_VALUE_NODE.UNARY = TRUE;
+                        end;
+                   else do;
+                        call COUNT_DOWN_VALUE (V);
+                        V = NULL_CXX_VID;
+                        end;
+                goto RETURN_V;
+                end;
+
+	CXX_VALUE_NODE_PTR = RIGHT;
+        K = CXX_VALUE_NODE.OP;
+
+        if K = COMMA_VO                /* bug 005 */
+           then do;
+                /* [Shouldn't ever occur, since EXPV does this, too.] */
+                /* Transform:
+                    Branch_True/False( L, Comma(X,Y) )
+                   into -->
+                    Comma( X, Branch_True/False(L,Y) )
+                */
+                KV = RIGHT;              /* Comma */
+                JV = LEFT;               /* L */
+                LEFT = CXX_VALUE_NODE.LEFT;     /* X */
+                RIGHT = CXX_VALUE_NODE.RIGHT;   /* Y */
+		call COUNT_UP_VALUE(LEFT);
+                call COUNT_UP_VALUE(RIGHT);
+                call COUNT_DOWN_VALUE(KV);
+		RIGHT = GET_VALUE_AND_EXPAND_LR (VOP, JV, RIGHT);
+		CXX_VALUE_NODE_PTR = V;
+                CXX_VALUE_NODE.OP = COMMA_VO;
+                CXX_VALUE_NODE.LEFT = LEFT;
+                CXX_VALUE_NODE.RIGHT = RIGHT;
+                goto REFOLD;
+                end;
+
+        if K = NOT_VO
+           then do; /* I'm not sure this can actually occur. */
+                if VOP = BRANCH_TRUE_VO
+                   then VOP = BRANCH_FALSE_VO;
+                   else VOP = BRANCH_TRUE_VO;
+                KV = CXX_VALUE_NODE.LEFT;
+                call COUNT_UP_VALUE(KV);
+                call COUNT_DOWN_VALUE(RIGHT);
+		CXX_VALUE_NODE_PTR = V;
+                CXX_VALUE_NODE.RIGHT = KV;
+                CXX_VALUE_NODE.OP = VOP;
+                goto REFOLD;
+                end;
+
+        if K = OR_OR_VO | K = AND_AND_VO
+           then do;
+                LABEL = LEFT;
+                JV = RIGHT; /* OR_OR or AND_AND */
+                LEFT = CXX_VALUE_NODE.LEFT; /* of JV */
+                RIGHT = CXX_VALUE_NODE.RIGHT; /* of JV */
+                call COUNT_UP_VALUE(LEFT);
+                call COUNT_UP_VALUE(RIGHT);
+                if VOP = BRANCH_TRUE_VO & K = OR_OR_VO |
+                   VOP = BRANCH_FALSE_VO & K = AND_AND_VO
+                   then do;
+                        call COUNT_UP_VALUE(LABEL);
+                        call COUNT_DOWN_VALUE(JV);
+                        RIGHT = GET_VALUE_AND_EXPAND_LR (VOP, LABEL, RIGHT);
+                        LEFT  = GET_VALUE_AND_EXPAND_LR (VOP, LABEL, LEFT);
+                        end;
+                   else do;
+                        call COUNT_DOWN_VALUE(JV);
+                        RIGHT = GET_VALUE_AND_EXPAND_LR (VOP, LABEL, RIGHT);
+                        NEW_LABEL = DECLARE_LABEL_VALUE (2);
+                        if VOP = BRANCH_TRUE_VO
+                           then VOP = BRANCH_FALSE_VO;
+                           else VOP = BRANCH_TRUE_VO;
+                        LEFT  = GET_VALUE_AND_EXPAND_LR (VOP, NEW_LABEL, LEFT);
+			CXX_VALUE_NODE_PTR = NEW_LABEL;
+                        if CXX_VALUE_NODE.COUNT = 1 then
+				call COUNT_DOWN_VALUE (NEW_LABEL);
+			else do;
+                                LEFT = CONCATENATE_STATEMENTS (LEFT, RIGHT);
+                                RIGHT = GET_VALUE_AND_EXPAND_L
+					(LABEL_VO, NEW_LABEL);
+                                end;
+                        end;
+
+		CXX_VALUE_NODE_PTR = V;
+                CXX_VALUE_NODE.OP = COMMA_VO;
+                CXX_VALUE_NODE.LEFT = LEFT;
+                CXX_VALUE_NODE.RIGHT = RIGHT;
+                goto REFOLD;
+                end;
+
+        if K < EQ_VO |
+           K > GT_VO
+           then do;
+		CXX_VALUE_NODE_PTR = V;
+                goto RETURN_V;
+                end;
+
+        /* Transform to a branch relational */
+
+        K = K - (EQ_VO-1);
+        if VOP = BRANCH_FALSE_VO
+           then /* reverse relation */
+                if K <= 3
+                   then K = K + 3;
+                   else K = K - 3;
+
+        LEFT = CXX_VALUE_NODE.LEFT;
+        RIGHT = CXX_VALUE_NODE.RIGHT;
+        call COUNT_UP_VALUE(LEFT);
+        call COUNT_UP_VALUE(RIGHT);
+
+	CXX_VALUE_NODE_PTR = V;
+        call COUNT_DOWN_VALUE (CXX_VALUE_NODE.RIGHT);
+	CXX_VALUE_NODE_PTR = V;
+        CXX_VALUE_NODE.OP = BRANCH_VO + K;
+        CXX_VALUE_NODE.RIGHT = LEFT;
+        CXX_VALUE_NODE.THIRD = RIGHT;
+        CXX_VALUE_NODE.TERNARY = TRUE;
+        goto RETURN_V;
+
+end FOLD_VALUE;
+
+/* ---------------------------------------------------------------------
+/* FOLD_FLOAT
+/*
+/* Fold the constants represented by LEFT and RIGHT, doing the operation
+/* specified by FOLDOP.  One of LEFT or RIGHT must be a floating constant
+/* (CONSTANT_VO) and the other if not a floating constant, must be an
+/* integer (INTEGER_VO).  Return a constant_vo that represents the folded
+/* value, and count down the original vops.
+/* ------------------------------------------------------------------- */
+
+FOLD_FLOAT: procedure (LEFT, RIGHT, FOLDOP) returns (type (CXX_VID_T));
+ 
+Declare	LEFT		type (CXX_VID_T),
+	RIGHT		type (CXX_VID_T),
+	FOLDOP		type (SHORT_T);
+
+Declare	J		type (SHORT_T),
+	P		pointer,
+	TEMP_V		type (CXX_VID_T),
+	(KV, V)		type (CXX_VID_T);
+
+Declare	LEFT_FLOAT	float bin(DOUBLE_P),
+	RIGHT_FLOAT	float bin(DOUBLE_P);
+ 
+	TEMP_V = NULL_CXX_VID;
+
+	/*  Get the LEFT, and convert it to float  */
+
+	CXX_VALUE_NODE_PTR = LEFT; /* The CONSTANT_VO or INTEGER_VO */
+	if CXX_VALUE_NODE.OP = INTEGER_VO
+	   then do;
+		/*  Make a CONSTANT_VO for the integer converted to float */
+		TEMP_V = CONVERT_VALUE (LEFT, FLOAT_BT);
+		CXX_VALUE_NODE_PTR = TEMP_V;
+		end;
+	/*  Get the value that contains the spelling of the constant  */
+	V = CXX_VALUE_NODE.LEFT;
+	CXX_VALUE_NODE_PTR = V;
+	/*  Convert it implicitly  */
+	LEFT_FLOAT = substr (CXX_VALUE_NODE.SPTR->TOKEN_SPELLING_POD.SPELLING,
+				1, CXX_VALUE_NODE.SIZE);
+ 
+	/*  Do the same for the RIGHT  */
+	CXX_VALUE_NODE_PTR = RIGHT; /*  The CONSTANT_VO or INTEGER_VO  */
+	if CXX_VALUE_NODE.OP = INTEGER_VO
+	   then do;
+		/*  Make a CONSTANT_VO for the integer converted to float */
+		TEMP_V = CONVERT_VALUE (RIGHT, FLOAT_BT);
+		CXX_VALUE_NODE_PTR = TEMP_V;
+		end;
+	/*  Get the value that contains the spelling of the constant  */
+	V = CXX_VALUE_NODE.LEFT;
+	CXX_VALUE_NODE_PTR = V;
+	/*  Convert it implicitly  */
+	RIGHT_FLOAT = substr (CXX_VALUE_NODE.SPTR->TOKEN_SPELLING_POD.SPELLING,
+				1, CXX_VALUE_NODE.SIZE);
+
+	/*  Do the operation on the two float values.  */
+	goto FLOAT_FUNCTION (FOLDOP);
+ 
+FLOAT_FUNCTION(ADD_VO):
+	LEFT_FLOAT = LEFT_FLOAT + RIGHT_FLOAT;
+	goto RETURN_FOLDED;
+ 
+FLOAT_FUNCTION(SUB_VO):
+	LEFT_FLOAT = LEFT_FLOAT - RIGHT_FLOAT;
+	goto RETURN_FOLDED;
+ 
+FLOAT_FUNCTION(MUL_VO):
+	LEFT_FLOAT = LEFT_FLOAT * RIGHT_FLOAT;
+	goto RETURN_FOLDED;
+ 
+FLOAT_FUNCTION(DIV_VO):
+	LEFT_FLOAT = divide (LEFT_FLOAT, RIGHT_FLOAT, DOUBLE_P);
+	goto RETURN_FOLDED;
+ 
+RETURN_FOLDED:
+ 
+	/* Make a new CONSTANT_VO for the folded value */
+	
+	J = length (trim (char (LEFT_FLOAT)));
+	P = SALLOC (J);
+	P->TOKEN_SPELLING_POD.SPELLING = trim (char (LEFT_FLOAT));
+	KV = ALLOC_EMPTY_CXX_VALUE_NODE ();
+	KV->CXX_VALUE_NODE.SPTR = P;
+	KV->CXX_VALUE_NODE.SIZE = J;
+	V = GET_CONSTANT_AND_EXPAND (KV, FLOAT_CONSTANT_TOKEN);
+ 
+	/*  Count down the original constant vops  */
+	call COUNT_DOWN_VALUE (LEFT);
+	call COUNT_DOWN_VALUE (RIGHT);
+ 
+	/*  If a temporary constant vop was created, count it down.  */
+	if TEMP_V ^= NULL_CXX_VID then
+		call COUNT_DOWN_VALUE (TEMP_V);
+
+	return (V);
+ 
+end FOLD_FLOAT;
+

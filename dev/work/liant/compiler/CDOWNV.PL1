@@ -1,0 +1,110 @@
+/* C++ cdownv.pl1 - Count down a value-node */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  013  New value-node scheme.
+ *  08.19.91  DGM  012  Picked up ANSI-C FE changes (from 06.05.90)
+ *			for floating point constant folding.
+ *  06.28.91  PKT  011  Eliminated STRING_VO.
+ *  10.16.90  PKT  010  COUNT no longer goes to 0 for active value nodes.
+ *  09.25.90  DGM  009  Preprocessor include file name changes.
+ *  09.14.90  DGM  008  Changed include file names and VOP names.
+ *  08.08.90  DGM  007  New type-node.
+ *  07.25.90  PKT  006  Added support for LEFT_VALUE_VO.
+ *  07.20.90  PKT  005  Fix handling of left of comma, fix COUNT_DOWN_VALUE_0.
+ *  07.05.90  PKT  004  Added COUNT_DOWN_VALUE_0.
+ *  06.05.90  DGM  003  Updated for the new utilities.
+ *  04.19.90  DGM  002  Fixed up includes.
+ *  04.04.90  TLF  001  Removed last commented-out code.
+ *  01.19.90  TLF  000  Original.  Derived from the ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 013 CDOWNV');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+
+/* ---------------------------------------------------------------------
+/* COUNT_DOWN_VALUE
+/* ------------------------------------------------------------------- */
+
+COUNT_DOWN_VALUE: procedure (V)         
+                  recursive
+		  external  (X_COUNT_DOWN_VALUE);
+
+	declare V type (CXX_VID_T);
+
+	if V = NULL_CXX_VID then
+		return;
+
+	else if V->CXX_VALUE_NODE.COUNT <= 0 then
+		return;
+
+	else if V->CXX_VALUE_NODE.COUNT = 1 then do;
+		if V->CXX_VALUE_NODE.OP = LEFT_VALUE_VO then do;
+			if ^V->CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+			   (V->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then
+				call COUNT_DOWN_VALUE (V->CXX_VALUE_NODE.LEFT);
+		end;
+		if ^V->CXX_VALUE_NODE.THIRD_IS_NOT_VID &
+		   (V->CXX_VALUE_NODE.THIRD ^= NULL_CXX_VID) then
+			call COUNT_DOWN_VALUE (V->CXX_VALUE_NODE.THIRD);
+		if ^V->CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+		   (V->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then
+			call COUNT_DOWN_VALUE (V->CXX_VALUE_NODE.LEFT);
+		if ^V->CXX_VALUE_NODE.RIGHT_IS_NOT_VID &
+		   (V->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID) then
+			call COUNT_DOWN_VALUE (V->CXX_VALUE_NODE.RIGHT);
+		call FREE_CXX_VALUE_NODE (V);
+		return;
+	end;
+
+	else	V->CXX_VALUE_NODE.COUNT = V->CXX_VALUE_NODE.COUNT - 1;
+
+	if (V->CXX_VALUE_NODE.OP = CAST_VO) |
+	   (V->CXX_VALUE_NODE.OP = IMPLICIT_CAST_VO) |
+	   (V->CXX_VALUE_NODE.OP = LEFT_VALUE_VO) then do;
+		if ^V->CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+		   (V->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then
+			call COUNT_DOWN_VALUE (V->CXX_VALUE_NODE.LEFT);
+	end;
+
+	else if (V->CXX_VALUE_NODE.OP = COMMA_VO) then do;
+		if ^V->CXX_VALUE_NODE.RIGHT_IS_NOT_VID &
+		   (V->CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID) then
+			call COUNT_DOWN_VALUE (V->CXX_VALUE_NODE.RIGHT);
+	end;
+
+end COUNT_DOWN_VALUE;
+

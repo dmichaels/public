@@ -1,0 +1,29 @@
+/* ---- TULTS.DCL, Token Allocation Utility Routine Declarations ---- */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+*       EDIT HISTORY
+*
+***********************************************************************/
+
+    Declare TINIT   entry,
+            TALLOC  entry                       returns (pointer),
+            TFREE   entry (pointer),
+            TFREEB  entry,
+            TPUT    entry (pointer),
+            TUNGET  entry (pointer, pointer),
+            TGET    entry                       returns (pointer);
+
+    Declare SALLOC  entry (fixed bin (15))      returns (pointer),
+            SFREE   entry (pointer),
+            SFREEB  entry ;
+
+/**********************************************************************/
+

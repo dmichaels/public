@@ -1,0 +1,238 @@
+/* C++ prclay.pl1 - Print the class layout */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  003  New value-node scheme.
+ *  05.29.91  DGM  002  Minor fix.
+ *  02.01.91  DGM  001  Minor fix.
+ *  12.12.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 003 PRCLAY');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_PRINT_TYPE_IN;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+SHORT_STRING_T	character (64) varying based,
+LONG_STRING_T	character (512) varying based;
+
+/* ---------------------------------------------------------------------
+/* PRINT_CLASS_LAYOUT
+/* ------------------------------------------------------------------- */
+
+PRINT_CLASS_LAYOUT: procedure (CLASS) external (X_PRINT_CLASS_LAYOUT);
+
+	declare
+		CLASS			type (NID_T);
+	declare
+		(CP, BCP, MP, VBCP)	type (POINTER_T),
+		(BC, NEXT_BC)		type (NID_T),
+		(VBC, NEXT_VBC)		type (NID_T),
+		(M, NEXT_M)		type (NID_T),
+		(SIZE, OFFSET)		type (LONG_T),
+		SIZE_UNITS		type (SHORT_T),
+		S			type (LONG_STRING_T);
+	declare
+		NEST_LEVEL		type (SHORT_T) static initial (-1),
+		CURRENT_OFFSET		type (LONG_T) static internal,
+		VFTP_SIZE		type (LONG_T) static internal,
+		FULL_FLAG		type (DSM_T) static internal;
+
+	if CLASS = NULL_NID then
+		return;
+
+	NEST_LEVEL = NEST_LEVEL + 1;
+
+	call GET_SYM_NODE_R (CLASS, CP);
+
+	if ^CP->SYM_NODE.IS_AGGREGATE_TAG then
+		goto DONE_PRINT_CLASS_LAYOUT;
+
+	/* Print the class header */
+
+	if NEST_LEVEL = 0 then do;
+		if AM_DEBUGGER then
+			FULL_FLAG = FULL_CW_DSM;
+		else	FULL_FLAG = FULL_DSM;
+		call OUTPUT_STRING_AND_RETURN ('');
+		S = DECLARATION_STRING (CLASS, FULL_FLAG) || ' {';
+		call OUTPUT_STRING_AND_RETURN (S);
+		CURRENT_OFFSET	= 0;
+		call SIMPLE_TYPE_SIZE (POINTER_DT, VFTP_SIZE, SIZE_UNITS, 0);
+		VFTP_SIZE = ROUNDU (VFTP_SIZE, SIZE_UNITS, BYTES);
+	end;
+
+	/* Print the layout of each (non-virtual) base class */
+
+	do BC = CP->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+		if BCP->BASE_CLASS_NODE.VIRTUAL then do;
+			S = '____lpi_vbcp(' ||
+			    SYMBOL_NAME (BCP->BASE_CLASS_NODE.SYMBOL) || ')';
+			call PRINT_MEMBER_LAYOUT
+			     (CURRENT_OFFSET,
+			      TOKEN_NAME (CP->SYM_NODE.NAME),
+			      S,
+			      VFTP_SIZE,
+			      BYTES);
+			CURRENT_OFFSET = CURRENT_OFFSET + VFTP_SIZE;
+		end;
+		else	call PRINT_CLASS_LAYOUT (BCP->BASE_CLASS_NODE.SYMBOL);
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	/* Print the members */
+
+	do M = CP->SYM_NODE.FIELD1 repeat (NEXT_M) while (M ^= NULL_NID);
+		call GET_SYM_NODE_R (M, MP);
+		NEXT_M = MP->SYM_NODE.BROTHER;
+		OFFSET = CURRENT_OFFSET;
+		if ^MP->SYM_NODE.IS_BIT_FIELD then do;
+			SIZE = ROUNDU (MP->SYM_NODE.SIZE,
+				       rank (MP->SYM_NODE.SIZE_UNITS),
+				       BYTES);
+			SIZE_UNITS = BYTES;
+			CURRENT_OFFSET = CURRENT_OFFSET + SIZE;
+		end;
+		else do;
+			SIZE = MP->SYM_NODE.SIZE;
+			SIZE_UNITS = BITS;
+			CURRENT_OFFSET =
+				ROUNDU (MP->SYM_NODE.LOCATION,
+					rank (MP->SYM_NODE.OFFSET_UNITS),
+					BYTES);
+		end;
+		call PRINT_MEMBER_LAYOUT
+		     (OFFSET,
+		      TOKEN_NAME (CP->SYM_NODE.NAME),
+		      TOKEN_NAME (MP->SYM_NODE.NAME),
+		      SIZE,
+		      SIZE_UNITS);
+		call RELEASE_SYM_NODE (M);
+	end;
+
+	/* Print the virtual base classes */
+
+	if NEST_LEVEL = 0 then do;
+		if CP->SYM_NODE.HAS_VIRTUAL_BASES then do;
+			do VBC = CP->SYM_NODE.VIRTUAL_BASE_CLASSES
+			repeat (NEXT_VBC) while (VBC ^= NULL_NID);
+				call GET_VBC_NODE_R (VBC, VBCP);
+				call PRINT_CLASS_LAYOUT (VBCP->VBC_NODE.SYMBOL);
+				NEXT_VBC = VBCP->VBC_NODE.NEXT;
+				call RELEASE_VBC_NODE (VBC);
+			end;
+		end;
+		call OUTPUT_STRING_AND_RETURN ('}');
+	end;
+
+	DONE_PRINT_CLASS_LAYOUT:
+	call RELEASE_SYM_NODE (CLASS);
+	NEST_LEVEL = NEST_LEVEL - 1;
+	return;
+
+/* ---------------------------------------------------------------------
+/* PRINT_MEMBER_LAYOUT
+/* ------------------------------------------------------------------- */
+
+PRINT_MEMBER_LAYOUT: procedure (OFFSET,
+				CLASS_NAME,
+				MEMBER_NAME,
+				MEMBER_SIZE,
+				MEMBER_SIZE_UNITS) internal;
+	declare
+		OFFSET			type (LONG_T),
+		CLASS_NAME		character (*) varying,
+		MEMBER_NAME		character (*) varying,
+		MEMBER_SIZE		type (LONG_T),
+		MEMBER_SIZE_UNITS	type (SHORT_T);
+	declare
+		S			character (1024) varying,
+		TMP			character (6) varying;
+	declare
+		SPACES			character (6) varying
+					static internal initial ('      ');
+
+	TMP = trim (char (OFFSET));
+	S = substr (SPACES, 1, 5 - length (TMP)) || TMP || ': ';
+
+	if length (CLASS_NAME) > 0 then
+		S = S || CLASS_NAME || '::';
+
+	if length (MEMBER_NAME) > 0 then
+		S = S || MEMBER_NAME;
+	else	S = S || '<name>';
+
+	S = S || '   (' || trim (char (MEMBER_SIZE));
+	
+	if MEMBER_SIZE_UNITS = BITS then
+		S = S || ' bit';
+	else	S = S || ' byte';
+
+	if MEMBER_SIZE ^= 1 then
+		S = S || 's)';
+	else	S = S || ')';
+
+	call OUTPUT_STRING_AND_RETURN (S);
+
+end PRINT_MEMBER_LAYOUT;
+
+end PRINT_CLASS_LAYOUT;
+
+/* ---------------------------------------------------------------------
+/* OUTPUT_STRING_AND_RETURN
+/* ------------------------------------------------------------------- */
+
+OUTPUT_STRING_AND_RETURN: procedure (S) internal;
+
+	declare
+		S	character (*) varying;
+	declare
+		WRITTT	entry (character (*) varying) external;
+
+	if AM_DEBUGGER then
+		call WRITTT (S);
+	else	call WRITE_DEBUG_LINE (S);
+
+end OUTPUT_STRING_AND_RETURN;
+
+

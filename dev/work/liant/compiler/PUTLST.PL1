@@ -1,0 +1,29 @@
+/* C++ putlst.pl1 - Emit a line to the listing file */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.22.89  DGM  000  Original; cloned & modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+PUTLST: procedure (LINE);
+
+%include 'incfil';
+%include UTL_EXT_NAMES_IN;
+%include LINE_UTILS_DCL;
+
+	declare LINE character (*) varying;
+
+	call WRITE_LIST_LINE (LINE);
+
+end PUTLST;
+

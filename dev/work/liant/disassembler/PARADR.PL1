@@ -1,0 +1,45 @@
+/* LPI-DEBUG M68 PARADR.PL1 - Get address of parameters */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/* --------------------------------------------------------------------
+/* PARADR - Get address of parameters in stack frame
+/*
+/* In:     FRAME = Frame pointer
+/* Return: Address of parameters
+/**********************************************************************/
+
+PARADR: procedure (FRAME) returns (fixed binary (31));
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include SYSREADUSER_IN;
+%include TARGET_IN;
+
+    declare 
+        FRAME           fixed binary (31);
+
+    declare
+        LOC             fixed binary (ADDRESS_LENGTH),
+        PAR_ADDR        fixed binary (ADDRESS_LENGTH),
+        DUMMY           fixed binary (31),
+        STATUS          fixed binary (15);
+    
+    if FRAME = 0 then
+         return (0);
+    else if FRAME = $FP_BREAK then
+         return (PROGRAM_REGISTER_AREA->REGS.A6);
+    else LOC = FRAME;
+
+    call REAUSR (PROCESS_ID, DUMMY, LOC, 4, addr(PAR_ADDR), STATUS);
+    return (PAR_ADDR);
+
+end PARADR;
+

@@ -1,0 +1,341 @@
+/* C++ dclstk.pl1 - Declaration semantic stack manipulation routines */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.07.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)DCLSTK  000  10/17/89  (c) 1989 Language Processors, Inc.');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include C_STANDARD_DEFS_IN;
+%include C_ERROR_PKG;
+%include C_SYMBOL_TABLE_DEFS_IN;
+%include C_DECLARATION_STACK_IN;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+/* Derived type stack - for pointer, reference, array, function types */
+
+%replace HB_DERIVED_TYPE_STACK		by 128;
+
+declare
+
+DERIVED_TYPE_STACK		(0 : HB_DERIVED_TYPE_STACK - 1)
+				type (BYTE_T) static internal,
+DERIVED_TYPE_STACK_TOP		type (SHORT_T) static internal
+				initial (HB_DERIVED_TYPE_STACK);
+
+/* Type qualifier stack - for pointers/references */
+
+%replace HB_TYPE_QUALIFIER_STACK	by 64;
+
+declare
+
+TYPE_QUALIFIER_STACK		(0 : HB_TYPE_QUALIFIER_STACK - 1)
+				type (BYTE_T) static internal,
+TYPE_QUALIFIER_STACK_TOP	type (SHORT_T) static internal
+				initial (HB_TYPE_QUALIFIER_STACK);
+
+/* Class qualifier stack - for pointers (to members) */
+
+%replace HB_CLASS_QUALIFIER_STACK	by 64;
+
+declare
+
+CLASS_QUALIFIER_STACK		(0 : HB_CLASS_QUALIFIER_STACK - 1)
+				type (BYTE_T) static internal,
+CLASS_QUALIFIER_STACK_TOP	type (SHORT_T) static internal
+				initial (HB_CLASS_QUALIFIER_STACK);
+
+/* Dimension stack - for arrays */
+
+%replace HB_DIMENSION_STACK		by 64;
+
+declare
+
+DIMENSION_STACK			(0 : HB_DIMENSION_STACK - 1)
+				type (NID_T) static internal,
+DIMENSION_STACK_TOP		type (SHORT_T) static internal
+				initial (HB_DIMENSION_STACK);
+
+/* Signature stack - for functions */
+
+%replace HB_SIGNATURE_STACK		by 64;
+
+declare
+
+SIGNATURE_STACK			(0 : HB_SIGNATURE_STACK - 1)
+				type (NID_T) static internal,
+SIGNATURE_STACK_TOP		type (SHORT_T) static internal
+				initial (HB_SIGNATURE_STACK);
+
+/* Miscellaneous node id stack - for miscellaneous node id's */
+
+%replace HB_NODE_STACK			by 32;
+
+declare
+
+NODE_STACK			(0 : HB_NODE_STACK - 1)
+				type (NID_T) static internal,
+NODE_STACK_TOP			type (SHORT_T) static internal
+				initial (HB_NODE_STACK);
+
+/* ---------------------------------------------------------------------
+/* DCLSTK
+/* ------------------------------------------------------------------- */
+
+DCLSTK: procedure external;
+
+end DCLSTK;
+
+/* ---------------------------------------------------------------------
+/* PUSH_DERIVED_TYPE
+/* ------------------------------------------------------------------- */
+
+PUSH_DERIVED_TYPE: procedure (DT)
+		   external  (X_PUSH_DERIVED_TYPE);
+
+	declare DT type (SHORT_T);
+
+	if DERIVED_TYPE_STACK_TOP <= 0 then do;
+		call CERROR (ERR_SEM_STACK_OVERFLOW, 0, 3);
+		return;
+	end;
+	DERIVED_TYPE_STACK_TOP = DERIVED_TYPE_STACK_TOP - 1;
+	DERIVED_TYPE_STACK (DERIVED_TYPE_STACK_TOP) = byte (DT);
+
+end PUSH_DERIVED_TYPE;
+
+/* ---------------------------------------------------------------------
+/* POP_DERIVED_TYPE
+/* ------------------------------------------------------------------- */
+
+POP_DERIVED_TYPE: procedure
+		  returns   (type (SHORT_T))
+		  external  (X_POP_DERIVED_TYPE);
+
+	declare DT type (SHORT_T);
+
+	if DERIVED_TYPE_STACK_TOP >= HB_DERIVED_TYPE_STACK then do;
+		call CERROR (ERR_SEM_STACK_UNDERFLOW, 0, 3);
+		return (NULL_DT);
+	end;
+	DT = rank (DERIVED_TYPE_STACK (DERIVED_TYPE_STACK_TOP));
+	DERIVED_TYPE_STACK_TOP = DERIVED_TYPE_STACK_TOP + 1;
+	return (DT);
+
+end POP_DERIVED_TYPE;
+
+/* ---------------------------------------------------------------------
+/* PUSH_TYPE_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+PUSH_TYPE_QUALIFIER: procedure (TQ)
+		     external  (X_PUSH_TYPE_QUALIFIER);
+
+	declare TQ type (SHORT_T);
+
+	if TYPE_QUALIFIER_STACK_TOP <= 0 then do;
+		call CERROR (ERR_SEM_STACK_OVERFLOW, 0, 3);
+		return;
+	end;
+	TYPE_QUALIFIER_STACK_TOP = TYPE_QUALIFIER_STACK_TOP - 1;
+	TYPE_QUALIFIER_STACK (TYPE_QUALIFIER_STACK_TOP) = byte (TQ);
+
+end PUSH_TYPE_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* POP_TYPE_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+POP_TYPE_QUALIFIER: procedure
+		    returns   (type (SHORT_T))
+		    external  (X_POP_TYPE_QUALIFIER);
+
+	declare TQ type (SHORT_T);
+
+	if TYPE_QUALIFIER_STACK_TOP >= HB_TYPE_QUALIFIER_STACK then do;
+		call CERROR (ERR_SEM_STACK_UNDERFLOW, 0, 3);
+		return (NULL_TQ);
+	end;
+	TQ = rank (TYPE_QUALIFIER_STACK (TYPE_QUALIFIER_STACK_TOP));
+	TYPE_QUALIFIER_STACK_TOP = TYPE_QUALIFIER_STACK_TOP + 1;
+	return (TQ);
+
+end POP_TYPE_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* PUSH_CLASS_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+PUSH_CLASS_QUALIFIER: procedure (TQ)
+		      external  (X_PUSH_CLASS_QUALIFIER);
+
+	declare TQ type (SHORT_T);
+
+	if CLASS_QUALIFIER_STACK_TOP <= 0 then do;
+		call CERROR (ERR_SEM_STACK_OVERFLOW, 0, 3);
+		return;
+	end;
+	CLASS_QUALIFIER_STACK_TOP = CLASS_QUALIFIER_STACK_TOP - 1;
+	CLASS_QUALIFIER_STACK (CLASS_QUALIFIER_STACK_TOP) = byte (TQ);
+
+end PUSH_CLASS_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* POP_CLASS_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+POP_CLASS_QUALIFIER: procedure
+		     returns   (type (SHORT_T))
+		     external  (X_POP_CLASS_QUALIFIER);
+
+	declare TQ type (SHORT_T);
+
+	if CLASS_QUALIFIER_STACK_TOP >= HB_CLASS_QUALIFIER_STACK then do;
+		call CERROR (ERR_SEM_STACK_UNDERFLOW, 0, 3);
+		return (NULL_TQ);
+	end;
+	TQ = rank (CLASS_QUALIFIER_STACK (CLASS_QUALIFIER_STACK_TOP));
+	CLASS_QUALIFIER_STACK_TOP = CLASS_QUALIFIER_STACK_TOP + 1;
+	return (TQ);
+
+end POP_CLASS_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* PUSH_DIMENSION
+/* ------------------------------------------------------------------- */
+
+PUSH_DIMENSION: procedure (D)
+		external  (X_PUSH_DIMENSION);
+
+	declare D type (NID_T);
+
+	if DIMENSION_STACK_TOP <= 0 then do;
+		call CERROR (ERR_SEM_STACK_OVERFLOW, 0, 3);
+		return;
+	end;
+	DIMENSION_STACK_TOP = DIMENSION_STACK_TOP - 1;
+	DIMENSION_STACK (DIMENSION_STACK_TOP) = D;
+
+end PUSH_DIMENSION;
+
+/* ---------------------------------------------------------------------
+/* POP_DIMENSION
+/* ------------------------------------------------------------------- */
+
+POP_DIMENSION: procedure
+	       returns   (type (NID_T))
+	       external  (X_POP_DIMENSION);
+
+	declare D type (NID_T);
+
+	if DIMENSION_STACK_TOP >= HB_DIMENSION_STACK then do;
+		call CERROR (ERR_SEM_STACK_UNDERFLOW, 0, 3);
+		return (0);
+	end;
+	D = DIMENSION_STACK (DIMENSION_STACK_TOP);
+	DIMENSION_STACK_TOP = DIMENSION_STACK_TOP + 1;
+	return (D);
+
+end POP_DIMENSION;
+
+/* ---------------------------------------------------------------------
+/* PUSH_SIGNATURE
+/* ------------------------------------------------------------------- */
+
+PUSH_SIGNATURE: procedure (S)
+		external  (X_PUSH_SIGNATURE);
+
+	declare S type (NID_T);
+
+	if SIGNATURE_STACK_TOP <= 0 then do;
+		call CERROR (ERR_SEM_STACK_OVERFLOW, 0, 3);
+		return;
+	end;
+	SIGNATURE_STACK_TOP = SIGNATURE_STACK_TOP - 1;
+	SIGNATURE_STACK (SIGNATURE_STACK_TOP) = S;
+
+end PUSH_SIGNATURE;
+
+/* ---------------------------------------------------------------------
+/* POP_SIGNATURE
+/* ------------------------------------------------------------------- */
+
+POP_SIGNATURE: procedure
+	       returns   (type (NID_T))
+	       external  (X_POP_SIGNATURE);
+
+	declare S type (NID_T);
+
+	if SIGNATURE_STACK_TOP >= HB_SIGNATURE_STACK then do;
+		call CERROR (ERR_SEM_STACK_UNDERFLOW, 0, 3);
+		return (0);
+	end;
+	S = SIGNATURE_STACK (SIGNATURE_STACK_TOP);
+	SIGNATURE_STACK_TOP = SIGNATURE_STACK_TOP + 1;
+	return (S);
+
+end POP_SIGNATURE;
+
+/* ---------------------------------------------------------------------
+/* PUSH_NODE
+/* ------------------------------------------------------------------- */
+
+PUSH_NODE: procedure (N)
+	   external  (X_PUSH_NODE);
+
+	declare N type (NID_T);
+
+	if NODE_STACK_TOP <= 0 then do;
+		call CERROR (ERR_SEM_STACK_OVERFLOW, 0, 3);
+		return;
+	end;
+	NODE_STACK_TOP = NODE_STACK_TOP - 1;
+	NODE_STACK (NODE_STACK_TOP) = N;
+
+end PUSH_NODE;
+
+/* ---------------------------------------------------------------------
+/* POP_NODE
+/* ------------------------------------------------------------------- */
+
+POP_NODE: procedure
+	  returns   (type (NID_T))
+	  external  (X_POP_NODE);
+
+	declare N type (NID_T);
+
+	if NODE_STACK_TOP >= HB_NODE_STACK then do;
+		call CERROR (ERR_SEM_STACK_UNDERFLOW, 0, 3);
+		return (0);
+	end;
+	N = NODE_STACK (NODE_STACK_TOP);
+	NODE_STACK_TOP = NODE_STACK_TOP + 1;
+	return (N);
+
+end POP_NODE;
+

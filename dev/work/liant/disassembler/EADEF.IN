@@ -1,0 +1,134 @@
+/* CodeWatch M68 EADEF.IN - Effective address calculation definitions */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.11.91  DGM  (001) Made DISP_8 aligned.
+ *
+ *  04.30.87  DGM  Original.
+ *
+ **********************************************************************/
+
+
+/* -------------------------------------------------------------------
+ * -- Single Effective Address Format --
+ * ---------------------------------------------------------------- */
+
+declare
+    1 SINGLE_EA             based,
+      2 OPCODE              bit (10),
+      2 MODE                bit (3),
+      2 REG                 bit (3);
+
+/* -------------------------------------------------------------------
+ * -- Brief Format Effective Address Extension Word --
+ * ---------------------------------------------------------------- */
+
+declare
+    1 BRIEF_EA     based,
+      2 IR_TYPE    bit (1),            /* index register type */
+      2 IR_NUM     bit (3),            /* index register number */
+      2 IR_SIZE    bit (1),            /* index register size */
+      2 IR_SCALE   bit (2),            /* index register scale */
+      2 ZERO       bit (1),            /* constant: 0 */
+      2 DISP_8     bit (8) aligned;    /* 8-bit base displacement */
+
+/* -------------------------------------------------------------------
+ * -- Full Format Effective Address Extension Word(s) --
+ * ---------------------------------------------------------------- */
+
+declare
+    1 FULL_EA               based,
+      2 IR_TYPE             bit (1),    /* index register type */
+      2 IR_NUM              bit (3),    /* index register number */
+      2 IR_SIZE             bit (1),    /* index register size */
+      2 IR_SCALE            bit (2),    /* index register scale */
+      2 ONE                 bit (1),    /* constant: 1 */
+      2 BR_SUP              bit (1),    /* base register suppress */
+      2 IR_SUP              bit (1),    /* index suppress */
+      2 BD_SIZE             bit (2),    /* base displacement size */
+      2 ZERO                bit (1),    /* constant: 0 */
+      2 IIS_STRUCT,                     /* index/indirect selection */
+        3 IS                bit (1),    /* index selection (pre/post) */
+        3 OD_SIZE           bit (2);    /* outer displacement size */
+
+/* -------------------------------------------------------------------
+ * -- Effective Address Extension Field Definitions --
+ * ---------------------------------------------------------------- */
+
+%replace $DATA_REGISTER     by '0'B;            /* IR_TYPE */
+%replace $ADDRESS_REGISTER  by '1'B;
+
+%replace $WORD_INDEX        by '0'B;            /* IR_SIZE */
+%replace $LONG_INDEX        by '1'B;
+
+declare  SCALE_FACTOR (0:3) fixed binary (15)   /* IR_SCALE */
+                            static initial
+                            ( 1, 2, 4, 8 );
+
+%replace $RESERVED_DISP     by '00'B;           /* BD_SIZE, OD_SIZE */
+%replace $NULL_DISP         by '01'B;
+%replace $WORD_DISP         by '10'B;
+%replace $LONG_DISP         by '11'B;
+
+/* -------------------------------------------------------------------
+ * -- Effective Addressing Sizes --
+ * ---------------------------------------------------------------- */
+
+%replace $EASIZE_UNKNOWN    by -2;
+%replace $EASIZE_UNSIZED    by -1;
+%replace $EASIZE_BYTE       by  0;
+%replace $EASIZE_WORD       by  1;
+%replace $EASIZE_LONG       by  2;
+
+/* -------------------------------------------------------------------
+ * -- Maximum Size of Effective Address Extensions --
+ * ---------------------------------------------------------------- */
+
+%replace $MAX_EAEXT_WORDS   by 5;
+%replace $MAX_EAEXT_BYTES   by 10;
+
+/* -------------------------------------------------------------------
+ * -- Effective Addressing Mode Categories --
+ * ---------------------------------------------------------------- */
+
+%replace $EATYPE_ALL            by 1023999;     /* 0xF9FFF */
+%replace $EATYPE_DATA           by 1023997;     /* 0xF9FFD */
+%replace $EATYPE_MEMORY         by 1023996;     /* 0xF9FFC */
+%replace $EATYPE_CONTROL        by 1019876;     /* 0xF8FE4 */
+%replace $EATYPE_ALTER          by 4095;        /* 0x00FFF */
+%replace $EATYPE_DATA_ALTER     by 4093;        /* 0x00FFD */
+%replace $EATYPE_MEMORY_ALTER   by 4092;        /* 0x00FFC */
+
+/* -------------------------------------------------------------------
+ * -- Effective Addressing Modes --
+ * ---------------------------------------------------------------- */
+
+%replace $EAMODE_DREG                    by 1;      /* 0x00001 */
+%replace $EAMODE_AREG                    by 2;      /* 0x00002 */
+%replace $EAMODE_AREG_INDIR              by 4;      /* 0x00004 */
+%replace $EAMODE_AREG_INDIR_INC          by 8;      /* 0x00008 */
+%replace $EAMODE_AREG_INDIR_DEC          by 16;     /* 0x00010 */
+%replace $EAMODE_AREG_INDIR_DISP         by 32;     /* 0x00020 */
+%replace $EAMODE_AREG_INDEX_DISP_8       by 64;     /* 0x00040 */
+%replace $EAMODE_AREG_INDEX_BASE_DISP    by 128;    /* 0x00080 */
+%replace $EAMODE_MEM_INDIR_POST_INDEX    by 256;    /* 0x00100 */
+%replace $EAMODE_MEM_INDIR_PRE_INDEX     by 512;    /* 0x00200 */
+%replace $EAMODE_ABS_WORD                by 1024;   /* 0x00400 */
+%replace $EAMODE_ABS_LONG                by 2048;   /* 0x00800 */
+%replace $EAMODE_IMMED                   by 4096;   /* 0x01000 */
+%replace $EAMODE_PC_INDIR_DISP           by 32768;  /* 0x08000 */
+%replace $EAMODE_PC_INDEX_DISP_8         by 65536;  /* 0x10000 */
+%replace $EAMODE_PC_INDEX_BASE_DISP      by 131072; /* 0x20000 */
+%replace $EAMODE_PC_MEM_INDIR_POST_INDEX by 262144; /* 0x40000 */
+%replace $EAMODE_PC_MEM_INDIR_PRE_INDEX  by 524288; /* 0x80000 */
+

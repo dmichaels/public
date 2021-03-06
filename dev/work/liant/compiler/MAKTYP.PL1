@@ -1,0 +1,73 @@
+/* C++ maktyp.pl1 - Utilities for making type nodes. */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.01.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)MAKTYP  000  03/01/90  (c) 1990 Language Processors, Inc.');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include VALUE_UTILS_DCL;
+%include C_STANDARD_DEFS_IN;
+%include C_EXTERNAL_NAME_MAP_IN;
+%include C_ERROR_PKG;
+%include C_NODE_MGR_PKG;
+%include C_SYMBOL_TABLE_DEFS_IN;
+%include C_SYMBOL_TABLE_NODES_IN;
+
+/* ---------------------------------------------------------------------
+/* MAKE_POINTER_TYPE
+/*
+/* Construct a type-node representing a pointer to the given simple type.
+/* Return the new type-node id, and with it paged in.
+/* ------------------------------------------------------------------- */
+
+MAKE_POINTER_TYPE: procedure (BT)
+		   returns   (type (NID_T))
+		   external  (X_MAKE_POINTER_TYPE);
+
+	declare
+		BT		type (SHORT_T);
+	declare
+		THIS_TYPE	type (NID_T);
+
+	/* Allocate a type-node */
+
+	call ALLOC_TYPE_NODE ();
+	THIS_TYPE = CURRENT_NODE_ID;
+
+	TYPE_NODE.TYPE (0)	     = byte (BT);
+	TYPE_NODE.TYPE_QUALIFIER (0) = NULL_TQ;
+	TYPE_NODE.TYPE (1)	     = byte (POINTER_DT);
+	TYPE_NODE.TYPE_QUALIFIER (1) = NULL_TQ;
+	TYPE_NODE.TYPE_ID	     = NULL_ID;
+	TYPE_NODE.LEVEL		     = byte (1);
+	TYPE_NODE.DIMENSIONS	     = NULL_ID;
+	TYPE_NODE.SIGNATURES	     = NULL_ID;
+	TYPE_NODE.CLASSES	     = NULL_ID;
+
+	return (THIS_TYPE);
+
+end MAKE_POINTER_TYPE;

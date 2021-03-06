@@ -1,0 +1,214 @@
+/* CodeWatch M68 JMPADR.PL1 - Determine target address of jump/branch */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *  10.04.91  VTF  (005) Changed so that location field determines location
+ *                       to check, rather than REGAREA->REGS.PC.
+ *
+ *  03.06.91  DGM  (004) Removed SIGNEX calls.
+ *
+ *  06.12.87  DGM  Added call to ENTCOD to get "real" entry point
+ *		   address (i.e. not data-section interlude) for 
+ *		   Apollo/DOMAIN.  For other systems, ENTCODE can
+ *		   simply be a stub returning FALSE.
+ *
+ *  04.08.87  DGM  Totally redone to add support for M68020 memory
+ *                 indirect/indexed and PC-relative addressing modes
+ *                 as well as the BSR, BRA, adn Bcc instructions.
+ *
+ *  02.xx.83  JRC  Coded for 68000 JMP instruction.
+ *
+ **********************************************************************/
+
+/* -------------------------------------------------------------------
+/* JMPADR - Examine execution point & get target of jump/branch target
+/*
+/* In:     REGAREA  -> Saved user register area.  If NULL, then assume
+/*                     that the user process is not active, and only
+/*                     allow "static" type addressing modes.
+/*         LOCATION  = Location (address) of instruction to examine.
+/*         REPLACED -> Replaced instruction, if any.
+/* Out:    TARGET    = Address of destination, after optional
+/*                     indirect label array.
+/* Return: TRUE if execution point is at a valid jump, FALSE if not.
+/**********************************************************************/
+
+JMPADR: procedure (REGAREA, LOCATION, REPLACED, TARGET) returns (bit (1));
+
+    %include 'incfil';
+    %include GLOBAL_IN;
+    %include DBGGLOBAL_IN;
+    %include SYSREADUSER_IN;
+    %include EADEF_IN;
+    %include CALCEA_IN;
+    %include TARGET_IN;
+
+    declare
+        REGAREA     pointer,
+        LOCATION    fixed binary (31),
+        REPLACED    pointer,
+        TARGET      fixed binary (31);
+    declare
+        DUMMY       fixed binary (31),
+        EATARGET    bit (1),
+        MEMORY      fixed binary (31),
+        NBYTES      fixed binary (15),
+        STATUS      fixed binary (15);
+    declare
+        ENTCOD      entry   (fixed binary (31), fixed binary (31),
+                             fixed binary (31), fixed binary (15))
+                    returns (bit (1));
+
+    /* -------------------------------------------------------------------
+     * -- M68000/68010/68020 Branch/Jump Instruction Formats --
+     * ---------------------------------------------------------------- */
+
+    /*
+     * This represents the size in bytes of the largest possible
+     * jump or branch instruction (note that the largest possible
+     * M68020 instruction in general is 22 bytes (11 words)).
+     */
+
+    %replace SIZE_INSTRUCTION   by 12;
+
+    declare
+        1 INSTRUCTION,
+          2 WORD (1:6)          fixed binary (15);
+
+    /* -------------------------------------------------------------------
+     * -- Jump Instruction Formats --
+     * ---------------------------------------------------------------- */
+
+    declare
+        1 JUMP_INSTRUCTION      based (addr(INSTRUCTION)),
+          2 OPCODE              bit (10),
+          2 MODE                bit (3),
+          2 REG                 bit (3),
+          2 WORD (2:6)          fixed binary (15);
+
+    %replace $JMP_OPCODE        by '0100111011'B;    /* JMP */
+    %replace $JSR_OPCODE        by '0100111010'B;    /* JSR */
+
+    /* -------------------------------------------------------------------
+     * -- Branch Instruction Formats --
+     * ---------------------------------------------------------------- */
+
+    declare
+        1 BRANCH_INSTRUCTION    based (addr(INSTRUCTION)),
+          2 OPCODE              bit (4),
+          2 COND                bit (4),
+          2 DISP_8              bit (8) aligned,
+          2 DISP_16             fixed binary (15),
+          2 DISP_32             fixed binary (31);
+
+    %replace $BRANCH_OPCODE       by '0110'B;     /* BSR, BRA, Bcc */
+    %replace $BRANCH_COND_SUBR    by '0001'B;
+    %replace $BRANCH_COND_ALWAYS  by '0000'B;
+
+
+    /* -------------------------------------------------------------------
+     * -- Start Processing --
+     * ---------------------------------------------------------------- */
+
+    if REPLACED ^= NULL then      /* Should we handle this ? */
+        goto INVALID;
+
+    /* Determine whether or not the user process is assumed active */
+
+    MEMORY = LOCATION;
+
+    /* Read in the instruction */
+
+    call REAUSR (PROCESS_ID, DUMMY,
+                 MEMORY, SIZE_INSTRUCTION,
+                 addr(INSTRUCTION), STATUS);
+
+    /* -------------------------------------------------------------------
+     * -- Handle BRANCH instructions -- BSR, BRA, Bcc
+     * ---------------------------------------------------------------- */
+
+    if (BRANCH_INSTRUCTION.OPCODE = $BRANCH_OPCODE) then do;
+        if BRANCH_INSTRUCTION.DISP_8 = '11111111'B then
+             TARGET = BRANCH_INSTRUCTION.DISP_32;
+        else if BRANCH_INSTRUCTION.DISP_8 = '00000000'B then
+             TARGET = BRANCH_INSTRUCTION.DISP_16;
+        else TARGET = SIGN_EXTEND_BYTE (BRANCH_INSTRUCTION.DISP_8);
+        if REGAREA = NULL then
+            goto INVALID;
+        TARGET = TARGET + REGAREA->REGS.PC + 2;
+        /* Apollo/DOMAIN specific ... */
+        if BRANCH_INSTRUCTION.COND = $BRANCH_COND_SUBR then do;
+            if ENTCOD(TARGET,MEMORY,DUMMY,NBYTES) then
+                TARGET = MEMORY;
+        end;
+        /* ... Apollo/DOMAIN specific */
+        goto VALID;
+    end;
+
+    /* -------------------------------------------------------------------
+     * -- Handle JUMP instructions -- JSR, JMP
+     * ---------------------------------------------------------------- */
+
+    else if (JUMP_INSTRUCTION.OPCODE = $JSR_OPCODE) |
+            (JUMP_INSTRUCTION.OPCODE = $JMP_OPCODE) then do;
+
+        NBYTES = CALCEA (binary (JUMP_INSTRUCTION.MODE),
+                         binary (JUMP_INSTRUCTION.REG),
+                         $EASIZE_UNSIZED,
+                         addr(JUMP_INSTRUCTION.WORD),
+                         $EATYPE_CONTROL,
+                         REGAREA,
+                         TARGET,
+                         EATARGET);
+
+        if NBYTES < 0 then
+            goto INVALID;
+        /* Apollo/DOMAIN specific ... */
+        if JUMP_INSTRUCTION.OPCODE = $JSR_OPCODE then do;
+            if ENTCOD(TARGET,MEMORY,DUMMY,NBYTES) then
+                TARGET = MEMORY;
+        end;
+        /* ... Apollo/DOMAIN specific */
+    end;
+
+    else do;
+        goto INVALID;
+    end;
+
+    VALID:
+        return (TRUE);
+
+    INVALID:
+        return (FALSE);
+
+/* --------------------------------------------------------------------
+/* SIGN_EXTEND_BYTE
+/* ------------------------------------------------------------------ */
+
+SIGN_EXTEND_BYTE: procedure (B) returns (fixed binary (31)) internal;
+
+	declare
+		B	bit (8) aligned;
+	declare
+		C	character (1),
+		L	fixed binary (31);
+
+	unspec (C) = unspec (B);
+	L = rank (C);
+	if L > 127 then
+		L = L - 256;
+	return (L);
+
+end SIGN_EXTEND_BYTE;
+
+end JMPADR;
+

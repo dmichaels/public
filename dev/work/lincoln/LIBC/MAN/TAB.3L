@@ -1,0 +1,41 @@
+.TH TAB 3L LOCAL
+
+.SH NAME
+fdetab, fentab - tab manipulation functions
+
+.SH SYNOPSIS
+
+.ft B
+void
+.br
+fdetab(from, to)
+.br
+FILE *from, *to;
+
+void
+.br
+fentab(from, to)
+.br
+FILE *from, *to;
+
+.SH DESCRIPTION
+\fIFdetab\fP copies file \fIfrom\fP to file \fIto\fP while translating tabs
+to an appropriate number of blanks.  The tab stops are
+automatically set by default at every 8 columns starting
+at column 1 (1 indexed).
+.PP
+\fIFentab\fP copies file \fIfrom\fP to file \fIto\fP
+while translating blanks
+to an appropriate number of tabs and blanks.  The tab stops
+are automatically set by default at every 8 columns starting
+at column 1 (1 indexed).
+.PP
+The \fIto\fP file must be opened for reading,
+and the \fIfrom\fP file must be opened for writing (via \fIfopen(3S)\fP).
+The \fIfrom\fP and \fIto\fP files may not to be the same.
+
+.SH FILES
+fdetab.c, fentab.c
+
+.SH SEE ALSO
+expand(1)

@@ -1,0 +1,215 @@
+/* C++ CXX_TOKEN_MAP_TERMINAL_IN - Token type to parser terminal map */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  07.08.91  DGM  006  Updated.
+ *  03.20.91  DGM  005  Added #pragmas.
+ *  03.12.91  DGM  004  Added "throw", "try", and "asm".
+ *  09.25.90  DGM  003  Preprocessor include file name changes.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  06.14.90  DGM  001  Updated.
+ *  01.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;         */
+/* %include CXX_EXTERNAL_NAME_MAP_IN;     */
+/* %include CXX_PP_TOKEN_TYPE_CODES_IN;   */
+/* %include CXX_PARSER_TERMINAL_CODES_IN; */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* TOKMAPT
+/*
+/* Keep this in sync with CXX_PP_TOKEN_TYPE_CODES_IN !
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 TOKMAPT		external,
+
+  2 TOKEN_TO_TERMINAL	(LB_FE_TOKEN : HB_FE_TOKEN)
+			type (SHORT_T) initial (
+
+    /* ======================####=========================== */
+    /* Lexer Token Type Code #### Parser Terminal Class Code */
+    /* ======================####=========================== */
+
+    /* Special tokens */
+
+    /* BOF_TOKEN		    */	BOF_TERMINAL,
+    /* EOF_TOKEN		    */	EOF_TERMINAL,
+
+    /* Unparsed tokens (FE "lexer" won't let these through) */
+
+    /* BOF_INCLUDE_TOKEN	    */	NULL_TERMINAL,
+    /* EOF_INCLUDE_TOKEN	    */	NULL_TERMINAL,
+    /* LINE_FILE_TOKEN		    */	NULL_TERMINAL,
+    /* C_HEADER_PRAGMA_TOKEN	    */	NULL_TERMINAL,
+    /* PRAGMA_A_TOKEN		    */	NULL_TERMINAL,
+    /* PRAGMA_B_TOKEN		    */	NULL_TERMINAL,
+    /* PRAGMA_C_TOKEN		    */	NULL_TERMINAL,
+    /* PRAGMA_D_TOKEN		    */	NULL_TERMINAL,
+    /* PRAGMA_E_TOKEN		    */	NULL_TERMINAL,
+    /* PRAGMA_F_TOKEN		    */	NULL_TERMINAL,
+
+    /* Unparsed tokens (FE "lexer" won't let these through) */
+
+    /* NULL_TOKEN		    */	NULL_TERMINAL,
+    /* SINGLE_CHAR_TOKEN	    */	NULL_TERMINAL,
+    /* PP_NUMBER_TOKEN		    */	NULL_TERMINAL,
+
+    /* String literals and constant tokens */
+
+    /* STRING_LITERAL_TOKEN	    */	STRING_TERMINAL,
+    /* WSTRING_LITERAL_TOKEN	    */	STRING_TERMINAL,
+
+    /* CHAR_CONSTANT_TOKEN	    */	CONSTANT_TERMINAL,
+    /* WCHAR_CONSTANT_TOKEN	    */	CONSTANT_TERMINAL,
+
+    /* DECIMAL_CONSTANT_TOKEN	    */	CONSTANT_TERMINAL,
+    /* OCTAL_CONSTANT_TOKEN	    */	CONSTANT_TERMINAL,
+    /* HEX_CONSTANT_TOKEN	    */	CONSTANT_TERMINAL,
+    /* FLOAT_CONSTANT_TOKEN	    */	CONSTANT_TERMINAL,
+
+    /* COOKED_CHAR_CONSTANT_TOKEN   */	CONSTANT_TERMINAL,
+    /* COOKED_WCHAR_CONSTANT_TOKEN  */	CONSTANT_TERMINAL,
+
+    /* COOKED_STRING_LITERAL_TOKEN  */	STRING_TERMINAL,
+    /* COOKED_WSTRING_LITERAL_TOKEN */	STRING_TERMINAL,
+
+    /* Identifier token */
+
+    /* IDENTIFIER_TOKEN		    */	IDENTIFIER_TERMINAL,
+
+    /* Punctuator and operator tokens */
+
+    /* COLON_COLON_TOKEN	    */	COLON_COLON_TERMINAL,
+    /* COLON_TOKEN		    */	COLON_TERMINAL,
+    /* SEMICOLON_TOKEN		    */	SEMI_COLON_TERMINAL,
+    /* DOT_TOKEN		    */	DOT_TERMINAL,
+    /* DOT_STAR_TOKEN		    */	DOT_STAR_TERMINAL,
+    /* QUESTION_TOKEN		    */	QUESTION_TERMINAL,
+    /* ELLIPSIS_TOKEN		    */	ELLIPSIS_TERMINAL,
+    /* LCURLY_TOKEN		    */	LEFT_BRACE_TERMINAL,
+    /* RCURLY_TOKEN		    */	RIGHT_BRACE_TERMINAL,
+    /* RSQUARE_TOKEN		    */	RIGHT_BRACKET_TERMINAL,
+    /* RPAREN_TOKEN		    */	RIGHT_PAREN_TERMINAL,
+
+    /* LSQUARE_TOKEN		    */	LEFT_BRACKET_TERMINAL,
+    /* LPAREN_TOKEN		    */	LEFT_PAREN_TERMINAL,
+    /* COMMA_TOKEN		    */	COMMA_TERMINAL,
+    /* POINTER_TOKEN		    */	ARROW_TERMINAL,
+    /* POINTER_STAR_TOKEN	    */	ARROW_STAR_TERMINAL,
+
+    /* PLUS_TOKEN		    */	PLUS_TERMINAL,
+    /* PLUS_PLUS_TOKEN		    */	PLUS_PLUS_TERMINAL,
+    /* MINUS_TOKEN		    */	MINUS_TERMINAL,
+    /* MINUS_MINUS_TOKEN	    */	MINUS_MINUS_TERMINAL,
+    /* STAR_TOKEN		    */	STAR_TERMINAL,
+    /* SLASH_TOKEN		    */	SLASH_TERMINAL,
+    /* MOD_TOKEN		    */	PERCENT_TERMINAL,
+    /* AND_TOKEN		    */	AND_TERMINAL,
+    /* OR_TOKEN			    */	OR_TERMINAL,
+    /* XOR_TOKEN		    */	XOR_TERMINAL,
+    /* TILDE_TOKEN		    */	TILDE_TERMINAL,
+    /* NOT_TOKEN		    */	NOT_TERMINAL,
+    /* LSHIFT_TOKEN		    */	LEFT_SHIFT_TERMINAL,
+    /* RSHIFT_TOKEN		    */	RIGHT_SHIFT_TERMINAL,
+    /* AND_AND_TOKEN		    */	AND_AND_TERMINAL,
+    /* OR_OR_TOKEN		    */	OR_OR_TERMINAL,
+    /* LESS_THAN_TOKEN		    */	LESS_THAN_TERMINAL,
+    /* LESS_EQUAL_TOKEN		    */	LESS_EQUAL_TERMINAL,
+    /* GREATER_THAN_TOKEN	    */	GREATER_THAN_TERMINAL,
+    /* GREATER_EQUAL_TOKEN	    */	GREATER_EQUAL_TERMINAL,
+    /* EQUAL_EQUAL_TOKEN	    */	EQUAL_EQUAL_TERMINAL,
+    /* NOT_EQUAL_TOKEN		    */	NOT_EQUAL_TERMINAL,
+    /* EQUAL_TOKEN		    */	EQUAL_TERMINAL,
+    /* PLUS_EQUAL_TOKEN		    */	PLUS_EQUAL_TERMINAL,
+    /* MINUS_EQUAL_TOKEN	    */	MINUS_EQUAL_TERMINAL,
+    /* STAR_EQUAL_TOKEN		    */	STAR_EQUAL_TERMINAL,
+    /* SLASH_EQUAL_TOKEN	    */	SLASH_EQUAL_TERMINAL,
+    /* MOD_EQUAL_TOKEN		    */	PERCENT_EQUAL_TERMINAL,
+    /* AND_EQUAL_TOKEN		    */	AND_EQUAL_TERMINAL,
+    /* OR_EQUAL_TOKEN		    */	OR_EQUAL_TERMINAL,
+    /* XOR_EQUAL_TOKEN		    */	XOR_EQUAL_TERMINAL,
+    /* LSHIFT_EQUAL_TOKEN	    */	LEFT_SHIFT_EQUAL_TERMINAL,
+    /* RSHIFT_EQUAL_TOKEN	    */	RIGHT_SHIFT_EQUAL_TERMINAL,
+
+    /* Keyword tokens */
+
+    /* KW_NEW_TOKEN		    */	KW_NEW_TERMINAL,
+    /* KW_DELETE_TOKEN		    */	KW_DELETE_TERMINAL,
+
+    /* KW_TYPEDEF_TOKEN		    */	STORAGE_CLASS_TERMINAL,
+    /* KW_STATIC_TOKEN		    */	STORAGE_CLASS_TERMINAL,
+    /* KW_EXTERN_TOKEN		    */	STORAGE_CLASS_TERMINAL,
+    /* KW_AUTO_TOKEN		    */	STORAGE_CLASS_TERMINAL,
+    /* KW_REGISTER_TOKEN	    */	STORAGE_CLASS_TERMINAL,
+
+    /* KW_VOID_TOKEN		    */	TYPE_TERMINAL, 
+    /* KW_INT_TOKEN		    */	TYPE_TERMINAL,
+    /* KW_CHAR_TOKEN		    */	TYPE_TERMINAL,
+    /* KW_FLOAT_TOKEN		    */	TYPE_TERMINAL,
+    /* KW_DOUBLE_TOKEN		    */	TYPE_TERMINAL,
+    /* KW_LONG_TOKEN		    */	TYPE_TERMINAL,
+    /* KW_SHORT_TOKEN		    */	TYPE_TERMINAL,
+    /* KW_UNSIGNED_TOKEN	    */	TYPE_TERMINAL,
+    /* KW_SIGNED_TOKEN		    */	TYPE_TERMINAL,
+
+    /* KW_CLASS_TOKEN		    */	CLASS_TERMINAL,
+    /* KW_STRUCT_TOKEN		    */	CLASS_TERMINAL,
+    /* KW_UNION_TOKEN		    */	CLASS_TERMINAL,
+    /* KW_ENUM_TOKEN		    */	KW_ENUM_TERMINAL,
+
+    /* KW_CONST_TOKEN		    */	TYPE_QUALIFIER_TERMINAL,
+    /* KW_VOLATILE_TOKEN	    */	TYPE_QUALIFIER_TERMINAL,
+
+    /* KW_PRIVATE_TOKEN		    */	KW_PRIVATE_TERMINAL,
+    /* KW_PROTECTED_TOKEN	    */	KW_PROTECTED_TERMINAL,
+    /* KW_PUBLIC_TOKEN		    */	KW_PUBLIC_TERMINAL,
+    /* KW_VIRTUAL_TOKEN		    */	KW_VIRTUAL_TERMINAL,
+    /* KW_FRIEND_TOKEN		    */	KW_FRIEND_TERMINAL,
+    /* KW_INLINE_TOKEN		    */	KW_INLINE_TERMINAL,
+    /* KW_OVERLOAD_TOKEN	    */	KW_OVERLOAD_TERMINAL,
+    /* KW_OPERATOR_TOKEN	    */	KW_OPERATOR_TERMINAL,
+    /* KW_TEMPLATE_TOKEN	    */	KW_TEMPLATE_TERMINAL,
+    /* KW_THIS_TOKEN		    */	KW_THIS_TERMINAL,
+    /* KW_CATCH_TOKEN		    */	KW_CATCH_TERMINAL,
+    /* KW_THROW_TOKEN		    */	KW_THROW_TERMINAL,
+    /* KW_TRY_TOKEN		    */	KW_TRY_TERMINAL,
+    /* KW_ASM_TOKEN		    */	KW_ASM_TERMINAL,
+
+    /* KW_SIZEOF_TOKEN		    */	KW_SIZEOF_TERMINAL,
+
+    /* KW_BREAK_TOKEN		    */	KW_BREAK_TERMINAL,
+    /* KW_CASE_TOKEN		    */	KW_CASE_TERMINAL,
+    /* KW_CONTINUE_TOKEN	    */	KW_CONTINUE_TERMINAL,
+    /* KW_DEFAULT_TOKEN		    */	KW_DEFAULT_TERMINAL,
+    /* KW_DO_TOKEN		    */	KW_DO_TERMINAL,
+    /* KW_ELSE_TOKEN		    */	KW_ELSE_TERMINAL,
+    /* KW_FOR_TOKEN		    */	KW_FOR_TERMINAL,
+    /* KW_GOTO_TOKEN		    */	KW_GOTO_TERMINAL,
+    /* KW_IF_TOKEN		    */	KW_IF_TERMINAL,
+    /* KW_RETURN_TOKEN		    */	KW_RETURN_TERMINAL,
+    /* KW_SWITCH_TOKEN		    */	KW_SWITCH_TERMINAL,
+    /* KW_WHILE_TOKEN		    */	KW_WHILE_TERMINAL
+
+  );
+

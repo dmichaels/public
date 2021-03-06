@@ -1,0 +1,184 @@
+/* LPI-DEBUG M68 RETADR.PL1 - Get return address of given frame */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *  10.04.91  VTF  If the current instruction is some sort of return, assume
+ *                 that frame has been unlinked, therefore (SP) is the
+ *                 return address.
+ *
+ *  12.30.87  DGM  Changed calls to STRIP & TRIM to call TRIMS & TRIMNU.
+ *
+ *  03.25.87  DGM  Redone for new signal/on-unit RTS routines (first
+ *                 implemented for the Apollo/DOMAIN).  If the current
+ *                 environment contains ON-UNITS, then the return
+ *                 address has been by P$ON to be the entry point of
+ *                 P$POPON.  In this case we must search the on-unit
+ *                 list for the entry corresponding to this frame, and
+ *                 extract the "real" return address.
+ *
+ **********************************************************************/
+
+/* --------------------------------------------------------------------
+/* RETADR - Get address of caller to stack frame
+/*
+/* In:     FRAME = Frame pointer.
+/* Return: Return-address of caller.
+/**********************************************************************/
+
+RETADR: procedure (FRAME) returns (fixed binary (31));
+
+    %nolist;
+    %include 'incfil';
+    %include GLOBAL_IN;
+    %include DBGGLOBAL_IN;
+    %include DBGDEBUG_IN;
+    %include DBGRTS_IN;
+    %include SYSREADUSER_IN;
+    %include TARGET_IN;
+    %include SYSTTY_IN;
+    %list;
+
+    declare 
+        FRAME           fixed binary (31);
+    declare
+        DUMMY           fixed binary (31),
+        FP              fixed binary (31),
+        RETURN_ADDR     fixed binary (31),
+        RET_CODE        fixed binary (15);
+    declare
+        PRNPTR          entry (fixed binary (31));
+
+    %replace $RTD_INSTRUCTION     by '0100111001110100'b;
+    %replace $RTR_INSTRUCTION     by '0100111001110111'b;
+    %replace $RTS_INSTRUCTION     by '0100111001110101'b;
+   
+    declare
+        INSTRUCTION            fixed bin(15),
+        1 RET_INSTRUCTION      based (addr(INSTRUCTION)),
+          2 OPCODE             bit (16);
+
+    if DBG_FLAG then do;
+        call WRITNC ('**RETADR** ');
+        if FRAME = $FP_BREAK then
+             call WRITNC ('BREAK-FP');
+        else call PRNPTR (FRAME);
+        call WRITNC (' --> ');
+    end;
+ 
+    if FRAME = 0 then do;
+         RETURN_ADDR = 0;
+         goto DONE;
+    end;
+    else if FRAME = $FP_BREAK then do;
+	 /* check to see if we are at a return instruction.
+	    This would indicate that we have executed an unlink instruction,
+	    and we should use the return address is at (SP).
+          */
+         call REAUSR (PROCESS_ID,DUMMY,PROGRAM_REGISTER_AREA->REGS.PC,
+                      2,addr(INSTRUCTION),RET_CODE);
+         if (RET_INSTRUCTION.OPCODE = $RTS_INSTRUCTION 
+             | RET_INSTRUCTION.OPCODE = $RTR_INSTRUCTION
+             | RET_INSTRUCTION.OPCODE = $RTS_INSTRUCTION) then
+             FP =  PROGRAM_REGISTER_AREA->REGS.A7 - $PC_OFF;
+         else
+             FP = PROGRAM_REGISTER_AREA->REGS.A6;
+    end;
+    else call REAUSR (PROCESS_ID,DUMMY,FRAME,4,addr(FP),RET_CODE);
+
+    if DBG_FLAG then do;
+        call PRNPTR (FP);
+        call WRITNC (' RET: ');
+    end;
+
+    call REAUSR (PROCESS_ID, DUMMY, (FP + $PC_OFF), 4,
+                 addr(RETURN_ADDR), RET_CODE);
+
+    if DBG_FLAG then do;
+        call PRNPTR (RETURN_ADDR);
+    end;
+
+    /*
+     * If the return address is not an even address, then assume that
+     * this is an Apollo/DOMAIN FP stack frame; in this case RETURN_ADDR
+     * points to an FP information block, and the return address we want
+     * is the next long word down on the stack.
+     */
+
+    if mod(RETURN_ADDR,2) ^= 0 then do;
+        call REAUSR (PROCESS_ID, DUMMY, (FP + $PC_OFF + 4), 4,
+                     addr(RETURN_ADDR), RET_CODE);
+        if DBG_FLAG then do;
+            call WRITNC (' --> ');
+            call PRNPTR (RETURN_ADDR);
+        end;
+    end;
+
+    if RETURN_ADDR = RTS_ENTRY.ADDRESS(RTSENT_POPONUNIT_) then do;
+        if DBG_FLAG then do;
+            call WRITNC (' (');
+            call WRITNC (TRIMS((RTS_ENTRY.NAME(RTSENT_POPONUNIT_))));
+            call WRITNC (') --> ');
+        end;
+        RETURN_ADDR = GET_REAL_RETURN_ADDRESS(FP);
+        if DBG_FLAG then do;
+            call PRNPTR (RETURN_ADDR);
+        end;
+    end;
+
+  DONE:
+    if DBG_FLAG then do;
+        call WRITTT ('');
+    end;
+
+    return (RETURN_ADDR);
+
+    /* ----------------------------------------------------------------
+     * GET_REAL_RETURN_ADDRESS
+     *
+     * Note: Check the RTS header file "onunit.h" to verify the
+     *       layout and sizes of the data structures used.
+     */
+
+    GET_REAL_RETURN_ADDRESS:    procedure (FP)
+                                returns   (fixed binary (ADDRESS_LENGTH));
+        declare
+            FP                  fixed binary (ADDRESS_LENGTH);
+        declare
+            DUMMY               fixed binary (31),
+            STATUS              fixed binary (15),
+            ONFRAME_PTR         fixed binary (ADDRESS_LENGTH);
+        declare
+            1 ONFRAME           static internal,
+              2 ONFRAME_NEXT    fixed binary (ADDRESS_LENGTH),
+              2 ONFRAME_FP      fixed binary (ADDRESS_LENGTH),
+              2 ONFRAME_RETADDR fixed binary (ADDRESS_LENGTH);
+
+        %replace ONFRAME_SIZE   by 12;  /* Bytes */
+        %replace ONFRAME_OFFSET by  0;  /* Bytes */
+
+        STATUS = 0;
+        ONFRAME_PTR = RTS_DATA.ADDRESS(RTSDAT_ONUNIT_LIST_);
+
+        do while ((ONFRAME_PTR ^= 0) & (STATUS = 0));
+            call REAUSR (PROCESS_ID, DUMMY,
+                         ONFRAME_PTR + ONFRAME_OFFSET,
+                         ONFRAME_SIZE, addr(ONFRAME), STATUS);
+            if ONFRAME_FP = FP then
+                 return (ONFRAME_RETADDR);
+            else ONFRAME_PTR = ONFRAME_NEXT;
+        end;
+        return (0);
+
+    end GET_REAL_RETURN_ADDRESS;
+
+end RETADR;
+

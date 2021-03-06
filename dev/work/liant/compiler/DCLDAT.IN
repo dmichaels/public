@@ -1,0 +1,208 @@
+/* C++ CXX_GLOBAL_DECLARATION_DATA_IN - Declaration semantic analysis data */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  05.06.92  DGM  019  Added CURRENT_SIMPLE_LINKAGE_SPECIFIER.
+ *  03.26.92  DGM  018  New value-node scheme.
+ *  12.16.91  DGM  017  Removed CURRENT_CLASS_ALIGNMENT.
+ *  11.12.91  DGM  016  Added CURRENT_ENUM_DATA.
+ *  08.01.91  DGM  015  Added CURRENT_OLD_FUNCTION_DEFINITION.
+ *  05.21.91  DGM  014  Added CURRENT_CLASS_NON_NESTED.
+ *  04.29.91  DGM  013  Minor changes to eliminate run-time calls
+ *  03.28.91  DGM  012  Minor changes to eliminate run-time calls
+ *			when dealing with bit-string types.
+ *  02.11.91  DGM  011  Initialize CURRENT_OLD_PARAMETERS.
+ *  11.06.90  DGM  010  Added CURRENT_CLASS_DERIVED and
+ *			CURRENT_CLASS_ABSTRACTLY_DERIVED.
+ *  10.10.90  DGM  009  Fix; put CURRENT_TYPE_QUALIFIER in the
+ *			global declaration specifier data area.
+ *  09.25.90  DGM  008  Preprocessor include file name changes.
+ *  09.14.90  DGM  007  Changed include file names and VOP names.
+ *  09.13.90  DGM  006  Changed NULL_ST to NULL_SIMPLE_TYPES.
+ *  08.31.90  DGM  005  Added CURRENT_BASE_TYPE_SIGNED
+ *			and CURRENT_BASE_TYPE_UNSPECIFIED.
+ *  08.14.90  DGM  004  Removed CURRENT_NON_TAG_SPECIIERS.
+ *			TODO: make CURRENT_BASE_TYPE be a TYPE_DATA_T;
+ *			change pardcl, buityp, dclstk, dclsym, paraid.
+ *  03.27.90  DGM  003  Added CURRENT_PURE_SPECIFIER.
+ *  02.15.90  DGM  002  Updated.
+ *  02.05.90  DGM  001  Updated.
+ *  01.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/***********************************************************************
+/* This header contains the data which is needed by (and
+/* should ONLY be included by) the modules which perform
+/* the semantic actions necessary to process declarations.
+/*
+/* See CXX_GLOBAL_SEMANTIC_DATA_IN for data which needs to
+/* be among the difference modules which perform various
+/* kinds of semantic actions during the parse.
+/***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;       */
+/* %include CXX_EXTERNAL_NAME_MAP_IN;   */
+/* %include CXX_SYMBOL_TABLE_DEFS_IN;   */
+/* %include CXX_PP_TOKEN_TYPE_CODES_IN; */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Definitions
+/* ------------------------------------------------------------------- */
+
+%replace NULL_SIMPLE_TYPES	by '0000000000000000'B;
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 GLOBAL_DECLARATION_DATA		external (X_GLOBAL_DECLARATION_DATA),
+
+  /* Basic declaration/type specifier and declarator level data */
+
+  2 CURRENT_DECLARATION_DATA,
+    3 CURRENT_BASE_TYPE_QUALIFIER	type (BYTE_BITS_T),
+    3 CURRENT_TYPE_QUALIFIER		type (BYTE_BITS_T),
+    3 CURRENT_BASE_TYPE_SIGNED		type (BIT_T),
+    3 CURRENT_BASE_TYPE_UNSPECIFIED	type (BIT_T),
+    3 CURRENT_FRIEND			type (BIT_T),
+    3 CURRENT_VIRTUAL			type (BIT_T),
+    3 CURRENT_INLINE			type (BIT_T),
+    3 CURRENT_OVERLOAD			type (BIT_T),
+    3 CURRENT_BASE_TYPE_TAG_DEFINITION	type (BIT_T),
+    3 CURRENT_OLD_FUNCTION_DEFINITION	type (BIT_T),
+    3 available_1			type (BIT_T),
+    3 available_2			type (BIT_T),
+    3 available_3			type (BIT_T),
+    3 available_4			type (BIT_T),
+    3 available_5			type (BIT_T),
+    3 available_6			type (BIT_T),
+    3 available_7			type (BIT_T),
+    3 CURRENT_SIMPLE_LINKAGE_SPECIFIER	type (BIT_T),
+    3 CURRENT_BASE_TYPE			type (SHORT_T),
+    3 CURRENT_BASE_TYPE_ID		type (NID_T),
+    3 CURRENT_STORAGE_CLASS		type (SHORT_T),
+    3 CURRENT_DERIVED_TYPE_LEVEL	type (SHORT_T),
+
+  /* Current simple types (e.g. int, short, double) */
+
+  2 CURRENT_SIMPLE_TYPES		type (SHORT_BITS_T),
+
+  /* Class (member) declaration data (save/restore in nested classes) */
+
+  2 CURRENT_CLASS_DATA,
+    3 CURRENT_CLASS_DERIVED		type (BIT_T),
+    3 CURRENT_CLASS_ABSTRACTLY_DERIVED	type (BIT_T),
+    3 CURRENT_CLASS_NON_NESTED		type (BIT_T),
+    3 available_2			type (BIT_T),
+    3 available_3			type (BIT_T),
+    3 available_4			type (BIT_T),
+    3 available_5			type (BIT_T),
+    3 available_6			type (BIT_T),
+    3 available_7			type (BYTE_T),
+    3 CURRENT_CLASS			type (NID_T),
+    3 CURRENT_CLASS_NAME		type (NID_T),
+    3 CURRENT_CLASS_TYPE		type (SHORT_T),
+    3 CURRENT_MEMBER_ACCESS		type (SHORT_T),
+
+  2 CURRENT_MEMBER_DATA,
+    3 CURRENT_PURE_SPECIFIER		type (BIT_T),
+    3 available_1			type (BIT_T),
+    3 available_2			type (BIT_T),
+    3 available_3			type (BIT_T),
+    3 available_4			type (BIT_T),
+    3 available_5			type (BIT_T),
+    3 available_6			type (BIT_T),
+    3 available_7			type (BIT_T),
+    3 available_8			type (BYTE_BITS_T),
+    3 CURRENT_BIT_FIELD			type (SHORT_T),
+
+  /* Base class data */
+
+  2 CURRENT_BASE_CLASS_DATA,
+    3 CURRENT_BASE_CLASS_VIRTUAL	type (BIT_T),
+    3 available_1			type (BIT_T),
+    3 available_2			type (BIT_T),
+    3 available_3			type (BIT_T),
+    3 available_4			type (BIT_T),
+    3 available_5			type (BIT_T),
+    3 available_6			type (BIT_T),
+    3 available_7			type (BIT_T),
+    3 CURRENT_BASE_CLASS_ACCESS		type (SHORT_T),
+    3 CURRENT_NBASE_CLASSES		type (SHORT_T),
+    3 CURRENT_BASE_CLASSES		type (NID_T),
+    3 CURRENT_LAST_BASE_CLASS		type (NID_T),
+
+  /* Enum and enumerator data */
+
+  2 CURRENT_ENUM_DATA,
+    3 CURRENT_ENUM_TOP_TYPE		type (TYPE_DATA_T),
+    3 CURRENT_ENUM_TYPE			type (NID_T),
+    3 CURRENT_ENUM_PARENT_SCOPE		type (NID_T),
+    3 CURRENT_ENUM_PARENT_SCOPE_NAME	type (NID_T),
+    3 CURRENT_ENUM_BASE_TYPE		type (SHORT_T),
+    3 CURRENT_ENUM_NO_BASE_TYPE		type (BOOL_T),
+    3 CURRENT_ENUMERATOR_INITIAL	type (BOOL_T),
+    3 CURRENT_ENUMERATOR		type (NID_T),
+    3 CURRENT_ENUMERATOR_VALUE		type (LONG_T),
+    3 CURRENT_ENUMERATOR_LARGE_VALUE	type (LONG_T),
+    3 CURRENT_ENUMERATOR_SMALL_VALUE	type (LONG_T),
+    3 CURRENT_ENUMERATOR_COUNT		type (LONG_T),
+
+  /* Function signature declaration data (save/restore in nested signatures) */
+
+  2 CURRENT_SIGNATURE_DATA,
+    3 CURRENT_ELLIPSIS			type (BIT_T),
+    3 CURRENT_PROTOTYPED		type (BIT_T),
+    3 available_2			type (BIT_T),
+    3 available_3			type (BIT_T),
+    3 available_4			type (BIT_T),
+    3 available_5			type (BIT_T),
+    3 available_6			type (BIT_T),
+    3 available_7			type (BIT_T),
+    3 available_8			type (SHORT_T),
+
+  /* Current symbol declared */
+
+  2 CURRENT_SYMBOL			type (NID_T)
+					initial (NULL_NID),
+
+  /* Current linkage kind (e.g. "C++" or "C") */
+
+  2 CURRENT_LINKAGE_KIND		type (SHORT_T)
+					initial (DEFAULT_LINKAGE),
+
+  /* Old-style function definition declaration data */
+
+  2 CURRENT_OLD_PARAMETERS		type (NID_T)
+					initial (NULL_NID),
+
+  2 END_GLOBAL_DECLARATION_DATA		type (SHORT_T),
+
+/* Current simple type array (to reference individualy) */
+
+CURRENT_SIMPLE_TYPE			(LB_KW_TYPE_TOKEN : HB_KW_TYPE_TOKEN)
+					type (BIT_T)
+					defined (CURRENT_SIMPLE_TYPES);
+
+
+

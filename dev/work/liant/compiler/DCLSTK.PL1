@@ -1,0 +1,367 @@
+/* C++ dclstk.pl1 - Declaration semantic stack manipulation routines */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  02.18.93  DGM  013  Increase stack sizes; customer hit limit
+ *			for the node-stack when using more then
+ *			32 member-initializers.
+ *  05.29.91  DGM  010  Removed include of CXX_SCOPE_STACK_PKG.
+ *  09.14.90  DGM  009  Changed include file names and VOP names.
+ *  08.14.90  DGM  008  Moved the type related stacks to typdcl.pl1;
+ *			removed SAVE_RESTORE_NON_TAG_SPECIFIERS.
+ *  05.25.90  DGM  007  Added PUSH_OVER_xxx (see pardcl.pl1 for usage).
+ *  05.15.90  DGM  006  Updated to new error message interface.
+ *  04.04.90  DGM  005  Updated.
+ *  02.15.90  DGM  004  Updated.
+ *  02.05.90  DGM  003  Updated.
+ *  01.04.90  DGM  001  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 02.18.93 013 DCLSTK');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+
+/* ---------------------------------------------------------------------
+/* PUSH_POP_NODE
+/* ------------------------------------------------------------------- */
+
+/* Miscellaneous node id stack - for miscellaneous node id's */
+
+%replace HB_NODE_STACK			by 256;
+
+declare
+
+NODE_STACK			(0 : HB_NODE_STACK - 1)
+				type (NID_T) static internal,
+NODE_STACK_TOP			type (SHORT_T) static internal
+				initial (HB_NODE_STACK);
+
+/* ---------------------------------------------------------------------
+/* PUSH_NODE
+/* ------------------------------------------------------------------- */
+
+PUSH_NODE: procedure (N)
+	   external  (X_PUSH_NODE);
+
+	declare N type (NID_T);
+
+	if NODE_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_NODE_STACK_OVERFLOW);
+		return;
+	end;
+	NODE_STACK_TOP = NODE_STACK_TOP - 1;
+	NODE_STACK (NODE_STACK_TOP) = N;
+
+end PUSH_NODE;
+
+/* ---------------------------------------------------------------------
+/* POP_NODE
+/* ------------------------------------------------------------------- */
+
+POP_NODE: procedure
+	  returns   (type (NID_T))
+	  external  (X_POP_NODE);
+
+	declare N type (NID_T);
+
+	if NODE_STACK_TOP >= HB_NODE_STACK then do;
+		call COMPILER_ERROR (ERR_NODE_STACK_UNDERFLOW);
+		return (0);
+	end;
+	N = NODE_STACK (NODE_STACK_TOP);
+	NODE_STACK_TOP = NODE_STACK_TOP + 1;
+	return (N);
+
+end POP_NODE;
+
+/* ---------------------------------------------------------------------
+/* SAVE_RESTORE_DECLARATION_STATE
+/* ------------------------------------------------------------------- */
+
+SAVE_RESTORE_DECLARATION_STATE: procedure internal;
+
+%replace HB_DECLARATION_STATE_STACK	by 256;
+
+declare
+
+1 DECLARATION_STACK		(1 : HB_DECLARATION_STATE_STACK)
+				static internal,
+  2 DECLARATION_DATA		type (CURRENT_DECLARATION_DATA),
+  2 NAME_DATA			type (CURRENT_NAME_DATA),
+
+DECLARATION_STACK_TOP		type (SHORT_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* SAVE_DECLARATION_STATE
+/*
+/* Save (push) the current declaration data; this consists
+/* of the declaration specifier, declarator, and name data.
+/* ------------------------------------------------------------------- */
+
+SAVE_DECLARATION_STATE: entry external (X_SAVE_DECLARATION_STATE);
+
+	if DECLARATION_STACK_TOP >= HB_DECLARATION_STATE_STACK then do;
+		call COMPILER_ERROR (ERR_DCL_STATE_STACK_OVERFLOW);
+		return;
+	end;
+	DECLARATION_STACK_TOP = DECLARATION_STACK_TOP + 1;
+	DECLARATION_STACK (DECLARATION_STACK_TOP).DECLARATION_DATA =
+		CURRENT_DECLARATION_DATA;
+	DECLARATION_STACK (DECLARATION_STACK_TOP).NAME_DATA =
+		CURRENT_NAME_DATA;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* RESTORE_DECLARATION_STATE
+/*
+/* Restore (pop) the previous declaration data; this consists
+/* of the declaration specifier, declarator, and name data.
+/* ------------------------------------------------------------------- */
+
+RESTORE_DECLARATION_STATE: entry external (X_RESTORE_DECLARATION_STATE);
+
+	if DECLARATION_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_DCL_STATE_STACK_UNDERFLOW);
+		return;
+	end;
+	CURRENT_DECLARATION_DATA =
+		DECLARATION_STACK (DECLARATION_STACK_TOP).DECLARATION_DATA;
+	CURRENT_NAME_DATA =
+		DECLARATION_STACK (DECLARATION_STACK_TOP).NAME_DATA;
+	DECLARATION_STACK_TOP = DECLARATION_STACK_TOP - 1;
+
+	return;
+
+end SAVE_RESTORE_DECLARATION_STATE;
+
+/* ---------------------------------------------------------------------
+/* SAVE_RESTORE_NAME_STATE
+/* ------------------------------------------------------------------- */
+
+SAVE_RESTORE_NAME_STATE: procedure internal;
+
+%replace HB_NAME_STATE_STACK	by 256;
+
+declare
+
+NAME_STACK		(1 : HB_NAME_STATE_STACK)
+			type (CURRENT_NAME_DATA) static internal,
+NAME_STACK_TOP		type (SHORT_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* SAVE_NAME_STATE
+/*
+/* Save (push) the current name data.
+/* ------------------------------------------------------------------- */
+
+SAVE_NAME_STATE: entry external (X_SAVE_NAME_STATE);
+
+	if NAME_STACK_TOP >= HB_NAME_STATE_STACK then do;
+		call COMPILER_ERROR (ERR_NAME_STATE_STACK_OVERFLOW);
+		return;
+	end;
+	NAME_STACK_TOP = NAME_STACK_TOP + 1;
+	NAME_STACK (NAME_STACK_TOP) = CURRENT_NAME_DATA;
+	return;
+
+/* ---------------------------------------------------------------------
+/* RESTORE_NAME_STATE
+/*
+/* Restore (pop) the previous name data.
+/* ------------------------------------------------------------------- */
+
+RESTORE_NAME_STATE: entry external (X_RESTORE_NAME_STATE);
+
+	if NAME_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_NAME_STATE_STACK_UNDERFLOW);
+		return;
+	end;
+	CURRENT_NAME_DATA = NAME_STACK (NAME_STACK_TOP);
+	NAME_STACK_TOP = NAME_STACK_TOP - 1;
+	return;
+
+end SAVE_RESTORE_NAME_STATE;
+
+/* ---------------------------------------------------------------------
+/* SAVE_RESTORE_SIGNATURE_STATE
+/* ------------------------------------------------------------------- */
+
+SAVE_RESTORE_SIGNATURE_STATE: procedure internal;
+
+%replace HB_SIGNATURE_STATE_STACK	by 256;
+
+declare
+
+SIGNATURE_STACK		(1 : HB_SIGNATURE_STATE_STACK)
+			type (CURRENT_SIGNATURE_DATA) static internal,
+SIGNATURE_STACK_TOP	type (SHORT_T) static internal initial (-1);
+
+/* ---------------------------------------------------------------------
+/* SAVE_SIGNATURE_STATE
+/* ------------------------------------------------------------------- */
+
+SAVE_SIGNATURE_STATE: entry external (X_SAVE_SIGNATURE_STATE);
+
+	if SIGNATURE_STACK_TOP < 0 then do;
+		SIGNATURE_STACK_TOP = SIGNATURE_STACK_TOP + 1;
+		return;
+	end;
+	if SIGNATURE_STACK_TOP >= HB_SIGNATURE_STATE_STACK then do;
+		call COMPILER_ERROR (ERR_SIG_STATE_STACK_OVERFLOW);
+		return;
+	end;
+	SIGNATURE_STACK_TOP = SIGNATURE_STACK_TOP + 1;
+	SIGNATURE_STACK (SIGNATURE_STACK_TOP) = CURRENT_SIGNATURE_DATA;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* RESTORE_SIGNATURE_STATE
+/* ------------------------------------------------------------------- */
+
+RESTORE_SIGNATURE_STATE: entry external (X_RESTORE_SIGNATURE_STATE);
+
+	if SIGNATURE_STACK_TOP = 0 then do;
+		SIGNATURE_STACK_TOP = SIGNATURE_STACK_TOP - 1;
+		return;
+	end;
+	else if SIGNATURE_STACK_TOP < 0 then do;
+		call COMPILER_ERROR (ERR_SIG_STATE_STACK_UNDERFLOW);
+		return;
+	end;
+	CURRENT_SIGNATURE_DATA = SIGNATURE_STACK (SIGNATURE_STACK_TOP);
+	SIGNATURE_STACK_TOP = SIGNATURE_STACK_TOP - 1;
+
+	return;
+
+end SAVE_RESTORE_SIGNATURE_STATE;
+
+/* ---------------------------------------------------------------------
+/* SAVE_RESTORE_CLASS_STATE
+/* ------------------------------------------------------------------- */
+
+SAVE_RESTORE_CLASS_STATE: procedure internal;
+
+%replace HB_CLASS_STATE_STACK		by 256;
+
+declare
+
+CLASS_STACK		(1 : HB_CLASS_STATE_STACK)
+			type (CURRENT_CLASS_DATA) static internal,
+CLASS_STACK_TOP		type (SHORT_T) static internal initial (-1);
+
+/* ---------------------------------------------------------------------
+/* SAVE_CLASS_STATE
+/* ------------------------------------------------------------------- */
+
+SAVE_CLASS_STATE: entry external (X_SAVE_CLASS_STATE);
+
+	if CLASS_STACK_TOP < 0 then do;
+		CLASS_STACK_TOP = CLASS_STACK_TOP + 1;
+		return;
+	end;
+	if CLASS_STACK_TOP >= HB_CLASS_STATE_STACK then do;
+		call COMPILER_ERROR (ERR_CLASS_STATE_STACK_OVERFLOW);
+		return;
+	end;
+	CLASS_STACK_TOP = CLASS_STACK_TOP + 1;
+	CLASS_STACK (CLASS_STACK_TOP) = CURRENT_CLASS_DATA;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* RESTORE_CLASS_STATE
+/* ------------------------------------------------------------------- */
+
+RESTORE_CLASS_STATE: entry external (X_RESTORE_CLASS_STATE);
+
+	if CLASS_STACK_TOP = 0 then do;
+		CLASS_STACK_TOP = CLASS_STACK_TOP - 1;
+		return;
+	end;
+	else if CLASS_STACK_TOP < 0 then do;
+		call COMPILER_ERROR (ERR_CLASS_STATE_STACK_UNDERFLOW);
+		return;
+	end;
+	CURRENT_CLASS_DATA = CLASS_STACK (CLASS_STACK_TOP);
+	CLASS_STACK_TOP = CLASS_STACK_TOP - 1;
+
+	return;
+
+end SAVE_RESTORE_CLASS_STATE;
+
+/* ---------------------------------------------------------------------
+/* SAVE_RESTORE_LINKAGE_STATE
+/* ------------------------------------------------------------------- */
+
+/* Linkage stack - for the nest-able linkage specifier */
+
+%replace HB_LINKAGE_STACK		by 64;
+
+declare
+
+LINKAGE_STACK			(0 : HB_LINKAGE_STACK - 1)
+				type (BYTE_T) static internal,
+LINKAGE_STACK_TOP		type (SHORT_T) static internal
+				initial (HB_LINKAGE_STACK);
+
+/* ---------------------------------------------------------------------
+/* SAVE_LINKAGE_STATE
+/* ------------------------------------------------------------------- */
+
+SAVE_LINKAGE_STATE: procedure
+		    external  (X_SAVE_LINKAGE_STATE);
+
+	if LINKAGE_STACK_TOP <= 0 then do;
+		call COMPILER_ERROR (ERR_LINK_STATE_STACK_OVERFLOW);
+		return;
+	end;
+	LINKAGE_STACK_TOP = LINKAGE_STACK_TOP - 1;
+	LINKAGE_STACK (LINKAGE_STACK_TOP) = byte (CURRENT_LINKAGE_KIND);
+
+end SAVE_LINKAGE_STATE;
+
+/* ---------------------------------------------------------------------
+/* RESTORE_LINKAGE_STATE
+/* ------------------------------------------------------------------- */
+
+RESTORE_LINKAGE_STATE: procedure
+		       external  (X_RESTORE_LINKAGE_STATE);
+
+	if LINKAGE_STACK_TOP >= HB_LINKAGE_STACK then do;
+		call COMPILER_ERROR (ERR_LINK_STATE_STACK_UNDERFLOW);
+		return;
+	end;
+	CURRENT_LINKAGE_KIND = rank (LINKAGE_STACK (LINKAGE_STACK_TOP));
+	LINKAGE_STACK_TOP = LINKAGE_STACK_TOP + 1;
+
+end RESTORE_LINKAGE_STATE;
+

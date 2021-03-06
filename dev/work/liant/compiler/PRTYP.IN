@@ -1,0 +1,139 @@
+/* C++ CXX_PRINT_TYPE_IN - Print value or symbol type definitions */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.08.91  DGM  003  Updated
+ *  11.29.90  DGM  002  Updated
+ *  11.20.90  DGM  001  Updated
+ *  09.25.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* None */
+
+/* ---------------------------------------------------------------------
+/* Definitions
+/* ------------------------------------------------------------------- */
+
+/* Member Selection Mode Flags */
+
+%replace NON_STATIC_DATA_MEMBERS_MSM	 by '00000000000000000000000000000001'B;
+%replace STATIC_DATA_MEMBERS_MSM	 by '00000000000000000000000000000010'B;
+%replace NON_STATIC_MEMBER_FUNCTIONS_MSM by '00000000000000000000000000000100'B;
+%replace STATIC_MEMBER_FUNCTIONS_MSM	 by '00000000000000000000000000001000'B;
+%replace VIRTUAL_FUNCTIONS_MSM		 by '00000000000000000000000000010000'B;
+%replace FRIENDS_MSM			 by '00000000000000000000000000100000'B;
+%replace ACCESS_DECLARATIONS_MSM	 by '00000000000000000000000001000000'B;
+%replace NESTED_TYPES_MSM		 by '00000000000000000000000010000000'B;
+%replace NESTED_MEMBERS_MSM		 by '00000000000000000000000100000000'B;
+%replace INHERITED_MSM			 by '00000000000000000000001000000000'B;
+
+%replace PUBLIC_MSM			 by '00000000000000000000010000000000'B;
+%replace PROTECTED_MSM			 by '00000000000000000000100000000000'B;
+%replace PRIVATE_MSM			 by '00000000000000000001000000000000'B;
+%replace ACCESSIBLE_MSM			 by '00000000000000000010000000000000'B;
+
+%replace NO_OVERLOADED_FUNCTIONS_MSM	 by '00000000000000000100000000000000'B;
+
+%replace NON_STATIC_MEMBERS_MSM		 by '00000000000000000000000000000101'B;
+%replace STATIC_MEMBERS_MSM		 by '00000000000000000000000000001010'B;
+%replace DATA_MEMBERS_MSM		 by '00000000000000000000000000000011'B;
+%replace MEMBER_FUNCTIONS_MSM		 by '00000000000000000000000000011100'B;
+%replace ALL_MEMBERS_MSM		 by '00000000000000000000000011111111'B;
+%replace ANY_MEMBER_ACCESS_MSM		 by '00000000000000000011110000000000'B;
+
+%replace NULL_MSM			 by '00000000000000000000000000000000'B;
+%replace FULL_MSM			 by '00000000000000000011110111111111'B;
+
+/* ---------------------------------------------------------------------
+/* Type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+MSM_T					bit (32) aligned;
+
+declare
+
+1 MEMBER_SELECTION_MODE_T		based,
+  2 member_selection_mode_union	union,
+    3 FLAGS				type (MSM_T),
+    3 member_selection_mode_flags,
+      4 available_01			type (BIT_T),
+      4 available_02			type (BIT_T),
+      4 available_03			type (BIT_T),
+      4 available_04			type (BIT_T),
+      4 available_05			type (BIT_T),
+      4 available_06			type (BIT_T),
+      4 available_07			type (BIT_T),
+      4 available_08			type (BIT_T),
+      4 available_09			type (BIT_T),
+      4 available_10			type (BIT_T),
+      4 available_11			type (BIT_T),
+      4 available_12			type (BIT_T),
+      4 available_13			type (BIT_T),
+      4 available_14			type (BIT_T),
+      4 available_15			type (BIT_T),
+      4 available_16			type (BIT_T),
+      4 available_17			type (BIT_T),
+      4 NO_OVERLOADED_FUNCTIONS		type (BIT_T),
+      4 ACCESSIBLE			type (BIT_T),
+      4 PRIVATE				type (BIT_T),
+      4 PROTECTED			type (BIT_T),
+      4 PUBLIC				type (BIT_T),
+      4 INHERITED			type (BIT_T),
+      4 NESTED_MEMBERS			type (BIT_T),
+      4 NESTED_TYPES			type (BIT_T),
+      4 ACCESS_DECLARATIONS		type (BIT_T),
+      4 FRIENDS				type (BIT_T),
+      4 VIRTUAL_FUNCTIONS		type (BIT_T),
+      4 STATIC_MEMBER_FUNCTIONS		type (BIT_T),
+      4 NON_STATIC_MEMBER_FUNCTIONS	type (BIT_T),
+      4 STATIC_DATA_MEMBERS		type (BIT_T),
+      4 NON_STATIC_DATA_MEMBERS		type (BIT_T);
+
+/* ---
+
+CLASS
+	/LATtice	-- inheritance lattice
+	/LAYout		-- non-static data member layout
+	/MEMbers	-- all members
+	/NSDM		-- non-static data members
+	/NSMF		-- non-static member functions
+	/SDM		-- static data members
+	/SMF		-- static member functions
+	/SM		-- static members -- /SDM & /SMF
+	/NSM		-- non-static members -- /NSDM & /NSMF
+	/DM		-- data members -- /NSDM & /SDM
+	/MF		-- member functions -- /NSMF & /SMF
+	/NT		-- nested types
+	/VF		-- virtual functions
+	/INHerited	-- inherited members
+	/CONstructors	-- constructors
+	/DEStructors	-- destructors
+	/OPerators	-- operator functions
+	/FRIends	-- friends
+	/INHerited	-- inherited members
+	/ACCessible	-- accessible members
+	/PUBlic		-- public members
+	/PROtected	-- protected members
+	/PRIvate	-- private members
+	/QUALified	-- qualify all names
+	/ALPHabetical	-- alphabetize final output
+	/XXX		-- separate final output into data members, function ..
+
+--- */
+

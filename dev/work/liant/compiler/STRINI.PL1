@@ -1,0 +1,607 @@
+/* C++ strini.pl1 - Make an initialized string symbol */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.29.92  DGM  012  Call SET_DATA_SECTION.
+ *  03.26.92  DGM  011  New value-node scheme.
+ *  11.12.91  DGM  010  Updated for L"wide-string-literals".
+ *  06.25.91  PKT  009  Elminated special parsing for string initializers;
+ *			save up string symbol initializations.
+ *  03.12.91  DGM  008  Fix in MAKE_INITIALIZED_STRING.
+ *  03.08.91  DGM  007  Added MAKE_INITIALIZED_STRING (for vft.pl1 use).
+ *  09.25.90  DGM  006  Preprocessor include file name changes.
+ *  09.14.90  DGM  005  Changed include file names and VOP names.
+ *  08.08.90  DGM  004  New type-node.
+ *  06.25.90  DGM  003  Name change (GET_SIMPLE_ARRAY_TYPE).
+ *  06.06.90  DGM  002  Updated for the new utilities.
+ *  04.19.90  DGM  001  Oops.
+ *  04.19.90  DGM  000  Original; derived from ANSI-C strsym.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.29.92 012 STRINI');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_DATA_INITIAL_FILE_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_SCOPE_DECLARATION_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_TARGET_DATA_CONVERSION_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_PRAGMA_DATA_SECTION_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+
+/* ---------------------------------------------------------------------
+/* PKT rearranged string-literal processing 91 Jun 25, because
+/*	1. STRING_VO was an inadequate method to deal with pointer
+/*	   initializations.
+/*	2. The old INITIALIZE_STRING mechanism doesn't work during
+/*	   parsing of an initializer, because it makes a symbol, and
+/*	   needed to write to the data initial file right away in order
+/*	   to record the symbol's initializer.  But the data initial
+/*	   file was already open for a different purpose.
+/* The solution to these problems follows the method PLB used for New C.
+/* 
+/* The basis for this module is that string literals become initialized
+/* symbols, being represented as VALUE(REF(symbol)) expressions.
+/* 
+/* To work around the problem of clashing uses of the data initial file,
+/* a flag indicates whether we're in an initializer or not.  When in
+/* an initializer the symbol is created but its initialization
+/* processing is deferred until such time as the data initial file
+/* is closed and the flag is reset.  In the meantime a list 
+/* SAVED_INITIAL_LIST of STRING_INITIAL_NODEs keeps track of the
+/* remaining work.
+/*
+/* Initialization of character arrays was the reason behind STRING_VOs.
+/* Instead of that, a valid string-literal initializer of a character
+/* array is recognized based on its expression tree.  Since it's
+/* the declared symbol which needs to be initialized according to the
+/* string literal in this case, the symbol and its STRING_INITIAL_NODE
+/* need to be removed.  This is a bit difficult as the symbol has
+/* already been placed on the BLOCK_NODE_ID's DCL_LIST.  The
+/* penultimate string literal symbol is tracked for this purpose,
+/* and a flag exists to indicate whether the last string literal
+/* symbol has been removed from the list.  Such a string literal
+/* symbol node and its data initial node will be reused if needed
+/* later.
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/*
+/* Note: LAST_STRING_SYMBOL is not on the BLOCK_NODE's DCL_LIST when
+/* SAVED_STRING_SYM is TRUE.  PENULT_STRING_SYMBOL is always on the
+/* DCL_LIST.
+/* ------------------------------------------------------------------- */
+
+declare
+	SAVED_INITIAL_LIST	pointer internal initial (NULL),
+	SAVED_STRING_SYM	type (BOOL_T) internal initial (FALSE),
+	PENULT_STRING_SYMBOL	type (NID_T) internal initial (NULL_NID),
+	LAST_STRING_SYMBOL	type (NID_T) internal initial (NULL_NID),
+	SAVING_STRINGS		type (BOOL_T) initial (FALSE);
+
+declare 1 STRING_INITIAL_NODE	based,
+          2 VALUE		type (POINTER_T),
+          2 INITIAL_NODE	type (NID_T),
+	  2 APPEND_NULL		type (BOOL_T),  
+          2 NEXT		type (POINTER_T);
+
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_STRING
+/*
+/* Initializes the string-literal represented by the value-node V.  
+/* V is a CONSTANT_VO node, whose LEFT is the value-node id of a value
+/* whose SPTR and SIZE represent a token-pod-spelling string (and its
+/* length) of a cooked [wide] string-literal.
+/* Returns a (new) symbol-node id for the string-literal.
+/*
+/* The value node V is taken over by INITIALIZE_STRING.  It must not
+/* have a count > 1, or be counted down (except as provided by
+/* INITIALIZE_STRING.
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_STRING: procedure (V, IS_WIDE_STRING_LITERAL)
+		   returns   (type (NID_T))
+		   external  (X_INITIALIZE_STRING);
+
+	declare
+		V			type (CXX_VID_T),
+		IS_WIDE_STRING_LITERAL	type (BOOL_T);
+	declare
+		(SP, SPTR)		type (POINTER_T),
+		VARYING_STRING		character (32767) varying based,
+		SYMBOL			type (NID_T),
+		DIN			type (NID_T),
+		LEFT			type (CXX_VID_T);
+
+	LEFT = V->CXX_VALUE_NODE.LEFT;
+	SPTR = LEFT->CXX_VALUE_NODE.SPTR;
+	SP = addr (LEFT->CXX_VALUE_NODE.SPTR->TOKEN_SPELLING_POD.SPELLING);
+
+	/*
+	/* Get symbol node to use for the string, and find the
+	/* associated data initial node. 
+	/**/
+
+	SYMBOL = MAKE_STRING_SYMBOL (SP->VARYING_STRING,
+				     IS_WIDE_STRING_LITERAL,
+				     DIN);
+
+	if ^SAVING_STRINGS then do;
+		/* Write the string to the data-initial-file */
+		call WRITE_STRING (SP->VARYING_STRING, DIN, FALSE);
+		call COUNT_DOWN_VALUE (V);
+	end;
+	else do;
+		call SAVE_STRING (SPTR, DIN, FALSE);
+
+		/* Eliminate the value nodes, but don't eliminate SPTR. */
+		if V->CXX_VALUE_NODE.COUNT ^= 1 then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		/*
+		/* Fool count-down-value so it doesn't treat this
+		/* as special constant case.
+		/**/
+		V->CXX_VALUE_NODE.OP = 0;
+		call COUNT_DOWN_VALUE (V);
+	end;
+
+	/* Return the sym-node id of the string-literal symbol */
+
+	return (SYMBOL);
+
+end INITIALIZE_STRING;
+
+/* ---------------------------------------------------------------------
+/* MAKE_INITIALIZED_STRING
+/*
+/* Initializes the string-literal represented by the given string.
+/* Returns a (new) symbol-node id for the string-literal.
+/* ------------------------------------------------------------------- */
+
+MAKE_INITIALIZED_STRING: procedure (STRING)
+			 returns   (type (NID_T))
+			 external  (X_MAKE_INITIALIZED_STRING);
+	declare
+		STRING			character (*) varying;
+	declare
+		SYMBOL			type (NID_T),
+		DIN			type (NID_T),
+		SPTR			type (POINTER_T);
+
+	/*
+	/* Get symbol node to use for the string, and find the
+	/* associated data initial node. 
+	/**/
+
+	SYMBOL = MAKE_STRING_SYMBOL (STRING, FALSE, DIN);
+
+	if ^SAVING_STRINGS then do;
+		/* Write the string to the data-initial-file */
+		call WRITE_STRING (STRING, DIN, TRUE);
+	end;
+	else do;
+		SPTR = SALLOC (length (STRING));
+		SPTR->TOKEN_SPELLING_POD.SPELLING = STRING;
+		call SAVE_STRING (SPTR, DIN, TRUE);
+	end;
+
+	/* Return the sym-node id of the string-literal symbol */
+
+	return (SYMBOL);
+
+end MAKE_INITIALIZED_STRING;
+
+/* ---------------------------------------------------------------------
+/* MAKE_STRING_SYMBOL
+/*
+/* Makes a symbol to represent the given string, suited for subsequent
+/* initialization; the type of the string is array-of-char, or if
+/* IS_WIDE_STRING_LITERAL, array-of-wchar_t.  Returns a (new or recycled)
+/* symbol-node id for the string-literal.  Sets DIN to the associated
+/* data-initial-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MAKE_STRING_SYMBOL: procedure (STRING, IS_WIDE_STRING_LITERAL, DIN)
+		    returns   (type (NID_T))
+		    internal;
+	declare
+		STRING			character (*) varying,
+		IS_WIDE_STRING_LITERAL	type (BOOL_T),
+		DIN			type (NID_T);
+	declare
+		SYMBOL			type (NID_T),
+		(P, Q)			type (POINTER_T),
+		ARRAY_TYPE		type (SHORT_T),
+		ARRAY_SIZE		type (LONG_T),
+		SIZE			type (LONG_T),
+		SIZE_UNITS		type (SHORT_T),
+		BOUNDARY		type (SHORT_T);
+
+	/* Set the type/size data for a "char" or "wchar_t" type */
+
+	if IS_WIDE_STRING_LITERAL then
+		ARRAY_TYPE = GET_WCHAR_T_TYPE_CODE ();
+	else	ARRAY_TYPE = CHAR_BT;
+
+	call SIMPLE_TYPE_SIZE (ARRAY_TYPE, SIZE, SIZE_UNITS, 0);
+
+	ARRAY_SIZE = divide (length (STRING),
+			     ROUNDU (SIZE, SIZE_UNITS, BYTES), 31);
+
+	/* Get a sym-node for the string-literal */
+
+	if ^SAVED_STRING_SYM then do;
+
+		/* Make a data-initial-node */
+
+		DIN = PENDING_DATA_INITIAL_NODE ();
+
+		/* Make a sym-node for the string-literal */
+
+		call MAKE_SYM_NODE_P
+		     (CONSTANT_SK | DATA_SK | DUMMY_SK, SYMBOL, P);
+
+		P->SYM_NODE.VALUE = DIN;
+
+		PENULT_STRING_SYMBOL = LAST_STRING_SYMBOL;
+		LAST_STRING_SYMBOL = SYMBOL;
+
+		P->SYM_NODE.BLOCK		 = BLOCK_LIST_ID;
+		P->SYM_NODE.ENCLOSING_SCOPE	 = CURRENT_GLOBAL_SCOPE;
+		P->SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (GLOBAL_SCOPE);
+
+		call SET_DATA_SECTION (SYMBOL, P);
+	end;
+	else do;
+		/*
+		/* Reuse the previous string symbol, i.e. previous string used
+		/* for initialization of array of char (symbol not needed).
+		/**/
+		SYMBOL = LAST_STRING_SYMBOL;
+		call GET_SYM_NODE (SYMBOL, P);
+		DIN = P->SYM_NODE.VALUE;
+
+		SAVED_STRING_SYM = FALSE;
+	end;
+
+	/*
+	/* +----------------------+
+	/* | BACK-END REQUIREMENT |
+	/* +----------------------+
+	/*
+	/* Install the string-literal sym-node at the head of the
+	/* outer-most (imaginary) BLOCK_NODE.DCL_LIST so that they
+	/* will be allocated before any pointer symbols which might
+	/* have been initialized to point to them.
+	/**/
+
+	if PENULT_STRING_SYMBOL = NULL_NID then do;
+		call GET_BLOCK_NODE (BLOCK_LIST_ID, Q);
+		P->SYM_NODE.BROTHER = Q->BLOCK_NODE.DCL_LIST;
+		Q->BLOCK_NODE.DCL_LIST = SYMBOL;
+		call RELEASE_BLOCK_NODE (BLOCK_LIST_ID);
+	end;
+	else do;
+		call GET_SYM_NODE (PENULT_STRING_SYMBOL, Q);
+		P->SYM_NODE.BROTHER = Q->SYM_NODE.BROTHER;
+		Q->SYM_NODE.BROTHER = SYMBOL;
+		call RELEASE_SYM_NODE (PENULT_STRING_SYMBOL);
+	end;
+
+	P->SYM_NODE.TYPE	  = GET_SIMPLE_ARRAY_TYPE
+				    (ARRAY_TYPE, ARRAY_SIZE);
+
+	call GET_TOP_TYPE (P->SYM_NODE.TYPE, P->SYM_NODE.TOP_TYPE);
+
+	call TYPE_SIZE (P->SYM_NODE.TYPE,
+			P->SYM_NODE.SIZE, SIZE_UNITS, BOUNDARY);
+
+	P->SYM_NODE.SIZE_UNITS	  = byte (SIZE_UNITS);
+	P->SYM_NODE.BOUNDARY	  = byte (BOUNDARY);
+	P->SYM_NODE.INITIAL_AT	  = TRUE;
+	P->SYM_NODE.DEFINED	  = TRUE;
+	P->SYM_NODE.REFERENCED	  = TRUE;
+	P->SYM_NODE.VARIABLE_AT	  = TRUE;
+
+	call RELEASE_SYM_NODE (SYMBOL);
+
+	/* Return the sym-node id of the string-literal symbol */
+
+	return (SYMBOL);
+
+end MAKE_STRING_SYMBOL;
+
+/* ---------------------------------------------------------------------
+ * START_SAVING_STRINGS
+ * 
+ * Call this before opening the data initial file.
+ * This prevents calls to INITIALIZE_STRING from interfering by
+ * trying to do initialization of strings.
+ * ------------------------------------------------------------------- */
+
+START_SAVING_STRINGS: procedure
+		      external (X_START_SAVING_STRINGS);
+
+	SAVING_STRINGS = TRUE;
+
+end START_SAVING_STRINGS;
+
+/* ---------------------------------------------------------------------
+ * SAVE_STRING
+ *
+ * Pointers to strings within aggregates require that writing the
+ * actual string to IDATA space be deferred until later since writing
+ * at this point in time will trash the current aggregate being
+ * initialized.
+ *
+ * Note the initialization of a string literal symbol on the
+ * SAVED_INITIAL_LIST of STRING_INITIAL_NODEs, for deferred
+ * processing with the data initial file.
+ *
+ * SP is a pointer to the token pod with the initial value.
+ * INITIAL is the data initial node associated with the symbol.
+ * APPEND_NULL tells whether to append a null to SP's string.
+ * ------------------------------------------------------------------- */
+
+SAVE_STRING: procedure (SP, INITIAL, APPEND_NULL)
+	     internal;
+
+	declare
+		SP		type (POINTER_T),
+		INITIAL		type (NID_T),
+		APPEND_NULL	type (BOOL_T);
+	declare
+		P		type (POINTER_T);
+
+	allocate STRING_INITIAL_NODE set (P);
+	P->STRING_INITIAL_NODE.VALUE = SP;
+	P->STRING_INITIAL_NODE.INITIAL_NODE = INITIAL;
+	P->STRING_INITIAL_NODE.NEXT = SAVED_INITIAL_LIST;
+	P->STRING_INITIAL_NODE.APPEND_NULL = APPEND_NULL;
+	SAVED_INITIAL_LIST = P;
+
+end SAVE_STRING;
+
+/* ---------------------------------------------------------------------
+ * STOP_SAVING_STRINGS
+ *
+ * Call this after closing the data initial file.
+ * All clear to use the data initial file to do initialization of
+ * strings; deferred string initialzation is processed now.
+ * ------------------------------------------------------------------- */
+
+STOP_SAVING_STRINGS: procedure
+		     external (X_STOP_SAVING_STRINGS);
+
+	declare
+		S		type (POINTER_T),
+		SP		type (POINTER_T);
+
+	/*
+	/* Writes the character string into IDATA space for the 
+	/* corresponding string symbol in the SAVED_SYMBOL_LIST. 
+	/* <see strsym.pl1 & dinit.pl1>
+	/**/
+	do while (SAVED_INITIAL_LIST ^= NULL);
+		S = SAVED_INITIAL_LIST;
+		SAVED_INITIAL_LIST = S->STRING_INITIAL_NODE.NEXT;
+		SP = S->STRING_INITIAL_NODE.VALUE;
+		
+		call WRITE_STRING (SP->TOKEN_SPELLING_POD.SPELLING,
+				   S->STRING_INITIAL_NODE.INITIAL_NODE,
+				   S->STRING_INITIAL_NODE.APPEND_NULL);
+
+		call SFREE (SP);
+		free S->STRING_INITIAL_NODE;
+	end;
+
+	SAVING_STRINGS = FALSE;
+
+end STOP_SAVING_STRINGS;
+
+
+/* ---------------------------------------------------------------------
+ * WRITE_STRING
+ *
+ * Write the string to the data initial file, using the
+ * already-allocated data initial node DIN.  DIN shall have been
+ * created with PENDING_DATA_INITIAL_NODE.
+ *
+ * If APPEND_NULL_BYTE, the string written has a null appended after
+ * what's in STRING.
+ * ------------------------------------------------------------------- */
+
+WRITE_STRING: procedure (STRING, DIN, APPEND_NULL_BYTE)
+	      internal;
+
+	declare
+		STRING			character (*) varying,
+		DIN			type (NID_T),
+		APPEND_NULL_BYTE	type (BOOL_T);
+	declare
+		(P, Q)			type (POINTER_T),
+		DIF			type (DIFILE_T),
+		NULL_BYTE		character (1),
+		STRING_LENGTH		type (SHORT_T);
+	declare
+		NEW_VARYING_STRING	character (STRING_LENGTH) varying based,
+		1 VARYING_STRING	based,
+		  2 VARYING_STRING_U	union,
+		    3 WHOLE		character (32767) varying,
+		    3 STRING_DATA,
+		      4 SIZE		type (SHORT_T),
+		      4 TEXT		character (STRING_LENGTH);
+
+	/* Open the data-initial-file */
+
+	call OPEN_DATA_INITIAL_FILE (DIF);
+
+	/* Set the data-initial-node's location. */
+
+	call LOCATE_DATA_INITIAL_NODE (DIN, DIF);
+
+	/* Write the string to the data-initial-file */
+
+	STRING_LENGTH = length (STRING);
+
+	if AM_CROSS then do;
+		allocate NEW_VARYING_STRING set (P);
+		P->VARYING_STRING.WHOLE = STRING;
+		Q = addr (P->VARYING_STRING.TEXT);
+		call TARGET_CONVERSION (Q, 0, STRING_LENGTH);
+		call APPEND_DATA_INITIAL_FILE (DIF, Q, (STRING_LENGTH));
+		free P->VARYING_STRING;
+	end;
+	else do;
+		P = addr (addr (STRING)->VARYING_STRING.TEXT);
+		call APPEND_DATA_INITIAL_FILE (DIF, P, (STRING_LENGTH));
+	end;
+
+	/* Append the null terminator if desired */
+
+	if APPEND_NULL_BYTE then do;
+		NULL_BYTE = byte (0);
+		call APPEND_DATA_INITIAL_FILE (DIF, addr (NULL_BYTE), 1);
+		STRING_LENGTH = STRING_LENGTH + 1;
+	end;
+
+	/* Set the data-initial-file */
+
+	call SET_DATA_INITIAL_FILE (DIF);
+
+	/* Close the data-initial-file */
+
+	call CLOSE_DATA_INITIAL_FILE (DIF);
+
+end WRITE_STRING;
+
+/* ---------------------------------------------------------------------
+ * RECYCLE_STRING_SYMBOL
+ *
+ * Check whether the expression VID is a plain string literal
+ * with a symbol node whose initialization processing has been deferred,
+ * because we're in an initializer.
+ * If not, return FALSE.
+ * Otherwise, for consistency, verify that the expression's symbol
+ * is indeed the last symbol on
+ * the DCL_LIST of the block, and that the symbol SID designates
+ * was destined to be initialized by the last-saved string initial node.
+ *
+ * Sets SPTR pointer to the token pod for the string value associated
+ * with the symbol.  It becomes the responsibility of the caller to
+ * SFREE this pointer.  Also sets THIS_SIZE to the size on the REF.
+ * Counts down VID.
+ *
+ * The last-saved string initial node is yanked off the 
+ * initial list (since its symbol and relocation info are not 
+ * required).  The allocated symbol remains LAST_STRING_SYMBOL,
+ * and is available for reuse in MAKE_STRING_SYMBOL.
+ * ------------------------------------------------------------------- */
+
+RECYCLE_STRING_SYMBOL: procedure (VID, SPTR, THIS_SIZE)
+		       returns 	 (type (NID_T))
+		       external  (X_RECYCLE_STRING_SYMBOL);
+
+	declare
+		VID		type (CXX_VID_T),
+		SPTR		type (POINTER_T),
+		THIS_SIZE	type (LONG_T);
+	declare
+		SID		type (NID_T),
+		(P, Q)		type (POINTER_T);
+
+	if ^(VID->CXX_VALUE_NODE.ARRAY_DESIGNATOR &
+	     VID->CXX_VALUE_NODE.OP = ADDR_VO) then
+		return (FALSE);
+	if ^(VID->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.OP = REF_VO) then
+		return (FALSE);
+	SID = VID->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.LEFT_NID;
+	if SID ^= LAST_STRING_SYMBOL then
+		return (FALSE);
+	if SAVED_STRING_SYM then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	THIS_SIZE =
+	ROUNDU (VID->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.SIZE,
+		rank (VID->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.SIZE_UNITS),
+		BYTES);
+
+	SAVED_STRING_SYM = TRUE;
+
+	call GET_SYM_NODE (SID, P);
+	if    P->SYM_NODE.VALUE 
+	   ^= SAVED_INITIAL_LIST->STRING_INITIAL_NODE.INITIAL_NODE then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	/* Remove the symbol from the outer block's DCL_LIST. */
+
+	if PENULT_STRING_SYMBOL = NULL_NID then do;
+		call GET_BLOCK_NODE (BLOCK_LIST_ID, Q);
+		Q->BLOCK_NODE.DCL_LIST = P->SYM_NODE.BROTHER;
+		call RELEASE_BLOCK_NODE (BLOCK_LIST_ID);
+	end;
+	else do;
+		call GET_SYM_NODE (PENULT_STRING_SYMBOL, Q);
+		if Q->SYM_NODE.BROTHER ^= SID then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		Q->SYM_NODE.BROTHER = P->SYM_NODE.BROTHER;
+		call RELEASE_SYM_NODE (PENULT_STRING_SYMBOL);
+	end;
+	P->SYM_NODE.BROTHER = NULL_NID;
+	call RELEASE_SYM_NODE (SID);
+
+	/*
+	/* Eliminate the last node on the list of string symbols
+	/* to initialize, and grab the token pod pointer.
+	/**/
+	P = SAVED_INITIAL_LIST;
+	SPTR = P->STRING_INITIAL_NODE.VALUE;
+	if P->STRING_INITIAL_NODE.APPEND_NULL then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	SAVED_INITIAL_LIST = P->STRING_INITIAL_NODE.NEXT;
+	free P->STRING_INITIAL_NODE;
+
+	call COUNT_DOWN_VALUE (VID);
+
+	return (TRUE);
+
+end RECYCLE_STRING_SYMBOL;
+

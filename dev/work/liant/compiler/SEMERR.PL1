@@ -1,0 +1,101 @@
+
+/* ---- SEMERR.PL1, put a semantic error message ---- */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  02.02.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)SEMERR  000  02/02/90  (c) 1990 Language Processors, Inc.');
+
+
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+
+%include 'incfil';
+%include GLOBAL_IN;             /* Globals, utilities   */
+%include UTILITYDCLS_IN;
+%include C_STANDARD_DEFS_IN;
+%include C_EXTERNAL_NAME_MAP_IN;
+%include C_SOURCE_MGR_PKG;
+%include C_ERROR_PKG;
+/*
+%include C_NODE_MGR_PKG;
+%include C_SYMBOL_TABLE_IN;
+%include C_TYPE_MAP_IN;
+%include C_TARGET_HARDWARE_IN;
+%include C_VALUE_NODE_IN;
+%include C_VALUE1_IN;
+%include C_VOP_DEFS_IN;
+%include C_TOKEN_TYPE_CODES_IN;
+%include C_PAR_EXPRESSION_PKG;
+%include C_CXXVAL_U_PKG;
+/* %include C_ENTRIES_PKG; */
+%include C_TYPE_INFO_PKG;
+%include C_DEBUG_SWITCHES_IN;
+%include C_PUTDBG_PKG;
+%include C_EGETV_PKG;
+%include C_CUPV_PKG;
+%include C_FOLDV_PKG;
+%include C_CONVRT_PKG;
+%include C_CDOWNV_PKG;
+%include C_CONSTR_PKG;
+/* %include VALUE_UTILS_IN; */
+%include GBLVALUES_IN;
+%include VALENT_IN;
+%include OPERATOR_UTILS_DCL;
+
+
+SEMERR: procedure(ERR,SEV,MSG)
+	external (X_SEMERR);
+
+
+
+Declare /* parameters */
+        ERR     fixed bin(15),
+        SEV     fixed bin(15),
+        MSG     char(LINE_SIZE) varying;
+
+Declare COLUMN  fixed bin(15);
+
+        if SILENT & SEV <= 1
+           then return;
+
+        call PUTCTX(COLUMN, SEMANTIC);
+        /*
+        /* ERR and DIAG_LINE_ID passed by value for backward compatibility
+        /*  with the "old Ults/Globals".
+        /**/
+        call PUTXER(SEMANTIC, COLUMN, SEV, (ERR), 
+                   (CURRENT_SOURCE.LINE), CURRENT_SOURCE.FILE);
+        call PUTERR(MSG);
+        call PUTERR('');
+
+        if SEV >= 4
+           then goto ABORT_EXIT;
+
+        end; /* SEMERR */
+
+/*--------------------------------------------*/
+

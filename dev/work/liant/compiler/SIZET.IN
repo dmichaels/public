@@ -1,0 +1,170 @@
+
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  02.07.90  TLF  001  Added back-end type to CG_TYPE_TABLE for
+ *                      array and function. (ARRAY_DT and FUNCTION_DT).
+ *                      Changed entries for REFERENCE_DT, POINTER_DT,
+ *                      and MEMBER_POINTER_DT in CG_TYPE_TABLE to 0.
+ *  01.30.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 EXP_TYPMAP		static external,
+
+  2 SIZE_TABLE 		(LB_ALL_TYPES : HB_ALL_TYPES)
+			type (SHORT_T) initial (
+
+	/* NULL_BT		*/	  0
+	/* VOID_BT		*/	, 0
+	/* LOGICAL_BT		*/	, INT_TYPE_SIZE
+	/* BIT_FIELD_BT		*/	, FIELD_INT_SIZE
+	/* ENUMERATOR_BT	*/	, INT_TYPE_SIZE
+	/* CHAR_BT		*/	, CHAR_TYPE_SIZE
+	/* SCHAR_BT		*/	, CHAR_TYPE_SIZE
+	/* UCHAR_BT		*/	, CHAR_TYPE_SIZE
+	/* SHORT_BT		*/	, SHORT_TYPE_SIZE
+	/* SSHORT_BT		*/	, SHORT_TYPE_SIZE
+	/* USHORT_BT		*/	, SHORT_TYPE_SIZE
+	/* INT_BT		*/	, INT_TYPE_SIZE
+	/* SINT_BT		*/	, INT_TYPE_SIZE
+	/* UINT_BT		*/	, INT_TYPE_SIZE
+	/* LONG_BT		*/	, LONG_TYPE_SIZE
+	/* SLONG_BT		*/	, LONG_TYPE_SIZE
+	/* ULONG_BT		*/	, LONG_TYPE_SIZE
+	/* FLOAT_BT		*/	, FLOAT_TYPE_SIZE
+	/* DOUBLE_BT		*/	, FLOAT_TYPE_SIZE
+	/* LDOUBLE_BT		*/	, FLOAT_TYPE_SIZE
+	/* CLASS_BT		*/	, 0
+	/* STRUCT_BT		*/	, 0
+	/* UNION_BT		*/	, 0
+	/* ENUM_BT		*/	, 0
+	/* TYPEDEF_BT		*/	, 0
+	/* REFERENCE_DT		*/	, PTR_TYPE_SIZE
+	/* POINTER_DT		*/	, PTR_TYPE_SIZE
+	/* MEMBER_POINTER_DT	*/	, PTR_TYPE_SIZE
+	/* ARRAY_DT		*/	, 0
+	/* FUNCTION_DT		*/	, 0
+    ),
+
+  2 BOUNDARY_TABLE 	(LB_ALL_TYPES : HB_ALL_TYPES)
+			type (SHORT_T) initial (
+
+	/* NULL_BT		*/	  0
+	/* VOID_BT		*/	, 0
+	/* LOGICAL_BT		*/	, INT_TYPE_BOUNDARY
+	/* BIT_FIELD_BT		*/	, FIELD_INT_BOUNDARY
+	/* ENUMERATOR_BT	*/	, INT_TYPE_BOUNDARY
+	/* CHAR_BT		*/	, CHAR_TYPE_BOUNDARY
+	/* SCHAR_BT		*/	, CHAR_TYPE_BOUNDARY
+	/* UCHAR_BT		*/	, CHAR_TYPE_BOUNDARY
+	/* SHORT_BT		*/	, SHORT_TYPE_BOUNDARY
+	/* SSHORT_BT		*/	, SHORT_TYPE_BOUNDARY
+	/* USHORT_BT		*/	, SHORT_TYPE_BOUNDARY
+	/* INT_BT		*/	, INT_TYPE_BOUNDARY
+	/* SINT_BT		*/	, INT_TYPE_BOUNDARY
+	/* UINT_BT		*/	, INT_TYPE_BOUNDARY
+	/* LONG_BT		*/	, LONG_TYPE_BOUNDARY
+	/* SLONG_BT		*/	, LONG_TYPE_BOUNDARY
+	/* ULONG_BT		*/	, LONG_TYPE_BOUNDARY
+	/* FLOAT_BT		*/	, FLOAT_TYPE_BOUNDARY
+	/* DOUBLE_BT		*/	, FLOAT_TYPE_BOUNDARY
+	/* LDOUBLE_BT		*/	, FLOAT_TYPE_BOUNDARY
+	/* CLASS_BT		*/	, 0
+	/* STRUCT_BT		*/	, 0
+	/* UNION_BT		*/	, 0
+	/* ENUM_BT		*/	, 0
+	/* TYPEDEF_BT		*/	, 0
+	/* REFERENCE_DT		*/	, PTR_TYPE_BOUNDARY
+	/* POINTER_DT		*/	, PTR_TYPE_BOUNDARY
+	/* MEMBER_POINTER_DT	*/	, PTR_TYPE_BOUNDARY
+	/* ARRAY_DT		*/	, 0
+	/* FUNCTION_DT		*/	, 0
+    ),
+
+  2 CG_TYPE_TABLE 	(LB_ALL_TYPES : HB_ALL_TYPES)
+			type (SHORT_T) initial (
+
+	/* NULL_BT		*/	  0
+	/* VOID_BT		*/	, 0
+	/* LOGICAL_BT		*/	, BIT_ALIGNED_
+	/* BIT_FIELD_BT		*/	, BIT_ALIGNED_
+	/* ENUMERATOR_BT	*/	, FIXED_BIN_
+	/* CHAR_BT		*/	, CHAR_
+	/* SCHAR_BT		*/	, CHAR_
+	/* UCHAR_BT		*/	, CHAR_
+	/* SHORT_BT		*/	, FIXED_BIN_
+	/* SSHORT_BT		*/	, FIXED_BIN_
+	/* USHORT_BT		*/	, FIXED_BIN_UNSIGNED_
+	/* INT_BT		*/	, FIXED_BIN_
+	/* SINT_BT		*/	, FIXED_BIN_
+	/* UINT_BT		*/	, FIXED_BIN_UNSIGNED_
+	/* LONG_BT		*/	, FIXED_BIN_
+	/* SLONG_BT		*/	, FIXED_BIN_
+	/* ULONG_BT		*/	, FIXED_BIN_UNSIGNED_
+	/* FLOAT_BT		*/	, FLOAT_BIN_
+	/* DOUBLE_BT		*/	, FLOAT_BIN_
+	/* LDOUBLE_BT		*/	, FLOAT_BIN_
+	/* CLASS_BT		*/	, 0
+	/* STRUCT_BT		*/	, 0
+	/* UNION_BT		*/	, 0
+	/* ENUM_BT		*/	, 0
+	/* TYPEDEF_BT		*/	, 0
+	/* REFERENCE_DT		*/	, POINTER_
+	/* POINTER_DT		*/	, POINTER_
+	/* MEMBER_POINTER_DT	*/	, POINTER_
+	/* ARRAY_DT		*/	, ARRAY_
+	/* FUNCTION_DT		*/	, ENTRY_
+    ),
+
+  2 CG_SIZE_TABLE 	(LB_ALL_TYPES : HB_ALL_TYPES)
+			type (SHORT_T) initial (
+
+	/* NULL_BT		*/	  0
+	/* VOID_BT		*/	, 0
+	/* LOGICAL_BT		*/	, 1
+	/* BIT_FIELD_BT		*/	, 1
+	/* ENUMERATOR_BT	*/	, INT_P
+	/* CHAR_BT		*/	, 1
+	/* SCHAR_BT		*/	, 1
+	/* UCHAR_BT		*/	, 1
+	/* SHORT_BT		*/	, SHORT_P
+	/* SSHORT_BT		*/	, SHORT_P
+	/* USHORT_BT		*/	, USHORT_P
+	/* INT_BT		*/	, INT_P
+	/* SINT_BT		*/	, INT_P
+	/* UINT_BT		*/	, UINT_P
+	/* LONG_BT		*/	, LONG_P
+	/* SLONG_BT		*/	, LONG_P
+	/* ULONG_BT		*/	, ULONG_P
+	/* FLOAT_BT		*/	, FLOAT_P
+	/* DOUBLE_BT		*/	, DOUBLE_P
+	/* LDOUBLE_BT		*/	, DOUBLE_P
+	/* CLASS_BT		*/	, 0
+	/* STRUCT_BT		*/	, 0
+	/* UNION_BT		*/	, 0
+	/* ENUM_BT		*/	, 0
+	/* TYPEDEF_BT		*/	, 0
+	/* REFERENCE_DT		*/	, 0
+	/* POINTER_DT		*/	, 0
+	/* MEMBER_POINTER_DT	*/	, 0
+	/* ARRAY_DT		*/	, 0
+	/* FUNCTION_DT		*/	, 0
+    );

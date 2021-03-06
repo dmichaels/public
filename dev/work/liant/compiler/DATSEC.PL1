@@ -1,0 +1,422 @@
+/* C++ datsec.pl1 - #pragma data_section implementation */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.30.92  DGM  003 	Hook this stuff on SW_PRAGMA_DATA_SECTION.
+ *  07.01.92  DGM  002R	Added CLEANUP_DATA_SECTIONS.
+ *  06.29.92  DGM  002 	Moved DATA_SECTION_LIST to global/gglobl.in.
+ *  06.25.92  DGM  001 	Updated.
+ *  06.18.92  DGM  000 	Original (for Sequoia LPI-C++).
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 07.01.92 002 DATSEC');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_PRAGMA_DATA_SECTION_IN;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T		character (512) varying based;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+DEFAULT_DATA_SECTION	type (NID_T) static internal initial (NULL_NID);
+
+/* ---------------------------------------------------------------------
+/* SET_CURRENT_DATA_SECTION
+/*
+/* Set the data-section field for the sym-node of the symbol currently
+/* paged-in.  Set the symbol field of the current data-secton-node to
+/* to be the sym-node id of the symbol currently paged in (this is not
+/* a list and the back-end doesn't even care which symbol, it just needs
+/* a handle on *one* symbol in the data-section).
+/* ------------------------------------------------------------------- */
+
+SET_CURRENT_DATA_SECTION: procedure external (X_SET_CURRENT_DATA_SECTION);
+
+	declare P type (POINTER_T);
+
+	if ^SW_IMPLICIT_PRAGMA_DATA_SECTION then
+		return;
+
+	if CURRENT_DATA_SECTION ^= NULL_NID then do;
+		SYM_NODE.DATA_SECTION = CURRENT_DATA_SECTION;
+		call GET_DATA_SECTION_NODE (CURRENT_DATA_SECTION, P);
+		P->DATA_SECTION_NODE.SYMBOL = CURRENT_NODE_ID;
+		call RELEASE_DATA_SECTION_NODE (CURRENT_DATA_SECTION);
+	end;
+
+end SET_CURRENT_DATA_SECTION;
+
+/* ---------------------------------------------------------------------
+/* SET_DATA_SECTION
+/* ------------------------------------------------------------------- */
+
+SET_DATA_SECTION: procedure (SYMBOL, SYMBOL_PTR)
+		  external  (X_SET_DATA_SECTION);
+
+	declare
+		SYMBOL		type (NID_T),
+		SYMBOL_PTR	type (POINTER_T);
+	declare
+		P		type (POINTER_T);
+
+	if ^SW_IMPLICIT_PRAGMA_DATA_SECTION then
+		return;
+
+	if CURRENT_DATA_SECTION ^= NULL_NID then do;
+		SYMBOL_PTR->SYM_NODE.DATA_SECTION = CURRENT_DATA_SECTION;
+		call GET_DATA_SECTION_NODE (CURRENT_DATA_SECTION, P);
+		P->DATA_SECTION_NODE.SYMBOL = SYMBOL;
+		call RELEASE_DATA_SECTION_NODE (CURRENT_DATA_SECTION);
+	end;
+
+end SET_DATA_SECTION;
+
+/* ---------------------------------------------------------------------
+/* SET_INITIAL_DATA_SECTION
+/* ------------------------------------------------------------------- */
+
+SET_INITIAL_DATA_SECTION: procedure external (X_SET_INITIAL_DATA_SECTION);
+
+	declare P type (POINTER_T);
+
+	if ^SW_IMPLICIT_PRAGMA_DATA_SECTION then
+		return;
+
+	if DEFAULT_DATA_SECTION = NULL_NID then do;
+		call NEW_DATA_SECTION_NODE (DEFAULT_DATA_SECTION, P);
+		P->DATA_SECTION_NODE.NAME	 = NULL_NID;
+		P->DATA_SECTION_NODE.ADDRESS	 = 0;
+		P->DATA_SECTION_NODE.ALIGNMENT	 = 0;
+		P->DATA_SECTION_NODE.ATTRIBUTES	 = 0;
+		P->DATA_SECTION_NODE.LINE	 = 0;
+		P->DATA_SECTION_NODE.FILE	 = NULL_NID;
+		P->DATA_SECTION_NODE.LOCATION	 = 0;
+		P->DATA_SECTION_NODE.SYMBOL	 = NULL_NID;
+		P->DATA_SECTION_NODE.SECTION	 = 0;
+		P->DATA_SECTION_NODE.NEXT	 = DATA_SECTION_LIST;
+		DATA_SECTION_LIST = DEFAULT_DATA_SECTION;
+		call RELEASE_DATA_SECTION_NODE (DEFAULT_DATA_SECTION);
+		CURRENT_DATA_SECTION = DEFAULT_DATA_SECTION;
+	end;
+
+end SET_INITIAL_DATA_SECTION;
+
+/* ---------------------------------------------------------------------
+/* REGISTER_PRAGMA_DATA_SECTION
+/* ------------------------------------------------------------------- */
+
+REGISTER_PRAGMA_DATA_SECTION: procedure (DSP)
+			      external  (X_REGISTER_PRAGMA_DATA_SECTION);
+	declare
+		DSP		type (POINTER_T);
+	declare
+		NEW_DSN		type (NID_T),
+		NEW_DSP		type (POINTER_T),
+		THIS_DSN	type (NID_T),
+		THIS_DSP	type (POINTER_T);
+	declare
+		DEFAULT_NAME_1	type (NID_T)
+				static internal initial (NULL_NID),
+		DEFAULT_NAME_2	type (NID_T)
+				static internal initial (NULL_NID);
+		
+	if ^SW_IMPLICIT_PRAGMA_DATA_SECTION then
+		return;
+
+	if DSP = null () then
+		return;
+
+	/*
+	/* See if this is the default data section which may be
+	/* specified as "default", ".data", or with an empty name.
+	/**/
+
+	if DEFAULT_NAME_1 = NULL_NID then do;
+		DEFAULT_NAME_1 = FORM_IDENTIFIER_TOKEN ('.data');
+		DEFAULT_NAME_2 = FORM_IDENTIFIER_TOKEN ('default');
+	end;
+
+	if (DSP->DATA_SECTION_NODE.NAME = DEFAULT_NAME_1) |
+	   (DSP->DATA_SECTION_NODE.NAME = DEFAULT_NAME_2) |
+	   (DSP->DATA_SECTION_NODE.NAME = NULL_NID) then do;
+		/*
+		/* Here, the default data
+		/* section (.data) was specified.
+		/**/
+		if (DSP->DATA_SECTION_NODE.ATTRIBUTES ^= 0) |
+		   (DSP->DATA_SECTION_NODE.ALIGNMENT ^= 0) |
+		   (DSP->DATA_SECTION_NODE.ADDRESS ^= 0) then do;
+			/*
+			/* Error; the default data section (.data)
+			/* may not be specified with any attributes.
+			/**/
+			call SEMANTIC_ERROR (ERR_PRAGMA_DATASEC_DEFAULT);
+			DSP->DATA_SECTION_NODE.ATTRIBUTES = 0;
+			DSP->DATA_SECTION_NODE.ALIGNMENT = 0;
+			DSP->DATA_SECTION_NODE.ADDRESS = 0;
+		end;
+		if DEFAULT_DATA_SECTION ^= NULL_NID then
+			CURRENT_DATA_SECTION = DEFAULT_DATA_SECTION;
+		else	call SET_INITIAL_DATA_SECTION ();
+		return;
+	end;
+
+	call LOOKUP_DATA_SECTION (DSP->DATA_SECTION_NODE.NAME,
+				  THIS_DSN, THIS_DSP);
+
+	if THIS_DSN = NULL_NID then do;
+		/*
+		/* Here, we have a never before seen data section name.
+		/**/
+		call NEW_DATA_SECTION_NODE (NEW_DSN, NEW_DSP);
+		NEW_DSP->DATA_SECTION_NODE.NAME
+			= DSP->DATA_SECTION_NODE.NAME;
+		NEW_DSP->DATA_SECTION_NODE.ATTRIBUTES
+			= DSP->DATA_SECTION_NODE.ATTRIBUTES;
+		NEW_DSP->DATA_SECTION_NODE.ALIGNMENT
+			= DSP->DATA_SECTION_NODE.ALIGNMENT;
+		NEW_DSP->DATA_SECTION_NODE.ADDRESS
+			= DSP->DATA_SECTION_NODE.ADDRESS;
+		NEW_DSP->DATA_SECTION_NODE.LINE
+			= DSP->DATA_SECTION_NODE.LINE;
+		NEW_DSP->DATA_SECTION_NODE.FILE
+			= CURRENT_SOURCE.FILE;
+		free DSP->DATA_SECTION_NODE;
+		NEW_DSP->DATA_SECTION_NODE.LOCATION
+			= 0;
+		NEW_DSP->DATA_SECTION_NODE.SYMBOL
+			= NULL_NID;
+		NEW_DSP->DATA_SECTION_NODE.SECTION
+			= 0;
+		NEW_DSP->DATA_SECTION_NODE.NEXT
+			= DATA_SECTION_LIST;
+		DATA_SECTION_LIST = NEW_DSN;
+		call RELEASE_DATA_SECTION_NODE (NEW_DSN);
+		CURRENT_DATA_SECTION = NEW_DSN;
+		return;
+	end;
+
+	/* Here, we have seen this data section name before */
+
+	if (THIS_DSP->DATA_SECTION_NODE.ATTRIBUTES ^=
+	    DSP->DATA_SECTION_NODE.ATTRIBUTES) &
+	   (THIS_DSP->DATA_SECTION_NODE.ATTRIBUTES ^= 0) &
+	   (DSP->DATA_SECTION_NODE.ATTRIBUTES ^= 0) then do;
+		/*
+		/* Error; this data section has been previously
+		/* defined with different attributes.
+		/**/
+		call SEMANTIC_ERROR_II
+		     (ERR_PRAGMA_DATASEC_ATTRIBUTES,
+		      TOKEN_NAME (DSP->DATA_SECTION_NODE.NAME),
+		      DATA_SECTION_LOCATION (DSP));
+	end;
+	if (THIS_DSP->DATA_SECTION_NODE.ALIGNMENT ^=
+	    DSP->DATA_SECTION_NODE.ALIGNMENT) &
+	   (THIS_DSP->DATA_SECTION_NODE.ALIGNMENT ^= 0) &
+	   (DSP->DATA_SECTION_NODE.ALIGNMENT ^= 0) then do;
+		/*
+		/* Error; this data section has been previously
+		/* defined with a different alignment constraint.
+		/**/
+		call SEMANTIC_ERROR_II
+		     (ERR_PRAGMA_DATASEC_ALIGNMENT,
+		      TOKEN_NAME (DSP->DATA_SECTION_NODE.NAME),
+		      DATA_SECTION_LOCATION (DSP));
+	end;
+	if (THIS_DSP->DATA_SECTION_NODE.ADDRESS ^=
+	    DSP->DATA_SECTION_NODE.ADDRESS) &
+	   (THIS_DSP->DATA_SECTION_NODE.ADDRESS ^= 0) &
+	   (DSP->DATA_SECTION_NODE.ADDRESS ^= 0) then do;
+		/*
+		/* Error; this data section has been previously
+		/* defined with a different alignment constraint.
+		/**/
+		call SEMANTIC_ERROR_II
+		     (ERR_PRAGMA_DATASEC_ADDRESS,
+		      TOKEN_NAME (DSP->DATA_SECTION_NODE.NAME),
+		      DATA_SECTION_LOCATION (DSP));
+	end;
+	if (THIS_DSP->DATA_SECTION_NODE.ATTRIBUTES = 0) |
+	   (DSP->DATA_SECTION_NODE.ATTRIBUTES = 0) then do;
+		THIS_DSP->DATA_SECTION_NODE.ATTRIBUTES =
+			THIS_DSP->DATA_SECTION_NODE.ATTRIBUTES +
+			DSP->DATA_SECTION_NODE.ATTRIBUTES;
+	end;
+	if (THIS_DSP->DATA_SECTION_NODE.ALIGNMENT = 0) |
+	   (DSP->DATA_SECTION_NODE.ALIGNMENT = 0) then do;
+		THIS_DSP->DATA_SECTION_NODE.ALIGNMENT =
+			THIS_DSP->DATA_SECTION_NODE.ALIGNMENT +
+			DSP->DATA_SECTION_NODE.ALIGNMENT;
+	end;
+	if (THIS_DSP->DATA_SECTION_NODE.ADDRESS = 0) |
+	   (DSP->DATA_SECTION_NODE.ADDRESS = 0) then do;
+		THIS_DSP->DATA_SECTION_NODE.ADDRESS =
+			THIS_DSP->DATA_SECTION_NODE.ADDRESS +
+			DSP->DATA_SECTION_NODE.ADDRESS;
+	end;
+
+	call RELEASE_DATA_SECTION_NODE (THIS_DSN);
+
+	CURRENT_DATA_SECTION = THIS_DSN;
+
+end REGISTER_PRAGMA_DATA_SECTION;
+
+/* ---------------------------------------------------------------------
+/* CLEANUP_DATA_SECTIONS
+/* ------------------------------------------------------------------- */
+
+CLEANUP_DATA_SECTIONS: procedure () external (X_CLEANUP_DATA_SECTIONS);
+
+	declare
+		(D, NEXT_D, PREV_D)	type (NID_T),
+		(DP, P)			type (POINTER_T);
+
+	if ^SW_IMPLICIT_PRAGMA_DATA_SECTION then
+		return;
+
+	PREV_D = NULL_NID;
+
+	do D = DATA_SECTION_LIST repeat (NEXT_D) while (D ^= NULL_NID);
+		call GET_DATA_SECTION_NODE (D, DP);
+		NEXT_D = DP->DATA_SECTION_NODE.NEXT;
+		if DP->DATA_SECTION_NODE.SYMBOL = NULL_NID then do;
+			/*
+			/* Here, no symbols were put into this
+			/* data section; delete it from the list.
+			/**/
+			if PREV_D ^= NULL_NID then do;
+				call GET_DATA_SECTION_NODE (PREV_D, P);
+				P->DATA_SECTION_NODE.NEXT = NEXT_D;
+				call RELEASE_DATA_SECTION_NODE (PREV_D);
+			end;
+			else	DATA_SECTION_LIST = NEXT_D;
+			call GET_DATA_SECTION_NODE (PREV_D, DP);
+		end;
+		PREV_D = D;
+		call RELEASE_DATA_SECTION_NODE (D);
+	end;
+
+end CLEANUP_DATA_SECTIONS;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_DATA_SECTION
+/* ------------------------------------------------------------------- */
+
+LOOKUP_DATA_SECTION: procedure (NAME, FOUND_DSN, FOUND_DSP) internal;
+
+	declare
+		NAME		type (NID_T),
+		FOUND_DSN	type (NID_T),
+		FOUND_DSP	type (POINTER_T);
+	declare
+		DSN		type (NID_T),
+		NEXT_DSN	type (NID_T),
+		DSP		type (POINTER_T);
+
+	do DSN = DATA_SECTION_LIST repeat NEXT_DSN while (DSN ^= NULL_NID);
+		call GET_DATA_SECTION_NODE_R (DSN, DSP);
+		if DSP->DATA_SECTION_NODE.NAME = NAME then do;
+			FOUND_DSN = DSN;
+			FOUND_DSP = DSP;
+			return;
+		end;
+		NEXT_DSN = DSP->DATA_SECTION_NODE.NEXT;
+		call RELEASE_DATA_SECTION_NODE (DSN);
+	end;
+	FOUND_DSN = NULL_NID;
+	FOUND_DSP = null ();
+	return;
+
+end LOOKUP_DATA_SECTION;
+
+/* ---------------------------------------------------------------------
+/* DATA_SECTION_LOCATION
+/* ------------------------------------------------------------------- */
+
+DATA_SECTION_LOCATION: procedure (DSP) returns (type (STRING_T)) internal;
+
+	declare
+		DSP	type (POINTER_T);
+	declare
+		S	type (STRING_T);
+
+	if DSP = null () then
+		return ('');
+
+	S = trim (char (DSP->DATA_SECTION_NODE.LINE));
+	if (((CURRENT_SOURCE.ASSUMED_FILE ^= NULL_NID) &
+	     (CURRENT_SOURCE.ASSUMED_FILE ^=
+	      DSP->DATA_SECTION_NODE.FILE)) |
+	    ((CURRENT_SOURCE.ASSUMED_FILE = NULL_NID) &
+	     (CURRENT_SOURCE.FILE ^= DSP->DATA_SECTION_NODE.FILE))) then
+		S = S || ', "' ||
+		    TOKEN_NAME (DSP->DATA_SECTION_NODE.FILE) || '"';
+	return (S);
+
+end DATA_SECTION_LOCATION;
+
+/* ---------------------------------------------------------------------
+/* DATA_SECTION_NAME
+/* ------------------------------------------------------------------- */
+
+DATA_SECTION_NAME: procedure (DSN)
+		   returns   (character (512) varying)
+		   external  (X_DATA_SECTION_NAME);
+	declare
+		DSN	type (NID_T);
+	declare
+		DSP	type (POINTER_T),
+		S	character (512) varying;
+
+	if DSN = NULL_NID then
+		return ('');
+
+	call GET_DATA_SECTION_NODE_R (DSN, DSP);
+	if DSP->DATA_SECTION_NODE.NAME = NULL_NID then
+		S = '.data';
+	else	S = TOKEN_NAME (DSP->DATA_SECTION_NODE.NAME);
+	call RELEASE_DATA_SECTION_NODE (DSN);
+	return (S);
+
+end DATA_SECTION_NAME;
+

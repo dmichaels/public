@@ -1,0 +1,2743 @@
+/* C++ clsutl.pl1 - Support for operations involving classes */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  05.22.92  PKT  049	Fixed 045->046 regression in TRANSMUTE of
+ *			CAST_TO_BASE_VO.
+ *  05.04.92  PKT  048	Updated GET_CONSTRUCTOR_VALUE to diagnose
+ *			function types and uninitialized references.
+ *			Updated TRANSMUTE and INITIALIZE to recover
+ *			from function expressions.
+ *  04.30.92  PKT  048	Added RESTORE_FUNCTION_VALUE.
+ *  03.26.92  PKT  047	Enhanced INITALIZE_OBJECT for void values.
+ *  03.13.92  PKT  047	Updated for parameter nodes.
+ *  03.26.92  DGM  046	New value-node scheme.
+ *  02.06.92  PKT  045	Made PLAIN_VALUE_OF_REF external.
+ *  01.31.92  DGM  044	Fix in CALL_CONSTRUCTOR which fixed:
+ *			   struct Box { };
+ *			   struct TBBox : virtual Box { TBBox (int = 7); };
+ *			   TBBox::TBBox(int g1) { -- g1 should be 7 -- }
+ *			   main () { TBBox t; }
+ *			which came up in InterViews 3.0.
+ *  01.21.92  DGM  043	Parameter link-node changes.
+ *  01.06.92  PKT  042  Fixed GET_CONSTRUCTOR_VALUE to not check
+ *			destructor access when fetching a compatible
+ *			lvalue.
+ *  12.20.91  PKT  041  Fixed TRANSMUTE_WITH_TEMP for void values.
+ *  11.12.91  DGM  040  Updated for new GET_INTEGRAL_CONSTANT_VALUE.
+ *  10.03.91  DGM  039  Added void ____lpi_compilation_assert (int);
+ *			short enum changes.
+ *  09.25.91  PKT  038  Fixed & used IS_BITWISE in order to avoid assuming
+ *			trivial constructor is copy constructor.
+ *			Eliminated assumption of parameter list in
+ *			EXPLICIT_PARAMETER_1_SYMBOL.
+ *			Fixed CALL_ARRAY_COPY to transmute its argument.
+ *			Enhanced GET_CONSTRUCTOR_VALUE to recognize
+ *			an initializer that's an array designator.
+ *			Fixed TRANSMUTE to work right with arrays.
+ *			Added RESTORE_ARRAY_VALUE.
+ *  09.06.91  PKT  037  Added BYPASS_COMMA.
+ *  09.06.91  DGM  036  Call [BEGIN,END]_INTERNAL_PARSE
+ *			for DECLARE_BUILT_INS.
+ *  07.08.91  PKT  035  Updated for NOTE_SYMBOL_REFERENCE, and for
+ *			array designator changes.
+ *  06.28.91  PKT  034  Eliminated STRING_VO.
+ *  06.08.91  PKT  033  Fix CALL_CONSTRUCTOR.
+ *  06.05.91  PKT  032  Made CALL_CONSTRUCTOR external; updated.
+ *  05.29.91  DGM  031  Fix in DECLARE_BUILT_INS.
+ *  05.14.91  PKT  030  Added ability to initialize array when default
+ *			constructor has default arguments.
+ *  04.24.91  PKT  029  Removed implicit declaration of
+ *			void * operator new (unsigned int, void *)
+ *			Added context to GET_CONSTRUCTOR_VALUE.
+ *			Added DETACH_COMMA and REATTACH_COMMA.
+ *  04.19.91  DGM  028  Temporary work-around in DECLARE_BUILT_INS for
+ *			design bug with #pragma C-header -- if a C-header
+ *			include file is the very first thing in the source
+ *			file, then because of of the way the lexer & parser
+ *			work, i.e. processing the #pragma C-header token
+ *			after the BOF token was matched but before BEGIN_
+ *			GLOBAL_SCOPE get called, the linkage of operator
+ *			new and delete will be "C" rather than "C++"!
+ *  03.22.91  PKT  027  Tweaked one name.
+ *  03.05.91  PKT  026  Updated for destructor access fix, etc.
+ *  02.21.91  PKT  025  Updated for member pointers.
+ *  02.01.91  DGM  024  Updated to new global names scheme.
+ *  01.27.91  PKT  023  Updated for member pointers.
+ *  01.11.91  PKT  022  Changed the interface to GET_CONSTRUCTOR_VALUE
+ *			to accept id of most derived class.
+ *  12.28.90  PKT  021  Bug fixes related to the 020 changes.
+ *  12.18.90  PKT  020  Fixed substantial deficiency in
+ *			TRANSMUTE_WITH_TEMP and INITIALIZE_OBJECT
+ *			in case the initializing expression is a subobject
+ *			of an object returned by a function.
+ *			Added support for access control.
+ *  12.17.90  DGM  019  Modified INITIALIZE_OBJECT to deal properly with
+ *			integral "const" variables; TODO what about
+ *			floating "const" variables, et. al. ?
+ *  11.09.90  PKT  018  Updated for default arguments; fixed bug in
+ *			INITIALIZE_OBJECT when VALUE is a conditional.
+ *  11.01.90  PKT  017  Updated for strict INITIALIZE_OBJECT.
+ *			Made CALL_ARRAY_INIT set type of expr to 'array'.
+ *			Changed INITIALIZE_OBJECT not to call NEEDS_OBJECT
+ *			when it might examine the whole subtree.
+ *			Added CONCATENATE_STATEMENTS;
+ *			added EFFECT_BEFORE_VALUE from EXPAND(COMMA_VO...);
+ *			took VALUE_BEFORE_EFFECT from dstroy.pl1.
+ *  10.18.90  TLF  016  Added call to ADD_TO_GENERATE_LIST;
+ *  10.16.90  PKT  015  Enhancements for base/member init; fixes.
+ *  09.28.90  PKT  014  Bug fixes.
+ *  09.25.90  DGM  013  Preprocessor include file name changes.
+ *  09.17.90  PKT  012  Fixed bugs, to make operators new and delete work.
+ *  09.14.90  DGM  011  Changed include file names and VOP names.
+ *  09.13.90  DGM  010  Changed xxx_SC names to xxx_ST.
+ *  09.05.90  PKT  009  Added DECLARE_BUILT_INS; support for arrays.
+ *  08.21.90  TLF  008  Updated for overloaded constructors.  DGM.
+ *  08.08.90  DGM  007  New type-node.
+ *  08.07.90  PKT  006  Moved destructor utilities to dstroy.pl1,
+ *			added HAS_CONSTRUCTOR and CONSTRUCTOR_OF_TYPE.
+ *  07.26.90  DGM  005  Call constructor/destructor with the
+ *			"not-most-derived-flag" parameter if necessary.
+ *  07.19.90  PKT  004  More destructor functionality.
+ *  07.19.90  DGM  003  Changed SYM_NODE.FATHER to
+ *			SYM_NODE.ENCLOSING_SCOPE_OWNER.
+ *  07.05.90  PKT  002  Added destructor utilities.
+ *  06.06.90  DGM  001  Updated for the new utilities.
+ *  05.04.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 05.22.92 049 CLSUTL');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_DECLARE_SYMBOL_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_CHECK_ARGUMENT_LIST_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_TYPE_CLASS_PKG;
+%include CXX_OVERLOAD_PKG;
+%include CXX_BASSYM_PKG;
+%include CXX_RUN_TIME_CALL_PKG;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_DUPLICATE_VALUE_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_MEMBER_VALUE_PKG;
+%include CXX_MEMBER_POINTER_PKG;
+%include CXX_CONVERT_CLASS_POINTER_PKG;
+%include CXX_CHECK_REFERENCE_TYPE_PKG;
+%include CXX_PP_TOKEN_POD_DEF_IN;
+%include CXX_LEXER_TOKENS_IN;
+%include CXX_INTERNAL_PARSE_PKG;
+
+/* ---------------------------------------------------------------------
+/* HAS_CONSTRUCTOR
+/* ------------------------------------------------------------------- */
+
+HAS_CONSTRUCTOR: procedure (TYPE)
+		 returns (type (BOOL_T))
+		 external (X_HAS_CONSTRUCTOR);
+
+	declare TYPE type (NID_T);
+
+	return (CONSTRUCTOR_OF_TYPE (TYPE, 0) ^= NULL_NID);
+
+end HAS_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* CONSTRUCTOR_OF_TYPE
+/*
+/* If the type represented by the given type-node id has a constructor
+/* (i.e. is a class type or an n-dimensional array of class types),
+/* return the symbol node id of the constructor symbol, otherwise,
+/* do nothing and return NULL_NID.  Preserves current-node-id.
+/*
+/* On entry, SKIP_NLEVELS is the number of top type levels of
+/* the type-node to be skipped before being examined.
+/*
+/* On exit, SKIP_NLEVELS indicates the number of top type levels to
+/* be skipped to get to where the constructor was found (i.e. to the
+/* class type).
+/*
+/* Note that SKIP_NLEVELS on input and output will differ iff non-NULL_NID is
+/* returned, and the type is an n-dimensional array of classes, in which
+/* case the output value of SKIP_NLEVELS will simply be the sum of the
+/* input SKIP_NLEVELS and the number of array dimensions.
+/* ------------------------------------------------------------------- */
+
+CONSTRUCTOR_OF_TYPE: procedure (TYPE, SKIP_NLEVELS)
+		     returns   (type (NID_T))
+		     external  (X_CONSTRUCTOR_OF_TYPE);
+	declare
+		TYPE		type (NID_T),
+		SKIP_NLEVELS	type (SHORT_T);
+	declare
+		(TP, SP)	type (POINTER_T),
+		LEVEL		type (SHORT_T),
+		CONSTRUCTOR	type (NID_T);
+	
+	if TYPE = NULL_NID then return (NULL_NID);
+
+	call GET_TYPE_NODE_R (TYPE, TP);
+
+	LEVEL = rank (TP->TYPE_NODE.LEVEL) - SKIP_NLEVELS;
+
+	do while ((LEVEL >= 0) &
+		  (TP->TYPE_NODE.TYPE_CODE (LEVEL) = byte (ARRAY_DT)));
+		LEVEL = LEVEL - 1;
+	end;
+
+	if (LEVEL = 0) &
+	   IS_AGGREGATE_TAG_TYPE (rank (TP->TYPE_NODE.TYPE_CODE (0))) then do;
+		call GET_SYM_NODE_R (TP->TYPE_NODE.TYPE_NID (0), SP);
+		CONSTRUCTOR = SP->SYM_NODE.CONSTRUCTOR;
+		if   CONSTRUCTOR = NULL_NID 
+		   & SP->SYM_NODE.NEEDS_INIT then
+			call SEMANTIC_ERROR_I (ERR_TODO_GEN_CTOR,
+				SYMBOL_NAME (TP->TYPE_NODE.TYPE_NID (0)));
+		call RELEASE_SYM_NODE (TP->TYPE_NODE.TYPE_NID (0));
+		SKIP_NLEVELS = rank (TP->TYPE_NODE.LEVEL) - LEVEL;
+	end;
+	else	CONSTRUCTOR = NULL_NID;
+
+
+	call RELEASE_TYPE_NODE (TYPE);
+	return (CONSTRUCTOR);
+
+end CONSTRUCTOR_OF_TYPE;
+
+/* ---------------------------------------------------------------------
+/* CALL_CONSTRUCTOR
+/*
+/* Generate expression tree which calls the given (possibly overloaded)
+/* constructor symbol with the argument list.
+/*
+/* MOST_DERIVED is the most derived class of the object being constructed,
+/* which differs from the class owning the constructor during base class
+/* initialization.
+/*
+/* FORCE indicates to call the constructor even if elidable.
+/*
+/* Result value is not null, and is paged in on return.
+/* ------------------------------------------------------------------- */
+
+CALL_CONSTRUCTOR: procedure (CONSTRUCTOR, ARGUMENTS, MOST_DERIVED, FORCE)
+		  external (X_CALL_CONSTRUCTOR) 
+		  returns (type (CXX_VID_T));
+
+	declare
+		CONSTRUCTOR	type (NID_T),
+		ARGUMENTS	type (CXX_VID_T),
+		MOST_DERIVED	type (NID_T),
+		FORCE		type (BOOL_T);
+
+	declare
+		CHOSEN_CTOR	type (NID_T),
+		CLASS_SYM	type (NID_T),
+		WORK_TYPE	type (TYPE_INFO_T),
+		KV		type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		ARGS		type (CXX_VID_T),
+		CTOR_DESIGNATOR	type (CXX_VID_T),
+		CTOR_FLAG	type (LONG_T),
+		HAS_FLAG	type (BOOL_T),
+		IS_INNER	type (BOOL_T),
+		IS_INACCESSIBLE	type (BOOL_T),
+		IS_AMBIGUOUS	type (BOOL_T),
+		IS_VIRTUAL	type (BOOL_T),
+		IS_BASE		type (BOOL_T),
+		SIGNATURE	type (NID_T),
+		NARGS		type (SHORT_T),
+		VICTIM		type (CXX_VID_T),
+		SP		pointer,
+		REF_TYPE_INFO	type (TYPE_INFO_T),
+		ARG_TYPE_ID	type (NID_T),
+		IS_BITWISE	type (BOOL_T);
+
+	/* Choose the correct overloaded constructor */
+
+	CHOSEN_CTOR = OVERLOAD (ARGUMENTS, CONSTRUCTOR, NULL_NID, 0);
+
+	if CHOSEN_CTOR = NULL_NID then do;
+		/*
+		/* Error; argument-list/initializer don't match
+		/* the class's constructor.  Note that this situation
+		/* is perhaps more fatal if the class has virtual functions,
+		/* virtual bases, etc.
+		/**/
+		if ARGUMENTS ^= NULL_CXX_VID then do;
+			call SEMANTIC_ERROR_I (ERR_CTOR_NO_MATCH,
+					       SYMBOL_NAME (CONSTRUCTOR));
+			call COUNT_DOWN_VALUE (ARGUMENTS);
+		end;
+		else	call SEMANTIC_ERROR_I (ERR_NO_DEFAULT_CTOR,
+					       SYMBOL_NAME (CONSTRUCTOR));
+
+		/* Result is an undefined value of the CONSTRUCTOR's type. */
+		call SET_SYM_NODE_R (CONSTRUCTOR);
+		call SET_SYM_NODE_R ((SYM_NODE.ENCLOSING_SCOPE_OWNER));
+		call GET_SYMBOL_TYPE (WORK_TYPE);
+		call DETERMINE_SIZE (WORK_TYPE);
+		RESULT = ALLOC_CXX_VALUE_NODE (UNINITIALIZED_VO);
+		call SET_VALUE_TYPE (WORK_TYPE);
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+		CXX_VALUE_NODE.NULARY = TRUE;
+		return (RESULT);
+	end;
+
+	/*
+	/* If the chosen constructor is the copy constructor, it
+	/* may not be a necessary call.  Attempt to eliminate the
+ 	/* call even before processing arguments, to avoid
+	/* checking the access.  (Cfront permits "C(x)" to invoke
+	/* a conversion function without checking access to the
+	/* copy constructor -- we want don't want to break too many
+	/* programs.)
+	/**/
+
+	call GET_SYM_NODE_R (CHOSEN_CTOR, SP);
+	CLASS_SYM = SP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+	IS_INNER = (MOST_DERIVED ^= CLASS_SYM);
+	HAS_FLAG = SP->SYM_NODE.HAS_FLAG;
+	call RELEASE_SYM_NODE (CHOSEN_CTOR);
+	call GET_SYM_NODE_R (CLASS_SYM, SP);
+	IS_BITWISE = ^SP->NEEDS_COPY & (CHOSEN_CTOR = SP->COPY_CONSTRUCTOR);
+
+	if   ^(HAS_FLAG & IS_INNER)
+	   & ^FORCE
+	   & CHOSEN_CTOR = SP->SYM_NODE.COPY_CONSTRUCTOR then do;
+		/*
+		/* We eliminate the copy constructor call if the normal
+		/* argument processing would create an independent
+		/* temporary.  This is the case unless the argument is
+		/* an lvalue of an accessibly derived class.  Note that the
+		/* argument may be of an unrelated class, with the copy
+		/* constructor selected on account of a conversion function.
+		/**/
+		KV = ARGUMENTS->CXX_VALUE_NODE.LEFT;
+		CXX_VALUE_NODE_PTR = KV;
+		call GET_VALUE_TYPE (WORK_TYPE);
+		if WORK_TYPE.TYPE_CODE = byte (REFERENCE_DT) then
+			call STRIP_TOP_TYPE (WORK_TYPE, FALSE);
+		if ^IS_AGGREGATE_TAG_TYPE (rank (WORK_TYPE.CODE)) then
+			/*
+			/* How could the copy constructor be chosen if the
+			/* argument were not a class?
+			/**/
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		IS_BASE = IS_BASE_CLASS_OF (CLASS_SYM, WORK_TYPE.TAG_SYMBOL,
+					    IS_AMBIGUOUS,
+					    IS_INACCESSIBLE,
+					    IS_VIRTUAL);
+		if WORK_TYPE.NOT_AN_LVALUE | ^IS_BASE | IS_INACCESSIBLE then do;
+			call COUNT_UP_VALUE (KV);
+			call COUNT_DOWN_VALUE (ARGUMENTS);
+
+			/* Get class's type. */
+			call SET_TYPE_NODE_R (SP->SYM_NODE.TYPE);
+			call GET_TYPE_NODE_TYPE (WORK_TYPE);
+			RESULT = GENERAL_CONVERT_VALUE (KV, WORK_TYPE, ARG_VO);
+			call RELEASE_SYM_NODE (CLASS_SYM);
+			return (RESULT);
+		end;
+	end;
+	call RELEASE_SYM_NODE (CLASS_SYM);
+
+	call GET_SYM_NODE_R (CHOSEN_CTOR, SP);
+	if IS_BITWISE then do;
+		/*
+		/* Do a bitwise fetch of the value from the argument,
+		/* rather than an explicit function call.  The argument
+		/* must still be processed as initializing a reference,
+		/* even though the constructor body is trivial.
+		/**/
+		ARG_TYPE_ID = EXPLICIT_FIRST_PARAMETER (SP);
+		call SET_TYPE_NODE_R (ARG_TYPE_ID);
+		call GET_TYPE_NODE_TYPE (REF_TYPE_INFO);
+		KV = ARGUMENTS->CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (KV);
+		call COUNT_DOWN_VALUE (ARGUMENTS);
+		KV = INIT_REF_CHECK (REF_TYPE_INFO, KV, ARG_VO,
+					1, NULL_NID, VICTIM);
+
+		/* KV is a pointer to argument object. */
+		KV = GET_VALUE_AND_EXPAND_L (IMPLICIT_STAR_VO, KV);
+		if CXX_VALUE_NODE.OP ^= VALUE_VO then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		KV = COPY_VALUE (KV);
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+		RESULT = VALUE_BEFORE_EFFECT (KV, VICTIM);
+
+		call RELEASE_SYM_NODE (CHOSEN_CTOR);
+		return (RESULT);		
+	end;
+	call RELEASE_SYM_NODE (CHOSEN_CTOR);
+
+	call NOTE_SYMBOL_REFERENCE (CHOSEN_CTOR);
+
+	if ^( IS_ACCESSIBLE (CHOSEN_CTOR, MOST_DERIVED) 
+	    | AM_DEBUGGER ) then
+		call SEMANTIC_ERROR_I (ERR_PRIV_CTOR, 
+					FULL_SYMBOL_NAME (CHOSEN_CTOR));
+
+	/* Call the constructor */
+
+	call SET_SYM_NODE_R (CHOSEN_CTOR);
+	call GET_SYMBOL_TYPE (WORK_TYPE);
+	SIGNATURE = WORK_TYPE.TOP_TYPE.SIGNATURE;
+
+	/* Expand the CALL */
+
+	CTOR_DESIGNATOR = GET_VALUE_REF_AND_EXPAND (CHOSEN_CTOR);
+
+	/*
+	/* Note:  there's no need to make a function designator
+	/* out of this, at least as far as PKT knows.
+	/**/
+
+	RESULT = ALLOC_CXX_VALUE_NODE_LR (CALL_FUNCTION_VO,
+					  CTOR_DESIGNATOR,
+					  ARGUMENTS);
+	/*
+	/* STRIP_TOP_TYPE ... SET_VALUE_TYPE doesn't work because
+	/* the constructor's type is not represented in the symbol
+	/* table as returning a value.  At least it wasn't that way
+	/* when PKT first coded this.
+	/**/
+
+	call SET_SYM_NODE_R (CLASS_SYM);		    /* the class */
+	call SET_TYPE_NODE_R ((SYM_NODE.TYPE));		    /* class type */
+	call GET_TYPE_NODE_TYPE (WORK_TYPE);
+	call DETERMINE_SIZE (WORK_TYPE);
+	call SET_VALUE_TYPE (WORK_TYPE);
+
+	/* Count arguments and compare with formal params */
+
+	NARGS = CHECK_ARGUMENTS (RESULT, SIGNATURE, 
+				 CHOSEN_CTOR, VICTIM);
+
+	/* Set up the "not-most-derived-flag" if present;
+	/* this flag is put before any other arguments
+	/* (except of course the "this" argument is first).
+	/**/
+
+	if HAS_FLAG then do;
+		if IS_INNER then
+			CTOR_FLAG = 1;
+		else	CTOR_FLAG = 0;
+		/*
+		/* -TODO- I don't like mucking with the CALL value like
+		/* this, but I can't put this flag argument on the
+		/* list before CHECK_ARGUMENTS is called above because
+		/* it would give an error.  Maybe the interface to
+		/* CHECK_ARGUMENTS should be changed to take an ARG
+		/* value rather than a CALL value so that I could call
+		/* CHECK_ARGUMENTS, then attach this flag arguments,
+		/* *then* make the CALL value.
+		/**/
+		if ARGUMENTS = NULL_NID then do;
+			/*
+			/* We had no *explicit* arguments, but check to see if
+			/* default arguments were added (in CHECK_ARGUMENTS),
+			/* and if so, set ARGUMENTS to point to them so we
+			/* don't lose track of them when adding the ctor-flag
+			/* argument.  This fixed the following:
+			/*
+			/*   struct Box { };
+			/*   struct TBBox : virtual Box { TBBox (int = 7); };
+			/*   TBBox::TBBox(int g1) { -- g1 should be 7 -- }
+			/*   main () { TBBox t; }
+			/*
+			/* Here, RESULT is CALL(function,ARG_VO(...)).
+			/**/
+			ARGUMENTS = RESULT->CXX_VALUE_NODE.RIGHT;
+		end;
+		ARGS = GET_VALUE_AND_EXPAND_LR
+			(ARG_VO,
+			 INTEGER_VALUE (CTOR_FLAG, INT_BT),
+			 ARGUMENTS);
+		RESULT->CXX_VALUE_NODE.RIGHT = ARGS;
+	end;
+
+	/* */
+
+	RESULT->CXX_VALUE_NODE.OFFSET = NARGS; /* Arg count for WRITOP */
+	if RESULT->CXX_VALUE_NODE.RIGHT = NULL_CXX_VID then 
+		RESULT->CXX_VALUE_NODE.UNARY = TRUE;
+	RESULT = VALUE_BEFORE_EFFECT (RESULT, VICTIM);
+	CXX_VALUE_NODE_PTR = RESULT;
+	return (RESULT);
+
+/*---------------------------------------------------------------------
+/* EXPLICIT_FIRST_PARAMETER
+/*
+/* Given a pointer to the sym-node of a function symbol (assumed),
+/* return type-node id of its first explicit parameter, if there is such
+/* a parameter.  Otherwise return NULL_NID.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+EXPLICIT_FIRST_PARAMETER: procedure (SYMBOL_PTR)
+			  returns   (type (NID_T))
+			  internal;
+	declare
+		SYMBOL_PTR	type (POINTER_T);
+	declare
+		SP		type (POINTER_T),
+		PARAM		type (NID_T),
+		PAP		type (POINTER_T),
+		RESULT		type (NID_T);
+	
+	call GET_SIG_NODE_R (SYMBOL_PTR->SYM_NODE.TOP_TYPE.SIGNATURE, SP);
+	if SP->SIG_NODE.EXPLICIT_NPARAMETERS > 0 then do;
+		PARAM = SP->SIG_NODE.EXPLICIT_PARAMETERS;
+		call GET_PARAMETER_NODE_R (PARAM, PAP);
+		RESULT = PAP->PARAMETER_NODE.TYPE;
+		call RELEASE_PARAMETER_NODE (PARAM);
+	end;
+	else	RESULT = NULL_NID;
+	call RELEASE_SIG_NODE (SYMBOL_PTR->SYM_NODE.TOP_TYPE.SIGNATURE);
+	return (RESULT);
+
+end EXPLICIT_FIRST_PARAMETER;
+
+end CALL_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* CALL_ARRAY_INIT
+/*
+/* Generate a call to the run-time routine which initializes an
+/* array by calling a no-argument constructor repeatedly.
+/* The class of the individual objects is given by the CLASS symbol node.
+/* argument may be overloaded, and the default version needs to
+/* be found.
+/*
+/* Result value (if non-null) is paged in on return.
+/* ------------------------------------------------------------------- */
+CALL_ARRAY_INIT: procedure (CLASS, COUNT, RESULT_TYPE)
+		 returns (type (CXX_VID_T))
+		 internal;
+
+	declare
+		CLASS		type (NID_T),
+		COUNT		type (CXX_VID_T),
+		RESULT_TYPE	type (NID_T);
+	declare
+		CONSTRUCTOR	type (NID_T),
+		CP		pointer,
+		TYPE_INFO	type (TYPE_INFO_T),
+		SIGNATURE	type (NID_T),
+		SIG_P		pointer,
+		N		type (SHORT_T),
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T),
+		SIZE_ARG	type (CXX_VID_T),
+		ARGS		type (CXX_VID_T),
+		CTOR		type (CXX_VID_T),
+		CTOR_FLAG	type (LONG_T),
+		CTOR_FLAG_ARG	type (CXX_VID_T),
+		CLASS_TYPE	type (NID_T),
+		RESULT		type (CXX_VID_T),
+		RESULT_TYPE_INFO
+				type (TYPE_INFO_T);
+
+	call GET_SYM_NODE (CLASS, CP);
+	CONSTRUCTOR = CP->SYM_NODE.CONSTRUCTOR;
+	CLASS_TYPE = CP->SYM_NODE.TYPE;
+	call RELEASE_SYM_NODE (CLASS);
+
+	/* Type of returned expr will be 'array', for future transmutation. */
+
+	call SET_TYPE_NODE_R (RESULT_TYPE);
+	call GET_TYPE_NODE_TYPE (RESULT_TYPE_INFO);
+	call DETERMINE_SIZE (RESULT_TYPE_INFO);
+
+	CONSTRUCTOR = OVERLOAD (NULL_CXX_VID, CONSTRUCTOR, NULL_NID, 0);
+
+	if CONSTRUCTOR = NULL_NID then do;
+		call SEMANTIC_ERROR_I (ERR_NEEDS_DEFAULT_CTOR, 
+				       SYMBOL_NAME (CLASS));
+		call COUNT_DOWN_VALUE (COUNT);
+
+		RESULT = ALLOC_CXX_VALUE_NODE (UNINITIALIZED_VO);
+		CXX_VALUE_NODE.NULARY = TRUE;
+		call SET_VALUE_TYPE (RESULT_TYPE_INFO);
+		return (RESULT);
+	end;
+
+	call SET_SYM_NODE_R (CONSTRUCTOR);
+	call GET_SYMBOL_TYPE (TYPE_INFO);
+	SIGNATURE = TYPE_INFO.TOP_TYPE.SIGNATURE;
+
+	call GET_SIG_NODE_R (SIGNATURE, SIG_P);
+	N = SIG_P->SIG_NODE.EXPLICIT_NPARAMETERS;
+	call RELEASE_SIG_NODE (SIGNATURE);
+
+	if N ^= 0 then do;
+		/*
+		/* Generate a way to call the default constructor
+		/* even if it has default arguments. 
+		/**/
+		CONSTRUCTOR = SEARCH_CLASS
+			      (CLASS, ARRAY_CONSTRUCTOR_NAME, ANY_SK);
+	end;
+
+	else if ^(IS_ACCESSIBLE (CONSTRUCTOR, CLASS) | AM_DEBUGGER) then do;
+		call SEMANTIC_ERROR_I (ERR_PRIV_ARRAY_CTOR, 
+					SYMBOL_NAME (CLASS));
+	end;
+
+	call NOTE_SYMBOL_REFERENCE (CONSTRUCTOR);
+
+	CTOR = GET_VALUE_AND_EXPAND_L
+		(ADDR_VO,
+		 GET_VALUE_REF_AND_EXPAND (CONSTRUCTOR));
+
+	call TYPE_SIZE (CLASS_TYPE, SIZE, SIZE_UNITS, BOUNDARY);
+	SIZE = ROUNDU (SIZE, SIZE_UNITS, ADDRESS_UNITS);
+	SIZE_ARG = INTEGER_VALUE (SIZE, INT_BT);
+	if LOOKUP_CTOR_FLAG_PARAMETER (CONSTRUCTOR) = NULL_NID then
+		CTOR_FLAG = -1;
+	else 	CTOR_FLAG = 0;		/* is most derived */
+	CTOR_FLAG_ARG = INTEGER_VALUE (CTOR_FLAG, INT_BT);
+	ARGS = RUN_TIME_ARGS (SIZE_ARG,
+		RUN_TIME_ARGS (COUNT,
+		 RUN_TIME_ARGS (CTOR,
+		  RUN_TIME_ARGS (CTOR_FLAG_ARG,
+		   NULL_CXX_VID))));
+	RESULT = RUN_TIME_CALL (ARRAY_INIT_NAME, ARGS);
+	
+	/*
+	/* Fudge the call operation to make it more easily detectable,
+	/* because this call must be transmuted with a pointer to the
+	/* array being intialized.
+	/**/
+
+	CXX_VALUE_NODE.OP = CALL_FUNCTION_VO;
+	call SET_VALUE_TYPE (RESULT_TYPE_INFO);
+	return (RESULT);
+
+end CALL_ARRAY_INIT;
+
+/* ---------------------------------------------------------------------
+/* CALL_ARRAY_COPY
+/*
+/* Generate a call to the run-time routine which initializes an
+/* array by calling a copy constructor repeatedly.
+/* The class of the individual objects is given by the CLASS symbol node.
+/*
+/* Result value (if non-null) is paged in on return.
+/* ------------------------------------------------------------------- */
+CALL_ARRAY_COPY: procedure (CLASS, COUNT, RESULT_TYPE, ARG_IN)
+		 returns (type (CXX_VID_T))
+		 internal;
+
+	declare
+		CLASS		type (NID_T),
+		COUNT		type (CXX_VID_T),
+		RESULT_TYPE	type (NID_T),
+		ARG_IN		type (CXX_VID_T);
+	declare
+		ARG		type (CXX_VID_T),
+		NEEDS_COPY	type (BOOL_T),
+		CONSTRUCTOR	type (NID_T),
+		CP		pointer,
+		TYPE_INFO	type (TYPE_INFO_T),
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T),
+		SIZE_ARG	type (CXX_VID_T),
+		ARGS		type (CXX_VID_T),
+		CTOR		type (CXX_VID_T),
+		CTOR_FLAG	type (LONG_T),
+		CTOR_FLAG_ARG	type (CXX_VID_T),
+		CLASS_TYPE	type (NID_T),
+		VICTIM		type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		RESULT_TYPE_INFO
+				type (TYPE_INFO_T);
+
+	CXX_VALUE_NODE_PTR = ARG_IN;
+	ARG = ARG_IN->CXX_VALUE_NODE.LEFT;
+	call COUNT_UP_VALUE (ARG);
+	call COUNT_DOWN_VALUE (ARG_IN);
+
+	call GET_SYM_NODE (CLASS, CP);
+	CONSTRUCTOR = CP->SYM_NODE.COPY_CONSTRUCTOR;
+	CLASS_TYPE = CP->SYM_NODE.TYPE;
+	NEEDS_COPY = CP->SYM_NODE.NEEDS_COPY;
+	call RELEASE_SYM_NODE (CLASS);
+
+	if ^NEEDS_COPY then
+		return (ARG);
+
+	ARG = TRANSMUTE_WITH_TEMP (ARG, VICTIM, TRUE, AUTO_ST, 
+				   IMPLICIT_ADDR_VO);
+	ARG = GET_VALUE_AND_EXPAND_L (IMPLICIT_ADDR_VO, ARG);
+
+	/* Type of returned expr will be 'array', for future transmutation. */
+	call SET_TYPE_NODE_R (RESULT_TYPE);
+	call GET_TYPE_NODE_TYPE (RESULT_TYPE_INFO);
+	call DETERMINE_SIZE (RESULT_TYPE_INFO);
+
+	call NOTE_SYMBOL_REFERENCE (CONSTRUCTOR);
+	call SET_SYM_NODE_R (CONSTRUCTOR);
+	call GET_SYMBOL_TYPE (TYPE_INFO);
+
+	if ^( IS_ACCESSIBLE (CONSTRUCTOR, CLASS)
+	    | AM_DEBUGGER ) then
+		call SEMANTIC_ERROR_I (ERR_PRIV_ARRAY_CTOR, 
+					SYMBOL_NAME (CLASS));
+
+	CTOR = GET_VALUE_AND_EXPAND_L
+		(ADDR_VO,
+		 GET_VALUE_REF_AND_EXPAND (CONSTRUCTOR));
+
+	call TYPE_SIZE (CLASS_TYPE, SIZE, SIZE_UNITS, BOUNDARY);
+	SIZE = ROUNDU (SIZE, SIZE_UNITS, ADDRESS_UNITS);
+	SIZE_ARG = INTEGER_VALUE (SIZE, INT_BT);
+	if LOOKUP_CTOR_FLAG_PARAMETER (CONSTRUCTOR) = NULL_NID then
+		CTOR_FLAG = -1;
+	else	CTOR_FLAG = 0;		/* is most derived */
+	CTOR_FLAG_ARG = INTEGER_VALUE (CTOR_FLAG, INT_BT);
+	ARGS = RUN_TIME_ARGS (ARG,
+		RUN_TIME_ARGS (SIZE_ARG,
+		 RUN_TIME_ARGS (COUNT,
+		  RUN_TIME_ARGS (CTOR,
+		   RUN_TIME_ARGS (CTOR_FLAG_ARG,
+		    NULL_CXX_VID)))));
+	RESULT = RUN_TIME_CALL (ARRAY_APPLY_NAME, ARGS);
+	
+	/*
+	/* Fudge the call operation to make it more easily detectable,
+	/* because this call must be transmuted with a pointer to the
+	/* array being intialized.
+	/**/
+
+	CXX_VALUE_NODE.OP = CALL_FUNCTION_VO;
+	call SET_VALUE_TYPE (RESULT_TYPE_INFO);
+	RESULT = VALUE_BEFORE_EFFECT (RESULT, VICTIM);
+	return (RESULT);
+
+end CALL_ARRAY_COPY;
+
+/* ---------------------------------------------------------------------
+/* GET_CONSTRUCTOR_VALUE
+/*
+/* Create a value node to initialize an object based on an argument list.
+/* The returned value node will have the given type, and
+/* the initialized object will be the temporary that is implicit in that
+/* value node.  The returned expression may then be copied to a declared
+/* object, passed as an argument, etc.
+/*
+/* However, this is inadequate for some encapsulated objects.
+/* Then the value node with the CALL_FUNCTION_VO has not got the
+/* required transmutation, which inserts into the call an
+/* extra argument with the location of the object to initialize.
+/* A result symbol is not provided by GET_CONSTRUCTOR_VALUE because
+/* often it would need to be optimized away when the context of 
+/* construction becomes evident.  This need arises either when
+/* the type has a nontrivial copy constructor or the function 
+/* directly invoked is a constructor.
+/*
+/* Any operation which can accept an operand having a copy constructor
+/* must call either TRANSMUTE_WITH_TEMP or INITIALIZE_OBJECT
+/* to insert the extra argument into the value node having
+/* CALL_FUNCTION_VO.
+/*
+/* MOST_DERIVED is the symbol node id of the most derived class of
+/* the object being constructed.  It is the same as the symbol for
+/* TYPE_NODE_ID, except when handling a base class initializer.
+/* If it's NULL_NID, we assume it's the same as for the TYPE_NODE_ID.
+/* A constructor for a class with virtual bases takes a parameter that
+/* says whether it's inner.  Also affects constructor access check.
+/*
+/* GET_CONSTRUCTOR_VALUE supports all types.  For types without
+/* constructors, the number of arguments must be either:
+/*
+/*        0   meaning undefined value (ARM 5.2.3)
+/*   or   1   meaning explicit conversion, in which case the
+/*            job is delegated to GENERAL_CONVERT_VALUE.
+/*
+/* For types with constructors, a user-defined or a generated
+/* constructor is called, as determined by resolving overloading.
+/*
+/* The result value node is paged in on return, and is never null.
+/* ------------------------------------------------------------------- */
+
+GET_CONSTRUCTOR_VALUE: procedure (TYPE_NODE_ID, ARGUMENTS, MOST_DERIVED, VOP)
+		       returns (type (CXX_VID_T))
+		       external (X_GET_CONSTRUCTOR_VALUE);
+	declare
+		TYPE_NODE_ID	type (NID_T),
+		ARGUMENTS	type (CXX_VID_T),
+		MOST_DERIVED	type (NID_T),
+		VOP		type (SHORT_T);
+	declare
+		CONSTRUCTOR	type (NID_T),
+		CTOR_TYPE	type (NID_T),
+		THIS_TOP_TYPE	type (TYPE_DATA_T),
+		WORK_TYPE	type (TYPE_INFO_T),
+		KV		type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		TYPEV		type (CXX_VID_T),
+		VICTIM		type (CXX_VID_T),
+		ARGS		type (CXX_VID_T),
+		ARG_TYPE	type (TYPE_INFO_T),
+		TOPT		type (TYPE_DATA_T),
+		NARGS		type (SHORT_T),
+		SP		pointer,
+		TP		pointer,
+		DP		pointer,
+		MEMBERS		type (LONG_T),
+		NEW_MEMBERS	type (LONG_T),
+		COUNT		type (CXX_VID_T),
+		SINGLE		type (BOOL_T),
+		COMPATIBLE	type (BOOL_T),
+		IS_AMBIGUOUS	type (BOOL_T),
+		IS_INACCESSIBLE	type (BOOL_T),
+		IS_VIRTUAL	type (BOOL_T),
+		NLEVELS_ABOVE_CLASS
+				type (SHORT_T),
+		SKIP_NLEVELS	type (SHORT_T),
+		MOST_DERIVED_ID	type (NID_T);
+
+	/* A constructor will be called if the type has one */
+
+	call GET_TOP_TYPE (TYPE_NODE_ID, THIS_TOP_TYPE);
+
+	if ARGUMENTS = NULL_CXX_VID
+		then NARGS = 0;
+	else do;
+		CXX_VALUE_NODE_PTR = ARGUMENTS;
+		if CXX_VALUE_NODE.RIGHT = NULL_CXX_VID then 
+			NARGS = 1;
+		else	NARGS = 2; /* or more */
+	end;
+
+	ARGS = ARGUMENTS;
+	if rank (THIS_TOP_TYPE.CODE) = ARRAY_DT then do;
+		if NARGS > 1 then do;
+			call SEMANTIC_ERROR (ERR_ARRAY_INITIAL_ARGS);
+			call COUNT_DOWN_VALUE (ARGS);
+			ARGS = NULL_CXX_VID;
+			NARGS = 0;
+		end;
+		else if NARGS = 1 then do;
+			/* Allow compatible array argument. */
+			KV = ARGS->CXX_VALUE_NODE.LEFT;
+			CXX_VALUE_NODE_PTR = KV;
+			if CXX_VALUE_NODE.ARRAY_DESIGNATOR then do;
+				call RESTORE_ARRAY_VALUE (KV, WORK_TYPE);
+				call SEMANTIC_ERROR (ERR_ARRAY_RESTORED);
+				ARGS = COPY_VALUE (ARGS);
+				CXX_VALUE_NODE.LEFT = KV;
+				call SET_VALUE_TYPE (WORK_TYPE);
+			end;
+			if ^COMPATIBLE_ANY_SPECIAL_TYPES
+				    (TYPE_NODE_ID,
+				     0,
+				     IGNORE_TOP_QUALIFIERS_TCM,
+				     CXX_VALUE_NODE.TYPE,
+				     CXX_VALUE_NODE.DERIVED_TYPE_SKIP,
+				     IGNORE_TOP_QUALIFIERS_TCM) then do;
+
+				call SEMANTIC_ERROR (ERR_ARRAY_INITIALIZER);
+				call COUNT_DOWN_VALUE (ARGS);
+				ARGS = NULL_CXX_VID;
+				NARGS = 0;
+			end;
+		end;
+	end;
+	else if rank (THIS_TOP_TYPE.CODE) = FUNCTION_DT then do;
+		if ^IS_CAST_VOP (VOP) then
+			/* Error; attempt to initialize a function. */
+			call SEMANTIC_ERROR (ERR_CONVERT_FUNCTION);
+		else if VOP ^= IMPLICIT_CAST_VO then
+			/* Any explicit cast to function is illegal. */
+			call SEMANTIC_ERROR (ERR_FUN_CAST);
+	end;
+
+	NLEVELS_ABOVE_CLASS = 0;
+	CONSTRUCTOR = CONSTRUCTOR_OF_TYPE (TYPE_NODE_ID, NLEVELS_ABOVE_CLASS);
+
+	if CONSTRUCTOR ^= NULL_NID then do;
+
+		call GET_TYPE_NODE_R (TYPE_NODE_ID, TP);
+		MEMBERS = 1;
+		COUNT = NULL_CXX_VID;
+
+		do SKIP_NLEVELS = 0 to NLEVELS_ABOVE_CLASS;
+			call GET_TOP_LEVEL_TYPE_P (TP, SKIP_NLEVELS, 
+						   THIS_TOP_TYPE);
+			if THIS_TOP_TYPE.CODE ^= byte (ARRAY_DT) then
+				leave;
+			call GET_DIM_NODE_R (THIS_TOP_TYPE.DIMENSION, DP);
+			if ^DP->DIM_NODE.INCOMPLETE then do;
+				NEW_MEMBERS = MEMBERS * DP->DIM_NODE.VALUE;
+				if NEW_MEMBERS > 0 then
+					MEMBERS = NEW_MEMBERS;
+				else
+					call COMPILER_ERROR (ERR_ASSERT_FAIL);
+			end;
+			else if DP->DIM_NODE.VALUE_ID = NULL_CXX_VID then do;
+				call COMPILER_ERROR (ERR_ASSERT_FAIL);
+			end;
+			else do;
+				COUNT = DP->DIM_NODE.VALUE_ID;
+				call COUNT_UP_VALUE (COUNT);
+			end;
+			call RELEASE_DIM_NODE (THIS_TOP_TYPE.DIMENSION);
+		end;
+
+		SINGLE = FALSE;
+		if MOST_DERIVED ^= NULL_NID then
+			MOST_DERIVED_ID = MOST_DERIVED;
+		else
+			MOST_DERIVED_ID = THIS_TOP_TYPE.TAG_SYMBOL;
+
+		if COUNT = NULL_CXX_VID then do;
+			if MEMBERS = 1 then
+				SINGLE = TRUE;
+			else	COUNT = INTEGER_VALUE (MEMBERS, INT_BT);
+		end;
+		else
+			COUNT = GET_VALUE_AND_EXPAND_LR
+				(MUL_VO,
+				 COUNT,
+				 INTEGER_VALUE (MEMBERS, INT_BT));
+
+		if SINGLE then
+			RESULT = CALL_CONSTRUCTOR (CONSTRUCTOR, ARGS, 
+						   MOST_DERIVED_ID, FALSE);
+		else if NARGS = 0 then do;
+			call GET_SYM_NODE_R (CONSTRUCTOR, SP);
+			RESULT = CALL_ARRAY_INIT
+				   (SP->SYM_NODE.ENCLOSING_SCOPE_OWNER, COUNT,
+				    TYPE_NODE_ID);
+			call RELEASE_SYM_NODE (CONSTRUCTOR);
+		end;
+		else do;
+			/* initializing array from array value */
+			call GET_SYM_NODE_R (CONSTRUCTOR, SP);
+			RESULT = CALL_ARRAY_COPY
+				   (SP->SYM_NODE.ENCLOSING_SCOPE_OWNER, COUNT,
+				    TYPE_NODE_ID, ARGS);
+			call RELEASE_SYM_NODE (CONSTRUCTOR);
+		end;
+	end;
+	else do;
+		/* not a type with a constructor */
+		if NARGS = 1 then do;
+			/* One argument -- equivalent to cast. */
+			KV = ARGS->CXX_VALUE_NODE.LEFT;
+			call COUNT_UP_VALUE (KV);
+			call COUNT_DOWN_VALUE (ARGS);
+
+			CXX_VALUE_NODE_PTR = KV;
+			call GET_VALUE_TYPE (ARG_TYPE);
+			if ARG_TYPE.CODE = byte (REFERENCE_DT) then
+				call STRIP_TOP_TYPE (ARG_TYPE, FALSE);
+
+			call SET_TYPE_NODE_R (TYPE_NODE_ID);
+			call GET_TYPE_NODE_TYPE (WORK_TYPE);
+
+			COMPATIBLE = FALSE;
+			if   IS_AGGREGATE_TAG_TYPE (rank (ARG_TYPE.CODE))
+			   & IS_AGGREGATE_TAG_TYPE (rank (WORK_TYPE.CODE))
+			   & ^ARG_TYPE.NOT_AN_LVALUE then do;
+				/*
+				/* Semantic checks should work as if a copy
+				/* constructor had been declared for this
+				/* type.  In particular,
+				/* destructor access check must be avoided if
+				/* this is a fetch from a compatible lvalue.
+				/**/
+				if IS_BASE_CLASS_OF (WORK_TYPE.TAG_SYMBOL,
+						     ARG_TYPE.TAG_SYMBOL,
+						     IS_AMBIGUOUS,
+						     IS_INACCESSIBLE,
+						     IS_VIRTUAL) then
+					COMPATIBLE = ^IS_INACCESSIBLE;
+			end;
+
+			if ^COMPATIBLE then
+				RESULT = GENERAL_CONVERT_VALUE
+					 (KV, WORK_TYPE, VOP);
+			else do;
+				KV = VALUE_OF (KV);
+				RESULT = FETCH_VALUE (KV, ARG_TYPE.TAG_SYMBOL);
+				if WORK_TYPE.TAG_SYMBOL
+				   ^= ARG_TYPE.TAG_SYMBOL then do;
+					RESULT = ALLOC_CXX_VALUE_NODE_L
+					         (CAST_TO_BASE_VO, RESULT);
+					call SET_VALUE_TYPE (WORK_TYPE);
+				end;
+			end;
+		end;
+		else if NARGS > 1 then do;
+			/* 2 or more arguments */
+			call SEMANTIC_ERROR (ERR_NO_CONSTRUCTOR);
+			call COUNT_DOWN_VALUE (ARGS);
+			RESULT = NULL_CXX_VID;
+		end;
+		else  do;
+			/* 0 arguments; undefined value */
+			if rank (THIS_TOP_TYPE.CODE) = REFERENCE_DT then do;
+				if VOP ^= IMPLICIT_CAST_VO then
+					call SEMANTIC_ERROR
+					     (ERR_UNINITIALIZED_REFERENCE);
+			end;
+			RESULT = NULL_CXX_VID;
+		end;
+	end;
+
+	if RESULT = NULL_CXX_VID then do;
+		/*
+		/* C++ ARM 5.2.3 "If the type is a class with a
+		/* suitably declared constructor that constructor
+		/* will be called; otherwise the result is an
+		/* undefined value of the specified type."
+		/**/
+		call SET_TYPE_NODE_R (TYPE_NODE_ID);
+		call GET_TYPE_NODE_TYPE (WORK_TYPE);
+		call DETERMINE_SIZE (WORK_TYPE);
+		RESULT = ALLOC_CXX_VALUE_NODE (UNINITIALIZED_VO);
+		call SET_VALUE_TYPE (WORK_TYPE);
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+		CXX_VALUE_NODE.NULARY = TRUE;
+	end;
+
+	return (RESULT);
+
+end GET_CONSTRUCTOR_VALUE;
+
+/* ---------------------------------------------------------------------
+/* CALL_NEEDS_OBJECT
+/*
+/* Returns whether the value node (which is known to be a CALL_FUNCITON_VO) 
+/* requires an extra parameter for the object it initializes.
+/* It will be paged in on return.
+/* ------------------------------------------------------------------- */
+CALL_NEEDS_OBJECT: procedure (CALL_VALUE)
+		   internal
+		   returns (type (BOOL_T));
+
+	declare
+		CALL_VALUE	type (CXX_VID_T);
+	declare
+		V_C_SYM		type (NID_T),
+		RESULT		type (BOOL_T),
+		SP		type (POINTER_T);
+
+	CXX_VALUE_NODE_PTR = CALL_VALUE;
+	if CALL_VALUE->CXX_VALUE_NODE.OP ^= CALL_FUNCTION_VO then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	RESULT = FALSE;
+	CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+	if ((CXX_VALUE_NODE.OP = VALUE_VO) |
+	    (CXX_VALUE_NODE.OP = ADDR_VO)) &
+	   ^CXX_VALUE_NODE.LEFT_IS_NOT_VID &
+	   (CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+		if (CXX_VALUE_NODE.OP = REF_VO) &
+		   (CXX_VALUE_NODE.LEFT_NID ^= NULL_NID) then do;
+			V_C_SYM = RUN_TIME_SYMBOL (ARRAY_INIT_NAME);
+			if CXX_VALUE_NODE.LEFT_NID = V_C_SYM then
+				RESULT = TRUE;
+			V_C_SYM = RUN_TIME_SYMBOL (ARRAY_APPLY_NAME);
+			if CXX_VALUE_NODE.LEFT_NID = V_C_SYM then
+				RESULT = TRUE;
+			call GET_SYM_NODE_R (CXX_VALUE_NODE.LEFT_NID, SP);
+			if SP->SYM_NODE.IS_CONSTRUCTOR_FUNCTION then
+				RESULT = TRUE;
+			call RELEASE_SYM_NODE (CXX_VALUE_NODE.LEFT_NID);
+		end;
+	end;
+
+	CXX_VALUE_NODE_PTR = CALL_VALUE;
+	if IS_AGGREGATE_TAG_TYPE (rank (CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+		/*
+		/* Set RESULT true if the type is
+		/* a class with a copy constructor.
+		/**/
+		call GET_SYM_NODE_R (CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL, SP);
+		if SP->SYM_NODE.NEEDS_COPY then
+			RESULT = TRUE;
+		call RELEASE_SYM_NODE (CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL);
+	end;
+
+	return (RESULT);
+
+end CALL_NEEDS_OBJECT;
+
+/* ---------------------------------------------------------------------
+/* NEEDS_OBJECT:
+/*
+/* Tells whether the given expression is too tricky simply to be
+/* emitted with an ASSIGN_VO/MOVE_OP when it initializes something.
+/*
+/* Note: This is no longer called for COMMA_VO or LEFT_VALUE_VO
+/* and is therefore somewhat obsolete.  This change was made
+/* because a DOT or IMPLICIT_CAST could be buried inside.
+/* So for COMMA_VO and LVALUE_VO there is now a difference between
+/*     1. whether their RIGHT/LEFT operand needs TRANSMUTE_WITH_TEMP
+/* and 2. whether it would be valid to create a temp up front.
+/*
+/* Returns true if the value node is a CALL_FUNCTION_VO 
+/* which needs an extra parameter for the object to initialize.
+/* This need arises either when the type has a nontrivial copy
+/* constructor or the function directly invoked is a constructor,
+/* or if the function is the array initialization function.
+/*
+/* Also returns true when the value node is UNINITIALIZED_VO 
+/* or CONDITIONAL_VO for a class or for void, because those shouldn't
+/* be passed along to the back end.  Also when it's LEFT_VALUE_VO
+/* for void.
+/*
+/* Also, when LEFT_VALUE occurs with an operand that's a non-lvalue VALUE
+/* (i.e. a fetch), the fetch should take place prior to the LEFT_VALUE's
+/* side-effect, so NEEDS_OBJECT returns true.
+/*
+/* REFERENCE is 0, ADDR_VO, or IMPLICIT_ADDR_VO.
+/*
+/* The value node (if any) is paged in on return.
+/* ------------------------------------------------------------------- */
+
+NEEDS_OBJECT: procedure (VALUE, FETCH, REFERENCE)
+	      internal
+	      returns (type (BOOL_T));
+
+	declare
+		VALUE		type (CXX_VID_T),
+		FETCH		type (BOOL_T),
+		REFERENCE	type (SHORT_T);
+
+	declare 
+		RESULT		type (BOOL_T),
+		TYPE_CODE	type (SHORT_T),
+		VOP		type (SHORT_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		LOW_LEVEL_TYPE	type (NID_T);
+
+	RESULT = FALSE;
+	CXX_VALUE_NODE_PTR = VALUE;
+
+	/* VALUE is paged in, and is not a COMMA or LEFT_VALUE. */
+
+	VOP = CXX_VALUE_NODE.OP;
+	if CXX_VALUE_NODE.TOP_TYPE.CODE = byte (REFERENCE_DT) then
+		RESULT = FALSE;
+	else if VOP = CALL_FUNCTION_VO then do;
+		if REFERENCE ^= 0 then
+			RESULT = TRUE;
+		else if CALL_NEEDS_OBJECT (VALUE) then
+			RESULT = TRUE;
+	end;
+	else if (VOP = CONDITIONAL_VO) |
+		(VOP = UNINITIALIZED_VO) then do;
+		TYPE_CODE = rank (CXX_VALUE_NODE.TOP_TYPE.CODE);
+		if TYPE_CODE = MEMBER_POINTER_DT then do;
+			call GET_TOP_LEVEL_TYPE 
+			     (CXX_VALUE_NODE.TYPE, 
+			      CXX_VALUE_NODE.DERIVED_TYPE_SKIP + 1, 
+			      TYPE_DATA);
+			LOW_LEVEL_TYPE = GET_MEMBER_POINTER_TYPE (TYPE_DATA);
+			call GET_TOP_TYPE (LOW_LEVEL_TYPE, TYPE_DATA);
+			TYPE_CODE = rank (TYPE_DATA.CODE);
+		end;
+		RESULT = IS_AGGREGATE_TAG_TYPE (TYPE_CODE)
+			| TYPE_CODE = VOID_BT
+			| TYPE_CODE = ARRAY_DT
+			| REFERENCE ^= 0;
+	end;
+	else if   VOP = INTEGER_VO | VOP = CONSTANT_VO
+		| (VOP = VALUE_VO & ^CXX_VALUE_NODE.NOT_AN_LVALUE) then
+		RESULT = FALSE;
+	else
+		RESULT = (REFERENCE ^= 0);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+	return (RESULT);
+
+end NEEDS_OBJECT;
+
+/* ---------------------------------------------------------------------
+/* MAY_NEED_OBJECT:
+/*
+/* Looks at the top level of the given value node and returns
+/* TRUE if there's a chance that TRANSMUTE_WITH_TEMP would need to
+/* do something with it.
+/*
+/* REFERENCE is 0, ADDR_VO, or IMPLICIT_ADDR_VO.
+/* ------------------------------------------------------------------- */
+
+MAY_NEED_OBJECT: procedure (VALUE, FETCH, REFERENCE)
+	         returns   (type (BOOL_T))
+	         internal;
+	declare
+		VALUE		type (CXX_VID_T),
+		FETCH		type (BOOL_T),
+		REFERENCE	type (SHORT_T),
+		TYPE_CODE	type (SHORT_T);
+	declare 
+		VOP		type (SHORT_T);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+	TYPE_CODE = rank (CXX_VALUE_NODE.TOP_TYPE.CODE);
+	VOP = CXX_VALUE_NODE.OP;
+	if VOP = COMMA_VO | VOP = LEFT_VALUE_VO | VOP = DOT_STAR_VO
+			  | VOP = CAST_TO_BASE_VO 
+			  | TYPE_CODE = ARRAY_DT
+			  /* | TYPE_CODE = FUNCTION_DT */
+			  | TYPE_CODE = MEMBER_POINTER_DT then
+		return (TRUE);
+	else	return (NEEDS_OBJECT (VALUE, FETCH, REFERENCE));
+
+end MAY_NEED_OBJECT;
+
+/* ---------------------------------------------------------------------
+/* TRANSMUTE_WITH_TEMP:
+/*
+/* Reprocess a value node so that it's ready for emitting to the
+/* back end in the context specified by VOP.
+/* Create a temp for the object implied by the value node, if necessary.
+/* Note that this is never necessary for the operands of built-in
+/* operations (+, -, etc.).
+/*
+/* If the value node is a CALL_FUNCTION_VO
+/* which needs an extra parameter for the object to initialize,
+/* create a temp symbol to hold the constructed or returned value,
+/* and insert its location as an extra parameter to the
+/* CALL_FUNCTION_VO operation.  
+/* If the transmutation is performed, the value node is modified into
+/* a COMMA_VO expression whose second operand is VALUE->REF->temp.
+/* The returned value node (if any) is paged in on return.
+/*
+/* This function is called to create argument objects, and to create
+/* objects when a reference is being initialized with an incompatible
+/* expression.
+/*
+/* If the object requires destruction, arranging that is up to the caller.
+/* If a temp is created which requires destruction, an expression for
+/* destroying it is set up and VICTIM is set to its value node id.
+/* Otherwise, VICTIM is set to 0.
+/*
+/* CALLER_DESTROY indicates that this is a temp for an expression
+/* whose value is being bound to a reference, so that the destruction for any
+/* temp created, must be returned through VICTIM and must never be handled
+/* via NOTE_DESTRUCTOR.
+/* 
+/* VOP tells the context in which the expression is to be emitted.
+/* It may be ARG_VO, ADDR_VO, NOP_VO, COPY_VO, or RETURN_VO.
+/* ------------------------------------------------------------------- */
+
+TRANSMUTE_WITH_TEMP: procedure (VALUE, VICTIM, CALLER_DESTROY, 
+				STORAGE_CLASS, VOP)
+		     returns (type (CXX_VID_T))
+		     recursive
+		     external (X_TRANSMUTE_WITH_TEMP);
+
+	declare
+		VALUE		type (CXX_VID_T),
+		VICTIM		type (CXX_VID_T),
+		CALLER_DESTROY	type (BOOL_T),
+		STORAGE_CLASS	type (SHORT_T),
+		VOP		type (SHORT_T);
+
+	if VOP = ADDR_VO | VOP = IMPLICIT_ADDR_VO then
+		return (TRANSMUTE (VALUE, VICTIM, 
+				^(SW_ZOMBIE_TEMP & ^CALLER_DESTROY),
+				STORAGE_CLASS, FALSE, VOP));
+	else if VOP = NOP_VO then
+		return (TRANSMUTE (VALUE, VICTIM,
+				^(SW_ZOMBIE_TEMP & ^CALLER_DESTROY),
+				STORAGE_CLASS, FALSE, 0));
+	else
+		/* Note that FETCH will only be true when the value is being
+		/* copied bitwise to the new context.  The temp must not be a
+		/* derived type.
+		/**/
+		return (TRANSMUTE (VALUE, VICTIM, TRUE,
+				STORAGE_CLASS, TRUE, 0));
+
+end TRANSMUTE_WITH_TEMP;
+
+/* ---------------------------------------------------------------------
+/* TRANSMUTE
+/*
+/* Like TRANSMUTE_WITH_TEMP, but the FETCH/REFERENCE paramters give
+/* a little more fine-grained indication of the demands of the caller.
+/* also, CALLER_DESTROY has a different meaning.  It is assumed already
+/* to have taken SW_ZOMBIE_TEMP into account, that is, for correct results
+/* it must be TRUE when SW_ZOMBIE_TEMP is false.
+/*
+/* FETCH means that the transmuted value will be moved to a new location
+/* in bitwise fashion.  When it is true the resulting temp (if any) will
+/* not be aliased.  Therefore if the result is a newly-created temp
+/* it need not be destroyed, and indeed TRANSMUTE will make no provisions
+/* for its destruction.
+/*
+/* When FETCH is false, the value of the object during execution of
+/* the expression "VALUE" is irrelevant.
+/*
+/* Non-zero REFERENCE means that the transmuted value will have its address
+/* used.  REFERENCE is 0, ADDR_VO, or IMPLICIT_ADDR_VO.  
+/* 
+/* Both FETCH and REFERENCE may be true when the VALUE is the base value
+/* of a fetched DOT_STAR_VO expression.  Both may be false when the VALUE is
+/* the operand of NOP_VO.
+/* ------------------------------------------------------------------- */
+TRANSMUTE: procedure (VALUE, VICTIM, CALLER_DESTROY, 
+		      STORAGE_CLASS, FETCH, REFERENCE)
+	   returns (type (CXX_VID_T))
+	   recursive
+	   internal;
+
+	declare
+		VALUE		type (CXX_VID_T),
+		VICTIM		type (CXX_VID_T),
+		CALLER_DESTROY	type (BOOL_T),
+		STORAGE_CLASS	type (SHORT_T),
+		FETCH		type (BOOL_T),
+		REFERENCE	type (SHORT_T);
+
+	declare
+		TEMP		type (CXX_VID_T),
+		TEMP_ADDR	type (CXX_VID_T),
+		TEMP_REF	type (CXX_VID_T),
+		TEMP_VALUE	type (CXX_VID_T),
+		INITTER		type (CXX_VID_T),
+		SCOPE_P		pointer,
+		RESULT		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		QUAL		type (NID_T),
+		MEMBER		type (CXX_VID_T),
+		THIS_TAG	type (NID_T),
+		TEMP_TAG	type (NID_T),
+		THIS_VOP	type (SHORT_T),
+		(LEFT, RIGHT)	type (CXX_VID_T),
+		FORCE_COPY	type (BOOL_T);
+
+	if VALUE = NULL_CXX_VID then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+/******
+/*	Here's an old error message which needs updating.
+/*            if AM_DEBUGGER then 
+/*            do; /* Can't do "function().member" from debugger. */
+/*                call SEMANTIC_ERROR (ERR_EVAL_FCT_DOT_MEMBER);
+/*                goto DOT_ERROR;
+/*            end;
+/******/
+
+	/* If FETCH, let the new context destroy arguments and return values. */
+	FORCE_COPY = FALSE;
+	RESULT = VALUE;
+	VICTIM = NULL_CXX_VID;
+
+	CXX_VALUE_NODE_PTR = VALUE;
+	THIS_VOP = CXX_VALUE_NODE.OP;
+
+	if THIS_VOP = COMMA_VO then do;
+		if MAY_NEED_OBJECT
+		   (CXX_VALUE_NODE.RIGHT, FETCH, REFERENCE) then do;
+			CXX_VALUE_NODE_PTR = VALUE;
+			LEFT = CXX_VALUE_NODE.LEFT;
+			RIGHT = CXX_VALUE_NODE.RIGHT;
+			call COUNT_UP_VALUE (LEFT);
+			call COUNT_UP_VALUE (RIGHT);
+			call COUNT_DOWN_VALUE (VALUE);
+			
+			RIGHT = TRANSMUTE (RIGHT, VICTIM, CALLER_DESTROY,
+					   STORAGE_CLASS, FETCH, REFERENCE);
+			RESULT = EFFECT_BEFORE_VALUE (LEFT, RIGHT);
+		end;
+	end;
+
+	else if THIS_VOP = LEFT_VALUE_VO then do;
+		if FETCH | MAY_NEED_OBJECT (CXX_VALUE_NODE.LEFT, 
+					    FETCH, REFERENCE) then do;
+			CXX_VALUE_NODE_PTR = VALUE;
+			LEFT = CXX_VALUE_NODE.LEFT;
+			RIGHT = CXX_VALUE_NODE.RIGHT;
+			call COUNT_UP_VALUE (LEFT);
+			call COUNT_UP_VALUE (RIGHT);
+			call COUNT_DOWN_VALUE (VALUE);
+
+			if FETCH then do;
+				/* Make a temp. */
+				CXX_VALUE_NODE_PTR = LEFT;
+				call GET_VALUE_TYPE (TYPE_INFO);
+				TEMP = GET_TEMP_VALUE (TYPE_INFO, AUTO_ST,
+								  FALSE);
+				call COUNT_UP_VALUE (TEMP);
+
+				/* Initialize new temp, before RIGHT. */
+				TEMP_REF = GET_TEMP_REF (TEMP);
+				INITTER = INITIALIZE (TEMP_REF, LEFT, TRUE);
+				INITTER = CONCATENATE_STATEMENTS (INITTER, 
+								  RIGHT);
+				/*
+				/* Form expr for value of new temp,
+				/* after setting it up.
+				/**/
+				TEMP_REF = GET_TEMP_REF (TEMP);
+				TEMP_VALUE = PLAIN_VALUE_OF_REF (TEMP_REF);
+				CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+				RESULT = EFFECT_BEFORE_VALUE (INITTER,
+							      TEMP_VALUE);
+				VICTIM = NULL_CXX_VID;
+			end;
+			else do;
+				LEFT = TRANSMUTE (LEFT, VICTIM, CALLER_DESTROY,
+					      STORAGE_CLASS, FETCH, REFERENCE);
+				RESULT = VALUE_BEFORE_EFFECT (LEFT, RIGHT);
+			end;
+		end;
+	end;
+
+	else if THIS_VOP = DOT_STAR_VO then do;
+		if rank (CXX_VALUE_NODE.TOP_TYPE.CODE) ^= FUNCTION_DT then do;
+			/* Expression involves access to a member subobject;
+			/* temp will be made for the superobject.
+			/**/
+			/* Get the information out of the value node. */
+			TEMP_VALUE = CXX_VALUE_NODE.LEFT;
+			MEMBER = CXX_VALUE_NODE.RIGHT;
+			call COUNT_UP_VALUE (TEMP_VALUE);
+			call COUNT_UP_VALUE (MEMBER);
+			call COUNT_DOWN_VALUE (VALUE);
+
+			FORCE_COPY = TRANSMUTE_SUPEROBJECT();
+			RESULT = ACCESS_DATA_MEMBER (TEMP_VALUE, MEMBER);
+		end;
+		else
+			call AVOID_FUNCTION_TEMP ();
+	end;
+
+	else if THIS_VOP = CAST_TO_BASE_VO then do;
+		/* Expression involves access to a base class subobject;
+		/* temp will be made for the superobject.
+		/**/
+		/* Get the information out of the value node. */
+		TEMP_VALUE = CXX_VALUE_NODE.LEFT;
+		THIS_TAG = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+		call COUNT_UP_VALUE (TEMP_VALUE);
+		TEMP_TAG = TEMP_VALUE->CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+		call COUNT_DOWN_VALUE (VALUE);
+
+		FORCE_COPY = TRANSMUTE_SUPEROBJECT();
+		TEMP_VALUE = GET_VALUE_AND_EXPAND_L
+			     (IMPLICIT_ADDR_VO, TEMP_VALUE);
+		/* Pretend this is an ARG_VO because if VOP is
+		/* CAST, DERIVED_TO_BASE_CLASS_POINTER will think
+		/* this is an explicit pointer cast and won't diagnose
+		/* any access errors.  And we are in a sense handling
+		/* the argument to a copy constructor here.
+		/**/
+		if DERIVED_TO_BASE_CLASS_POINTER 
+		       (TEMP_VALUE, TEMP_TAG, THIS_TAG, NULL_NID,
+			NULL_NID, FALSE, ARG_VO) then
+			;
+		RESULT = GET_VALUE_AND_EXPAND_L (IMPLICIT_STAR_VO, TEMP_VALUE);
+	end;
+
+	else if ^NEEDS_OBJECT (VALUE, FETCH, REFERENCE) then do;
+		VICTIM = NULL_CXX_VID;
+		if CXX_VALUE_NODE.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT) then
+			RESULT = TRANSMUTE_MEMBER_VALUE (VALUE, STORAGE_CLASS);
+		else
+			RESULT = VALUE;
+	end;
+
+	else do;
+		/* VALUE is paged in.  Make a temp of its type. */
+		call GET_VALUE_TYPE (TYPE_INFO);
+		TEMP = GET_TEMP_VALUE (TYPE_INFO, STORAGE_CLASS, 
+				       ^CALLER_DESTROY);
+		TEMP_REF = GET_TEMP_REF (TEMP);
+		if ^CALLER_DESTROY then
+			VICTIM = NULL_CXX_VID;
+		else do;
+			call COUNT_UP_VALUE (TEMP_REF);
+			VICTIM = DESTROY_OBJECT (TEMP_REF, NULL_CXX_VID, 
+						 TYPE_INFO.TOP_TYPE,
+						 FALSE, NULL_NID);
+		end;
+		call COUNT_UP_VALUE (TEMP_REF);
+		INITTER = INITIALIZE_OBJECT (TEMP_REF, VALUE);
+		TEMP_VALUE = PLAIN_VALUE_OF_REF (TEMP_REF);
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+		RESULT = EFFECT_BEFORE_VALUE (INITTER, TEMP_VALUE);
+	end;
+
+	if FORCE_COPY | (FETCH & VICTIM ^= NULL_CXX_VID) then do;
+		/* If FETCH is true we must know about any destructors,
+		/* because the back end can't be trusted to fetch from
+		/* the temp before its destructor is called.
+		/**/
+		if STORAGE_CLASS ^= AUTO_ST then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+		/* Make another temp. */
+		CXX_VALUE_NODE_PTR = RESULT;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		TEMP = GET_TEMP_VALUE (TYPE_INFO, AUTO_ST, FALSE);
+		call COUNT_UP_VALUE (TEMP);
+
+		/* Initialize new temp, and destroy its initializing object. */
+		TEMP_REF = GET_TEMP_REF (TEMP);
+		INITTER = ALLOC_CXX_VALUE_NODE_LR (ASSIGN_VO, TEMP_REF, RESULT);
+		call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+		INITTER = CONCATENATE_STATEMENTS (INITTER, VICTIM);
+
+		/* Form expr for value of new temp after setting it up. */
+		TEMP_REF = GET_TEMP_REF (TEMP);
+		TEMP_VALUE = PLAIN_VALUE_OF_REF (TEMP_REF);
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+		RESULT = EFFECT_BEFORE_VALUE (INITTER, TEMP_VALUE);
+		VICTIM = NULL_CXX_VID;
+	end;
+
+	return (RESULT);
+
+/* ---------------------------------------------------------------------
+/* TRANSMUTE_SUPEROBJECT
+/*
+/* Make sure superobject can be handled:  Conversion to base and
+/* dot operation are similar.  In both cases the emitted ops involve
+/* taking the address of the superobject.
+/*
+/* Special handling is required if the context is FETCH, but the
+/* superobject NEEDS_COPY and so it can't be fetched.
+/* Return whether the special case occurred.  If so, then the
+/* new TEMP_VALUE has to be copied, even if there is no VICTIM,
+/* because it is not to be aliased with the temp created by the
+/* superobject's constructor.
+/* ------------------------------------------------------------------- */
+TRANSMUTE_SUPEROBJECT: procedure
+		       returns (type (BOOL_T));
+
+	declare
+		NEEDS_COPY	type (BOOL_T),
+		P		pointer,
+		SUPER_FETCH	type (BOOL_T),
+		SUPER_VOP	type (SHORT_T);
+
+	/* Page in value node for superobject, determine if it NEEDS_COPY. */
+	CXX_VALUE_NODE_PTR = TEMP_VALUE;
+	call GET_SYM_NODE_R (CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL, P);
+	NEEDS_COPY = P->SYM_NODE.NEEDS_COPY;
+	call RELEASE_SYM_NODE (CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL);
+
+	/* Transmute the superobject; if needs_copy then it's not fetchable. */
+	SUPER_FETCH = FETCH & ^NEEDS_COPY;
+
+	/* Pass on the more demanding of either VOP or IMPLICIT_ADDR_VO,
+	/* unless the super class doesn't need_copy and the super object
+	/* is not an lvalue, in which case it seems that we can avoid making
+	/* a copy of the larger object.  If more bottom-up information
+	/* were preserved, this could be more effective.
+	/**/
+	SUPER_VOP = REFERENCE;
+	if    REFERENCE = 0 
+	   | (REFERENCE = ADDR_VO & ^NEEDS_COPY &
+	      CXX_VALUE_NODE.NOT_AN_LVALUE) then
+		SUPER_VOP = IMPLICIT_ADDR_VO;
+
+	TEMP_VALUE = TRANSMUTE (TEMP_VALUE, VICTIM, CALLER_DESTROY,
+				STORAGE_CLASS, SUPER_FETCH, SUPER_VOP);
+
+	/* Force the special temp to be made when the context
+	/* requires a fetch but the superclass can't support it.
+	/* Also when we don't ask a true ADDR_VO of the superclass,
+	/* but the context requires it.
+	/**/
+	return (  FETCH ^= SUPER_FETCH 
+	        | (REFERENCE = ADDR_VO & SUPER_VOP ^= ADDR_VO));
+
+end TRANSMUTE_SUPEROBJECT;
+
+/* ---------------------------------------------------------------------
+/* AVOID_FUNCTION_TEMP
+/*
+/* Function, unsupported value, fatal error already
+/* diagnosed.  Recover to prevent bombs.
+/* ------------------------------------------------------------------- */
+
+AVOID_FUNCTION_TEMP: procedure
+		     internal;
+
+	call COUNT_DOWN_VALUE (VALUE);
+	call GET_VALUE_TYPE (TYPE_INFO);
+	RESULT = ALLOC_CXX_VALUE_NODE (UNINITIALIZED_VO);
+	CXX_VALUE_NODE.NULARY = TRUE;
+	call SET_VALUE_TYPE (TYPE_INFO);
+
+end AVOID_FUNCTION_TEMP;
+
+end TRANSMUTE;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_OBJECT:
+/* Transmute an expression which has a value to a valueless expression,
+/* which uses the value to initialize the object.
+/* Also transmute some valueless (void) expressions to a form acceptable
+/* to the back end.  Returns the valueless expression, paged in.
+/* 
+/* If the value node is an UNINITIALIZED_VO, that represents
+/* non-initialization.  Return 0.
+/*
+/* If the value node is a CALL_FUNCTION_VO which needs an extra parameter
+/* for the object to initialize, transmute VALUE's CALL_FUNCTION_VO by
+/* inserting the location of the object as an extra parameter.
+/*
+/* If there's no copy constructor, just copy VALUE to OBJECT using
+/* ordinary (not user-defined) assignment.
+/*
+/* The value must already have been converted to the type of the object,
+/* so that it can just be copied directly.
+/*
+/* OBJECT is a ref-op expression for the object to initialize.  It does NOT
+/* get counted up.  OBJECT may be NULL_CXX_VID when the expression's type
+/* is void.
+/*
+/* The returned value node id will be 0 if the initializing expression
+/* is an undefined value, so no initialization need be carried out.
+/*
+/* INITIALIZE_OBJECT does not make a cross-reference entry for the
+/* object.
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_OBJECT: procedure (OBJECT, VALUE)
+		   recursive
+		   returns (type (CXX_VID_T))
+		   external (X_INITIALIZE_OBJECT);
+
+	declare
+		OBJECT		type (CXX_VID_T),
+		VALUE		type (CXX_VID_T);
+
+	return (INITIALIZE (OBJECT, VALUE, FALSE));
+
+end INITIALIZE_OBJECT;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE
+/*
+/* FORCE_COPY indicates that the context is one in which the OBJECT will
+/* not be aliased, and the initializing expression must likewise have
+/* no alias to OBJECT.  That is, it will be initialized by bitwise copy.
+/* Note that when FORCE_COPY is true and NEEDS_COPY is also true,
+/* that's because OBJECT is an intermediate stage in a legal bitwise
+/* assignment of VALUE to some object.
+/* ------------------------------------------------------------------- */
+INITIALIZE: procedure (OBJECT_IN, VALUE, FORCE_COPY)
+	    recursive
+	    returns (type (CXX_VID_T))
+	    internal;
+
+	declare
+		OBJECT_IN	type (CXX_VID_T),
+		VALUE		type (CXX_VID_T),
+		FORCE_COPY	type (BOOL_T);
+	
+	declare
+		OBJECT		type (CXX_VID_T),
+		ARG_LIST	type (CXX_VID_T),
+		NEW_ARG		type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		RIGHT		type (CXX_VID_T),
+		RIGHT_COUNT	type (SHORT_T),
+		LEFT		type (CXX_VID_T),
+		LOWEST_COMMA	type (CXX_VID_T),
+		INITTER		type (CXX_VID_T),
+		COLON		type (CXX_VID_T),
+		TEST		type (CXX_VID_T),
+		ALT		type (CXX_VID_T),
+		SPECIAL		type (BOOL_T),
+		VOP		type (SHORT_T),
+		TV		type (CXX_VID_T),
+		TYPINF		type (TYPE_INFO_T),
+		TYPE_ID		type (NID_T),
+		TEMP		type (CXX_VID_T),
+		TEMP_REF	type (CXX_VID_T),
+		OBJECT_TYPE	type (TYPE_INFO_T),
+		TYPE_CODE	type (SHORT_T),
+		CONSTRUCTOR	type (NID_T),
+		SP		pointer,
+		VICTIM		type (CXX_VID_T),
+		CONSTANT	type (LONG_T),
+		TAG_SYMBOL	type (NID_T);
+
+	if VALUE = NULL_CXX_VID then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+	TYPE_CODE = rank (CXX_VALUE_NODE.TOP_TYPE.CODE);
+
+	if TYPE_CODE = VOID_BT then do;
+		if OBJECT_IN ^= NULL_CXX_VID then do;
+			/* The object has no bits; forget it. */
+			call COUNT_DOWN_VALUE (OBJECT_IN);
+			CXX_VALUE_NODE_PTR = VALUE;
+		end;
+		OBJECT = NULL_CXX_VID;
+	end;
+	else if OBJECT_IN = NULL_CXX_VID then
+		/* Nothing to initialize with the value. */
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	else
+		OBJECT = OBJECT_IN;
+
+	VOP = CXX_VALUE_NODE.OP;
+	if VOP = UNINITIALIZED_VO | TYPE_CODE = FUNCTION_DT then do;
+		/*
+		/* Either (1) the initializing value is undefined,
+		/* or (2) unsupported initialization with a function-type
+		/* expression, fatal error already diagnosed.
+		/* Don't generate any code.
+		/**/
+		call COUNT_DOWN_VALUE (VALUE);
+		call COUNT_DOWN_VALUE (OBJECT);
+		return (NULL_CXX_VID);
+	end;
+
+	if VOP = CONDITIONAL_VO then do;
+		/* The initializing expr is an ordinary conditional.  
+		/**/
+		if  CXX_VALUE_NODE.TOP_TYPE.CODE = byte (VOID_BT)
+		  & OBJECT ^= NULL_CXX_VID then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+		/* Change each branch of the
+		/* COLON_VO to a valueless expression initializing
+		/* the object with its expression.
+		/**/
+		COLON = CXX_VALUE_NODE.RIGHT;
+		TEST = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (TEST);
+
+		LEFT = COLON->CXX_VALUE_NODE.LEFT;
+		RIGHT = COLON->CXX_VALUE_NODE.RIGHT;
+		ALT = LEFT;
+		if ALT->CXX_VALUE_NODE.OP ^= ALTERNATE_VO then
+			/* no alternates; done prematurely */
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+		/* Discard the ALTERNATE_VOs. */
+		LEFT = ALT->CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (LEFT);
+		ALT = RIGHT;
+		RIGHT = ALT->CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (RIGHT);
+		call COUNT_DOWN_VALUE (VALUE);
+
+		/* Each branch of the newly-formed conditional will
+		/* initialize OBJECT.  However, the emitted code can't
+		/* refer to the REF for OBJECT twice, because the second
+		/* reference is beyond a label.  If OBJECT is complex,
+		/* use a temp rather than duplicate all of its code.
+		/**/
+		if OBJECT ^= NULL_CXX_VID then do;
+			CXX_VALUE_NODE_PTR =  OBJECT;
+			TV = CXX_VALUE_NODE.THIRD;
+		end;
+		else	TV = NULL_CXX_VID;
+		if TV ^= NULL_CXX_VID then do;
+			/* Make TEMP for OBJECT and an expr to init it. */
+			call GET_VALUE_TYPE (OBJECT_TYPE);
+			TV = GET_VALUE_AND_EXPAND_L (VALUE_VO, OBJECT);
+			TV = GET_VALUE_AND_EXPAND_L (IMPLICIT_ADDR_VO, TV);
+			call GET_VALUE_TYPE (TYPINF);
+			TEMP = GET_TEMP_VALUE (TYPINF, AUTO_ST, TRUE);
+			call COUNT_UP_VALUE (TEMP);
+			TEMP_REF = GET_TEMP_REF (TEMP);
+			TV = INITIALIZE_OBJECT (TEMP_REF, TV);
+
+			/* Make a replacement OBJECT REF. */
+			TEMP_REF = GET_TEMP_REF (TEMP);
+			OBJECT = REF_WITH_LOCATOR (
+				GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF), 
+				OBJECT_TYPE);
+
+			/* Initialize a temp with the TEST value. 
+			/* This temp is necessary because VALUE_BEFORE_EFFECT
+			/* would not handle it if TV contained a conditional.
+			/**/
+			CXX_VALUE_NODE_PTR = TEST;
+			call GET_VALUE_TYPE (TYPINF);
+			TEMP = GET_TEMP_VALUE (TYPINF, AUTO_ST, TRUE);
+			call COUNT_UP_VALUE (TEMP);
+			TEMP_REF = GET_TEMP_REF (TEMP);
+			TEST = INITIALIZE_OBJECT (TEMP_REF, TEST);
+
+			/* Make a replacement TEST expression. */
+			TV = CONCATENATE_STATEMENTS (TEST, TV);
+			TEMP_REF = GET_TEMP_REF (TEMP);
+			TEST = GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF);
+			TEST = EFFECT_BEFORE_VALUE (TV, TEST);
+		end;
+
+		if OBJECT ^= NULL_CXX_VID then
+			TV = DUPLICATE_VALUE (OBJECT, TRUE);
+		else
+			TV = NULL_CXX_VID;
+		LEFT = INITIALIZE_OBJECT (OBJECT, LEFT);
+		RIGHT = INITIALIZE_OBJECT (TV, RIGHT);
+
+		COLON = ALLOC_CXX_VALUE_NODE_LR (COLON_VO, LEFT, RIGHT);
+		call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+
+		RESULT = ALLOC_CXX_VALUE_NODE_LR (CONDITIONAL_VO, TEST, COLON);
+	end;  /* CONDITIONAL_VO */
+
+	else if VOP = COMMA_VO then do;
+		RIGHT = CXX_VALUE_NODE.RIGHT;
+		LEFT = CXX_VALUE_NODE.LEFT;
+
+		/* The object initializer is required. */
+		call COUNT_UP_VALUE (RIGHT);
+		INITTER = INITIALIZE_OBJECT (OBJECT, RIGHT);
+
+		/* replace the value with object initializer */
+		call COUNT_UP_VALUE (LEFT);
+		call COUNT_DOWN_VALUE (VALUE);
+		RESULT = CONCATENATE_STATEMENTS (LEFT, INITTER);
+	end; /* COMMA_VO */
+
+	else if VOP = LEFT_VALUE_VO then do;
+		RIGHT = CXX_VALUE_NODE.RIGHT;
+		LEFT = CXX_VALUE_NODE.LEFT;
+
+		/* The object initializer is required. */
+		call COUNT_UP_VALUE (LEFT);
+		INITTER = INITIALIZE_OBJECT (OBJECT, LEFT);
+
+		/* replace the value with object initializer */
+		call COUNT_UP_VALUE (RIGHT);
+		call COUNT_DOWN_VALUE (VALUE);
+		RESULT = CONCATENATE_STATEMENTS (INITTER, RIGHT);
+	end; /* LEFT_VALUE_VO */
+
+	else if VOP = CALL_FUNCTION_VO then do;
+		if OBJECT = NULL_CXX_VID then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+		if ^FORCE_COPY & CALL_NEEDS_OBJECT (VALUE) then do;
+			ARG_LIST = CXX_VALUE_NODE.RIGHT;
+			LEFT = CXX_VALUE_NODE.LEFT;
+			call COUNT_UP_VALUE (ARG_LIST);
+			call COUNT_UP_VALUE (LEFT);
+			CXX_VALUE_NODE_PTR = OBJECT;
+			call GET_VALUE_TYPE (OBJECT_TYPE);
+			/* don't expand -- might be an array */
+			NEW_ARG = ALLOC_CXX_VALUE_NODE_L (VALUE_VO, OBJECT);
+			call SET_VALUE_TYPE (OBJECT_TYPE);
+			CXX_VALUE_NODE.UNARY = TRUE;
+			NEW_ARG = GET_VALUE_AND_EXPAND_L
+				  (IMPLICIT_ADDR_VO, NEW_ARG);
+			ARG_LIST = GET_VALUE_AND_EXPAND_LR
+				   (ARG_VO, NEW_ARG, ARG_LIST);
+			call COUNT_DOWN_VALUE (VALUE);
+			RESULT = ALLOC_CXX_VALUE_NODE_LR
+				 (CALL_VO, LEFT, ARG_LIST);
+			/* arg count */
+			CXX_VALUE_NODE.OFFSET = CHECK_ARG_SAVE (RESULT);
+		end;
+		else do;
+			/* If FORCE_COPY, VALUE may still need transmuting. */
+			RESULT = TRANSMUTE_WITH_TEMP (VALUE, VICTIM,
+					            FALSE, AUTO_ST, ASSIGN_VO);
+			RESULT = ALLOC_CXX_VALUE_NODE_LR
+				 (ASSIGN_VO, OBJECT, RESULT);
+		end;
+	end;  /* CALL_FUNCTION_VO */
+
+	else if CXX_VALUE_NODE.TOP_TYPE.CODE = byte (MEMBER_POINTER_DT) then
+		RESULT = INITIALIZE_MEMBER_VALUE (OBJECT, VALUE);
+
+	else if OBJECT ^= NULL_CXX_VID then do;
+		/*
+		/* No transformation of CALL_FUNCTION_VO
+		/* is needed; do a straight copy.
+		/**/
+		INITTER = VALUE;
+		CONSTRUCTOR = NULL_NID;
+
+		/* Determine if the type is a class with a copy constructor */
+
+		if IS_AGGREGATE_TAG_TYPE
+		   (rank (CXX_VALUE_NODE.TOP_TYPE.CODE)) then do;
+			TAG_SYMBOL = CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL;
+			call SET_SYM_NODE_R
+			     (CXX_VALUE_NODE.TOP_TYPE.TAG_SYMBOL);
+			if SYM_NODE.NEEDS_COPY then
+				CONSTRUCTOR = SYM_NODE.CONSTRUCTOR;
+		end;
+		/*
+		/* See if this value refers to an integral constant.
+		/* TODO: what about floating constants.
+		/**/
+		else do;
+			call GET_VALUE_TYPE (TYPINF);
+			if GET_INTEGRAL_CONSTANT_VALUE (INITTER, CONSTANT, 0)
+			then	INITTER = GET_INTEGER_VALUE
+					  (CONSTANT, TYPINF.TOP_TYPE);
+		end;
+
+		if CONSTRUCTOR ^= NULL_NID then do;
+			/* This is a reference to an object of a class with
+			/* a copy constructor; copy constructor call required
+			/* in the process of initializing anything with this.
+			/* therefore it can't have a VALUE_VO.
+			/*
+			/* Since GET_CONSTRUCTOR_VALUE/CALL_CONSTRUCTOR
+			/* processes all such expressions, we will only get
+			/* here with non-lvalues.  But don't call the
+			/* constructor directly, because it will loop.
+			/**/
+			INITTER = TRANSMUTE_WITH_TEMP (INITTER, VICTIM, FALSE,
+					AUTO_ST, IMPLICIT_ADDR_VO);
+			INITTER = GET_VALUE_AND_EXPAND_L
+				  (IMPLICIT_ADDR_VO, INITTER);
+			INITTER = GET_VALUE_AND_EXPAND_L
+				  (IMPLICIT_STAR_VO, INITTER);
+			/* Now INITTER looks like an lvalue. */
+			if CXX_VALUE_NODE.NOT_AN_LVALUE then
+				call COMPILER_ERROR (ERR_ASSERT_FAIL);
+			TV = GET_VALUE_AND_EXPAND_L (ARG_VO, INITTER);
+			INITTER = CALL_CONSTRUCTOR (CONSTRUCTOR, TV,
+						    TAG_SYMBOL, TRUE);
+			INITTER = INITIALIZE_OBJECT (OBJECT, INITTER);
+			RESULT = CONCATENATE_STATEMENTS (INITTER, VICTIM);
+		end;
+		else if VOP = DOT_STAR_VO | VOP = CAST_TO_BASE_VO then do;
+			LEFT = TRANSMUTE_WITH_TEMP (INITTER, VICTIM, FALSE,
+						    AUTO_ST, ASSIGN_VO);
+			/* Note no expansion here: this is an assign in the
+			/* intermediate language, not in C or C++.
+			/**/
+			LEFT = ALLOC_CXX_VALUE_NODE_LR
+			       (ASSIGN_VO, OBJECT, LEFT);
+			call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+			RESULT = CONCATENATE_STATEMENTS (LEFT, VICTIM);
+		end;
+		else do;
+			/* Note no expansion here: this is an assign in the
+			/* intermediate language, not in C or C++. */
+			RESULT = ALLOC_CXX_VALUE_NODE_LR
+				 (ASSIGN_VO, OBJECT, INITTER);
+		end;
+	end;
+	else do;
+		/* OBJECT = NULL_CXX_VID and type of VALUE is void. */
+
+		if VOP = VALUE_VO then do;
+			/*
+			/* Initializing with void fetch (VALUE_VO):
+			/* eliminate the void-typed value and ref,
+			/* 'cause the back end isn't wise to them.
+			/**/
+			LEFT = CXX_VALUE_NODE.LEFT;
+			CXX_VALUE_NODE_PTR = LEFT;  /* the REF */
+			RESULT = CXX_VALUE_NODE.THIRD;
+			call COUNT_UP_VALUE (RESULT);
+			call COUNT_DOWN_VALUE (VALUE);
+			if RESULT ^= NULL_CXX_VID then
+				RESULT = CONVERT_TO_VOID (RESULT);
+		end;
+		else
+			RESULT = VALUE;
+	end;
+
+	call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+	return (RESULT);
+
+end INITIALIZE;
+
+/* ---------------------------------------------------------------------
+/* DECLARE_BUILT_INS
+/*
+/* Declare built-in operator new, operator delete.
+/* ------------------------------------------------------------------- */
+
+DECLARE_BUILT_INS: procedure external (X_DECLARE_BUILT_INS);
+
+	declare
+		SIZE_T_DATA		type (TYPE_DATA_T),
+		SAVED_PARSE_STATE	type (PARSE_STATE_DATA_T);
+
+	call BEGIN_INTERNAL_PARSE
+	     (addr (SAVED_PARSE_STATE), CURRENT_GLOBAL_SCOPE);
+
+	/* ---------------------------------------------
+	/* Declare: extern void *operator new (size_t);
+	/* ------------------------------------------- */
+
+	call CLEAR_DECLARATION ();
+
+	/* Set the base type and storage class */
+
+	CURRENT_STORAGE_CLASS	= EXTERN_ST;
+	CURRENT_BASE_TYPE	= VOID_BT;
+	call SET_BASE_TYPE ();
+
+	/* Set the type qualifier for the pointer return type */
+
+	call SET_DERIVED_TYPE_QUALIFIER ();
+
+	/* Set the operator name */
+
+	CURRENT_NAME		= OPERATOR_NEW_NAME;
+	CURRENT_NAME_KIND	= OPERATOR_NK;
+
+	/* Start the operator new function type */
+
+	call BEGIN_FUNCTION_TYPE ();
+
+	/* Start the operator new parameter -- size_t */
+
+	call CLEAR_DECLARATION ();
+	call GET_TOP_TYPE (GET_SIZET_TYPE (), SIZE_T_DATA);
+	CURRENT_BASE_TYPE = rank (SIZE_T_DATA.CODE);
+	call SET_BASE_TYPE ();
+	call SET_PARAMETER_DECLARATION ();
+
+	/* Finish the operator new function type */
+
+	call SET_FUNCTION_TYPE ();
+
+	/* Set the operator new pointer return type */
+
+	call SET_POINTER_TYPE ();
+
+	/* Finish declaring operator new */
+
+	call SET_DECLARATION ();
+
+	SYM_NODE.LINKAGE_KIND = byte (CXX_LINKAGE);	/* hackish (028) */
+
+	/* -----------------------------------------------
+	/* Declare: extern void operator delete (void *);
+	/* --------------------------------------------- */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_STORAGE_CLASS = EXTERN_ST;
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+
+	/* Set the operator delete name */
+
+	CURRENT_NAME	  = OPERATOR_DELETE_NAME;
+	CURRENT_NAME_KIND = OPERATOR_NK;
+
+	/* Begin the operator delete function type */
+
+	call BEGIN_FUNCTION_TYPE ();
+
+	/* Start the operator delete parameter -- void * */
+
+	call CLEAR_DECLARATION ();
+
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+
+	/* Set the pointer type of the parameter */
+
+	call SET_DERIVED_TYPE_QUALIFIER ();
+	call SET_POINTER_TYPE ();
+
+	/* Finish the parameter declaration */
+
+	call SET_PARAMETER_DECLARATION ();
+
+	/* Finish the function type */
+
+	call SET_FUNCTION_TYPE ();
+
+	/* Finish declaring operator delete */
+
+	call SET_DECLARATION ();
+
+	SYM_NODE.LINKAGE_KIND = byte (CXX_LINKAGE);	/* hackish (028) */
+
+	/* -------------------------------------------------------
+	/* Declare: extern void ____lpi_compilation_assert (int);
+	/* ----------------------------------------------------- */
+
+	call CLEAR_DECLARATION ();
+	CURRENT_STORAGE_CLASS = EXTERN_ST;
+	CURRENT_BASE_TYPE = VOID_BT;
+	call SET_BASE_TYPE ();
+
+	/* Set the operator delete name */
+
+	CURRENT_NAME	  = FORM_IDENTIFIER_TOKEN
+			    ('____lpi_compilation_assert');
+
+	/* Begin the ____lpi_compilation_assert function type */
+
+	call BEGIN_FUNCTION_TYPE ();
+
+	/* Start the ____lpi_compilation_assert parameter -- int */
+
+	call CLEAR_DECLARATION ();
+
+	CURRENT_BASE_TYPE = INT_BT;
+	call SET_BASE_TYPE ();
+	call SET_PARAMETER_DECLARATION ();
+
+	/* Finish the ____lpi_compilation_assert function type */
+
+	call SET_FUNCTION_TYPE ();
+
+	/* Finish declaring ____lpi_compilation_assert */
+
+	call SET_DECLARATION ();
+
+	SYM_NODE.LINKAGE_KIND = byte (C_LINKAGE);	/* hackish */
+
+	SYM_NODE.COMPILATION_ASSERT_FUNCTION = TRUE;
+
+	call END_INTERNAL_PARSE (addr (SAVED_PARSE_STATE));
+
+end DECLARE_BUILT_INS;
+
+/* ---------------------------------------------------------------------
+/* VALUE_BEFORE_EFFECT
+/* Create an expression tree which evaluates the expression V prior to
+/* evaluating the expression EFFECT for its side-effects.  The result
+/* of V is preserved and is the result of the new expression.  This is
+/* similar to GET_VALUE_AND_EXPAND_LR (COMMA_VO, EFFECT, V) except that
+/* the value returned is from the first-executed expression, not the
+/* second.
+/*
+/* The expression EFFECT must be past the INITIALIZE_OBJECT/EXPAND(NOP_VO)
+/* stage, while the VALUE must still need INITIALIZE_OBJECT done
+/* to it.  The result still needs INITIALIZE_OBJECT done to it.
+/* Use EXPAND_VALUE (LEFT_VALUE_VO, VALUE, EFFECT) if EFFECT still
+/* needs INITIALIZE_OBJECT done to it.
+/* 
+/* The result type is the same as that of VALUE.
+/*
+/* Result value is paged in on return.
+/*
+/* The current implementation is limited, in that the effect cannot contain
+/* a conditional, because that would cause the value to be referenced
+/* across a label.  This is OK because VALUE_BEFORE_EFFECT is only used for:
+/*      1. expressions returned by DESTROY_OBJECT
+/*	2. BRANCH_SAVEs returned by DESTROY_DIFFERENCE
+/*	3. SAVE/EXIT pairs
+/* ------------------------------------------------------------------- */
+
+VALUE_BEFORE_EFFECT: procedure (VALUE, EFFECT)
+		     recursive
+		     returns (type (CXX_VID_T))
+		     external (X_VALUE_BEFORE_EFFECT);
+
+	declare
+		VALUE		type (CXX_VID_T),
+		EFFECT		type (CXX_VID_T);
+	declare
+		V		type (CXX_VID_T),
+		E		type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		REFVAL		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		(AD, FD)	type (BOOL_T);
+
+	if VALUE = NULL_CXX_VID then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	/* EFFECT may be doing nothing. */
+	if EFFECT = NULL_CXX_VID then do;
+		CXX_VALUE_NODE_PTR = VALUE;
+		return (VALUE);
+	end;
+	CXX_VALUE_NODE_PTR = EFFECT;
+	if CXX_VALUE_NODE.OP = UNINITIALIZED_VO then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+        if   rank (CXX_VALUE_NODE.TOP_TYPE.CODE) = VOID_BT
+	   & CXX_VALUE_NODE.OP = UNINITIALIZED_VO then do;
+		/* Value has no side-effects; use comma. */
+		RESULT = ALLOC_CXX_VALUE_NODE_LR (COMMA_VO, EFFECT, VALUE);
+		call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+		return (RESULT);
+	end;
+
+	call GET_VALUE_TYPE (TYPE_INFO);
+	AD = CXX_VALUE_NODE.ARRAY_DESIGNATOR;
+	FD = CXX_VALUE_NODE.FUNCTION_DESIGNATOR;
+        if CXX_VALUE_NODE.OP = COMMA_VO & CXX_VALUE_NODE.COUNT = 1 then do;
+                /* Turn LEFT_VALUE (COMMA (E, V), Z) 
+		/* into COMMA (E, LEFT_VALUE (V, Z)) 
+		/**/
+                V     = CXX_VALUE_NODE.RIGHT;
+                E     = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (V);
+                call COUNT_UP_VALUE (E);
+                call COUNT_DOWN_VALUE (VALUE);
+                V = VALUE_BEFORE_EFFECT (V, EFFECT); /* V,  Z */
+		RESULT = ALLOC_CXX_VALUE_NODE_LR
+			 (COMMA_VO, E, V); /* E, (V,Z) */
+		call SET_VALUE_TYPE (TYPE_INFO);
+		CXX_VALUE_NODE.ARRAY_DESIGNATOR = AD;
+		CXX_VALUE_NODE.FUNCTION_DESIGNATOR = FD;
+                return (RESULT);
+	end;
+
+        if CXX_VALUE_NODE.OP = LEFT_VALUE_VO
+	 & CXX_VALUE_NODE.COUNT = 1 then do;
+                /* Turn LEFT_VALUE (LEFT_VALUE (V, E), Z) 
+		/* into LEFT_VALUE (V, COMMA (E, Z)) 
+		/**/
+                E     = CXX_VALUE_NODE.RIGHT;
+                V     = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (E);
+                call COUNT_UP_VALUE (V);
+                call COUNT_DOWN_VALUE (VALUE);
+                E = CONCATENATE_STATEMENTS (E, EFFECT);      /* E, Z */
+		return (VALUE_BEFORE_EFFECT (V, E));       /* V, (E,Z) */
+	end;
+
+	if CXX_VALUE_NODE.OP = VALUE_VO & CXX_VALUE_NODE.COUNT = 1 
+				    & ^CXX_VALUE_NODE.NOT_AN_LVALUE then do;
+		/* lift the VALUE above the LEFT_VALUE so that it appears
+		/* as an lvalue to EXPAND(ASSIGN_VO).  But don't do it
+		/* for a non-lvalue, because that should mean that the
+		/* value is fetched before the EFFECT is executed.
+		/**/
+		RESULT = COPY_VALUE (VALUE);
+		REFVAL = CXX_VALUE_NODE.LEFT;
+		V = VALUE_BEFORE_EFFECT (REFVAL, EFFECT);
+		CXX_VALUE_NODE_PTR = RESULT;
+		CXX_VALUE_NODE.LEFT = V;
+		CXX_VALUE_NODE_PTR = RESULT;
+		return (RESULT);
+	end;
+/*
+/* PKT tried this out on 91 Sep 24, thinking that VALUE_BEFORE_EFFECT is
+/* a low-level thing which should be free to do bitwise copies of 
+/* structures with copy constructors.  But this idea was all wet.
+/* VALUE_BEFORE_EFFECT is habitually called _before_ TRANSMUTE_WITH_TEMP,
+/* with all kinds of types.  TRANSMUTE_WITH_TEMP or INITIALIZE_OBJECT
+/* should be called afterwards to make the code acceptable in its
+/* context.  In this case, the motivating context was the return of
+/* a structure with a destructor but no copy constructor.
+/*
+/*		TEMP		type (CXX_VID_T),
+/*
+/*	if   ^IS_SCALAR_TYPE (rank (CXX_VALUE_NODE.TOP_TYPE.CODE))
+/*	   & CXX_VALUE_NODE.OP ^= REF_VO then do;
+/*		/*
+/*		/* The back end and code generator can't handle the
+/*		/* usual left-value op sequence for a structure, etc.
+/*		/* Create a temporary.
+/*		/**/
+/*		call GET_VALUE_TYPE (TYPE_INFO);
+/*		TEMP = GET_TEMP_VALUE (TYPE_INFO, AUTO_ST, FALSE);
+/*		REFVAL = GET_TEMP_REF (TEMP);
+/*		call COUNT_UP_VALUE (REFVAL);
+/*		E = INITIALIZE (REFVAL, VALUE, TRUE);
+/*		E = CONCATENATE_STATEMENTS (E, EFFECT);
+/*		V = PLAIN_VALUE_OF_REF (REFVAL);
+/*		RESULT = EFFECT_BEFORE_VALUE (E, V);
+/*		return (RESULT);
+/*	end;
+/**/
+
+	call COUNT_UP_VALUE (VALUE);
+	RESULT = ALLOC_CXX_VALUE_NODE_LR (LEFT_VALUE_VO, VALUE, EFFECT);
+	call SET_VALUE_TYPE (TYPE_INFO);
+	CXX_VALUE_NODE.ARRAY_DESIGNATOR = AD;
+	CXX_VALUE_NODE.FUNCTION_DESIGNATOR = FD;
+	return (RESULT);
+
+end VALUE_BEFORE_EFFECT;
+
+/* ---------------------------------------------------------------------
+/* EFFECT_BEFORE_VALUE
+/* Create an expression tree which evaluates the expression V after
+/* evaluating the expression EFFECT for its side-effects.  The result
+/* of V is preserved and is the result of the new expression.
+/*
+/* The expression EFFECT must be past the INITIALIZE_OBJECT/EXPAND(NOP_VO)
+/* stage, while the VALUE must still need INITIALIZE_OBJECT done
+/* to it.  The result still needs INITIALIZE_OBJECT done to it.
+/* Use EXPAND_VALUE (COMMA_VO, EFFECT, VALUE) if EFFECT still
+/* needs INITIALIZE_OBJECT done to it.
+/* 
+/* The result type is the same as that of VALUE.
+/*
+/* Result value is paged in on return.
+/* ------------------------------------------------------------------- */
+
+EFFECT_BEFORE_VALUE: procedure (EFFECT, VALUE)
+		     recursive
+		     returns (type (CXX_VID_T))
+		     external (X_EFFECT_BEFORE_VALUE);
+
+	declare
+		EFFECT		type (CXX_VID_T),
+		VALUE		type (CXX_VID_T);
+	declare
+		(E, V, RESULT)	type (CXX_VID_T),
+		REFVAL		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		(AD, FD)	type (BOOL_T);
+
+	if VALUE = NULL_CXX_VID then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	/* EFFECT may be trivial when COMMA_VO is created to initialize an
+	/* object with an undefined value, e.g.
+	/*         struct1 = sval_needed ? struct_func() : S();
+	/**/
+        if EFFECT = NULL_CXX_VID then do;
+		CXX_VALUE_NODE_PTR = VALUE;
+		return (VALUE);
+	end;
+	CXX_VALUE_NODE_PTR = EFFECT;
+	if CXX_VALUE_NODE.OP = UNINITIALIZED_VO then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+        if CXX_VALUE_NODE.OP = COMMA_VO & CXX_VALUE_NODE.COUNT = 1 then do;
+                /* Turn COMMA (X, COMMA (E, V)) into COMMA (COMMA (X, E), V) */
+                V = CXX_VALUE_NODE.RIGHT;
+                E = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (E);
+                call COUNT_UP_VALUE (V);
+                call COUNT_DOWN_VALUE (VALUE);
+                E = CONCATENATE_STATEMENTS (EFFECT, E); /* X, E */
+		return (EFFECT_BEFORE_VALUE (E, V)); /* (X,E), V */
+	end;
+
+	if CXX_VALUE_NODE.OP = VALUE_VO & CXX_VALUE_NODE.COUNT = 1 then do;
+		/* lift the VALUE above the COMMA so that it appears
+		/* as an lvalue to EXPAND(ASSIGN_VO).
+		/**/
+		RESULT = COPY_VALUE (VALUE);
+		REFVAL = CXX_VALUE_NODE.LEFT;
+		V = EFFECT_BEFORE_VALUE (EFFECT, REFVAL);
+		VALUE->CXX_VALUE_NODE.LEFT = V;
+		CXX_VALUE_NODE_PTR = RESULT;
+		return (RESULT);
+	end;		
+
+        /*
+        Result is type of VALUE.
+        */
+        call GET_VALUE_TYPE (TYPE_INFO);
+	AD = CXX_VALUE_NODE.ARRAY_DESIGNATOR;
+	FD = CXX_VALUE_NODE.FUNCTION_DESIGNATOR;
+	RESULT = ALLOC_CXX_VALUE_NODE_LR (COMMA_VO, EFFECT, VALUE);
+	call SET_VALUE_TYPE (TYPE_INFO);
+	CXX_VALUE_NODE.ARRAY_DESIGNATOR = AD;
+	CXX_VALUE_NODE.FUNCTION_DESIGNATOR = FD;
+	return (RESULT);
+
+end EFFECT_BEFORE_VALUE;
+
+/* ---------------------------------------------------------------------
+/* CONCATENATE_STATEMENTS
+/*
+/* The two arguments are value node ids representing statements, i.e.
+/* their type is VOID_BT and there is no need to call INITALIZE_OBJECT
+/* on them to fix up UNINITIALIZED_VOs or CONDITIONAL_VOs.  Either
+/* or both may be NULL_CXX_VID.
+/* The result is NULL_CXX_VID or a value node id representing the side-effect
+/* of the first argument followed by the side-effect of the second.
+/* It is paged in on return.
+/* ------------------------------------------------------------------- */
+
+CONCATENATE_STATEMENTS: procedure (FIRST, SECOND)
+			returns (type (CXX_VID_T))
+			external (X_CONCATENATE_STATEMENTS);
+	declare
+		(FIRST, SECOND)	type (CXX_VID_T);
+	declare
+		V		type (CXX_VID_T);
+
+	if FIRST ^= NULL_CXX_VID then do;
+		CXX_VALUE_NODE_PTR = FIRST;
+		if CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (VOID_BT) then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	end;
+	if SECOND ^= NULL_CXX_VID then do;
+		CXX_VALUE_NODE_PTR = SECOND;
+		if CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (VOID_BT) then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	end;
+	if FIRST = NULL_CXX_VID then
+		/* SECOND is paged in. */
+		return (SECOND);
+	else if SECOND = NULL_CXX_VID then do;
+		/* FIRST is paged in. */
+		return (FIRST);
+	end;
+
+	V = ALLOC_CXX_VALUE_NODE_LR (COMMA_VO, FIRST, SECOND);
+	call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+	return (V);
+
+end CONCATENATE_STATEMENTS;
+
+/* ---------------------------------------------------------------------
+ * DETACH_COMMA
+ *
+ * Call this in order to work on the piece of the expression which
+ * is the result of the expression and does not include the
+ * side effects which are the LEFT of a COMMA or the RIGHT of a
+ * LEFT_VALUE.
+ *
+ * Modifies VALUE to be the expression with COMMA etc. stripped.
+ * Assumes that the expression is properly canonicalized so that
+ * the COMMA (if any) is at the top and the LEFT_VALUE (if any) is
+ * next, and there is no more than 1 of either.
+ *
+ * BEFORE and AFTER are set up in such a way that REATTACH_COMMA can
+ * form a combined expression again, assuming that the caller of
+ * DETACH_COMMA and REATTACH_COMMA may make some alterations to
+ * VALUE in between.
+ *
+ * This is a low-level routine which does not take care of all of the
+ * niceties of the high-level result type of its expression.
+ * The caller must watch out because the type of VALUE after
+ * reattaching will be taken from the detached VALUE.  In some cases
+ * such as array designators, detaching and reattaching can change
+ * the type. 
+ *
+ * VALUE is paged in on return.
+ * ------------------------------------------------------------------- */
+
+DETACH_COMMA: procedure (VALUE, BEFORE, AFTER)
+	      external (X_DETACH_COMMA);
+
+	declare
+		(VALUE, BEFORE, AFTER)	type (CXX_VID_T);
+	declare
+		V			type (CXX_VID_T);
+
+	CXX_VALUE_NODE_PTR = VALUE;
+	if CXX_VALUE_NODE.OP = COMMA_VO then do;
+		V = VALUE; /* the COMMA */
+		VALUE = CXX_VALUE_NODE.RIGHT;
+		BEFORE = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (VALUE);
+		call COUNT_UP_VALUE (BEFORE);
+		call COUNT_DOWN_VALUE (V);
+		CXX_VALUE_NODE_PTR = VALUE;
+	end;
+	else	BEFORE = NULL_CXX_VID;
+
+	if CXX_VALUE_NODE.OP = LEFT_VALUE_VO then do;
+		/* Analogous to COMMA, but with LEFT. */
+		V = VALUE; /* the LEFT_VALUE */
+		VALUE = CXX_VALUE_NODE.LEFT;
+		AFTER = CXX_VALUE_NODE.RIGHT;
+		call COUNT_UP_VALUE (VALUE);
+		call COUNT_UP_VALUE (AFTER);
+		call COUNT_DOWN_VALUE (V);
+		CXX_VALUE_NODE_PTR = VALUE;
+	end;
+	else	AFTER = NULL_CXX_VID;
+
+end DETACH_COMMA;
+
+/* ---------------------------------------------------------------------
+ * REATTACH_COMMA
+ *
+ * Use in conjunction with DETACH_COMMA. See above.
+ * VALUE is paged in on return.
+ * ------------------------------------------------------------------- */
+
+REATTACH_COMMA: procedure (VALUE, BEFORE, AFTER)
+		external (X_REATTACH_COMMA);
+
+	declare
+		(VALUE, BEFORE, AFTER)	type (CXX_VID_T);
+
+	if AFTER ^= NULL_CXX_VID then do;
+		/* Re-attach as LEFT of the LEFT_VALUE. */
+		VALUE = VALUE_BEFORE_EFFECT (VALUE, AFTER);
+	end;
+	if BEFORE ^= NULL_CXX_VID then do;
+		/* Re-attach as RIGHT of the COMMA. */
+		VALUE = EFFECT_BEFORE_VALUE (BEFORE, VALUE);
+	end;
+	else if AFTER = NULL_CXX_VID then
+		CXX_VALUE_NODE_PTR = VALUE;
+
+end REATTACH_COMMA;
+
+/* ---------------------------------------------------------------------
+ * BYPASS_COMMA
+ *
+ * Call this in order to inspect the piece of the expression which
+ * is the result of the expression and does not include the
+ * side effects which are the LEFT of a COMMA or the RIGHT of a
+ * LEFT_VALUE.
+ *
+ * Has no effect unless the paged-in value node is a COMMA or a
+ * LEFT_VALUE.  In that case, pages in the right or left respectively
+ * until it arrives at a value node which is not a COMMA or LEFT_VALUE.
+ * ------------------------------------------------------------------- */
+
+BYPASS_COMMA: procedure
+	      external (X_BYPASS_COMMA);
+
+	do while ((CXX_VALUE_NODE.OP = COMMA_VO) |
+		  (CXX_VALUE_NODE.OP = LEFT_VALUE_VO));
+		if CXX_VALUE_NODE.OP = COMMA_VO then
+			CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.RIGHT;
+		else	CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+	end;
+
+end BYPASS_COMMA;
+
+/* ---------------------------------------------------------------------
+ * PLAIN_VALUE_OF_REF
+ *
+ * Like GET_VALUE_AND_EXPAND_L (VALUE_VO, REF)
+ * except doesn't convert arrays to pointer. 
+ * The result is an lvalue.
+ * The result value node is paged in on return.
+ * ------------------------------------------------------------------- */
+
+PLAIN_VALUE_OF_REF: procedure (REF)
+		    returns   (type (CXX_VID_T))
+		    external  (X_PLAIN_VALUE_OF_REF);
+
+	declare
+		REF		type (CXX_VID_T);
+	declare
+		RESULT		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	CXX_VALUE_NODE_PTR = REF;
+	call GET_VALUE_TYPE (TYPE_INFO);
+	RESULT = ALLOC_CXX_VALUE_NODE_L (VALUE_VO, REF);
+	call SET_VALUE_TYPE (TYPE_INFO);
+	CXX_VALUE_NODE.UNARY = TRUE;
+
+	return (RESULT);
+
+end PLAIN_VALUE_OF_REF;
+	
+/* ---------------------------------------------------------------------
+/* RESTORE_ARRAY_VALUE
+/*
+/* V is an array designator, and has been implicitly converted by
+/* EXPAND_VALUE (VALUE_VO,,) into a pointer to the first element.
+/* 
+/* Undoes this conversion, restoring the expression to a true array
+/* (assigning to V the value node id of the array expression).
+/* TYPE_INFO is set to the array type.
+/* V is paged in on return.
+/* ------------------------------------------------------------------- */
+
+RESTORE_ARRAY_VALUE: procedure (V, TYPE_INFO)
+		     external  (X_RESTORE_ARRAY_VALUE);
+
+	declare
+		V		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+	declare
+		TV		type (CXX_VID_T),
+		T_LEFT		type (CXX_VID_T),
+		T_RIGHT		type (CXX_VID_T);
+
+	/*
+	/* Here, we are initializing a reference to array
+	/* with an array, so we will undo the transformation
+	/* into a pointer to the first element.
+	/**/
+	call DETACH_COMMA (V, T_LEFT, T_RIGHT);
+
+	if CXX_VALUE_NODE.OP ^= ADDR_VO then
+		/*
+		/* We're not set up to handle such a a fancy
+		/* array designator -- cross our fingers
+		/* and hope they don't exist.
+		/**/
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	TV = CXX_VALUE_NODE.LEFT;
+	CXX_VALUE_NODE_PTR = TV;
+	call GET_VALUE_TYPE (TYPE_INFO);
+	if rank (TYPE_INFO.TYPE_CODE) ^= ARRAY_DT then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	call COUNT_UP_VALUE (TV);
+	call COUNT_DOWN_VALUE (V);
+	V = ALLOC_CXX_VALUE_NODE_L (VALUE_VO, TV);
+	call SET_VALUE_TYPE (TYPE_INFO);
+	CXX_VALUE_NODE.UNARY = TRUE;
+
+	call REATTACH_COMMA (V, T_LEFT, T_RIGHT);
+
+end RESTORE_ARRAY_VALUE;
+	
+/* ---------------------------------------------------------------------
+/* RESTORE_FUNCTION_VALUE
+/*
+/* V is a function designator, and has been implicitly converted by
+/* into a pointer to function.
+/* 
+/* Undoes this conversion, restoring the expression to an lvalue function.
+/* TYPE_INFO is set to the lvalue function type.
+/* V is paged in on return.
+/* ------------------------------------------------------------------- */
+
+RESTORE_FUNCTION_VALUE: procedure (V, TYPE_INFO)
+		        external  (X_RESTORE_FUNCTION_VALUE);
+
+	declare
+		V		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+	declare
+		TV		type (CXX_VID_T),
+		T_LEFT		type (CXX_VID_T),
+		T_RIGHT		type (CXX_VID_T);
+
+	CXX_VALUE_NODE_PTR = V;
+	call GET_VALUE_TYPE (TYPE_INFO);
+	call DETACH_COMMA (V, T_LEFT, T_RIGHT);
+
+	call STRIP_TOP_TYPE (TYPE_INFO, TRUE);
+	if rank (TYPE_INFO.TYPE_CODE) ^= FUNCTION_DT then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	V = PLAIN_VALUE_OF_REF (REF_WITH_LOCATOR (V, TYPE_INFO));
+
+	call REATTACH_COMMA (V, T_LEFT, T_RIGHT);
+
+end RESTORE_FUNCTION_VALUE;
+
+/* ---------------------------------------------------------------------
+ * FETCH_VALUE
+ *
+ * Explicit cast of lvalue: must fetch.
+ * PKT thought the following code was weird when
+ * writing it.  It's similar to the code in
+ * CALL_CONSTRUCTOR in that it is trying to express
+ * fetching the data from a certain location, however,
+ * there's nothing easy to call which expresses this.
+ *
+ * INPUT_VALUE has an lvalue class type (or reference to class type)
+ * INPUT_TYPE, whose symbol is INPUT_CLASS.
+ * 
+ * Returns with result value node paged in.
+ * ------------------------------------------------------------------- */
+
+FETCH_VALUE: procedure (INPUT_VALUE, INPUT_CLASS)
+	     returns   (type (CXX_VID_T))
+	     external  (X_FETCH_VALUE);
+
+	declare
+		INPUT_VALUE	type (CXX_VID_T),
+		INPUT_CLASS	type (NID_T);
+	declare
+		CLASS_P		type (POINTER_T),
+		CONSTRUCTOR	type (NID_T),
+		V		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	V = INPUT_VALUE;
+
+	call GET_SYM_NODE_R (INPUT_CLASS, CLASS_P);
+	CONSTRUCTOR = CLASS_P->SYM_NODE.CONSTRUCTOR;
+
+	if ^CLASS_P->SYM_NODE.NEEDS_COPY then do;
+		V = GET_VALUE_AND_EXPAND_L (ADDR_VO, V);
+		V = GET_VALUE_AND_EXPAND_L (IMPLICIT_STAR_VO, V);
+		if CXX_VALUE_NODE.OP ^= VALUE_VO then
+			call COMPILER_ERROR (ERR_ASSERT_FAIL);
+		INPUT_VALUE = COPY_VALUE (V);
+		/* Indicate fetch by marking VALUE_VO not lvalue. */
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+	end;
+	else if CONSTRUCTOR ^= NULL_NID then do;
+		/*
+		/* This is a reference to an object of a class with
+		/* a copy constructor; copy constructor call required
+		/* in the process of initializing anything with this.
+		/* Therefore it can't have a non-lvalue VALUE_VO.
+		/**/
+		V = GET_VALUE_AND_EXPAND_L (ARG_VO, V);
+		V = CALL_CONSTRUCTOR (CONSTRUCTOR, V, INPUT_CLASS, TRUE);
+	end;
+	else do;
+		/*
+		/* NEEDS_COPY is supposed to imply that a copy
+		/* constructor has been declared.
+		/**/
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	end;
+
+	call RELEASE_SYM_NODE (INPUT_CLASS);
+	return (V);
+
+end FETCH_VALUE;
+

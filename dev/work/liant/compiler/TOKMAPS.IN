@@ -1,0 +1,178 @@
+/* C++ CXX_TOKEN_MAP_SPELLING_IN - Token type to spelling maps */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.25.90  DGM  002  Preprocessor include file name changes.
+ *  11.20.89  DGM  000  Original
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_PP_TOKEN_TYPE_CODES_IN; */
+
+/* ---------------------------------------------------------------------
+/* TOKMAPS
+/*
+/* Keep this in sync with CXX_PP_TOKEN_TYPE_CODES_IN !
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 TOKMAPS		static external,
+
+  2 PSEUDO_TOKEN	(LB_PSEUDO_TOKEN : HB_PSEUDO_TOKEN)
+			character (13) varying initial (
+
+	/* BOF_TOKEN		*/	  '<bof>'
+	/* EOF_TOKEN		*/	, '<eof>'
+	/* BOF_INCLUDE_TOKEN	*/	, '<bof-include>'
+	/* EOF_INCLUDE_TOKEN	*/	, '<eof-include>'
+	/* LINE_FILE_TOKEN	*/	, '<line-file>'
+    ),
+
+  2 OP_TOKEN		(LB_OP_TOKEN : HB_OP_TOKEN)
+			character (3) varying initial (
+
+	/* COLON_COLON_TOKEN	*/	  '::'
+	/* COLON_TOKEN		*/	, ':'
+	/* SEMICOLON_TOKEN	*/	, ';'
+	/* DOT_TOKEN		*/	, '.'
+	/* DOT_STAR_TOKEN	*/	, '.*'
+	/* QUESTION_TOKEN	*/	, '?'
+	/* ELLIPSIS_TOKEN	*/	, '...'
+	/* LCURLY_TOKEN		*/	, '{'
+	/* RCURLY_TOKEN		*/	, '}'
+	/* RSQUARE_TOKEN	*/	, ']'
+	/* RPAREN_TOKEN		*/	, ')'
+
+	/* LSQUARE_TOKEN	*/	, '['
+	/* LPAREN_TOKEN		*/	, '('
+	/* COMMA_TOKEN		*/	, ','
+	/* POINTER_TOKEN	*/	, '->'
+	/* POINTER_STAR_TOKEN	*/	, '->*'
+	/* PLUS_TOKEN		*/	, '+'
+	/* PLUS_PLUS_TOKEN	*/	, '++'
+	/* MINUS_TOKEN		*/	, '-'
+	/* MINUS_MINUS_TOKEN	*/	, '--'
+	/* STAR_TOKEN		*/	, '*'
+	/* SLASH_TOKEN		*/	, '/'
+	/* MOD_TOKEN		*/	, '%'
+	/* AND_TOKEN		*/	, '&'
+	/* OR_TOKEN		*/	, '|'
+	/* XOR_TOKEN		*/	, '^'
+	/* TILDE_TOKEN		*/	, '~'
+	/* NOT_TOKEN		*/	, '!'
+	/* LSHIFT_TOKEN		*/	, '<<'
+	/* RSHIFT_TOKEN		*/	, '>>'
+	/* AND_AND_TOKEN	*/	, '&&'
+	/* OR_OR_TOKEN		*/	, '||'
+
+	/* LESS_THAN_TOKEN	*/	, '<'
+	/* LESS_EQUAL_TOKEN	*/	, '<='
+	/* GREATER_THAN_TOKEN	*/	, '>'
+	/* GREATER_EQUAL_TOKEN	*/	, '>='
+	/* EQUAL_EQUAL_TOKEN	*/	, '=='
+	/* NOT_EQUAL_TOKEN	*/	, '!='
+	/* EQUAL_TOKEN		*/	, '='
+	/* PLUS_EQUAL_TOKEN	*/	, '+='
+	/* MINUS_EQUAL_TOKEN	*/	, '-='
+	/* STAR_EQUAL_TOKEN	*/	, '*='
+	/* SLASH_EQUAL_TOKEN	*/	, '/='
+	/* MOD_EQUAL_TOKEN	*/	, '%='
+	/* AND_EQUAL_TOKEN	*/	, '&='
+	/* OR_EQUAL_TOKEN	*/	, '|='
+	/* XOR_EQUAL_TOKEN	*/	, '^='
+	/* LSHIFT_EQUAL_TOKEN	*/	, '<<='
+	/* RSHIFT_EQUAL_TOKEN	*/	, '>>='
+    ),
+
+  2 KW_TOKEN		(LB_KW_TOKEN : HB_KW_TOKEN)
+			character (9) varying initial (
+
+	/* KW_NEW_TOKEN		*/	  'new'
+	/* KW_DELETE_TOKEN	*/	, 'delete'
+
+	/* KW_TYPEDEF_TOKEN	*/	, 'typedef'
+	/* KW_STATIC_TOKEN	*/	, 'static'
+	/* KW_EXTERN_TOKEN	*/	, 'extern'
+	/* KW_AUTO_TOKEN	*/	, 'auto'
+	/* KW_REGISTER_TOKEN	*/	, 'register'
+
+	/* KW_VOID_TOKEN	*/	, 'void'
+	/* KW_INT_TOKEN		*/	, 'int'
+	/* KW_CHAR_TOKEN	*/	, 'char'
+	/* KW_FLOAT_TOKEN	*/	, 'float'
+	/* KW_DOUBLE_TOKEN	*/	, 'double'
+	/* KW_LONG_TOKEN	*/	, 'long'
+	/* KW_SHORT_TOKEN	*/	, 'short'
+	/* KW_UNSIGNED_TOKEN	*/	, 'unsigned'
+	/* KW_SIGNED_TOKEN	*/	, 'signed'
+	/* KW_CLASS_TOKEN	*/	, 'class'
+	/* KW_STRUCT_TOKEN	*/	, 'struct'
+	/* KW_UNION_TOKEN	*/	, 'union'
+	/* KW_ENUM_TOKEN	*/	, 'enum'
+
+	/* KW_CONST_TOKEN	*/	, 'const'
+	/* KW_VOLATILE_TOKEN	*/	, 'volatile'
+
+	/* KW_PRIVATE_TOKEN	*/	, 'private'
+	/* KW_PROTECTED_TOKEN	*/	, 'protected'
+	/* KW_PUBLIC_TOKEN	*/	, 'public'
+	/* KW_VIRTUAL_TOKEN	*/	, 'virtual'
+	/* KW_FRIEND_TOKEN	*/	, 'friend'
+	/* KW_INLINE_TOKEN	*/	, 'inline'
+	/* KW_OVERLOAD_TOKEN	*/	, 'overload'
+	/* KW_OPERATOR_TOKEN	*/	, 'operator'
+	/* KW_TEMPLATE_TOKEN	*/	, 'template'
+	/* KW_THIS_TOKEN	*/	, 'this'
+	/* KW_CATCH_TOKEN	*/	, 'catch'
+
+	/* KW_SIZEOF_TOKEN	*/	, 'sizeof'
+
+	/* KW_BREAK_TOKEN	*/	, 'break'
+	/* KW_CASE_TOKEN	*/	, 'case'
+	/* KW_CONTINUE_TOKEN	*/	, 'continue'
+	/* KW_DEFAULT_TOKEN	*/	, 'default'
+	/* KW_DO_TOKEN		*/	, 'do'
+	/* KW_ELSE_TOKEN	*/	, 'else'
+	/* KW_FOR_TOKEN		*/	, 'for'
+	/* KW_GOTO_TOKEN	*/	, 'goto'
+	/* KW_IF_TOKEN		*/	, 'if'
+	/* KW_RETURN_TOKEN	*/	, 'return'
+	/* KW_SWITCH_TOKEN	*/	, 'switch'
+	/* KW_WHILE_TOKEN	*/	, 'while'
+    ),
+
+  2 PP_TOKEN		(LB_PP_TOKEN : HB_PP_TOKEN)
+			character (13) varying initial (
+
+	/* PP_KW_DEFINE_TOKEN		*/	  'define'
+	/* PP_KW_ELIF_TOKEN		*/	, 'elif'
+	/* PP_KW_ELSE_TOKEN		*/	, 'else'
+	/* PP_KW_ENDIF_TOKEN		*/	, 'endif'
+	/* PP_KW_ERROR_TOKEN		*/	, 'error'
+	/* PP_KW_IF_TOKEN		*/	, 'if'
+	/* PP_KW_IFDEF_TOKEN		*/	, 'ifdef'
+	/* PP_KW_IFNDEF_TOKEN		*/	, 'ifndef'
+	/* PP_KW_INCLUDE_TOKEN		*/	, 'include'
+	/* PP_KW_LINE_TOKEN		*/	, 'line'
+	/* PP_KW_PRAGMA_TOKEN		*/	, 'pragma'
+	/* PP_KW_UNDEF_TOKEN		*/	, 'undef'
+	/* PP_STRINGIZE_TOKEN		*/	, '#'
+	/* PP_CHARIZE_TOKEN		*/	, '<charize>'
+	/* PP_TOKEN_PASTE_TOKEN		*/	, '##'
+	/* PP_MACRO_PARAMETER_TOKEN	*/	, '<macro-param>'
+    );
+

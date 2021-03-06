@@ -1,0 +1,64 @@
+/* CodeWatch M68 PTRBLD.PL1 - Build pointer to data */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  02.23.90  MJF  009  Changed DERROR calls to use replace constants.
+ *
+ *  08.10.89  DCZ  007  Added NLS support;
+ *			derror replaces writtt calls.
+ *			Added DERROR_IN.
+ *
+ **********************************************************************/
+
+/* --------------------------------------------------------------------
+/* PTRBLD - Build a machine format pointer to a user data item for
+/*          use as a call argument.
+/*
+/* In:     LOCATION = Base address of the item in user memory
+/*         BITOFF   = Bit offset of the item
+/*         OTHER    = Other data (e.g. Ring number)
+/* Return: Pointer to the data item
+/*
+/* NOTE:   If the machine requires a level of indirection, this routine
+/*         must allocate the indirect descriptor (possibly via ALLOC_TEMP),
+/*         fill it in, and return a pointer to the descriptor
+/**********************************************************************/
+
+PTRBLD: procedure (TYPE, LOCATION, BITOFF, OTHER) returns (pointer);
+
+%include 'incfil';
+%include SYSTTY_IN;
+%include DERROR_IN; /* 002 */
+
+    declare
+        TYPE        fixed binary (15),
+        LOCATION    fixed binary (31),
+        BITOFF      fixed binary (15),
+        OTHER       fixed binary (31);
+
+    declare
+        RP          pointer;
+
+    declare
+        1 PTRI      based (addr(RP)),
+          2 LOC     fixed binary (31);
+
+    PTRI.LOC = LOCATION;
+
+    if BITOFF > 0 then
+	call derror ( BIT_OFFSET_IN_PTRS_NOT_SUPPORTED, '', '');
+
+    return (RP);
+
+end PTRBLD;
+

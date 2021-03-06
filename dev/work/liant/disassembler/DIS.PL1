@@ -1,0 +1,3387 @@
+/* LPI-DEBUG M68 DIS.PL1 - Disassemble an MC68020/68881 instruction */
+
+/**********************************************************************
+ * This product is the property of Language Processors, Inc.          *
+ * and is licensed pursuant to a written license agreement.           *
+ * No portion of this product may be reproduced without the written   *
+ * permission of Language Processors, Inc. except pursuant to the     *
+ * license agreement.                                                 *
+ *********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   4.14.92  VTF  (005) Bug fixes
+ *               * fixed disassembly of cas and cas2 instructions.
+ *
+ *   2.13.92  VTF  (004r) More bug fixes.
+ *               * fixed code to disassemble bit-field instructions.
+ *               * fixed code for MOVEC to print out the correct instruction
+ *                 name.
+ *               * fixed a regression introduced in 004 causing the disassembler
+ *                 to calculate the wrong destination value for relative
+ *                 branches.
+ *
+ *   2.12.92  VTF  (004) Bug fixes and enhancements
+ *               * Enhanced MOVEM to display a list of registers being moved.
+ *               * ANDI, CMPI, EORI, and ORI to a status register or
+ *                 CCR is now correctly disassembled.
+ *               * fixed operand order for addx.
+ *               * fixed code to disassemble EXG.
+ *               * fixed code to disassemble MOVEQ (immediate operand was
+ *                 being disassembled incorrectly).
+ *               * fixed code to disassemble RTE.
+ *               * fixed code to disassemble subx.
+ *
+ *  12.03.91  VTF  (003)  Added 68040 instructions.
+ *                 Modified code for the branch instructions so that
+ *                 the destination address appears rather than the offset
+ *                 from the current instruction.  This required a new
+ *                 parameter:  IADDRESS (address of instruction).
+ *
+ *  03.17.88  DGM  Fixed bug (typo) in ROTATE_SHIFT_REG_INSTRUCTION
+ *		   which prevented correct disassembly of ROX[LR].
+ *
+ *  01.13.88  DGM  Fixed bug (typo) in CMPM_INSTRUCTION.
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68020 User's Manual.
+ *
+ *********************************************************************/
+
+/* --------------------------------------------------------------------
+ * DIS
+ *
+ * Disassemble one MC68020/68881 instruction given in the array of (not
+ * less than) MAX_INSTRUCTION_WORDS 16-bit words (in INSTRUCTION_WORDS).
+ * If successful, then put the string representing the disassembled
+ * instruction in STRING and return the total number of bytes in the 
+ * instruction, otherwise return zero.
+ *
+ *  In:  INSTRUCTION_WORDS - an array of 16-bit integers containing the
+ *                           instruction to be disassembled.
+ *       IADDRESS          - the address in memory where the instruction
+ *                           is located (zero if this is not applicable).
+ *                           DIS() currently uses IADDRESS only to calculate
+ *                           the destination address for relative branch
+ *                           instructions.
+ *
+ * Out:  STRING            - the disassembled instruction.
+ *
+ */
+
+DIS: procedure (INSTRUCTION_WORDS, IADDRESS, STRING) 
+     returns (fixed binary (15));
+
+    %include 'incfil';
+    %include DIS_IN;
+    %include DISOPDEF_IN;
+    %include DISOPSIZE_IN;
+    %include DISREGDEF_IN;
+    %include DISREGNAME_IN;
+    %include DISEA_IN;
+    %include SYSTTY_IN;
+
+    declare
+	INSTRUCTION_WORDS	(MAX_INSTRUCTION_WORDS) fixed binary (15),
+        IADDRESS                fixed bin (31),
+	STRING			character (MAX_STRING_LENGTH) varying;
+
+    declare
+	DIS881		entry	  ((MAX_INSTRUCTION_WORDS) fixed binary (15),
+                                   fixed bin(31),
+				   character (MAX_STRING_LENGTH) varying)
+			returns	  (fixed binary (15))
+			external,
+	DISEA		entry	  (fixed binary (15),
+				   fixed binary (15),
+				   fixed binary (15),
+				   pointer,
+				   fixed binary (15),
+				   pointer)
+			returns	  (fixed binary (15))
+			external,
+        ITOABS          entry     (pointer, fixed bin(31)) external,
+	PRNTEA		entry	  (pointer)
+			returns   (character (MAX_STRING_LENGTH) varying)
+			external,
+	PRNTOP		entry	  (fixed binary (15), fixed binary (15))
+			returns   (character (MAX_STRING_LENGTH) varying)
+			external,
+        REGLIST         entry     (fixed binary (15), bit (1) aligned)
+                        returns   (character (96) varying)
+                        external;
+
+    declare
+	EA_DATA_BUFFER	character (SIZEOF_EA_DATA),
+        TEMPSTR         character (12) varying,     /* holds addresses */
+	EAP		pointer,
+	IP		pointer,
+	NBYTES		fixed binary (15),
+	NWORDS		fixed binary (15);
+
+    IP = addr(INSTRUCTION_WORDS);
+    EAP = addr(EA_DATA_BUFFER);
+    STRING = '';
+    NBYTES = 0;
+    NWORDS = 0;
+
+    goto OPCODE_GROUP (GET_OPCODE_GROUP(IP->INSTRUCTION.WORD(1)));
+
+    /* ----------------------------------------------------------------
+     * Group 0:  Bit Manipulation, MOVEP, Immediate
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (0):
+
+	NWORDS = BIT_MEM_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = BIT_REG_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = CALLM_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = CAS_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = CAS2_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = CHK2_CMP2_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = IMMEDIATE_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = IMMEDIATE_CCR_SR_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = MOVEP_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = MOVES_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 1, 2, and 3:  Move Byte, Move Word, Move Long
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (1):;
+    OPCODE_GROUP (2):;
+    OPCODE_GROUP (3):;
+
+	NWORDS = MOVE_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 4:  Miscellaneous
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (4):
+
+	NWORDS = BKPT_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = CHK_LEA_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = CLR_NEG_NOT_TST_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = CONSTANT_GROUP_4_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = DIV_MUL_LONG_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = EXT_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = JMP_JSR_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = LINK_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = MOVE_CCR_SR_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = MOVE_USP_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = MOVEC_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = MOVEM_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = RTD_STOP_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = NBCD_PEA_TAS_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = SWAP_UNLK_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = TRAP_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 5:  ADDQ, SUBQ, Scc, DBcc, TRAPcc
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (5):
+
+	NWORDS = ADDQ_SUBQ_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = DBCC_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = SCC_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = TRAPCC_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 6:  Bcc, BSR, BRA
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (6):
+
+	NWORDS = BCC_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 7:  MOVEQ
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (7):
+
+	NWORDS = MOVEQ_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 8:  OR, DIV, SBCD
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (8):
+
+	NWORDS = AND_OR_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = ABCD_SBCD_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = DIV_MUL_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = PACK_UNPK_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 9:  SUB, SUBX
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (9):
+
+	NWORDS = ADD_SUB_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = ADDX_SUBX_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 10:  Unassigned, Reserved
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (10):
+
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 11:  CMP, EOR
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (11):
+
+	NWORDS = CMP_EOR_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = CMPM_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 12:  AND, MUL, ABCD, EXG
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (12):
+
+	NWORDS = ABCD_SBCD_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = AND_OR_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = DIV_MUL_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = EXG_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 13:  ADD, ADDX
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (13):
+
+	NWORDS = ADD_SUB_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = ADDX_SUBX_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 14:  Shift, Rotate, Bit Field
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (14):
+
+	NWORDS = BIT_FIELD_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = BFEXT_BFFFO_BFINS_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = ROTATE_SHIFT_MEM_INSTRUCTION ();
+	if NWORDS > 0 then goto DONE;
+	NWORDS = ROTATE_SHIFT_REG_INSTRUCTION ();
+	goto DONE;
+
+    /* ----------------------------------------------------------------
+     * Group 15:  MC68881 Coprocessor Interface
+     *            68040 Cache instructions (priviliged)
+     * ------------------------------------------------------------- */
+
+    OPCODE_GROUP (15):
+
+        NWORDS = CACHE_INSTRUCTION ();
+        if NWORDS > 0 then goto DONE;
+        NWORDS = MOVE16_INSTRUCTION ();
+        if NWORDS > 0 then goto DONE;
+        NWORDS = PFLUSH_INSTRUCTION ();
+        if NWORDS > 0 then goto DONE;
+        NWORDS = PLOAD_INSTRUCTION ();
+        if NWORDS > 0 then goto DONE;
+        NWORDS = PTEST_INSTRUCTION ();
+        if NWORDS > 0 then goto DONE;
+	NBYTES = DIS881 (INSTRUCTION_WORDS, IADDRESS, STRING);
+        goto RETURN;
+
+    DONE:
+        NBYTES = 2 * NWORDS;
+
+    RETURN:
+        return (NBYTES);
+
+
+    /* --------------------------------------------------------------------
+     * ABCD_SBCD_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * ABCD or SBCD instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    ABCD_SBCD_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+	    CODE		fixed binary (15);
+        declare
+	    1 ABCD_SBCD_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 RX		bit (3),
+	      2 BITS_8_4	bit (5),
+	      2 RM		bit (1),
+	      2 RY		bit (3);
+
+	%replace ABCD_BITS_15_12	by '1100'B;
+	%replace ABCD_BITS_8_4		by '10000'B;
+	%replace SBCD_BITS_15_12	by '1000'B;
+	%replace SBCD_BITS_8_4		by '10000'B;
+	%replace SIZE_ABCD_SBCD		by 1;
+
+	if (IP->ABCD_SBCD_OPCODE.BITS_15_12 = ABCD_BITS_15_12) &
+	   (IP->ABCD_SBCD_OPCODE.BITS_8_4   = ABCD_BITS_8_4)   then
+	     CODE = OP_ABCD;
+	else if (IP->ABCD_SBCD_OPCODE.BITS_15_12 = SBCD_BITS_15_12) &
+	        (IP->ABCD_SBCD_OPCODE.BITS_8_4   = SBCD_BITS_8_4)   then
+	     CODE = OP_SBCD;
+	else return (0);
+	if IP->ABCD_SBCD_OPCODE.RM = '0'B then
+	     STRING = PRNTOP(CODE,SIZE_BYTE) ||
+		      DREG_NAME(binary(IP->ABCD_SBCD_OPCODE.RY)) || ',' ||
+		      DREG_NAME(binary(IP->ABCD_SBCD_OPCODE.RX));
+	else STRING = PRNTOP(CODE,SIZE_BYTE) || '-(' ||
+		     AREG_NAME(binary(IP->ABCD_SBCD_OPCODE.RY)) || '),-(' ||
+		     AREG_NAME(binary(IP->ABCD_SBCD_OPCODE.RX)) || ')';
+	return (SIZE_ABCD_SBCD);
+
+    end ABCD_SBCD_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * ADD_SUB_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * ADD, ADDA, SUB or SUBA instruction.  If so, then return the
+     * disassembled instruction in STRING and return the size in
+     * bytes of the instruction.  Otherwise, return zero.
+     */
+
+    ADD_SUB_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            MODE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 ADD_SUB_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 REGN		bit (3),
+	      2 OPMODE		bit (3),
+	      2 MODE		bit (3),
+	      2 REG		bit (3);
+
+	%replace ADD_BITS_15_12	by '1101'B;
+	%replace SUB_BITS_15_12	by '1001'B;
+	%replace SIZE_ADD_SUB	by 1;
+
+	if IP->ADD_SUB_OPCODE.BITS_15_12 = ADD_BITS_15_12 then
+	     CODE = OP_ADD;
+	else if IP->ADD_SUB_OPCODE.BITS_15_12 = SUB_BITS_15_12 then
+	     CODE = OP_SUB;
+	else return (0);
+	MODE = binary(IP->ADD_SUB_OPCODE.OPMODE);
+	if MODE = 0 then do;
+	    SIZE = SIZE_BYTE;
+	    TYPE = EATYPE_DATA;
+	end;
+	else if MODE = 1 then do;
+	    SIZE = SIZE_WORD;
+	    TYPE = EATYPE_ALL;
+	end;
+	else if MODE = 2 then do;
+	    SIZE = SIZE_LONG;
+	    TYPE = EATYPE_ALL;
+	end;
+	else if MODE = 4 then do;
+	    SIZE = SIZE_BYTE;
+	    TYPE = EATYPE_MEMORY_ALTER;
+	end;
+	else if MODE = 5 then do;
+	    SIZE = SIZE_WORD;
+	    TYPE = EATYPE_MEMORY_ALTER;
+	end;
+	else if MODE = 6 then do;
+	    SIZE = SIZE_LONG;
+	    TYPE = EATYPE_MEMORY_ALTER;
+	end;
+	else if MODE = 3 then do;
+	    if CODE = OP_ADD then
+		 CODE = OP_ADDA;
+	    else CODE = OP_SUBA;
+	    SIZE = SIZE_WORD;
+	    TYPE = EATYPE_ALL;
+	end;
+	else if MODE = 7 then do;
+	    if CODE = OP_ADD then
+		 CODE = OP_ADDA;
+	    else CODE = OP_SUBA;
+	    SIZE = SIZE_LONG;
+	    TYPE = EATYPE_ALL;
+	end;
+	else return (0);
+	NWORDS = DISEA (binary(IP->ADD_SUB_OPCODE.MODE),
+			binary(IP->ADD_SUB_OPCODE.REG),
+			SIZE,
+			addr(IP->INSTRUCTION.WORD(2)),
+			TYPE,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE);
+	if (MODE = 0) | (MODE = 1) | (MODE = 2) then
+	     STRING = STRING || PRNTEA(EAP) ||
+		      ',' || DREG_NAME(binary(IP->ADD_SUB_OPCODE.REGN));
+	else if (MODE = 4) | (MODE = 5) | (MODE = 6) then
+	     STRING = STRING || DREG_NAME(binary(IP->ADD_SUB_OPCODE.REGN)) ||
+		      ',' || PRNTEA(EAP);
+	else if (MODE = 3) | (MODE = 7) then
+	     STRING = STRING || PRNTEA(EAP) ||
+		      ',' || AREG_NAME(binary(IP->ADD_SUB_OPCODE.REGN));
+	else return (0);
+	return (SIZE_ADD_SUB + NWORDS);
+
+    end ADD_SUB_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * ADDQ_SUBQ_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * ADDQ or SUBQ instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    ADDQ_SUBQ_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            DATA		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 ADDQ_SUBQ_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 DATA		bit (3),
+	      2 ADDQ_OR_SUBQ	bit (1),
+	      2 SIZE		bit (2),
+	      2 MODE		bit (3),
+	      2 REG		bit (3);
+
+	%replace ADDQ_SUBQ_BITS_15_12	by '0101'B;
+	%replace SIZE_ADDQ_SUBQ		by 1;
+
+	if IP->ADDQ_SUBQ_OPCODE.BITS_15_12 ^= ADDQ_SUBQ_BITS_15_12 then
+	    return (0);
+	SIZE = binary(IP->ADDQ_SUBQ_OPCODE.SIZE);
+	if      SIZE = 0 then SIZE = SIZE_BYTE;
+	else if SIZE = 1 then SIZE = SIZE_WORD;
+	else if SIZE = 2 then SIZE = SIZE_LONG;
+	else return (0);
+	if (SIZE = SIZE_BYTE) &
+	   (binary(IP->ADDQ_SUBQ_OPCODE.MODE) = EAMODE_AREG) then
+	    return (0);
+	DATA = binary(IP->ADDQ_SUBQ_OPCODE.DATA);
+	if DATA = 0 then DATA = 8;
+	NWORDS = DISEA (binary(IP->ADDQ_SUBQ_OPCODE.MODE),
+			binary(IP->ADDQ_SUBQ_OPCODE.REG),
+			SIZE,
+			addr(IP->INSTRUCTION.WORD(2)),
+			EATYPE_ALTER,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	if IP->ADDQ_SUBQ_OPCODE.ADDQ_OR_SUBQ = '0'B then
+	     CODE = OP_ADDQ;
+	else CODE = OP_SUBQ;
+
+        call GETPTR((DATA),TEMPSTR);  /* convert immediate to hex */
+	STRING = PRNTOP(CODE,SIZE) || '#' ||
+		 TEMPSTR || ',' || PRNTEA(EAP);
+	return (SIZE_ADDQ_SUBQ + NWORDS);
+
+    end ADDQ_SUBQ_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * ADDX_SUBX_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * ADDX or SUBX instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    ADDX_SUBX_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15);
+        declare
+	    1 ADDX_SUBX_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 RX		bit (3),
+	      2 BITS_8_8	bit (1),
+	      2 SIZE		bit (2),
+	      2 BITS_5_4	bit (2),
+	      2 RM		bit (1),
+	      2 RY		bit (3);
+
+	%replace ADDX_BITS_15_12	by '1101'B;
+	%replace ADDX_BITS_8_8		by '1'B;
+	%replace ADDX_BITS_5_4		by '00'B;
+	%replace SUBX_BITS_15_12	by '1001'B;
+	%replace SUBX_BITS_8_8		by '1'B;
+	%replace SUBX_BITS_5_4		by '00'B;
+	%replace SIZE_ADDX_SUBX		by 1;
+
+	if (IP->ADDX_SUBX_OPCODE.BITS_15_12 = ADDX_BITS_15_12) &
+	   (IP->ADDX_SUBX_OPCODE.BITS_8_8   = ADDX_BITS_8_8)   &
+	   (IP->ADDX_SUBX_OPCODE.BITS_5_4   = ADDX_BITS_5_4)   then
+	     CODE = OP_ADDX;
+	else if (IP->ADDX_SUBX_OPCODE.BITS_15_12 = SUBX_BITS_15_12) &
+	        (IP->ADDX_SUBX_OPCODE.BITS_8_8   = SUBX_BITS_8_8)   &
+	        (IP->ADDX_SUBX_OPCODE.BITS_5_4   = SUBX_BITS_5_4)   then
+	     CODE = OP_SUBX;
+	else return (0);
+	SIZE = binary(IP->ADDX_SUBX_OPCODE.SIZE);
+	if      SIZE = 0 then SIZE = SIZE_BYTE;
+	else if SIZE = 1 then SIZE = SIZE_WORD;
+	else if SIZE = 2 then SIZE = SIZE_LONG;
+	else return (0);
+	if IP->ADDX_SUBX_OPCODE.RM = '0'B then
+	     STRING = PRNTOP(CODE,SIZE) ||
+		      DREG_NAME(binary(IP->ADDX_SUBX_OPCODE.RY)) ||
+		      ',' || DREG_NAME(binary(IP->ADDX_SUBX_OPCODE.RX));
+	else STRING = PRNTOP(CODE,SIZE) || '-(' ||
+		      AREG_NAME(binary(IP->ADDX_SUBX_OPCODE.RY)) || '),-(' ||
+		      AREG_NAME(binary(IP->ADDX_SUBX_OPCODE.RX)) || ')';
+	return (SIZE_ADDX_SUBX);
+
+    end ADDX_SUBX_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * AND_OR_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * AND or OR instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    AND_OR_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            SIZE		fixed binary (15),
+            CODE		fixed binary (15),
+            TYPE		fixed binary (15),
+            MODE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 AND_OR_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 REGN		bit (3),
+	      2 OPMODE		bit (3),
+	      2 MODE		bit (3),
+	      2 REG		bit (3);
+
+	%replace AND_BITS_15_12	by '1100'B;
+	%replace OR_BITS_15_12	by '1000'B;
+	%replace SIZE_AND_OR	by 1;
+
+	if IP->AND_OR_OPCODE.BITS_15_12 = AND_BITS_15_12 then
+	     CODE = OP_AND;
+	else if IP->AND_OR_OPCODE.BITS_15_12 = OR_BITS_15_12 then
+	     CODE = OP_OR;
+	else return (0);
+	MODE = binary(IP->AND_OR_OPCODE.OPMODE);
+	if MODE = 0 then do;
+	    SIZE = SIZE_BYTE;
+	    TYPE = EATYPE_DATA;
+	end;
+	else if MODE = 1 then do;
+	    SIZE = SIZE_WORD;
+	    TYPE = EATYPE_DATA;
+	end;
+	else if MODE = 2 then do;
+	    SIZE = SIZE_LONG;
+	    TYPE = EATYPE_DATA;
+	end;
+	else if MODE = 4 then do;
+	    SIZE = SIZE_BYTE;
+	    TYPE = EATYPE_MEMORY_ALTER;
+	end;
+	else if MODE = 5 then do;
+	    SIZE = SIZE_WORD;
+	    TYPE = EATYPE_MEMORY_ALTER;
+	end;
+	else if MODE = 6 then do;
+	    SIZE = SIZE_LONG;
+	    TYPE = EATYPE_MEMORY_ALTER;
+	end;
+	else return (0);
+	NWORDS = DISEA (binary(IP->AND_OR_OPCODE.MODE),
+			binary(IP->AND_OR_OPCODE.REG),
+			SIZE,
+			addr(IP->INSTRUCTION.WORD(2)),
+			TYPE,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE);
+	if (MODE = 0) | (MODE = 1) | (MODE = 2) then
+	     STRING = STRING || PRNTEA(EAP) ||
+		      ',' || DREG_NAME(binary(IP->AND_OR_OPCODE.REGN));
+	else STRING = STRING || DREG_NAME(binary(IP->AND_OR_OPCODE.REGN)) ||
+		      ',' || PRNTEA(EAP);
+	return (SIZE_AND_OR + NWORDS);
+
+    end AND_OR_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * BFEXT_BFFFO_BFINS_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * memory BFEXTS, BFEXTU, BFFFO or BFINS instruction.  If so, then
+     * return the disassembled instruction in STRING and return the
+     * size in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    BFEXT_BFFFO_BFINS_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            MODE		fixed binary (15),
+            OFFSET		fixed binary (15),
+            WIDTH		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 BFEXT_BFFFO_BFINS_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_6		bit (10),
+	        3 MODE			bit (3),
+	        3 REG			bit (3),
+	      2 SECOND_WORD,
+	        3 ZERO			bit (1),
+	        3 DREG			bit (3),
+	        3 DO			bit (1),
+	        3 OFFSET		bit (5),
+	        3 DW			bit (1),
+	        3 WIDTH			bit (5);
+
+	%replace BFEXTS_BITS_15_6	by '1110101111'B;
+	%replace BFEXTU_BITS_15_6	by '1110100111'B;
+	%replace BFFFO_BITS_15_6	by '1110110111'B;
+	%replace BFINS_BITS_15_6	by '1110111111'B;
+	%replace SIZE_BFEXT_BFFFO_BFINS	by 2;
+
+	if IP->BFEXT_BFFFO_BFINS_OPCODE.ZERO ^= '0'B then
+	     return (0);
+	if IP->BFEXT_BFFFO_BFINS_OPCODE.BITS_15_6 = BFEXTS_BITS_15_6 then
+	     CODE = OP_BFEXTS;
+	else if IP->BFEXT_BFFFO_BFINS_OPCODE.BITS_15_6 = BFEXTU_BITS_15_6 then
+	     CODE = OP_BFEXTU;
+	else if IP->BFEXT_BFFFO_BFINS_OPCODE.BITS_15_6 = BFFFO_BITS_15_6  then
+	     CODE = OP_BFFFO;
+	else if IP->BFEXT_BFFFO_BFINS_OPCODE.BITS_15_6 = BFINS_BITS_15_6  then
+	     CODE = OP_BFINS;
+	else return (0);
+	OFFSET = binary(IP->BFEXT_BFFFO_BFINS_OPCODE.OFFSET);
+	if IP->BFEXT_BFFFO_BFINS_OPCODE.DO = '0'B then
+	     OFFSET = NO_REG;
+	else if (OFFSET >= DREG_0) & (OFFSET <= DREG_7) then
+	     OFFSET = binary(IP->BFEXT_BFFFO_BFINS_OPCODE.OFFSET);
+	else return (0);
+	WIDTH = binary(IP->BFEXT_BFFFO_BFINS_OPCODE.WIDTH);
+	if IP->BFEXT_BFFFO_BFINS_OPCODE.DW = '0'B then
+	     WIDTH = NO_REG;
+	else if (WIDTH >= DREG_0) & (WIDTH <= DREG_7) then
+	     WIDTH = binary(IP->BFEXT_BFFFO_BFINS_OPCODE.WIDTH);
+	else return (0);
+	if binary(IP->BFEXT_BFFFO_BFINS_OPCODE.MODE) = EAMODE_DREG then
+	     MODE = EATYPE_ALL;
+	else MODE = EATYPE_CONTROL_ALTER;
+	NWORDS = DISEA (binary(IP->BFEXT_BFFFO_BFINS_OPCODE.MODE),
+			binary(IP->BFEXT_BFFFO_BFINS_OPCODE.REG),
+			SIZE_NULL,
+			addr(IP->INSTRUCTION.WORD(3)),
+			MODE,
+			EAP);
+	if NWORDS < 0 then
+	     return (0);
+	if OFFSET = NO_REG then
+	     STRING = STRING ||
+		      trim(char(binary(IP->BFEXT_BFFFO_BFINS_OPCODE.OFFSET)));
+	else STRING = STRING || DREG_NAME(OFFSET);
+	if WIDTH = NO_REG then
+	     STRING = STRING || ':' ||
+		      trim(char(binary(IP->BFEXT_BFFFO_BFINS_OPCODE.WIDTH)))
+		      || '}';
+	else STRING = STRING || ':' || DREG_NAME(WIDTH) || '}';
+
+        if CODE = OP_BFINS then do;
+            STRING = ',' || PRNTEA(EAP) || '{' || STRING;
+	    STRING = PRNTOP(CODE,SIZE_NULL)
+                || DREG_NAME(binary(IP->BFEXT_BFFFO_BFINS_OPCODE.DREG)) 
+                || STRING;
+        end;
+        else do;
+	    STRING = PRNTOP(CODE,SIZE_NULL) || PRNTEA(EAP) || '{' || STRING;
+	    STRING = STRING || ',' ||
+		 DREG_NAME(binary(IP->BFEXT_BFFFO_BFINS_OPCODE.DREG));
+        end;
+	return (SIZE_BFEXT_BFFFO_BFINS + NWORDS);
+
+    end BFEXT_BFFFO_BFINS_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * BIT_FIELD_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * memory BFCHG, BFCLR, BFSET or BFTST instruction.  If so, then
+     * return the disassembled instruction in STRING and return the
+     * size in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    BIT_FIELD_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            MODE		fixed binary (15),
+            OFFSET		fixed binary (15),
+            WIDTH		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 BIT_FIELD_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_6	bit (10),
+	        3 MODE		bit (3),
+	        3 REG		bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_12	bit (4),
+	        3 DO		bit (1),
+	        3 OFFSET	bit (5),
+	        3 DW		bit (1),
+	        3 WIDTH		bit (5);
+
+	%replace BFCHG_BITS_15_6	by '1110101011'B;
+	%replace BFCHG_BITS_15_12	by '0000'B;
+	%replace BFCLR_BITS_15_6	by '1110110011'B;
+	%replace BFCLR_BITS_15_12	by '0000'B;
+	%replace BFSET_BITS_15_6	by '1110111011'B;
+	%replace BFSET_BITS_15_12	by '0000'B;
+	%replace BFTST_BITS_15_6	by '1110100011'B;
+	%replace BFTST_BITS_15_12	by '0000'B;
+	%replace SIZE_BIT_FIELD		by 2;
+
+	if (IP->BIT_FIELD_OPCODE.BITS_15_6  = BFCHG_BITS_15_6)  &
+	   (IP->BIT_FIELD_OPCODE.BITS_15_12 = BFCHG_BITS_15_12) then
+	     CODE = OP_BFCHG;
+	else if (IP->BIT_FIELD_OPCODE.BITS_15_6  = BFCLR_BITS_15_6)  &
+	        (IP->BIT_FIELD_OPCODE.BITS_15_12 = BFCLR_BITS_15_12) then
+	     CODE = OP_BFCLR;
+	else if (IP->BIT_FIELD_OPCODE.BITS_15_6  = BFSET_BITS_15_6)  &
+	        (IP->BIT_FIELD_OPCODE.BITS_15_12 = BFSET_BITS_15_12) then
+	     CODE = OP_BFSET;
+	else if (IP->BIT_FIELD_OPCODE.BITS_15_6  = BFTST_BITS_15_6)  &
+	        (IP->BIT_FIELD_OPCODE.BITS_15_12 = BFTST_BITS_15_12) then
+	     CODE = OP_BFTST;
+	else return (0);
+	OFFSET = binary(IP->BIT_FIELD_OPCODE.OFFSET);
+	if IP->BIT_FIELD_OPCODE.DO = '0'B then
+	     OFFSET = NO_REG;
+	else if (OFFSET >= DREG_0) & (OFFSET <= DREG_7) then
+	     OFFSET = binary(IP->BIT_FIELD_OPCODE.OFFSET);
+	else return (0);
+	WIDTH = binary(IP->BIT_FIELD_OPCODE.WIDTH);
+	if IP->BIT_FIELD_OPCODE.DW = '0'B then
+	     WIDTH = NO_REG;
+	else if (WIDTH >= DREG_0) & (WIDTH <= DREG_7) then
+	     WIDTH = binary(IP->BIT_FIELD_OPCODE.WIDTH);
+	else return (0);
+	MODE = binary(IP->BIT_FIELD_OPCODE.MODE);
+        if MODE = EAMODE_DREG then
+            MODE = EATYPE_DATA;
+	else
+	    MODE = EATYPE_CONTROL_ALTER;
+
+	NWORDS = DISEA (binary(IP->BIT_FIELD_OPCODE.MODE),
+			binary(IP->BIT_FIELD_OPCODE.REG),
+			SIZE_NULL,
+			addr(IP->INSTRUCTION.WORD(3)),
+			MODE,
+			EAP);
+
+	if NWORDS < 0 then
+	     return (0);
+	STRING = PRNTOP(CODE,SIZE_NULL) || PRNTEA(EAP) || '{';
+	if OFFSET = NO_REG then
+	     STRING = STRING || trim(char(binary(IP->BIT_FIELD_OPCODE.OFFSET)));
+	else STRING = STRING || DREG_NAME(OFFSET);
+	STRING = STRING || ':';
+	if WIDTH = NO_REG then
+	     STRING = STRING || trim(char(binary(IP->BIT_FIELD_OPCODE.WIDTH)));
+	else STRING = STRING || DREG_NAME(WIDTH);
+	STRING = STRING || '}';
+	return (SIZE_BIT_FIELD + NWORDS);
+
+    end BIT_FIELD_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * BIT_MEM_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * memory BCHG, BCLR, BSET or BTST instruction.  If so, then
+     * return the disassembled instruction in STRING and return the
+     * size in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    BIT_MEM_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 BIT_MEM_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_6	bit (10),
+	        3 MODE		bit (3),
+	        3 REG		bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_8	bit (8),
+	        3 BIT		bit (8);
+
+	%replace BCHG_BITS_15_6		by '0000100001'B;
+	%replace BCHG_BITS_15_8		by '00000000'B;
+	%replace BCLR_BITS_15_6		by '0000100010'B;
+	%replace BCLR_BITS_15_8		by '00000000'B;
+	%replace BSET_BITS_15_6		by '0000100011'B;
+	%replace BSET_BITS_15_8		by '00000000'B;
+	%replace BTST_BITS_15_6		by '0000100000'B;
+	%replace BTST_BITS_15_8		by '00000000'B;
+	%replace SIZE_BIT_MEM		by 2;
+
+	if      (IP->BIT_MEM_OPCODE.BITS_15_6 = BCHG_BITS_15_6) &
+	        (IP->BIT_MEM_OPCODE.BITS_15_8 = BCHG_BITS_15_8) then
+	     CODE = OP_BCHG;
+	else if (IP->BIT_MEM_OPCODE.BITS_15_6 = BCLR_BITS_15_6) &
+	        (IP->BIT_MEM_OPCODE.BITS_15_8 = BCLR_BITS_15_8) then
+	     CODE = OP_BCLR;
+	else if (IP->BIT_MEM_OPCODE.BITS_15_6 = BSET_BITS_15_6) &
+	        (IP->BIT_MEM_OPCODE.BITS_15_8 = BSET_BITS_15_8) then
+	     CODE = OP_BSET;
+	else if (IP->BIT_MEM_OPCODE.BITS_15_6 = BTST_BITS_15_6) &
+	        (IP->BIT_MEM_OPCODE.BITS_15_8 = BTST_BITS_15_8) then
+	     CODE = OP_BTST;
+	else return (0);
+	NWORDS = DISEA (binary(IP->BIT_MEM_OPCODE.MODE),
+			binary(IP->BIT_MEM_OPCODE.REG),
+			SIZE_BYTE,
+			addr(IP->INSTRUCTION.WORD(3)),
+			EATYPE_DATA,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE_BYTE) ||
+		 '#' || trim(char(binary(IP->BIT_MEM_OPCODE.BIT))) ||
+		 ',' || PRNTEA(EAP);
+	return (SIZE_BIT_MEM + NWORDS);
+
+    end BIT_MEM_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * BIT_REG_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * register BCHG, BCLR, BSET or BTST instruction.  If so, then
+     * return the disassembled instruction in STRING and return the
+     * size in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    BIT_REG_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 BIT_REG_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 DREG		bit (3),
+	      2 BITS_8_6	bit (3),
+	      2 MODE		bit (3),
+	      2 REG		bit (3);
+
+	%replace BCHG_BITS_15_12	by '0000'B;
+	%replace BCHG_BITS_8_6		by '101'B;
+	%replace BCLR_BITS_15_12	by '0000'B;
+	%replace BCLR_BITS_8_6		by '110'B;
+	%replace BSET_BITS_15_12	by '0000'B;
+	%replace BSET_BITS_8_6		by '111'B;
+	%replace BTST_BITS_15_12	by '0000'B;
+	%replace BTST_BITS_8_6		by '100'B;
+	%replace SIZE_BIT_REG		by 1;
+
+	if (IP->BIT_REG_OPCODE.BITS_15_12 = BCHG_BITS_15_12) &
+	   (IP->BIT_REG_OPCODE.BITS_8_6   = BCHG_BITS_8_6)   then
+	     CODE = OP_BCHG;
+	else if (IP->BIT_REG_OPCODE.BITS_15_12 = BCLR_BITS_15_12) &
+	        (IP->BIT_REG_OPCODE.BITS_8_6   = BCLR_BITS_8_6)   then
+	     CODE = OP_BCLR;
+	else if (IP->BIT_REG_OPCODE.BITS_15_12 = BSET_BITS_15_12) &
+	        (IP->BIT_REG_OPCODE.BITS_8_6   = BSET_BITS_8_6)   then
+	     CODE = OP_BSET;
+	else if (IP->BIT_REG_OPCODE.BITS_15_12 = BTST_BITS_15_12) &
+	        (IP->BIT_REG_OPCODE.BITS_8_6   = BTST_BITS_8_6)   then
+	     CODE = OP_BTST;
+	else return (0);
+	NWORDS = DISEA (binary(IP->BIT_REG_OPCODE.MODE),
+			binary(IP->BIT_REG_OPCODE.REG),
+			SIZE_LONG,
+			addr(IP->INSTRUCTION.WORD(2)),
+			EATYPE_DATA,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE_LONG) ||
+		 DREG_NAME(binary(IP->BIT_REG_OPCODE.DREG)) || ',' ||
+		 PRNTEA(EAP);
+	return (SIZE_BIT_REG + NWORDS);
+
+    end BIT_REG_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * BKPT_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * BKPT instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    BKPT_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            1 BKPT_OPCODE	based,
+              2 BITS_15_4	bit (13),
+              2 VECTOR		bit (3);
+
+	%replace BKPT_BITS_15_4	by '0100100001001'B;
+	%replace BKPT_SIZE	by 1;
+
+	if IP->BKPT_OPCODE.BITS_15_4 ^= BKPT_BITS_15_4 then
+	    return (0);
+        call GETPTR(binary(IP->BKPT_OPCODE.VECTOR),TEMPSTR);
+	STRING = PRNTOP(OP_BKPT,SIZE_NULL) ||
+		 '#' || TEMPSTR;
+	return (BKPT_SIZE);
+
+    end BKPT_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * BCC_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * Bcc instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    BCC_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            INDEX		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 BCC_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 CONDITION	bit (4),
+              2 DISP_8		bit (8);
+
+	%replace BCC_BITS_15_12	by '0110'B;
+	%replace SIZE_BCC	by 1;
+
+	if IP->BCC_OPCODE.BITS_15_12 ^= BCC_BITS_15_12 then
+	    return (0);
+	if IP->BCC_OPCODE.DISP_8 = '11111111'B then do;
+	     SIZE = SIZE_LONG;
+	     INDEX = 2;
+	end;
+	else if IP->BCC_OPCODE.DISP_8 = '00000000'B then do;
+	     SIZE = SIZE_WORD;
+	     INDEX = 2;
+	end;
+	else do;
+	    SIZE = SIZE_BYTE;
+	    INDEX = 1;
+	end;
+	NWORDS = DISEA (EAMODE_IMMED,
+			EAREG_IMMED,
+			SIZE,
+			addr(IP->INSTRUCTION.WORD(INDEX)),
+			EATYPE_ALL,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+
+        /* hack...if this is a negative short branch, it won't be properly
+         * sign-extended.  Take this into account.
+         */
+        if (INDEX = 1 & binary(IP->BCC_OPCODE.DISP_8) >= 128) then
+            /* convert offset to absolute address */
+            call ITOABS(EAP,IADDRESS+2-256);
+        else
+            /* convert offset to absolute address */
+            call ITOABS(EAP,IADDRESS+2);
+
+	CODE = OP_BRA_COND + binary(IP->BCC_OPCODE.CONDITION);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP);
+	if SIZE = SIZE_BYTE then
+	     NWORDS = 0;
+	return (SIZE_BCC + NWORDS);
+
+    end BCC_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * CINV_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68040
+     * CINV instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.'
+     * Otherwise, return zero.
+     */
+
+    CACHE_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            NWORDS		fixed binary (15);
+
+	declare
+	    1 CACHE_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_8	bit (8),
+	        3 CACHE		bit (2),
+                3 CPUSH_FLAG    bit (1),
+                3 SCOPE         bit (2),
+	        3 REG		bit (3);
+
+	%replace SIZE_CACHE		by 1;
+        %replace CACHE_BITS_15_8        by '11110100'B;
+
+        %replace CACHE_CACHE_NOP         by '00'B;
+        %replace CACHE_CACHE_DATA        by '01'B;
+        %replace CACHE_CACHE_INSTRUCTION by '10'B;
+        %replace CACHE_CACHE_BOTH        by '11'B;
+
+        %replace CACHE_SCOPE_LINE        by '01'B;
+        %replace CACHE_SCOPE_PAGE        by '10'B;
+        %replace CACHE_SCOPE_ALL         by '11'B;
+
+        if (IP->CACHE_OPCODE.BITS_15_8 ^= CACHE_BITS_15_8) then
+            return (0);
+
+        if (IP->CACHE_OPCODE.SCOPE = CACHE_SCOPE_ALL) then do;
+            if IP->CACHE_OPCODE.CPUSH_FLAG then
+                STRING = PRNTOP(OP_CPUSHA,SIZE_NULL);
+            else
+                STRING = PRNTOP(OP_CINVA,SIZE_NULL);
+            EA_DATA_BUFFER = '';
+        end;
+        else do;
+            if (IP->CACHE_OPCODE.SCOPE = CACHE_SCOPE_LINE) then
+                if IP->CACHE_OPCODE.CPUSH_FLAG then
+                    STRING = PRNTOP(OP_CPUSHL,SIZE_NULL);
+                else
+                    STRING = PRNTOP(OP_CINVL,SIZE_NULL);
+            else if (IP->CACHE_OPCODE.SCOPE = CACHE_SCOPE_PAGE) then
+                if IP->CACHE_OPCODE.CPUSH_FLAG then
+                    STRING = PRNTOP(OP_CPUSHP,SIZE_NULL);
+                else
+                    STRING = PRNTOP(OP_CINVP,SIZE_NULL);
+            else do;
+                STRING = PRNTOP(OP_ILLEGAL,SIZE_NULL);
+                return (SIZE_CACHE);
+            end;
+
+            EA_DATA_BUFFER = ',(' || AREG_NAME(binary(IP->CACHE_OPCODE.REG))
+                             || ')';
+        end;
+
+        if (IP->CACHE_OPCODE.CACHE = CACHE_CACHE_NOP) then
+            STRING = STRING || 'nc';
+        else if (IP->CACHE_OPCODE.CACHE = CACHE_CACHE_DATA) then
+            STRING = STRING || 'dc';
+        else if (IP->CACHE_OPCODE.CACHE = CACHE_CACHE_INSTRUCTION) then
+            STRING = STRING || 'ic';
+        else
+            STRING = STRING || 'bc';
+
+        STRING = STRING || trim(EA_DATA_BUFFER);
+        return (SIZE_CACHE);
+
+    end CACHE_INSTRUCTION;
+
+
+    /* --------------------------------------------------------------------
+     * CALLM_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * CALLM instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.'
+     * Otherwise, return zero.
+     */
+
+    CALLM_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            NWORDS		fixed binary (15);
+	declare
+	    1 CALLM_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_6	bit (10),
+	        3 MODE		bit (3),
+	        3 REG		bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_8	bit (8),
+	        3 DATA		bit (8);
+
+	%replace CALLM_BITS_15_6	by '0000011011'B;
+	%replace CALLM_BITS_15_8	by '00000000'B;
+	%replace SIZE_CALLM		by 2;
+
+	if (IP->CALLM_OPCODE.BITS_15_6 ^= CALLM_BITS_15_6) |
+	   (IP->CALLM_OPCODE.BITS_15_8 ^= CALLM_BITS_15_8) then
+	    return (0);
+        NWORDS = DISEA (binary(IP->CALLM_OPCODE.MODE),
+                        binary(IP->CALLM_OPCODE.REG),
+                        SIZE_NULL,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        EATYPE_CONTROL,
+                        EAP);
+        if NWORDS < 0 then
+	    return (0);
+        call GETPTR(binary(IP->CALLM_OPCODE.DATA),TEMPSTR);
+	STRING = PRNTOP(OP_CALLM,SIZE_NULL) || '#' ||
+		 TEMPSTR || ',' ||
+		 PRNTEA(EAP);
+	return (SIZE_CALLM + NWORDS);
+
+    end CALLM_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * CAS_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * CAS instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    CAS_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            SIZE		fixed binary (15),
+            NWORDS		fixed binary (15);
+	declare
+	    1 CAS_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_11	bit (5),
+	        3 SIZE		bit (2),
+	        3 BITS_8_6	bit (3),
+	        3 MODE		bit (3),
+	        3 REG		bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_9	bit (7),
+	        3 DU		bit (3),
+	        3 BITS_5_3	bit (3),
+	        3 DC		bit (3);
+
+	%replace CAS_BITS_15_11		by '00001'B;
+	%replace CAS_BITS_8_6		by '011'B;
+	%replace CAS_BITS_15_9		by '0000000'B;
+	%replace CAS_BITS_5_3		by '000'B;
+	%replace SIZE_CAS		by 2;
+
+	if (IP->CAS_OPCODE.BITS_15_11 ^= CAS_BITS_15_11) |
+	   (IP->CAS_OPCODE.BITS_8_6   ^= CAS_BITS_8_6)   |
+	   (IP->CAS_OPCODE.BITS_15_9  ^= CAS_BITS_15_9)  |
+	   (IP->CAS_OPCODE.BITS_5_3   ^= CAS_BITS_5_3) then
+	    return (0);
+	SIZE = binary(IP->CAS_OPCODE.SIZE);
+	if      SIZE = 1 then SIZE = SIZE_BYTE;
+	else if SIZE = 2 then SIZE = SIZE_WORD;
+	else if SIZE = 3 then SIZE = SIZE_LONG;
+	else return (0);
+        NWORDS = DISEA (binary(IP->CAS_OPCODE.MODE),
+                        binary(IP->CAS_OPCODE.REG),
+                        SIZE_NULL,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        EATYPE_MEMORY_ALTER,
+                        EAP);
+        if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(OP_CAS,SIZE) ||
+		 DREG_NAME(binary(IP->CAS_OPCODE.DC)) || ',' ||
+		 DREG_NAME(binary(IP->CAS_OPCODE.DU)) || ',' ||
+		 PRNTEA(EAP);
+	return (SIZE_CAS + NWORDS);
+
+    end CAS_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * CAS2_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * CAS2 instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    CAS2_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            SIZE		fixed binary (15),
+            RN1			fixed binary (15),
+            RN2			fixed binary (15),
+            NWORDS		fixed binary (15);
+	declare
+	    1 CAS2_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_11	bit (5),
+	        3 SIZE		bit (2),
+	        3 BITS_8_0	bit (9),
+	      2 SECOND_WORD,
+	        3 DA1		bit (1),
+	        3 RN1		bit (3),
+	        3 BITS_11_9	bit (3),
+	        3 DU1		bit (3),
+	        3 BITS_5_3	bit (3),
+	        3 DC1		bit (3),
+	      2 THIRD_WORD,
+	        3 DA2		bit (1),
+	        3 RN2		bit (3),
+	        3 BITS_11_9	bit (3),
+	        3 DU2		bit (3),
+	        3 BITS_5_3	bit (3),
+	        3 DC2		bit (3);
+
+	%replace CAS2_BITS_15_11	by '00001'B;
+	%replace CAS2_BITS_8_0		by '011111100'B;
+	%replace CAS2_BITS_11_9		by '000'B;
+	%replace CAS2_BITS_5_3		by '000'B;
+	%replace SIZE_CAS2		by 3;
+
+	if (IP->CAS2_OPCODE.BITS_15_11            ^= CAS2_BITS_15_11) |
+	   (IP->CAS2_OPCODE.BITS_8_0              ^= CAS2_BITS_8_0)   |
+	   (IP->CAS2_OPCODE.SECOND_WORD.BITS_11_9 ^= CAS2_BITS_11_9)  |
+	   (IP->CAS2_OPCODE.SECOND_WORD.BITS_5_3  ^= CAS2_BITS_5_3)   |
+	   (IP->CAS2_OPCODE.THIRD_WORD.BITS_11_9  ^= CAS2_BITS_11_9)  |
+	   (IP->CAS2_OPCODE.THIRD_WORD.BITS_5_3   ^= CAS2_BITS_5_3) then 
+	    return (0);
+	SIZE = binary(IP->CAS2_OPCODE.SIZE);
+	if      SIZE = 2 then SIZE = SIZE_WORD;
+	else if SIZE = 3 then SIZE = SIZE_LONG;
+	else return (0);
+	if IP->CAS2_OPCODE.DA1 = '0'B then
+	     RN1 = binary(IP->CAS2_OPCODE.RN1) + REG_D0;
+	else RN1 = binary(IP->CAS2_OPCODE.RN1) + REG_A0;
+	if IP->CAS2_OPCODE.DA2 = '0'B then
+	     RN2 = binary(IP->CAS2_OPCODE.RN2) + REG_D0;
+	else RN2 = binary(IP->CAS2_OPCODE.RN2) + REG_A0;
+	STRING = PRNTOP(OP_CAS2,SIZE) ||
+		 DREG_NAME(binary(IP->CAS2_OPCODE.DC1)) || ':' ||
+		 DREG_NAME(binary(IP->CAS2_OPCODE.DC2)) || ',' ||
+		 DREG_NAME(binary(IP->CAS2_OPCODE.DU1)) || ':' ||
+		 DREG_NAME(binary(IP->CAS2_OPCODE.DU2)) || ',(' ||
+		 REG_NAME(RN1) || '):(' || REG_NAME(RN2) || ')';
+	return (SIZE_CAS2);
+
+    end CAS2_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * CHK_LEA_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * CHK or LEA instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    CHK_LEA_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            REG			fixed binary (15),
+            NWORDS		fixed binary (15);
+	declare
+	    1 CHK_LEA_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 REGN		bit (3),
+	      2 SIZE		bit (3),
+	      2 MODE		bit (3),
+	      2 REG		bit (3);
+
+        %replace CHK_LEA_BITS_15_12	by '0100'B;
+	%replace SIZE_CHK_LEA		by 1;
+
+	if IP->CHK_LEA_OPCODE.BITS_15_12 ^= CHK_LEA_BITS_15_12 then
+	    return (0);
+	SIZE = binary(IP->CHK_LEA_OPCODE.SIZE);
+	if SIZE = 4 then do;
+	     CODE = OP_CHK;
+	     SIZE = SIZE_LONG;
+	     TYPE = EATYPE_DATA;
+	     REG = binary(IP->CHK_LEA_OPCODE.REGN) + REG_D0;
+	end;
+	else if SIZE = 6 then do;
+	     CODE = OP_CHK;
+	     SIZE = SIZE_WORD;
+	     TYPE = EATYPE_DATA;
+	     REG = binary(IP->CHK_LEA_OPCODE.REGN) + REG_D0;
+	end;
+	else if SIZE = 7 then do;
+	     CODE = OP_LEA;
+	     SIZE = SIZE_LONG;
+	     TYPE = EATYPE_CONTROL;
+	     REG = binary(IP->CHK_LEA_OPCODE.REGN) + REG_A0;
+	end;
+	else return (0);
+        NWORDS = DISEA (binary(IP->CHK_LEA_OPCODE.MODE),
+                        binary(IP->CHK_LEA_OPCODE.REG),
+                        SIZE,
+                        addr(IP->INSTRUCTION.WORD(2)),
+                        TYPE,
+                        EAP);
+        if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP) || ',' || REG_NAME(REG);
+	return (SIZE_CHK_LEA + NWORDS);
+
+    end CHK_LEA_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * CHK2_CMP2_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * CHK2 or CMP2 instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    CHK2_CMP2_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            REG			fixed binary (15),
+            NWORDS		fixed binary (15);
+	declare
+	    1 CHK2_CMP2_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_11	bit (5),
+	        3 SIZE		bit (2),
+	        3 BITS_8_6	bit (3),
+	        3 MODE		bit (3),
+	        3 REG		bit (3),
+	      2 SECOND_WORD,
+		3 DA		bit (1),
+		3 REGN		bit (3),
+		3 BITS_11_0	bit (12);
+
+	%replace CHK2_BITS_15_11	by '00000'B;
+	%replace CHK2_BITS_8_6		by '011'B;
+	%replace CHK2_BITS_11_0		by '100000000000'B;
+	%replace CMP2_BITS_15_11	by '00000'B;
+	%replace CMP2_BITS_8_6		by '011'B;
+	%replace CMP2_BITS_11_0		by '100000000000'B;
+	%replace SIZE_CHK2_CMP2		by 1;
+
+	if (IP->CHK2_CMP2_OPCODE.BITS_15_11 = CHK2_BITS_15_11) &
+	   (IP->CHK2_CMP2_OPCODE.BITS_8_6 = CHK2_BITS_8_6)     &
+	   (IP->CHK2_CMP2_OPCODE.BITS_11_0 = CHK2_BITS_11_0)   then
+	     CODE = OP_CHK2;
+	else if (IP->CHK2_CMP2_OPCODE.BITS_15_11 = CMP2_BITS_15_11) &
+	        (IP->CHK2_CMP2_OPCODE.BITS_8_6 = CMP2_BITS_8_6)     &
+	        (IP->CHK2_CMP2_OPCODE.BITS_11_0 = CMP2_BITS_11_0)   then
+	     CODE = OP_CMP2;
+	else return (0);
+	SIZE = binary(IP->CHK2_CMP2_OPCODE.SIZE);
+	if      SIZE = 0 then SIZE = SIZE_BYTE;
+	else if SIZE = 1 then SIZE = SIZE_WORD;
+	else if SIZE = 2 then SIZE = SIZE_LONG;
+	else return (0);
+        NWORDS = DISEA (binary(IP->CHK2_CMP2_OPCODE.MODE),
+                        binary(IP->CHK2_CMP2_OPCODE.REG),
+                        SIZE,
+                        addr(IP->INSTRUCTION.WORD(2)),
+                        EATYPE_CONTROL,
+                        EAP);
+        if NWORDS < 0 then
+	    return (0);
+	if IP->CHK2_CMP2_OPCODE.DA = '0'B then
+	     REG = binary(IP->CHK2_CMP2_OPCODE.REGN) + REG_D0;
+	else REG = binary(IP->CHK2_CMP2_OPCODE.REGN) + REG_A0;
+	STRING = PRNTOP(CODE,SIZE) ||
+		 PRNTEA(EAP) || ',' || REG_NAME(REG);
+	return (SIZE_CHK2_CMP2 + NWORDS);
+
+    end CHK2_CMP2_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * CLR_NEG_NOT_TST_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * CLR, NEG, NEGX, NOT, or TST instruction.  If so, then return the
+     * disassembled instruction in STRING and return the size in bytes
+     * of the instruction.  Otherwise, return zero.
+     */
+
+    CLR_NEG_NOT_TST_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE	fixed binary (15),
+            SIZE	fixed binary (15),
+            TYPE	fixed binary (15),
+            NWORDS	fixed binary (15);
+        declare
+	    1 CLR_NEG_NOT_TST_OPCODE	based,
+	      2 BITS_15_8		bit (8),
+	      2 SIZE			bit (2),
+	      2 MODE			bit (3),
+	      2 REG			bit (3);
+
+	%replace CLR_BITS_15_8		by '01000010'B;
+	%replace NEG_BITS_15_8		by '01000100'B;
+	%replace NEGX_BITS_15_8		by '01000000'B;
+	%replace NOT_BITS_15_8		by '01000110'B;
+	%replace TST_BITS_15_8		by '01001010'B;
+	%replace SIZE_CLR_NEG_NOT_TST	by 1;
+
+	if IP->CLR_NEG_NOT_TST_OPCODE.BITS_15_8 = CLR_BITS_15_8  then
+	     CODE = OP_CLR;
+	else if IP->CLR_NEG_NOT_TST_OPCODE.BITS_15_8 = NEG_BITS_15_8  then
+	     CODE = OP_NEG;
+	else if IP->CLR_NEG_NOT_TST_OPCODE.BITS_15_8 = NEGX_BITS_15_8 then
+	     CODE = OP_NEGX;
+	else if IP->CLR_NEG_NOT_TST_OPCODE.BITS_15_8 = NOT_BITS_15_8  then
+	     CODE = OP_NOT;
+	else if IP->CLR_NEG_NOT_TST_OPCODE.BITS_15_8 = TST_BITS_15_8  then
+	     CODE = OP_TST;
+	else return (0);
+	SIZE = binary(IP->CLR_NEG_NOT_TST_OPCODE.SIZE);
+	if      SIZE = 0 then SIZE = SIZE_BYTE;
+	else if SIZE = 1 then SIZE = SIZE_WORD;
+	else if SIZE = 2 then SIZE = SIZE_LONG;
+	else return (0);
+	if (CODE = OP_TST) & (SIZE ^= SIZE_BYTE) then
+	     TYPE = EATYPE_ALL;
+	else TYPE = EATYPE_DATA_ALTER;
+        NWORDS = DISEA (binary(IP->CLR_NEG_NOT_TST_OPCODE.MODE),
+                        binary(IP->CLR_NEG_NOT_TST_OPCODE.REG),
+                        SIZE,
+			addr(IP->INSTRUCTION.WORD(2)),
+			TYPE,
+			EAP);
+        if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP);
+	return (SIZE_CLR_NEG_NOT_TST + NWORDS);
+
+    end CLR_NEG_NOT_TST_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * CMP_EOR_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * CMP, CMPA or EOR instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    CMP_EOR_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            REG			fixed binary (15),
+            NWORDS		fixed binary (15);
+	declare
+	    1 CMP_EOR_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 REGN		bit (3),
+	      2 OPMODE		bit (3),
+	      2 MODE		bit (3),
+	      2 REG		bit (3);
+
+	%replace CMP_EOR_BITS_15_12	by '1011'B;
+	%replace SIZE_CMP_EOR		by 1;
+
+	if IP->CMP_EOR_OPCODE.BITS_15_12 ^= CMP_EOR_BITS_15_12 then
+	    return (0);
+	SIZE = binary(IP->CMP_EOR_OPCODE.OPMODE);
+	if (SIZE = 0) | (SIZE = 1) | (SIZE = 2) then do;
+	    CODE = OP_CMP;
+	    TYPE = EATYPE_ALL;
+	    REG = binary(IP->CMP_EOR_OPCODE.REGN) + REG_D0;
+	end;
+	else if SIZE = 3 then do;
+	    CODE = OP_CMPA;
+	    SIZE = SIZE_WORD;
+	    TYPE = EATYPE_ALL;
+	    REG = binary(IP->CMP_EOR_OPCODE.REGN) + REG_A0;
+	end;
+	else if SIZE = 7 then do;
+	    CODE = OP_CMPA;
+	    SIZE = SIZE_LONG;
+	    TYPE = EATYPE_ALL;
+	    REG = binary(IP->CMP_EOR_OPCODE.REGN) + REG_A0;
+	end;
+	else if SIZE = 4 then do;
+	    CODE = OP_EOR;
+	    SIZE = SIZE_BYTE;
+	    TYPE = EATYPE_DATA_ALTER;
+	    REG = binary(IP->CMP_EOR_OPCODE.REGN) + REG_D0;
+	end;
+	else if SIZE = 5 then do;
+	    CODE = OP_EOR;
+	    SIZE = SIZE_WORD;
+	    TYPE = EATYPE_DATA_ALTER;
+	    REG = binary(IP->CMP_EOR_OPCODE.REGN) + REG_D0;
+	end;
+	else if SIZE = 6 then do;
+	    CODE = OP_EOR;
+	    SIZE = SIZE_LONG;
+	    TYPE = EATYPE_DATA_ALTER;
+	    REG = binary(IP->CMP_EOR_OPCODE.REGN) + REG_D0;
+	end;
+	else return (0);
+        NWORDS = DISEA (binary(IP->CMP_EOR_OPCODE.MODE),
+                        binary(IP->CMP_EOR_OPCODE.REG),
+                        SIZE,
+                        addr(IP->INSTRUCTION.WORD(2)),
+                        TYPE,
+                        EAP);
+        if NWORDS < 0 then
+	    return (0);
+        if CODE = OP_EOR then  /* different operand order */
+	    STRING = PRNTOP(CODE,SIZE) ||
+                     REG_NAME(REG) || ',' || PRNTEA(EAP);
+        else
+	    STRING = PRNTOP(CODE,SIZE) ||
+		     PRNTEA(EAP) || ',' || REG_NAME(REG);
+	return (SIZE_CMP_EOR + NWORDS);
+
+    end CMP_EOR_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * CMPM_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * CMPM instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    CMPM_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            SIZE		fixed binary (15);
+        declare
+	    1 CMPM_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 AX		bit (3),
+	      2 BITS_8_8	bit (1),
+	      2 SIZE		bit (2),
+	      2 BITS_5_3	bit (3),
+	      2 AY		bit (3);
+
+	%replace CMPM_BITS_15_12	by '1011'B;
+	%replace CMPM_BITS_8_8		by '1'B;
+	%replace CMPM_BITS_5_3		by '001'B;
+	%replace SIZE_CMPM		by 1;
+
+	if (IP->CMPM_OPCODE.BITS_15_12 ^= CMPM_BITS_15_12) |
+	   (IP->CMPM_OPCODE.BITS_8_8   ^= CMPM_BITS_8_8)   |
+	   (IP->CMPM_OPCODE.BITS_5_3   ^= CMPM_BITS_5_3)   then
+	    return (0);
+	SIZE = binary(IP->CMPM_OPCODE.SIZE);
+	if      SIZE = 0 then SIZE = SIZE_BYTE;
+	else if SIZE = 1 then SIZE = SIZE_WORD;
+	else if SIZE = 2 then SIZE = SIZE_LONG;
+	else return (0);
+	STRING = PRNTOP(OP_CMPM,SIZE) || '(' ||
+		 AREG_NAME(binary(IP->CMPM_OPCODE.AY)) ||
+		      ')+,(' || AREG_NAME(binary(IP->CMPM_OPCODE.AX)) || ')+';
+	return (SIZE_CMPM);
+
+    end CMPM_INSTRUCTION;
+
+    /* ----------------------------------------------------------------
+     * CONSTANT_GROUP_4_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * NOP, RESET, RTR, RTS or TRAPV instruction.  If so, then return
+     * the disassembled instruction in STRING and return the size in
+     * bytes of the instruction.  Otherwise, return zero.
+     */
+
+    CONSTANT_GROUP_4_INSTRUCTION: procedure returns (fixed binary (15));
+
+	declare
+	    CODE fixed binary (15);
+
+	%replace CONSTANT_GROUP_4_SIZE	by 1;
+
+	if IP->BASED_WORD_BITS = '4AFC'B4 then
+	     CODE = OP_ILLEGAL;
+	else if IP->BASED_WORD_BITS = '4E70'B4 then
+	     CODE = OP_RESET;
+	else if IP->BASED_WORD_BITS = '4E71'B4 then
+	     CODE = OP_NOP;
+        else if IP->BASED_WORD_BITS = '4E73'B4 then
+             CODE = OP_RTE;
+	else if IP->BASED_WORD_BITS = '4E75'B4 then
+	     CODE = OP_RTS;
+	else if IP->BASED_WORD_BITS = '4E76'B4 then
+	     CODE = OP_TRAPV;
+	else if IP->BASED_WORD_BITS = '4E77'B4 then
+	     CODE = OP_RTR;
+	else return (0);
+	STRING = PRNTOP(CODE,SIZE_NULL);
+	return (CONSTANT_GROUP_4_SIZE);
+
+    end CONSTANT_GROUP_4_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * DBCC_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * DBRA or DBcc instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    DBCC_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 DBCC_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 CONDITION	bit (4),
+	      2 BITS_7_3	bit (5),
+	      2 REG		bit (3);
+
+	%replace DBCC_BITS_15_12	by '0101'B;
+	%replace DBCC_BITS_7_3		by '11001'B;
+	%replace SIZE_DBCC		by 1;
+
+	if (IP->DBCC_OPCODE.BITS_15_12 ^= DBCC_BITS_15_12) |
+	   (IP->DBCC_OPCODE.BITS_7_3   ^= DBCC_BITS_7_3)   then
+	    return (0);
+	NWORDS = DISEA (EAMODE_IMMED,
+			EAREG_IMMED,
+			SIZE_WORD,
+			addr(IP->INSTRUCTION.WORD(2)),
+			EATYPE_ALL,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+
+        /* convert offset to absolute address */
+        call ITOABS(EAP,IADDRESS+2);
+
+	CODE = OP_DBRA_COND + binary(IP->DBCC_OPCODE.CONDITION);
+	STRING = PRNTOP(CODE,SIZE_WORD) ||
+		 DREG_NAME(binary(IP->DBCC_OPCODE.REG)) ||
+		 ',' || PRNTEA(EAP);
+	return (SIZE_DBCC + NWORDS);
+
+    end DBCC_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * DIV_MUL_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * DIVS.W or DIVU.W instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    DIV_MUL_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            REG			fixed binary (15),
+            NWORDS		fixed binary (15);
+	declare
+	    1 DIV_MUL_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 DREG		bit (3),
+	      2 BITS_8_6	bit (3),
+	      2 MODE		bit (3),
+	      2 REG		bit (3);
+
+	%replace DIVS_BITS_15_12	by '1000'B;
+	%replace DIVS_BITS_8_6		by '111'B;
+	%replace DIVU_BITS_15_12	by '1000'B;
+	%replace DIVU_BITS_8_6		by '011'B;
+	%replace MULS_BITS_15_12	by '1100'B;
+	%replace MULS_BITS_8_6		by '111'B;
+	%replace MULU_BITS_15_12	by '1100'B;
+	%replace MULU_BITS_8_6		by '011'B;
+	%replace SIZE_DIV_MUL		by 1;
+
+	if (IP->DIV_MUL_OPCODE.BITS_15_12 = DIVS_BITS_15_12) &
+	   (IP->DIV_MUL_OPCODE.BITS_8_6   = DIVS_BITS_8_6)   then
+	     CODE = OP_DIVS;
+	else if (IP->DIV_MUL_OPCODE.BITS_15_12 = DIVU_BITS_15_12) &
+	        (IP->DIV_MUL_OPCODE.BITS_8_6   = DIVU_BITS_8_6)   then
+	     CODE = OP_DIVU;
+	else if (IP->DIV_MUL_OPCODE.BITS_15_12 = MULS_BITS_15_12) &
+	        (IP->DIV_MUL_OPCODE.BITS_8_6   = MULS_BITS_8_6)   then
+	     CODE = OP_MULS;
+	else if (IP->DIV_MUL_OPCODE.BITS_15_12 = MULU_BITS_15_12) &
+	        (IP->DIV_MUL_OPCODE.BITS_8_6   = MULU_BITS_8_6)   then
+	     CODE = OP_MULU;
+	else return (0);
+        NWORDS = DISEA (binary(IP->DIV_MUL_OPCODE.MODE),
+                        binary(IP->DIV_MUL_OPCODE.REG),
+                        SIZE_WORD,
+                        addr(IP->INSTRUCTION.WORD(2)),
+                        EATYPE_DATA,
+                        EAP);
+        if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE_WORD) || PRNTEA(EAP) || ',' ||
+		 DREG_NAME(binary(IP->DIV_MUL_OPCODE.DREG));
+	return (SIZE_DIV_MUL + NWORDS);
+
+    end DIV_MUL_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * DIV_MUL_LONG_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * DIVS.L, DIVSL.L, DIVU.L, DIVUL.L, MULS.L, MULSL.L, MULU.L or MULUL.L
+     * instruction.  If so, then return the disassembled instruction in
+     * STRING and return the size in bytes of the instruction.  Otherwise,
+     * return zero.
+     */
+
+    DIV_MUL_LONG_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            REG			fixed binary (15),
+            NWORDS		fixed binary (15);
+	declare
+	    1 DIV_MUL_LONG_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_6		bit (10),
+	        3 MODE			bit (3),
+	        3 REG			bit (3),
+	      2 SECOND_WORD,
+	        3 BITS_15_15		bit (1),
+	        3 DQDL			bit (3),
+	        3 BITS_11_11		bit (1),
+	        3 SIZE			bit (1),
+	        3 BITS_9_3		bit (7),
+	        3 DRDH			bit (3);
+
+	%replace DIVSL_BITS_15_6	by '0100110001'B;
+	%replace DIVSL_BITS_15_15	by '0'B;
+	%replace DIVSL_BITS_11_11	by '1'B;
+	%replace DIVSL_BITS_9_3		by '0000000'B;
+	%replace DIVUL_BITS_15_6	by '0100110001'B;
+	%replace DIVUL_BITS_15_15	by '0'B;
+	%replace DIVUL_BITS_11_11	by '0'B;
+	%replace DIVUL_BITS_9_3		by '0000000'B;
+	%replace MULSL_BITS_15_6	by '0100110000'B;
+	%replace MULSL_BITS_15_15	by '0'B;
+	%replace MULSL_BITS_11_11	by '1'B;
+	%replace MULSL_BITS_9_3		by '0000000'B;
+	%replace MULUL_BITS_15_6	by '0100110000'B;
+	%replace MULUL_BITS_15_15	by '0'B;
+	%replace MULUL_BITS_11_11	by '0'B;
+	%replace MULUL_BITS_9_3		by '0000000'B;
+	%replace SIZE_DIV_MUL_LONG	by 2;
+
+	if (IP->DIV_MUL_LONG_OPCODE.BITS_15_6  = DIVSL_BITS_15_6)  &
+	   (IP->DIV_MUL_LONG_OPCODE.BITS_15_15 = DIVSL_BITS_15_15) &
+	   (IP->DIV_MUL_LONG_OPCODE.BITS_11_11 = DIVSL_BITS_11_11) &
+	   (IP->DIV_MUL_LONG_OPCODE.BITS_9_3   = DIVSL_BITS_9_3)   then do;
+	     if (IP->DIV_MUL_LONG_OPCODE.SIZE = '0'B) &
+		(IP->DIV_MUL_LONG_OPCODE.DRDH ^= IP->DIV_MUL_LONG_OPCODE.DQDL)
+	     then CODE = OP_DIVSL;
+	     else CODE = OP_DIVS;
+	end;
+	else if (IP->DIV_MUL_LONG_OPCODE.BITS_15_6  = DIVUL_BITS_15_6)  &
+	        (IP->DIV_MUL_LONG_OPCODE.BITS_15_15 = DIVUL_BITS_15_15) &
+	        (IP->DIV_MUL_LONG_OPCODE.BITS_11_11 = DIVUL_BITS_11_11) &
+	        (IP->DIV_MUL_LONG_OPCODE.BITS_9_3   = DIVUL_BITS_9_3)   then do;
+	     if (IP->DIV_MUL_LONG_OPCODE.SIZE = '0'B) &
+		(IP->DIV_MUL_LONG_OPCODE.DRDH ^= IP->DIV_MUL_LONG_OPCODE.DQDL)
+	     then CODE = OP_DIVUL;
+	     else CODE = OP_DIVU;
+	end;
+	else if (IP->DIV_MUL_LONG_OPCODE.BITS_15_6  = MULSL_BITS_15_6)  &
+	        (IP->DIV_MUL_LONG_OPCODE.BITS_15_15 = MULSL_BITS_15_15) &
+	        (IP->DIV_MUL_LONG_OPCODE.BITS_11_11 = MULSL_BITS_11_11) &
+	        (IP->DIV_MUL_LONG_OPCODE.BITS_9_3   = MULSL_BITS_9_3)   then do;
+	     if (IP->DIV_MUL_LONG_OPCODE.SIZE = '0'B) &
+		(IP->DIV_MUL_LONG_OPCODE.DRDH ^= IP->DIV_MUL_LONG_OPCODE.DQDL)
+	     then CODE = OP_MULSL;
+	     else CODE = OP_MULS;
+	end;
+	else if (IP->DIV_MUL_LONG_OPCODE.BITS_15_6  = MULUL_BITS_15_6)  &
+	        (IP->DIV_MUL_LONG_OPCODE.BITS_15_15 = MULUL_BITS_15_15) &
+	        (IP->DIV_MUL_LONG_OPCODE.BITS_11_11 = MULUL_BITS_11_11) &
+	        (IP->DIV_MUL_LONG_OPCODE.BITS_9_3   = MULUL_BITS_9_3)   then do;
+	     if (IP->DIV_MUL_LONG_OPCODE.SIZE = '0'B) &
+		(IP->DIV_MUL_LONG_OPCODE.DRDH ^= IP->DIV_MUL_LONG_OPCODE.DQDL)
+	     then CODE = OP_MULUL;
+	     else CODE = OP_MULU;
+	end;
+	else return (0);
+        NWORDS = DISEA (binary(IP->DIV_MUL_LONG_OPCODE.MODE),
+                        binary(IP->DIV_MUL_LONG_OPCODE.REG),
+                        SIZE_LONG,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        EATYPE_DATA,
+                        EAP);
+        if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE_LONG) || PRNTEA(EAP) || ',';
+	if (IP->DIV_MUL_LONG_OPCODE.SIZE = '1'B) |
+	   (IP->DIV_MUL_LONG_OPCODE.DRDH ^= IP->DIV_MUL_LONG_OPCODE.DQDL) then
+	     STRING = STRING ||
+		      DREG_NAME(binary(IP->DIV_MUL_LONG_OPCODE.DRDH)) || ':' ||
+		      DREG_NAME(binary(IP->DIV_MUL_LONG_OPCODE.DQDL));
+	else STRING = STRING || DREG_NAME(binary(IP->DIV_MUL_LONG_OPCODE.DQDL));
+	return (SIZE_DIV_MUL_LONG + NWORDS);
+
+    end DIV_MUL_LONG_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * EXT_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * EXT or EXTB instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    EXT_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            MODE		fixed binary (15);
+	declare
+	    1 EXT_OPCODE	based,
+	      2 BITS_15_9	bit (7),
+	      2 OPMODE		bit (3),
+	      2 BITS_5_3	bit (3),
+	      2 REG		bit (3);
+
+	%replace EXT_BITS_15_9	by '0100100'B;
+	%replace EXT_BITS_5_3	by '000'B;
+	%replace SIZE_EXT	by 1;
+
+	if (IP->EXT_OPCODE.BITS_15_9 ^= EXT_BITS_15_9) |
+	   (IP->EXT_OPCODE.BITS_5_3 ^= EXT_BITS_5_3) then
+	    return (0);
+	MODE = binary(IP->EXT_OPCODE.OPMODE);
+	if (MODE = 2) then do;
+	     CODE = OP_EXT;
+	     SIZE = SIZE_WORD;
+	end;
+	else if (MODE = 3) then do;
+	     CODE = OP_EXT;
+	     SIZE = SIZE_LONG;
+	end;
+	else if (MODE = 7) then do;
+	     CODE = OP_EXTB;
+	     SIZE = SIZE_LONG;
+	end;
+	else return (0);
+	STRING = PRNTOP(CODE,SIZE) ||
+		 DREG_NAME(binary(IP->EXT_OPCODE.REG));
+	return (SIZE_EXT);
+
+    end EXT_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * EXG_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * EXG instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    EXG_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            REGX		fixed binary (15),
+            REGY		fixed binary (15);
+	declare
+	    1 EXG_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 RX		bit (3),
+	      2 BITS_8_8	bit (1),
+	      2 OPMODE		bit (5),
+	      2 RY		bit (3);
+
+	%replace EXG_BITS_15_12	by '1100'B;
+	%replace EXG_BITS_8_8	by '1'B;
+	%replace SIZE_EXG	by 1;
+
+	if (IP->EXG_OPCODE.BITS_15_12 ^= EXG_BITS_15_12) |
+	   (IP->EXG_OPCODE.BITS_8_8 ^= EXG_BITS_8_8) then
+	    return (0);
+	if (IP->EXG_OPCODE.OPMODE = '01000'B) then do;
+	     REGX = binary(IP->EXG_OPCODE.RX) + REG_D0;
+	     REGY = binary(IP->EXG_OPCODE.RY) + REG_D0;
+	end;
+	else if (IP->EXG_OPCODE.OPMODE = '01001'B) then do;
+	     REGX = binary(IP->EXG_OPCODE.RX) + REG_A0;
+	     REGY = binary(IP->EXG_OPCODE.RY) + REG_A0;
+	end;
+	else if (IP->EXG_OPCODE.OPMODE = '10001'B) then do;
+	     REGX = binary(IP->EXG_OPCODE.RX) + REG_D0;
+	     REGY = binary(IP->EXG_OPCODE.RY) + REG_A0;
+	end;
+	else return (0);
+	STRING = PRNTOP(OP_EXG,SIZE_LONG) ||
+		 REG_NAME(REGX) || ',' || REG_NAME(REGY);
+	return (SIZE_EXG);
+
+    end EXG_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * IMMEDIATE_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * ADDI, ANDI, CMPI, EORI, ORI or SUBI instruction.  If so, then
+     * return the disassembled instruction in STRING and return the size
+     * in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    IMMEDIATE_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            DST_NWORDS		fixed binary (15),
+            SRC_NWORDS		fixed binary (15);
+        declare
+	    1 IMMEDIATE_OPCODE	based,
+	      2 BITS_15_8	bit (8),
+	      2 SIZE		bit (2),
+	      2 MODE		bit (3),
+	      2 REG		bit (3);
+
+	%replace ADDI_BITS_15_8	by '00000110'B;
+	%replace ANDI_BITS_15_8	by '00000010'B;
+	%replace CMPI_BITS_15_8	by '00001100'B;
+	%replace EORI_BITS_15_8	by '00001010'B;
+	%replace ORI_BITS_15_8	by '00000000'B;
+	%replace SUBI_BITS_15_8	by '00000100'B;
+	%replace SIZE_IMMEDIATE	by 1;
+
+	if IP->IMMEDIATE_OPCODE.BITS_15_8 = ADDI_BITS_15_8 then
+	     CODE = OP_ADDI;
+	else if IP->IMMEDIATE_OPCODE.BITS_15_8 = ANDI_BITS_15_8 then
+	     CODE = OP_ANDI;
+	else if IP->IMMEDIATE_OPCODE.BITS_15_8 = CMPI_BITS_15_8 then
+	     CODE = OP_CMPI;
+	else if IP->IMMEDIATE_OPCODE.BITS_15_8 = EORI_BITS_15_8 then
+	     CODE = OP_EORI;
+	else if IP->IMMEDIATE_OPCODE.BITS_15_8 = ORI_BITS_15_8  then
+	     CODE = OP_ORI;
+	else if IP->IMMEDIATE_OPCODE.BITS_15_8 = SUBI_BITS_15_8 then
+	     CODE = OP_SUBI;
+	else return (0);
+	SIZE = binary(IP->IMMEDIATE_OPCODE.SIZE);
+	if      SIZE = 0 then SIZE = SIZE_BYTE;
+	else if SIZE = 1 then SIZE = SIZE_WORD;
+	else if SIZE = 2 then SIZE = SIZE_LONG;
+	else return (0);
+	SRC_NWORDS = DISEA (EAMODE_IMMED,
+			    EAREG_IMMED,
+			    SIZE,
+			    addr(IP->INSTRUCTION.WORD(2)),
+			    EATYPE_ALL,
+			    EAP);
+	if SRC_NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP) || ',';
+
+        DST_NWORDS = DISEA (binary(IP->IMMEDIATE_OPCODE.MODE),
+			    binary(IP->IMMEDIATE_OPCODE.REG),
+			    SIZE,
+		    	    addr(IP->INSTRUCTION.WORD(2 + SRC_NWORDS)),
+		    	    EATYPE_DATA_ALTER,
+		    	    EAP);
+        if DST_NWORDS < 0 then
+	    return (0);
+	STRING = STRING || PRNTEA(EAP);
+        return (SIZE_IMMEDIATE + SRC_NWORDS + DST_NWORDS);
+
+    end IMMEDIATE_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * IMMEDIATE_CCR_SR_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * ADDI, ANDI, CMPI, EORI, ORI or SUBI (to CCR or SR) instruction.
+     * If so, then return the disassembled instruction in STRING and return
+     * the size in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    IMMEDIATE_CCR_SR_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            REG			fixed binary (15),
+            DATA		fixed binary (15);
+        declare
+	    1 IMMEDIATE_CCR_SR_OPCODE	based,
+	      2 FIRST_WORD,
+	        3 BITS_15_0		bit (16),
+	      2 SECOND_WORD,
+	        3 HIGH			bit (8),
+	        3 LOW			bit (8);
+
+	%replace ANDI_CCR_BITS_15_0	by '023C'B4;
+	%replace ANDI_SR_BITS_15_0	by '027C'B4;
+	%replace EORI_CCR_BITS_15_0	by '0A3C'B4;
+	%replace EORI_SR_BITS_15_0	by '0A7C'B4;
+	%replace ORI_CCR_BITS_15_0	by '003C'B4;
+	%replace ORI_SR_BITS_15_0	by '007C'B4;
+	%replace SIZE_IMMEDIATE_CCR_SR	by 2;
+
+	if IP->IMMEDIATE_CCR_SR_OPCODE.BITS_15_0 = ANDI_CCR_BITS_15_0
+	then do;
+	     CODE = OP_ANDI;
+	     REG = REG_CCR;
+	end;
+	else if IP->IMMEDIATE_CCR_SR_OPCODE.BITS_15_0 = ANDI_SR_BITS_15_0
+	then do;
+	     CODE = OP_ANDI;
+	     REG = REG_SR;
+	end;
+	else if IP->IMMEDIATE_CCR_SR_OPCODE.BITS_15_0 = EORI_CCR_BITS_15_0
+	then do;
+	     CODE = OP_EORI;
+	     REG = REG_CCR;
+	end;
+	else if IP->IMMEDIATE_CCR_SR_OPCODE.BITS_15_0 = EORI_SR_BITS_15_0
+	then do;
+	     CODE = OP_EORI;
+	     REG = REG_SR;
+	end;
+	else if IP->IMMEDIATE_CCR_SR_OPCODE.BITS_15_0 = ORI_CCR_BITS_15_0
+	then do;
+	     CODE = OP_ORI;
+	     REG = REG_CCR;
+	end;
+	else if IP->IMMEDIATE_CCR_SR_OPCODE.BITS_15_0 = ORI_SR_BITS_15_0
+	then do;
+	     CODE = OP_ORI;
+	     REG = REG_SR;
+	end;
+	else return (0);
+	if REG = REG_CCR then do;
+	    if binary(IP->IMMEDIATE_CCR_SR_OPCODE.SECOND_WORD.HIGH) ^= 0 then
+	        return (0);
+	    SIZE = SIZE_BYTE;
+	    DATA = binary(IP->IMMEDIATE_CCR_SR_OPCODE.SECOND_WORD.LOW);
+	end;
+	else do;
+	    SIZE = SIZE_WORD;
+	    DATA = binary(IP->INSTRUCTION.WORD(2));
+	end;
+        call GETPTR((DATA),TEMPSTR);
+	STRING = PRNTOP(CODE,SIZE) || '#' ||
+		 TEMPSTR || ',' || REG_NAME(REG);
+	return (SIZE_IMMEDIATE_CCR_SR);
+
+    end IMMEDIATE_CCR_SR_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * JMP_JSR_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * JMP or JSR instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    JMP_JSR_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            NWORDS		fixed binary (15);
+
+        %replace JMP_BITS_15_6	by '0100111011'B;
+        %replace JSR_BITS_15_6	by '0100111010'B;
+        %replace SIZE_JMP_JSR	by 1;
+
+        if IP->SINGLE_EA.OPCODE = JMP_BITS_15_6 then
+	     CODE = OP_JMP;
+        else if IP->SINGLE_EA.OPCODE = JSR_BITS_15_6 then
+	     CODE = OP_JSR;
+	else return (0);
+        NWORDS = DISEA (binary(IP->SINGLE_EA.MODE),
+                        binary(IP->SINGLE_EA.REG),
+                        SIZE_NULL,
+                        addr(IP->INSTRUCTION.WORD(2)),
+                        EATYPE_CONTROL,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	STRING = PRNTOP(CODE,SIZE_NULL) || PRNTEA(EAP);
+        return (SIZE_JMP_JSR + NWORDS);
+
+    end JMP_JSR_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * LINK_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * LINK instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    LINK_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+	    SIZE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+            1 LINK_OPCODE	based,
+              2 BITS_15_3	bit (13),
+              2 REG		bit (3);
+
+        %replace LINKW_BITS_15_3	by '0100111001010'B;
+        %replace LINKL_BITS_15_3	by '0100100000001'B;
+        %replace SIZE_LINK		by  1;
+
+        if IP->LINK_OPCODE.BITS_15_3 = LINKW_BITS_15_3 then
+	     SIZE = SIZE_WORD;
+        else if IP->LINK_OPCODE.BITS_15_3 = LINKL_BITS_15_3 then
+	     SIZE = SIZE_LONG;
+	else return (0);
+	NWORDS = DISEA (EAMODE_IMMED,
+			EAREG_IMMED,
+			SIZE,
+			addr(IP->INSTRUCTION.WORD(2)),
+			EATYPE_ALL,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(OP_LINK,SIZE) ||
+		 AREG_NAME(binary(IP->LINK_OPCODE.REG)) ||
+		 ',' || PRNTEA(EAP);
+        return (SIZE_LINK + NWORDS);
+
+    end LINK_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * MOVE_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * MOVE or MOVEA instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    MOVE_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            DST_NWORDS		fixed binary (15),
+            SRC_NWORDS		fixed binary (15);
+        declare
+            1 MOVE_OPCODE	based,
+              2 BITS_15_14	bit (2),
+              2 SIZE		bit (2),
+              2 DST_REG		bit (3),
+              2 DST_MODE	bit (3),
+              2 SRC_MODE	bit (3),
+              2 SRC_REG		bit (3);
+
+        %replace SIZE_MOVE		by 1;
+        %replace MOVE_BITS_15_14	by '00'B;
+
+        if IP->MOVE_OPCODE.BITS_15_14 ^= MOVE_BITS_15_14 then
+	    return (0);
+        SIZE = binary(IP->MOVE_OPCODE.SIZE);
+        if      SIZE = 1 then SIZE = SIZE_BYTE;
+        else if SIZE = 3 then SIZE = SIZE_WORD;
+        else if SIZE = 2 then SIZE = SIZE_LONG;
+	else return (0);
+	if binary(IP->MOVE_OPCODE.DST_MODE) = EAMODE_AREG then do;
+	     if SIZE = SIZE_BYTE then
+		 return (0);
+	     CODE = OP_MOVEA;
+	end;
+	else CODE = OP_MOVE;
+        SRC_NWORDS = DISEA (binary(IP->MOVE_OPCODE.SRC_MODE),
+                            binary(IP->MOVE_OPCODE.SRC_REG),
+                            SIZE,
+                            addr(IP->INSTRUCTION.WORD(2)),
+                            EATYPE_ALL,
+                            EAP);
+        if SRC_NWORDS < 0 then
+            return (0);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP) || ',';
+        DST_NWORDS = DISEA (binary(IP->MOVE_OPCODE.DST_MODE),
+                            binary(IP->MOVE_OPCODE.DST_REG),
+                            binary(IP->MOVE_OPCODE.SIZE),
+                            addr(IP->INSTRUCTION.WORD(SRC_NWORDS + 2)),
+                            EATYPE_ALTER,
+                            EAP);
+        if DST_NWORDS < 0 then
+            return (0);
+	STRING = STRING || PRNTEA(EAP);
+        return (SIZE_MOVE + SRC_NWORDS + DST_NWORDS);
+
+    end MOVE_INSTRUCTION;
+
+    /* ----------------------------------------------------------------
+     * MOVE16_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68040
+     * MOVE16 instruction.
+     */
+
+    MOVE16_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            1 MOVE16_OPCODE	based,
+              2 FIRST_WORD,
+                3 BITS_15_6	  bit (10),
+                3 POSTINC_FLAG    bit (1),
+                3 OPMODE          bit (2),
+                3 REGISTER_Ax     bit (3),
+              2 REST union,
+                3 ADDRESS         bit (32) aligned,
+                3 POSTINC,
+                  4 unused        bit (1),
+                  4 REGISTER_Ay   bit (3),
+                  4 zeros         bit (12),
+            REG_Ax_STRING         char(5) varying;
+              
+
+
+        %replace MOVE16_BITS_15_6       by '1111011000'B;
+
+        if (IP->MOVE16_OPCODE.BITS_15_6 ^= MOVE16_BITS_15_6) |
+           (IP->MOVE16_OPCODE.POSTINC_FLAG & (IP->MOVE16_OPCODE.OPMODE ^= '00'B
+               | IP->MOVE16_OPCODE.unused ^= '1'B 
+               | IP->MOVE16_OPCODE.zeros ^= '000000000000'B)) then
+            return (0);
+
+        STRING = PRNTOP(OP_MOVE16,SIZE_NULL);
+        if (IP->MOVE16_OPCODE.POSTINC_FLAG) then do;
+            STRING = STRING || '(' 
+                     || AREG_NAME(binary(IP->MOVE16_OPCODE.REGISTER_Ax)) 
+                     || ')+,('
+                     || AREG_NAME(binary(IP->MOVE16_OPCODE.REGISTER_Ay))
+                     || ')+';
+            return(2);
+        end;
+        else do;
+            REG_Ax_STRING = AREG_NAME(binary(IP->MOVE16_OPCODE.REGISTER_Ax));
+            NWORDS = DISEA (EAMODE_ABS_LONG,
+                            EAREG_ABS_LONG,
+                            SIZE_UNKNOWN,
+                            addr(IP->MOVE16_OPCODE.ADDRESS),
+                            EATYPE_ALL,
+                            EAP);
+  
+            if IP->MOVE16_OPCODE.OPMODE = '00'B then
+                STRING = STRING || '(' || REG_Ax_STRING || ')+,'
+                         || PRNTEA(EAP);
+            else if IP->MOVE16_OPCODE.OPMODE = '01'B then
+                STRING = STRING || PRNTEA(EAP) || ',('
+                         || REG_Ax_STRING || ')+';
+            else if IP->MOVE16_OPCODE.OPMODE = '10'B then
+                STRING = STRING || '(' || REG_Ax_STRING || '),'
+                         || PRNTEA(EAP);
+            else
+                STRING = STRING || PRNTEA(EAP) || ',('
+                         || REG_Ax_STRING || ')';
+            return(3);
+        end;
+    end MOVE16_INSTRUCTION;
+
+
+    /* ----------------------------------------------------------------
+     * MOVE_CCR_SR_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * MOVE-from-CCR, MOVE-to-CCR, MOVE-from-SR, or MOVE-to-SR instruction.
+     * If so, then return the disassembled instruction in STRING and return
+     * the size in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    MOVE_CCR_SR_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            REG				fixed binary (15),
+            NWORDS			fixed binary (15);
+        declare
+            1 MOVE_CCR_SR_OPCODE	based,
+              2 BITS_15_6		bit (10),
+              2 MODE			bit (3),
+              2 REG			bit (3);
+
+        %replace MOVE_FROM_CCR_BITS_15_6	by '0100001011'B;
+        %replace MOVE_TO_CCR_BITS_15_6		by '0100010011'B;
+        %replace MOVE_FROM_SR_BITS_15_6		by '0100000011'B;
+        %replace MOVE_TO_SR_BITS_15_6		by '0100011011'B;
+        %replace SIZE_MOVE_CCR_SR		by 1;
+
+        if IP->MOVE_CCR_SR_OPCODE.BITS_15_6 = MOVE_FROM_CCR_BITS_15_6 then
+	     REG = REG_CCR;
+        else if IP->MOVE_CCR_SR_OPCODE.BITS_15_6 = MOVE_TO_CCR_BITS_15_6 then
+	     REG = REG_CCR;
+        else if IP->MOVE_CCR_SR_OPCODE.BITS_15_6 = MOVE_FROM_SR_BITS_15_6 then
+	     REG = REG_SR;
+        else if IP->MOVE_CCR_SR_OPCODE.BITS_15_6 = MOVE_TO_SR_BITS_15_6 then
+	     REG = REG_SR;
+	else return (0);
+        NWORDS = DISEA (binary(IP->MOVE_CCR_SR_OPCODE.MODE),
+                        binary(IP->MOVE_CCR_SR_OPCODE.REG),
+                        SIZE_WORD,
+                        addr(IP->INSTRUCTION.WORD(2)),
+                        EATYPE_DATA_ALTER,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+        if (IP->MOVE_CCR_SR_OPCODE.BITS_15_6 = MOVE_FROM_CCR_BITS_15_6) |
+           (IP->MOVE_CCR_SR_OPCODE.BITS_15_6 = MOVE_FROM_SR_BITS_15_6)  then
+	     STRING = PRNTOP(OP_MOVE,SIZE_WORD) ||
+		      REG_NAME(REG) || ',' || PRNTEA(EAP);
+	else STRING = PRNTOP(OP_MOVE,SIZE_WORD) ||
+		      PRNTEA(EAP) || ',' || REG_NAME(REG);
+        return (SIZE_MOVE_CCR_SR + NWORDS);
+
+    end MOVE_CCR_SR_INSTRUCTION;
+
+    /* ----------------------------------------------------------------
+     * MOVE_USP_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * MOVE-from-USP or MOVE-to-USP instruction.  If so, then return
+     * the disassembled instruction in STRING and return the size in
+     * bytes of the instruction.  Otherwise, return zero.
+     */
+
+    MOVE_USP_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            1 MOVE_USP_OPCODE	based,
+              2 BITS_15_6	bit (12),
+              2 DIRECTION	bit (1),
+              2 REG		bit (3);
+
+        %replace MOVE_USP_BITS_15_6	by '010011100110'B;
+        %replace SIZE_MOVE_USP		by 1;
+
+        if (IP->MOVE_USP_OPCODE.BITS_15_6 ^= MOVE_USP_BITS_15_6) then
+	     return (0);
+	if IP->MOVE_USP_OPCODE.DIRECTION = '0'B then
+	     STRING = PRNTOP(OP_MOVE,SIZE_LONG) ||
+		      REG_NAME(REG_USP) || ',' ||
+		      AREG_NAME(binary(IP->MOVE_USP_OPCODE.REG));
+	else STRING = PRNTOP(OP_MOVE,SIZE_LONG) ||
+		      REG_NAME(REG_USP) || ',' ||
+		      AREG_NAME(binary(IP->MOVE_USP_OPCODE.REG));
+        return (SIZE_MOVE_USP);
+
+    end MOVE_USP_INSTRUCTION;
+
+    /* ----------------------------------------------------------------
+     * MOVEC_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * MOVEC instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    MOVEC_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+	    REG			fixed binary (15),
+	    CREG		fixed binary (15);
+        declare
+            1 MOVEC_OPCODE	based,
+	      2 FIRST_WORD,
+                3 BITS_15_1	bit (15),
+                3 DIRECTION	bit (1),
+	      2 SECOND_WORD,
+                3 AD		bit (1),
+                3 REG		bit (3),
+                3 CREG		bit (12);
+
+        %replace MOVEC_BITS_15_1	by '010011100111101'B;
+        %replace SIZE_MOVEC		by 2;
+
+        if (IP->MOVEC_OPCODE.BITS_15_1 ^= MOVEC_BITS_15_1) then
+	     return (0);
+	if IP->MOVEC_OPCODE.AD = '0'B then
+	     REG = binary(IP->MOVEC_OPCODE.REG) + REG_D0;
+	else REG = binary(IP->MOVEC_OPCODE.REG) + REG_A0;
+	     if IP->MOVEC_OPCODE.CREG = '000'B4 then CREG = REG_SFC;
+	else if IP->MOVEC_OPCODE.CREG = '001'B4 then CREG = REG_DFC;
+	else if IP->MOVEC_OPCODE.CREG = '002'B4 then CREG = REG_CACR;
+	else if IP->MOVEC_OPCODE.CREG = '800'B4 then CREG = REG_USP;
+	else if IP->MOVEC_OPCODE.CREG = '801'B4 then CREG = REG_VBR;
+	else if IP->MOVEC_OPCODE.CREG = '802'B4 then CREG = REG_CAAR;
+	else if IP->MOVEC_OPCODE.CREG = '803'B4 then CREG = REG_MSP;
+	else if IP->MOVEC_OPCODE.CREG = '804'B4 then CREG = REG_ISP;
+        else if IP->MOVEC_OPCODE.CREG = '003'B4 then CREG = REG_TC;
+        else if IP->MOVEC_OPCODE.CREG = '004'B4 then CREG = REG_ITT0;
+        else if IP->MOVEC_OPCODE.CREG = '005'B4 then CREG = REG_ITT1;
+        else if IP->MOVEC_OPCODE.CREG = '006'B4 then CREG = REG_DTT0;
+        else if IP->MOVEC_OPCODE.CREG = '007'B4 then CREG = REG_DTT1;
+        else if IP->MOVEC_OPCODE.CREG = '805'B4 then CREG = REG_MMUSR;
+        else if IP->MOVEC_OPCODE.CREG = '806'B4 then CREG = REG_URP;
+        else if IP->MOVEC_OPCODE.CREG = '807'B4 then CREG = REG_SRP;
+	else return (0);
+	if IP->MOVEC_OPCODE.DIRECTION = '0'B then
+	     STRING = PRNTOP(OP_MOVEC,SIZE_LONG) ||
+		      REG_NAME(CREG) || ',' || REG_NAME(REG);
+	else STRING = PRNTOP(OP_MOVEC,SIZE_LONG) ||
+		      REG_NAME(REG) || ',' || REG_NAME(CREG);
+        return (SIZE_MOVEC);
+
+    end MOVEC_INSTRUCTION;
+
+    /* ----------------------------------------------------------------
+     * MOVEP_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * MOVEP instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    MOVEP_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+	    SIZE		fixed binary (15),
+	    NWORDS		fixed binary (15);
+        declare
+            1 MOVEP_OPCODE	based,
+              2 BITS_15_12	bit (4),
+              2 DREG		bit (3),
+              2 BITS_8_8	bit (1),
+              2 DIRECTION	bit (1),
+              2 SIZE		bit (1),
+              2 BITS_5_3	bit (3),
+              2 AREG		bit (3);
+
+        %replace MOVEP_BITS_15_12	by '0000'B;
+        %replace MOVEP_BITS_5_3		by '001'B;
+        %replace MOVEP_BITS_8_8		by '1'B;
+        %replace SIZE_MOVEP		by 1;
+
+        if (IP->MOVEP_OPCODE.BITS_15_12 ^= MOVEP_BITS_15_12) |
+           (IP->MOVEP_OPCODE.BITS_8_8   ^= MOVEP_BITS_8_8)   |
+           (IP->MOVEP_OPCODE.BITS_5_3   ^= MOVEP_BITS_5_3)   then
+	     return (0);
+	if IP->MOVEP_OPCODE.SIZE = '0'B then
+	     SIZE = SIZE_WORD;
+	else SIZE = SIZE_LONG;
+        NWORDS = DISEA (EAMODE_AREG_INDIR_DISP,
+                        binary(IP->MOVEP_OPCODE.AREG),
+                        SIZE,
+                        addr(IP->INSTRUCTION.WORD(2)),
+                        EATYPE_ALL,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	if IP->MOVEP_OPCODE.DIRECTION = '0'B then
+	     STRING = PRNTOP(OP_MOVEP,SIZE) ||
+		      PRNTEA(EAP) || ',' ||
+		      DREG_NAME(binary(IP->MOVEP_OPCODE.DREG));
+	else STRING = PRNTOP(OP_MOVEP,SIZE) ||
+		      DREG_NAME(binary(IP->MOVEP_OPCODE.DREG)) ||
+		      ',' || PRNTEA(EAP);
+        return (SIZE_MOVEP + NWORDS);
+
+    end MOVEP_INSTRUCTION;
+
+    /* ----------------------------------------------------------------
+     * MOVES_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * MOVES instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    MOVES_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+	    REG			fixed binary (15),
+	    SIZE		fixed binary (15),
+	    NWORDS		fixed binary (15);
+        declare
+            1 MOVES_OPCODE	based,
+	      2 FIRST_WORD,
+                3 BITS_15_9	bit (8),
+                3 SIZE		bit (2),
+                3 MODE		bit (3),
+                3 REG		bit (3),
+	      2 SECOND_WORD,
+                3 AD		bit (1),
+                3 REG		bit (3),
+                3 DIRECTION	bit (1),
+                3 BITS_10_0	bit (11);
+
+        %replace MOVES_BITS_15_9	by '00001110'B;
+        %replace MOVES_BITS_10_0	by '00000000000'B;
+        %replace SIZE_MOVES		by 2;
+
+        if (IP->MOVES_OPCODE.BITS_15_9 ^= MOVES_BITS_15_9) |
+           (IP->MOVES_OPCODE.BITS_10_0 ^= MOVES_BITS_10_0) then
+	     return (0);
+	if IP->MOVES_OPCODE.AD = '0'B then
+	     REG = binary(IP->MOVES_OPCODE.SECOND_WORD.REG) + REG_D0;
+	else REG = binary(IP->MOVES_OPCODE.SECOND_WORD.REG) + REG_A0;
+	SIZE = binary(IP->MOVES_OPCODE.SIZE);
+	if      SIZE = 0 then SIZE = SIZE_BYTE;
+	else if SIZE = 1 then SIZE = SIZE_WORD;
+	else if SIZE = 2 then SIZE = SIZE_LONG;
+	else return (0);
+        NWORDS = DISEA (binary(IP->MOVES_OPCODE.MODE),
+                        binary(IP->MOVES_OPCODE.FIRST_WORD.REG),
+                        SIZE,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        EATYPE_MEMORY_ALTER,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	if IP->MOVES_OPCODE.DIRECTION = '0'B then
+	     STRING = PRNTOP(OP_MOVES,SIZE) ||
+		      PRNTEA(EAP) || ',' || REG_NAME(REG);
+	else STRING = PRNTOP(OP_MOVES,SIZE) ||
+		      REG_NAME(REG) || ',' || PRNTEA(EAP);
+        return (SIZE_MOVES);
+
+    end MOVES_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * MOVEM_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid
+     * MC68020 MOVE or MOVEA instruction.  If so, then return the
+     * disassembled instruction in STRING and return the size in
+     * bytes of the instruction.  Otherwise, return zero.
+     *
+     * --TODO-- Decode the register list mask.
+     */
+
+    MOVEM_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            MODE		fixed binary (15),
+            NWORDS		fixed binary (15),
+            LIST                char (96) varying;
+
+        declare
+            1 MOVEM_OPCODE	based,
+              2 BITS_15_11	bit (5),
+              2 DIRECTION	bit (1),
+              2 BITS_9_7	bit (3),
+              2 SIZE		bit (1),
+              2 MODE		bit (3),
+              2 REG		bit (3);
+
+        %replace MOVEM_BITS_15_11	by '01001'B;
+        %replace MOVEM_BITS_9_7		by '001'B;
+        %replace SIZE_MOVEM		by 2;
+
+        if (IP->MOVEM_OPCODE.BITS_15_11 ^= MOVEM_BITS_15_11) |
+	   (IP->MOVEM_OPCODE.BITS_9_7   ^= MOVEM_BITS_9_7)   then
+	    return (0);
+        if IP->MOVEM_OPCODE.SIZE = '0'B then
+	     SIZE = SIZE_WORD;
+	else SIZE = SIZE_LONG;
+	MODE = binary(IP->MOVEM_OPCODE.MODE);
+	if (IP->MOVEM_OPCODE.DIRECTION = '0'B) &
+	   (MODE = EAMODE_AREG_INDIR_DEC) then
+	     TYPE = EATYPE_ALL;
+	else if (IP->MOVEM_OPCODE.DIRECTION = '1'B) &
+	        (MODE = EAMODE_AREG_INDIR_INC) then
+	     TYPE = EATYPE_ALL;
+	else TYPE = EATYPE_CONTROL_ALTER;
+        NWORDS = DISEA (MODE,
+                        binary(IP->MOVEM_OPCODE.REG),
+                        SIZE,
+                        addr(IP->INSTRUCTION.WORD(3)),
+                        TYPE,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	STRING = PRNTOP(OP_MOVEM,SIZE);
+
+        /* get the register list */
+        if (MODE = 4) then  /* -(An)?  Mask field is reversed. */
+            LIST = REGLIST(binary(IP->INSTRUCTION.WORD(2)),TRUE);
+        else
+            LIST = REGLIST(binary(IP->INSTRUCTION.WORD(2)),FALSE);
+
+	if IP->MOVEM_OPCODE.DIRECTION = '0'B then
+	     STRING = STRING || '<' || LIST || '>'
+		      || ',' || PRNTEA(EAP);
+	else STRING = STRING || PRNTEA(EAP) || ',' ||
+		      '<' || LIST || '>';
+        return (SIZE_MOVEM + NWORDS);
+
+    end MOVEM_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * MOVEQ_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * MOVEQ instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    MOVEQ_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+            1 MOVEQ_OPCODE	based,
+              2 BITS_15_12	bit (4),
+              2 REG		bit (3),
+              2 BITS_8_8	bit (1),
+              2 DATA		bit (8);
+
+        %replace MOVEQ_BITS_15_12	by '0111'B;
+        %replace MOVEQ_BITS_8_8		by '0'B;
+        %replace SIZE_MOVEQ		by 1;
+
+	if (IP->MOVEQ_OPCODE.BITS_15_12 ^= MOVEQ_BITS_15_12) |
+	   (IP->MOVEQ_OPCODE.BITS_8_8   ^= MOVEQ_BITS_8_8)   then
+	    return (0);
+	if NWORDS < 0 then
+	    return (0);
+        call GETPTR(binary(IP->MOVEQ_OPCODE.DATA),TEMPSTR); 
+	STRING = PRNTOP(OP_MOVEQ,SIZE_LONG) || '#' || TEMPSTR ||
+		 ',' || DREG_NAME(binary(IP->MOVEQ_OPCODE.REG));
+	return (SIZE_MOVEQ);
+
+    end MOVEQ_INSTRUCTION;
+
+    /* ----------------------------------------------------------------
+     * NBCD_PEA_TAS_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid
+     * MC68020 NBCD, PEA, or TAS instruction.  If so, then return
+     * the disassembled instruction in STRING and return the size
+     * in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    NBCD_PEA_TAS_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            TYPE		fixed binary (15),
+            NWORDS		fixed binary (15);
+
+        %replace NBCD_BITS_15_6		by '0100100000'B;
+        %replace PEA_BITS_15_6		by '0100100001'B;
+        %replace TAS_BITS_15_6		by '0100101011'B;
+        %replace SIZE_NBCD_PEA_TAS	by 1;
+
+        if IP->SINGLE_EA.OPCODE = NBCD_BITS_15_6 then do;
+	     CODE = OP_NBCD;
+	     SIZE = SIZE_BYTE;
+	     TYPE = EATYPE_DATA_ALTER;
+	end;
+        else if IP->SINGLE_EA.OPCODE = PEA_BITS_15_6 then do;
+	     CODE = OP_PEA;
+	     SIZE = SIZE_LONG;
+	     TYPE = EATYPE_CONTROL;
+	end;
+        else if IP->SINGLE_EA.OPCODE = TAS_BITS_15_6 then do;
+	     CODE = OP_TAS;
+	     SIZE = SIZE_BYTE;
+	     TYPE = EATYPE_DATA_ALTER;
+	end;
+        else return (0);
+        NWORDS = DISEA (binary(IP->SINGLE_EA.MODE),
+                        binary(IP->SINGLE_EA.REG),
+                        SIZE,
+                        addr(IP->INSTRUCTION.WORD(2)),
+                        TYPE,
+                        EAP);
+        if NWORDS < 0 then
+            return (0);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP);
+        return (SIZE_NBCD_PEA_TAS + NWORDS);
+
+    end NBCD_PEA_TAS_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * PACK_UNPK_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * PACK or UNPK instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    PACK_UNPK_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15);
+        declare
+	    1 PACK_UNPK_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 RY		bit (3),
+	      2 BITS_8_4	bit (5),
+	      2 RM		bit (1),
+	      2 RX		bit (3);
+
+	%replace PACK_BITS_15_12	by '1000'B;
+	%replace PACK_BITS_8_4		by '10100'B;
+	%replace UNPK_BITS_15_12	by '1000'B;
+	%replace UNPK_BITS_8_4		by '11000'B;
+	%replace SIZE_PACK_UNPK		by 2;
+
+	if (IP->PACK_UNPK_OPCODE.BITS_15_12 = PACK_BITS_15_12) &
+	   (IP->PACK_UNPK_OPCODE.BITS_8_4   = PACK_BITS_8_4)   then
+	     CODE = OP_PACK;
+	else if (IP->PACK_UNPK_OPCODE.BITS_15_12 = UNPK_BITS_15_12) &
+	        (IP->PACK_UNPK_OPCODE.BITS_8_4   = UNPK_BITS_8_4)   then
+	     CODE = OP_UNPK;
+	else return (0);
+
+        call GETPTR(binary(IP->INSTRUCTION.WORD(2)),TEMPSTR);
+	if IP->PACK_UNPK_OPCODE.RM = '0'B then
+	     STRING = PRNTOP(CODE,SIZE_NULL) ||
+		      DREG_NAME(binary(IP->PACK_UNPK_OPCODE.RX)) ||
+		      ',' || DREG_NAME(binary(IP->PACK_UNPK_OPCODE.RY)) ||
+		      ',#' || TEMPSTR;
+	else STRING = PRNTOP(CODE,SIZE_NULL) ||
+		      '-(' || AREG_NAME(binary(IP->PACK_UNPK_OPCODE.RX)) ||
+		      '),-(' || AREG_NAME(binary(IP->PACK_UNPK_OPCODE.RY)) ||
+		      '),#' || TEMPSTR;
+	return (SIZE_PACK_UNPK);
+
+    end PACK_UNPK_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * PFLUSH_INSTRUCTION 
+     *
+     * Disassemble a 68030 and 68040 variants of the PFLUSH instruction
+     * (PFLUSH, PFLUSHN, PFLUSHA, PFLUSHAN)
+     *
+     */
+    PFLUSH_INSTRUCTION:  procedure returns (fixed binary (15));
+    declare
+        EAP                      pointer,
+        (NWORDS,SIZE)            fixed bin(15);
+
+    declare
+        1 PFLUSH_OPCODE_030      based,
+          2 FIRST_WORD,
+            3 BITS_15_6          bit (10) aligned,
+            3 EA,
+              4 MODE             bit (3),
+              4 REGISTER         bit (3),
+          2 SECOND_WORD,
+            3 BITS_15_13         bit (3) aligned,
+            3 MODE               bit (3),
+            3 BITS_9_8           bit (2),
+            3 MASK               bit (3),
+            3 FC                 bit (5),
+
+        1 PFLUSH_OPCODE_040      based,
+          2 BITS_15_5            bit (11),
+          2 OPMODE               bit (2),
+          2 REGISTER             bit (3);
+
+    %replace PFLUSH_030_15_6     by '1111000000'b;
+    %replace PFLUSH_030_15_13    by '001'b;
+    %replace PFLUSH_040_15_5     by '11110101000'b;
+
+    if IP->PFLUSH_OPCODE_030.BITS_15_6 = PFLUSH_030_15_6
+       & IP->PFLUSH_OPCODE_030.BITS_15_13 = PFLUSH_030_15_13
+       & IP->PFLUSH_OPCODE_030.BITS_9_8 = '00'B then do;
+       /* try 68030 variant */
+       NWORDS = 0;
+       if IP->PFLUSH_OPCODE_030.SECOND_WORD.MODE = '001'B then 
+           STRING = PRNTOP(OP_PFLUSHA,SIZE_NULL);
+       else if IP->PFLUSH_OPCODE_030.SECOND_WORD.MODE = '100'B then do;
+           call GETPTR(binary(IP->PFLUSH_OPCODE_030.FC),TEMPSTR);
+           STRING =  PRNTOP(OP_PFLUSH,SIZE_NULL)
+                  || '#' || TEMPSTR;
+       end;
+       else if IP->PFLUSH_OPCODE_030.SECOND_WORD.MODE = '110'B then do;
+           SIZE = 0;
+                  
+           NWORDS = DISEA (binary(IP->PFLUSH_OPCODE_030.EA.MODE),
+                           binary(IP->PFLUSH_OPCODE_030.EA.REGISTER),
+                           SIZE,
+                           addr(IP->INSTRUCTION.WORD(3)),
+                           EATYPE_CONTROL_ALTER,
+                           EAP);
+
+           if NWORDS < 0 then return (0);
+
+           call GETPTR(binary(IP->PFLUSH_OPCODE_030.FC),TEMPSTR);
+           STRING = PRNTOP(OP_PFLUSH,SIZE_NULL)
+                  || '#' || TEMPSTR
+                  || ',' || PRNTEA(EAP);
+       end;
+       else
+           return (0);
+
+       return(2+NWORDS);
+    end;
+    else if IP->PFLUSH_OPCODE_040.BITS_15_5 = PFLUSH_040_15_5 then do;
+       /* try 68040 variant */
+       if IP->PFLUSH_OPCODE_040.OPMODE = '00'b then
+           STRING = PRNTOP(OP_PFLUSHN,SIZE_NULL) 
+                    || '(' 
+                    || AREG_NAME(binary(IP->PFLUSH_OPCODE_040.REGISTER))
+                    || ')';
+       else if IP->PFLUSH_OPCODE_040.OPMODE = '01'b then
+           STRING = PRNTOP(OP_PFLUSH,SIZE_NULL) 
+                    || '(' 
+                    || AREG_NAME(binary(IP->PFLUSH_OPCODE_040.REGISTER))
+                    || ')';
+       else if IP->PFLUSH_OPCODE_040.OPMODE = '10'b then
+           STRING = PRNTOP(OP_PFLUSHAN,SIZE_NULL);
+       else
+           STRING = PRNTOP(OP_PFLUSHA, SIZE_NULL);
+       return(1);
+    end;
+    else 
+       return(0);
+
+    end PFLUSH_INSTRUCTION;
+
+
+    /* --------------------------------------------------------------------
+     * PLOAD_INSTRUCTION 
+     *
+     * Disassemble the 68030 PLOADR AND PLOADW instructions.
+     */
+    PLOAD_INSTRUCTION:  procedure returns (fixed binary (15));
+    declare
+        EAP                      pointer,
+        (NWORDS,SIZE)            fixed bin(15);
+
+    declare
+        1 PLOAD_OPCODE           based,
+          2 BITS_15_6            bit (10) aligned,
+          2 EA,
+            3 MODE               bit (3),
+            3 REGISTER           bit (3),
+          2 BITS_15_10           bit (6) aligned,
+          2 RW                   bit (1),
+          2 BITS_8_5             bit (4),
+          2 FC                   bit (5);
+
+      if IP->PLOAD_OPCODE.BITS_15_6 = '1111000000'b 
+         & IP->PLOAD_OPCODE.BITS_15_10 = '001000'b
+         & IP->PLOAD_OPCODE.BITS_8_5 = '0000'b then do;
+           SIZE = 0;
+                  
+           NWORDS = DISEA (binary(IP->PLOAD_OPCODE.EA.MODE),
+                           binary(IP->PLOAD_OPCODE.EA.REGISTER),
+                           SIZE,
+                           addr(IP->INSTRUCTION.WORD(3)),
+                           EATYPE_CONTROL_ALTER,
+                           EAP);
+           if NWORDS >= 0 then do;
+               if IP->PLOAD_OPCODE.RW then
+                   STRING = PRNTOP(OP_PLOADR,SIZE_NULL);
+               else
+                   STRING = PRNTOP(OP_PLOADW,SIZE_NULL);
+
+               call GETPTR(binary(IP->PLOAD_OPCODE.FC),TEMPSTR);
+               STRING = STRING || '#' 
+                        || TEMPSTR
+                        || ',' || PRNTEA(EAP);
+               return (2+NWORDS);
+           end;
+       end;
+       return(0);
+
+    end PLOAD_INSTRUCTION;
+
+
+    /* --------------------------------------------------------------------
+     * PTEST_INSTRUCTION - disassemble to 68040 PTEST instructions (the
+     * 68030 variant is not presently supported).
+     */
+    PTEST_INSTRUCTION:  procedure returns (fixed binary (15));
+/* for 68030 variant - not supported
+ *  declare
+ *      EAP                      pointer,
+ *      (NWORDS,SIZE)            fixed bin(15);
+ */
+    declare
+        1 PTEST_OPCODE_030       based,
+          2 BITS_15_6            bit (10) aligned,
+          2 EA,
+            3 MODE               bit (3),
+            3 REGISTER           bit (3),
+          2 BITS_15_13           bit (3) aligned,
+          2 LEVEL                bit (3),
+          2 RW                   bit (1),
+          2 A                    bit (1),
+          2 REG                  bit (3) aligned,
+          2 FC                   bit (5),
+          2 BITS_7_0             bit (8) aligned,
+        1 PTEST_OPCODE_040       based,
+          2 BITS_15_6            bit (10),
+          2 RW                   bit (1),
+          2 BITS_4_3             bit (2),
+          2 REGISTER             bit (3);
+
+        if IP->PTEST_OPCODE_040.BITS_15_6 = '1111010101'b
+           & IP->PTEST_OPCODE_040.BITS_4_3 = '01'b then do;
+        
+            if IP->PTEST_OPCODE_040.RW then 
+                STRING = PRNTOP(OP_PTESTR, SIZE_NULL);
+            else
+                STRING = PRNTOP(OP_PTESTW, SIZE_NULL);
+            STRING = STRING || '(' 
+                     || AREG_NAME(binary(IP->PTEST_OPCODE_040.REGISTER))
+                     || ')';
+            return (1);
+        end;
+        else
+            return(0);
+
+    end PTEST_INSTRUCTION;
+
+
+    /* --------------------------------------------------------------------
+     * ROTATE_SHIFT_MEM_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * memory ASL, ASR, LSL, LSR, ROL, ROR, ROXL, or ROXR instruction.
+     * If so, then return the disassembled instruction in STRING and return
+     * the size in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    ROTATE_SHIFT_MEM_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            DATA		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 ROTATE_SHIFT_MEM_OPCODE	based,
+	      2 BITS_15_9		bit (7),
+	      2 DIRECTION		bit (1),
+	      2 BITS_7_6		bit (2),
+	      2 MODE			bit (3),
+	      2 REG			bit (3);
+
+	%replace ASD_BITS_15_9		by '1110000'B;
+	%replace ASD_BITS_7_6		by '11'B;
+	%replace LSD_BITS_15_9		by '1110001'B;
+	%replace LSD_BITS_7_6		by '11'B;
+	%replace ROD_BITS_15_9		by '1110011'B;
+	%replace ROD_BITS_7_6		by '11'B;
+	%replace ROXD_BITS_15_9		by '1110010'B;
+	%replace ROXD_BITS_7_6		by '11'B;
+	%replace SIZE_ROTATE_SHIFT_MEM	by 1;
+
+	if (IP->ROTATE_SHIFT_MEM_OPCODE.BITS_15_9 = ASD_BITS_15_9) &
+	   (IP->ROTATE_SHIFT_MEM_OPCODE.BITS_7_6  = ASD_BITS_7_6)  then
+	     if IP->ROTATE_SHIFT_MEM_OPCODE.DIRECTION = '1'B then
+	          CODE = OP_ASL;
+	     else CODE = OP_ASR;
+	else if (IP->ROTATE_SHIFT_MEM_OPCODE.BITS_15_9 = LSD_BITS_15_9) &
+	        (IP->ROTATE_SHIFT_MEM_OPCODE.BITS_7_6  = LSD_BITS_7_6)  then
+	     if IP->ROTATE_SHIFT_MEM_OPCODE.DIRECTION = '1'B then
+	          CODE = OP_LSL;
+	     else CODE = OP_LSR;
+	else if (IP->ROTATE_SHIFT_MEM_OPCODE.BITS_15_9 = ROD_BITS_15_9) &
+	        (IP->ROTATE_SHIFT_MEM_OPCODE.BITS_7_6  = ROD_BITS_7_6)  then
+	     if IP->ROTATE_SHIFT_MEM_OPCODE.DIRECTION = '1'B then
+	          CODE = OP_ROL;
+	     else CODE = OP_ROR;
+	else if (IP->ROTATE_SHIFT_MEM_OPCODE.BITS_15_9 = ROXD_BITS_15_9) &
+	        (IP->ROTATE_SHIFT_MEM_OPCODE.BITS_7_6  = ROXD_BITS_7_6) then
+	     if IP->ROTATE_SHIFT_MEM_OPCODE.DIRECTION = '1'B then
+	          CODE = OP_ROXL;
+	     else CODE = OP_ROXR;
+	else return (0);
+	NWORDS = DISEA (binary(IP->ROTATE_SHIFT_MEM_OPCODE.MODE),
+			binary(IP->ROTATE_SHIFT_MEM_OPCODE.REG),
+			SIZE_WORD,
+			addr(IP->INSTRUCTION.WORD(2)),
+			EATYPE_MEMORY_ALTER,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	STRING = PRNTOP(CODE,SIZE_WORD) || PRNTEA(EAP);
+	return (SIZE_ROTATE_SHIFT_MEM + NWORDS);
+
+    end ROTATE_SHIFT_MEM_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * ROTATE_SHIFT_REG_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * register ASL, ASR, LSL, LSR, ROL, ROR, ROXL, or ROXR instruction.
+     * If so, then return the disassembled instruction in STRING and return
+     * the size in bytes of the instruction.  Otherwise, return zero.
+     */
+
+    ROTATE_SHIFT_REG_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            DATA		fixed binary (15);
+        declare
+	    1 ROTATE_SHIFT_REG_OPCODE	based,
+	      2 BITS_15_12		bit (4),
+	      2 DREG			bit (3),
+	      2 DIRECTION		bit (1),
+	      2 SIZE			bit (2),
+	      2 IR			bit (1),
+	      2 BITS_4_3		bit (2),
+	      2 REG			bit (3);
+
+	%replace ASD_BITS_15_12		by '1110'B;
+	%replace ASD_BITS_4_3		by '00'B;
+	%replace LSD_BITS_15_12		by '1110'B;
+	%replace LSD_BITS_4_3		by '01'B;
+	%replace ROD_BITS_15_12		by '1110'B;
+	%replace ROD_BITS_4_3		by '11'B;
+	%replace ROXD_BITS_15_12	by '1110'B;
+	%replace ROXD_BITS_4_3		by '10'B;
+	%replace SIZE_ROTATE_SHIFT_REG	by 1;
+
+	if (IP->ROTATE_SHIFT_REG_OPCODE.BITS_15_12 = ASD_BITS_15_12) &
+	   (IP->ROTATE_SHIFT_REG_OPCODE.BITS_4_3   = ASD_BITS_4_3)   then
+	     if IP->ROTATE_SHIFT_REG_OPCODE.DIRECTION = '1'B then
+	          CODE = OP_ASL;
+	     else CODE = OP_ASR;
+	else if (IP->ROTATE_SHIFT_REG_OPCODE.BITS_15_12 = LSD_BITS_15_12) &
+	        (IP->ROTATE_SHIFT_REG_OPCODE.BITS_4_3   = LSD_BITS_4_3)   then
+	     if IP->ROTATE_SHIFT_REG_OPCODE.DIRECTION = '1'B then
+	          CODE = OP_LSL;
+	     else CODE = OP_LSR;
+	else if (IP->ROTATE_SHIFT_REG_OPCODE.BITS_15_12 = ROD_BITS_15_12) &
+	        (IP->ROTATE_SHIFT_REG_OPCODE.BITS_4_3   = ROD_BITS_4_3)   then
+	     if IP->ROTATE_SHIFT_REG_OPCODE.DIRECTION = '1'B then
+	          CODE = OP_ROL;
+	     else CODE = OP_ROR;
+	else if (IP->ROTATE_SHIFT_REG_OPCODE.BITS_15_12 = ROXD_BITS_15_12) &
+	        (IP->ROTATE_SHIFT_REG_OPCODE.BITS_4_3   = ROXD_BITS_4_3)   then
+	     if IP->ROTATE_SHIFT_REG_OPCODE.DIRECTION = '1'B then
+	          CODE = OP_ROXL;
+	     else CODE = OP_ROXR;
+	else return (0);
+	SIZE = binary(IP->ROTATE_SHIFT_REG_OPCODE.SIZE);
+	if      SIZE = 0 then SIZE = SIZE_BYTE;
+	else if SIZE = 1 then SIZE = SIZE_WORD;
+	else if SIZE = 2 then SIZE = SIZE_LONG;
+	else return (0);
+	STRING = PRNTOP(CODE,SIZE);
+	if IP->ROTATE_SHIFT_REG_OPCODE.IR = '0'B then do;
+	     if binary(IP->ROTATE_SHIFT_REG_OPCODE.DREG) = 0 then
+		  DATA = 8;
+	     else DATA = binary(IP->ROTATE_SHIFT_REG_OPCODE.DREG);
+             call GETPTR((DATA),TEMPSTR);  /* convert to hex */
+	     STRING = STRING || '#' || TEMPSTR;
+	end;
+	else STRING = STRING ||
+		      DREG_NAME(binary(IP->ROTATE_SHIFT_REG_OPCODE.DREG));
+	STRING = STRING || ',' ||
+		 DREG_NAME(binary(IP->ROTATE_SHIFT_REG_OPCODE.REG));
+	return (SIZE_ROTATE_SHIFT_REG);
+
+    end ROTATE_SHIFT_REG_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * RTD_STOP_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * RTD or STOP instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    RTD_STOP_INSTRUCTION: procedure returns (fixed binary (15));
+
+	declare CODE fixed binary (15);
+
+	%replace RTD_STOP_SIZE	by 2;
+
+	if IP->BASED_WORD_BITS = '4E74'B4 then
+	     CODE = OP_RTD;
+	else if IP->BASED_WORD_BITS = '4E72'B4 then
+	     CODE = OP_STOP;
+	else return (0);
+        call GETPTR((IP->INSTRUCTION.WORD(2)),TEMPSTR);
+	STRING = PRNTOP(CODE,SIZE_NULL) || '#' || TEMPSTR;
+	return (RTD_STOP_SIZE);
+
+    end RTD_STOP_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * SCC_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * Scc instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    SCC_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 SCC_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 CONDITION	bit (4),
+	      2 BITS_7_6	bit (2),
+	      2 MODE		bit (3),
+	      2 REG		bit (3);
+
+	%replace SCC_BITS_15_12	by '0101'B;
+	%replace SCC_BITS_7_6	by '11'B;
+	%replace SIZE_SET	by 1;
+
+	if (IP->SCC_OPCODE.BITS_15_12 ^= SCC_BITS_15_12) |
+	   (IP->SCC_OPCODE.BITS_7_6   ^= SCC_BITS_7_6)   then
+	    return (0);
+	NWORDS = DISEA (binary(IP->SCC_OPCODE.MODE),
+			binary(IP->SCC_OPCODE.REG),
+			SIZE_BYTE,
+			addr(IP->INSTRUCTION.WORD(2)),
+			EATYPE_DATA_ALTER,
+			EAP);
+	if NWORDS < 0 then
+	    return (0);
+	CODE = OP_SET_COND + binary(IP->SCC_OPCODE.CONDITION);
+	STRING = PRNTOP(CODE,SIZE_BYTE) || PRNTEA(EAP);
+	return (SIZE_SET + NWORDS);
+
+    end SCC_INSTRUCTION;
+
+    /* ----------------------------------------------------------------
+     * SWAP_UNLK_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * SWAP or UNLK instruction.  If so, then return the disassembled
+     * instruction in STRING and return the size in bytes of the
+     * instruction.  Otherwise, return zero.
+     */
+
+    SWAP_UNLK_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            1 SWAP_UNLK_OPCODE	based,
+              2 BITS_15_3	bit (13),
+              2 REG		bit (3);
+
+	%replace SWAP_BITS_15_3	by '0100100001000'B;
+	%replace UNLK_BITS_15_3	by '0100111001011'B;
+	%replace SWAP_UNLK_SIZE	by 1;
+
+        if IP->SWAP_UNLK_OPCODE.BITS_15_3 = SWAP_BITS_15_3 then
+	     STRING = PRNTOP(OP_SWAP,SIZE_WORD) ||
+		      DREG_NAME(binary(IP->SWAP_UNLK_OPCODE.REG));
+	else if IP->SWAP_UNLK_OPCODE.BITS_15_3 = UNLK_BITS_15_3 then
+	     STRING = PRNTOP(OP_UNLK,SIZE_NULL) ||
+		      AREG_NAME(binary(IP->SWAP_UNLK_OPCODE.REG));
+	else return (0);
+	return (SWAP_UNLK_SIZE);
+
+    end SWAP_UNLK_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * TRAP_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * TRAP instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    TRAP_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            1 TRAP_OPCODE	based,
+              2 BITS_15_4	bit (12),
+              2 VECTOR		bit (4);
+
+	%replace TRAP_BITS_15_4	by '010011100100'B;
+	%replace TRAP_SIZE	by 1;
+
+	if IP->TRAP_OPCODE.BITS_15_4 ^= TRAP_BITS_15_4 then
+	    return (0);
+        call GETPTR(binary(IP->TRAP_OPCODE.VECTOR),TEMPSTR);
+	STRING = PRNTOP(OP_TRAP,SIZE_NULL) || '#' || TEMPSTR;
+	return (TRAP_SIZE);
+
+    end TRAP_INSTRUCTION;
+
+    /* --------------------------------------------------------------------
+     * TRAPCC_INSTRUCTION
+     *
+     * Determine if the given code pointed to by IP is a valid MC68020
+     * TRAPcc instruction.  If so, then return the disassembled instruction
+     * in STRING and return the size in bytes of the instruction.
+     * Otherwise, return zero.
+     */
+
+    TRAPCC_INSTRUCTION: procedure returns (fixed binary (15));
+
+        declare
+            CODE		fixed binary (15),
+            SIZE		fixed binary (15),
+            OPMODE		fixed binary (15),
+            NWORDS		fixed binary (15);
+        declare
+	    1 TRAPCC_OPCODE	based,
+	      2 BITS_15_12	bit (4),
+	      2 CONDITION	bit (4),
+	      2 BITS_7_3	bit (5),
+	      2 OPMODE		bit (3);
+
+	%replace TRAPCC_BITS_15_12	by '0101'B;
+	%replace TRAPCC_BITS_7_3	by '11111'B;
+	%replace SIZE_TRAPCC		by 1;
+
+	if (IP->TRAPCC_OPCODE.BITS_15_12 ^= TRAPCC_BITS_15_12) |
+	   (IP->TRAPCC_OPCODE.BITS_7_3   ^= TRAPCC_BITS_7_3)   then
+	    return (0);
+	OPMODE = binary(IP->TRAPCC_OPCODE.OPMODE);
+	if      OPMODE = 2 then SIZE = SIZE_WORD;
+	else if OPMODE = 3 then SIZE = SIZE_LONG;
+	else if OPMODE = 4 then SIZE = SIZE_NULL;
+	else return (0);
+	NWORDS = 0;
+	if SIZE ^= SIZE_NULL then do;
+	    NWORDS = DISEA (EAMODE_IMMED,
+			    EAREG_IMMED,
+			    SIZE,
+			    addr(IP->INSTRUCTION.WORD(2)),
+			    EATYPE_ALL,
+			    EAP);
+	    if NWORDS < 0 then
+	        return (0);
+	end;
+	CODE = OP_TRAP_COND + binary(IP->TRAPCC_OPCODE.CONDITION);
+	STRING = PRNTOP(CODE,SIZE) || PRNTEA(EAP);
+	return (SIZE_TRAPCC + NWORDS);
+
+    end TRAPCC_INSTRUCTION;
+
+    /* ----------------------------------------------------------------
+     * GET_OPCODE_GROUP
+     *
+     * Return as a short integer, the high 4 bytes of the given word.
+     */
+
+    GET_OPCODE_GROUP: procedure (WORD) returns (fixed binary (15));
+
+        declare WORD fixed binary (15);
+
+	return (binary(substr(unspec(WORD),1,4),15));
+
+    end GET_OPCODE_GROUP;
+
+end DIS;
+

@@ -1,0 +1,105 @@
+/* C++ evali.pl1 - Evaluate tree to an integer */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.26.92  DGM  006  New value-node scheme.
+ *  03.18.92  DGM  005  Non-support for integral constant names in C mode.
+ *  06.27.91  PKT  004  Support for integral constant names.
+ *  09.14.90  DGM  003  Changed include file names and VOP names.
+ *  08.08.90  DGM  002  New type-node.
+ *  06.05.90  DGM  001  Updated for the new utilities.
+ *  02.08.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.26.92 006 EVALI');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+
+/* ---------------------------------------------------------------------
+/* EVALUATE_INTEGER
+/*
+/* Determine if the tree denoted by TREE is an integer.
+/* If so, return the integer value in RESULT, and set
+/* VARIABLE_FLAG to FALSE.  Otherwise, set VARIABLE_FLAG to TRUE.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+EVALUATE_INTEGER: procedure (TREE, RESULT, VARIABLE_FLAG)
+		  external (X_EVALUATE_INTEGER);
+	declare
+		TREE		type (CXX_VID_T),
+		RESULT		type (LONG_T),
+		VARIABLE_FLAG	type (BOOL_T);
+	declare
+		V		type (CXX_VID_T),
+		R		type (LONG_T),
+		VF		type (BOOL_T),
+		P		type (POINTER_T);
+
+	V = TREE;
+	VF = TRUE;
+
+	if V->CXX_VALUE_NODE.OP = INTEGER_VO then do;
+		R = V->CXX_VALUE_NODE.OFFSET;
+		VF = FALSE;
+	end;
+	else if IS_INTEGRAL_TYPE (rank (V->CXX_VALUE_NODE.TOP_TYPE.CODE)) &
+		 V->CXX_VALUE_NODE.TOP_TYPE.CONST &
+		(V->CXX_VALUE_NODE.OP = VALUE_VO) &
+		(V->CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) &
+		 SW_C_PLUS_PLUS then do;
+		if (V->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.OP = REF_VO) &
+		   (V->CXX_VALUE_NODE.LEFT->CXX_VALUE_NODE.LEFT ^= NULL_NID)
+		then do;
+			call GET_SYM_NODE_R
+			     (V->CXX_VALUE_NODE.LEFT->
+			         CXX_VALUE_NODE.LEFT_NID, P);
+			if P->SYM_NODE.HAS_CONST_INITIALIZER then do;
+				R = P->SYM_NODE.CONST_INITIALIZER;
+				VF = FALSE;
+			end;
+			call RELEASE_SYM_NODE
+			     (V->CXX_VALUE_NODE.LEFT->
+			         CXX_VALUE_NODE.LEFT_NID);
+		end;
+	end;
+
+	if ^VF then
+		RESULT = R;
+	VARIABLE_FLAG = VF;
+
+end EVALUATE_INTEGER;
+

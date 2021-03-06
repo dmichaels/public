@@ -1,0 +1,162 @@
+/* C++ CXX_VALUE_NODE_IN - C++ compiler value nodes */ 
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  03.26.92  DGM  010  New value-node scheme.
+ *  10.03.91  DGM  009  Added CPLUS_VAL.ASM/COMPILATION_ASSERT.
+ *  08.19.91  DGM  008  Picked up ANSI-C FE changes (from 06.05.90)
+ *			for floating point constant folding.
+ *  07.18.91  DGM  007  Added CPLUS_VAL.SETJMP.
+ *  02.27.91  DGM  006  Support for CPLUS_VAL.ARRAY_DESIGNATOR.
+ *  11.28.90  TLF  005  Added definition of the common part of the
+ *                      C++ value node here.  This change, in
+ *		 	combination with changes to the C++ value
+ *			manipulation routines, allows a maximum of
+ * 			32767 value nodes.  The limit on the maximum
+ *			number of value nodes in the utl/util package
+ *			was slightly more than 1000.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  08.08.90  DGM  003  Added CPLUS_VAL.SIGNED_BIT_FIELD.
+ *  08.08.90  DGM  002  New type-node.
+ *  04.17.90  PKT  001  Added EXTRA_PTR_LEVEL.
+ *  01.30.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_UTL_DEFS_IN;           */
+/* %include CXX_UTL_VALUE_NODE_PKG;    */
+/* %include CXX_STANDARD_DEFS_IN;      */
+/* %include CXX_SYMBOL_TABLE_NODES_IN; */
+
+/* ---------------------------------------------------------------------
+/* DERIVED_TYPE_SKIP_LEVEL indicates the number of top types which should
+/* be skipped when referencing the type-node referred to by CPLUS_VAL.TYPE.
+/* If DERIVED_TYPE_SKIP_LEVEL is the zero, then the type of this value-node
+/* is given directly by the type-node.
+/*
+/* EXTRA_PTR_LEVEL indicates that the type is not that given by 
+/* TYPE and DERIVED_TYPE_INDEX, rather it's a pointer to that type.
+/* There's a chance that this will be inadequate, and that either
+/* multiple levels of EXTRA_PTR will be required, i.e. so we have
+/*     EXTRA_PTR_COUNT  type (BYTE_T)
+/* or that we'll have to create type nodes on the fly in EXPAND_VALUE.
+/* This change is limited to cvalue.in and the typinf module.
+/*
+/* FUNCTION_DESIGNATOR is set only in connection with function types. 
+/* Expressions having a function type are implicitly converted, in ALL
+/* contexts but two, to pointer-to-function.  We perform the 
+/* conversion in the few places where such a value node is created,
+/* rather than in the many where it could be used.  However, we also mark
+/* the node with FUNCTION_DESIGNATOR "true" so that in the "sizeof" and "&"
+/* contexts the value can be handled as a function and not a pointer-to.
+/*
+/* Excerpt [X3J11/88-159:3.3.2.1]: A "function designator" is an
+/* expression that has function type.  Except when it is the operand
+/* of the "sizeof" operator or the unary "&" operator, a function
+/* designator with type "function returning type" si converted to
+/* an expression that has type "pointer to function returning type".
+/* ------------------------------------------------------------------- */
+
+declare
+
+CXX_VALUE_NODE_PTR		type (CXX_VID_T) external initial (0);
+
+declare
+
+1 CXX_VALUE_NODE		based (CXX_VALUE_NODE_PTR),
+
+  2 id_id_nid_union		union,
+    3 ID			type (OID_T),
+    3 ID_SHORT			type (SHORT_T),
+    3 ID_NID			type (NID_T),
+    3 ID_VID			type (CXX_VID_T),
+
+  2 vop_op_union		union,
+    3 OP			type (SHORT_T),
+    3 VOP			type (SHORT_T),
+
+  2 COUNT			type (SHORT_T),
+
+  2 left_union			union,
+    3 LEFT			type (CXX_VID_T),
+    3 LEFT_NID			type (NID_T),
+    3 LEFT_SHORT		type (SHORT_T),
+    3 LEFT_OID			type (OID_T),
+  2 right_union			union,
+    3 RIGHT			type (CXX_VID_T),
+    3 RIGHT_NID			type (NID_T),
+    3 RIGHT_SHORT		type (SHORT_T),
+    3 RIGHT_OID			type (OID_T),
+  2 third_union			union,
+    3 THIRD			type (CXX_VID_T),
+    3 THIRD_NID			type (NID_T),
+    3 THIRD_SHORT		type (SHORT_T),
+    3 THIRD_OID			type (OID_T),
+
+  2 SIZE			type (LONG_T),
+  2 SIZE_UNITS			type (BYTE_T),
+  2 OFFSET_UNITS		type (BYTE_T),
+
+  2 TOP_TYPE			type (TYPE_DATA_T),
+  2 TYPE			type (NID_T),
+  2 DERIVED_TYPE_SKIP		type (SHORT_T),
+  2 EXTRA_PTR_LEVEL		type (BIT_T),
+
+  2 NULARY			type (BIT_T),
+  2 UNARY			type (BIT_T),
+  2 TERNARY			type (BIT_T),
+
+  2 LEFT_IS_NID			type (BIT_T),
+  2 RIGHT_IS_NID		type (BIT_T),
+  2 THIRD_IS_NID		type (BIT_T),
+
+  2 LEFT_IS_NOT_VID		type (BIT_T),
+  2 RIGHT_IS_NOT_VID		type (BIT_T),
+  2 THIRD_IS_NOT_VID		type (BIT_T),
+
+  2 ID_IS_NID			type (BIT_T),
+  2 available_02		type (BIT_T),
+  2 available_03		type (BIT_T),
+
+
+  2 NOT_AN_LVALUE		type (BIT_T),
+  2 ARRAY_DESIGNATOR		type (BIT_T),
+  2 FUNCTION_DESIGNATOR		type (BIT_T),
+  2 SIGNED_BIT_FIELD		type (BIT_T),
+
+  2 ASM				type (BIT_T),
+  2 SETJMP			type (BIT_T),
+  2 COMPILATION_ASSERT		type (BIT_T),
+
+  2 IN_USE			type (BIT_T),
+  2 available_04		type (BIT_T),
+  2 available_05		type (BIT_T),
+  2 available_06		type (BIT_T),
+
+  2 available_07		type (BYTE_T),
+
+  2 offset_string_pointer_union	union,
+    3 OFFSET			type (LONG_T),
+    3 SPTR			type (POINTER_T),
+
+  2 float_union			union,
+    3 FLT23			float binary (23),
+    3 FLT52			float binary (52),
+    3 FLTVAL			float binary (52);
+
+/* 50 bytes */
+
+

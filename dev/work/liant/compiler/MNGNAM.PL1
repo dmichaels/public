@@ -1,0 +1,552 @@
+/* C++ mngnam.pl1 - Name mangler */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  05.11.92  DGM  027	Updated to use SIG_NODE.THIS_QUALIFIERS to
+ *			get the const-ness of a function.
+ *  03.13.92  PKT  026	Updated for parameter nodes.
+ *  03.26.92  DGM  025	New value-node scheme.
+ *  01.28.92  DGM  024  Fix in MANGLED_FUNCTION_SIGNATURE which showed up
+ *			when the paged version of the symbol table was used.
+ *  01.21.92  DGM  023	Parameter link-node changes.
+ *  01.13.92  DGM  022  Fix to mangle:
+ *				struct S { enum E {}; int f (E); };
+ *				int S::f (S::E);
+ *			as "f__1SFQ11S1E" rather than "f__1SF1S1E".
+ *  05.29.91  DGM  021  Skip the top type qualifiers for parameters.
+ *  02.27.91  DGM  020  Moved the MANGLED_OPERATOR_NAME array
+ *			to CXX_TOKEN_MAP_OPERATOR_IN.
+ *  02.01.91  DGM  019  Updated to the new global names scheme.
+ *  01.29.91  DGM  018  Handle more than 9 qualifiers in
+ *			MANGLED_NAME_QUALIFIER, and other fixes.
+ *  01.18.91  DGM  017  Minor fix in MANGLED_NAME_QUALIFIER.
+ *  12.20.90  DGM  016  Don't mangle *derived* return type.
+ *  12.17.90  DGM  015  Don't use 'Q' if only one qualifier.
+ *  11.29.90  DGM  014  Miscellaneous fixes relating mangling details.
+ *  10.12.90  DGM  013  Don't mangle names if SW_NO_TYPE_SAFE_LINKAGE.
+ *  09.25.90  DGM  012  Preprocessor include file name changes.
+ *  09.14.90  DGM  011  Changed include file names and VOP names.
+ *  09.13.90  DGM  010  Changed xxx_SC names to xxx_ST.
+ *  09.12.90  DGM  009  Fixed to mangle static function member name with
+ *			with the class qualifier name.
+ *  09.05.90  PKT  008  Updated for incomplete array types.
+ *  08.29.90  DGM  007  Fix (typo) in table mangled operator name table.
+ *  08.15.90  DGM  006  New type-node.
+ *  07.12.90  DGM  005  Updated for new operator encodings,
+ *			and to handle multiply qualified names.
+ *  06.06.90  DGM  004  Updated for the new utilities.
+ *  05.25.90  DGM  003  Added support for non-function (static) members.
+ *  03.27.90  DGM  002  Minor fix.
+ *  03.02.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 05.11.92 027 MNGNAM');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_TOKEN_MAP_OPERATOR_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_GLOBAL_NAMES_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+STRING_T	character (2048) varying based;
+
+/* ---------------------------------------------------------------------
+/* Local static definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+MANGLED_NAME_SEPARATOR		character (6) varying
+				static internal initial ('__');
+
+/* ---------------------------------------------------------------------
+/* MANGLED_SYMBOL_NAME
+/*
+/* Given a symbol, return a string representing its mangled name.
+/* ------------------------------------------------------------------- */
+
+MANGLED_SYMBOL_NAME: procedure (SYMBOL)
+		     returns   (type (STRING_T))
+		     external  (X_MANGLED_SYMBOL_NAME);
+
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		(S, Q)		type (STRING_T),
+		P		type (POINTER_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+
+	call GET_SYM_NODE_R (SYMBOL, P);
+
+	/* Only mangle function or static (function/data) member names */
+
+	if (SW_NO_TYPE_SAFE_LINKAGE &
+	    ^P->SYM_NODE.IS_CONSTRUCTOR_FUNCTION &
+	    ^P->SYM_NODE.IS_DESTRUCTOR_FUNCTION &
+	    ^P->SYM_NODE.IS_CONVERSION_FUNCTION &
+	    ^P->SYM_NODE.IS_OPERATOR_FUNCTION) |
+	   ((^P->SYM_NODE.IS_FUNCTION) &
+	    ((^P->SYM_NODE.IS_MEMBER) |
+	     (P->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST)))) then do;
+		S = SYMBOL_NAME (SYMBOL);
+		goto DONE_MANGLE_NAME;
+	end;
+
+	S = '';
+
+	/* Get the name qualifier for static (function/data) member names */
+
+	Q = MANGLED_NAME_QUALIFIER (P->SYM_NODE.ENCLOSING_SCOPE_OWNER, FALSE);
+
+	/* Get the function/data name */
+
+	if P->SYM_NODE.IS_CONSTRUCTOR_FUNCTION then
+		S = '_ct';
+	else if P->SYM_NODE.IS_DESTRUCTOR_FUNCTION then
+		S = '_dt';
+	else if P->SYM_NODE.IS_CONVERSION_FUNCTION then
+		S = '_op' ||
+		    MANGLED_TYPE_NAME (P->SYM_NODE.TYPE, TRUE, FALSE, FALSE);
+	else if P->SYM_NODE.IS_OPERATOR_FUNCTION then
+		S = MANGLED_OPERATOR_NAME
+		    (GET_OPERATOR_NAME_TOKEN_CODE (P->SYM_NODE.NAME));
+	else	S = SYMBOL_NAME (SYMBOL);
+
+	S = S || MANGLED_NAME_SEPARATOR || Q;
+
+	if P->SYM_NODE.IS_FUNCTION then do;
+		if CXX_MANGLE_STATIC_MEMBER_FUN then do;
+			if P->SYM_NODE.STORAGE_CLASS = byte (STATIC_ST) then
+				S = S || 'S';
+		end;
+		S = S ||
+		    MANGLED_TYPE_NAME (P->SYM_NODE.TYPE, FALSE, FALSE, TRUE);
+	end;
+
+	DONE_MANGLE_NAME:
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+/* ---------------------------------------------------------------------
+/* MANGLED_NAME_QUALIFIER
+/* ------------------------------------------------------------------- */
+
+MANGLED_NAME_QUALIFIER: procedure (SYMBOL, TYPE_NAME_QUALIFIER)
+			returns   (type (STRING_T))
+			internal;
+	declare
+		SYMBOL			type (NID_T),
+		TYPE_NAME_QUALIFIER	type (BOOL_T);
+	declare
+		(SP, ESP, P)		type (POINTER_T),
+		NQUALIFIERS		type (SHORT_T),
+		(ES, NEXT_ES)		type (NID_T),
+		(S, NAME)		type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+
+	call GET_SYM_NODE_R (SYMBOL, SP);
+
+	if ^SP->SYM_NODE.IS_TAG | (SP->SYM_NODE.NAME = NULL_NID) then do;
+		call RELEASE_SYM_NODE (SYMBOL);
+		return ('');
+	end;
+
+	if SP->SYM_NODE.ENCLOSING_SCOPE_TYPE ^= byte (CLASS_SCOPE) then do;
+		if TYPE_NAME_QUALIFIER then
+			S = 'Q1';
+		else	S = '';
+		S = S || MANGLED_TOKEN_NAME (SP->SYM_NODE.NAME);
+		goto DONE_MANGLED_NAME_QUALIFIER;
+	end;
+
+	/* Handle multiple class qualifiers */
+
+	S = MANGLED_TOKEN_NAME (SP->SYM_NODE.NAME);
+	NQUALIFIERS = 1;
+
+	do ES = SP->SYM_NODE.ENCLOSING_SCOPE
+	repeat (NEXT_ES) while (ES ^= NULL_NID);
+		call GET_SCOPE_NODE_R (ES, ESP);
+		if ESP->SCOPE_NODE.TYPE ^= byte (CLASS_SCOPE) then do;
+			if TYPE_NAME_QUALIFIER | NQUALIFIERS > 1 then
+				S = 'Q' || trim (char (NQUALIFIERS)) || S;
+			call RELEASE_SCOPE_NODE (ES);
+			goto DONE_MANGLED_NAME_QUALIFIER;
+		end;
+		call GET_SYM_NODE_R (ESP->SCOPE_NODE.OWNER, P);
+		S = MANGLED_TOKEN_NAME (P->SYM_NODE.NAME) || S;
+		call RELEASE_SYM_NODE (ESP->SCOPE_NODE.OWNER);
+		if NQUALIFIERS = 9 then do;
+			S = 'Q9' || S;
+			NQUALIFIERS = 1;
+		end;
+		else	NQUALIFIERS = NQUALIFIERS + 1;
+		NEXT_ES = ESP->SCOPE_NODE.ENCLOSING_SCOPE;
+		call RELEASE_SCOPE_NODE (ES);
+	end;
+
+	S = S || MANGLED_TOKEN_NAME (SP->SYM_NODE.NAME);
+
+	DONE_MANGLED_NAME_QUALIFIER:
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end MANGLED_NAME_QUALIFIER;
+
+/* ---------------------------------------------------------------------
+/* MANGLED_CLASS_NAME
+/* ------------------------------------------------------------------- */
+
+MANGLED_CLASS_NAME: procedure (SYMBOL)
+		    returns   (type (STRING_T))
+		    internal;
+	declare
+		SYMBOL		type (NID_T);
+	declare
+		SP		type (POINTER_T),
+		(S, NAME)	type (STRING_T);
+
+	if SYMBOL = NULL_NID then
+		return ('');
+
+	call GET_SYM_NODE_R (SYMBOL, SP);
+
+	if ^SP->SYM_NODE.IS_TAG | (SP->SYM_NODE.NAME = NULL_NID) then do;
+		call RELEASE_SYM_NODE (SYMBOL);
+		return ('');
+	end;
+
+	if SP->SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (CLASS_SCOPE) then
+		S = MANGLED_NAME_QUALIFIER
+			(SP->SYM_NODE.ENCLOSING_SCOPE_OWNER, TRUE);
+	else	S = '';
+
+	S = S || MANGLED_TOKEN_NAME (SP->SYM_NODE.NAME);
+
+	call RELEASE_SYM_NODE (SYMBOL);
+	return (S);
+
+end MANGLED_CLASS_NAME;
+
+/* ---------------------------------------------------------------------
+/* MANGLED_TOKEN_NAME
+/* ------------------------------------------------------------------- */
+
+MANGLED_TOKEN_NAME: procedure (TOKEN)
+		    returns   (type (STRING_T))
+		    internal;
+	declare
+		TOKEN		type (NID_T);
+	declare
+		(S, NAME)	type (STRING_T);
+
+	if TOKEN = NULL_NID then
+		return ('');
+	NAME = TOKEN_NAME (TOKEN);
+	S = trim (char (length (NAME))) || NAME;
+	return (S);
+
+end MANGLED_TOKEN_NAME;
+
+/* ---------------------------------------------------------------------
+/* MANGLED_TYPE_NAME
+/*
+/* Returns a string representing the mangled name of the type represented
+/* by the given type-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MANGLED_TYPE_NAME: procedure (TYPE_ID,
+			      SKIP_TOP_TYPE,
+			      SKIP_TOP_QUALIFIER_TYPE,
+			      SKIP_RETURN_TYPE)
+		   returns   (type (STRING_T))
+		   internal;
+	declare
+		TYPE_ID			type (NID_T),
+		SKIP_TOP_TYPE		type (BOOL_T),
+		SKIP_TOP_QUALIFIER_TYPE	type (BOOL_T),
+		SKIP_RETURN_TYPE	type (BOOL_T);
+	declare
+		(TP, P)			type (POINTER_T),
+		(DT, BT)		type (SHORT_T),
+		TQ			type (BYTE_BITS_T),
+		TI			type (NID_T),
+		(BTS, BTQS, TQS, S)	type (STRING_T),
+		(I, TOP, BOTTOM)	type (INT_T),
+		IS_FUNCTION_TYPE	type (BOOL_T),
+		CONTAINS_FUNCTION_TYPE	type (BOOL_T);
+
+	if TYPE_ID = NULL_NID then
+		return ('');
+
+	/* Get the declarator data & initialize */
+
+	call GET_TYPE_NODE_R (TYPE_ID, TP);
+
+	TOP = rank (TP->TYPE_NODE.LEVEL);
+
+	IS_FUNCTION_TYPE = (TP->TYPE_NODE.DATA (TOP).CODE = byte (FUNCTION_DT));
+
+	if SKIP_TOP_TYPE then do;
+		if TOP > 0 then
+			TOP = TOP - 1;
+	end;
+
+	if IS_FUNCTION_TYPE then do;
+		CONTAINS_FUNCTION_TYPE = TRUE;
+		if SKIP_RETURN_TYPE then
+			BOTTOM = TOP;
+		else	BOTTOM = 1;
+	end;
+	else do;
+		CONTAINS_FUNCTION_TYPE = FALSE;
+		BOTTOM = 1;
+	end;
+
+	S = '';
+
+	/* Make the derived type encoding */
+
+	do I = TOP to BOTTOM by -1;
+		DT = rank (TP->TYPE_NODE.TYPE_CODE (I));
+		TQ = TP->TYPE_NODE.TYPE_QUALIFIERS (I);
+		TI = TP->TYPE_NODE.TYPE_NID (I);
+		if      DT = REFERENCE_DT then do;
+			if ^SKIP_TOP_QUALIFIER_TYPE | (I ^= TOP) then
+				S = S || MANGLED_TYPE_QUALIFIER_NAME (TQ);
+			S = S || 'R';
+		end;
+		else if DT = POINTER_DT then do;
+			if ^SKIP_TOP_QUALIFIER_TYPE | (I ^= TOP) then
+				S = S || MANGLED_TYPE_QUALIFIER_NAME (TQ);
+			S = S || 'P';
+		end;
+		else if DT = MEMBER_POINTER_DT then do;
+			if ^SKIP_TOP_QUALIFIER_TYPE | (I ^= TOP) then
+				S = S || MANGLED_TYPE_QUALIFIER_NAME (TQ);
+			S = S || 'M' || MANGLED_CLASS_NAME (TI);
+		end;
+		else if DT = ARRAY_DT then do;
+			S = S || MANGLED_ARRAY_DIMENSION (TI);
+		end;
+		else if DT = FUNCTION_DT then do;
+			CONTAINS_FUNCTION_TYPE = TRUE;
+			if ^SKIP_TOP_QUALIFIER_TYPE | (I ^= TOP) then
+				S = S || MANGLED_TYPE_QUALIFIER_NAME (TQ);
+			S = S || MANGLED_FUNCTION_SIGNATURE (TI);
+		end;
+	end;
+
+	/* Set the base type encoding if desired */
+
+	if ^IS_FUNCTION_TYPE | ^SKIP_RETURN_TYPE then do;
+		if CONTAINS_FUNCTION_TYPE then
+			S = S || '_';
+		S = S || MANGLED_TYPE_QUALIFIER_NAME
+			 (TP->TYPE_NODE.TYPE_QUALIFIERS (0)) ||
+			 MANGLED_BASE_TYPE_NAME (TP);
+	end;
+
+	call RELEASE_TYPE_NODE (TYPE_ID);
+
+	return (S);
+
+/* ---------------------------------------------------------------------
+/* MANGLED_BASE_TYPE_NAME
+/*
+/* Returns a code string representing the base type represented
+/* by the given type-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MANGLED_BASE_TYPE_NAME: procedure (TP) returns (type (STRING_T)) internal;
+
+	declare
+		TP	type (POINTER_T);
+	declare
+		BT	type (SHORT_T),
+		S	type (STRING_T);
+
+	if TYPE_ID = NULL_NID then
+		return ('');
+
+	BT = rank (TP->TYPE_NODE.TYPE_CODE (0));
+
+	if      BT = VOID_BT	then	S = 'v';
+	else if BT = CHAR_BT	then	S = 'c';
+	else if BT = SCHAR_BT	then	S = 'Sc';
+	else if BT = UCHAR_BT	then	S = 'Uc';
+	else if BT = SHORT_BT	then	S = 's';
+	else if BT = SSHORT_BT	then	S = 'Ss';
+	else if BT = USHORT_BT	then	S = 'Us';
+	else if BT = INT_BT	then	S = 'i';
+	else if BT = SINT_BT	then	S = 'Si';
+	else if BT = UINT_BT	then	S = 'Ui';
+	else if BT = LONG_BT	then	S = 'l';
+	else if BT = SLONG_BT	then	S = 'Sl';
+	else if BT = ULONG_BT	then	S = 'Ul';
+	else if BT = FLOAT_BT	then	S = 'f';
+	else if BT = DOUBLE_BT	then	S = 'd';
+	else if BT = LDOUBLE_BT	then	S = 'r';
+
+	else if IS_TAG_TYPE (BT) then do;
+		if TP->TYPE_NODE.TYPE_NID (0) ^= NULL_NID then
+			S = MANGLED_CLASS_NAME (TP->TYPE_NODE.TYPE_NID (0));
+		else	S = '';
+	end;
+
+	else if BT = TYPEDEF_BT then do;
+		if TP->TYPE_NODE.TYPE_NID (0) ^= NULL_NID then
+			S = MANGLED_SYMBOL_NAME (TP->TYPE_NODE.TYPE_NID (0));
+	end;
+
+	else	S = '';
+
+       	return (S);
+
+end MANGLED_BASE_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* MANGLED_FUNCTION_SIGNATURE
+/*
+/* Returns a code string representing the signature (parameter
+/* declaration list) of the given the signature-node.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MANGLED_FUNCTION_SIGNATURE: procedure (SIGNATURE)
+			    returns   (type (STRING_T))
+			    internal;
+	declare
+		SIGNATURE	type (NID_T);
+	declare
+		(SP, P)		type (POINTER_T),
+		I		type (INT_T),
+		(PL, NEXT_PL)	type (NID_T),
+		(S, NAME)	type (STRING_T);
+
+	call GET_SIG_NODE_R (SIGNATURE, SP);
+
+	S = MANGLED_TYPE_QUALIFIER_NAME
+	    (SP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS) || 'F';
+
+	if SP->SIG_NODE.EXPLICIT_NPARAMETERS > 0 then do;
+		PL = SP->SIG_NODE.EXPLICIT_PARAMETERS;
+		do I = 1 to SP->SIG_NODE.EXPLICIT_NPARAMETERS
+		while (PL ^= NULL_NID);
+			call GET_PARAMETER_NODE_R (PL, P);
+			S = S || MANGLED_TYPE_NAME
+				 (P->PARAMETER_NODE.TYPE, FALSE, TRUE, FALSE);
+			NEXT_PL = P->PARAMETER_NODE.NEXT;
+			call RELEASE_PARAMETER_NODE (PL);
+			PL = NEXT_PL;
+		end;
+		if SP->SIG_NODE.ELLIPSIS then
+			S = S || 'e';
+	end;
+	else	if SP->SIG_NODE.ELLIPSIS then
+		S = S || 'e';
+	else	S = S || 'v';
+
+	call RELEASE_SIG_NODE (SIGNATURE);
+	return (S);
+
+end MANGLED_FUNCTION_SIGNATURE;
+
+/* ---------------------------------------------------------------------
+/* MANGLED_ARRAY_DIMENSION
+/*
+/* Returns a code string representing the dimension the given
+/* the dim-node.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MANGLED_ARRAY_DIMENSION: procedure (DIMENSION)
+			 returns   (type (STRING_T))
+			 internal;
+	declare
+		DIMENSION	type (NID_T);
+	declare
+		DP		type (POINTER_T),
+		S		type (STRING_T);
+
+	call GET_DIM_NODE_R (DIMENSION, DP);
+
+	if DP->DIM_NODE.INCOMPLETE then
+		S = 'P';
+	else	S = 'A' || trim (char (DP->DIM_NODE.VALUE)) || '_';
+
+	call RELEASE_DIM_NODE (DIMENSION);
+	return (S);
+
+end MANGLED_ARRAY_DIMENSION;
+
+/* ---------------------------------------------------------------------
+/* MANGLED_TYPE_QUALIFIER_NAME
+/*
+/* Returns a code string representing the type qualifer name of
+/* the given type qualifier code.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+MANGLED_TYPE_QUALIFIER_NAME: procedure (TQ) returns (type (STRING_T)) internal;
+
+	declare
+		TQ	type (BYTE_BITS_T);
+	declare
+		S	type (STRING_T);
+	
+	if (TQ & CONST_TQ) = CONST_TQ then do;
+		S = 'C';
+		if (TQ & VOLATILE_TQ) = VOLATILE_TQ then
+			S = S || 'V';
+	end;
+	else if (TQ & VOLATILE_TQ) = VOLATILE_TQ then
+		S = 'V';
+	else	S = '';
+
+	return (S);
+
+end MANGLED_TYPE_QUALIFIER_NAME;
+
+end MANGLED_TYPE_NAME;
+
+end MANGLED_SYMBOL_NAME;
+

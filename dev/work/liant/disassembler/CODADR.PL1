@@ -1,0 +1,158 @@
+/* LPI-DEBUG M68 CODADR.PL1 - Get address of execution point */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  12.30.87  DGM  Changed calls to STRIP & TRIM to call TRIMS & TRIMNU.
+ *
+ *  05.29.87  DGM  Redone for new signal/on-unit RTS routines (first
+ *                 implemented for Apollo/DOMAIN).  If the current
+ *                 environment contains ON-UNITS, then the return
+ *                 address has been by P$ON to be the entry point of
+ *                 P$POPON.  In this case we must search the on-unit
+ *                 list for the entry corresponding to this frame, and
+ *                 extract the "real" return address.
+ *
+ **********************************************************************/
+
+CODADR: procedure (FRAME) returns (fixed binary (31));
+
+/* --------------------------------------------------------------------
+/* CODADR - Get address of execution point of stack frame
+/*
+/* In:     FRAME = Frame pointer
+/* Return: Address of execution
+/**********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include DBGRTS_IN;
+%include DBGDEBUG_IN;
+%include TARGET_IN;
+%include SYSREADUSER_IN;
+%include SYSTTY_IN;
+
+    declare 
+        FRAME           fixed binary (31);
+    declare
+        DUMMY           fixed binary (31),
+        CODE_PT         fixed binary (31),
+        RET_CODE        fixed binary (15);
+    declare
+        PRNPTR          entry (fixed binary (31)) external;
+
+    if DBG_FLAG then do;
+        call WRITNC ('**CODADR** ');
+        if FRAME = $FP_BREAK then
+             call WRITNC ('BREAK-FP');
+        else call PRNPTR (FRAME);
+        call WRITNC (' --> RET: ');
+    end;
+
+    if FRAME = 0 then do;
+        CODE_PT = 0;
+        if DBG_FLAG then do;
+            call PRNPTR(CODE_PT);
+        end;
+        goto DONE;
+    end;
+    else if FRAME = $FP_BREAK then do;
+        CODE_PT = PROGRAM_REGISTER_AREA->REGS.PC;
+        if DBG_FLAG then do;
+            call PRNPTR(CODE_PT);
+        end;
+        goto DONE;
+    end;
+    else do;
+        call REAUSR (PROCESS_ID, DUMMY, FRAME + $PC_OFF, 4,
+                     addr(CODE_PT),RET_CODE);
+        if DBG_FLAG then do;
+            call PRNPTR (CODE_PT);
+        end;
+    end;
+
+    /*
+     * If the return address is not an even address, then assume that
+     * this is an Apollo/DOMAIN FP stack frame; in this case RETURN_ADDR
+     * points to an FP information block, and the return address we wan
+     * is the next long word down on the stack.
+     */
+
+    if mod(CODE_PT,2) ^= 0 then do;
+        call REAUSR (PROCESS_ID, DUMMY, (FRAME + $PC_OFF + 4), 4,
+                     addr(CODE_PT), RET_CODE);
+        if DBG_FLAG then do;
+            call WRITNC (' --> ');
+            call PRNPTR (CODE_PT);
+        end;
+    end;
+
+    if CODE_PT = RTS_ENTRY.ADDRESS(RTSENT_POPONUNIT_) then do;
+        if DBG_FLAG then do;
+            call WRITNC (' (');
+            call WRITNC (TRIMS((RTS_ENTRY.NAME(RTSENT_POPONUNIT_))));
+            call WRITNC (') --> ');
+        end;
+        CODE_PT = GET_REAL_RETURN_ADDRESS(FRAME);
+        if DBG_FLAG then do;
+            call PRNPTR (CODE_PT);
+        end;
+    end;
+
+  DONE:
+    if DBG_FLAG then do;
+        call WRITTT ('');
+    end;
+    return (CODE_PT);
+
+
+    /* ----------------------------------------------------------------
+     * GET_REAL_RETURN_ADDRESS
+     *
+     * Note: Check the RTS header file "onunit.h" to verify the
+     *       layout and sizes of the data structures used.
+     */
+
+    GET_REAL_RETURN_ADDRESS:    procedure (FP)
+                                returns   (fixed binary (ADDRESS_LENGTH));
+        declare
+            FP                  fixed binary (ADDRESS_LENGTH);
+        declare
+            DUMMY               fixed binary (31),
+            STATUS              fixed binary (15),
+            ONFRAME_PTR         fixed binary (ADDRESS_LENGTH);
+        declare
+            1 ONFRAME           static internal,
+              2 ONFRAME_NEXT    fixed binary (ADDRESS_LENGTH),
+              2 ONFRAME_FP      fixed binary (ADDRESS_LENGTH),
+              2 ONFRAME_RETADDR fixed binary (ADDRESS_LENGTH);
+
+        %replace ONFRAME_SIZE   by 12;  /* Bytes */
+        %replace ONFRAME_OFFSET by  0;  /* Bytes */
+
+        STATUS = 0;
+        ONFRAME_PTR = RTS_DATA.ADDRESS(RTSDAT_ONUNIT_LIST_);
+
+        do while ((ONFRAME_PTR ^= 0) & (STATUS = 0));
+            call REAUSR (PROCESS_ID, DUMMY,
+                         ONFRAME_PTR + ONFRAME_OFFSET,
+                         ONFRAME_SIZE, addr(ONFRAME), STATUS);
+            if ONFRAME_FP = FP then
+                 return (ONFRAME_RETADDR);
+            else ONFRAME_PTR = ONFRAME_NEXT;
+        end;
+        return (0);
+
+    end GET_REAL_RETURN_ADDRESS;
+
+end CODADR;

@@ -1,0 +1,158 @@
+/* C++ TERM_MAP_IN - Tables that map terminal codes to precedence values and vop
+/*                   codes.
+*/
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  01.22.91  PKT  004  Added support for DOT_STAR_VO and ARROW_STAR_VO.
+ *  09.14.90  DGM  003  Changed include file names and VOP names.
+ *  08.31.90  TLF  002  Changed ADDR_VO to UNARY_AND_VO in the
+ *                      TERMINAL_TO_UNARY_VOP table.  This is 
+ *                      done to support overloading of unary '&'.
+ *  02.06.90  TLF  001  Modified TERMINAL_TO_BINARY_VOP table
+ *                      because DOT_STAR_TERMINAL changed its position.
+ *  11.30.89  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_PARSER_TERMINAL_CODES_IN;     */
+/* %include CXX_OPERATOR_CODES_IN;          */
+
+
+declare
+
+1 TERMGLOB		static,
+
+  2 TERMINAL_TO_UNARY_PREC (LB_UNARY_OP_TERMINAL : HB_UNARY_OP_TERMINAL)
+			   fixed binary (15) initial (
+
+    /* ======================####=========================== */
+    /* Terminal Type Code    #### Operator Precedence Value  */
+    /* ======================####=========================== */
+
+    /* PLUS_PLUS_TERMINAL           */  16,
+    /* MINUS_MINUS_TERMINAL         */  16,
+    /* NOT_TERMINAL                 */  16,
+    /* TILDE_TERMINAL               */  16,
+    /* PLUS_TERMINAL                */  16,
+    /* MINUS_TERMINAL               */  16,
+    /* STAR_TERMINAL                */  16,
+    /* AND_TERMINAL                 */  16
+    
+    ),
+
+  2 TERMINAL_TO_BINARY_PREC (LB_BINARY_OP_TERMINAL : HB_BINARY_OP_TERMINAL)
+			    fixed binary (15) initial (
+
+    /* ======================####=========================== */
+    /* Terminal Type Code    #### Operator Precedence Value  */
+    /* ======================####=========================== */
+
+    /* PLUS_TERMINAL                */  13,
+    /* MINUS_TERMINAL               */  13,
+    /* STAR_TERMINAL                */  14,
+    /* AND_TERMINAL                 */   9,
+    /* SLASH_TERMINAL               */  14,          /* divide */
+    /* PERCENT_TERMINAL             */  14,          /* mod */
+    /* LEFT_SHIFT_TERMINAL          */  12,
+    /* RIGHT_SHIFT_TERMINAL         */  12,
+    /* AND_AND_TERMINAL             */   6,
+    /* OR_OR_TERMINAL               */   5,
+    /* OR_TERMINAL                  */   7,
+    /* XOR_TERMINAL                 */   8,
+    /* LESS_THAN_TERMINAL           */  11,
+    /* LESS_EQUAL_TERMINAL          */  11,
+    /* GREATER_THAN_TERMINAL        */  11,
+    /* GREATER_THAN_TERMINAL        */  11,
+    /* EQUAL_EQUAL_TERMINAL         */  10,
+    /* NOT_EQUAL_TERMINAL           */  10,
+    /* ARROW_STAR_TERMINAL          */  15,
+    /* EQUAL_TERMINAL               */  -2,
+    /* PLUS_EQUAL_TERMINAL          */  -2,
+    /* MINUS_EQUAL_TERMINAL         */  -2,
+    /* STAR_EQUAL_TERMINAL          */  -2,
+    /* SLASH_EQUAL_TERMINAL         */  -2,
+    /* PERCENT_EQUAL_TERMINAL       */  -2,
+    /* AND_EQUAL_TERMINAL           */  -2,
+    /* OR_EQUAL_TERMINAL            */  -2,
+    /* XOR_EQUAL_TERMINAL           */  -2,
+    /* LEFT_SHIFT_EQUAL_TERMINAL    */  -2,
+    /* RIGHT_SHIFT_EQUAL_TERMINAL   */  -2,
+    /* DOT_STAR_TERMINAL            */  15,
+    /* QUESTION_TERMINAL            */  -3
+    ),
+
+
+  2 TERMINAL_TO_UNARY_VOP (LB_UNARY_OP_TERMINAL : HB_UNARY_OP_TERMINAL)
+        		   fixed binary (15) initial (
+
+    /* ======================####=========================== */
+    /* Terminal Type Code    #### VOP Code                   */
+    /* ======================####=========================== */
+
+    /* PLUS_PLUS_TERMINAL           */  INC_VO,
+    /* MINUS_MINUS_TERMINAL         */  DEC_VO,
+    /* NOT_TERMINAL                 */  NOT_VO,
+    /* TILDE_TERMINAL               */  COMPLEMENT_VO,
+    /* PLUS_TERMINAL                */  PLUS_VO,
+    /* MINUS_TERMINAL               */  MINUS_VO,
+    /* STAR_TERMINAL                */  STAR_VO,
+    /* AND_TERMINAL                 */  UNARY_AND_VO
+    
+    ),
+
+  2 TERMINAL_TO_BINARY_VOP (LB_BINARY_OP_TERMINAL : HB_BINARY_OP_TERMINAL)
+			    fixed binary (15) initial (
+
+    /* ======================####=========================== */
+    /* Terminal Type Code    #### VOP Code                   */
+    /* ======================####=========================== */
+
+    /* PLUS_TERMINAL                */  ADD_VO,
+    /* MINUS_TERMINAL               */  SUB_VO,
+    /* STAR_TERMINAL                */  MUL_VO,
+    /* AND_TERMINAL                 */  AND_VO,
+    /* SLASH_TERMINAL               */  DIV_VO,     /* divide */
+    /* PERCENT_TERMINAL             */  MOD_VO,     /* mod */
+    /* LEFT_SHIFT_TERMINAL          */  LSHIFT_VO,
+    /* RIGHT_SHIFT_TERMINAL         */  RSHIFT_VO,
+    /* AND_AND_TERMINAL             */  AND_AND_VO,
+    /* OR_OR_TERMINAL               */  OR_OR_VO,
+    /* OR_TERMINAL                  */  OR_VO,
+    /* XOR_TERMINAL                 */  XOR_VO,
+    /* LESS_THAN_TERMINAL           */  LT_VO,
+    /* LESS_EQUAL_TERMINAL          */  LE_VO,
+    /* GREATER_THAN_TERMINAL        */  GT_VO,
+    /* GREATER_EQUAL_TERMINAL       */  GE_VO,
+    /* EQUAL_EQUAL_TERMINAL         */  EQ_VO,
+    /* NOT_EQUAL_TERMINAL           */  NE_VO,
+    /* ARROW_STAR_TERMINAL          */  ARROW_STAR_VO,
+    /* EQUAL_TERMINAL               */  ASSIGN_VO,
+    /* PLUS_EQUAL_TERMINAL          */  ADD_ASSIGN_VO,
+    /* MINUS_EQUAL_TERMINAL         */  SUB_ASSIGN_VO,
+    /* STAR_EQUAL_TERMINAL          */  MUL_ASSIGN_VO,
+    /* SLASH_EQUAL_TERMINAL         */  DIV_ASSIGN_VO,
+    /* PERCENT_EQUAL_TERMINAL       */  MOD_ASSIGN_VO,
+    /* AND_EQUAL_TERMINAL           */  AND_ASSIGN_VO,
+    /* OR_EQUAL_TERMINAL            */  OR_ASSIGN_VO,
+    /* XOR_EQUAL_TERMINAL           */  XOR_ASSIGN_VO,
+    /* LEFT_SHIFT_EQUAL_TERMINAL    */  LSHIFT_ASSIGN_VO,
+    /* RIGHT_SHIFT_EQUAL_TERMINAL   */  RSHIFT_ASSIGN_VO,
+    /* DOT_STAR_TERMINAL            */  DOT_STAR_VO,
+    /* QUESTION_TERMINAL            */  CONDITIONAL_VO
+    );
+

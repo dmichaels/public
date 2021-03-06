@@ -1,0 +1,252 @@
+/* C++ CXX_TYPE_CLASS_IN - type class utility package */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  02.10.92  DGM  004	Name changes; clash with CodeWatch.
+ *  01.09.92  PKT  003	Added support for lvalue indication.
+ *			Added VOP_OPERAND_TYPE.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  08.21.90  TLF  001  Added REFERENCE_TYPE.  DGM.
+ *  06.29.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+
+%replace NULL_TK		by 4;
+%replace INTONLY_TK		by 8;
+%replace POINTER_TK		by 12;
+%replace ARITHORPTR_TK		by 16;
+%replace SCALAR_TK		by 20;
+%replace ASSIGNABLE_TK		by 24;
+%replace ARITHMETIC_TK		by 28;
+%replace INTEGER_TK		by 32;
+%replace REFERENCE_TK		by 36;
+%replace TRUE_INT_TK		by 40;
+%replace TRUE_ARITH_TK		by 44;
+
+%replace TYPE_CLASS_FACTOR		by 4;
+
+%replace NO_TYPE_RESTRICTION		by 0;
+%replace LVALUE_TYPE_RESTRICTION	by 1;
+%replace NON_CONST_TYPE_RESTRICTION	by 2;
+ 
+%replace NON_CONST_ARITHORPTR		by 18;
+
+declare	
+
+1 VOPOPDT		external,
+  2 VOP_OPERAND_TYPE	(LB_OPERATOR_CODES : HB_OPERATOR_CODES)
+			type (SHORT_T) initial (
+
+/*  LB_OPERATOR_CODES            */
+
+/*  ASSIGN_VO             */ 	NON_CONST_ARITHORPTR,
+/*  IMPLICIT_ASSIGN_VO    */	NULL_TK,
+/*  COPY_VO               */	NULL_TK,
+
+/*  INTEGER_VO            */	NULL_TK,
+/*  CONSTANT_VO           */	NULL_TK,
+/*  available             */	NULL_TK,
+/*  REF_VO                */	NULL_TK,
+/*  PARAM_REF_VO          */	NULL_TK,
+/*  MEMBER_REF_VO         */	NULL_TK,
+/*  MEMBER_PTR_VO         */	NULL_TK,
+/*  VALUE_VO              */	NULL_TK,
+/*  ADDR_VO               */	NULL_TK,
+/*  IMPLICIT_ADDR_VO      */	NULL_TK,
+/*  DOT_VO                */	NULL_TK,
+/*  CAST_TO_BASE_VO	   */	NULL_TK,
+/*  CAST_VO               */	NULL_TK,
+/*  FUNCTIONAL_CAST_VO    */	NULL_TK,
+/*  IMPLICIT_CAST_VO      */	NULL_TK,
+/*  TYPE_VO               */	NULL_TK,
+/*  STAR_VO               */	POINTER_TK,
+/*  IMPLICIT_STAR_VO	  */	NULL_TK,
+/*  ARROW_VO              */    NULL_TK,
+/*  ARROW_STAR_VO         */	NULL_TK,
+/*  DOT_STAR_VO           */	NULL_TK,
+/*  SIZEOF_VO             */	NULL_TK,
+/*  EXPLICIT_COMMA_VO     */	NULL_TK,
+/*  COMMA_VO              */	NULL_TK,
+/*  LEFT_VALUE_VO         */	NULL_TK,
+
+/*  PLUS_VO               */	ARITHMETIC_TK,
+/*  MINUS_VO              */	ARITHMETIC_TK,
+/*  COMPLEMENT_VO         */	INTEGER_TK,
+
+/*  ADD_VO                */	ARITHORPTR_TK,
+/*  ADD_ASSIGN_VO         */	NON_CONST_ARITHORPTR,
+
+/*  SUB_VO                */	ARITHORPTR_TK,
+/*  SUB_ASSIGN_VO         */	NON_CONST_ARITHORPTR,
+
+/*  MUL_VO                */	ARITHMETIC_TK,
+/*  MUL_ASSIGN_VO         */	NON_CONST_ARITHORPTR,
+
+/*  DIV_VO                */	ARITHMETIC_TK,
+/*  DIV_ASSIGN_VO         */	NON_CONST_ARITHORPTR,
+
+/*  MOD_VO                */	INTEGER_TK,
+/*  MOD_ASSIGN_VO         */	NON_CONST_ARITHORPTR,
+
+/*  LSHIFT_VO             */	INTEGER_TK,
+/*  LSHIFT_ASSIGN_VO      */	NON_CONST_ARITHORPTR,
+
+/*  RSHIFT_VO             */	INTEGER_TK,
+/*  RSHIFT_ASSIGN_VO      */	NON_CONST_ARITHORPTR,
+
+/*  AND_VO                */	INTEGER_TK,
+/*  AND_ASSIGN_VO         */	NON_CONST_ARITHORPTR,
+
+/*  OR_VO                 */	INTEGER_TK,
+/*  OR_ASSIGN_VO          */	NON_CONST_ARITHORPTR,
+
+/*  XOR_VO                */	INTEGER_TK,
+/*  XOR_ASSIGN_VO         */	NON_CONST_ARITHORPTR,
+
+/*  AND_AND_VO            */	SCALAR_TK,
+/*  OR_OR_VO              */	SCALAR_TK,
+
+/*  NOT_VO                */	SCALAR_TK,
+
+/*  UNARY_AND_VO          */	NULL_TK,
+
+/*  EQ_VO                 */	SCALAR_TK,
+/*  GE_VO                 */	SCALAR_TK,
+/*  LE_VO                 */	SCALAR_TK,
+/*  NE_VO                 */	SCALAR_TK,
+/*  LT_VO                 */	SCALAR_TK,
+/*  GT_VO                 */	SCALAR_TK,
+
+/*  LB_BRANCH_VO   	   */
+/*  BRANCH_VO             */	NULL_TK,
+/*  BRANCH_EQ_VO          */	NULL_TK,
+/*  BRANCH_GE_VO          */	NULL_TK,
+/*  BRANCH_LE_VO          */	NULL_TK,
+/*  BRANCH_NE_VO          */	NULL_TK,
+/*  BRANCH_LT_VO          */	NULL_TK,
+/*  BRANCH_GT_VO          */	NULL_TK,
+/*  BRANCH_TRUE_VO        */	NULL_TK,
+/*  BRANCH_FALSE_VO       */	NULL_TK,
+/*  BRANCH_COMPUTED_VO    */	NULL_TK,
+/*  BRANCH_SWITCH_VO      */	NULL_TK,
+/*  BRANCH_SAVE_VO	   */	NULL_TK,
+/*  HB_BRANCH_VO	   */
+
+/*  INC_VO                */	NON_CONST_ARITHORPTR,
+/*  POST_INC_VO           */	NON_CONST_ARITHORPTR,
+
+/*  DEC_VO                */	NON_CONST_ARITHORPTR,
+/*  POST_DEC_VO           */	NON_CONST_ARITHORPTR,
+
+/*  DECLARE_LABEL_VO      */	NULL_TK,
+/*  LABEL_VO              */	NULL_TK,
+
+/*  CONDITIONAL_VO        */	NULL_TK,
+/*  COND_REF_VO           */	NULL_TK,
+/*  COND_VALUE_VO         */	NULL_TK,
+/*  ALTERNATE_VO          */	NULL_TK,
+/*  ALT_VALUE_VO          */	NULL_TK,
+/*  COLON_VO              */	NULL_TK,
+/*  UNINITIALIZED_VO      */	NULL_TK,
+
+/*  CALL_VO               */	NULL_TK,
+/*  CALL_FUNCTION_VO      */	NULL_TK,
+/*  ARG_VO                */	NULL_TK,
+/*  ARG_REF_VO            */	NULL_TK,
+/*  SREF_VO               */	NULL_TK,
+/*  RETURN_VO             */	NULL_TK,
+/*  IMPLICIT_RETURN_VO    */	NULL_TK,
+
+/*  CONVERT_VO            */	NULL_TK,
+/*  CONVERT_UNITS_VO      */	NULL_TK,
+/*  BYTE_VO               */	NULL_TK,
+/*  RANK_VO               */	NULL_TK,
+/*  SRANK_VO              */	NULL_TK,
+/*  FIELD_VO              */	NULL_TK,
+
+/*  STMNT_ID_VO           */	NULL_TK,
+/*  PROCEDURE_VO          */	NULL_TK,
+/*  ENTRY_VO              */	NULL_TK,
+/*  NOP_VO                */	NULL_TK,
+/*  BLOCK_END_VO          */	NULL_TK,
+
+/*  PTR_VO                */	NULL_TK,
+/*  INITIAL_VO            */	NULL_TK,
+
+/*  SSADD_VO              */	ARITHORPTR_TK,
+
+/*  ABS_VO                */ 	NULL_TK,     /* Math Intrinsics              */
+/*  SQRT_VO               */	NULL_TK,
+/*  EXP_VO                */	NULL_TK,
+/*  LOG_VO                */	NULL_TK,
+/*  LOG10_VO              */	NULL_TK,
+/*  SIN_VO                */	NULL_TK,
+/*  COS_VO                */	NULL_TK,
+/*  TAN_VO                */	NULL_TK,
+/*  ASIN_VO               */	NULL_TK,
+/*  ACOS_VO               */	NULL_TK,
+/*  ATAN_VO               */	NULL_TK,
+/*  ATAN2_VO              */	NULL_TK,
+/*  SINH_VO               */	NULL_TK,
+/*  COSH_VO               */	NULL_TK,
+/*  TANH_VO               */	NULL_TK,
+/*  FMOD_VO               */	NULL_TK,
+/*  POW_VO                */	NULL_TK,
+/*  CEIL_VO               */	NULL_TK,
+/*  FLOOR_VO              */	NULL_TK,
+/*  FABS_VO               */	NULL_TK,
+
+/*  STRCMP_VO             */ 	NULL_TK,    /* String Minipulation builtins */
+/*  STRCPY_VO             */	NULL_TK,
+/*  STRLEN_VO             */	NULL_TK,
+/*  STRNCMP_VO            */	NULL_TK,
+/*  STRNCPY_VO            */	NULL_TK,
+/*  STRCAT_VO             */	NULL_TK,
+/*  STRNCAT_VO            */	NULL_TK,
+/*  MEMCPY_VO             */	NULL_TK,
+/*  MEMCMP_VO             */	NULL_TK,
+
+/*  SWITCH_VO             */	NULL_TK,
+
+/*  MEMBER_INIT_VO        */ 	NULL_TK,    /* a member initializer */
+/*  VEC_INITIAL_VO        */ 	NULL_TK,    /* virtual member reference */
+/*  NEW_VO                */	NULL_TK,
+/*  DELETE_VO             */	NULL_TK,
+/*  DESTROY_VO		   */	NULL_TK,
+    
+/*  LOOP_TOP_VO           */	NULL_TK,
+/*  LOOP_BODY_VO          */	NULL_TK,
+/*  LOOP_EXIT_VO          */	NULL_TK,
+
+/*  VA_REG_VO             */	NULL_TK,
+/*  VA_MEM_VO             */	NULL_TK,
+/*  VA_OFFSET_VO          */	NULL_TK,
+/*  VA_REGTYP_VO          */	NULL_TK,
+/*  VA_ALIGN_VO           */	NULL_TK,
+
+/*  SAVE_VO		   */	NULL_TK,
+/*  EXIT_VO		   */	NULL_TK,
+
+/*  DECLARE_TEMP_VO	   */	NULL_TK,
+
+/*  VA_STACK_VO           */	NULL_TK,
+
+/*  DESTRUCTOR_VO         */    NULL_TK,
+
+/*  DBG_RANGE_VO          */    NULL_TK,
+/*  DBG_SUBSCRIPT_VO      */    NULL_TK,
+
+/*  VA_ARG_VO             */	NULL_TK,
+/*  VA_START_VO           */	NULL_TK
+
+				 );

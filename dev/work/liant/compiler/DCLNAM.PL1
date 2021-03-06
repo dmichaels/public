@@ -1,0 +1,763 @@
+/* C++ CXX_DECLARE_NAME_PKG - Miscellaneous name declaration routines */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  01.18.91  PKT  012  Added GET_MFPs for member function pointer type.
+ *  11.26.90  TLF  011  Added GET_ARRAY_APPLY_NAME.
+ *  11.12.90  TLF  010  Added GET_XROOT_VARIABLE_NAME.
+ *  10.25.90  TLF  009  Added GET_XLINK_CLEANUP_MEMBER_NAME,
+ *                            GET_XLINK_CLEANUP_PROC_NAME,
+ *                            GET_XLINK_NEXT_MEMBER_NAME,
+ *                            GET_XLINK_STARTUP_MEMBER_NAME,
+ *                            GET_XLINK_STARTUP_PROC_NAME,
+ *                            GET_XLINK_TYPE_NAME,
+ *                            GET_XLINK_STRUCT_NAME.
+ *  10.18.90  TLF  008  Added GET_COPY_PARAM_NAME.
+ *			Added GET_ASSIGN_PARAM_NAME.
+ *  10.10.90  DGM  007  Added GET_PURE_VIRTUAL_FUNCTION_NAME.
+ *  09.17.90  PKT  006  Bug fix to GET_ARRAY_FINI_NAME.
+ *  09.14.90  DGM  005  Changed include file names and VOP names.
+ *  09.05.90  PKT  004  Added names for RETURN_PARAMETER, ARRAY_INIT, 
+ *			ARRAY_FINI, DTOR_RETURN_LABEL.
+ *  09.04.90  DGM  003  Added GET_MAIN_NAME.
+ *  08.29.90  DGM  002  Added GET_RETURN_PARAMETER_NAME.
+ *  07.26.90  DGM  001  Minor update.
+ *  07.13.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)DCLNAM  012  1/18/91  (c) 1990 Language Processors, Inc.');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_NODE_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+MAIN_NAME		   type (NID_T) static internal initial (NULL_ID),
+RETURN_PARAMETER_NAME	   type (NID_T) static internal initial (NULL_ID),
+THIS_PARAMETER_NAME	   type (NID_T) static internal initial (NULL_ID),
+VFT_NAME		   type (NID_T) static internal initial (NULL_ID),
+VFT_POINTER_NAME	   type (NID_T) static internal initial (NULL_ID),
+VFT_ENTRY_TYPE_NAME	   type (NID_T) static internal initial (NULL_ID),
+VFT_TYPE_NAME		   type (NID_T) static internal initial (NULL_ID),
+VFT_POINTER_TYPE_NAME	   type (NID_T) static internal initial (NULL_ID),
+VFT_FUNCTION_ADDRESS_NAME  type (NID_T) static internal initial (NULL_ID),
+VFT_DELTA_NAME		   type (NID_T) static internal initial (NULL_ID),
+NOT_MOST_DERIVED_FLAG_NAME type (NID_T) static internal initial (NULL_ID),
+ARRAY_INIT_NAME		   type (NID_T) static internal initial (NULL_ID),
+ARRAY_FINI_NAME            type (NID_T) static internal initial (NULL_ID),
+DTOR_RETURN_LABEL_NAME     type (NID_T) static internal initial (NULL_ID),
+PURE_VIRTUAL_FUNCTION_NAME type (NID_T) static internal initial (NULL_ID),
+COPY_PARAM_NAME            type (NID_T) static internal initial (NULL_ID),
+ASSIGN_PARAM_NAME          type (NID_T) static internal initial (NULL_ID),
+XLINK_TYPE_NAME            type (NID_T) static internal initial (NULL_ID),
+XLINK_STARTUP_MEMBER_NAME  type (NID_T) static internal initial (NULL_ID),
+XLINK_STARTUP_PROC_NAME    type (NID_T) static internal initial (NULL_ID),
+XLINK_NEXT_MEMBER_NAME     type (NID_T) static internal initial (NULL_ID),
+XLINK_CLEANUP_MEMBER_NAME  type (NID_T) static internal initial (NULL_ID),
+XLINK_CLEANUP_PROC_NAME    type (NID_T) static internal initial (NULL_ID),
+XLINK_STRUCT_NAME          type (NID_T) static internal initial (NULL_ID),
+XROOT_VARIABLE_NAME        type (NID_T) static internal initial (NULL_ID),
+ARRAY_APPLY_NAME           type (NID_T) static internal initial (NULL_ID),
+MFP_TYPE_NAME              type (NID_T) static internal initial (NULL_ID),
+MFP_THIS_DELTA_NAME        type (NID_T) static internal initial (NULL_ID),
+MFP_VIRTUAL_INDEX_NAME     type (NID_T) static internal initial (NULL_ID),
+MFP_ADDRESS_NAME           type (NID_T) static internal initial (NULL_ID),
+MFP_VIRTUAL_DELTA_NAME     type (NID_T) static internal initial (NULL_ID),
+MFP_UNION_NAME             type (NID_T) static internal initial (NULL_ID);
+
+/* ---------------------------------------------------------------------
+/* GET_MAIN_NAME
+/*
+/* Return a token-id representing the name of the
+/* special "main" function.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_MAIN_NAME: procedure
+	       returns   (type (NID_T))
+	       external  (X_GET_MAIN_NAME);
+
+	if MAIN_NAME = NULL_ID then
+		MAIN_NAME = FORM_IDENTIFIER_TOKEN ('main');
+	return (MAIN_NAME);
+
+end GET_MAIN_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_RETURN_PARAMETER_NAME
+/*
+/* Return a token-id representing the name of a
+/* return value parameter.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_RETURN_PARAMETER_NAME: procedure
+			   returns   (type (NID_T))
+			   external  (X_GET_RETURN_PARAMETER_NAME);
+
+	if RETURN_PARAMETER_NAME = NULL_ID then
+		RETURN_PARAMETER_NAME 
+			= FORM_IDENTIFIER_TOKEN ('____lpi_return');
+	return (RETURN_PARAMETER_NAME);
+
+end GET_RETURN_PARAMETER_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_THIS_PARAMETER_NAME
+/*
+/* Return a token-id representing the name of the "this" parameter.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_THIS_PARAMETER_NAME: procedure
+			 returns   (type (NID_T))
+			 external  (X_GET_THIS_PARAMETER_NAME);
+
+	if THIS_PARAMETER_NAME = NULL_ID then
+		THIS_PARAMETER_NAME = FORM_IDENTIFIER_TOKEN ('this');
+	return (THIS_PARAMETER_NAME);
+
+end GET_THIS_PARAMETER_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_NAME
+/*
+/* Return a token-id representing the name of a virtual function table.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VFT_NAME: procedure
+	      returns   (type (NID_T))
+	      external  (X_GET_VFT_NAME);
+
+	if VFT_NAME = NULL_ID then
+		VFT_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_vft');
+	return (VFT_NAME);
+
+end GET_VFT_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_POINTER_NAME
+/*
+/* Return a token-id representing the name of a virtual
+/* function table pointer.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VFT_POINTER_NAME: procedure
+		      returns   (type (NID_T))
+		      external  (X_GET_VFT_POINTER_NAME);
+
+	if VFT_POINTER_NAME = NULL_ID then
+		VFT_POINTER_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_vftp');
+	return (VFT_POINTER_NAME);
+
+end GET_VFT_POINTER_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_ENTRY_TYPE_NAME
+/*
+/* Return a token-id representing the name of the type of a
+/* virtual function table entry.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VFT_ENTRY_TYPE_NAME: procedure
+			 returns   (type (NID_T))
+			 external  (X_GET_VFT_ENTRY_TYPE_NAME);
+
+	if VFT_ENTRY_TYPE_NAME = NULL_ID then
+		VFT_ENTRY_TYPE_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_vfte_t');
+	return (VFT_ENTRY_TYPE_NAME);
+
+end GET_VFT_ENTRY_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_TYPE_NAME
+/*
+/* Return a token-id representing the name of the type of
+/* the virtual function table.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VFT_TYPE_NAME: procedure
+		   returns   (type (NID_T))
+		   external  (X_GET_VFT_TYPE_NAME);
+
+	if VFT_TYPE_NAME = NULL_ID then
+		VFT_TYPE_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_vft_t');
+	return (VFT_TYPE_NAME);
+
+end GET_VFT_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_POINTER_TYPE_NAME
+/*
+/* Return a token-id representing the name of the type of the
+/* virtual function table pointer.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VFT_POINTER_TYPE_NAME: procedure
+			   returns   (type (NID_T))
+			   external  (X_GET_VFT_POINTER_TYPE_NAME);
+
+	if VFT_POINTER_TYPE_NAME = NULL_ID then
+		VFT_POINTER_TYPE_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_vftp_t');
+	return (VFT_POINTER_TYPE_NAME);
+
+end GET_VFT_POINTER_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_FUNCTION_ADDRESS_NAME
+/*
+/* Return a token-id representing the name of a virtual function
+/* table entry member representing the virtual function address.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VFT_FUNCTION_ADDRESS_NAME: procedure
+			       returns   (type (NID_T))
+			       external  (X_GET_VFT_FUNCTION_ADDRESS_NAME);
+
+	if VFT_FUNCTION_ADDRESS_NAME = NULL_ID then
+		VFT_FUNCTION_ADDRESS_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_faddress');
+	return (VFT_FUNCTION_ADDRESS_NAME);
+
+end GET_VFT_FUNCTION_ADDRESS_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_VFT_DELTA_NAME
+/*
+/* Return a token-id representing the name of a virtual function
+/* table entry member representing the virtual function "this" delta.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VFT_DELTA_NAME: procedure
+		    returns   (type (NID_T))
+		    external  (X_GET_VFT_DELTA_NAME);
+
+	if VFT_DELTA_NAME = NULL_ID then
+		VFT_DELTA_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_delta');
+	return (VFT_DELTA_NAME);
+
+end GET_VFT_DELTA_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_NOT_MOST_DERIVED_FLAG_NAME
+/*
+/* Return a token-id representing the name of a virtual function
+/* table entry member representing the virtual function "this" delta.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_NOT_MOST_DERIVED_FLAG_NAME: procedure
+				returns   (type (NID_T))
+				external  (X_GET_NOT_MOST_DERIVED_FLAG_NAME);
+
+	if NOT_MOST_DERIVED_FLAG_NAME = NULL_ID then
+		NOT_MOST_DERIVED_FLAG_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_not_most_derived');
+	return (NOT_MOST_DERIVED_FLAG_NAME);
+
+end GET_NOT_MOST_DERIVED_FLAG_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_ARRAY_INIT_NAME
+/*
+/* Return a token-id representing the name of the run-time routine for
+/* initializing an array of objects.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_ARRAY_INIT_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_ARRAY_INIT_NAME);
+
+	if ARRAY_INIT_NAME = NULL_ID then
+		ARRAY_INIT_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_ary_init');
+	return (ARRAY_INIT_NAME);
+
+end GET_ARRAY_INIT_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_ARRAY_FINI_NAME
+/*
+/* Return a token-id representing the name of the run-time routine for
+/* destroying an array of objects.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_ARRAY_FINI_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_ARRAY_FINI_NAME);
+
+	if ARRAY_FINI_NAME = NULL_ID then
+		ARRAY_FINI_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_ary_fini');
+	return (ARRAY_FINI_NAME);
+
+end GET_ARRAY_FINI_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_DTOR_RETURN_LABEL_NAME
+/*
+/* Return a token-id representing the name of the label to use when
+/* returning from a destructor.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_DTOR_RETURN_LABEL_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_DTOR_RETURN_LABEL_NAME);
+
+	if DTOR_RETURN_LABEL_NAME = NULL_ID then
+		DTOR_RETURN_LABEL_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_ret_lab');
+	return (DTOR_RETURN_LABEL_NAME);
+
+end GET_DTOR_RETURN_LABEL_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_PURE_VIRTUAL_FUNCTION_NAME
+/*
+/* Return a token-id representing the name of the label to use when
+/* returning from a destructor.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_PURE_VIRTUAL_FUNCTION_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_PURE_VIRTUAL_FUNCTION_NAME);
+
+	if PURE_VIRTUAL_FUNCTION_NAME = NULL_ID then
+		PURE_VIRTUAL_FUNCTION_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_pvf');
+	return (PURE_VIRTUAL_FUNCTION_NAME);
+
+end GET_PURE_VIRTUAL_FUNCTION_NAME;
+
+
+
+/* ---------------------------------------------------------------------
+/* GET_COPY_PARAM_NAME
+/*
+/* Return a token-id representing the name of the reference parameter
+/* for a copy constructor which is generated by the compiler.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_COPY_PARAM_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_COPY_PARAM_NAME);
+
+	if COPY_PARAM_NAME = NULL_ID then
+		COPY_PARAM_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_copy_param');
+	return (COPY_PARAM_NAME);
+
+end GET_COPY_PARAM_NAME;
+
+
+/* ---------------------------------------------------------------------
+/* GET_ASSIGN_PARAM_NAME
+/*
+/* Return a token-id representing the name of the reference parameter
+/* for an assignment operator which is generated by the compiler.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_ASSIGN_PARAM_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_ASSIGN_PARAM_NAME);
+
+	if ASSIGN_PARAM_NAME = NULL_ID then
+		ASSIGN_PARAM_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_assign_param');
+	return (ASSIGN_PARAM_NAME);
+
+end GET_ASSIGN_PARAM_NAME;
+
+
+/* ---------------------------------------------------------------------
+/* GET_XLINK_STARTUP_MEMBER_NAME
+/*
+/* Return a token-id representing the name of the pointer to the 
+/* global startup function in the global link structure.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_XLINK_STARTUP_MEMBER_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_XLINK_STARTUP_MEMBER_NAME);
+
+	if XLINK_STARTUP_MEMBER_NAME = NULL_ID then
+		XLINK_STARTUP_MEMBER_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_startup');
+	return (XLINK_STARTUP_MEMBER_NAME);
+
+end GET_XLINK_STARTUP_MEMBER_NAME;
+
+
+/* ---------------------------------------------------------------------
+/* GET_XLINK_CLEANUP_MEMBER_NAME
+/*
+/* Return a token-id representing the name of the pointer to the global
+/* cleanup function in the global link structure.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_XLINK_CLEANUP_MEMBER_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_XLINK_CLEANUP_MEMBER_NAME);
+
+	if XLINK_CLEANUP_MEMBER_NAME = NULL_ID then
+		XLINK_CLEANUP_MEMBER_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_cleanup');
+	return (XLINK_CLEANUP_MEMBER_NAME);
+
+end GET_XLINK_CLEANUP_MEMBER_NAME;
+
+
+/* ---------------------------------------------------------------------
+/* GET_XLINK_NEXT_MEMBER_NAME
+/*
+/* Return a token-id representing the name of the pointer to the next
+/* global link structure in the global link structure.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_XLINK_NEXT_MEMBER_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_XLINK_NEXT_MEMBER_NAME);
+
+	if XLINK_NEXT_MEMBER_NAME = NULL_ID then
+		XLINK_NEXT_MEMBER_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_xlink_next');
+	return (XLINK_NEXT_MEMBER_NAME);
+
+end GET_XLINK_NEXT_MEMBER_NAME;
+
+
+/* ---------------------------------------------------------------------
+/* GET_XLINK_TYPE_NAME
+/*
+/* Return a token-id representing the name of the typedef name for
+/* the typdef that defines the global link structure.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_XLINK_TYPE_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_XLINK_TYPE_NAME);
+
+	if XLINK_TYPE_NAME = NULL_ID then
+		XLINK_TYPE_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_xlink_t');
+	return (XLINK_TYPE_NAME);
+
+end GET_XLINK_TYPE_NAME;
+
+
+/* ---------------------------------------------------------------------
+/* GET_XLINK_STRUCT_NAME
+/*
+/* Return a token-id representing the name of the name of the global
+/* link structure.
+/* The name of the global link structure is a constant prefix, concatenated
+/* with the source file 'base' name, i.e., the source filename with
+/* directory prefix and any suffix stripped off.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_XLINK_STRUCT_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_XLINK_STRUCT_NAME);
+
+	declare
+		TNAME char (FILE_NAME_SIZE) varying;
+
+	if XLINK_STRUCT_NAME = NULL_ID then do;
+		/* *** Code generator generates bad code for
+		       the following:
+		XLINK_STRUCT_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_XLINK_' ||
+				GET_SOURCE_BASE_NAME ());
+		*** */
+
+		TNAME = GET_SOURCE_BASE_NAME();
+		TNAME = '____lpi_XLINK_' || TNAME;
+		XLINK_STRUCT_NAME = FORM_IDENTIFIER_TOKEN (TNAME);
+	end;
+
+	return (XLINK_STRUCT_NAME);
+
+end GET_XLINK_STRUCT_NAME;
+
+
+/* ---------------------------------------------------------------------
+/* GET_XLINK_STARTUP_PROC_NAME
+/*
+/* Return a token-id representing the name of the name of the global
+/* startup procedure.
+/* The name of the global startup procedure is a constant prefix, concatenated
+/* with the source file 'base' name, i.e., the source filename with
+/* directory prefix and any suffix stripped off.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_XLINK_STARTUP_PROC_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_XLINK_STARTUP_PROC_NAME);
+
+	declare
+		TNAME char (FILE_NAME_SIZE) varying;
+
+	if XLINK_STARTUP_PROC_NAME = NULL_ID then do;
+		/* *** Code generator generates bad code for
+		       the following:
+		XLINK_STARTUP_PROC_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_XLINK_' ||
+				GET_SOURCE_BASE_NAME ());
+		*** */
+
+		TNAME = GET_SOURCE_BASE_NAME();
+		TNAME = '____lpi_START_' || TNAME;
+		XLINK_STARTUP_PROC_NAME = FORM_IDENTIFIER_TOKEN (TNAME);
+	end;
+
+	return (XLINK_STARTUP_PROC_NAME);
+
+end GET_XLINK_STARTUP_PROC_NAME;
+
+
+
+/* ---------------------------------------------------------------------
+/* GET_XLINK_CLEANUP_PROC_NAME
+/*
+/* Return a token-id representing the name of the name of the global
+/* cleanup procedure.
+/* The name of the global cleanup procedure is a constant prefix, concatenated
+/* with the source file 'base' name, i.e., the source filename with
+/* directory prefix and any suffix stripped off.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_XLINK_CLEANUP_PROC_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_XLINK_CLEANUP_PROC_NAME);
+
+	declare
+		TNAME char (FILE_NAME_SIZE) varying;
+
+	if XLINK_CLEANUP_PROC_NAME = NULL_ID then do;
+		/* *** Code generator generates bad code for
+		       the following:
+		XLINK_CLEANUP_PROC_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_XLINK_' ||
+				GET_SOURCE_BASE_NAME ());
+		*** */
+
+		TNAME = GET_SOURCE_BASE_NAME();
+		TNAME = '____lpi_CLEAN_' || TNAME;
+		XLINK_CLEANUP_PROC_NAME = FORM_IDENTIFIER_TOKEN (TNAME);
+	end;
+
+	return (XLINK_CLEANUP_PROC_NAME);
+
+end GET_XLINK_CLEANUP_PROC_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_XROOT_VARIABLE_NAME
+/*
+/* Return a token-id representing the name of the variable that is the
+/* root of the linked list of global link structures.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_XROOT_VARIABLE_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_XROOT_VARIABLE_NAME);
+
+	if XROOT_VARIABLE_NAME = NULL_ID then
+		XROOT_VARIABLE_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_XROOT_');
+	return (XROOT_VARIABLE_NAME);
+
+end GET_XROOT_VARIABLE_NAME;
+
+
+/*----------------------------------------------------------------------
+/*
+/* GET_SOURCE_BASE_NAME
+/*
+/* Return the 'base' name of the source file, i.e., the source
+/* filename, with any directory prefix and any suffix stripped
+/* off.
+/*
+/* Note: This code is cloned from XINIT.
+/*
+/*-----------------------------------------------------------------------*/
+ 
+GET_SOURCE_BASE_NAME: procedure
+		      returns (char(FILE_NAME_SIZE) varying)
+		      internal;
+
+	declare
+    		TNAME       	char(FILE_NAME_SIZE) varying;
+
+	declare
+		I     		type (SHORT_T);
+
+    	TNAME = SOURCE_FILE_NAME;
+
+    	/* Remove any directory prefix */
+    	do I = length(TNAME) to 1 BY -1;
+        	if substr(TNAME,I,1) = FILENAME_SEPARATOR then
+            	do;
+            	TNAME = substr(TNAME,I+1);
+            	I = 0; /* TERMINATE LOOP */
+            	end;
+    	end;
+
+    	/* Remove any "suffix" */
+    	do I = length(TNAME) TO 1 BY -1;
+        	if SUBSTR(TNAME,I,1) = SUFFIX_DELIMITER_CHAR then
+            	do;
+            	TNAME = substr(TNAME,1,I-1);
+            	I = 0; /* TERMINATE LOOP */
+            	end;
+    	end;
+	
+	return (TNAME);
+
+end GET_SOURCE_BASE_NAME;
+
+
+/* ---------------------------------------------------------------------
+/* GET_ARRAY_APPLY_NAME
+/*
+/* Return a token-id representing the name of the run-time routine for
+/* copying or assigning an array of objects.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_ARRAY_APPLY_NAME: procedure
+		     returns   (type (NID_T))
+		     external  (X_GET_ARRAY_APPLY_NAME);
+
+	if ARRAY_APPLY_NAME = NULL_ID then
+		ARRAY_APPLY_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_ary_apply');
+	return (ARRAY_APPLY_NAME);
+
+end GET_ARRAY_APPLY_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_MFP_TYPE_NAME
+/* ------------------------------------------------------------------- */
+GET_MFP_TYPE_NAME: procedure
+		   returns  (type (NID_T))
+		   external (X_GET_MFP_TYPE_NAME);
+
+	if MFP_TYPE_NAME = NULL_ID then
+		MFP_TYPE_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_pmf_t');
+	return (MFP_TYPE_NAME);
+
+end GET_MFP_TYPE_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_MFP_THIS_DELTA_NAME
+/* ------------------------------------------------------------------- */
+GET_MFP_THIS_DELTA_NAME: procedure
+		         returns  (type (NID_T))
+		         external (X_GET_MFP_THIS_DELTA_NAME);
+
+	if MFP_THIS_DELTA_NAME = NULL_ID then
+		MFP_THIS_DELTA_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_delta');
+	return (MFP_THIS_DELTA_NAME);
+
+end GET_MFP_THIS_DELTA_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_MFP_VIRTUAL_INDEX_NAME
+/* ------------------------------------------------------------------- */
+GET_MFP_VIRTUAL_INDEX_NAME: procedure
+		            returns  (type (NID_T))
+		            external (X_GET_MFP_VIRTUAL_INDEX_NAME);
+
+	if MFP_VIRTUAL_INDEX_NAME = NULL_ID then
+		MFP_VIRTUAL_INDEX_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_index');
+	return (MFP_VIRTUAL_INDEX_NAME);
+
+end GET_MFP_VIRTUAL_INDEX_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_MFP_ADDRESS_NAME
+/* ------------------------------------------------------------------- */
+GET_MFP_ADDRESS_NAME: procedure
+		      returns  (type (NID_T))
+		      external (X_GET_MFP_ADDRESS_NAME);
+
+	if MFP_ADDRESS_NAME = NULL_ID then
+		MFP_ADDRESS_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_address');
+	return (MFP_ADDRESS_NAME);
+
+end GET_MFP_ADDRESS_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_MFP_VIRTUAL_DELTA_NAME
+/* ------------------------------------------------------------------- */
+GET_MFP_VIRTUAL_DELTA_NAME: procedure
+		            returns  (type (NID_T))
+		            external (X_GET_MFP_VIRTUAL_DELTA_NAME);
+
+	if MFP_VIRTUAL_DELTA_NAME = NULL_ID then
+		MFP_VIRTUAL_DELTA_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_voffset');
+	return (MFP_VIRTUAL_DELTA_NAME);
+
+end GET_MFP_VIRTUAL_DELTA_NAME;
+
+/* ---------------------------------------------------------------------
+/* GET_MFP_UNION_NAME
+/* ------------------------------------------------------------------- */
+GET_MFP_UNION_NAME: procedure
+		    returns  (type (NID_T))
+		    external (X_GET_MFP_UNION_NAME);
+
+	if MFP_UNION_NAME = NULL_ID then
+		MFP_UNION_NAME =
+			FORM_IDENTIFIER_TOKEN ('____lpi_u');
+	return (MFP_UNION_NAME);
+
+end GET_MFP_UNION_NAME;

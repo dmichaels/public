@@ -1,0 +1,101 @@
+/* C++ intprm.pl1 - Perform the integral promotions */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.04.91  DGM  005  Updated for new CXX_TYPE_SIZE_PKG.
+ *  02.21.91  DGM  004  Uncommented the SW_X_UNSIGNED_PRESERVING code.
+ *  01.03.91  TLF  003  Fixed bug in INTEGRAL_PROMOTION so that 
+ *  			signed char type is handled.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  06.05.90  DGM  001  Updated for the new utilities.
+ *  02.12.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.03.91 005 INTPRM');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_SIZE_PKG;
+
+/* ---------------------------------------------------------------------
+/* INTEGRAL_PROMOTION
+/*
+/* Perform the integral promotion on the given type and return
+/* the resultant type as defined in ANSI-C, section 3.2.1.1.
+/* ------------------------------------------------------------------- */
+
+INTEGRAL_PROMOTION: procedure (TYPE) 
+		    returns (type (SHORT_T))
+		    external (X_INTEGRAL_PROMOTION);
+	declare
+		TYPE	type (SHORT_T);
+	declare
+		BDRY	type (SHORT_T),
+		SU_TYPE type (SHORT_T),
+		SU_INT  type (SHORT_T),
+		SZ_TYPE	type (LONG_T),
+		SZ_INT	type (LONG_T);
+
+	if (TYPE = SHORT_BT) |
+	   (TYPE = CHAR_BT) |
+	   (TYPE = SCHAR_BT) |
+	   (TYPE = LOGICAL_BT) then do;
+		/*
+		/* All signed shorter varieties widened to "int".
+		/* N.B. ENUM_BT stays ENUM_BT (for type check in call).
+		/**/
+		return (INT_BT);
+	end;
+	else if (TYPE = USHORT_BT) | (TYPE = UCHAR_BT) then do;
+		/*
+		/* Unsigned-preserving rules.
+		/**/
+		if SW_X_UNSIGNED_PRESERVING then	
+			return (UINT_BT);
+		/*
+		/* Value-preserving rules.
+		/**/
+		call SIMPLE_TYPE_SIZE (INT_BT, SZ_INT, SU_INT, BDRY);
+		SZ_INT = ROUNDU (SZ_INT, BDRY, BYTES);
+		call SIMPLE_TYPE_SIZE (TYPE,   SZ_TYPE, SU_TYPE, BDRY);
+		SZ_TYPE = ROUNDU (SZ_TYPE, BDRY, BYTES);
+		/*
+		/* If an "int" can represent all the values of the
+		/* original type, then the promoted type is "int",
+		/* otherwise, the promoted type is "unsigned int".
+		/**/
+		if SZ_INT > SZ_TYPE then
+			return (INT_BT);  /* Yes, convert to "int" */
+		else	return (UINT_BT); /* No,  convert to "unsigned int" */
+	end;
+
+	return (TYPE);
+    
+end INTEGRAL_PROMOTION;
+

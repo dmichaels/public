@@ -1,0 +1,637 @@
+/* CPP pp_kw.pl1 - ANSI-C/C++ keyword table initialization and lookup */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  02.10.92  DGM  014  Updated.
+ *  11.12.91  DGM  013  Updated.
+ *  07.08.91  DGM  012  Added #file (AT&T extension) and #elseif
+ *			(for Sequoia who says GreenHills supports it).
+ *  03.20.91  DGM  011  Added #assert, #ident, #note, #once, #unassert. 
+ *  03.12.91  DGM  010  Added "asm", "throw", and "try".
+ *  02.01.91  DGM  009  Guard against multiple initialization; necessary
+ *			because the C++ front-end needs to initialize
+ *			the keyword tables before it initializes all
+ *			of its global names which include "this" (see
+ *			cxxfe/namdat.pl1/INITIALIZE_GLOBAL_NAMES).
+ *  10.10.90  DGM  008  IS_RESERVED_PP_KEYWORD & IS_DEFINED_PP_KEYWORD.
+ *  09.25.90  DGM  007  New and faster implementation which relies
+ *  09.25.90  DGM  006  Include file name changes.
+ *			on consecutively allocated token-nodes to be
+ *			assigned consecutively increasing token-node ids.
+ *			TODO: Add "try", "throw", and maybe "asm"; these as
+ *			well as "catch" should perhaps be put on a switch;
+ *			"overload" should perhaps be ignored on a switch.
+ *  06.13.90  DGM  002  Updated.
+ *  06.05.90  DGM  001  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  11.21.89  DGM  001  Modified to work with C++ as well as ANSI-C.
+ *			For ANSI-C set up with "INITKW(0)".
+ *			For C++    set up with "INITKW(1)".
+ *
+ *  01.31.89  DGM  000  Original (yanked out of PREPROCESSOR).
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 02.10.92 014 PPKW');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CPP_UTL_DEFS_IN;
+%include CPP_UTL_STORE_TOKEN_PKG;
+%include CPP_STANDARD_DEFS_IN;
+%include CPP_EXTERNAL_NAME_MAP_IN;
+%include CPP_COMPILATION_SWITCHES_IN;
+%include CPP_TOKEN_TYPE_CODES_IN;
+%include CPP_ERROR_MGR_PKG;
+%include CPP_KEYWORD_IN;
+
+/* ---------------------------------------------------------------------
+/* ANSI-C/C++ Keyword Lookup Implementation
+/*
+/* The sum total of ANSI-C/C++ language proper keywords and preprocessor
+/* directive keywords are kept in one table.  The spellings are in the
+/* KW_NAME table, and the corresponding token codes are in the KW_TOKEN_CODE
+/* and the PPKW_TOKEN_CODE tables.  A NULL_TOKEN entry indicates a null (not
+/* applicable entry).  The codes marked negative in the KW_TOKEN_CODE table
+/* represent C++ *only* keywords which will be nulled out at initialization
+/* time if compilation is not is C++ mode (otherwise they will be unmarked
+/* for normal use).
+/*
+/* At initialization (INITIALIZE_KEYWORD_TABLES), a token-node will be
+/* created for each and every keyword in the table, and with the IMPORTANT
+/* assumption that consecutively allocated token-nodes (via STORE_TOKEN)
+/* will be assigned consecutively increasing token-node ids, the low and
+/* high token-node ids will be noted (in LB/HB_KW_TOKEN_NODE_ID).  Then at
+/* lookup time, the given token-node id is checked against this range and
+/* if it is within it, it is looked up in the appropriate keyword token
+/* code table (KW_TOKEN_CODE or PPKW_TOKEN_CODE) and returned.
+/*
+/* The keywords are in alphabetical order for convenience; they aren't
+/* required to be, but the three different tables must all have same
+/* ordering.
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* ANSI-C, C++, and CPP keyword data
+/* ------------------------------------------------------------------- */
+
+%replace LB_KW_TABLE		by  0;
+%replace HB_KW_TABLE		by 72;
+
+declare
+
+KW_NAME				(LB_KW_TABLE : HB_KW_TABLE)
+				character (11) varying
+				static internal initial (
+
+	   'asm'		/*  ------   C++   ---  */
+	,  'assert'		/*  ------   ---   CPP  */
+	,  'auto'		/*  ANSI-C   C++   ---  */
+	,  'break'		/*  ANSI-C   C++   ---  */
+	,  'case'		/*  ANSI-C   C++   ---  */
+	,  'catch'		/*  ------   C++   ---  */
+	,  'char'		/*  ANSI-C   C++   ---  */
+	,  'class'		/*  ------   C++   ---  */
+	,  'const'		/*  ANSI-C   C++   ---  */
+	,  'continue'		/*  ANSI-C   C++   ---  */
+	,  'default'		/*  ANSI-C   C++   ---  */
+	,  'define'		/*  ------   ---   CPP  */
+	,  'defined'		/*  ------   ---   CPP  */
+	,  'delete'		/*  ------   C++   ---  */
+	,  'do'			/*  ANSI-C   C++   ---  */
+	,  'double'		/*  ANSI-C   C++   ---  */
+	,  'elif'		/*  ------   ---   CPP  */
+	,  'else'		/*  ANSI-C   C++   CPP  */
+	,  'elseif'		/*  ------   ---   CPP* */
+	,  'endif'		/*  ------   ---   CPP  */
+	,  'enum'		/*  ANSI-C   C++   ---  */
+	,  'error'		/*  ------   ---   CPP  */
+	,  'extern'		/*  ANSI-C   C++   ---  */
+	,  'file'		/*  ------   ---   CPP* */
+	,  'float'		/*  ANSI-C   C++   ---  */
+	,  'for'		/*  ANSI-C   C++   ---  */
+	,  'friend'		/*  ------   C++   ---  */
+	,  'goto'		/*  ANSI-C   C++   ---  */
+	,  'ident'		/*  ------   ---   CPP  */
+	,  'if'			/*  ANSI-C   C++   CPP  */
+	,  'ifdef'		/*  ------   ---   CPP  */
+	,  'ifndef'		/*  ------   ---   CPP  */
+	,  'include'		/*  ------   ---   CPP  */
+	,  'inline'		/*  ------   C++   ---  */
+	,  'int'		/*  ANSI-C   C++   ---  */
+	,  'line'		/*  ------   ---   CPP  */
+	,  'long'		/*  ANSI-C   C++   ---  */
+	,  'new'		/*  ------   C++   ---  */
+	,  'note'		/*  ------   ---   CPP  */
+	,  'once'		/*  ------   ---   CPP  */
+	,  'operator'		/*  ------   C++   ---  */
+	,  'overload'		/*  ------   C++   ---  */
+	,  'pragma'		/*  ------   ---   CPP  */
+	,  'private'		/*  ------   C++   ---  */
+	,  'protected'		/*  ------   C++   ---  */
+	,  'public'		/*  ------   C++   ---  */
+	,  'register'		/*  ANSI-C   C++   ---  */
+	,  'return'		/*  ANSI-C   C++   ---  */
+	,  'short'		/*  ANSI-C   C++   ---  */
+	,  'signed'		/*  ANSI-C   C++   ---  */
+	,  'sizeof'		/*  ANSI-C   C++   ---  */
+	,  'static'		/*  ANSI-C   C++   ---  */
+	,  'struct'		/*  ANSI-C   C++   ---  */
+	,  'switch'		/*  ANSI-C   C++   ---  */
+	,  'template'		/*  ------   C++   ---  */
+	,  'this'		/*  ------   C++   ---  */
+	,  'throw'		/*  ------   C++   ---  */
+	,  'try'		/*  ------   C++   ---  */
+	,  'typedef'		/*  ANSI-C   C++   ---  */
+	,  'unassert'		/*  ------   ---   CPP  */
+	,  'undef'		/*  ------   ---   CPP  */
+	,  'union'		/*  ANSI-C   C++   ---  */
+	,  'unsigned'		/*  ANSI-C   C++   ---  */
+	,  'virtual'		/*  ------   C++   ---  */
+	,  'void'		/*  ANSI-C   C++   ---  */
+	,  'volatile'		/*  ANSI-C   C++   ---  */
+	,  'while'		/*  ANSI-C   C++   ---  */
+	,  '__cplusplus'	/*  ------   ---   CPP  */
+	,  '__DATE__'		/*  ------   ---   CPP  */
+	,  '__FILE__'		/*  ------   ---   CPP  */
+	,  '__LINE__'		/*  ------   ---   CPP  */
+	,  '__STDC__'		/*  ------   ---   CPP  */
+	,  '__TIME__'		/*  ------   ---   CPP  */
+),
+
+KW_TOKEN_CODE			(LB_KW_TABLE : HB_KW_TABLE)
+				type (NID_T)
+				static internal initial (
+
+	   KW_ASM_TOKEN		/*  ------   C++   ---   asm         */
+	,  NULL_TOKEN		/*  ------   ---   CPP   assert      */
+	,  KW_AUTO_TOKEN	/*  ANSI-C   C++   ---   auto        */
+	,  KW_BREAK_TOKEN	/*  ANSI-C   C++   ---   break       */
+	,  KW_CASE_TOKEN	/*  ANSI-C   C++   ---   case        */
+	,  KW_CATCH_TOKEN	/*  ANSI-C   C++   ---   catch       */
+	,  KW_CHAR_TOKEN	/*  ANSI-C   C++   ---   char        */
+	,  KW_CLASS_TOKEN	/*  ------   C++   ---   class       */
+	,  KW_CONST_TOKEN	/*  ANSI-C   C++   ---   const       */
+	,  KW_CONTINUE_TOKEN	/*  ANSI-C   C++   ---   continue    */
+	,  KW_DEFAULT_TOKEN	/*  ANSI-C   C++   ---   default     */
+	,  NULL_TOKEN		/*  ------   ---   CPP   define      */
+	,  NULL_TOKEN		/*  ------   ---   CPP   defined     */
+	,  KW_DELETE_TOKEN	/*  ------   C++   ---   delete      */
+	,  KW_DO_TOKEN		/*  ANSI-C   C++   ---   do          */
+	,  KW_DOUBLE_TOKEN	/*  ANSI-C   C++   ---   double      */
+	,  NULL_TOKEN		/*  ------   ---   CPP   elif        */
+	,  KW_ELSE_TOKEN	/*  ANSI-C   C++   CPP   else        */
+	,  NULL_TOKEN		/*  ------   ---   CPP*  elseif      */
+	,  NULL_TOKEN		/*  ------   ---   CPP   endif       */
+	,  KW_ENUM_TOKEN	/*  ANSI-C   C++   ---   enum        */
+	,  NULL_TOKEN		/*  ------   ---   CPP   error       */
+	,  KW_EXTERN_TOKEN	/*  ANSI-C   C++   ---   extern      */
+	,  NULL_TOKEN		/*  ------   ---   CPP*  file        */
+	,  KW_FLOAT_TOKEN	/*  ANSI-C   C++   ---   float       */
+	,  KW_FOR_TOKEN		/*  ANSI-C   C++   ---   for         */
+	,  KW_FRIEND_TOKEN	/*  ------   C++   ---   friend      */
+	,  KW_GOTO_TOKEN	/*  ANSI-C   C++   ---   goto        */
+	,  NULL_TOKEN		/*  ------   ---   CPP   ident       */
+	,  KW_IF_TOKEN		/*  ANSI-C   C++   CPP   if          */
+	,  NULL_TOKEN		/*  ------   ---   CPP   ifdef       */
+	,  NULL_TOKEN		/*  ------   ---   CPP   ifndef      */
+	,  NULL_TOKEN		/*  ------   ---   CPP   include     */
+	,  KW_INLINE_TOKEN	/*  ------   C++   ---   inline      */
+	,  KW_INT_TOKEN		/*  ANSI-C   C++   ---   int         */
+	,  NULL_TOKEN		/*  ------   ---   CPP   line        */
+	,  KW_LONG_TOKEN	/*  ANSI-C   C++   ---   long        */
+	,  KW_NEW_TOKEN		/*  ------   C++   ---   new         */
+	,  NULL_TOKEN		/*  ------   ---   CPP   note        */
+	,  NULL_TOKEN		/*  ------   ---   CPP   once        */
+	,  KW_OPERATOR_TOKEN	/*  ------   C++   ---   operator    */
+	,  KW_OVERLOAD_TOKEN	/*  ------   C++   ---   overload    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   pragma      */
+	,  KW_PRIVATE_TOKEN	/*  ------   C++   ---   private     */
+	,  KW_PROTECTED_TOKEN	/*  ------   C++   ---   protected   */
+	,  KW_PUBLIC_TOKEN	/*  ------   C++   ---   public      */
+	,  KW_REGISTER_TOKEN	/*  ANSI-C   C++   ---   register    */
+	,  KW_RETURN_TOKEN	/*  ANSI-C   C++   ---   return      */
+	,  KW_SHORT_TOKEN	/*  ANSI-C   C++   ---   short       */
+	,  KW_SIGNED_TOKEN	/*  ANSI-C   C++   ---   signed      */
+	,  KW_SIZEOF_TOKEN	/*  ANSI-C   C++   ---   sizeof      */
+	,  KW_STATIC_TOKEN	/*  ANSI-C   C++   ---   static      */
+	,  KW_STRUCT_TOKEN	/*  ANSI-C   C++   ---   struct      */
+	,  KW_SWITCH_TOKEN	/*  ANSI-C   C++   ---   switch      */
+	,  KW_TEMPLATE_TOKEN	/*  ------   C++   ---   template    */
+	,  KW_THIS_TOKEN	/*  ------   C++   ---   this        */
+	,  KW_THROW_TOKEN	/*  ------   C++   ---   throw       */
+	,  KW_TRY_TOKEN		/*  ------   C++   ---   try         */
+	,  KW_TYPEDEF_TOKEN	/*  ANSI-C   C++   ---   typedef     */
+	,  NULL_TOKEN		/*  ------   ---   CPP   unassert    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   undef       */
+	,  KW_UNION_TOKEN	/*  ANSI-C   C++   ---   union       */
+	,  KW_UNSIGNED_TOKEN	/*  ANSI-C   C++   ---   unsigned    */
+	,  KW_VIRTUAL_TOKEN	/*  ------   C++   ---   virtual     */
+	,  KW_VOID_TOKEN	/*  ANSI-C   C++   ---   void        */
+	,  KW_VOLATILE_TOKEN	/*  ANSI-C   C++   ---   volatile    */
+	,  KW_WHILE_TOKEN	/*  ANSI-C   C++   ---   while       */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __cplusplus */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __DATE__    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __FILE__    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __LINE__    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __STDC__    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __TIME__    */
+),
+
+PPKW_TOKEN_CODE			(LB_KW_TABLE : HB_KW_TABLE)
+				type (NID_T)
+				static internal initial (
+
+	   NULL_TOKEN		/*  ------   C++   ---   asm         */
+	,  PP_KW_ASSERT_TOKEN	/*  ------   ---   CPP   assert      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   auto        */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   break       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   case        */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   catch       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   char        */
+	,  NULL_TOKEN		/*  ------   C++   ---   class       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   const       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   continue    */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   default     */
+	,  PP_KW_DEFINE_TOKEN	/*  ------   ---   CPP   define      */
+	,  NULL_TOKEN		/*  ------   ---   CPP   defined     */
+	,  NULL_TOKEN		/*  ------   C++   ---   delete      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   do          */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   double      */
+	,  PP_KW_ELIF_TOKEN	/*  ------   ---   CPP   elif        */
+	,  PP_KW_ELSE_TOKEN	/*  ANSI-C   C++   CPP   else        */
+	,  PP_KW_ELSEIF_TOKEN	/*  ------   ---   CPP*  elseif      */
+	,  PP_KW_ENDIF_TOKEN	/*  ------   ---   CPP   endif       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   enum        */
+	,  PP_KW_ERROR_TOKEN	/*  ------   ---   CPP   error       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   extern      */
+	,  PP_KW_FILE_TOKEN	/*  ------   ---   CPP*  file        */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   float       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   for         */
+	,  NULL_TOKEN		/*  ------   C++   ---   friend      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   goto        */
+	,  PP_KW_IDENT_TOKEN	/*  ------   ---   CPP   ident       */
+	,  PP_KW_IF_TOKEN	/*  ANSI-C   C++   CPP   if          */
+	,  PP_KW_IFDEF_TOKEN	/*  ------   ---   CPP   ifdef       */
+	,  PP_KW_IFNDEF_TOKEN	/*  ------   ---   CPP   ifndef      */
+	,  PP_KW_INCLUDE_TOKEN	/*  ------   ---   CPP   include     */
+	,  NULL_TOKEN		/*  ------   C++   ---   inline      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   int         */
+	,  PP_KW_LINE_TOKEN	/*  ------   ---   CPP   line        */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   long        */
+	,  NULL_TOKEN		/*  ------   C++   ---   new         */
+	,  PP_KW_NOTE_TOKEN	/*  ------   ---   CPP*  note        */
+	,  PP_KW_ONCE_TOKEN	/*  ------   ---   CPP   once        */
+	,  NULL_TOKEN		/*  ------   C++   ---   operator    */
+	,  NULL_TOKEN		/*  ------   C++   ---   overload    */
+	,  PP_KW_PRAGMA_TOKEN	/*  ------   ---   CPP   pragma      */
+	,  NULL_TOKEN		/*  ------   C++   ---   private     */
+	,  NULL_TOKEN		/*  ------   C++   ---   protected   */
+	,  NULL_TOKEN		/*  ------   C++   ---   public      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   register    */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   return      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   short       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   signed      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   sizeof      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   static      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   struct      */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   switch      */
+	,  NULL_TOKEN		/*  ------   C++   ---   template    */
+	,  NULL_TOKEN		/*  ------   C++   ---   this        */
+	,  NULL_TOKEN		/*  ------   C++   ---   throw       */
+	,  NULL_TOKEN		/*  ------   C++   ---   try         */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   typedef     */
+	,  PP_KW_UNASSERT_TOKEN	/*  ------   ---   CPP   unassert    */
+	,  PP_KW_UNDEF_TOKEN	/*  ------   ---   CPP   undef       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   union       */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   unsigned    */
+	,  NULL_TOKEN		/*  ------   C++   ---   virtual     */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   void        */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   volatile    */
+	,  NULL_TOKEN		/*  ANSI-C   C++   ---   while       */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __cplusplus */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __DATE__    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __FILE__    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __LINE__    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __STDC__    */
+	,  NULL_TOKEN		/*  ------   ---   CPP   __TIME__    */
+),
+
+IS_PPRW_TOKEN			(LB_KW_TABLE : HB_KW_TABLE)
+				type (BIT_T)
+				static internal initial (
+
+	   FALSE		/*  ANSI-C   C++   ---   asm         */
+	,  FALSE		/*  ------   ---   CPP   assert      */
+	,  FALSE		/*  ANSI-C   C++   ---   auto        */
+	,  FALSE		/*  ANSI-C   C++   ---   break       */
+	,  FALSE		/*  ANSI-C   C++   ---   case        */
+	,  FALSE		/*  ANSI-C   C++   ---   catch       */
+	,  FALSE		/*  ANSI-C   C++   ---   char        */
+	,  FALSE		/*  ------   C++   ---   class       */
+	,  FALSE		/*  ANSI-C   C++   ---   const       */
+	,  FALSE		/*  ANSI-C   C++   ---   continue    */
+	,  FALSE		/*  ANSI-C   C++   ---   default     */
+	,  FALSE		/*  ------   ---   CPP   define      */
+	,  TRUE			/*  ------   ---   CPP   defined     */
+	,  FALSE		/*  ------   C++   ---   delete      */
+	,  FALSE		/*  ANSI-C   C++   ---   do          */
+	,  FALSE		/*  ANSI-C   C++   ---   double      */
+	,  FALSE		/*  ------   ---   CPP   elif        */
+	,  FALSE		/*  ANSI-C   C++   CPP   else        */
+	,  FALSE		/*  ------   ---   CPP*  elseif      */
+	,  FALSE		/*  ------   ---   CPP   endif       */
+	,  FALSE		/*  ANSI-C   C++   ---   enum        */
+	,  FALSE		/*  ------   ---   CPP   error       */
+	,  FALSE		/*  ANSI-C   C++   ---   extern      */
+	,  FALSE		/*  ------   ---   CPP*  file        */
+	,  FALSE		/*  ANSI-C   C++   ---   float       */
+	,  FALSE		/*  ANSI-C   C++   ---   for         */
+	,  FALSE		/*  ------   C++   ---   friend      */
+	,  FALSE		/*  ANSI-C   C++   ---   goto        */
+	,  FALSE		/*  ------   ---   CPP   ident       */
+	,  FALSE		/*  ANSI-C   C++   CPP   if          */
+	,  FALSE		/*  ------   ---   CPP   ifdef       */
+	,  FALSE		/*  ------   ---   CPP   ifndef      */
+	,  FALSE		/*  ------   ---   CPP   include     */
+	,  FALSE		/*  ------   C++   ---   inline      */
+	,  FALSE		/*  ANSI-C   C++   ---   int         */
+	,  FALSE		/*  ------   ---   CPP   line        */
+	,  FALSE		/*  ANSI-C   C++   ---   long        */
+	,  FALSE		/*  ------   C++   ---   new         */
+	,  FALSE		/*  ------   ---   CPP*  note        */
+	,  FALSE		/*  ------   ---   CPP   once        */
+	,  FALSE		/*  ------   C++   ---   operator    */
+	,  FALSE		/*  ------   C++   ---   overload    */
+	,  FALSE		/*  ------   ---   CPP   pragma      */
+	,  FALSE		/*  ------   C++   ---   private     */
+	,  FALSE		/*  ------   C++   ---   protected   */
+	,  FALSE		/*  ------   C++   ---   public      */
+	,  FALSE		/*  ANSI-C   C++   ---   register    */
+	,  FALSE		/*  ANSI-C   C++   ---   return      */
+	,  FALSE		/*  ANSI-C   C++   ---   short       */
+	,  FALSE		/*  ANSI-C   C++   ---   signed      */
+	,  FALSE		/*  ANSI-C   C++   ---   sizeof      */
+	,  FALSE		/*  ANSI-C   C++   ---   static      */
+	,  FALSE		/*  ANSI-C   C++   ---   struct      */
+	,  FALSE		/*  ANSI-C   C++   ---   switch      */
+	,  FALSE		/*  ------   C++   ---   template    */
+	,  FALSE		/*  ------   C++   ---   this        */
+	,  FALSE		/*  ------   C++   ---   throw       */
+	,  FALSE		/*  ------   C++   ---   try         */
+	,  FALSE		/*  ANSI-C   C++   ---   typedef     */
+	,  FALSE		/*  ------   ---   CPP   unassert    */
+	,  FALSE		/*  ------   ---   CPP   undef       */
+	,  FALSE		/*  ANSI-C   C++   ---   union       */
+	,  FALSE		/*  ANSI-C   C++   ---   unsigned    */
+	,  FALSE		/*  ------   C++   ---   virtual     */
+	,  FALSE		/*  ANSI-C   C++   ---   void        */
+	,  FALSE		/*  ANSI-C   C++   ---   volatile    */
+	,  FALSE		/*  ANSI-C   C++   ---   while       */
+	,  TRUE			/*  ------   ---   CPP   __cplusplus */
+	,  TRUE			/*  ------   ---   CPP   __DATE__    */
+	,  TRUE			/*  ------   ---   CPP   __FILE__    */
+	,  TRUE			/*  ------   ---   CPP   __LINE__    */
+	,  TRUE			/*  ------   ---   CPP   __STDC__    */
+	,  TRUE			/*  ------   ---   CPP   __TIME__    */
+),
+
+IS_CXX_ONLY_TOKEN		(LB_KW_TABLE : HB_KW_TABLE)
+				type (BIT_T)
+				static internal initial (
+
+	   TRUE			/*  ------   C++   ---   asm         */
+	,  FALSE		/*  ------   ---   CPP   assert      */
+	,  FALSE		/*  ANSI-C   C++   ---   auto        */
+	,  FALSE		/*  ANSI-C   C++   ---   break       */
+	,  FALSE		/*  ANSI-C   C++   ---   case        */
+	,  TRUE			/*  ANSI-C   C++   ---   catch       */
+	,  FALSE		/*  ANSI-C   C++   ---   char        */
+	,  TRUE			/*  ------   C++   ---   class       */
+	,  FALSE		/*  ANSI-C   C++   ---   const       */
+	,  FALSE		/*  ANSI-C   C++   ---   continue    */
+	,  FALSE		/*  ANSI-C   C++   ---   default     */
+	,  FALSE		/*  ------   ---   CPP   define      */
+	,  FALSE		/*  ------   ---   CPP   defined     */
+	,  TRUE			/*  ------   C++   ---   delete      */
+	,  FALSE		/*  ANSI-C   C++   ---   do          */
+	,  FALSE		/*  ANSI-C   C++   ---   double      */
+	,  FALSE		/*  ------   ---   CPP   elif        */
+	,  FALSE		/*  ANSI-C   C++   CPP   else        */
+	,  FALSE		/*  ------   ---   CPP*  elseif      */
+	,  FALSE		/*  ------   ---   CPP   endif       */
+	,  FALSE		/*  ANSI-C   C++   ---   enum        */
+	,  FALSE		/*  ------   ---   CPP   error       */
+	,  FALSE		/*  ANSI-C   C++   ---   extern      */
+	,  FALSE		/*  ------   ---   CPP*  file        */
+	,  FALSE		/*  ANSI-C   C++   ---   float       */
+	,  FALSE		/*  ANSI-C   C++   ---   for         */
+	,  TRUE			/*  ------   C++   ---   friend      */
+	,  FALSE		/*  ANSI-C   C++   ---   goto        */
+	,  FALSE		/*  ------   ---   CPP   ident       */
+	,  FALSE		/*  ANSI-C   C++   CPP   if          */
+	,  FALSE		/*  ------   ---   CPP   ifdef       */
+	,  FALSE		/*  ------   ---   CPP   ifndef      */
+	,  FALSE		/*  ------   ---   CPP   include     */
+	,  TRUE			/*  ------   C++   ---   inline      */
+	,  FALSE		/*  ANSI-C   C++   ---   int         */
+	,  FALSE		/*  ------   ---   CPP   line        */
+	,  FALSE		/*  ANSI-C   C++   ---   long        */
+	,  TRUE			/*  ------   C++   ---   new         */
+	,  FALSE		/*  ------   ---   CPP*  note        */
+	,  FALSE		/*  ------   ---   CPP   once        */
+	,  TRUE			/*  ------   C++   ---   operator    */
+	,  TRUE			/*  ------   C++   ---   overload    */
+	,  FALSE		/*  ------   ---   CPP   pragma      */
+	,  TRUE			/*  ------   C++   ---   private     */
+	,  TRUE			/*  ------   C++   ---   protected   */
+	,  TRUE			/*  ------   C++   ---   public      */
+	,  FALSE		/*  ANSI-C   C++   ---   register    */
+	,  FALSE		/*  ANSI-C   C++   ---   return      */
+	,  FALSE		/*  ANSI-C   C++   ---   short       */
+	,  FALSE		/*  ANSI-C   C++   ---   signed      */
+	,  FALSE		/*  ANSI-C   C++   ---   sizeof      */
+	,  FALSE		/*  ANSI-C   C++   ---   static      */
+	,  FALSE		/*  ANSI-C   C++   ---   struct      */
+	,  FALSE		/*  ANSI-C   C++   ---   switch      */
+	,  TRUE			/*  ------   C++   ---   template    */
+	,  TRUE			/*  ------   C++   ---   this        */
+	,  TRUE			/*  ------   C++   ---   throw       */
+	,  TRUE			/*  ------   C++   ---   try         */
+	,  FALSE		/*  ANSI-C   C++   ---   typedef     */
+	,  FALSE		/*  ------   ---   CPP   unassert    */
+	,  FALSE		/*  ------   ---   CPP   undef       */
+	,  FALSE		/*  ANSI-C   C++   ---   union       */
+	,  FALSE		/*  ANSI-C   C++   ---   unsigned    */
+	,  TRUE			/*  ------   C++   ---   virtual     */
+	,  FALSE		/*  ANSI-C   C++   ---   void        */
+	,  FALSE		/*  ANSI-C   C++   ---   volatile    */
+	,  FALSE		/*  ANSI-C   C++   ---   while       */
+	,  TRUE			/*  ------   ---   CPP   __cplusplus */
+	,  FALSE		/*  ------   ---   CPP   __DATE__    */
+	,  FALSE		/*  ------   ---   CPP   __FILE__    */
+	,  FALSE		/*  ------   ---   CPP   __LINE__    */
+	,  FALSE		/*  ------   ---   CPP   __STDC__    */
+	,  FALSE		/*  ------   ---   CPP   __TIME__    */
+);
+
+declare
+
+LB_KW_TOKEN_ID		    type (NID_T) static internal initial (0),
+HB_KW_TOKEN_ID		    type (NID_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_KEYWORD_TABLES
+/*
+/* Initialize the ANSI-C/C++ keyword tables.
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_KEYWORD_TABLES: procedure ()
+			   external  (X_INITIALIZE_KEYWORD_TABLES);
+
+	declare
+		I	type (SHORT_T),
+		ID	type (NID_T),
+		PREV_ID	type (NID_T);
+
+	/* See if we've already initialized the keyword tables */
+
+	if LB_KW_TOKEN_ID ^= 0 then
+		return;
+
+	/*
+	/* Make token-nodes for all of the keywords and note the
+	/* low and high bound.  This is where the VERY IMPORTANT
+	/* ASSUMPTION is made that consecutively allocated token-nodes
+	/* are assigned consecutively increasing token-node ids.
+	/**/
+
+	do I = LB_KW_TABLE to HB_KW_TABLE;
+		ID = STORE_TOKEN (IDENTIFIER_TOKEN, KW_NAME (I));
+		if I = LB_KW_TABLE then
+			LB_KW_TOKEN_ID = ID;
+		else if I = HB_KW_TABLE then
+			HB_KW_TOKEN_ID = ID;
+		if (I > LB_KW_TABLE) & (ID ^= (PREV_ID + 1)) then do;
+			/*
+			/* Fatal error; the previous/slower implementation
+			/* must be used since consecutively allocated token-
+			/* nodes do not seem to be assigned consecutively
+			/* increasing token-node ids; see a previous version
+			/* of this module.  Don't worry, this fatal error
+			/* will always be detected immediately.
+			/**/
+			call PP_ERROR (ERR_PP_KW_TABLE_INIT);
+			return;
+		end;
+		else	PREV_ID = ID;
+	end;
+
+	/*
+	/* If not in C++ mode, then null out the C++
+	/* specific keyword tokens in the keyword tables.
+	/**/
+
+	if ^SW_C_PLUS_PLUS then do;
+		do I = LB_KW_TABLE to HB_KW_TABLE;
+			if IS_CXX_ONLY_TOKEN (I) then do;
+				KW_TOKEN_CODE (I)	= NULL_TOKEN;
+				PPKW_TOKEN_CODE (I)	= NULL_TOKEN;
+				IS_PPRW_TOKEN (I)	= FALSE;
+			end;
+		end;
+	end;
+
+	/* Set any special keyword token-node ids */
+
+	DEFINED_PP_KW_NAME = STORE_TOKEN (IDENTIFIER_TOKEN, 'defined');
+	STDC_PP_KW_NAME    = STORE_TOKEN (IDENTIFIER_TOKEN, '__STDC__');
+
+	/* If not ANSI-C mode, then __STDC__ is not reserved */
+
+	if ^SW_ANSI_C_MODE then
+		IS_PPRW_TOKEN (STDC_PP_KW_NAME - LB_KW_TOKEN_ID) = FALSE;
+
+end INITIALIZE_KEYWORD_TABLES;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_KEYWORD
+/*
+/* If the identifier represented by the given token-node id represents
+/* an ANSI-C/C++ keyword, then return its corresponding token type code,
+/* otherwise return NULL_TOKEN.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_KEYWORD: procedure (ID)
+		returns   (type (SHORT_T))
+		external  (X_LOOKUP_KEYWORD);
+
+	declare ID type (NID_T);
+
+	if (ID >= LB_KW_TOKEN_ID) & (ID <= HB_KW_TOKEN_ID) then
+		return (KW_TOKEN_CODE (ID - LB_KW_TOKEN_ID));
+	else	return (NULL_TOKEN);
+
+end LOOKUP_KEYWORD;
+
+/* ---------------------------------------------------------------------
+/* LOOKUP_PP_KEYWORD
+/*
+/* If the identifier represented by the given token-node id represents
+/* an ANSI-C/C++ preprocessing directive keyword, then return its
+/* corresponding token type code, otherwise return NULL_TOKEN.
+/* ------------------------------------------------------------------- */
+
+LOOKUP_PP_KEYWORD: procedure (ID)
+		   returns   (type (SHORT_T))
+		   external  (X_LOOKUP_PP_KEYWORD);
+
+	declare ID type (NID_T);
+
+	if (ID >= LB_KW_TOKEN_ID) & (ID <= HB_KW_TOKEN_ID) then
+		return (PPKW_TOKEN_CODE (ID - LB_KW_TOKEN_ID));
+	else	return (NULL_TOKEN);
+
+end LOOKUP_PP_KEYWORD;
+
+/* ---------------------------------------------------------------------
+/* IS_RESERVED_PP_WORD
+/*
+/* If the identifier represented by the given token-node id represents a
+/* "reserved" preprocessor keyword -- i.e. one that may not be #defined
+/* or #undefined -- i.e. __DATE__, __FILE__, __LINE__, __STDC__ (if not
+/* C++), __TIME__, __cplusplus (if C++), and defined, then return TRUE,
+/* otherwise return FALSE.
+/* ------------------------------------------------------------------- */
+
+IS_RESERVED_PP_KEYWORD: procedure (ID)
+			returns   (type (BOOL_T))
+			external  (X_IS_RESERVED_PP_KEYWORD);
+
+	declare ID type (NID_T);
+
+	if (ID >= LB_KW_TOKEN_ID) & (ID <= HB_KW_TOKEN_ID) then
+		return (IS_PPRW_TOKEN (ID - LB_KW_TOKEN_ID));
+	else	return (FALSE);
+
+end IS_RESERVED_PP_KEYWORD;
+

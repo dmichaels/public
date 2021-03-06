@@ -1,0 +1,24 @@
+/* CPP CPP_KEYWORD_IN - Keyword lookup interface */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.12.91  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+declare
+
+1 PPKWDAT		external,
+
+  2 STDC_PP_KW_NAME	type (NID_T) initial (NULL_ID),
+  2 DEFINED_PP_KW_NAME	type (NID_T) initial (NULL_ID);
+

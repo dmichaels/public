@@ -1,0 +1,262 @@
+/* CodeWatch 68k REG.PL1 - Machine register handling routines.
+/**********************************************************************/
+/* This product is the property of Liant Software Corp.               */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Liant Software Corp. except pursuant to the          */
+/* license agreement.                                                 */
+/**********************************************************************/
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   7.01.92  VTF  (003) Added support for setting and retrieving extended
+ *                       precision long double register values.
+ *
+ *   4.07.92  VTF  (002) Added GET_REGISTER_DATA(), a C callable routine
+ *                       which returns the values of all the general purpose
+ *                       registers.
+ *                       Added GET_FP_REGISTER_DATA(), which returns the values
+ *                       of all the floating point registers.
+ *
+ *  12.04.91  VTF  (001) Changed GET_REGISTER_INFO() to recognize @fp[0-7]
+ *                       as floating point registers rather than @f[0-7].
+ *
+ *  11.20.91  VTF  (000) Initial version (was getreg.pl1)
+ *                       Added SET_REGISTER_VALUE()
+ **********************************************************************/
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include DBGDEBUG_IN;
+%include DEVAL_DCL;
+%include SYSGETPC_IN;
+%include TARGET_IN;
+%include CVTF12_IN;
+%include DERROR_IN;
+
+%replace UNKNOWN_REGISTER      by -1;
+%replace PC_REGISTER           by 1;
+%replace ADDRESS_REGISTER      by 2;
+%replace DATA_REGISTER         by 3;
+%replace FP_REGISTER           by 4;
+
+/* --------------------------------------------------------------------------
+/* GET_REGISTER_INFO
+/*   Determine the type of a register and its index in the REGS_ARRAY 
+/*   structure defined in TARGET_IN.  If you specify an illegal register
+/*   name, this routine prints an error message and sets TYPE to
+/*   UNKNOWN_TYPE.
+/*
+/*   In:  REG_NAME         register name
+/*   Out: INDEX            index in REGS_ARRAY
+/*        TYPE             type of register (UNKNOWN_TYPE, PC_REGISTER,
+/*                                           ADDRESS_REGISTER, DATA_REGISTER,
+/*                                           or FP_REGISTER )
+/****************************************************************************/
+GET_REGISTER_INFO: procedure(REG_NAME, INDEX, TYPE) internal;
+    declare
+        REG_NAME          char (*) varying,       /* In: register name */
+        INDEX             fixed bin(15),          /* Out: index into A() or D()
+                                                          register arrays */
+        TYPE              fixed bin(15);          /* Out: register type */
+
+    if (REG_NAME = 'pc') then 
+        TYPE = PC_REGISTER;
+    else if (REG_NAME = 'fp') then do;
+        TYPE = ADDRESS_REGISTER;
+        INDEX = 6;  /* A6 */
+    end;
+    else if (REG_NAME = 'sp') then do;
+        TYPE = ADDRESS_REGISTER;
+        INDEX = 7;  /* A7 */
+    end;
+
+    /* check for a[0-7] or d[0-7] */
+    else if (length(REG_NAME) = 2) then do;
+        if substr(REG_NAME,1,1) = 'a' then
+            TYPE = ADDRESS_REGISTER;
+        else if substr(REG_NAME,1,1) = 'd' then
+            TYPE = DATA_REGISTER;
+        else do;
+            call derror(ILLEGAL_REGISTER_NAME,REGISTER_PREFIX_CHAR 
+                                              || REG_NAME,'');
+            TYPE = UNKNOWN_REGISTER;
+            return;
+        end;
+
+        INDEX = rank(substr(REG_NAME,2,1)) - rank('0');
+        if (INDEX < 0 & INDEX > 7) then do;
+            call derror(ILLEGAL_REGISTER_NAME,REGISTER_PREFIX_CHAR 
+                                              || REG_NAME,'');
+            TYPE = UNKNOWN_REGISTER;
+        end;
+    end;
+    else if (length(REG_NAME) = 3 & substr(REG_NAME,1,2) = 'fp') then do;
+        TYPE = FP_REGISTER;
+        INDEX = rank(substr(REG_NAME,3,1)) - rank('0');
+        if (INDEX < 0 & INDEX > 7) then do;
+            call derror(ILLEGAL_REGISTER_NAME,REGISTER_PREFIX_CHAR 
+                                              || REG_NAME,'');
+            TYPE = UNKNOWN_REGISTER;
+        end;
+    end;
+    else do;  /* not a register */
+        call derror(ILLEGAL_REGISTER_NAME,REGISTER_PREFIX_CHAR || REG_NAME,'');
+        TYPE = UNKNOWN_REGISTER;
+    end;
+end;
+
+/* --------------------------------------------------------------------------
+/* GET_REGISTER_DATA (C callable)
+/*   Return in REG_VALUES the value of all the general purpose registers
+/*   REG_VALUES(0-7)  = d0-d7
+/*   REG_VALUES(8-15) = a0-a7
+/*   REG_VALUES(16)   = PC
+/*
+/****************************************************************************/
+GET_REGISTER_DATA:   procedure(REG_VALUES)
+                     external (X_GET_REGISTER_DATA);
+    declare
+        REG_VALUES(0:16)  fixed bin(31), /* 16 General purpose + PC */
+        I                 fixed bin(31);
+
+        do I = 0 to 7;
+            REG_VALUES(I) = PROGRAM_REGISTER_AREA->REGS_ARRAY.D(I);
+            REG_VALUES(I+8) = PROGRAM_REGISTER_AREA->REGS_ARRAY.A(I);
+        end;
+        REG_VALUES(16) = PROGRAM_REGISTER_AREA->REGS.PC;
+end;    
+
+
+/* --------------------------------------------------------------------------
+/* GET_FP_REGISTER_DATA (C callable)
+/*   Return in REG_VALUES the value of all the floating point registers
+/*
+/****************************************************************************/
+GET_FP_REGISTER_DATA:   procedure(REG_VALUES)
+                     external (X_GET_FP_REGISTER_DATA);
+    declare
+        REG_VALUES(24)    fixed bin(31), /* 8 floating point registers */
+        I                 fixed bin(31);
+
+        do I = 1 to 24;
+            REG_VALUES(I) = PROGRAM_REGISTER_AREA->REGS_ARRAY.FPREGS(I);
+        end;
+end;    
+
+
+/* --------------------------------------------------------------------------
+/* GET_REGISTER_VALUE
+/*   Create a debug value node containing the value of the specified register.
+/*   In:  REG_NAME         register name
+/*   Out: P                new value node, allocated by this routine, 
+/*                         containing the value of the specified register.
+/*
+/****************************************************************************/
+GET_REGISTER_VALUE:  procedure(REG_NAME,P)
+                     external (X_GET_REGISTER_VALUE);
+    declare
+        REG_NAME          char (*) varying,    /* In: register name */
+        P                 pointer,             /* Out: value of register */
+        REG_IVALUE        fixed bin(ADDRESS_LENGTH),
+        REG_FVALUE        float bin(FLOAT_BIN_MAX_P),
+        B_POINTER         pointer based,
+        INDEX             fixed bin(15),
+        TYPE              fixed bin(15);
+
+    call GET_REGISTER_INFO(REG_NAME,INDEX, TYPE);
+
+    call ALLOCATE_VALUE_AREA_NUM;
+
+    if TYPE = FP_REGISTER then do;
+        if FLOAT_BIN_EXTENDED_P > FLOAT_BIN_DOUBLE_P then do;
+            /* since PL/I doesn't support long doubles, we must use a hack. */
+            /* copy extended precision number 4 bytes (1 fixbin) at a time */
+            EVAL_PTR->VALUE_FLTB63.LF_BIN(1) = PROGRAM_REGISTER_AREA->FPREGS(INDEX*3+1);
+            EVAL_PTR->VALUE_FLTB63.LF_BIN(2) = PROGRAM_REGISTER_AREA->FPREGS(INDEX*3+2);
+            EVAL_PTR->VALUE_FLTB63.LF_BIN(3) = PROGRAM_REGISTER_AREA->FPREGS(INDEX*3+3);
+            EVAL_PTR->V_P = FLOAT_BIN_EXTENDED_P;
+        end;
+        else do; /* we don't support extended precision long doubles... */
+            /* convert extended floating point number to fixed bin(47) */
+            call CF12F8(REG_FVALUE,
+                    addr(PROGRAM_REGISTER_AREA->FPREGS(INDEX*3+1))->B_POINTER);
+            EVAL_PTR->V_P = FLOAT_BIN_DOUBLE_P;
+            EVAL_PTR->VAL_FLTBIN = REG_FVALUE;
+        end;
+        EVAL_PTR->V_TYPE = FLOAT_BIN_;
+    end;
+    else do;
+        if TYPE = PC_REGISTER then
+            REG_IVALUE = SGETPC();
+        else if TYPE = ADDRESS_REGISTER then
+            REG_IVALUE = PROGRAM_REGISTER_AREA->REGS_ARRAY.A(INDEX);
+        else if TYPE = DATA_REGISTER then
+            REG_IVALUE = PROGRAM_REGISTER_AREA->REGS_ARRAY.D(INDEX);
+
+        EVAL_PTR->V_TYPE = FIXED_BIN_;
+        EVAL_PTR->V_P    = FIXED_BIN_MAX_P;
+        EVAL_PTR->VAL_FIXBIN = REG_IVALUE;
+    end;
+
+    P = EVAL_PTR;
+end;    
+    
+
+/* --------------------------------------------------------------------------
+/* SET_REGISTER_VALUE
+/*   Set a register to the value specified in P.
+/*   In:  REG_NAME         register name
+/*        P                debug value node containing the new value for the
+/*                         register.
+/****************************************************************************/
+SET_REGISTER_VALUE:  PROCEDURE(REG_NAME,P)
+                      external (X_SET_REGISTER_VALUE);
+    declare
+        REG_NAME          char (*) varying,    /* In: register name b      */
+        P                 pointer,             /* In: debug value node     */
+        REG_IVALUE        fixed bin(ADDRESS_LENGTH),
+        B_POINTER         pointer based,
+        FLOAT_VALUE       float bin(23) based,
+        DOUBLE_VALUE      float bin(FLOAT_BIN_MAX_P),
+        (TYPE, INDEX)     fixed bin(15);
+
+    call GET_REGISTER_INFO(REG_NAME,INDEX, TYPE);
+
+    if TYPE = UNKNOWN_REGISTER then 
+        return;
+    else if TYPE = FP_REGISTER then do;
+        call dcnvrt(P,FLOAT_BIN_,FLOAT_BIN_EXTENDED_P,0);
+        if P->V_P > FLOAT_BIN_DOUBLE_P then do;
+            /* since PL/I doesn't support long doubles, we must use a hack. */
+            /* copy extended precision number 4 bytes (1 fixbin) at a time */
+                PROGRAM_REGISTER_AREA->FPREGS(INDEX*3+1) = P->VALUE_FLTB63.LF_BIN(1);
+                PROGRAM_REGISTER_AREA->FPREGS(INDEX*3+2) = P->VALUE_FLTB63.LF_BIN(2);
+                PROGRAM_REGISTER_AREA->FPREGS(INDEX*3+3) = P->VALUE_FLTB63.LF_BIN(3);
+        end;
+        else do;  /* long doubles not supported by dcnvrt, use special
+                     conversion routines. */
+            call CF8F12(
+                 addr(PROGRAM_REGISTER_AREA->FPREGS(INDEX*3+1))->B_POINTER,
+                 (P->VAL_FLTBIN));
+        end;
+    end;
+    else do;
+        if P->V_TYPE ^= FIXED_BIN_ & P->V_TYPE ^= POINTER_ then do;
+            call derror(CONTEXT_REQUIRES_AN_INTEGER_VAL,'','');
+            return;
+        end;
+
+        if P->V_P <= 15 then
+            REG_IVALUE = P->VAL_FIXB15;
+        else
+            REG_IVALUE = P->VAL_FIXBIN;
+
+        if TYPE = PC_REGISTER then
+            PROGRAM_REGISTER_AREA->REGS.PC = REG_IVALUE;
+        else if TYPE = ADDRESS_REGISTER then
+            PROGRAM_REGISTER_AREA->REGS_ARRAY.A(INDEX) = REG_IVALUE;
+        else if TYPE = DATA_REGISTER then
+            PROGRAM_REGISTER_AREA->REGS_ARRAY.D(INDEX) = REG_IVALUE;
+    end;
+end;

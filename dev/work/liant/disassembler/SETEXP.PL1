@@ -1,0 +1,30 @@
+/* LPI-DEBUG M68 SETEXP.PL1 - Set execution point PC */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/* --------------------------------------------------------------------
+/* SETEXP - Set execution point PC to new value
+/*
+/* In:  REGISTER_SAVE_AREA -> Save area with user PC
+/*      NEW_ADDRESS = New location
+/* Out: PC modified
+/**********************************************************************/
+
+SETEXP: procedure (REGISTER_SAVE_AREA, NEW_ADDRESS);
+
+%include 'incfil';
+%include TARGET_IN;
+
+    declare REGISTER_SAVE_AREA  pointer,
+            NEW_ADDRESS         fixed binary (31);
+
+    REGISTER_SAVE_AREA->REGS.PC = NEW_ADDRESS;
+
+end SETEXP;
+

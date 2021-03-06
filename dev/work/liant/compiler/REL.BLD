@@ -1,0 +1,264 @@
+# CXXFE rel.bld - LPI-C++ Front-End Release List
+
+########################################################################
+#  This product is the property of Liant Software Corporation and is   #
+#  licensed pursuant to a written license agreement.  No portion of    #
+#  this product may be reproduced without the written permission of    #
+#  Liant Software Corporation except pursuant to the license agreement.#
+########################################################################
+
+########################################################################
+#
+#  LPI EDIT HISTORY
+#
+#  12.08.93  TXK  181  Updated cxxfe.181.bld.
+#  06.08.93  DGM  180R Updated to global.231.bld and util.035.exp.
+#  05.12.93  DGM  180  Updated cxxfe.180.bld.
+#  02.18.93  DGM  179  Updated cxxfe.179.bld.
+#  11.11.92  DGM  178R Official LPI-C++ 1.1 release for
+#		       Intel i386/i486 UNIX System V.3 (SCO & ISC).
+#  10.20.92  DGM  178  Updated cxxfe.178.bld.
+#  09.29.92  DGM  177  Updated cxxfe.177.bld.
+#  09.09.92  DGM  176  Updated cxxfe.176.bld.
+#  08.31.92  DGM  175  Updated cxxfe.175.bld.
+#  08.19.92  DGM  174  Updated cxxfe.174.bld.
+#  08.10.92  DGM  173  Updated cxxfe.173.bld.
+#  07.15.92  DGM  172  Updated cxxfe.172.bld.
+#  07.03.92  DGM  171  Updated cxxfe.171.bld.
+#  06.25.92  DGM  170  Updated cxxfe.170.bld & global.214.bld.
+#  06.22.92  MJF  169  Updated cxxfe.169.bld.
+#  06.18.92  DGM  168  Updated cxxfe.168.bld & global.211.bld.
+#  06.11.92  DGM  167  Updated cxxfe.167.bld & global.210.bld.
+#  05.29.92  DGM  166  Updated cxxfe.166.bld.
+#  05.19.92  DGM  165  Updated cxxfe.165.bld.
+#  05.11.92  DGM  164  Updated cxxfe.164.bld.
+#  05.05.92  PKT  163  Updated cxxfe.163.bld.
+#  04.30.92  DGM  162  Updated cxxfe.162.bld.
+#  04.18.92  PKT  161  Updated cxxfe.161.bld.
+#  04.03.92  PKT  160  Updated cxxfe.160.bld.
+#  03.27.92  DGM  159  Updated cxxfe.159.bld.
+#  03.30.92  DGM  158  Updated cxxfe.158.bld.
+#  03.18.92  DGM  157  Updated cxxfe.157.bld.
+#  03.09.92  DGM  156  Updated cxxfe.156.bld.
+#  03.05.92  DGM  155  Updated cxxfe.155.bld & global.198.bld.
+#  02.24.92  PKT  154  Updated cxxfe.154.bld.
+#  02.20.92  DGM  153  Updated cxxfe.153.bld.
+#		       Revision 1.0.7 (386/UNIX V.3, V.4, SPARC).
+#  02.10.92  DGM  152  Updated cxxfe.152.bld.
+#  02.03.92  PKT  151  Updated cxxfe.151.bld.
+#  01.31.92  DGM  150  Updated cxxfe.150.bld.
+#  01.28.92  DGM  149  Updated cxxfe.149.bld.
+#		       NOTE: Must be used with TMLIB-017 or later
+#		             in order to pick up the new stdarg.h.
+#  01.27.92  PKT  148  Updated cxxfe.148.bld.
+#  01.24.92  DGM  147  Updated cxxfe.147.bld.
+#  01.21.92  DGM  146  Updated cxxfe.146.bld.
+#		       Multi-space nodes enabled!
+#		       NOTE: Must be used with UTIL-052 or later.
+#  01.17.92  PKT  145  Updated cxxfe.145.bld.
+#  01.13.92  DGM  144  Updated cxxfe.144.bld.
+#  12.28.91  PKT  143  Updated cxxfe.143.bld.
+#  12.20.91  PKT  142  Updated cxxfe.142.bld.
+#  12.18.91  PKT  141  Updated cxxfe.141.bld.
+#  12.09.91  DGM  140  Updated cxxfe.140.bld.  Minor fixes & .init/.fini.
+#  12.03.91  DGM  139  Updated cxxfe.139.bld.  Merge.
+#  11.27.91  PKT  138L Updated cxxfe.138.bld.
+#		       The really real LPI-C++ 1.0.2 (sparc)!
+#  11.21.91  DGM  137  Updated cxxfe.137.bld.
+#  11.20.91  PKT  136L Updated cxxfe.136.bld.
+#		       The real LPI-C++ 1.0.2 (sparc)!
+#  11.12.91  DGM  135  Updated cxxfe.135.bld.
+#  10.28.91  PKT  134  Updated cxxfe.134.bld.
+#		       LPI-C++ 1.0.2 (sparc)!
+#  10.24.91  PKT  133  Updated cxxfe.133.bld.
+#  10.09.91  PKT  132  Updated cxxfe.132.bld.
+#  10.03.91  DGM  131  Updated cxxfe.131.bld.
+#  09.26.91  PKT  130  Updated cxxfe.130.bld.
+#  09.11.91  PKT  129  Updated cxxfe.129.bld.
+#  09.06.91  DGM  128  Updated cxxfe.128.bld.
+#  08.30.91  DGM  127  LPI-C++ 1.0.0 (i386)!
+#  08.23.91  DGM  127  Updated cxxfe.127.bld.
+#  08.19.91  DGM  126  Updated cxxfe.126.bld.
+#  08.14.91  DGM  125  Updated cxxfe.125.bld.
+#  08.06.91  DGM  124  Updated cxxfe.124.bld.
+#  08.05.91  PKT  123  Updated cxxfe.123.bld.
+#  07.31.91  DGM  121  Updated cxxfe.121.bld.
+#  07.30.91  TLF  120  Updated cxxfe.120.bld.
+#  07.24.91  DGM  119  Updated cxxfe.119.bld.
+#  07.19.91  PKT  118  Updated cxxfe.118.bld.
+#  07.18.91  DGM  117  Updated cxxfe.117.bld.
+#  07.08.91  DGM  116  Updated cxxfe.116.bld.
+#  06.27.91  PKT  115  Updated cxxfe.115.bld.
+#  06.17.91  DGM  114  Updated cxxfe.114.bld, global.178.bld, util.029.exp.
+#  06.14.91  PKT  113  Updated cxxfe.113.bld.
+#  06.06.91  PKT  112  Updated cxxfe.112.bld.
+#  06.05.91  DGM  111  Updated cxxfe.111.bld (quick CodeWatch fix).
+#  05.29.91  DGM  110  Updated cxxfe.110.bld.
+#  05.22.91  PKT  109  Updated cxxfe.109.bld.
+#  05.14.91  PKT  108  Updated cxxfe.108.bld.
+#  05.13.91  DGM  107  Updated cxxfe.107.bld; rev.00.90.03 (minor fixes).
+#  05.06.91  DGM  106  Updated cxxfe.106.bld (1 external name change).
+#  05.02.91  DGM  105  Updated cxxfe.105.bld (SPARC support/fixes).
+#  04.29.91  DGM  104  Updated cxxfe.104.bld.
+#  04.24.91  PKT  103  Updated cxxfe.103.bld (oops).
+#  04.24.91  PKT  102  Updated cxxfe.102.bld.
+#  04.18.91  DGM  101  Updated cxxfe.101.bld.
+#  04.08.91  DGM  100  Updated cxxfe.100.bld.
+#  04.08.91  DGM  099  Updated cxxfe.099.bld.
+#  04.01.91  DGM  098  Updated cxxfe.098.bld; update parse.001.in.
+#  03.27.91  TLF  097  Updated cxxfe.097.bld.
+#  03.26.91  PKT  096  Updated cxxfe.096.bld.
+#  03.21.91  DGM  095  Updated cxxfe.095.bld.
+#  03.20.91  TLF  094  Updated cxxfe.094.bld.
+#  03.12.91  DGM  093  Updated cxxfe.093.bld.
+#  03.11.91  TLF  092  Updated cxxfe.092.bld.
+#  03.08.91  PKT  091  Updated cxxfe.091.bld.
+#  03.08.91  DGM  090  Updated cxxfe.090.bld.
+#  02.27.91  DGM  089  Updated cxxfe.089.bld.
+#  02.26.91  TLF  088  Updated cxxfe.088.bld.
+#  02.21.91  DGM  087  Updated cxxfe.087.bld.
+#  02.21.91  PKT  086  Updated cxxfe.086.bld.
+#  02.11.91  DGM  085  Updated cxxfe.085.bld/global.172.bld/util.028.exp.
+#  02.01.91  DGM  084  Updated cxxfe.084.bld.
+#  01.31.91  DGM  083  Updated cxxfe.083.bld.
+#  01.27.91  PKT  082  Updated cxxfe.082.bld.
+#  01.23.91  TLF  081  Updated cxxfe.081.bld.
+#  01.18.91  DGM  080  Updated cxxfe.080.bld.
+#  01.15.91  PKT  079  Updated cxxfe.079.bld.
+#  01.10.91  DGM  078  Updated cxxfe.078.bld.
+#  01.09.91  TLF  077  Updated cxxfe.077.bld.
+#  12.28.90  PKT  076  Updated cxxfe.076.bld.
+#  12.20.90  PKT  075  Updated cxxfe.075.bld.
+#  12.17.90  DGM  074  Updated cxxfe.074.bld.
+#  12.13.90  TLF  073  Updated cxxfe.073.bld.
+#  12.12.90  DGM  072  Updated cxxfe.072.bld.
+#  11.29.90  DGM  071  Updated cxxfe.071.bld.
+#  11.29.90  TLF  070  Updated cxxfe.070.bld.
+#  11.19.90  TLF  069  Updated cxxfe.069.bld.
+#  11.15.90  DGM  068  Updated cxxfe.068.bld.
+#  11.12.90  DGM  067  Updated cxxfe.067.bld.
+#  11.09.90  PKT  066  Updated cxxfe.066.bld.
+#  11.06.90  DGM  065  Updated cxxfe.065.bld.
+#  11.02.90  TLF  064  Updated cxxfe.064.bld.
+#  11.01.90  PKT  063  Updated cxxfe.063.bld.
+#  10.24.90  PKT  062  Updated cxxfe.062.bld.
+#  10.23.90  DGM  061  Updated cxxfe.061.bld.
+#  10.22.90  TLF  060  Updated cxxfe.060.bld.
+#  10.17.90  PKT  059  Updated cxxfe.059.bld.
+#  10.16.90  PKT  058  Updated cxxfe.058.bld.
+#  10.12.90  DGM  057  Updated cxxfe.057.bld.
+#  10.10.90  DGM  056  Updated cxxfe.056.bld.
+#  09.28.90  PKT  055  Updated cxxfe.055.bld.
+#  09.25.90  DGM  054  Updated cxxfe.054.bld.
+#  09.17.90  PKT  053  Updated cxxfe.053.bld.
+#  09.17.90  PKT  052  Updated cxxfe.052.bld.
+#  09.14.90  DGM  051  Updated cxxfe.051.bld.
+#  09.12.90  DGM  050  Updated cxxfe.050.bld.
+#  09.06.90  TLF  049  Updated cxxfe.049.bld.
+#  09.05.90  PKT  048  Updated cxxfe.048.bld.
+#  09.04.90  DGM  047  Updated cxxfe.047.bld.
+#  09.04.90  TLF  046  Updated cxxfe.046.bld.
+#  08.29.90  DGM  045  Updated cxxfe.045.bld.
+#  08.27.90  TLF  044  Updated cxxfe.044.bld.
+#  08.21.90  DGM  043  Updated cxxfe.043.bld.
+#  08.10.90  DGM  042  Updated cxxfe.042.bld.
+#  08.07.90  PKT  041  Updated cxxfe.041.bld.
+#  07.26.90  DGM  040  Updated cxxfe.040.bld.
+#  07.24.90  TLF  039  Updated cxxfe.039.bld.
+#  07.23.90  DGM  038  Updated cxxfe.038.bld.
+#  07.20.90  PKT  037  Updated cxxfe.037.bld.
+#  07.19.90  DGM  036  Updated cxxfe.036.bld.
+#  07.05.90  PKT  035  Updated cxxfe.035.bld.
+#  06.25.90  DGM  034  Updated cxxfe.034.bld.
+#  06.19.90  PKT  033  Updated cxxfe.033.bld.
+#  06.18.90  TLF  032  Updated cxxfe.032.bld.
+#  06.14.90  PKT  031  Updated cxxfe.031.bld.
+#  06.05.90  DGM  030  Updated to new method of referencing the new and
+#		       old utilities and globals.  The old utilities
+#		       will be referenced by default; to get the new
+#		       utilities, use "-def:newutils" on your build line.
+#		       Updated cxxfe.030.bld.
+#  05.31.90  PKT  029  Updated cxxfe.029.bld.
+#  05.25.90  DGM  028  Updated cxxfe.028.bld.
+#  05.17.90  DGM  027  Updated cxxfe.027.bld.
+#  05.15.90  DGM  026  Updated cxxfe.026.bld.
+#  05.11.90  DGM  025  Updated cxxfe.025.bld.
+#  05.11.90  TLF  024  Updated cxxfe.024.bld.
+#  04.27.90  DGM  023  Updated cxxfe.023.bld.
+#  04.23.90  DGM  022  Updated cxxfe.022.bld.
+#  04.19.90  DGM  021  Updated cxxfe.021.bld.
+#  04.17.90  PKT  020  Updated cxxfe.020.bld.
+#  04.06.90  TLF  019  Updated cxxfe.019.bld.
+#  04.04.90  DGM  018  Updated cxxfe.018.bld.
+#  03.27.90  DGM  017  Updated cxxfe.017.bld.
+#  03.26.90  TLF  016  Updated cxxfe.016.bld.
+#  03.14.90  PKT  015  Updated cxxfe.015.bld.
+#  03.02.90  DGM  014  Updated cxxfe.014.bld.
+#  02.27.90  PKT  013  Updated cxxfe.013.bld.
+#  02.22.90  DGM  012  Updated cxxfe.012.bld.
+#  02.22.90  TLF  011  Updated cxxfe.011.bld.
+#  02.20.90  PKT  010  Updated cxxfe.010.bld.
+#  02.15.90  DGM  009  Updated cxxfe.009.bld.
+#  02.09.90  DGM  008  Updated cxxfe.008.bld.
+#  02.06.90  TLF  007  Updated cxxfe.007.bld.
+#  02.05.90  DGM  006  Updated cxxfe.006.bld, global.140.bld, utl.124.bld.
+#  01.19.90  DGM  005  Updated.
+#  12.12.89  DGM  004  Updated.
+#  12.08.89  DGM  003  Updated.
+#  11.20.89  DGM  000  Original.
+#
+########################################################################
+
+# ----------------------------------------------------------------------
+# Globals & Utilities
+#
+# N.B. To get the new utilities, use "-def:newutils" your the build line!
+# ----------------------------------------------------------------------
+
+-component=global
+ -use=global.bld	-v=231
+
+-component=util
+ @util.exp		-v=035
+
+# ----------------------------------------------------------------------
+# Tools
+# ----------------------------------------------------------------------
+
+-component=tools/parse
+ parse.in		-v=001 -replace=CXX_PARSE_TOOL_IN
+
+# ----------------------------------------------------------------------
+# The C++ Front-End Component
+# ----------------------------------------------------------------------
+
+-component=cxxfe
+ @cxxfe.bld		-v=181
+
+# ----------------------------------------------------------------------
+# The Version Component (to pick up LPI_PRODUCT_VERSION in VERSION_DCL)
+# ----------------------------------------------------------------------
+
+-component=version
+ @versn.bld		-v=002  -replaces
+
+# ----------------------------------------------------------------------
+# Notes/Warnings
+# ----------------------------------------------------------------------
+
+-note='*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*'
+-note='*-*-*-*-> NOTE: You must use tmlib 017 or greater   <-*-*-*-*'
+-note='*-*-*-*->       to pick up the new stdarg.h (004).  <-*-*-*-*'
+-note='*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*'
+
+-note=''
+-note='+-----------------------------------------------------------+'
+-note='| This CXXFE list implements the latest multi-node-space.   |'
+-note='| You must use UTIL-063, ALLOC-169, and OE-150 or later!    |'
+-note='+-----------------------------------------------------------+'
+-note=''
+
+# ----------------------------------------------------------------------
+# End-of C++ rel.bld
+# ----------------------------------------------------------------------
+

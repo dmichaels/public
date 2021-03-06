@@ -1,0 +1,885 @@
+/* C++ arglst.pl1 - Handle an actual argument list for expand value. */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  11.09.92  DGM  042	Call DETERMINE_SIZE appropropriately
+ *			in CONVERT_ARGUMENT.
+ *  08.13.92  DGM  041	Do not do default argument stuff if AM_DEBUGGER.
+ *  04.18.92  PKT  040	Merged 036->036 with 036->039.
+ *  03.25.92  PKT  039	Updated handling of void parameters.
+ *  03.10.92  PKT  039	Changed for PARAMETER_NODEs.
+ *  03.26.92  DGM  038	New value-node scheme.
+ *  03.30.92  DGM  037  Nicer diagnostics for incompatible types in
+ *			expressions, esp. function arguments.
+ *  02.06.92  PKT  036	Fixed the 035 fix.
+ *  02.04.92  PKT  035  Fix for unprototyped arguments which target
+ *			passes by reference.
+ *			Removed all creation of ARG_REF_VO value nodes.
+ *  01.21.92  DGM  034	Parameter link-node changes.
+ *  01.06.92  PKT  033	Improved destructor access checking.
+ *  12.26.91  PKT  032	Improved error message.
+ *  12.20.91  PKT  031  Fix for void value passed as non-prototyped
+ *			argument.
+ *  12.03.91  DGM  030  Merge.
+ *  11.26.91  PKT  029L Fix for structures passed by reference.
+ *  10.03.91  DGM  026  Updated for short enum support.
+ *  10.03.91  DGM  025  Warn for non-prototyped function call if -wcnpf.
+ *  09.06.91  DGM  024  Updated -lint used-before-set warning to catch.
+ *			f () { void g (const int &); int x; g (x); }.
+ *  08.23.91  DGM  023  Implemented -lint used-before-set warning.
+ *  07.24.91  DGM  022  Call NOTE_SYMBOL_REFERENCE in DEFAULT_ARGUMENT_
+ *			PROMOTIONS to handle cases like:
+ *				extern void f (...);
+ *				extern void g ();
+ *				main () { f (g); }
+ *			And also use IS_OVERLOADED_VALUE there to give
+ *			a diagnostic for cases like:
+ *				extern void f (...);
+ *				extern void g ();
+ *				extern void g (int);
+ *				main () { f (g); }
+ *  03.27.91  PKT  021  Updated.
+ *  02.25.91  PKT  020  Bug fix in CONVERT_ARGUMENT.
+ *  12.17.90  PKT  019  Updated for improved TRANSMUTE_WITH_TEMP.
+ *  11.09.90  PKT  018  Support for default arguments.
+ *  11.01.90  PKT  017  Updated for strict INITIALIZE_OBJECT;
+ *			fixed bug preventing ERR_BYPASS_CONSTRUCTOR warning.
+ *  10.18.90  PKT  016  Fixed size of args for arg save area;
+ *			added diagnostic for class objects copied bitwise.
+ *  09.28.90  PKT  015  Updated.
+ *  09.17.90  PKT  014  Passing arguments with copy constructor.
+ *  09.14.90  DGM  013  Changed include file names and VOP names.
+ *  09.05.90  PKT  012  Updated.
+ *  08.31.90  TLF  011  Minor fix.
+ *  08.21.90  DGM  010  Fix.
+ *  08.08.90  DGM  009  New type-node.
+ *  08.07.90  PKT  008  Support for destruction of temp created
+ *			in connection with a reference argument.
+ *  07.23.90  TLF  007  Added code to check for and dereference an
+ *                      argument that is a reference type.
+ *  07.10.90  PKT  006  Added destruction of argument expressions.
+ *  07.02.90  DGM  005  Updated and simplified CONVERT_ARGUMENT
+ *			(formerly CHECK_ARGUMENT_WITH_PROTOTYPE
+ *			and CONVERT_ARGUMENT_TO_PROTOTYPE).
+ *  06.15.90  TLF  004  Updated for arguments that are reference types.
+ *  06.06.90  DGM  003  Updated for the new utilities.
+ *  05.31.90  PKT  002  Changes for member functions, added CHECK_ARG_SAVE.
+ *  04.27.90  DGM  001  Fix in TYPE_ID.
+ *  05.16.90  PKT  001  Changed to use EXPLICIT_PARAMETERS.
+ *  03.28.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 11.09.92 042 ARGLST');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_LOOKUP_BUILTIN_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_ARGUMENT_PROMOTION_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_CHECK_REFERENCE_TYPE_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_DUPLICATE_VALUE_PKG;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_OVERLOAD_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN; /* for CURRENT_ARGUMENT_NUMBER */
+
+/* ---------------------------------------------------------------------
+/* CHECK_ARGUMENTS
+/*
+/* Checks and prepares the given CALL/CALL_FUNCTION value-node tree V
+/* for a call which takes arguments specified by the sig-node PARAM_LIST.
+/* The VICTIM parameter is set up with an expression which should be
+/* called after the function returns, to destroy objects which are
+/* passed to the function.  If this is a direct function call, then
+/* the sym-node id FUN_SYMBOL represents the function symbol.
+/* The number of actual arguments is returned.
+/*
+/* The ANSI C compiler goes to extra lengths to track the way a
+/* non-prototyped function is called, and to give helpful error
+/* messages if it's used inconsistently.  We don't provide the
+/* data structures or code for this.
+/*
+/* Trashes current-node-id and current-value-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_ARGUMENTS: procedure (V, PARAM_LIST, FUN_SYMBOL, VICTIM)
+		 returns   (type (SHORT_T));
+
+	declare
+		V		type (CXX_VID_T), /* Call-vop value-node */
+		PARAM_LIST	type (NID_T), /* Parameters (link-nodes) */
+                FUN_SYMBOL	type (NID_T), /* Function sym-node */
+		VICTIM		type (CXX_VID_T); /* Returned destructor expr */
+	declare
+		NPARAMS		type (SHORT_T),
+		PARAM		type (NID_T),
+		NARGS		type (SHORT_T),
+		ARG_VALUE	type (CXX_VID_T),
+		ARG_OFFSET	type (LONG_T),
+		ARG_TYPE	type (TYPE_INFO_T),
+		PROTOTYPED	type (BOOL_T),
+		ELLIPSIS	type (BOOL_T),
+		IS_MATH_BIF	type (BOOL_T),
+		KV		type (CXX_VID_T),
+		K1		type (SHORT_T),
+		T		type (CXX_VID_T),
+		VCT		type (CXX_VID_T);
+
+	/* Initialize */
+
+	NARGS = 0;
+	VICTIM = NULL_CXX_VID;
+
+	/* Get the parameter (sig-node) list (NULL_NID if none) */
+
+	call SET_SIG_NODE_R (PARAM_LIST);
+
+	/* Give a warning for calling a non-prototyped function if desired */
+
+	if SW_WARN_CALL_NON_PROTO_FUN then do;
+		if ^SIG_NODE.PROTOTYPED then do;
+			if FUN_SYMBOL ^= NULL_NID then
+				call SEMANTIC_ERROR_I
+				     (ERR_DIRECT_NON_PROTO_FUN_CALL,
+				      QUALIFIED_SYMBOL_NAME (FUN_SYMBOL));
+			else	call SEMANTIC_ERROR
+				     (ERR_NON_PROTO_FUN_CALL);
+		end;
+	end;
+
+	/*
+	/* If the function is not prototyped (i.e. SYM_NODE.PROTOTYPED = FALSE)
+	/* but PARAM_LIST is non-zero, then a parameter list was built
+	/* from old an old-style function *definition*, hence argument
+	/* checking/conversion not required, just count the arguments.
+	/*
+	/* Do widening when no prototype.
+	/**/
+
+	PARAM		= SIG_NODE.EXPLICIT_PARAMETERS;
+	PROTOTYPED	= SIG_NODE.PROTOTYPED;
+	ELLIPSIS	= SIG_NODE.ELLIPSIS;
+	NPARAMS		= SIG_NODE.EXPLICIT_NPARAMETERS;
+
+        /*
+        /* Catch math intrinsics up-front to make life easier in 
+        /* CONVERT_ARGUMENT_TO_PROTOTYPE. Note that if FUN_SYMBOL = NULL_NID
+        /* then this is a call via "pointer-to-function" with a locator.
+        /**/
+
+        if FUN_SYMBOL ^= NULL_NID then
+		IS_MATH_BIF = (MATH_BIF (SYMBOL_NAME (FUN_SYMBOL)) ^= 0);
+        else	IS_MATH_BIF = FALSE;
+
+	/*
+	/* If this is a simple call, then set CURRENT_FUNCTION_BEING_CALLED
+	/* to the sym-node id of the function being called.  This is a hack
+	/* only to facilitate more precise diagnostics concerning incompatible
+	/* arguments (see COMPATIBLE_ASSIGNMENT_POINTERS).
+	/**/
+
+	CURRENT_FUNCTION_BEING_CALLED = NULL_NID;
+	CXX_VALUE_NODE_PTR = V;
+	if CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID then do;
+		/*
+		/* Look for one of:
+		/*
+		/* ADDR(REF(function-sym-node-id))
+		/* DOT_STAR(x,MEMBER_PTR(member-function-sym-node-id,y))
+		/**/
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+		if (CXX_VALUE_NODE.VOP = ADDR_VO) &
+		   (CXX_VALUE_NODE.LEFT ^= NULL_CXX_VID) then do;
+			CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+			if CXX_VALUE_NODE.VOP = REF_VO then
+				CURRENT_FUNCTION_BEING_CALLED =
+					CXX_VALUE_NODE.LEFT_NID;
+		end;
+		else if (CXX_VALUE_NODE.VOP = DOT_STAR_VO) &
+			(CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID) then do;
+			CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.RIGHT;
+			if CXX_VALUE_NODE.VOP = MEMBER_PTR_VO then
+				CURRENT_FUNCTION_BEING_CALLED =
+					CXX_VALUE_NODE.LEFT_NID;
+		end;
+	end;
+
+	/* Count arguments and compare with formal parameters */
+
+        ARG_OFFSET = 0;			/* Argument save area size */
+	ARG_VALUE = V;			/* Call-vop value-node */
+
+	do while (TRUE);
+		CXX_VALUE_NODE_PTR = ARG_VALUE;
+
+		/* Check for default argument. */
+
+		if ^AM_DEBUGGER &
+		   (CXX_VALUE_NODE.RIGHT = NULL_CXX_VID) &
+		   (PARAM ^= NULL_NID) then do;
+			call SET_PARAMETER_NODE_R (PARAM);
+			if PARAMETER_NODE.VALUE ^= NULL_CXX_VID then do;
+				T = DUPLICATE_VALUE ((PARAMETER_NODE.VALUE), FALSE);
+				/* Separate the argument from destructor */
+				KV = T->CXX_VALUE_NODE.LEFT;
+				VCT = T->CXX_VALUE_NODE.RIGHT;
+				call COUNT_UP_VALUE (KV);
+				call COUNT_UP_VALUE (VCT);
+				call COUNT_DOWN_VALUE (T);
+
+				VICTIM = CONCATENATE_STATEMENTS (VICTIM, VCT);
+				
+				KV = GET_VALUE_AND_EXPAND_L (ARG_VO, KV);
+				CXX_VALUE_NODE_PTR = ARG_VALUE;
+				CXX_VALUE_NODE.RIGHT = KV;
+			end;
+		end;
+
+		if CXX_VALUE_NODE.RIGHT = NULL_CXX_VID then
+			leave;
+
+		if NARGS = MAX_ARGUMENTS then do;
+			/*
+			/* Number of arguments exceeds implementation limit.
+			/**/
+			call SEMANTIC_ERROR (ERR_TOO_MANY_ARGS);
+			KV = CXX_VALUE_NODE.RIGHT;
+			CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+			call COUNT_DOWN_VALUE (KV);
+			goto DONE_CHECK_ARGUMENTS;
+		end;
+
+		NARGS = NARGS + 1;
+
+		ARG_VALUE = CXX_VALUE_NODE.RIGHT;
+
+		CURRENT_ARGUMENT_NUMBER = NARGS; /* For possible error (hack) */
+		VCT = CONVERT_ARGUMENT (ARG_VALUE, PARAM, PROTOTYPED);
+		VICTIM = CONCATENATE_STATEMENTS (VICTIM, VCT);
+
+		if PARAM ^= NULL_NID then do;
+			call SET_PARAMETER_NODE_R (PARAM);
+			PARAM = PARAMETER_NODE.NEXT;
+		end;
+
+                /*
+                /* Determine the size (bytes) of the argument save area for
+                /* arguments pushed on this function call. Max size of save
+                /* area stored in BLOCK_NODE for Back-End usage below.
+                /**/
+
+		call DETERMINE_ARGUMENT_SIZE (ARG_VALUE, ARG_TYPE);
+
+		/* Align the argument */
+
+                K1 = ROUND (ARG_TYPE.SIZE_UNITS, BYTES);
+                ARG_OFFSET = divide (ARG_OFFSET + K1-1, K1, 31) * K1;
+
+		/* Get the true argument size */
+
+                ARG_TYPE.SIZE = ROUNDU (ARG_TYPE.SIZE,
+					ARG_TYPE.SIZE_UNITS, BYTES);
+
+		/* Set the argument save area size */
+
+                ARG_OFFSET = ARG_OFFSET + ARG_TYPE.SIZE;
+	end;
+
+	DONE_CHECK_ARGUMENTS:
+
+	/* Set max arg save area */
+
+	call SET_BLOCK_NODE (CURRENT_BLOCK);
+
+        BLOCK_NODE.ARGUMENT_SAVE_AREA
+		= max (BLOCK_NODE.ARGUMENT_SAVE_AREA, ARG_OFFSET);
+
+	if PROTOTYPED then do;
+		/*
+		/* The number of arguments specified in this
+		/* function call may be inconsistent with the
+		/* declaration of this function.
+		/**/
+		if ^ELLIPSIS & (NARGS > NPARAMS) then do;
+			if CURRENT_FUNCTION_BEING_CALLED = NULL_NID then
+				call	SEMANTIC_ERROR_II
+					(ERR_TOO_MANY_ARGUMENTS,
+					 trim (char (NPARAMS)),
+					 trim (char (NARGS)));
+			else	call	SEMANTIC_ERROR_III
+					(ERR_TOO_MANY_FUN_ARGS,
+					 COMPLETE_QUALIFIED_SYMBOL_NAME
+					 (CURRENT_FUNCTION_BEING_CALLED),
+					 trim (char (NPARAMS)),
+					 trim (char (NARGS)));
+		end;
+		else if NARGS < NPARAMS then do;
+			if CURRENT_FUNCTION_BEING_CALLED = NULL_NID then
+				call SEMANTIC_ERROR_II
+				     (ERR_TOO_FEW_ARGUMENTS,
+				      trim (char (NPARAMS)),
+				      trim (char (NARGS)));
+			else	call SEMANTIC_ERROR_III
+				     (ERR_TOO_FEW_FUN_ARGS,
+				      COMPLETE_QUALIFIED_SYMBOL_NAME
+				      (CURRENT_FUNCTION_BEING_CALLED),
+				      trim (char (NPARAMS)),
+				      trim (char (NARGS)));
+		end;
+	end;
+
+	CXX_VALUE_NODE_PTR = V;
+
+	return (NARGS);
+        
+/* ---------------------------------------------------------------------
+/* CONVERT_ARGUMENT
+/*
+/* Converts the given argument A to the type of the given formal
+/* parameter P; performs semantic checks and emits diagnostics if
+/* necessary.  Trashes current-node-id and current-value-node-id.
+/*
+/* Returns an expression containing necessary destruction, which
+/* should be carried out after the function returns.
+/* ------------------------------------------------------------------- */
+
+CONVERT_ARGUMENT: procedure (A, P, PROTO) internal 
+		  returns (type (CXX_VID_T));
+
+	declare
+		A	type (CXX_VID_T),	     /* Argument value-node */
+		P	type (NID_T),	     /* Formal parameter sym-node */
+		PROTO	type (BOOL_T);	     /* Prototyped ? */
+        declare
+		AV		type (CXX_VID_T),	     /* Argument value */
+		AT		type (TYPE_INFO_T),  /* Argument type */
+		PT		type (TYPE_INFO_T),  /* Formal param type */
+		S		type (NID_T),
+		VICTIM		type (CXX_VID_T),        /* Expr to destroy temp */
+		SP		pointer,
+		TEMP		type (CXX_VID_T),
+		TEMP_REF	type (CXX_VID_T),
+		INITTER		type (CXX_VID_T),
+		TEMP_VALUE	type (CXX_VID_T),
+		TEMP_ADDR	type (CXX_VID_T),
+		TD		type (TYPE_DATA_T);
+
+	/*
+	/* If no formal parameter type was given, or if this
+	/* argument converion is not for a prototyped function,
+	/* then simply perform the default argument promotions.
+	/**/
+
+	if (P = NULL_NID) | ^PROTO then do;
+		return (DEFAULT_ARGUMENT_PROMOTIONS (A));
+	end;
+
+	/* Handle a reference type parameter */
+
+	if IS_REFERENCE_PARAMETER_TYPE (P, S) then do;
+		call SET_TYPE_NODE_R (S);
+		call GET_TYPE_NODE_TYPE (AT);
+		AV = A->CXX_VALUE_NODE.LEFT;
+		if SW_LINT then do;
+			/*
+			/* Check for argument value used before set.
+			/* We have a reference type parameter, so we
+			/* don't check for this unless the parameter
+			/* is a reference to a "const".  For example:
+			/* f () { void g (const int &); int x; g (x); }
+			/**/
+			call GET_TOP_LEVEL_TYPE (S, 1, TD);
+			if TD.CONST then
+				call CHECK_IF_USED_BEFORE_SET (AV, ARG_VO);
+		end;
+		AV = INIT_REF_CHECK (AT, AV, ARG_VO, NARGS, NULL_NID, VICTIM);
+		CXX_VALUE_NODE_PTR = A;
+		call SET_VALUE_TYPE (AT);
+		CXX_VALUE_NODE.LEFT = AV;
+		return (VICTIM);
+	end;
+
+	/* Get the type of the argument */
+
+	CXX_VALUE_NODE_PTR = A;
+
+	/* Auto dereference it if it is a reference type */
+	/* 
+	/* -TODO- This VALUE_OF call is redundant with what
+	/* GENERAL_CONVERT_VALUE does below.  This can result in
+	/* duplicate error messages in case of incomplete type, etc.
+	/**/
+	AV = VALUE_OF (A->CXX_VALUE_NODE.LEFT);
+
+	/* Warn about value used before set if desired */
+
+	if SW_LINT then
+		call CHECK_IF_USED_BEFORE_SET (AV, ARG_VO);
+
+	/* Set the possibly new type into the argument value */
+
+	CXX_VALUE_NODE_PTR = AV;
+	call GET_VALUE_TYPE (AT);
+	CXX_VALUE_NODE_PTR = A;
+	call SET_VALUE_TYPE (AT);
+	A->CXX_VALUE_NODE.LEFT = AV;
+
+	/* Get the type of the formal parameter */
+
+	call SET_PARAMETER_NODE_R (P);
+	call SET_TYPE_NODE_R (PARAMETER_NODE.TYPE);
+        call GET_TYPE_NODE_TYPE (PT);
+	call DETERMINE_SIZE (PT);
+
+	/*
+	/* For math builtins, allow single precision arguments
+	/* in place of double. Will result in single precision
+	/* version of the intrinsic.
+	/**/ 
+	if IS_MATH_BIF then do;        
+		if (AT.TOP_TYPE.CODE = byte (FLOAT_BT)) &
+		   (PT.TOP_TYPE.CODE = byte (DOUBLE_BT)) then
+			return (NULL_CXX_VID);
+	end;
+
+	/*
+	/* Perform semantic checks, convert the argument, 
+	/* and update the argument value.
+	/**/
+
+	AV = GENERAL_CONVERT_VALUE (AV, PT, ARG_VO);
+	CXX_VALUE_NODE_PTR = A;
+	call SET_VALUE_TYPE (PT);
+	A->CXX_VALUE_NODE.LEFT = AV;
+	if rank (PT.TYPE_CODE) = VOID_BT then
+		/*
+		/* Can't pass a void; how would it be received?
+		/* What would the type of the argument be in the
+		/* intermediate ops?
+		/**/
+		call SEMANTIC_ERROR_I (ERR_VOID_PARAMETER,
+				       trim (char (CURRENT_ARGUMENT_NUMBER)));
+
+	/* Make a temporary to hold the argument, if necessary */
+
+	/* If the argument type is a class with copy
+	/* constructor, fudge the setup by creating a temp,
+	/* initializing it with INITIALIZE_OBJECT, and passing
+	/* its address.  If SW_ZOMBIE_TEMP, set up VICTIM to
+	/* destroy the temp; if ^SW_ZOMBIE_TEMP, let the callee
+	/* destroy the temp.
+	/**/
+
+	if (PT.DERIVED_TYPE_SKIP ^= 0) | PT.EXTRA_PTR_LEVEL then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	if BACK_END_TYPE_BY_REFERENCE (PT.TYPE) then do;
+
+		/* Make a temp of the parameter type */
+
+		TEMP = GET_TEMP_VALUE (PT, AUTO_ST, FALSE);
+		TEMP_REF = GET_TEMP_REF (TEMP);
+		call COUNT_UP_VALUE (TEMP_REF);
+		INITTER = INITIALIZE_OBJECT (TEMP_REF, AV);
+		TEMP_VALUE = GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF);
+		TEMP_ADDR = GET_VALUE_AND_EXPAND_L (ADDR_VO, TEMP_VALUE);
+		call GET_VALUE_TYPE (AT);
+		AV = EFFECT_BEFORE_VALUE (INITTER, TEMP_ADDR);
+
+		/* Update the argument value */
+
+		CXX_VALUE_NODE_PTR = A;
+		call SET_VALUE_TYPE (AT);
+		A->CXX_VALUE_NODE.LEFT = AV;
+
+		return (NULL_CXX_VID);
+	end;		
+
+	AV = TRANSMUTE_WITH_TEMP (AV, VICTIM, FALSE, AUTO_ST, ARG_VO);
+
+	/* Update the argument value */
+
+	CXX_VALUE_NODE_PTR = A;
+	A->CXX_VALUE_NODE.LEFT = AV;
+
+	return (VICTIM);
+
+end CONVERT_ARGUMENT;
+
+/* ---------------------------------------------------------------------
+/* DEFAULT_ARGUMENT_PROMOTIONS
+/*
+/* Handle default widening when no formal parameter corresponds.
+/* The argument value node will be manipulated.  Its id won't be
+/* changed, but it must be independent with count=1.
+/*
+/* returns an expression indicating necessary destruction
+/* ------------------------------------------------------------------- */
+
+DEFAULT_ARGUMENT_PROMOTIONS: procedure (V) internal
+			     returns (type (CXX_VID_T));
+
+	declare
+		V		type (CXX_VID_T);
+	declare
+		K		type (SHORT_T),
+		KV		type (CXX_VID_T),
+		LEFT		type (CXX_VID_T),
+		ARG_TYPE	type (TYPE_INFO_T),
+		ARG_TYPE_CODE	type (SHORT_T),
+		VICTIM		type (CXX_VID_T),
+		P		type (POINTER_T),
+		ID		type (NID_T),
+		TEMP		type (CXX_VID_T),
+		TEMP_REF	type (CXX_VID_T),
+		INITTER		type (CXX_VID_T),
+		AT		type (TYPE_INFO_T),
+		TEMP_VALUE	type (CXX_VID_T),
+		TEMP_ADDR	type (CXX_VID_T);
+
+        /*
+        /* LEFT is an argument value.
+        /* RIGHT is next argument's ARG value or 0.
+	/*
+        /* Insert CONVERT's as req'd by language rules (integral promotions).
+        /**/
+
+        LEFT = V->CXX_VALUE_NODE.LEFT;	/* Argument's expression */
+	LEFT = VALUE_OF (LEFT);
+
+	CXX_VALUE_NODE_PTR = LEFT;
+        call GET_VALUE_TYPE (ARG_TYPE);
+
+        if ARG_TYPE.SIZE_UNITS = BITS then do;
+		LEFT = GET_VALUE_AND_EXPAND_L (FIELD_VO, LEFT);
+		call GET_VALUE_TYPE (ARG_TYPE);
+        end;
+
+	ARG_TYPE_CODE = rank (ARG_TYPE.TOP_TYPE.CODE);
+	if IS_AGGREGATE_TAG_TYPE (ARG_TYPE_CODE) then do;
+		/*
+		/* Warn if the type is one which gets copied bitwise, 
+		/* E&S 5.2.2.
+		/* -TODO- We don't copy bitwise anymore, but 
+		/* do warn that this is nonportable.  But watch
+		/* out because we don't just get here for ... args;
+		/* we also get here for args passed to unprototyped
+		/* functions.
+		/**/
+/*		call GET_SYM_NODE_R (ARG_TYPE.TOP_TYPE.TAG_SYMBOL, P);
+ *		if P->SYM_NODE.NEEDS_COPY then
+ *			call SEMANTIC_ERROR (ERR_BYPASS_CONSTRUCTOR);
+ *		call RELEASE_SYM_NODE (ARG_TYPE.TOP_TYPE.TAG_SYMBOL);
+ */
+		call CHECK_CTOR_DTOR_ACCESS (ARG_TYPE);
+	end;
+
+	else if ^IS_DERIVED_TYPE (ARG_TYPE_CODE) then do;
+		if ARG_TYPE_CODE = VOID_BT then
+			/*
+			/* Can't pass a void; how would it be received?
+			/* What would the type of the argument be in the
+			/* intermediate ops?
+			/**/
+			call SEMANTIC_ERROR (ERR_VOID_ARGUMENT);
+
+		/* Perform Integral Promotion */
+		K = ARGUMENT_PROMOTION (ARG_TYPE_CODE);
+		if K ^= ARG_TYPE_CODE then do;
+			/* CONVERT if necessary */
+			LEFT = CONVERT_VALUE (LEFT, K);
+			call GET_VALUE_TYPE (ARG_TYPE);
+		end;
+        end;
+	else if ARG_TYPE_CODE = POINTER_DT then do;
+		if IS_OVERLOADED_VALUE (LEFT, ID) then do;
+			/*
+			/* Error; illegal use of overloaded function pointer.
+			/**/
+			call SEMANTIC_ERROR (ERR_OVLD_FUN_PTR);
+		end;
+		else	call NOTE_SYMBOL_REFERENCE (ID);
+	end;
+        else if ARG_TYPE_CODE = ARRAY_DT then
+		/* Not a ptr is an error*/
+		call SEMANTIC_ERROR (ERR_PASS_AS_PTR_TO);
+                /* Array must be passed as ptr to ... .*/
+                /* but go ahead and try it ...! */
+
+	if BACK_END_TYPE_BY_REFERENCE (DIRECT_TYPE_ID (ARG_TYPE)) then do;
+		/*
+		/* Make a temp of the parameter type */
+
+		TEMP = GET_TEMP_VALUE (ARG_TYPE, AUTO_ST, FALSE);
+		TEMP_REF = GET_TEMP_REF (TEMP);
+		call COUNT_UP_VALUE (TEMP_REF);
+		call COUNT_UP_VALUE (TEMP_REF);
+		VICTIM = DESTROY_OBJECT (TEMP_REF, NULL_CXX_VID, 
+					 ARG_TYPE.TOP_TYPE,
+					 FALSE, NULL_NID);
+		INITTER = INITIALIZE_OBJECT (TEMP_REF, LEFT);
+		TEMP_VALUE = GET_VALUE_AND_EXPAND_L (VALUE_VO, TEMP_REF);
+		TEMP_ADDR = GET_VALUE_AND_EXPAND_L (ADDR_VO, TEMP_VALUE);
+		call GET_VALUE_TYPE (ARG_TYPE);
+		LEFT = EFFECT_BEFORE_VALUE (INITTER, TEMP_ADDR);
+	end;		
+	else
+		/* Make a temporary to hold the argument, if necessary. */
+		LEFT = TRANSMUTE_WITH_TEMP
+		       (LEFT, VICTIM, FALSE, AUTO_ST, ARG_VO);
+
+	CXX_VALUE_NODE_PTR = V;			/* the orignal ARG_VO */
+        call SET_VALUE_TYPE (ARG_TYPE);		/* copy the new type info   */
+        V->CXX_VALUE_NODE.LEFT = LEFT;                    
+        V->CXX_VALUE_NODE.UNARY = TRUE;
+
+	return (VICTIM);
+
+end DEFAULT_ARGUMENT_PROMOTIONS;
+
+end CHECK_ARGUMENTS;
+
+/* ---------------------------------------------------------------------
+/* CHECK_ARG_SAVE
+/*
+/* Make sure the current block's arg save area is sufficient
+/* for this call to a function returning a class w/constructor,
+/* or to a member function.
+/* This depends on the actual argument list.
+/*
+/* returns the number of actual arguments,
+/* and with the value node of the argument "V" paged in
+/* ------------------------------------------------------------------- */
+
+CHECK_ARG_SAVE: procedure (V)
+		returns  (type (SHORT_T));
+
+	declare
+		V		type (CXX_VID_T);	/* CALL_VO node */
+	declare
+		ARGS		type (SHORT_T),
+		RIGHT		type (CXX_VID_T),
+		KV		type (CXX_VID_T),
+		K1		type (SHORT_T),
+		ARG_OFFSET	type (LONG_T),
+		ARG_TYPE	type (TYPE_INFO_T);
+                
+	ARGS = 0;
+
+	/* Count arguments */
+
+        ARG_OFFSET = 0;			/* Size req'd arg save area */
+	CXX_VALUE_NODE_PTR = V;		/* CALL */
+
+	do while (CXX_VALUE_NODE.RIGHT ^= NULL_CXX_VID);
+		if ARGS = MAX_ARGUMENTS then do;
+			/*
+			/* Number of arguments exceeds implementation limit.
+			/**/
+			call SEMANTIC_ERROR (ERR_TOO_MANY_ARGS);
+			KV = CXX_VALUE_NODE.RIGHT;
+			CXX_VALUE_NODE.RIGHT = NULL_CXX_VID;
+			call COUNT_DOWN_VALUE (KV);
+			goto FINISH_ARGS;
+		end;
+		ARGS = ARGS + 1;
+		RIGHT = CXX_VALUE_NODE.RIGHT;	/* ARG value */
+
+                /*
+                /* Determine the size (bytes) of the argument save area for
+                /* arguments pushed on this function call. Max size of save
+                /* area stored in BLOCK_NODE for Back-End usage below.
+                /**/
+		call DETERMINE_ARGUMENT_SIZE (RIGHT, ARG_TYPE);
+
+                K1 = ROUND (ARG_TYPE.SIZE_UNITS, BYTES); /* Align	    */
+                ARG_OFFSET = divide (ARG_OFFSET + K1-1, K1, 31) * K1;
+                ARG_TYPE.SIZE = ROUNDU (ARG_TYPE.SIZE, 
+					ARG_TYPE.SIZE_UNITS, BYTES);
+		/* Set arg save area size. */
+                ARG_OFFSET = ARG_OFFSET + ARG_TYPE.SIZE;
+
+		CXX_VALUE_NODE_PTR = RIGHT;
+	end; /* looping through actual arguments */
+
+FINISH_ARGS:
+	call SET_BLOCK_NODE (CURRENT_BLOCK);	/* Set max arg save area    */
+        BLOCK_NODE.ARGUMENT_SAVE_AREA = 
+                              max (BLOCK_NODE.ARGUMENT_SAVE_AREA, ARG_OFFSET);
+
+	CXX_VALUE_NODE_PTR = V;
+	return (ARGS);
+
+end CHECK_ARG_SAVE;
+
+/* ------------------------------------------------------------------------
+/* IS_REFERENCE_PARAMETER_TYPE
+/* 
+/* Determine if the parameter whose parameter-node id is PARAM_ID is a
+/* REFERENCE type.  If so, then return the node id of the parameter
+/* type-node in TYPE_ID, and return TRUE.  Otherwise, return NULL_NID
+/* in TYPE_ID, and return FALSE.  Trashes current-node-id.
+/* ------------------------------------------------------------------------- */
+
+IS_REFERENCE_PARAMETER_TYPE: procedure (PARAM_ID, TYPE_ID)
+			     returns   (type (BOOL_T))
+			     internal;
+	declare
+		PARAM_ID	type (NID_T),
+		TYPE_ID		type (NID_T);
+
+	call SET_PARAMETER_NODE_R (PARAM_ID);
+	if PARAMETER_NODE.TOP_TYPE.CODE = byte (REFERENCE_DT) then do;
+		TYPE_ID = PARAMETER_NODE.TYPE;
+		return (TRUE);
+	end;
+	TYPE_ID = NULL_NID;
+	return (FALSE);
+
+end IS_REFERENCE_PARAMETER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* DETERMINE_ARGUMENT_SIZE
+/*
+/* Determine the size used by the given argument in the save area for
+/* arguments pushed on this function call.
+/* ------------------------------------------------------------------- */
+
+DETERMINE_ARGUMENT_SIZE: procedure (ARG_VALUE, ARG_TYPE) internal;
+
+	declare
+		ARG_VALUE	type (CXX_VID_T),
+		ARG_TYPE	type (TYPE_INFO_T);
+	declare
+		T		type (SHORT_T);
+
+	/* Get the actual argument value */
+
+	CXX_VALUE_NODE_PTR = ARG_VALUE->CXX_VALUE_NODE.LEFT;
+	call GET_VALUE_TYPE (ARG_TYPE);
+
+        if ARG_TYPE.SIZE_UNITS = BITS then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	if IS_ARITHMETIC_TYPE (rank (ARG_TYPE.TOP_TYPE.CODE)) then do;
+		if ARG_TYPE.TOP_TYPE.CODE = byte (ENUM_BT) then
+			T = GET_ENUM_INTEGRAL_TYPE (ARG_TYPE.TOP_TYPE);
+		else	T = rank (ARG_TYPE.TOP_TYPE.CODE);
+		/*
+		/* Perform the integral promotions.
+		/**/
+		T = ARGUMENT_PROMOTION (T);
+		ARG_TYPE.TYPE			= GET_BASIC_TYPE (T);
+		ARG_TYPE.TOP_TYPE.CODE		= byte (T);
+		ARG_TYPE.DERIVED_TYPE_SKIP	= 0;
+        end;
+
+	if ARG_TYPE.SIZE_UNITS = 0 then do;
+		/*
+		/* An incomplete type (error) will
+		/* have no size data -- just punt.
+		/**/
+		ARG_TYPE.SIZE_UNITS = WORDS;
+	end;
+
+	call DETERMINE_SIZE (ARG_TYPE);	/* Get true size */
+
+end DETERMINE_ARGUMENT_SIZE;
+
+/* ---------------------------------------------------------------------
+/* CHECK_DEFAULT_ARGUMENT
+/* ------------------------------------------------------------------- */
+
+CHECK_DEFAULT_ARGUMENT: procedure (ARG)
+			external (X_CHECK_DEFAULT_ARGUMENT);
+
+	declare
+		ARG		type (NID_T);
+	declare
+		ARG_VAL		type (CXX_VID_T),
+		PARAM_TYPE	type (TYPE_INFO_T),
+		VICTIM		type (CXX_VID_T);
+
+	call SET_SYM_NODE_R (ARG);
+	ARG_VAL = SYM_NODE.EXPRESSION;
+
+	/* Get the type of the formal parameter */
+	call GET_SYMBOL_TYPE (PARAM_TYPE);
+
+	/* Handle a reference type parameter */
+	if rank (PARAM_TYPE.TOP_TYPE.CODE) = REFERENCE_DT then do;
+		ARG_VAL = INIT_REF_CHECK (PARAM_TYPE, ARG_VAL, ARG_VO, 
+			 		  0, ARG, VICTIM);
+		ARG_VAL = GET_VALUE_AND_EXPAND_L (IMPLICIT_STAR_VO, ARG_VAL);
+	end;
+	else do;
+		VICTIM = NULL_CXX_VID;
+
+		/* Auto dereference it if it is a reference type */
+		ARG_VAL = VALUE_OF (ARG_VAL);
+
+		/*
+		/* Perform semantic checks, convert the argument, 
+		/* and update the argument value.
+		/**/
+		ARG_VAL = GENERAL_CONVERT_VALUE (ARG_VAL, PARAM_TYPE, ARG_VO);
+	end;
+
+	/* Set up SYM_NODE.EXPRESSION with a value node.
+	/*    CXX_VALUE_NODE.LEFT the initializing expression
+	/*    CXX_VALUE_NODE.RIGHT the destruction (0 if none)
+	/**/
+	ARG_VAL = ALLOC_CXX_VALUE_NODE_LR (0, ARG_VAL, VICTIM);
+
+	call SET_SYM_NODE (ARG);
+	SYM_NODE.EXPRESSION = ARG_VAL;
+
+end CHECK_DEFAULT_ARGUMENT;
+

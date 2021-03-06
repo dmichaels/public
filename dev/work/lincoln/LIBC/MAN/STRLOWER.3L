@@ -1,0 +1,23 @@
+.TH STRLOWER 3L LOCAL
+
+.SH NAME
+strlower - convert string to lower case
+
+.SH SYNOPSIS
+.ft B
+char *
+.br
+strlower(str)
+.br
+char *str;
+.ft P
+
+.SH DESCRIPTION
+Converts any upper case alphabetic characters
+in string \fIstr\fP to lower case.  Returns the string.
+
+.SH FILES
+strlower.c
+
+.SH SEE ALSO
+strupper(3L)

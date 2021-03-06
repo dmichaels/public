@@ -1,0 +1,117 @@
+/* LPI-DEBUG M68 REGNAME.IN - MC68020/68881 register names */
+
+/**********************************************************************
+ * This product is the property of Language Processors, Inc.          *
+ * and is licensed pursuant to a written license agreement.           *
+ * No portion of this product may be reproduced without the written   *
+ * permission of Language Processors, Inc. except pursuant to the     *
+ * license agreement.                                                 *
+ *********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   2.12.92  VTF (001) Changed all the register names to lowercase.
+ *                      Added 68040 control registers (tc, itt0, itt1,
+ *                      dtt0, dtt1, mmusr, urp, srp).
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68020 User's
+ *		   Manual, and the MC68881 User's Manual.
+ *
+ *********************************************************************/
+
+/* -------------------------------------------------------------------
+ * -- MC68020/MC68881 Register Names --
+ * ---------------------------------------------------------------- */
+
+declare REG_NAME (NO_REG : MAX_REGS - 1) character (5) varying
+				         static initial (
+
+	  ''		/* NO_REG */
+	, 'a0'		/* REG_A0 */
+	, 'a1'		/* REG_A1 */
+	, 'a2'		/* REG_A2 */
+	, 'a3'		/* REG_A3 */
+	, 'a4'		/* REG_A4 */
+	, 'a5'		/* REG_A5 */
+	, 'a6'		/* REG_A6 */
+	, 'sp'		/* REG_A7 or REG_SP */
+	, 'd0'		/* REG_D0 */
+	, 'd1'		/* REG_D1 */
+	, 'd2'		/* REG_D2 */
+	, 'd3'		/* REG_D3 */
+	, 'd4'		/* REG_D4 */
+	, 'd5'		/* REG_D5 */
+	, 'd6'		/* REG_D6 */
+	, 'd7'		/* REG_D7 */
+	, 'pc'		/* REG_PC */
+	, 'sr'		/* REG_SR */
+	, 'ccr'		/* REG_CCR */
+	, 'sfc'		/* REG_SFC */
+	, 'dfc'		/* REG_DFC */
+	, 'cacr'	/* REG_CACR */
+	, 'usp'		/* REG_USP */
+	, 'vbr'		/* REG_VBR */
+	, 'caar'	/* REG_CAAR */
+	, 'msp'		/* REG_MSP */
+	, 'isp'		/* REG_ISP */
+        , 'tc'          /* REG_TC  */
+        , 'itt0'        /* REG_ITT0 */
+        , 'itt1'        /* REG_ITT1 */
+        , 'dtt0'        /* REG_DTT0 */
+        , 'dtt1'        /* REG_DTT1 */
+        , 'mmusr'       /* REG_MMUSR */
+        , 'urp'         /* REG_URP */
+        , 'srp'         /* REG_SRP */        
+	, 'fp0'		/* REG_FP0 */
+	, 'fp1'		/* REG_FP1 */
+	, 'fp2'		/* REG_FP2 */
+	, 'fp3'		/* REG_FP3 */
+	, 'fp4'		/* REG_FP4 */
+	, 'fp5'		/* REG_FP5 */
+	, 'fp6'		/* REG_FP6 */
+	, 'fp7'		/* REG_FP7 */
+	, 'fpcr'	/* REG_FPCR */
+	, 'fpsr'	/* REG_FPSR */
+	, 'fpiar'	/* REG_FPIAR */
+);
+
+declare AREG_NAME (0 : MAX_AREGS - 1) character (2) varying
+				      static initial (
+
+	  'a0'		/* REG_A0 - REG_A0 */
+	, 'a1'		/* REG_A1 - REG_A0 */
+	, 'a2'		/* REG_A2 - REG_A0 */
+	, 'a3'		/* REG_A3 - REG_A0 */
+	, 'a4'		/* REG_A4 - REG_A0 */
+	, 'a5'		/* REG_A5 - REG_A0 */
+	, 'a6'		/* REG_A6 - REG_A0 */
+	, 'a7'		/* REG_A7 - REG_A0 */
+);
+
+declare DREG_NAME (0 : MAX_DREGS - 1) character (2) varying
+				      static initial (
+
+	  'd0'		/* REG_D0 - REG_D0 */
+	, 'd1'		/* REG_D1 - REG_D0 */
+	, 'd2'		/* REG_D2 - REG_D0 */
+	, 'd3'		/* REG_D3 - REG_D0 */
+	, 'd4'		/* REG_D4 - REG_D0 */
+	, 'd5'		/* REG_D5 - REG_D0 */
+	, 'd6'		/* REG_D6 - REG_D0 */
+	, 'd7'		/* REG_D7 - REG_D0 */
+);
+
+declare FREG_NAME (0 : MAX_FREGS - 1) character (3) varying
+				      static initial (
+
+	  'fp0'		/* REG_FP0 - REG_FP0 */
+	, 'fp1'		/* REG_FP1 - REG_FP0 */
+	, 'fp2'		/* REG_FP2 - REG_FP0 */
+	, 'fp3'		/* REG_FP3 - REG_FP0 */
+	, 'fp4'		/* REG_FP4 - REG_FP0 */
+	, 'fp5'		/* REG_FP5 - REG_FP0 */
+	, 'fp6'		/* REG_FP6 - REG_FP0 */
+	, 'fp7'		/* REG_FP7 - REG_FP0 */
+);

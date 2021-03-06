@@ -1,0 +1,3205 @@
+/* LPI-C++ convrt.pl1 - Convert a value */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.07.92  DGM  070	Fix for short enum.
+ *  08.12.92  DGM  069	Fix for float/double-to-unsigned conversion;
+ *			also need RTS fix (cvf[24]u4.[sc]) for SPARC
+ *			and CG fix for i386 and MC680x0.
+ *  06.11.92  DGM  068	Updated to not see overloaded functions which
+ *			are effectively non-visible because of parsing
+ *			from a deferred function body.
+ *  06.05.92  DGM  067  Added CXX_USE_LONG_OPERATIONS for AND/OR/XOR
+ *			from LPI-C.
+ *  05.12.92  PKT  066	Fixed GENERAL_CONVERT_VALUE for char to floating.
+ *  05.12.92  PKT  066	Fixed CONVERT_OVERLOADED for implicit conversion.
+ *  05.08.92  PKT  065R	Fixed REDUCE to work silently again; suppressed
+ *			new ERR_POINTER_WONT_FIT warning during implicit
+ *			conversion.
+ *  05.06.92  PKT  065R	Fixed CONVERT_OVERLOADED for member references.
+ *  04.30.92  PKT  065	Added CONVERT_OVERLOADED, mostly taken from
+ *			COMPATIBLE_ASSIGNMENT_POINTERS.
+ *  04.27.92  PKT  065	Fixed to avoid redundant diagnostic
+ *			casting pointer type to non-integral type.
+ *  04.22.92  PKT  065	Merged 060->061 with rearrangement.
+ *  04.10.92  PKT  065	Complete rearrangement of GENERAL_CONVERT_VALUE
+ *			and CONVERT_VALUE.
+ *  04.30.92  DGM  064  Fix to set REFERENCED for referenced but
+ *			uncalled functions.
+ *  04.18.92  PKT  063	Merged 061->062 with 061->062.
+ *  03.26.92  DGM  062  New value-node scheme.
+ *  03.30.92  DGM  061  New INCOMPATIBLE_xxx_ERROR.
+ *  03.19.92  DGM  060  Removed hook on SW_LAX_POINTER for giving error
+ *			for pointer to non-pointer conversion.
+ *  01.10.92  PKT  059  Revamped for better destructor access checking.
+ *  12.29.91  PKT  059	Fixed GENERAL_CONVERT_VALUE for reference
+ *			expressions that initialize classes, moved
+ *			FETCH_VALUE to clsutl.pl1.
+ *  12.18.91  DGM  058  Fixed DGM merging goof.
+ *  12.16.91  PKT  057  Fixed GENERAL_CONVERT_VALUE for reference
+ *			expressions, etc.  Also fixed it for
+ *			direct user conversion.
+ *			Changed suffix back to .pl1.
+ *  11.15.91  DGM  056  Changed file name suffix from .pl1 to .mpl.
+ *  11.13.91  DGM  055  Updated for short enums.
+ *  10.28.91  PKT  054  Fixed error recovery to prevent stack blowup.
+ *			Check size of non-lvalue in CONVERT_TO_VOID.
+ *  10.25.91  PKT  053L Updated.
+ *  10.03.91  DGM  052  Updated for short enums.
+ *  09.25.91  PKT  051  Fixed GENERAL_CONVERT_VALUE to diagnose and
+ *			handle conversion to array type. 
+ *  08.23.91  DGM  050  Don't emit incompatible enum diagnostic
+ *			in Classic C mode.
+ *  08.19.91  DGM  049  Picked up ANSI-C FE changes (from 06.05.90)
+ *			for floating point constant folding.
+ *  07.23.91  PKT  048  Updated.
+ *  06.19.91  PKT  047  Documentation update.
+ *  06.14.91  PKT  046  Support for -xcastl.
+ *  06.07.91  PKT  045  Bug fixes.
+ *  04.29.91  PKT  044  User conversions take precedence over conversion
+ *			to inaccessible or ambiguous base.
+ *  04.24.91  PKT  043  Improved support for overloaded expressions.
+ *  04.18.91  DGM  042  Added missing check for SCHAR_BT.
+ *  03.09.91  DGM  041  Added missing check for SCHAR_BT.
+ *  03.08.91  PKT  040  Updated for references to functions; fixes.
+ *  02.21.91  PKT  039  Added CONVERT_TO_MEMBER_POINTER; other updates
+ *			for member pointers.
+ *  02.01.91  DGM  038  Hooked int to enumeration conversion error
+ *			on SW_C_PLUS_PLUS.
+ *  01.31.91  DGM  037  Updated ERR_ILLEGAL_MEMBER_FUN check.
+ *  01.27.91  PKT  036  Updated for member pointers.
+ *  01.23.91  TLF  035  Incorporated PLB's bug fix:
+ *  01.22.91            Bug fix converting signed char-->unsigned <type>
+ *                      and vice-versa.
+ *  01.18.91  DGM  034  Enumerator compatibility checks.
+ *  01.11.91  DGM  033  Updated.
+ *  01.11.91  DGM  032  Fix in CONVERT_TO_POINTER_VALUE; if the context
+ *			is a "new" expression, then force the conversion.
+ *  01.03.91  TLF  031  Bug fix for signed char type being converted
+ *                      to an integral type.
+ *  12.28.90  PKT  030  Bug fixes related to the 029 changes.
+ *  12.17.90  PKT  029  Fixed looping when converting logical to short.
+ *			Improved access control.  Fixed bug so that
+ *			functional cast is handled as a cast.
+ *			Updated for improved TRANSMUTE_WITH_TEMP.
+ *  11.01.90  PKT  028  Updated for strict INITIALIZE_OBJECT.
+ *			Added CONVERT_TO_VOID, largely from EXPAND(NOP_VO...);
+ *			Fixed bug in GENERAL_CONVERT_VALUE which
+ *			transmuted non-lvalue base class expression, 
+ *			calling GET_CONSTRUCTOR_VALUE forever.
+ *  10.24.90  PKT  027  Fixed GENERAL_CONVERT_VALUE casts to 'void'.
+ *  10.16.90  PKT  026  Updated reference conversion support.
+ *  09.28.90  PKT  025  Bug fix and small improvements.
+ *  09.25.90  DGM  024  Preprocessor include file name changes.
+ *  09.18.90  PKT  023  Now converts to aggregates using GET_CONSTRUCTOR_VALUE.
+ *  09.14.90  DGM  022  Changed include file names and VOP names.
+ *  09.12.90  DGM  021  Fix to catch (illegal) unrelated class pointers
+ *			iff it isn't an explicit cast.
+ *  09.05.90  PKT  020  Paranoid update.
+ *  09.04.90  DGM  019  Fix to catch (illegal) unrelated class pointer
+ *			conversions in CONVERT_TO_POINTER_VALUE.
+ *  08.31.90  TLF  018  Added code so that reference types can be handled
+ *                      like pointers.
+ *  08.29.90  DGM  017  Substituted GET_SIMPLE_TYPE/GET_SIMPLE_POINTER_TYPE
+ *			with the new GET_BASIC_TYPE/GET_BASIC_POINTER_TYPE.
+ *  08.21.90  TLF  016  Updated.  DGM.
+ *  08.15.90  DGM  015  New type-node.
+ *  07.09.90  DGM  014  Fix in CONVERT_TO_POINTER_VALUE for non-pointer
+ *			to pointer conversions without a cast.
+ *  07.05.90  PKT  013  Updated.
+ *  07.03.90  DGM  012  Updated.
+ *  06.29.90  DGM  011  Added support for related class pointer conversion.
+ *  06.14.90  PKT  010  Updated for SW_LAX_POINTER.
+ *  06.05.90  DGM  009  Updated for the new utilities.
+ *  05.17.90  PKT  008  Added GENERAL_CONVERT_VALUE.
+ *  04.27.90  DGM  007  Changed type map names from IS_xxx to IS_xxx_TYPE.
+ *  04.19.90  DGM  006  Fixed up include files.
+ *  04.17.90  PKT  005  Fixed to properly set up type of value nodes,
+ *			and added support of the new basic types.
+ *  04.11.90  TLF  004  Fixed bug in converts of pointer types.
+ *  03.04.90  TLF  003  Removed the last commented out code.
+ *  02.22.90  TLF  002  Updated to 'comment in' error message calls.
+ *  02.09.90  DGM  001  Changed SIZE_FROM_TYPE call to SIMPLE_TYPE_SIZE.
+ *  01.24.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.07.92 070 CONVRT');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_PP_TOKEN_POD_MGR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_EXPRESSION_COMPATIBILITY_PKG;
+%include CXX_CHECK_REFERENCE_TYPE_PKG;
+%include CXX_FOLD_VALUE_PKG;
+%include CXX_CONVERT_CLASS_POINTER_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_MEMBER_VALUE_PKG;
+%include CXX_MEMBER_POINTER_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_OVERLOAD_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_FLOAT_UNSIGNED_CONVERT_PKG;
+%include CXX_DEFER_FUNCTION_PKG;
+
+/* ---------------------------------------------------------------------
+/* CONVERT_VALUE
+/*
+/* Like GENERAL_CONVERT_VALUE,
+/* returns an expression for the conversion of the INPUT_VALUE
+/* expression to the RESULT_TYPE.  INPUT_VALUE either gets
+/* counted down, or gets attached in an unspecified way in the
+/* returned expression.  Returns with the converted expression
+/* paged in.
+/*
+/* The differences are that
+/* (1) this procedure supports only the safe, standard converstions, 
+/* not the extras which are permitted in an explicit cast, and
+/* (2) in calling this function the result type must be representable
+/* as a simple type code.
+/* ------------------------------------------------------------------- */
+
+CONVERT_VALUE: procedure (INPUT_VALUE, RESULT_TYPE)
+               returns   (type (CXX_VID_T))
+               recursive
+               external  (X_CONVERT_VALUE);
+
+	declare
+		INPUT_VALUE		type (CXX_VID_T),
+		RESULT_TYPE		type (SHORT_T);
+	declare
+		RESULT_TYPE_INFO	type (TYPE_INFO_T);
+
+	if RESULT_TYPE = NULL_BT then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	RESULT_TYPE_INFO.TYPE			= GET_BASIC_TYPE (RESULT_TYPE);
+        RESULT_TYPE_INFO.TOP_TYPE.CODE		= byte (RESULT_TYPE);
+        RESULT_TYPE_INFO.TOP_TYPE.QUALIFIERS	= NULL_TQ;
+        RESULT_TYPE_INFO.TOP_TYPE.NID		= NULL_NID;
+	RESULT_TYPE_INFO.DERIVED_TYPE_SKIP	= 0;
+	RESULT_TYPE_INFO.EXTRA_PTR_LEVEL	= FALSE;
+        RESULT_TYPE_INFO.NOT_AN_LVALUE		= FALSE;
+
+	call SIMPLE_TYPE_SIZE (RESULT_TYPE, RESULT_TYPE_INFO.SIZE,
+					    RESULT_TYPE_INFO.SIZE_UNITS, 0);
+
+	return (GENERAL_CONVERT_VALUE
+	        (INPUT_VALUE, RESULT_TYPE_INFO, INITIAL_VO));
+
+end CONVERT_VALUE;
+
+/* ---------------------------------------------------------------------
+/* GENERAL_CONVERT_VALUE
+/*
+/* Return an expression for the conversion of the INPUT_VALUE
+/* expression to the RESULT_TYPE.  INPUT_VALUE either gets
+/* counted down, or gets attached in an unspecified way in the
+/* returned expression.  Returns with the converted expression paged in.
+/* In case of error a diagnostic is sent to the user.
+/* Lvalue-ness of RESULT_TYPE is irrelevant to the resulting expression.
+/* 
+/* VOP indicates the type of operation this conversion is for,
+/* and helps provide nicer diagnostics.  Other than that,
+/* all that matters is whether or not the operation is one of
+/* CAST_VO/IMPLICIT_CAST_VO/FUNCTIONAL_CAST_VO.  This distinction
+/* affects both the legality and meaning of the conversion.
+/*
+/* The expression before and after conversion has been expanded but not
+/* transmuted (though transmuting the converted expression may be
+/* trivial).
+/*
+/* If the result type has a non-trivial constructor (NEEDS_INIT),
+/* and the context VOP is any kind of cast (but not e.g. ARG_VO
+/* or INITIAL_VO) then the problem is passed on to GET_CONSTRUCTOR_VALUE.
+/*
+/* When the expression is overloaded, matches it against the result type to
+/* resolve overloading, except when the context is a cast (explicit conversion)
+/* VOP.  An explicit cast of an overloaded expression is a fatal error.
+/* An "implicit cast" of an expression is assumed already to have had
+/* its overloading resolved.
+/*
+/* A reference RESULT_TYPE is not handled in the ARG_VO context.
+/* Then a temporary requiring destruction may be required, so 
+/* CHECK_ARGUMENTS calls INIT_REF_CHECK instead of GENERAL_CONVERT_VALUE.  
+/* Nevertheless, this procedure will do what it can, and provide a
+/* diagnostic in the case it can't handle, which is not planned to ever
+/* happen.  Note that INIT_REF_CHECK is interchangeable
+/* with GENERAL_CONVERT_VALUE for the cases that they handle in common.
+/* ------------------------------------------------------------------- */
+
+GENERAL_CONVERT_VALUE: procedure (INPUT_VAL_ARG, RESULT_TYPE, VOP)
+		       returns   (type (CXX_VID_T))
+		       external  (X_GENERAL_CONVERT_VALUE);
+
+	declare
+		INPUT_VAL_ARG		type (CXX_VID_T),
+		RESULT_TYPE		type (TYPE_INFO_T),
+		VOP			type (SHORT_T);
+	declare
+		THE_VALUE		type (CXX_VID_T),
+		INPUT_TYPE		type (TYPE_INFO_T),
+		INPUT_TYPE_CODE		type (SHORT_T),
+		INPUT_CLASS		type (NID_T),
+		RESULT_TYPE_CODE	type (SHORT_T),
+		TYPE_CODE		type (SHORT_T),
+		ERROR_CODE		type (SHORT_T),
+		THIS_LEFT		type (CXX_VID_T),
+		THIS_RIGHT		type (CXX_VID_T),
+		THIS_CTOR		type (CXX_VID_T),
+		VICTIM			type (CXX_VID_T),
+		WORK_TYPE		type (TYPE_INFO_T),
+		IS_CAST			type (BOOL_T),
+		IS_ERROR		type (BOOL_T),
+		NEEDS_INIT		type (BOOL_T),
+		IS_BASE			type (BOOL_T),
+		IS_SAME			type (BOOL_T),
+		IS_OVERLOADED		type (BOOL_T),
+		USER_CONVERSION_ID	type (NID_T),
+		OTHER_CONVERSION_ID	type (NID_T),
+		TYPE_ID			type (NID_T),
+		SYM_ID			type (NID_T),
+		IS_CONVERSION_FUNCTION	type (BOOL_T),
+		SP			type (POINTER_T),
+		IS_AMBIGUOUS		type (BOOL_T),
+		IS_INACCESSIBLE		type (BOOL_T),
+		IS_VIRTUAL		type (BOOL_T),
+		INPUT_SIZE		type (LONG_T),
+		RESULT_SIZE		type (LONG_T),
+		(J, K)			type (CXX_VID_T),
+		SVOP			type (SHORT_T),
+		CONVERT_VOP		type (SHORT_T),
+		LONG			type (LONG_T),
+		TMP_FLT23		float binary (23),
+		TMP_FLT52		float binary (52);
+	declare
+		S			character (64) varying;
+
+
+	/********** SETUP **********/
+
+	IS_CAST = IS_CAST_VOP (VOP);
+	THE_VALUE = INPUT_VAL_ARG;
+
+	/* The value is not a null expression before transmutation. */
+	if THE_VALUE = NULL_CXX_VID then
+		goto ASSERT_FAIL;
+
+	RESULT_TYPE_CODE = rank (RESULT_TYPE.TOP_TYPE.CODE);
+
+	/********** RESULT TYPE SPECIAL CASES **********/
+
+	if RESULT_TYPE_CODE = REFERENCE_DT then do;
+		/*
+		/* This is for a cast type of operation of a reference
+		/* type to another reference type. (cast of a derived type
+		/* to a base class) or for an initialization of a reference
+		/* type with a derived class.
+		/**/
+		THIS_LEFT = INIT_REF_CHECK (RESULT_TYPE, THE_VALUE, VOP, 0,
+					    NULL_NID, VICTIM);
+
+		/* Value returned is a pointer. */
+		call SET_VALUE_TYPE (RESULT_TYPE);
+		call COUNT_DOWN_VALUE (VICTIM);
+
+		if VICTIM ^= NULL_NID then
+			/*
+			/* Sorry, compiler can't handle destroying the
+			/* generated temporary.  If this is reached, the 
+			/* caller of GENERAL_CONVERT_VALUE needs to call
+			/* INIT_REF_CHECK in order to get this right.
+			/**/
+			call COMPILER_ERROR (ERR_TOUGH_DESTRUCTION);
+
+		return (THIS_LEFT);
+	end;
+
+	if IS_AGGREGATE_TAG_TYPE (RESULT_TYPE_CODE) then do;
+		/* Determine type of dereferenced input. */
+		CXX_VALUE_NODE_PTR = THE_VALUE;
+		call GET_VALUE_TYPE (INPUT_TYPE);
+		INPUT_TYPE_CODE = rank (INPUT_TYPE.TYPE_CODE);
+		if INPUT_TYPE_CODE = REFERENCE_DT then do;
+			call STRIP_TOP_TYPE (INPUT_TYPE, FALSE);
+			INPUT_TYPE_CODE = rank (INPUT_TYPE.TYPE_CODE);
+		end;
+
+		IS_BASE = FALSE;
+		if IS_AGGREGATE_TAG_TYPE (rank (INPUT_TYPE.TYPE_CODE)) then do;
+			INPUT_CLASS = INPUT_TYPE.TAG_SYMBOL;
+			IS_BASE = IS_BASE_CLASS_OF (
+					RESULT_TYPE.TAG_SYMBOL,
+					INPUT_CLASS,
+					IS_AMBIGUOUS,
+					IS_INACCESSIBLE,
+					IS_VIRTUAL);
+			IS_SAME = (RESULT_TYPE.TAG_SYMBOL = INPUT_CLASS);
+		end;
+
+		if IS_BASE & ^IS_INACCESSIBLE & ^IS_AMBIGUOUS then do;
+			call CHECK_CTOR_DTOR_ACCESS (RESULT_TYPE);
+			/*
+			/* The input value is the same class as the result type,
+			/* or is a (non-trivially) derived class.
+			/**/
+			THE_VALUE = VALUE_OF (THE_VALUE);
+			call GET_VALUE_TYPE (WORK_TYPE);
+			if IS_CAST & VOP ^= IMPLICIT_CAST_VO 
+				   & ^WORK_TYPE.NOT_AN_LVALUE then
+				THE_VALUE = FETCH_VALUE (THE_VALUE, INPUT_CLASS);
+
+			THIS_LEFT = THE_VALUE;
+
+			if ^IS_SAME then do;
+				/* Defer processing of this access to a base class
+				/* subobject, because it's perfectly valid to use the
+				/* bigger object as a temp.
+				/* TRANSMUTE_WITH_TEMP will detect this case,
+				/* create a temp of the derived type, and access the
+				/* subobject.
+				/*
+				/* Defer processing of cast to same, for uniformity.
+				/* Note that presence of cast may force an extra copy,
+				/* to be handled later.
+				/**/
+				THIS_LEFT = ALLOC_CXX_VALUE_NODE_L
+					    (CAST_TO_BASE_VO, THIS_LEFT);
+				call SET_VALUE_TYPE (RESULT_TYPE);
+			end;
+
+			return (THIS_LEFT);
+		end;
+
+		TYPE_ID = DIRECT_TYPE_ID (RESULT_TYPE);
+		USER_CONVERSION_ID = QUIET_USER_CONVERSIONS
+				     (TYPE_ID, THE_VALUE, IS_CAST, FALSE,
+				      OTHER_CONVERSION_ID);
+		IS_CONVERSION_FUNCTION = FALSE;
+		if USER_CONVERSION_ID ^= NULL_NID then do;
+			call GET_SYM_NODE_R (USER_CONVERSION_ID, SP);
+			IS_CONVERSION_FUNCTION = SP->SYM_NODE.IS_CONVERSION_FUNCTION;
+			call RELEASE_SYM_NODE (USER_CONVERSION_ID);
+		end;
+
+		call GET_SYM_NODE_R (RESULT_TYPE.TAG_SYMBOL, SP);
+		NEEDS_INIT = SP->SYM_NODE.NEEDS_INIT;
+		call RELEASE_SYM_NODE (RESULT_TYPE.TAG_SYMBOL);
+
+		if   NEEDS_INIT & IS_CAST 
+		   & ^(IS_CONVERSION_FUNCTION & OTHER_CONVERSION_ID = NULL_NID) then do;
+			call CHECK_CTOR_DTOR_ACCESS (RESULT_TYPE);
+			/*
+			/* If the result type is an aggregate which needs_init,
+			/* hand off the work to GET_CONSTRUCTOR_VALUE.
+			/* This is the wonderful case in which "double
+			/* conversion" must happen.  Conversion functions
+			/* will be called to provide an argument to the
+			/* constructor.  This can only be done for IS_CAST,
+			/* because in other contexts double conversion is verboten.
+			/*
+			/* This must be avoided when a conversion function applies,
+			/* because overload resolution might find an ambiguous
+			/* other way to perform the conversion.
+			/**/
+			THIS_LEFT = GET_VALUE_AND_EXPAND_L (ARG_VO, THE_VALUE);
+			THIS_CTOR = GET_CONSTRUCTOR_VALUE (TYPE_ID, THIS_LEFT,
+							   NULL_NID, VOP);
+			return (THIS_CTOR);
+		end;
+
+		if OTHER_CONVERSION_ID ^= NULL_NID then
+			goto DIAGNOSE_AMBIGUOUS;
+
+		if USER_CONVERSION_ID ^= NULL_NID then do;
+			if IS_CONVERSION_FUNCTION then
+				/* Fall through and handle below. */ ;
+			else do;
+				/*
+				/* Must be a constructor.
+				/**/
+				THIS_LEFT = GET_VALUE_AND_EXPAND_L (ARG_VO,
+								    THE_VALUE);
+				call GET_SYM_NODE_R (USER_CONVERSION_ID, SP);
+				THIS_LEFT = CALL_CONSTRUCTOR (
+						USER_CONVERSION_ID, 
+						THIS_LEFT, 
+						SP->SYM_NODE.ENCLOSING_SCOPE_OWNER,
+						FALSE);
+				call RELEASE_SYM_NODE (USER_CONVERSION_ID);
+				call CHECK_CTOR_DTOR_ACCESS (RESULT_TYPE);
+				return (THIS_LEFT);
+			end;
+		end;
+		/*
+		/* Fall through if constructor and derived-to-base
+		/* conversions don't apply.
+		/**/
+	end;
+
+	/********** SETUP FOR OTHER RESULT TYPES **********/
+
+	/* Try moving this to the END !! */
+	if RESULT_TYPE.SIZE_UNITS = BITS then
+		call DETERMINE_SIZE (RESULT_TYPE); /* change to non-field */
+
+	THE_VALUE = VALUE_OF (THE_VALUE);
+
+	/* Process overloading. */
+	if VOP ^= IMPLICIT_CAST_VO then
+		if ^CONVERT_OVERLOADED (RESULT_TYPE, THE_VALUE, VOP) then
+			/*
+			/* Error has been diagnosed: overload and cast,
+			/* or overloaded does not match RESULT_TYPE.
+			/**/
+			goto RECOVER;
+
+	/********** INPUT TYPE CASE BY CASE **********/
+
+START_AGAIN:
+	CXX_VALUE_NODE_PTR = THE_VALUE;
+	call GET_VALUE_TYPE (INPUT_TYPE);
+	INPUT_TYPE_CODE = rank (INPUT_TYPE.TYPE_CODE);
+	CONVERT_VOP = CONVERT_VO;	/* May be changed to CAST or BYTE */
+	goto FROM_TYPE (INPUT_TYPE_CODE);
+
+FROM_TYPE (VOID_BT):
+	if RESULT_TYPE_CODE = VOID_BT then
+		return (THE_VALUE);
+	goto DIAGNOSE_AND_RECOVER;
+
+FROM_TYPE (FLOAT_BT):
+FROM_TYPE (DOUBLE_BT):
+FROM_TYPE (LDOUBLE_BT):
+	if RESULT_TYPE_CODE = INPUT_TYPE_CODE then
+		goto EXIT;
+
+	if IS_ARITHMETIC_TYPE (RESULT_TYPE_CODE) then do;
+		if ^IS_INTEGRAL_TYPE (RESULT_TYPE_CODE) then do;
+			/*
+			/* Float, double, or long double to
+			/* float, double, or long double conversion.
+			/**/
+			call GET_SIZES ();
+			if INPUT_SIZE = RESULT_SIZE then do;
+				/*
+				/* The other float is actually the same thing!
+				/**/
+				CONVERT_VOP = IMPLICIT_CAST_VO;
+			end;
+			else if (CXX_VALUE_NODE.OP = CONSTANT_VO) then do;
+				K = CXX_VALUE_NODE.LEFT;
+				call COUNT_UP_VALUE (K);
+				if (RESULT_TYPE_CODE = LDOUBLE_BT) &
+				    EXTENDED_PRECISION_LONG_DOUBLE then do;
+					/*
+					/* Float or double to extended
+					/* precision long double
+					/* constant conversion.
+					/**/
+					if INPUT_TYPE_CODE = FLOAT_BT then
+						S = K->CXX_VALUE_NODE.FLT23;
+					else	S = K->CXX_VALUE_NODE.FLT52;
+					K->CXX_VALUE_NODE.SIZE = length (S);
+					K->CXX_VALUE_NODE.SPTR =
+						SALLOC (length (S));
+					K->CXX_VALUE_NODE.SPTR->
+					   TOKEN_SPELLING_POD.SPELLING = S;
+				end;
+				else do;
+				/*
+				/* Begin block for on-unit.
+				/**/
+				begin;
+				on ERROR goto CONVERT_ERROR;
+				if INPUT_TYPE_CODE = FLOAT_BT then do;
+					/*
+					/* Using temporaries like "belt
+					/* and supenders" since CXX_VALUE_NODE.
+					/* FL23/FLT52 are overlayed.
+					/**/
+					TMP_FLT23 = K->CXX_VALUE_NODE.FLT23;
+					K->CXX_VALUE_NODE.FLT52 = TMP_FLT23;
+				end;
+				else if (INPUT_TYPE_CODE = DOUBLE_BT) |
+					^EXTENDED_PRECISION_LONG_DOUBLE
+				then do;
+					TMP_FLT52 = K->CXX_VALUE_NODE.FLT52;
+					K->CXX_VALUE_NODE.FLT23 = TMP_FLT52;
+				end;
+				else do;
+					/*
+					/* Extended precision long
+					/* double to float or double
+					/* constant conversion.
+					/**/
+					if RESULT_TYPE_CODE = FLOAT_BT then do;
+					    K->CXX_VALUE_NODE.FLT23 =
+						substr (K->CXX_VALUE_NODE.SPTR->
+						           TOKEN_SPELLING_POD.
+							   SPELLING,
+						        1,
+							K->CXX_VALUE_NODE.SIZE);
+					end;
+					else do;
+					    K->CXX_VALUE_NODE.FLT52 =
+						substr (K->CXX_VALUE_NODE.SPTR->
+							TOKEN_SPELLING_POD.
+							SPELLING,
+							1,
+							K->CXX_VALUE_NODE.SIZE);
+					end;
+				end;
+				/*
+				/* End block for on-unit.
+				/**/
+				end;
+				end;
+				call COUNT_DOWN_VALUE (THE_VALUE);
+				THE_VALUE = ALLOC_CONSTANT_CXX_VALUE_NODE
+				    (K, FLOAT_CONSTANT_TOKEN);
+				THE_VALUE->CXX_VALUE_NODE.TYPE
+					= GET_BASIC_TYPE (RESULT_TYPE_CODE);
+				THE_VALUE->CXX_VALUE_NODE.TOP_TYPE.CODE
+					= byte (RESULT_TYPE_CODE);
+				THE_VALUE->CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS
+					= NULL_TQ;
+				THE_VALUE->CXX_VALUE_NODE.TOP_TYPE.NID
+					= NULL_NID;
+				THE_VALUE->CXX_VALUE_NODE.DERIVED_TYPE_SKIP
+					= 0;
+				THE_VALUE->CXX_VALUE_NODE.EXTRA_PTR_LEVEL
+					= FALSE;
+				THE_VALUE = EXPAND_VALUE (THE_VALUE);
+				goto EXIT;
+			end;
+			goto MAKE_CONVERT;
+		end;
+		else if RESULT_TYPE_CODE = LOGICAL_BT then do;
+			THE_VALUE = GET_VALUE_AND_EXPAND_LR
+				       (NE_VO, THE_VALUE, 
+					       INTEGER_VALUE_ZERO ());
+			goto EXIT;
+		end;
+		else if RESULT_TYPE_CODE = ENUM_BT then
+			goto TO_ENUM;
+
+		else if   MAP_TO_UNSIGNED_TYPE (RESULT_TYPE_CODE)
+		        = UCHAR_BT then do;
+			/* a char type */
+			THE_VALUE = CONVERT_VALUE (THE_VALUE, SHORT_BT);
+			CONVERT_VOP = BYTE_VO;
+			goto MAKE_CONVERT;
+		end;
+		else if   RESULT_TYPE_CODE 
+			= PROMOTED_INTEGRAL_TYPE (RESULT_TYPE_CODE) then do;
+			/*
+			/* We have the promoted "int" type.
+			/**/
+			if CXX_VALUE_NODE.OP = CONSTANT_VO then do;
+				/*
+				/* Constant float to int conversion.
+				/**/
+				begin;
+				/*
+				/* Begin block for on-unit.
+				/**/
+				on ERROR goto CONVERT_ERROR;
+				CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+				if IS_UNSIGNED_INTEGRAL_TYPE (RESULT_TYPE_CODE)
+				then do;
+					if INPUT_TYPE_CODE = FLOAT_BT then do;
+						/*
+						/* float to ulong.
+						/**/
+						LONG =
+						CFTOUL (CXX_VALUE_NODE.FLT23);
+					end;
+					else do;
+						/*
+						/* double to ulong.
+						/**/
+						LONG =
+						CDTOUL (CXX_VALUE_NODE.FLT52);
+					end;
+				end;
+				else do;
+					if INPUT_TYPE_CODE = FLOAT_BT then
+						LONG = CXX_VALUE_NODE.FLT23;
+					else	LONG = CXX_VALUE_NODE.FLT52;
+				end;
+				/*
+				/* End block for on-unit.
+				/**/
+				end;
+				call COUNT_DOWN_VALUE (THE_VALUE);
+				THE_VALUE = INTEGER_VALUE 
+					       (LONG, RESULT_TYPE_CODE);
+				goto EXIT;
+			end;
+			goto MAKE_CONVERT;
+		end;
+		else do;
+			/*
+			/* First convert to the promoted int type.
+			/**/
+			THE_VALUE = CONVERT_VALUE 
+				      (THE_VALUE,
+				       PROMOTED_INTEGRAL_TYPE
+				       (RESULT_TYPE_CODE));
+			goto START_AGAIN;
+		end;	
+	end;
+	if RESULT_TYPE_CODE = VOID_BT then
+		goto TO_VOID;
+	goto DIAGNOSE_AND_RECOVER;	
+
+FROM_TYPE (CHAR_BT):
+FROM_TYPE (SCHAR_BT):
+FROM_TYPE (UCHAR_BT):
+FROM_TYPE (SHORT_BT):
+FROM_TYPE (SSHORT_BT):
+FROM_TYPE (USHORT_BT):
+FROM_TYPE (INT_BT):
+FROM_TYPE (SINT_BT):
+FROM_TYPE (UINT_BT):
+FROM_TYPE (LONG_BT):
+FROM_TYPE (SLONG_BT):
+FROM_TYPE (ULONG_BT):
+
+	/* Fetch operand bit field. */
+	if rank (THE_VALUE->CXX_VALUE_NODE.SIZE_UNITS) = BITS then do;
+		THE_VALUE = GET_VALUE_AND_EXPAND_L (FIELD_VO, THE_VALUE);
+		goto START_AGAIN;
+	end;
+
+	if RESULT_TYPE_CODE = INPUT_TYPE_CODE then
+		goto EXIT;
+
+	if IS_ARITHMETIC_TYPE (RESULT_TYPE_CODE) then do;
+		if ^IS_INTEGRAL_TYPE (RESULT_TYPE_CODE) then do;
+			/* convert to float, double, or ldouble */
+
+			/* Updated from ANSI-C FE, 08.16.91, DGM */
+
+			if ^AM_DEBUGGER then do;
+				if CXX_VALUE_NODE.OP = INTEGER_VO then do;
+					LONG = CXX_VALUE_NODE.OFFSET;
+					call COUNT_DOWN_VALUE (THE_VALUE);
+					K = ALLOC_EMPTY_CXX_VALUE_NODE ();
+					if (RESULT_TYPE_CODE = LDOUBLE_BT) &
+					    EXTENDED_PRECISION_LONG_DOUBLE
+					then do;
+					    /*
+					    /* Integral to extended
+					    /* precision long double
+					    /* constant conversion.
+					    /**/
+					    S = LONG;
+					    K->CXX_VALUE_NODE.SIZE = length (S);
+					    K->CXX_VALUE_NODE.SPTR =
+						    SALLOC (length (S));
+					    K->CXX_VALUE_NODE.SPTR->
+					       TOKEN_SPELLING_POD.SPELLING = S;
+					end;
+					else do;
+					/*
+					/* Begin block for on-unit.
+					/**/
+					begin;
+					on ERROR goto CONVERT_ERROR;
+					if IS_UNSIGNED_INTEGRAL_TYPE (INPUT_TYPE_CODE) then do;
+						if RESULT_TYPE_CODE = FLOAT_BT then
+							K->CXX_VALUE_NODE.FLT23 = CULTOF (LONG);
+						else	K->CXX_VALUE_NODE.FLT52 = CULTOD (LONG);
+					end;
+					else do;
+						if RESULT_TYPE_CODE = FLOAT_BT then
+							K->CXX_VALUE_NODE.FLT23 = LONG;
+						else	K->CXX_VALUE_NODE.FLT52 = LONG;
+					end;
+					/*
+					/* End block for on-unit.
+					/**/
+					end;
+					end;
+					THE_VALUE = ALLOC_CONSTANT_CXX_VALUE_NODE
+						      (K, FLOAT_CONSTANT_TOKEN);
+					THE_VALUE->CXX_VALUE_NODE.TYPE
+						= GET_BASIC_TYPE (RESULT_TYPE_CODE);
+					THE_VALUE->CXX_VALUE_NODE.TOP_TYPE.CODE
+						= byte (RESULT_TYPE_CODE);
+					THE_VALUE->CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS
+						= NULL_TQ;
+					THE_VALUE->CXX_VALUE_NODE.TOP_TYPE.NID
+						= NULL_NID;
+					THE_VALUE->CXX_VALUE_NODE.DERIVED_TYPE_SKIP = 0;
+					THE_VALUE->CXX_VALUE_NODE.EXTRA_PTR_LEVEL
+						= FALSE;
+					THE_VALUE = EXPAND_VALUE (THE_VALUE);
+					goto EXIT;
+				end;
+			end;
+
+			THE_VALUE = CONVERT_VALUE
+				    (THE_VALUE, 
+				     PROMOTED_INTEGRAL_TYPE (INPUT_TYPE_CODE));
+
+			/*
+			/* THE_VALUE is now either the promoted int type
+			/* or the other float type.
+			/**/
+
+			goto MAKE_CONVERT;
+		end;
+		else if RESULT_TYPE_CODE = LOGICAL_BT then
+			goto TO_LOGICAL;
+
+		else if RESULT_TYPE_CODE = ENUM_BT then
+			goto TO_ENUM;
+
+		else if MAP_TO_UNSIGNED_TYPE (RESULT_TYPE_CODE) = UCHAR_BT then do;
+			/* to a char type */
+			SVOP = CXX_VALUE_NODE.OP;
+
+			if SVOP = INTEGER_VO then do;
+				LONG = CXX_VALUE_NODE.OFFSET;
+				call COUNT_DOWN_VALUE (THE_VALUE);
+				THE_VALUE = INTEGER_VALUE (LONG, RESULT_TYPE_CODE);
+				goto EXIT;
+			end;
+			else if MAP_TO_UNSIGNED_TYPE (INPUT_TYPE_CODE) = UCHAR_BT then do;
+				/*
+				/* Unsigned char to signed char,
+				/* signed char to unsigned char.
+				/**/
+				if IS_CAST_VOP (CXX_VALUE_NODE.OP) |
+				   (CXX_VALUE_NODE.OP = BYTE_VO) then do;
+					if CXX_VALUE_NODE.COUNT = 1 then do;
+						/*
+						/* Just change result type.
+						/**/
+						goto FINISH;
+					end;
+					/*
+					/* Get THE_VALUE's operand and start again.
+					/**/
+					J = CXX_VALUE_NODE.LEFT;
+					CXX_VALUE_NODE_PTR = J;
+					if rank (CXX_VALUE_NODE.SIZE_UNITS) ^= BITS then do;
+						call COUNT_UP_VALUE (J);
+						call COUNT_DOWN_VALUE (THE_VALUE);
+						THE_VALUE = J;
+						goto START_AGAIN;
+					end;
+				end;
+				/*
+				/* Just cast as the other char type
+				/* (Must be a VALUE or a CALL_FUNCTION).
+				/**/
+				CONVERT_VOP = IMPLICIT_CAST_VO;
+				goto MAKE_CONVERT;
+			end;
+			else if (SVOP = RANK_VO) | (SVOP = SRANK_VO) then do;
+				J = CXX_VALUE_NODE.LEFT;
+				call COUNT_UP_VALUE (J);
+				call COUNT_DOWN_VALUE (THE_VALUE);
+				THE_VALUE = J;
+				goto START_AGAIN;
+			end;
+			else if ^CXX_USE_LONG_OPERATIONS &
+				(CXX_VALUE_NODE.COUNT = 1) &
+				((SVOP = ADD_VO)	|
+				 (SVOP = SUB_VO)	|
+				 (SVOP = AND_VO)	|
+				 (SVOP = XOR_VO)	|
+				 (SVOP = OR_VO)		|
+				 (SVOP = COMPLEMENT_VO)	|
+				 (SVOP = MINUS_VO)) then do;
+				call REDUCE ();
+				goto FINISH;
+			end;
+			else do;
+				THE_VALUE = CONVERT_VALUE (THE_VALUE, SHORT_BT);
+				CONVERT_VOP = BYTE_VO;
+				goto MAKE_CONVERT;
+			end;
+		end;
+		else do;
+			/*
+			/* to an integer that's not char,
+			/* from anything but float
+			/**/
+			SVOP = CXX_VALUE_NODE.OP; /* Opcode of the thing to be converted */
+
+			if SVOP = INTEGER_VO then do;
+				LONG = CXX_VALUE_NODE.OFFSET;
+				call COUNT_DOWN_VALUE (THE_VALUE);
+				THE_VALUE = INTEGER_VALUE (LONG, RESULT_TYPE_CODE);
+				goto EXIT;
+			end;
+
+			else if MAP_TO_UNSIGNED_TYPE (INPUT_TYPE_CODE) = UCHAR_BT then do;
+				/*
+				/* Convert short, ushort, int, uint, long,
+				/* or ulong to char, uchar, or schar.
+				/**/
+				THE_VALUE = GET_VALUE_AND_EXPAND_L
+					       (RANK_VO, THE_VALUE);
+				CXX_VALUE_NODE_PTR = THE_VALUE;
+				goto FINISH;
+			end;
+
+			/* We're looking at an int to int conversion now */
+
+			if ((SVOP = RANK_VO) | (SVOP = SRANK_VO)) &
+			   (IS_UNSIGNED_INTEGRAL_TYPE (INPUT_TYPE_CODE) =
+			    IS_UNSIGNED_INTEGRAL_TYPE (RESULT_TYPE_CODE)) &
+			   (CXX_VALUE_NODE.COUNT = 1) then do;
+				/*
+				/* Just change RANK's result type.
+				/**/
+				goto FINISH;
+			end;
+
+			call GET_SIZES ();
+			if RESULT_SIZE > INPUT_SIZE then
+				goto MAKE_CONVERT;	/* widening conversion */
+
+			if (SVOP = CONVERT_VO) | IS_CAST_VOP (SVOP) then do;
+				/*
+				/* If this is short(long(X)), where X was some integer type
+				/* in the first place, then just convert X instead of long(X).
+				/**/
+				J = CXX_VALUE_NODE.LEFT;	/* X */
+				CXX_VALUE_NODE_PTR = J;
+
+				if (LB_BASIC_INTEGRAL_TYPES <=
+				    rank (CXX_VALUE_NODE.TOP_TYPE.CODE)) &
+				   (rank (CXX_VALUE_NODE.TOP_TYPE.CODE) <=
+				    HB_BASIC_INTEGRAL_TYPES) then do;
+					if rank (CXX_VALUE_NODE.SIZE_UNITS) ^= BITS then do;
+						/* 001 */
+						call COUNT_UP_VALUE (J);
+						call COUNT_DOWN_VALUE (THE_VALUE);
+						THE_VALUE = J;
+						goto START_AGAIN;
+					end;
+				end;
+				CXX_VALUE_NODE_PTR = THE_VALUE;
+			end;
+
+			if ^CXX_USE_LONG_OPERATIONS &
+			   (CXX_VALUE_NODE.COUNT = 1) &
+			   ((SVOP = ADD_VO)	   |
+			    (SVOP = SUB_VO)	   |
+			    (SVOP = MUL_VO)	   |
+			    (SVOP = AND_VO)	   |
+			    (SVOP = XOR_VO)	   |
+			    (SVOP = OR_VO)	   |
+			    (SVOP = COMPLEMENT_VO) |
+			    (SVOP = MINUS_VO)	   |
+			    (SVOP = LSHIFT_VO))	then do;
+				call REDUCE ();
+				goto FINISH;
+			end;
+
+			if INPUT_SIZE = RESULT_SIZE then do;
+				/*
+				/* This is integer to integer of same size.
+				/**/
+				if (SVOP = VALUE_VO) & (CXX_VALUE_NODE.COUNT = 1) then do;
+					/*
+					/* Just make a new VALUE(REF(...)) with type RT.
+					/**/
+					J = COPY_VALUE (CXX_VALUE_NODE.LEFT);
+					CXX_VALUE_NODE.TYPE
+						= GET_BASIC_TYPE (RESULT_TYPE_CODE);
+					CXX_VALUE_NODE.TOP_TYPE.CODE
+						= byte (RESULT_TYPE_CODE);
+					CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS = NULL_TQ;
+					CXX_VALUE_NODE.TOP_TYPE.NID	   = NULL_NID;
+					CXX_VALUE_NODE.DERIVED_TYPE_SKIP   = 0;
+					CXX_VALUE_NODE.EXTRA_PTR_LEVEL	   = FALSE;
+					CXX_VALUE_NODE_PTR		   = THE_VALUE;
+					CXX_VALUE_NODE.LEFT		   = J;
+					goto FINISH;
+				end;
+
+				/* Updated from ANSI-C FE, 08.16.91, DGM */
+
+				if IS_UNSIGNED_INTEGRAL_TYPE (INPUT_TYPE_CODE) =
+				   IS_UNSIGNED_INTEGRAL_TYPE (RESULT_TYPE_CODE) then do;
+					/*
+					/* Actually the same "type".
+					/**/
+					CONVERT_VOP = IMPLICIT_CAST_VO;
+				end;
+			end;
+
+			goto MAKE_CONVERT;
+		end;	
+	end;
+	else if RESULT_TYPE_CODE = POINTER_DT then do;
+		/* See if the right is a null pointer (hackish) */
+		if ^IS_CAST then do;
+			if   THE_VALUE->CXX_VALUE_NODE.OP = INTEGER_VO
+			   & THE_VALUE->CXX_VALUE_NODE.OFFSET = 0 then
+				/* null pointer, OK */ ;
+			else do;
+				/*
+				/* Error; incompatible pointer assignment.
+				/**/
+				TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_NON_PTR_PTR_TCS;
+				call INCOMPATIBLE_POINTER_ERROR
+				     (VOP, RESULT_TYPE, INPUT_TYPE);
+			end;
+		end;
+
+		THE_VALUE = CONVERT_TO_TYPE
+			(CONVERT_VALUE (THE_VALUE, INT_BT), RESULT_TYPE);
+		goto EXIT;
+		
+	end;
+	else if RESULT_TYPE_CODE = MEMBER_POINTER_DT then do;
+		/* See if the right is a null pointer (hackish) */
+		CXX_VALUE_NODE_PTR = THE_VALUE;
+		if   CXX_VALUE_NODE.OP = INTEGER_VO
+		   & CXX_VALUE_NODE.OFFSET = 0 then
+			/* null pointer, OK */ 
+			;
+		else do;
+			call SEMANTIC_ERROR (ERR_BAD_MBR_PTR_CAST);
+			call COUNT_DOWN_VALUE (THE_VALUE);
+			THE_VALUE = INTEGER_VALUE_ZERO ();
+		end;
+
+		call SET_VALUE_TYPE (RESULT_TYPE);
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+		goto EXIT;
+	end;
+	else if RESULT_TYPE_CODE = VOID_BT then
+		goto TO_VOID;
+	goto DIAGNOSE_AND_RECOVER;	
+
+FROM_TYPE (LOGICAL_BT):
+	/* If value and result have same type, done. */
+	if RESULT_TYPE_CODE = INPUT_TYPE_CODE then
+		goto EXIT;
+
+	/* If value is integer constant convert in place to int and start again. */
+	if CXX_VALUE_NODE.OP = INTEGER_VO then do;
+		LONG = CXX_VALUE_NODE.OFFSET;
+		call COUNT_DOWN_VALUE (THE_VALUE);
+		THE_VALUE = INTEGER_VALUE (LONG, INT_BT);
+		goto START_AGAIN;
+	end;
+
+	THE_VALUE = ALLOC_CXX_VALUE_NODE_L (CONVERT_VO, THE_VALUE);
+	call SET_VALUE_SIMPLE_TYPE (INT_BT);
+	THE_VALUE = EXPAND_VALUE (THE_VALUE);
+	goto START_AGAIN;
+
+FROM_TYPE (ENUM_BT):
+
+	/*
+	/* If value and result have same type then
+	/* done, unless this is a char size enum.
+	/**/
+
+	TYPE_CODE = GET_ENUM_INTEGRAL_TYPE (INPUT_TYPE.TOP_TYPE);
+
+	if (RESULT_TYPE_CODE = ENUM_BT) &
+	   (RESULT_TYPE.TOP_TYPE.TAG_SYMBOL = INPUT_TYPE.TAG_SYMBOL) &
+	   (TYPE_CODE ^= UCHAR_BT) &
+	   (TYPE_CODE ^= CHAR_BT) &
+	   (TYPE_CODE ^= SCHAR_BT) then
+		goto EXIT;
+
+	if (RESULT_TYPE_CODE = ENUM_BT) & SW_C_PLUS_PLUS then do;
+		/*
+		/* Enum to enum.
+		/* Make sure they're the same kind (in C++).
+		/* This case should not be necessary,
+		/* but it may give better diagnostics.
+		/**/
+		if ^IS_CAST then do;
+			/*
+			/* Error; incompatible enums.
+			/**/
+			if ^SW_CLASSIC_C_MODE then do;
+				if VOP = ARG_VO then do;
+					if CURRENT_FUNCTION_BEING_CALLED ^=
+					   NULL_NID then
+					   call
+					   SEMANTIC_ERROR_IIII
+					   (ERR_ENUM_FUN_ARG,
+					    trim
+					    (char (CURRENT_ARGUMENT_NUMBER)),
+					    QUALIFIED_SYMBOL_NAME
+					    (INPUT_TYPE.TOP_TYPE.TAG_SYMBOL),
+					    QUALIFIED_SYMBOL_NAME
+					    (RESULT_TYPE.TOP_TYPE.TAG_SYMBOL),
+					    COMPLETE_QUALIFIED_SYMBOL_NAME
+					    (CURRENT_FUNCTION_BEING_CALLED));
+					else
+					   call
+					   SEMANTIC_ERROR_III
+					   (ERR_ENUM_ARG,
+					    trim
+					    (char (CURRENT_ARGUMENT_NUMBER)),
+					    QUALIFIED_SYMBOL_NAME
+					    (INPUT_TYPE.TOP_TYPE.TAG_SYMBOL),
+					    QUALIFIED_SYMBOL_NAME
+					    (RESULT_TYPE.TOP_TYPE.TAG_SYMBOL));
+				end;
+				else do;
+					call
+					SEMANTIC_ERROR_II
+					(ERR_INCOMPAT_ENUM_ENUM,
+					 QUALIFIED_SYMBOL_NAME
+					 (INPUT_TYPE.TOP_TYPE.TAG_SYMBOL),
+					 QUALIFIED_SYMBOL_NAME
+					 (RESULT_TYPE.TOP_TYPE.TAG_SYMBOL));
+				end;
+			end;
+		end;
+		if CXX_VALUE_NODE.OP = INTEGER_VO then do;
+			/*
+			/* Just create a new integer.
+			/**/
+			THE_VALUE = COPY_VALUE (THE_VALUE);
+			call SET_VALUE_TYPE (RESULT_TYPE);
+			THE_VALUE = FOLD_VALUE (THE_VALUE);
+			goto EXIT;
+		end;
+		goto FINISH_CAST;
+	end;
+
+	/* Treat as int, start again */
+
+	if CXX_VALUE_NODE.OP = INTEGER_VO then do;
+		if CXX_VALUE_NODE.COUNT > 1 then do;
+			LONG = CXX_VALUE_NODE.OFFSET;
+			call COUNT_DOWN_VALUE (THE_VALUE);
+			THE_VALUE = INTEGER_VALUE (LONG, TYPE_CODE);
+		end;
+		else
+			call SET_VALUE_SIMPLE_TYPE (TYPE_CODE);
+	end;
+	else
+		THE_VALUE = IMPLICIT_CAST_TO_SIMPLE_TYPE
+			      (THE_VALUE, TYPE_CODE);
+
+	if   IS_SCALAR_TYPE (RESULT_TYPE_CODE)
+	   | (RESULT_TYPE_CODE = MEMBER_POINTER_DT)
+	   | (RESULT_TYPE_CODE = VOID_BT) then
+		goto START_AGAIN;
+	else
+		goto DIAGNOSE_AND_RECOVER;
+
+FROM_TYPE (CLASS_BT):
+FROM_TYPE (STRUCT_BT):
+FROM_TYPE (UNION_BT):
+
+	/*
+	/* Conversion to a class has already been handled.
+	/* A user conversion must be a conversion function.
+	/**/
+
+	if ^IS_AGGREGATE_TAG_TYPE (RESULT_TYPE_CODE) then do;
+		USER_CONVERSION_ID = QUIET_USER_CONVERSIONS
+				     (DIRECT_TYPE_ID (RESULT_TYPE),
+				      THE_VALUE, IS_CAST, FALSE,
+				      OTHER_CONVERSION_ID);
+		if OTHER_CONVERSION_ID ^= NULL_NID then
+			goto DIAGNOSE_AMBIGUOUS;
+	end;
+	else
+		/* USER_CONVERSION_ID already determined above. */
+		;
+
+	if USER_CONVERSION_ID ^= NULL_NID then do;
+		/* Check things out. -TODO- remove these. */
+		call GET_SYM_NODE_R (USER_CONVERSION_ID, SP);
+		if ^SP->SYM_NODE.IS_CONVERSION_FUNCTION then
+			goto ASSERT_FAIL;
+		call RELEASE_SYM_NODE (USER_CONVERSION_ID);
+
+		THIS_LEFT = CALL_USER_CONVERSION
+			    (USER_CONVERSION_ID, THE_VALUE);
+		/*
+		/* Finish off the job.  Note that we can't just
+		/* start again here, because the result of the
+		/* conversion function may be a derived class of
+		/* the result type, or a reference conversion to
+		/* the result type.  Also, note that USER_CONVERSIONS
+		/* will prevent endless recursion here.
+		/**/
+		THIS_LEFT = GENERAL_CONVERT_VALUE 
+			    (THIS_LEFT, RESULT_TYPE, VOP);
+		return (THIS_LEFT);
+	end;
+
+	if IS_AGGREGATE_TAG_TYPE (RESULT_TYPE_CODE) then do;
+		
+		/*
+		/* Here, we have an implicit conversion to class type.
+		/* E.g. when passing/returning a class to/from a function,
+		/* or when assigning one class to another.  Or in C++ the
+		/* conversion may be explicit (i.e. with a cast expression).
+		/**/
+
+		if IS_BASE then do;
+			if IS_AMBIGUOUS then
+				call SEMANTIC_ERROR_II (
+					ERR_AMBIG_BASE_CLASS_REF,
+					QUALIFIED_SYMBOL_NAME 
+						(RESULT_TYPE.TAG_SYMBOL),
+					QUALIFIED_SYMBOL_NAME
+						(INPUT_CLASS));
+			else if IS_INACCESSIBLE then
+				call SEMANTIC_ERROR_II (
+					ERR_PRIV_BASE_CLASS_REF,
+					QUALIFIED_SYMBOL_NAME 
+						(RESULT_TYPE.TAG_SYMBOL),
+					QUALIFIED_SYMBOL_NAME
+						(INPUT_CLASS));
+		end;
+	end;
+	else if RESULT_TYPE_CODE = VOID_BT then
+		goto TO_VOID;
+	goto DIAGNOSE_AND_RECOVER;
+
+FROM_TYPE (POINTER_DT):
+	if RESULT_TYPE_CODE = POINTER_DT then do;
+		/*
+		/* Convert among pointers.
+		/**/
+		THE_VALUE = CONVERT_TO_POINTER_VALUE
+			       (THE_VALUE, RESULT_TYPE, VOP);
+		call RECOVER_LVALUE (THE_VALUE);
+		goto EXIT;
+	end;
+	else if   RESULT_TYPE_CODE = ARRAY_DT 
+	        & CXX_VALUE_NODE.ARRAY_DESIGNATOR then do;
+		/* restorable array in a context that needs an array */
+		call RESTORE_ARRAY_VALUE (THE_VALUE, INPUT_TYPE);
+		call SEMANTIC_ERROR (ERR_ARRAY_RESTORED);
+		goto START_AGAIN;
+	end;
+	else if   RESULT_TYPE_CODE = FUNCTION_DT
+		& CXX_VALUE_NODE.FUNCTION_DESIGNATOR then do;
+		/* restorable function in a context that wants a function */
+		call RESTORE_FUNCTION_VALUE (THE_VALUE, INPUT_TYPE);
+		goto START_AGAIN;
+	end;
+	else if RESULT_TYPE_CODE = VOID_BT then
+		goto TO_VOID;
+	else if RESULT_TYPE_CODE = ENUM_BT then
+		goto TO_ENUM;
+	else if RESULT_TYPE_CODE = LOGICAL_BT then
+		goto TO_LOGICAL;
+
+	if IS_ARITHMETIC_TYPE (RESULT_TYPE_CODE) then do;
+		/* Convert to int and thence to result type. */
+
+		if IS_INTEGRAL_TYPE (RESULT_TYPE_CODE) & IS_CAST then
+			/* Cast to integral type is just fine. */
+			;
+		else do;
+			/*
+			/* Error; attempt to convert a pointer
+			/* type to a non-integral type.
+			/**/
+			TYPE_COMPATIBILITY_STATUS 
+				= INCOMPATIBLE_PTR_NON_PTR_TCS;
+			call INCOMPATIBLE_POINTER_ERROR
+			     (VOP, RESULT_TYPE, INPUT_TYPE);
+		end;
+		call GET_SIZES ();
+		if RESULT_SIZE < INPUT_SIZE & VOP ^= IMPLICIT_CAST_VO then do;
+			/*
+			/* Not too useful, won't fit.
+			/**/
+			call SEMANTIC_ERROR_I (ERR_POINTER_WONT_FIT,
+					       TYPE_INFO_NAME
+					       (RESULT_TYPE));
+		end;
+		THE_VALUE = ALLOC_CXX_VALUE_NODE_L (CONVERT_VO, THE_VALUE);
+		call SET_VALUE_SIMPLE_TYPE (INT_BT);
+		THE_VALUE = EXPAND_VALUE (THE_VALUE);
+		goto START_AGAIN;
+	end;
+	goto DIAGNOSE_AND_RECOVER;
+
+FROM_TYPE (MEMBER_POINTER_DT):
+	if RESULT_TYPE_CODE = MEMBER_POINTER_DT then do;
+		/*
+		/* Convert among member pointers.
+		/**/
+		THE_VALUE = CONVERT_TO_MEMBER_POINTER
+			       (THE_VALUE, RESULT_TYPE, VOP);
+		goto EXIT;
+	end;
+
+	if RESULT_TYPE_CODE = VOID_BT then
+		goto TO_VOID;
+	else if RESULT_TYPE_CODE = LOGICAL_BT then do;
+		THE_VALUE = MEMBER_POINTER_TO_LOGICAL (THE_VALUE);
+		goto EXIT;
+	end;
+	else if RESULT_TYPE_CODE = ENUM_BT then
+		goto TO_ENUM;
+
+	if IS_INTEGRAL_TYPE (RESULT_TYPE_CODE) then do;
+		if ^IS_CAST then do;
+			/*
+			/* Error; attempt to convert a member pointer
+			/* type to a non-member-pointer type.
+			/* -TODO- Fix this error message so it specifies 
+			/* pointer to member, not pointer.
+			/**/
+			TYPE_COMPATIBILITY_STATUS
+				= INCOMPATIBLE_PTR_NON_PTR_TCS;
+			call INCOMPATIBLE_POINTER_ERROR
+			     (VOP, RESULT_TYPE, INPUT_TYPE);
+		end;
+		THE_VALUE = MEMBER_POINTER_TO_INTEGRAL 
+			       (THE_VALUE, RESULT_TYPE_CODE);
+		goto EXIT;
+	end;
+	goto DIAGNOSE_AND_RECOVER;
+
+FROM_TYPE (ARRAY_DT):
+	/*
+	/* This is created only in limited circumstances:
+	/*	array member of non-lvalue
+	/*	array restored when initializing array
+	/* Also, conversino to array is "generated via INITIAL_VO on the
+	/* re-expansion of ASSIGN.  An invalid user pgm is expected to result
+	/* in an invalid conversion of array."
+	/*
+	/* Initialization of array
+	/* might occur when implicitly initializing or assigning
+	/* an array member of class, as part of generated copy 
+	/* constructor or assignment, when called from
+	/* EXPAND (COPY_VO or ASSIGN_VO).
+	/**/
+	if RESULT_TYPE_CODE = ARRAY_DT then do;
+		/* Arrays must not only be compatible, but complete. */
+		call DETERMINE_SIZE (INPUT_TYPE);
+		if   COMPATIBLE_SPECIAL_TYPE_INFO
+		     (INPUT_TYPE, IGNORE_TOP_QUALIFIERS_TCM,
+		      RESULT_TYPE, IGNORE_TOP_QUALIFIERS_TCM)
+		   & (INPUT_TYPE.SIZE_UNITS ^= 0 | IS_CAST) then do;
+			if IS_CAST & VOP ^= IMPLICIT_CAST_VO then
+				/*
+				/* Any explicit cast to array is illegal.
+				/**/
+				call SEMANTIC_ERROR (ERR_ARRAY_CAST);
+			call CHECK_CTOR_DTOR_ACCESS (RESULT_TYPE);
+			if ^IS_CAST then
+				/*
+				/* No need to make a non-lvalue
+				/**/
+				goto EXIT;
+			goto FINISH_CAST;
+		end;
+	end;
+	else if RESULT_TYPE_CODE = VOID_BT then
+		goto TO_VOID;
+	else if RESULT_TYPE_CODE = POINTER_DT then do;
+		if ^INPUT_TYPE.NOT_AN_LVALUE then
+			/*
+			/* This is a valid conversion, but PKT believe
+			/* it is handled elsewhere.
+			/**/
+			goto ASSERT_FAIL;
+	end;
+	goto DIAGNOSE_AND_RECOVER;
+
+FROM_TYPE (FUNCTION_DT):
+	if RESULT_TYPE_CODE = FUNCTION_DT then do;
+		/*
+		/* C++ doesn't have first class functions.
+		/* PKT didn't think we'll ever get an implicit conversion
+		/* to function.  But it turns out we do, for
+		/*	void f() = s.mf;
+		/* not a terribly important case, but one which
+		/* helps show that the error message belongs
+		/* in parini.pl1.  INIT_REF_CHECK already has
+		/**/
+		if   COMPATIBLE_SPECIAL_TYPE_INFO
+		     (INPUT_TYPE, IGNORE_TOP_QUALIFIERS_TCM,
+		      RESULT_TYPE, IGNORE_TOP_QUALIFIERS_TCM) then do;
+		        if ^IS_CAST then
+				goto EXIT;
+			if VOP ^= IMPLICIT_CAST_VO then
+				/*
+				/* Any explicit cast to function is illegal.
+				/**/
+				call SEMANTIC_ERROR (ERR_FUN_CAST);
+			goto FINISH_CAST;
+		end;
+	end;
+	else if RESULT_TYPE_CODE = POINTER_DT then do;
+		if ^INPUT_TYPE.NOT_AN_LVALUE then
+			/*
+			/* This is a valid conversion, but PKT believes
+			/* it is handled elsewhere.
+			/**/
+			goto ASSERT_FAIL;
+		call SEMANTIC_ERROR (ERR_ILLEGAL_MEMBER_FUN); 
+	end;
+	else if RESULT_TYPE_CODE = VOID_BT then
+		goto TO_VOID;
+	goto DIAGNOSE_AND_RECOVER;
+
+FROM_TYPE (NULL_BT):
+	/*
+	/* We can get here if the expression is nonsense,
+	/* such as call of a float (PKT's test dfa25.cxx).
+	/* Presumably the problem is already diagnosed.
+	/**/
+	goto RECOVER;
+
+FROM_TYPE (LABEL_BT):
+	goto ASSERT_FAIL;
+
+	/********** COMMON CODE BASED ON RESULT TYPE **********/
+
+TO_VOID:
+	THE_VALUE = CONVERT_TO_VOID (THE_VALUE);
+	goto EXIT;
+
+TO_LOGICAL:
+	if THE_VALUE->CXX_VALUE_NODE.OP = INTEGER_VO then do;
+		LONG = THE_VALUE->CXX_VALUE_NODE.OFFSET; /* is 0 for NULL */
+		call COUNT_DOWN_VALUE (THE_VALUE);
+		if LONG ^= 0 then
+			LONG = 1;
+		THE_VALUE = INTEGER_VALUE (LONG, RESULT_TYPE_CODE);
+	end;
+	else
+		THE_VALUE = GET_VALUE_AND_EXPAND_LR
+			       (NE_VO, THE_VALUE, INTEGER_VALUE_ZERO ());
+	goto EXIT;
+
+TO_ENUM:
+	if ^IS_CAST then do;
+		/*
+		/* Error; incompatible conversion to an enum type.
+		/**/
+		if SW_C_PLUS_PLUS then do;
+			if VOP = ARG_VO then do;
+			    if CURRENT_FUNCTION_BEING_CALLED ^=
+			       NULL_NID then
+				call
+				SEMANTIC_ERROR_IIII
+				(ERR_ANY_ENUM_FUN_ARG,
+				 trim (char (CURRENT_ARGUMENT_NUMBER)),
+				 TYPE_INFO_NAME (INPUT_TYPE),
+				 QUALIFIED_SYMBOL_NAME
+				 (RESULT_TYPE.TOP_TYPE.TAG_SYMBOL),
+				 COMPLETE_QUALIFIED_SYMBOL_NAME
+				 (CURRENT_FUNCTION_BEING_CALLED));
+			    else
+				call
+				SEMANTIC_ERROR_III
+				(ERR_ANY_ENUM_ARG,
+				 trim (char (CURRENT_ARGUMENT_NUMBER)),
+				 TYPE_INFO_NAME (INPUT_TYPE),
+				 QUALIFIED_SYMBOL_NAME
+				 (RESULT_TYPE.TOP_TYPE.TAG_SYMBOL));
+			end;
+			else do;
+			    call SEMANTIC_ERROR_II
+				 (ERR_INCOMPAT_ANY_ENUM,
+				  TYPE_INFO_NAME (INPUT_TYPE),
+				  QUALIFIED_SYMBOL_NAME
+				  (RESULT_TYPE.TOP_TYPE.TAG_SYMBOL));
+			end;
+		end;
+	end;
+	THE_VALUE = CONVERT_VALUE
+		      (THE_VALUE,
+		       GET_ENUM_INTEGRAL_TYPE (RESULT_TYPE.TOP_TYPE));
+	goto FINISH_CAST;
+
+	/********** VARIOUS WAYS TO FINISH UP **********/
+
+FINISH_CAST:
+
+	THE_VALUE = CAST_TO_TYPE (THE_VALUE, RESULT_TYPE);
+	call RECOVER_LVALUE (THE_VALUE);
+	goto EXIT;
+
+ASSERT_FAIL:
+	call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+DIAGNOSE_AMBIGUOUS:
+	/*
+	/*  Ambiguous.  Both a user conversion and
+	/*  constructor exist.
+	/**/
+	call SEMANTIC_ERROR_II (ERR_AMBIGUOUS_USER_CONVERSION,
+				SYMBOL_TYPE_NAME
+				(OTHER_CONVERSION_ID),
+				SYMBOL_TYPE_NAME
+				(USER_CONVERSION_ID));
+	goto RECOVER;
+
+DIAGNOSE_AND_RECOVER:
+	/*
+	/* This is for FATAL errors.
+	/**/
+
+	/* Give diagnostic specific to the context. */
+
+	/* 
+	/* We do not get here with
+	/* IMPLICIT_CAST_VO, IMPLICIT_ASSIGN_VO, or IMPLICIT_RETURN_VO.
+	/**/
+
+	if      VOP = ASSIGN_VO then do;
+			ERROR_CODE = ERR_ASSIGNMENT_CONVERSION;
+	end;
+	else if VOP = CAST_VO   |
+		VOP = FUNCTIONAL_CAST_VO then do;
+			ERROR_CODE = ERR_EXPLICIT_CONVERSION;
+	end;
+	else if VOP = INITIAL_VO |
+		VOP = MEMBER_INIT_VO |
+		VOP = COPY_VO then do;
+			ERROR_CODE = ERR_INITIAL_CONVERSION;
+	end;
+	else if VOP = ARG_VO then do;
+			ERROR_CODE = ERR_ARGUMENT_CONVERSION;
+	end;
+	else if VOP = RETURN_VO then do;
+			ERROR_CODE = ERR_RETURN_CONVERSION;
+	end;
+	else do;
+			ERROR_CODE = ERR_CONVERSION;
+	end;
+
+	if VOP ^= ARG_VO then do;
+		call SEMANTIC_ERROR_II (ERROR_CODE,
+					TYPE_INFO_NAME (INPUT_TYPE),
+					TYPE_INFO_NAME (RESULT_TYPE));
+	end;
+	else do;
+		call SEMANTIC_ERROR_III (ERROR_CODE,
+					 TYPE_INFO_NAME (INPUT_TYPE),
+					 TYPE_INFO_NAME (RESULT_TYPE),
+					 trim (char (CURRENT_ARGUMENT_NUMBER)));
+	end;
+
+RECOVER:
+	/*
+	/* Recover by substituting a value of the required type.
+	/* We've given a fatal error, so this is only to help
+	/* suppress subsequent diagnostics.
+	/**/
+	call COUNT_DOWN_VALUE (THE_VALUE);
+	THE_VALUE = ALLOC_CXX_VALUE_NODE (UNINITIALIZED_VO);
+	call SET_VALUE_TYPE (RESULT_TYPE);
+	CXX_VALUE_NODE.NULARY = TRUE;
+	goto EXIT;
+
+CONVERT_ERROR:
+	/*
+        /* A floating point exception occurred while performing an arithmetic
+        /* conversion.  The conversion cannot be performed during compilation; 
+        /* it will be deferred to execution-time (if possible).
+        /**/
+        call SEMANTIC_ERROR (ERR_CONVERSION_EXCEPTION);
+	/*
+        /* Fall into MAKE_CONVERT; make up a convert which will either
+	/* trap at execution time, or get diagnosed in PARSE_INITIALIZER
+	/* if static initial.
+        /**/
+
+MAKE_CONVERT:
+	THE_VALUE = ALLOC_CXX_VALUE_NODE_L (CONVERT_VOP, THE_VALUE); /* CONVERT, CAST, or BYTE */
+
+FINISH:
+	call GET_SIZES ();
+	CXX_VALUE_NODE.TYPE			= GET_BASIC_TYPE (RESULT_TYPE_CODE);
+	CXX_VALUE_NODE.TOP_TYPE.CODE		= byte (RESULT_TYPE_CODE);
+	CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS	= NULL_TQ;
+	CXX_VALUE_NODE.TOP_TYPE.NID		= NULL_NID;
+	CXX_VALUE_NODE.DERIVED_TYPE_SKIP	= 0;
+	CXX_VALUE_NODE.EXTRA_PTR_LEVEL		= FALSE;
+	CXX_VALUE_NODE.SIZE			= RESULT_SIZE;
+	CXX_VALUE_NODE.SIZE_UNITS		= byte (BYTES);
+	if (CXX_VALUE_NODE.RIGHT = NULL_CXX_VID) |
+	   (CXX_VALUE_NODE.RIGHT_IS_NID &
+	    (CXX_VALUE_NODE.RIGHT ^= NULL_NID)) then
+		CXX_VALUE_NODE.UNARY		= TRUE;
+
+EXIT:
+	return (THE_VALUE);
+
+	/********** INTERNAL PROCEDURES **********/
+
+/* ---------------------------------------------------------------------
+/* GET_SIZES
+/* ------------------------------------------------------------------- */
+GET_SIZES: procedure internal;
+
+	declare
+		INPUT_SIZE_UNITS	type (SHORT_T),
+		RESULT_SIZE_UNITS	type (SHORT_T);
+
+        call SIMPLE_TYPE_SIZE (RESULT_TYPE_CODE, RESULT_SIZE,
+						 RESULT_SIZE_UNITS, 0);
+
+	/* Get the result type size in byte units */
+
+	if RESULT_SIZE_UNITS ^= BYTES then
+		RESULT_SIZE = ROUNDU (RESULT_SIZE, RESULT_SIZE_UNITS, BYTES);
+
+	INPUT_SIZE = THE_VALUE->CXX_VALUE_NODE.SIZE;
+	INPUT_SIZE_UNITS = rank (THE_VALUE->CXX_VALUE_NODE.SIZE_UNITS);
+
+	/* Get the input type size in byte units */
+
+	if INPUT_SIZE_UNITS ^= BYTES then
+		INPUT_SIZE = ROUNDU (INPUT_SIZE, INPUT_SIZE_UNITS, BYTES);
+
+end GET_SIZES;
+
+/* ---------------------------------------------------------------------
+/* REDUCE
+/* ------------------------------------------------------------------- */
+
+REDUCE: procedure internal;
+
+	declare
+		J1		type (CXX_VID_T),
+		J2		type (CXX_VID_T),
+		J2_IS_VID	type (BOOL_T);
+
+	/* Reduce precision of operation */
+
+	J2 = CXX_VALUE_NODE.RIGHT;
+	J2_IS_VID = ^CXX_VALUE_NODE.RIGHT_IS_NOT_VID;
+
+	J1 = GENERAL_CONVERT_VALUE (CXX_VALUE_NODE.LEFT, RESULT_TYPE,
+							 IMPLICIT_CAST_VO);
+
+	if J2_IS_VID & (J2 ^= NULL_CXX_VID) & (SVOP ^= LSHIFT_VO) then
+		J2 = GENERAL_CONVERT_VALUE (J2, RESULT_TYPE, IMPLICIT_CAST_VO);
+
+	CXX_VALUE_NODE_PTR = THE_VALUE;
+	CXX_VALUE_NODE.LEFT  = J1;
+	CXX_VALUE_NODE.RIGHT = J2;
+
+end REDUCE;
+
+/* ---------------------------------------------------------------------
+/* PROMOTED_INTEGRAL_TYPE
+/* ------------------------------------------------------------------- */
+
+PROMOTED_INTEGRAL_TYPE: procedure (BT) returns (type (SHORT_T)) internal;
+
+	declare BT type (SHORT_T);
+
+	if IS_UNSIGNED_INTEGRAL_TYPE (BT) then
+		return (ULONG_BT);
+	else	return (LONG_BT);
+
+end PROMOTED_INTEGRAL_TYPE;
+
+/* ---------------------------------------------------------------------
+ * RECOVER_LVALUE
+ *
+ * VALUE is value node id of an expression for which an lvalue may be
+ * required.  If the expression is a CAST which could be considered
+ * an lvalue based on SW_X_CAST_LVALUE, modify VALUE accordingly.
+ *
+ * VALUE must be paged in on entry, and will be paged in on return.
+ * ------------------------------------------------------------------- */
+RECOVER_LVALUE: procedure (VALUE)
+		internal;
+
+	declare
+		VALUE		type (CXX_VID_T);
+
+	declare
+		TYPE_INFO	type (TYPE_INFO_T),
+		(V1, V2, KV)	type (CXX_VID_T),
+		SZU		type (BYTE_T);
+		
+
+	if ^ ( ^INPUT_TYPE.NOT_AN_LVALUE 
+	     & IS_CAST 
+	     & CXX_VALUE_NODE.OP = CAST_VO ) then
+		return;
+
+	call GET_VALUE_TYPE (TYPE_INFO);
+
+	KV = CXX_VALUE_NODE.LEFT;
+	CXX_VALUE_NODE_PTR = KV;
+	call BYPASS_COMMA ();
+
+	/*
+	/* To recover, it must be a non-lvalue VALUE_VO.
+	/* Also, the recovery is only necessary when it's a simple,
+	/* explicit cast in the source code, in which case
+	/* PKT believes the operand's COUNT will be 1 making
+	/* things easy, because we won't have to worry about
+	/* having 2 VALUE_VOs involving fetches at different times.
+	/**/
+	if ^ (CXX_VALUE_NODE.OP = VALUE_VO & CXX_VALUE_NODE.COUNT = 1) then do;
+		CXX_VALUE_NODE_PTR = VALUE;
+		return;
+	end;
+
+	/* is VALUE_VO;  recoverable error */
+
+	call COUNT_UP_VALUE (KV);
+	call COUNT_DOWN_VALUE (VALUE);
+
+	VALUE = KV;
+
+	call DETACH_COMMA (VALUE, V1, V2);
+	call SET_VALUE_TYPE (TYPE_INFO);
+	CXX_VALUE_NODE.NOT_AN_LVALUE = FALSE;
+	call REATTACH_COMMA (VALUE, V1, V2);
+
+end RECOVER_LVALUE;
+
+end GENERAL_CONVERT_VALUE;
+
+/* ---------------------------------------------------------------------
+ * CHECK_CTOR_DTOR_ACCESS
+ *
+ * Call this from a context in which the compiler is free to make a
+ * temporary object.  Checks accessibility copy constructor and
+ * destructor, and gives a diagnostic message if appropriate.
+ * For cfront compatibility, these messages are suppressed by
+ * SW_LAX_ACCESS_CONTROL.
+ * ------------------------------------------------------------------- */
+
+CHECK_CTOR_DTOR_ACCESS: procedure (TYPE_INFO)
+			external  (X_CHECK_CTOR_DTOR_ACCESS)
+			recursive;
+
+	declare
+		TYPE_INFO	type (TYPE_INFO_T);
+	declare
+		COPY_CTOR	type (NID_T),
+		DESTRUCTOR	type (NID_T),
+		SP		pointer,
+		TYPE_CODE	type (SHORT_T),
+		BASE_TYPE	type (TYPE_INFO_T);
+
+	if SW_LAX_ACCESS_CONTROL then
+		return;
+
+	TYPE_CODE = rank (TYPE_INFO.TYPE_CODE);
+	if IS_AGGREGATE_TAG_TYPE (TYPE_CODE) then do;
+		call GET_SYM_NODE_R (TYPE_INFO.TAG_SYMBOL, SP);
+		COPY_CTOR = SP->SYM_NODE.COPY_CONSTRUCTOR;
+		DESTRUCTOR = SP->SYM_NODE.DESTRUCTOR;
+		call RELEASE_SYM_NODE (TYPE_INFO.TAG_SYMBOL);
+		if COPY_CTOR ^= NULL_NID then do;
+			/*
+			/* Check accessibility of copy constructor here
+			/* even if INPUT_VALUE is already a value of
+			/* the exact result type.
+			/**/
+			if ^IS_ACCESSIBLE
+			    (COPY_CTOR, TYPE_INFO.TAG_SYMBOL) then do;
+				if ^AM_DEBUGGER then do;
+					call SEMANTIC_ERROR_I
+					     (ERR_PRIV_COPY_CTOR,
+					      FULL_SYMBOL_NAME (COPY_CTOR));
+				end;
+			end;
+		end;
+		if DESTRUCTOR ^= NULL_NID then do;
+			/*
+			/* Check accessibility of destructor.
+			/**/
+			if ^IS_ACCESSIBLE
+			    (DESTRUCTOR, TYPE_INFO.TAG_SYMBOL) then do;
+				if ^AM_DEBUGGER then do;
+					call SEMANTIC_ERROR_I
+					     (ERR_PRIV_DTOR,
+					      FULL_SYMBOL_NAME (DESTRUCTOR));
+				end;
+			end;
+		end;
+	end;
+	else if TYPE_CODE = ARRAY_DT then do;
+		BASE_TYPE = TYPE_INFO;
+		call STRIP_TOP_TYPE (BASE_TYPE, FALSE);
+		call CHECK_CTOR_DTOR_ACCESS (BASE_TYPE);
+	end;
+		
+
+end CHECK_CTOR_DTOR_ACCESS;
+
+/* ---------------------------------------------------------------------
+/* CONVERT_TO_POINTER_VALUE
+/*
+/* If the type represented by the given type-info structure (RESULT_T)
+/* does not represent a pointer, then do nothing and return INPUT_VALUE.
+/* Otherwise, try to convert the expression represented by the given
+/* value-node tree (INPUT_VALUE) to this given result pointer type, and
+/* return the value-node id of the resultant expression.  If CAST is TRUE
+/* then this conversion is the result of an *explicit* user cast, otherwise
+/* it is the result of an implict conversion.  If an error is encountered,
+/* an appropriate diagnostic will be emitted.  This routine handles the
+/* derived-to-base and base-to-derived class pointer conversions as well
+/* as the simple cases.  Trashes current-node-id & current-value-node-id.
+/* Lvalueness of RESULT_T is ignored.
+/*
+/* This routine now treats a reference result type just like a pointer,
+/* except for error messages, and that INPUT_VALUE
+/* may be assumed not to be null.  The type of the result will always be
+/* set to pointer.
+/*
+/* The input value must not have reference type, i.e. this routine
+/* does not check for the need to call VALUE_OF.
+/*
+/* Overloading of the input value must already be resolved.
+/* ------------------------------------------------------------------- */
+
+CONVERT_TO_POINTER_VALUE: procedure (INPUT_VALUE, RESULT_T, VOP)
+			  returns   (type (CXX_VID_T))
+			  external  (X_CONVERT_TO_POINTER_VALUE);
+	declare
+		INPUT_VALUE		type (CXX_VID_T),
+		RESULT_T		type (TYPE_INFO_T),
+		VOP			type (SHORT_T);
+	declare
+		INPUT_TYPE		type (TYPE_INFO_T),
+		RESULT_TYPE		type (TYPE_INFO_T),
+		INPUT_POINTED_TO_TYPE	type (TYPE_DATA_T),
+		INPUT_CLASS		type (NID_T),
+		RESULT_POINTED_TO_TYPE	type (TYPE_DATA_T),
+		RESULT_CLASS		type (NID_T),
+		RESULT_VALUE		type (CXX_VID_T),
+		IS_CAST			type (BOOL_T),
+		TO_REFERENCE		type (BOOL_T),
+		OVLD_SYM		type (NID_T);
+
+	IS_CAST = IS_CAST_VOP (VOP);
+
+	/* Make sure we are converting something to a pointer type */
+
+	RESULT_TYPE = RESULT_T;
+	RESULT_TYPE.NOT_AN_LVALUE = TRUE;
+	if RESULT_TYPE.TOP_TYPE.CODE = byte (POINTER_DT) then
+		TO_REFERENCE = FALSE;
+	else if RESULT_TYPE.TOP_TYPE.CODE = byte (REFERENCE_DT) then do;
+		TO_REFERENCE = TRUE;
+		call STRIP_TOP_TYPE (RESULT_TYPE, FALSE);
+		call ADD_POINTER_LEVEL (RESULT_TYPE);
+		end;
+	else
+		return (INPUT_VALUE);
+
+	/* Here, we are indeed converting something to a pointer type */
+
+	CXX_VALUE_NODE_PTR = INPUT_VALUE;
+	call GET_VALUE_TYPE (INPUT_TYPE);
+
+	if INPUT_TYPE.TOP_TYPE.CODE ^= byte (POINTER_DT) then do;
+		/*
+		/* Here, we are converting a
+		/* non-pointer type to a pointer type.
+		/**/
+		goto CONVERT_NON_POINTER_TO_POINTER;
+	end;
+
+	/* Get the type to which the input type is pointing */
+
+	call GET_TOP_LEVEL_TYPE_INFO (INPUT_TYPE, 1, INPUT_POINTED_TO_TYPE);
+
+	if ^IS_AGGREGATE_TAG_TYPE (rank (INPUT_POINTED_TO_TYPE.CODE)) then do;
+		/*
+		/* Here, we are converting a non-class
+		/* pointer type to a pointer type.
+		/**/
+		goto CONVERT_SIMPLE_POINTERS;
+	end;
+
+	/* Get the type to which the result type is pointing */
+
+	call GET_TOP_LEVEL_TYPE_INFO (RESULT_TYPE, 1, RESULT_POINTED_TO_TYPE);
+
+	if ^IS_AGGREGATE_TAG_TYPE
+	    (rank (RESULT_POINTED_TO_TYPE.CODE)) then do;
+		/*
+		/* Here, we are converting a class
+		/* pointer type to a non-class pointer type.
+		/**/
+		goto CONVERT_SIMPLE_POINTERS;
+	end;
+
+	/* ----------------------------------------------------------
+	/* Handle class pointer conversions; i.e. we are converting
+	/* from one class pointer type to another class pointer type.
+	/* -------------------------------------------------------- */
+
+	/*
+	/* First, if this is not an explicit user cast, see if they
+	/* are compatible in terms of type qualifiers, i.e. the type
+	/* pointed to by the result must have (at least) all of the
+	/* type qualifiers of the type pointed to by the input.
+	/**/
+
+	if ^IS_CAST then do;
+		if ^HAS_ALL_TYPE_QUALIFIERS_OF
+		    (RESULT_POINTED_TO_TYPE.QUALIFIERS,
+		     INPUT_POINTED_TO_TYPE.QUALIFIERS) then do;
+			/*
+			/* Error; incompatible qualified pointer types.  The
+			/* type pointed to by the left operand must have all
+			/* the type qualifiers of the type pointed to by the
+			/* right operand.
+			/**/
+			TYPE_COMPATIBILITY_STATUS =
+				INCOMPATIBLE_PTR_QUALIFIERS_TCS;
+			if ^TO_REFERENCE then
+				call INCOMPATIBLE_POINTER_ERROR
+				     (VOP, RESULT_TYPE, INPUT_TYPE);
+			else
+				call INCOMPATIBLE_REFERENCE_ERROR
+				     (VOP, RESULT_TYPE, INPUT_TYPE);
+		end;
+	end;
+
+	/*
+	/* Here, we are converting from one class pointer to another
+	/* (and which are compatible in terms of type qualifiers).
+	/* See if they are the the same, or (more interestingly) if
+	/* one is a base class of the other, and do the appropriate
+	/* derived-to-base or base-to-derived class conversion if so.
+	/**/
+
+	INPUT_CLASS  = INPUT_POINTED_TO_TYPE.TAG_SYMBOL;
+	RESULT_CLASS = RESULT_POINTED_TO_TYPE.TAG_SYMBOL;
+
+	/* See if they are the same base classes */
+
+	if INPUT_CLASS = RESULT_CLASS then
+		RESULT_VALUE = CAST_TO_TYPE (INPUT_VALUE, RESULT_TYPE);
+
+	/* Convert derived class pointer to base class pointer ? */
+
+	else if DERIVED_TO_BASE_CLASS_POINTER (INPUT_VALUE, 
+				INPUT_CLASS, RESULT_CLASS, NULL_NID, 
+				NULL_NID, ^TO_REFERENCE, VOP) then
+		RESULT_VALUE = INPUT_VALUE;
+
+	else do;
+		/* If not cast, unrelated class pointer conversion error */
+		if ^IS_CAST then do;
+			/*
+			/* Error; incompatible qualified pointer types.
+			/**/
+			TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_TYPES_TCS;
+			if ^TO_REFERENCE then
+				call INCOMPATIBLE_POINTER_ERROR
+				     (VOP, RESULT_TYPE, INPUT_TYPE);
+			else	call INCOMPATIBLE_REFERENCE_ERROR
+				     (VOP, RESULT_TYPE, INPUT_TYPE);
+		end;
+
+		/* Convert base class pointer to derived class pointer ? */
+
+		if BASE_TO_DERIVED_CLASS_POINTER
+			(INPUT_VALUE, INPUT_CLASS, RESULT_CLASS, IS_CAST) then
+			RESULT_VALUE = INPUT_VALUE;
+
+		/* Otherwise, unrelated class pointer conversion */
+
+		else
+			RESULT_VALUE = CAST_TO_TYPE (INPUT_VALUE, RESULT_TYPE);
+	end;
+
+	goto RETURN_RESULT;
+
+	/* ----------------------------------------------------------
+	/* Handle simple pointer conversions; i.e. non-class pointer
+	/* to class pointer or class pointer to non-class pointer.
+	/* ------------------------------------------------------- */
+
+	CONVERT_SIMPLE_POINTERS:
+
+	if ^COMPATIBLE_ASSIGNMENT_POINTERS
+	    (RESULT_TYPE, INPUT_VALUE, VOP) then do;
+		/*
+		/* Error; incompatible pointer assignment; diagnostic
+		/* already given in COMPATIBLE_ASSIGNMENT_POINTERS.
+		/**/
+		;
+	end;
+	if COMPATIBLE_SPECIAL_TYPE_INFO (RESULT_TYPE, DEFAULT_TCM,
+					 INPUT_TYPE, DEFAULT_TCM) then do;
+		RESULT_VALUE = INPUT_VALUE;
+		CXX_VALUE_NODE_PTR = RESULT_VALUE;
+	end;
+	else
+		RESULT_VALUE = CAST_TO_TYPE (INPUT_VALUE, RESULT_TYPE);
+	goto RETURN_RESULT;
+
+	/* ------------------------------------------
+	/* Handle non-pointer to pointer conversions.
+	/* ---------------------------------------- */
+
+	CONVERT_NON_POINTER_TO_POINTER:
+
+	if rank (INPUT_TYPE.TYPE_CODE) = MEMBER_POINTER_DT then
+		call SEMANTIC_ERROR (ERR_MBR_PTR_CAST_TO_PTR);
+	if ^COMPATIBLE_ASSIGNMENT_POINTERS
+	    (RESULT_T, INPUT_VALUE, VOP) then do;
+		/*
+		/* Error; incompatible pointer assignment; diagnostic
+		/* already given in COMPATIBLE_ASSIGNMENT_POINTERS.
+		/**/
+		;
+	end;
+
+	RESULT_VALUE = CONVERT_TO_TYPE
+		(CONVERT_VALUE (INPUT_VALUE, INT_BT), RESULT_TYPE);
+
+	/* Fix result type to reference, if necessary. */
+
+	RETURN_RESULT:
+
+	call SET_VALUE_TYPE (RESULT_T);
+	return (RESULT_VALUE);
+
+end CONVERT_TO_POINTER_VALUE;
+
+/* ---------------------------------------------------------------------
+/* CAST_TO_CLASS_POINTER
+/*
+/* CLASS is the symbol node id for the class.
+/* ------------------------------------------------------------------- */
+
+CAST_TO_CLASS_POINTER: procedure (V, CLASS)
+		       returns   (type (CXX_VID_T))
+		       external  (X_CAST_TO_CLASS_POINTER);
+	declare
+		V		type (CXX_VID_T),
+		CLASS		type (NID_T);
+	declare
+		NEW_V		type (CXX_VID_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	/* If the cast yields no change in type, don't change anything. */
+	CXX_VALUE_NODE_PTR = V;
+	if   rank (CXX_VALUE_NODE.TOP_TYPE.CODE) = POINTER_DT
+	   & CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS = NULL_TQ then do;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		call GET_TOP_LEVEL_TYPE_INFO (TYPE_INFO, 1, TYPE_DATA);
+		if   IS_AGGREGATE_TAG_TYPE (rank (TYPE_DATA.CODE))
+		   & TYPE_DATA.QUALIFIERS = NULL_TQ
+		   & TYPE_DATA.TAG_SYMBOL = CLASS then
+			return (V);
+	end;
+
+	NEW_V = ALLOC_CXX_VALUE_NODE_L (CAST_VO, V);
+	call SET_VALUE_CLASS_POINTER_TYPE (CLASS);
+	CXX_VALUE_NODE.UNARY = TRUE;
+	return (NEW_V);
+
+end CAST_TO_CLASS_POINTER;
+
+/* ---------------------------------------------------------------------
+/* CAST_TO_CLASS_POINTER_POINTER
+/* ------------------------------------------------------------------- */
+
+CAST_TO_CLASS_POINTER_POINTER: procedure (V, CLASS)
+			       returns   (type (CXX_VID_T))
+			       external  (X_CAST_TO_CLASS_POINTER_POINTER);
+	declare
+		V	type (CXX_VID_T),
+		CLASS	type (NID_T);
+	declare
+		NEW_V	type (CXX_VID_T);
+
+	NEW_V = ALLOC_CXX_VALUE_NODE_L (CAST_VO, V);
+	call SET_VALUE_CLASS_POINTER_TYPE (CLASS);
+	CXX_VALUE_NODE.UNARY = TRUE;
+	CXX_VALUE_NODE.EXTRA_PTR_LEVEL = TRUE;
+	return (NEW_V);
+
+end CAST_TO_CLASS_POINTER_POINTER;
+
+/* ---------------------------------------------------------------------
+/* CAST_TO_SIMPLE_POINTER
+/* ------------------------------------------------------------------- */
+
+CAST_TO_SIMPLE_POINTER: procedure (V, T)
+			returns   (type (CXX_VID_T))
+			external  (X_CAST_TO_SIMPLE_POINTER);
+	declare
+		V	type (CXX_VID_T),
+		T	type (SHORT_T);
+	declare
+		NEW_V	type (CXX_VID_T);
+
+	NEW_V = ALLOC_CXX_VALUE_NODE_L (CAST_VO, V);
+	call SET_VALUE_SIMPLE_POINTER_TYPE (T);
+	CXX_VALUE_NODE.UNARY = TRUE;
+	return (NEW_V);
+
+end CAST_TO_SIMPLE_POINTER;
+
+/* ---------------------------------------------------------------------
+/* CAST_TO_SIMPLE_TYPE
+/* ------------------------------------------------------------------- */
+
+CAST_TO_SIMPLE_TYPE: procedure (V, T)
+		     returns   (type (CXX_VID_T))
+		     external  (X_CAST_TO_SIMPLE_TYPE);
+	declare
+		V	type (CXX_VID_T),
+		T	type (SHORT_T);
+	declare
+		NEW_V	type (CXX_VID_T);
+
+	NEW_V = ALLOC_CXX_VALUE_NODE_L (CAST_VO, V);
+	call SET_VALUE_SIMPLE_TYPE (T);
+	CXX_VALUE_NODE.UNARY = TRUE;
+	return (NEW_V);
+
+end CAST_TO_SIMPLE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* IMPLICIT_CAST_TO_SIMPLE_TYPE
+/* ------------------------------------------------------------------- */
+
+IMPLICIT_CAST_TO_SIMPLE_TYPE: procedure (V, T)
+			      returns   (type (CXX_VID_T))
+			      internal;
+	declare
+		V	type (CXX_VID_T),
+		T	type (SHORT_T);
+	declare
+		NEW_V	type (CXX_VID_T);
+
+	NEW_V = CAST_TO_SIMPLE_TYPE (V, T);
+	CXX_VALUE_NODE.OP = IMPLICIT_CAST_VO;
+	return (NEW_V);
+
+end IMPLICIT_CAST_TO_SIMPLE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* CAST_TO_TYPE
+/*
+/* Returns with the newly-created, unexpanded value node paged in.
+/* ------------------------------------------------------------------- */
+
+CAST_TO_TYPE: procedure (V, TI)
+	      returns   (type (CXX_VID_T))
+	      external  (X_CAST_TO_TYPE);
+
+	declare
+		V	type (CXX_VID_T),
+		TI	type (TYPE_INFO_T);
+	declare
+		NEW_V	type (CXX_VID_T);
+
+	NEW_V = ALLOC_CXX_VALUE_NODE_L (CAST_VO, V);
+	call SET_VALUE_TYPE (TI);
+	CXX_VALUE_NODE.UNARY = TRUE;
+	return (NEW_V);
+
+end CAST_TO_TYPE;
+
+/* ---------------------------------------------------------------------
+/* CONVERT_TO_TYPE
+/*
+/* Same as CAST_TO_TYPE except uses CONVERT_VO rather than CAST_VO.
+/* Returns with the newly-created, unexpanded value node paged in.
+/* ------------------------------------------------------------------ */
+
+CONVERT_TO_TYPE: procedure (V, TI) returns (type (CXX_VID_T)) internal;
+
+	declare
+		V	type (CXX_VID_T),
+		TI	type (TYPE_INFO_T);
+	declare
+		NEW_V	type (CXX_VID_T);
+
+	NEW_V = ALLOC_CXX_VALUE_NODE_L (CONVERT_VO, V);
+	call SET_VALUE_TYPE (TI);
+	CXX_VALUE_NODE.UNARY = TRUE;
+	return (NEW_V);
+
+end CONVERT_TO_TYPE;
+
+/* ---------------------------------------------------------------------
+/* CONVERT_TO_VOID
+/*
+/* Throw away the value returned by the operand expression, and return
+/* the void value, of type VOID_BT instead.  Preserve the operand expression
+/* for its side effects.  Usually, introduce a NOP_VO node into the expression
+/* tree because the back end requires it.
+/*
+/* Returns with the result value node paged in.
+/*
+/* Does NOT check for a user-defined conversion to void.
+/* ------------------------------------------------------------------- */
+
+CONVERT_TO_VOID: procedure (ARG)
+		 returns   (type (CXX_VID_T))
+		 external  (X_CONVERT_TO_VOID);
+
+	declare
+		ARG			type (CXX_VID_T);
+	declare
+		(T, VICTIM)		type (CXX_VID_T),
+		(LEFT, RIGHT)		type (CXX_VID_T),
+		OBJECT			type (CXX_VID_T),
+		MEMBER_REFERENCE	type (CXX_VID_T),
+		(ARGS, THIS)		type (CXX_VID_T),
+		NARGS			type (SHORT_T),
+		SYM_ID			type (NID_T),
+		OVERLOAD_ERROR		type (BOOL_T),
+		TYPE_INFO		type (TYPE_INFO_T);
+
+	if ARG = NULL_CXX_VID then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	CXX_VALUE_NODE_PTR = ARG;
+
+	/* only if it's not already void */
+	if CXX_VALUE_NODE.TOP_TYPE.CODE = byte (VOID_BT) then
+		return (ARG);
+
+        if (CXX_VALUE_NODE.COUNT ^= 1) |
+           (CXX_VALUE_NODE.OP = INTEGER_VO) |
+           (CXX_VALUE_NODE.OP = CONSTANT_VO) |
+           (CXX_VALUE_NODE.OP = UNINITIALIZED_VO) then do;
+		call COUNT_DOWN_VALUE (ARG);
+		return (GET_CONSTRUCTOR_VALUE (GET_VOID_TYPE(),
+					       NULL_CXX_VID, NULL_NID,
+					       IMPLICIT_CAST_VO));
+	end;
+
+        if CXX_VALUE_NODE.OP = COMMA_VO then do;	/* & count=1 here */
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.RIGHT;
+                if CXX_VALUE_NODE.COUNT > 1 then do;
+			/* This comma is from an assignment. */
+			CXX_VALUE_NODE_PTR = ARG;	/* COMMA */
+                        LEFT = CXX_VALUE_NODE.LEFT;	/* the plain assign */
+                        call COUNT_UP_VALUE (LEFT);	/* hang onto assign */
+                        call COUNT_DOWN_VALUE(ARG);	/* eliminate comma */
+			CXX_VALUE_NODE_PTR = LEFT;
+			return (LEFT);
+		end;
+		/* nop(comma(x,y)) --> comma(x,nop(y)) */
+		CXX_VALUE_NODE_PTR = ARG;
+		RIGHT = CXX_VALUE_NODE.RIGHT;
+		LEFT = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (RIGHT);
+		call COUNT_UP_VALUE (LEFT);
+		call COUNT_DOWN_VALUE (ARG);
+		RIGHT = CONVERT_TO_VOID (RIGHT);
+		return (EFFECT_BEFORE_VALUE (LEFT, RIGHT));
+	end;
+
+        if CXX_VALUE_NODE.OP = LEFT_VALUE_VO then do;	/* & count=1 here */
+		/* nop(left_value(x,y)) --> left_value(nop(x),y) */
+		CXX_VALUE_NODE_PTR = ARG;
+		RIGHT = CXX_VALUE_NODE.RIGHT;
+		LEFT = CXX_VALUE_NODE.LEFT;
+		call COUNT_UP_VALUE (RIGHT);
+		call COUNT_UP_VALUE (LEFT);
+		call COUNT_DOWN_VALUE (ARG);
+		LEFT = CONVERT_TO_VOID (LEFT);
+		return (VALUE_BEFORE_EFFECT (LEFT, RIGHT));
+	end;
+
+	if CXX_VALUE_NODE.OP = VALUE_VO then do;	/* & count=1 here */
+		T = CXX_VALUE_NODE.LEFT;
+		CXX_VALUE_NODE_PTR = T;
+		if CXX_VALUE_NODE.COUNT = 1 & CXX_VALUE_NODE.OP = COMMA_VO then do;
+			CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.RIGHT;
+			if CXX_VALUE_NODE.COUNT > 1 then do;
+				/* This comma is from an assignment. */
+				CXX_VALUE_NODE_PTR = T;   /* COMMA */
+				LEFT = CXX_VALUE_NODE.LEFT;/*the plain assign*/
+				call COUNT_UP_VALUE (LEFT);/*hang onto assign*/
+				call COUNT_DOWN_VALUE(ARG);/*eliminate value*/
+				CXX_VALUE_NODE_PTR = LEFT;
+				return (LEFT);
+			end;
+		end;
+		CXX_VALUE_NODE_PTR = ARG;
+	end;
+
+        if CXX_VALUE_NODE.OP = CONVERT_VO then do;
+                LEFT = CXX_VALUE_NODE.LEFT;
+                call COUNT_UP_VALUE(LEFT);
+                call COUNT_DOWN_VALUE(ARG);
+		return (CONVERT_TO_VOID (LEFT));
+	end;
+
+	if (CXX_VALUE_NODE.OP = DOT_STAR_VO) &
+	   (CXX_VALUE_NODE.TOP_TYPE.CODE = byte (FUNCTION_DT)) then do;
+		/* Bound static or bound non-static member function. */
+		OBJECT = CXX_VALUE_NODE.LEFT;
+		MEMBER_REFERENCE = CXX_VALUE_NODE.RIGHT;
+		call COUNT_UP_VALUE (OBJECT);
+		call COUNT_UP_VALUE (MEMBER_REFERENCE);
+
+		/* Check for unresolved overloading. */
+		OVERLOAD_ERROR = IS_OVERLOADED_VALUE (MEMBER_REFERENCE,SYM_ID);
+		
+		call COUNT_DOWN_VALUE (ARG);
+
+		if OVERLOAD_ERROR then do;
+			call SEMANTIC_ERROR_I (ERR_CAST_VOID_OVLD_FUN,
+					       QUALIFIED_SYMBOL_NAME (SYM_ID));
+			call COUNT_DOWN_VALUE (MEMBER_REFERENCE);
+			T = OBJECT;
+		end;
+		else do;
+			ARGS = NULL_CXX_VID;
+			NARGS = 0;
+			VICTIM = NULL_CXX_VID;
+			T = MEMBER_FUNCTION_CALL (MEMBER_REFERENCE, OBJECT,
+						  ARGS, NARGS, VICTIM);
+			/*
+			/* T is the address of function to call,
+			/* ARGS is 'this' object address, if applicable,
+			/* VICTIM is possible destructor for object.
+			/**/
+			if (ARGS ^= NULL_CXX_VID) then do;
+				CXX_VALUE_NODE_PTR = ARGS;
+				THIS = CXX_VALUE_NODE.LEFT;
+				call COUNT_UP_VALUE (THIS);
+				call COUNT_DOWN_VALUE (ARGS);
+				T = GET_VALUE_AND_EXPAND_LR (COMMA_VO, THIS, T);
+			end;
+			T = VALUE_BEFORE_EFFECT (T, VICTIM);
+		end;
+		T = CONVERT_TO_VOID (T);
+		return (T);
+	end;
+
+	if CXX_VALUE_NODE.OP = MEMBER_REF_VO then
+		return (CONVERT_TO_VOID (DEREFERENCE_MEMBER (ARG, TRUE)));
+
+	if IS_OVERLOADED_VALUE (ARG, SYM_ID) then do;
+		/*
+		/* Error: cannot tell which overloaded variant to
+		/* check access to.  Overloaded function names not
+		/* supported in this context.
+		/**/
+		call SEMANTIC_ERROR_I (ERR_CAST_VOID_OVLD_FUN,
+				       QUALIFIED_SYMBOL_NAME (SYM_ID));
+		call COUNT_DOWN_VALUE (ARG);
+		return (GET_CONSTRUCTOR_VALUE (GET_VOID_TYPE(), 
+					       NULL_CXX_VID, NULL_NID, 
+					       IMPLICIT_CAST_VO));
+	end;
+
+	/* Fix for: void f (); g () { f; }  // DGM, 064 */
+
+	else if SYM_ID ^= NULL_NID then
+		call NOTE_SYMBOL_REFERENCE (SYM_ID);
+
+	/*
+	/* For expressions that aren't lvalues, references, or member
+	/* references, call VALUE_OF because it will check that the
+	/* type is not incomplete.
+	/**/
+	call GET_VALUE_TYPE (TYPE_INFO);
+	if   TYPE_INFO.NOT_AN_LVALUE 
+	   & rank (TYPE_INFO.CODE) ^= REFERENCE_DT
+	   & ^(   (TYPE_INFO.CODE = byte (MEMBER_POINTER_DT))
+		& (CXX_VALUE_NODE.OP = MEMBER_REF_VO)) then do;
+		T = VALUE_OF (ARG);
+		call CHECK_CTOR_DTOR_ACCESS (TYPE_INFO);
+	end;
+	else
+		T = ARG;
+		
+	T = TRANSMUTE_WITH_TEMP (T, VICTIM, FALSE, AUTO_ST, NOP_VO);
+
+	T = ALLOC_CXX_VALUE_NODE_L (NOP_VO, T);
+        CXX_VALUE_NODE.UNARY = TRUE;
+	call SET_VALUE_SIMPLE_TYPE (VOID_BT);
+	return (VALUE_BEFORE_EFFECT (T, VICTIM));
+
+end CONVERT_TO_VOID;
+
+/* ---------------------------------------------------------------------
+/* CONVERT_TO_MEMBER_POINTER
+/* ------------------------------------------------------------------- */
+CONVERT_TO_MEMBER_POINTER: procedure (INPUT_VALUE, RESULT_TYPE, VOP)
+			   returns   (type (CXX_VID_T))
+			   internal;
+
+	declare
+		INPUT_VALUE		type (CXX_VID_T),
+		RESULT_TYPE		type (TYPE_INFO_T),
+		VOP			type (SHORT_T);
+	declare
+		RESULT			type (CXX_VID_T),
+		INPUT_TYPE		type (TYPE_INFO_T),
+		INPUT_POINTED_TO_TYPE	type (TYPE_DATA_T),
+		INPUT_CLASS		type (NID_T),
+		RESULT_POINTED_TO_TYPE	type (TYPE_DATA_T),
+		RESULT_CLASS		type (NID_T),
+		INTERMEDIATE_TYPE	type (TYPE_INFO_T),
+		IS_CAST			type (BOOL_T),
+		AMBIGUOUS		type (BOOL_T),
+		VIRTUAL			type (BOOL_T),
+		INACCESSIBLE		type (BOOL_T),
+		OVLD_SYM		type (NID_T),
+		DUMMY_BOOL		type (BOOL_T);
+
+	/* Make sure we are converting something to a member pointer type */
+
+	if RESULT_TYPE.TOP_TYPE.CODE ^= byte (MEMBER_POINTER_DT) then
+		return (INPUT_VALUE);
+
+	RESULT = INPUT_VALUE;
+	CXX_VALUE_NODE_PTR = RESULT;
+	if CXX_VALUE_NODE.TOP_TYPE.CODE ^= byte (MEMBER_POINTER_DT) then do;
+
+		/* See if the right is a null pointer (hackish) */
+
+		if ^( IS_INTEGRAL_TYPE (rank (CXX_VALUE_NODE.TOP_TYPE.CODE))
+		    & CXX_VALUE_NODE.OP = INTEGER_VO
+		    & CXX_VALUE_NODE.OFFSET = 0) then do;
+
+			call SEMANTIC_ERROR (ERR_BAD_MBR_PTR_CAST);
+MEMBER_POINTER_ERROR:	
+			call COUNT_DOWN_VALUE (RESULT);
+			RESULT = INTEGER_VALUE_ZERO ();
+		end;
+
+		call SET_VALUE_TYPE (RESULT_TYPE);
+		CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+		return (RESULT);
+	end;
+
+	/*
+	/* Explicit conversion from "IT IC::*" to "RT RC::*" is permitted if
+	/*     (1) IC = RC, IC is a non-virtual base of RC, or,
+	/*         RC is a non-virtual base of IC
+	/* and (2) either RT and IT are object types, or RT and IT are
+	/*	   function types
+	/* and (3) if RT is a base of IT, or IT a base of RT, the same
+	/*         considerations apply, as apply when ordinary pointers 
+	/*         point to classes, with the additional proviso that it's
+	/*	   an error if there's virtual derivation in the relationship.
+	/*
+	/* Implicit conversion is permitted if 
+	/*     (1) IC = RC, or IC is a non-virtual base of RC,
+	/*	   subject to accessibility
+	/* and (2) RT and IT are compatible types, or RT is a non-virtual
+	/*         base of IT, subject to accessibility
+	/* and (3) RT has all of the qualifiers of IT.
+	/*
+	/* The above rules are only partly set forth in ARM 4.8 and 5.4.
+	/* Some of the qualifier provisions are missing, can be garnered
+	/* from the C standard, and clearly apply to member pointer types
+	/* as well as pointer types.  The provisions regarding pointers
+	/* to related class types are in part analogous to those for
+	/* ordinary pointers, with the additional restrictions imposed
+	/* only in cases where cfront 2.1 either gives an error or generates
+	/* bad code.  The same goes for the restriction on conversion
+	/* between pointer to object and pointer to function.
+	/**/
+
+	IS_CAST = IS_CAST_VOP (VOP);
+
+	/* Here, we are indeed converting something to a pointer type */
+
+	CXX_VALUE_NODE_PTR = RESULT;
+	call GET_VALUE_TYPE (INPUT_TYPE);
+
+	/* Get the type to which the input type is pointing */
+
+	call GET_TOP_LEVEL_TYPE_INFO (INPUT_TYPE, 1, INPUT_POINTED_TO_TYPE);
+
+	if ^IS_AGGREGATE_TAG_TYPE (rank (INPUT_POINTED_TO_TYPE.CODE)) then do;
+		/*
+		/* Here, we are converting a non-class
+		/* pointer type to a pointer type.
+		/**/
+		goto CONVERT_SIMPLE_POINTERS;
+	end;
+
+	/* Get the type to which the result type is pointing */
+
+	call GET_TOP_LEVEL_TYPE_INFO (RESULT_TYPE, 1, RESULT_POINTED_TO_TYPE);
+
+	if ^IS_AGGREGATE_TAG_TYPE
+	    (rank (RESULT_POINTED_TO_TYPE.CODE)) then do;
+		/*
+		/* Here, we are converting a class
+		/* pointer type to a non-class pointer type.
+		/**/
+		goto CONVERT_SIMPLE_POINTERS;
+	end;
+
+	/* ----------------------------------------------------------
+	/* Handle class pointer conversions; i.e. we are converting
+	/* from one class pointer type to another class pointer type.
+	/* -------------------------------------------------------- */
+
+	/*
+	/* First, if this is not an explicit user cast, see if they
+	/* are compatible in terms of type qualifiers, i.e. the type
+	/* pointed to by the result must have (at least) all of the
+	/* type qualifiers of the type pointed to by the input.
+	/**/
+
+	if ^IS_CAST then do;
+		if ^HAS_ALL_TYPE_QUALIFIERS_OF
+		    (RESULT_POINTED_TO_TYPE.QUALIFIERS,
+		     INPUT_POINTED_TO_TYPE.QUALIFIERS) then do;
+			/*
+			/* Error; incompatible qualified pointer types.  The
+			/* type pointed to by the left operand must have all
+			/* the type qualifiers of the type pointed to by the
+			/* right operand.
+			/**/
+			TYPE_COMPATIBILITY_STATUS =
+				INCOMPATIBLE_PTR_QUALIFIERS_TCS;
+			call INCOMPATIBLE_POINTER_ERROR
+			     (VOP, RESULT_TYPE, INPUT_TYPE);
+		end;
+	end;
+
+	/*
+	/* Here, we are converting from one class pointer to another
+	/* (and which are compatible in terms of type qualifiers).
+	/* See if they are the the same, or (more interestingly) if
+	/* one is a base class of the other, and do the appropriate
+	/* derived-to-base or base-to-derived class conversion if so.
+	/**/
+
+	INPUT_CLASS  = INPUT_POINTED_TO_TYPE.TAG_SYMBOL;
+	RESULT_CLASS = RESULT_POINTED_TO_TYPE.TAG_SYMBOL;
+
+	/* See if they are the same base classes */
+
+	if INPUT_CLASS = RESULT_CLASS then do;
+		/* already ready */
+	end;
+
+	/* Convert derived class pointer to base class pointer ? */
+
+	else if IS_BASE_CLASS_OF (RESULT_CLASS, INPUT_CLASS, 
+				  AMBIGUOUS, INACCESSIBLE, VIRTUAL) then do;
+		if AMBIGUOUS then do;
+			/*
+			/* Ambiguous base class reference.
+			/**/
+			/*
+			/* Error; cannot convert a pointer to a derived class
+			/* to a pointer to an ambiguous base class.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_AMBIG_DERIVED_BASE_PTR_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+		end;
+
+		if VIRTUAL then do;
+			/*
+			/* Error; cannot convert a member pointer to a
+			/* derived class to a pointer to a virtual base.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_VIRT_DERIVED_BASE_PTR_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+			goto MEMBER_POINTER_ERROR;
+		end;
+
+		/* 
+		/* Check accessibility.
+		/**/
+		if INACCESSIBLE & ^IS_CAST & ^AM_DEBUGGER then do;
+			/*
+			/* Error; cannot convert a pointer to a derived class
+			/* (INPUT_CLASS) to a pointer to inaccessible base
+			/* class (RESULT_CLASS).
+			/**/
+			call SEMANTIC_ERROR_II (ERR_PRIV_DERIVED_BASE_PTR_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+		end;
+	end;
+
+	else do;
+		/* If not cast, unrelated class pointer conversion error */
+		if ^IS_CAST then do;
+			/*
+			/* Error; incompatible qualified pointer types.
+			/**/
+			TYPE_COMPATIBILITY_STATUS = INCOMPATIBLE_TYPES_TCS;
+			call INCOMPATIBLE_POINTER_ERROR
+			     (VOP, RESULT_TYPE, INPUT_TYPE);
+		end;
+
+		/* Convert base class pointer to derived class pointer ? */
+
+		if IS_BASE_CLASS_OF (INPUT_CLASS, RESULT_CLASS, 
+				     AMBIGUOUS, INACCESSIBLE, VIRTUAL) then do;
+			if ^IS_CAST then do;
+				/*
+				/* Error; a pointer to a base class may not be
+				/* converted to a pointer to a derived class 
+				/* without an appropriate cast.
+				/**/
+				call SEMANTIC_ERROR_II (
+						ERR_BASE_DERIVED_PTR_CNV, 
+						SYMBOL_NAME (INPUT_CLASS), 
+						SYMBOL_NAME (RESULT_CLASS));
+			end;
+
+			if AMBIGUOUS then do;
+				/*
+				/* Ambiguous base class reference.
+				/**/
+				/*
+				/* Error; cannot convert a pointer to an
+				/* ambiguous base class to a pointer to a 
+				/* derived class.
+				/**/
+				call SEMANTIC_ERROR_II (
+						ERR_AMBIG_BASE_DERIVED_PTR_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+			end;
+
+			if VIRTUAL then do;
+				/*
+				/* Error; cannot convert a pointer to virtual
+				/* base to a pointer to a derived class.
+				/**/
+				call SEMANTIC_ERROR_II (
+						ERR_VBASE_DERIVED_PTR_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+				goto MEMBER_POINTER_ERROR;
+			end;
+			if INACCESSIBLE & ^IS_CAST & ^AM_DEBUGGER then do;
+				/*
+				/* Error; a pointer to an inaccessible base
+				/* class may not be converted to a pointer to 
+				/* derived class.
+				/**/
+				call SEMANTIC_ERROR_II (
+						ERR_PRIV_BASE_DERIVED_PTR_CNV,
+						SYMBOL_NAME (INPUT_CLASS), 
+						SYMBOL_NAME (RESULT_CLASS));
+			end;
+		end;
+
+		/* Otherwise, unrelated class pointer conversion */
+
+		else 
+			goto CAST_AND_FINISH;
+	end;
+
+	INTERMEDIATE_TYPE = INPUT_TYPE;
+
+	goto RETURN_RESULT;
+
+	/* ----------------------------------------------------------
+	/* Handle simple pointer conversions; i.e. non-class pointer
+	/* to class pointer or class pointer to non-class pointer.
+	/* ------------------------------------------------------- */
+
+	CONVERT_SIMPLE_POINTERS:
+
+	if ^COMPATIBLE_ASSIGNMENT_POINTERS 
+	    (RESULT_TYPE, RESULT, VOP) then do;
+		/*
+		/* Error; incompatible pointer assignment; diagnostic
+		/* already given in COMPATIBLE_ASSIGNMENT_POINTERS.
+		/**/
+		;
+	end;
+
+	CAST_AND_FINISH:
+	/*
+	/* Transform to a cast followed
+	/* (when appropriate) by a conversion.
+	/**/
+	INTERMEDIATE_TYPE = RESULT_TYPE;
+	/* Revert the tag symbol to the input class. */
+	INTERMEDIATE_TYPE.TAG_SYMBOL = INPUT_TYPE.TAG_SYMBOL;
+	INTERMEDIATE_TYPE.TYPE = MODIFY_TYPE_LEVEL
+				 (INTERMEDIATE_TYPE.TYPE,
+				  INTERMEDIATE_TYPE.DERIVED_TYPE_SKIP,
+				  INTERMEDIATE_TYPE.TOP_TYPE);
+
+	if COMPATIBLE_SPECIAL_TYPE_INFO (INTERMEDIATE_TYPE, DEFAULT_TCM,
+					 INPUT_TYPE, DEFAULT_TCM) then do;
+		CXX_VALUE_NODE_PTR = RESULT;
+	end;
+	else
+		RESULT = CAST_TO_TYPE (RESULT, INTERMEDIATE_TYPE);
+
+	/* Fix result type to reference, if necessary. */
+
+	RETURN_RESULT:
+
+	/*
+	/* Now focus on the classes of which these pointers are members,
+	/* not on the classes they point to.  Check the relatioship.
+	/**/
+
+	INPUT_CLASS  = INPUT_TYPE.TAG_SYMBOL;
+	RESULT_CLASS = RESULT_TYPE.TAG_SYMBOL;
+
+	/* See if they are the same classes */
+
+	if INPUT_CLASS = RESULT_CLASS then do;
+		/* already ready */
+	end;
+
+	/* Convert derived class pointer to base class pointer ? */
+
+	else if IS_BASE_CLASS_OF (INPUT_CLASS, RESULT_CLASS, 
+				  AMBIGUOUS, INACCESSIBLE, VIRTUAL) then do;
+		if AMBIGUOUS then do;
+			/*
+			/* Ambiguous base class reference.
+			/**/
+			/*
+			/* Error; cannot convert a pointer to a member of
+			/* an ambiguous base to a pointer to a member of
+			/* a derived class.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_AMBIG_DERIVED_BASE_MP_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+		end;
+
+		if VIRTUAL then do;
+			/*
+			/* Error; cannot convert a pointer to a member of
+			/* a virtual base class to a pointer to a member
+			/* of a derived class.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_VIRT_BASE_DERIVED_MP_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+			goto MEMBER_POINTER_ERROR;
+		end;
+
+		/* 
+		/* Check accessibility.
+		/**/
+		if INACCESSIBLE & ^IS_CAST & ^AM_DEBUGGER then do;
+			/*
+			/* Error; cannot convert a pointer to a member of
+			/* an inaccessible base class to a pointer to a
+			/* member of a derived class.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_PRIV_BASE_DERIVED_MP_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+		end;
+		
+	end;
+
+	else do;
+		/* Convert pointer to member of derived to pointer to
+		/* member of base ? */
+
+		if IS_BASE_CLASS_OF (RESULT_CLASS, INPUT_CLASS, 
+				     AMBIGUOUS, INACCESSIBLE, VIRTUAL) then do;
+			if ^IS_CAST then do;
+				/*
+				/* Error; a pointer to a member of derived
+				/* class may not be converted to a pointer to
+				/* a member of derived class without an 
+				/* appropriate cast.
+				/**/
+				call SEMANTIC_ERROR_II (
+						ERR_DERIVED_BASE_MP_CNV, 
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+			end;
+
+			if AMBIGUOUS then do;
+				/*
+				/* Ambiguous base class reference.
+				/**/
+				/*
+				/* Error; cannot convert a pointer to a
+				/* member of derived class to a pointer to
+				/* a member of an ambiguous base class.
+				/**/
+				call SEMANTIC_ERROR_II (
+						ERR_AMBIG_DERIVED_BASE_MP_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+			end;
+
+			if VIRTUAL then do;
+				/*
+				/* Error; cannot convert a pointer to member
+				/* of derived class to a pointer to member
+				/* of a virtual base class.
+				/**/
+				call SEMANTIC_ERROR_II (
+						ERR_VIRT_DERIVED_BASE_MP_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+				goto MEMBER_POINTER_ERROR;
+			end;
+		end;
+
+		else do;
+			/*
+			/* Error; unrelated member pointer conversion.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_UNRELATED_MP_CNV,
+						SYMBOL_NAME (INPUT_CLASS),
+						SYMBOL_NAME (RESULT_CLASS));
+			goto MEMBER_POINTER_ERROR;
+		end;
+	end;
+
+	if COMPATIBLE_SPECIAL_TYPE_INFO (RESULT_TYPE, DEFAULT_TCM,
+				 INTERMEDIATE_TYPE, DEFAULT_TCM) then do;
+		CXX_VALUE_NODE_PTR = RESULT;
+	end;
+	else
+		RESULT = CONVERT_TO_TYPE (RESULT, RESULT_TYPE);
+	return (RESULT);
+
+end CONVERT_TO_MEMBER_POINTER;
+			   
+/* ---------------------------------------------------------------------
+/* IS_CAST_VOP
+/*
+/* Tells whether it's an explicit conversion, 
+/* either a functional or a classic cast.
+/* ------------------------------------------------------------------- */
+
+IS_CAST_VOP: procedure (VOP)
+	     returns   (type (BOOL_T))
+	     external  (X_IS_CAST_VOP);
+
+	declare
+		VOP		type (SHORT_T);
+
+	return ((VOP = CAST_VO) |
+	        (VOP = IMPLICIT_CAST_VO) |
+	        (VOP = FUNCTIONAL_CAST_VO));
+
+end IS_CAST_VOP;
+			   
+/* ---------------------------------------------------------------------
+/* CONVERT_OVERLOADED
+/*
+/* Resolve overloaded expression based on its use as an initializer.
+/* Resolve occurrences MEMBER_REF_VO left around by VALUE_OF.
+/* Returns whether the resolution was successful; FALSE means
+/* that the expression is overloaded but can't be resolved,
+/* either because the VOP is for explicit conversion, or because
+/* no variant of the overloaded function is a match for LTI.
+/* Always diagnoses such failure as a nonrecoverable error.
+/*
+/* Checks access if the RV represents an overloaded member function,
+/* diagnosing as appropriate.
+/*
+/* Also resolves member references, which should have gone through
+/* VALUE_OF before they get here, so that the only member references
+/* left are for functions.  Actually, since VALUE_OF doesn't do
+/* functions, and CONVERT_OVERLOADED doesn't do non-functions,
+/* they can be called in either order.
+/*
+/* If the type of RV has nothing to do with a function, does nothing
+/* in particular.
+/*
+/* Preserves current-node-id.
+/* Returns with RV paged in.
+/* ------------------------------------------------------------------- */
+
+CONVERT_OVERLOADED: procedure (LTI, RV, VOP)
+                    returns   (type (BOOL_T))
+		    external (X_CONVERT_OVERLOADED);
+	declare
+		LTI 	        	type (TYPE_INFO_T),
+		RV     		     	type (CXX_VID_T),
+		VOP			type (SHORT_T);
+	declare
+		IS_CAST			type (BOOL_T),
+		RTI			type (TYPE_INFO_T),
+		SLTI			type (TYPE_INFO_T),
+		OVERLOAD_LIST		type (NID_T),
+		OVERLOADED		type (BOOL_T),
+		NEW_RIGHT		type (NID_T),
+		OLD_RIGHT		type (NID_T),
+		FOUND			type (BOOL_T),
+		CONTINUE		type (BOOL_T),
+		CHANGE_MEMBERSHIP	type (BOOL_T),
+		SP			pointer,
+		SNID			type (SNID_T),
+		(TV1, TV2)		type (CXX_VID_T),
+		MPV			type (CXX_VID_T),
+		(LCODE, RCODE)		type (SHORT_T),
+		ERROR_CODE		type (SHORT_T);
+
+	declare IS_POINTISH_TYPE (LB_ALL_TYPES : HB_ALL_TYPES)
+				 type (BOOL_T) static internal initial (
+
+		/* NULL_BT/NULL_DT	*/	  FALSE
+		/* VOID_BT		*/	, FALSE
+		/* FLOAT_BT		*/	, FALSE
+		/* DOUBLE_BT		*/	, FALSE
+		/* LDOUBLE_BT		*/	, FALSE
+		/* CHAR_BT		*/	, FALSE
+		/* SCHAR_BT		*/	, FALSE
+		/* UCHAR_BT		*/	, FALSE
+		/* SHORT_BT		*/	, FALSE
+		/* SSHORT_BT		*/	, FALSE
+		/* USHORT_BT		*/	, FALSE
+		/* INT_BT		*/	, FALSE
+		/* SINT_BT		*/	, FALSE
+		/* UINT_BT		*/	, FALSE
+		/* LONG_BT		*/	, FALSE
+		/* SLONG_BT		*/	, FALSE
+		/* ULONG_BT		*/	, FALSE
+		/* LOGICAL_BT		*/	, FALSE
+		/* ENUMERATOR_BT	*/	, FALSE
+		/* ENUM_BT		*/	, FALSE
+		/* CLASS_BT		*/	, FALSE
+		/* STRUCT_BT		*/	, FALSE
+		/* UNION_BT		*/	, FALSE
+		/* REFERENCE_DT		*/	, TRUE
+		/* POINTER_DT		*/	, TRUE
+		/* MEMBER_POINTER_DT	*/	, TRUE
+		/* ARRAY_DT		*/	, FALSE
+		/* FUNCTION_DT		*/	, FALSE
+		/* MEMBER_REFERENCE_DT	*/	, TRUE
+		/* TYPEDEF_BT		*/	, FALSE
+		/* LABEL_BT		*/	, FALSE
+	    );
+
+	/* Get the type of the right */
+
+	if ^IS_DERIVED_TYPE (rank (RV->CXX_VALUE_NODE.TOP_TYPE.CODE)) then
+		return (TRUE);
+	CXX_VALUE_NODE_PTR = RV;
+	call GET_VALUE_TYPE (RTI);
+	RCODE = rank (RTI.TYPE_CODE);
+	if IS_POINTISH_TYPE (RCODE) then
+		call STRIP_TOP_TYPE (RTI, FALSE);
+	if rank (RTI.TYPE_CODE) ^= FUNCTION_DT then
+		return (TRUE);
+ 
+	IS_CAST = IS_CAST_VOP (VOP);
+
+	/* See if this is a pointer or reference to an overloaded function */
+
+	OVERLOADED = IS_OVERLOADED_VALUE (RV, OLD_RIGHT);
+	NEW_RIGHT = OLD_RIGHT;
+
+	if OVERLOADED then do;
+		OVERLOAD_LIST = OVERLOADED_FUNCTION_POINTER (RV);
+		FOUND = FALSE;
+		SLTI = LTI;
+		LCODE = rank (SLTI.TYPE_CODE);
+		if IS_POINTISH_TYPE (LCODE) then
+			call STRIP_TOP_TYPE (SLTI, FALSE);
+
+		call SAVE_NODE (SNID);
+		do CONTINUE = TRUE while (CONTINUE);
+			/*
+			/* Check the left and right pointer types for
+			/* compatibility.
+			/* Note that we ignore the top two qualifier levels, 
+			/* since the top level qualifiers are (always) ignored,
+			/* and the pointed to qualifiers were checked above.
+			/* Also, ignore the kind of pointer, because that's
+			/* checked by the caller (e.g. ptr to member of base
+			/* can be assigned to pointer to member of derived).
+			/**/
+			FOUND = COMPATIBLE_SPECIAL_TYPE_INFO
+				(SLTI, IGNORE_TOP_QUALIFIERS_TCM,
+				 RTI, IGNORE_TOP_QUALIFIERS_TCM);
+			if ^FOUND & (OVERLOAD_LIST ^= NULL_NID) then do;
+				call SET_SYM_NODE_R (OVERLOAD_LIST);
+				if PARSING_DEFERRED_FUNCTION () then do;
+					if EFFECTIVELY_NON_VISIBLE_C () then
+						goto CONTINUE_LABEL;
+				end;
+				NEW_RIGHT = OVERLOAD_LIST;
+				call GET_SYMBOL_TYPE (RTI);
+				CONTINUE_LABEL:
+				OVERLOAD_LIST = SYM_NODE.NEXT_OVERLOAD;
+			end;
+			else	CONTINUE = FALSE;
+		end;
+		call RESTORE_NODE (SNID);
+
+		if ^FOUND | IS_CAST then
+			goto DIAGNOSE;
+	end;
+
+	call NOTE_SYMBOL_REFERENCE (NEW_RIGHT);
+
+	/*
+	/* Take care of reference to member expression.
+	/**/
+	CXX_VALUE_NODE_PTR = RV;
+	call BYPASS_COMMA ();
+	if CXX_VALUE_NODE.OP = MEMBER_REF_VO then do;
+		call GET_SYM_NODE_R (NEW_RIGHT, SP);
+		call DETACH_COMMA (RV, TV1, TV2);
+		RV = COPY_VALUE (RV);
+		CXX_VALUE_NODE.LEFT_NID = NEW_RIGHT;
+		CXX_VALUE_NODE.TYPE = ADD_TOP_TYPE (SP->SYM_NODE.TYPE, 
+						    CXX_VALUE_NODE.TOP_TYPE);
+		CXX_VALUE_NODE.DERIVED_TYPE_SKIP = 0;
+		if (LTI.TYPE_CODE = byte (MEMBER_POINTER_DT)) &
+		   (SP->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST)) then do;
+			/* 
+			/* Like a function designator, implicitly convert
+			/* from member-ref to function, to member-ptr to func.
+			/**/
+			CXX_VALUE_NODE.OP = MEMBER_PTR_VO;
+		end;
+		else
+			RV = DEREFERENCE_MEMBER (RV, FALSE);
+		call REATTACH_COMMA (RV, TV1, TV2);
+		call RELEASE_SYM_NODE (NEW_RIGHT);
+
+		/* 
+		/* All of the work has been accomplished.
+		/**/
+		return (TRUE);
+	end;
+
+	CHANGE_MEMBERSHIP = FALSE;
+	if OVERLOADED then do;
+		/*
+		/* Check access if we have an overloaded member function.
+		/* Note this applies when IS_CAST because it's a check of
+		/* the RIGHT expression, not of the conversion.
+		/**/
+		call GET_SYM_NODE_R (NEW_RIGHT, SP);
+		if SP->SYM_NODE.IS_AGGREGATE_MEMBER & ^AM_DEBUGGER then do;
+			if ^IS_ACCESSIBLE_STATIC (NEW_RIGHT) then do;
+				/*
+				/* Error; not accessible.
+				/**/
+				call SEMANTIC_ERROR_I
+				     (ERR_PRIV_BASE_MEMBER_REF,
+				      FULL_QUALIFIED_SYMBOL_NAME (NEW_RIGHT));
+			end;
+		end;
+
+		/*
+		/* Determine whether MEMBER_PTR (symbol) needs changing to
+		/* ADDR (REF (symbol)).
+		/**/
+		CHANGE_MEMBERSHIP = 
+			(  rank (SP->SYM_NODE.STORAGE_CLASS) = STATIC_ST
+			& SP->SYM_NODE.IS_AGGREGATE_MEMBER );
+		call RELEASE_SYM_NODE (NEW_RIGHT);
+	end;
+	if NEW_RIGHT ^= OLD_RIGHT | CHANGE_MEMBERSHIP then do;
+		/*
+		/* Revise RV for the correct overloaded function and
+		/* update its type.
+		/**/
+		call DETACH_COMMA (RV, TV1, TV2);
+		call SAVE_NODE (SNID);
+		call SET_SYM_NODE_R (NEW_RIGHT);
+		if RV->CXX_VALUE_NODE.VOP = DOT_STAR_VO then do;
+			/*
+			/* a plain "." operation
+			/* of the form DOT_STAR (OBJ (), MEMBER_POINTER ()).
+			/* This case won't be used in a correct program,
+			/* but it could make for a very useful extension.
+			/* For now, it will just help error messages 
+			/* come out smoothly.
+			/**/
+			MPV = RV->CXX_VALUE_NODE.RIGHT;
+			MPV = COPY_VALUE (MPV);
+			MPV->CXX_VALUE_NODE.LEFT_NID = NEW_RIGHT;
+			MPV->CXX_VALUE_NODE.TYPE
+				= ADD_TOP_TYPE (SYM_NODE.TYPE,
+					MPV->CXX_VALUE_NODE.TOP_TYPE);
+			RV = COPY_VALUE (RV);
+			RV->CXX_VALUE_NODE.RIGHT = MPV;
+			call GET_SYMBOL_TYPE (RTI);
+			RTI.NOT_AN_LVALUE = TRUE;
+			CXX_VALUE_NODE_PTR = RV;
+			call SET_VALUE_TYPE (RTI);
+		end;
+		else if RV->CXX_VALUE_NODE.TOP_TYPE.CODE
+		     ^= byte (MEMBER_POINTER_DT)
+		   | CHANGE_MEMBERSHIP then do;
+			/*
+			/* Get rid of the original right value, and make a new
+			/* right value which is the function designator.
+			/**/
+			call COUNT_DOWN_VALUE (RV);
+			RV = GET_VALUE_REF_AND_EXPAND (NEW_RIGHT);
+			RV = GET_VALUE_AND_EXPAND_L (ADDR_VO, RV);
+			RV->CXX_VALUE_NODE.FUNCTION_DESIGNATOR = TRUE;
+		end;
+		else do;
+			/*
+			/* A member pointer.
+			/**/
+			RV = COPY_VALUE (RV);
+			RV->CXX_VALUE_NODE.LEFT_NID = NEW_RIGHT;
+			RV->CXX_VALUE_NODE.TYPE
+				= ADD_TOP_TYPE (SYM_NODE.TYPE,
+					RV->CXX_VALUE_NODE.TOP_TYPE);
+		end;
+		call RESTORE_NODE (SNID);
+		call REATTACH_COMMA (RV, TV1, TV2);
+	end;
+
+	return (TRUE);
+
+DIAGNOSE:
+	/*
+	/* -TODO- If conversion is explicit, 
+	/* message should say int("overloaded") rather than
+	/* give signature.
+	/**/
+
+	/* Give diagnostic specific to the context. */
+
+	/* 
+	/* We do not get here with
+	/* IMPLICIT_CAST_VO, IMPLICIT_ASSIGN_VO, or IMPLICIT_RETURN_VO.
+	/**/
+
+	if      VOP = ASSIGN_VO then do;
+			ERROR_CODE = ERR_OVLD_ASSIGNMENT;
+	end;
+	else if VOP = CAST_VO   |
+		VOP = FUNCTIONAL_CAST_VO then do;
+			ERROR_CODE = ERR_OVLD_CAST;
+	end;
+	else if VOP = INITIAL_VO |
+		VOP = MEMBER_INIT_VO |
+		VOP = COPY_VO then do;
+			ERROR_CODE = ERR_OVLD_INITIAL;
+	end;
+	else if VOP = ARG_VO then do;
+			ERROR_CODE = ERR_OVLD_ARGUMENT;
+	end;
+	else if VOP = RETURN_VO then do;
+			ERROR_CODE = ERR_OVLD_RETURN;
+	end;
+	else do;
+			ERROR_CODE = ERR_OVLD_CONVERSION;
+	end;
+
+	if VOP ^= ARG_VO then do;
+		call SEMANTIC_ERROR_II (ERROR_CODE,
+				       QUALIFIED_SYMBOL_NAME (OLD_RIGHT),
+				       TYPE_INFO_NAME (LTI));
+	end;
+	else do;
+		call SEMANTIC_ERROR_III (ERROR_CODE,
+				        QUALIFIED_SYMBOL_NAME (OLD_RIGHT),
+				        TYPE_INFO_NAME (LTI),
+				        trim (char (CURRENT_ARGUMENT_NUMBER)));
+	end;
+	CXX_VALUE_NODE_PTR = RV;
+	return (FALSE);
+
+end CONVERT_OVERLOADED;
+
+/* ---------------------------------------------------------------------
+/* OVERLOADED_FUNCTION_POINTER
+/*
+/* If the expression represented by the given value-node id
+/* is a pointer to an overloaded function, then
+/* return the overload list of the function, otherwise return
+/* NULL_NID.  Preserves current-node-id; trashes current-value-node-id.
+/* ------------------------------------------------------------------- */
+
+OVERLOADED_FUNCTION_POINTER: procedure (V) returns (type (NID_T)) internal;
+
+	declare
+		V	type (CXX_VID_T);
+	declare
+		SYM	type (NID_T),
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	ID = NULL_NID;
+
+	if IS_OVERLOADED_VALUE (V, SYM) then do;
+		call GET_SYM_NODE_R (SYM, P);
+		ID = P->SYM_NODE.NEXT_OVERLOAD;
+		call RELEASE_SYM_NODE (SYM);
+	end;
+	return (ID);
+
+end OVERLOADED_FUNCTION_POINTER;

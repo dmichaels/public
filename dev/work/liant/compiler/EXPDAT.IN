@@ -1,0 +1,79 @@
+/* C++ CXX_GLOBAL_EXPRESSION_DATA_IN - Expression semantic analysis data */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  04.18.92  PKT  010	Merged 007->008 with 007->009.
+ *  03.26.92  DGM  009  New value-node scheme.
+ *  03.30.92  DGM  008  Added CURRENT_ARGUMENT_NUMBER and
+ *			CURRENT_FUNCTION_BEING_CALLED for hacking
+ *			out nicer diagnostics for incompatible
+ *			argument/parameter types in function calls.
+ *  07.18.91  DGM  007  Added IN_NEW_EXPRESSION_LEVEL.
+ *  09.17.90  DGM  006  Changed semantic stack names.
+ *			TODO: move this stack to parstm.pl1!
+ *  09.14.90  DGM  005  Changed include file names and VOP names.
+ *  08.27.90  TLF  004  Added SKIP_DEREFERENCE flag.
+ *  03.14.90  PKT  003  Added IN_SIZEOF. 
+ *  02.08.90  PKT  002  Moved CURRENT_VALUE to CXX_GLOBAL_SEMANTIC_DATA_IN.
+ *			Eliminated unused variables.
+ *  01.24.90  PKT  001  Eliminated CURRENT_CONSTANT, added other
+ *			variables once used in cparse.  Changed
+ *			declarations to use CXX_STANDARD_DEFS_IN types.
+ *  01.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/***********************************************************************
+/* This header contains the data which is needed by (and
+/* should ONLY be included by) the modules which perform
+/* the semantic actions necessary to process expressions.
+/*
+/* See CXX_GLOBAL_SEMANTIC_DATA_IN for data which needs to
+/* be among the difference modules which perform various
+/* kinds of semantic actions during the parse.
+/***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Data declarations
+/* ------------------------------------------------------------------- */
+
+%replace HB_SEMANTIC_STACK	by  512;
+
+declare
+
+1 GLOBAL_EXPRESSION_DATA	  external (X_GLOBAL_EXPRESSION_DATA),
+
+  2 THIS_VOP			  type (SHORT_T),
+  2 THIS_PREC			  type (SHORT_T),
+
+  2 IN_SIZEOF			  type (SHORT_T) initial (0),
+  2 SKIP_DEREFERENCE		  type (BOOL_T) initial (FALSE),
+  2 IN_NEW_EXPRESSION_LEVEL	  type (SHORT_T) initial (0),
+
+  /* These are for hacking nicer diagnostic for incompatible arguments */
+
+  2 CURRENT_ARGUMENT_NUMBER	  type (SHORT_T) initial (0),
+  2 CURRENT_FUNCTION_BEING_CALLED type (NID_T) initial (NULL_NID),
+
+  2 END_GLOBAL_EXPRESSION_DATA	  type (SHORT_T);
+

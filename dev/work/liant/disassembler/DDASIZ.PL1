@@ -1,0 +1,260 @@
+/* CodeWatch M68 DDASIZ.PL1 - Compute size of data item */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  01.22.90  MJF  (004) Fixed to work with picture edited data.
+ *
+ *  07.08.87  DGM  Updated for new types.
+ *
+ *  07.09.86  DGM  Made FLOAT_DEC changes (for CBASIC).
+ *
+ *  04.06.86  PLB  Eliminated GBLNODES2 (now using std global.in)
+ *
+ *  10.03.85  ABC  One full byte for bit(1) aligned
+ *
+ *  09.23.85  PLB  Changes for COMPLEX Float Bin ...
+ *
+ *  08.22.85  ABC  Changed units and nunits to reflect
+ *                 half_word and word values.
+ *
+ *  08.xx.84  PLB  Fixed bug (NUNITS on computational types)
+ *                 Increased SIZETBL for RM data types.
+ *
+ *  05.xx.84  JAK  Changed size of POINTER_ from 6 to 4 (bytes), bug?
+ *
+ *  05.xx.84  JAK  Changes for LAN_C.
+ *
+ *  02.xx.84  JRC  COBOL data types added.
+ *
+ *  01.xx.84  JRC  Coded for TMX specific data sizes.
+ *
+ **********************************************************************/
+
+/* --------------------------------------------------------------------
+ * DDASIZ - Compute the size of a data item and the units of size
+ *          NOTE: This routine is machine dependent!
+ *
+ * In:  P      {pointer}
+ *             Value or REF node for a primitive data item.
+ * Out: NUNITS {fixed binary (31)}
+ *             Number of units of storage required.
+ *      UNITS  {fixed binary (15)}
+ *             Unit type (BITS, BYTES, etc.)
+ *             If UNITS=0, data type is not primitive or not fetchable.
+ ***********************************************************************/
+
+DDASIZ: procedure (P, NUNITS, UNITS);
+
+    %NOLIST;
+    %include 'incfil';
+    %include GLOBAL_IN;
+    %include DBGGLOBAL_IN;
+    %include SYSTTY_IN;
+    %LIST;
+
+    /* Sizes of floats (in HALF_WORDS) */
+
+    %replace LONG_FLTBIN_SIZE       by 4;
+    %replace SHORT_FLTBIN_SIZE      by 2;
+    %replace LONG_FLTDEC_SIZE       by 4;
+    %replace SHORT_FLTDEC_SIZE      by 2;
+
+    declare
+	P	pointer,
+        NUNITS	fixed binary (31),
+        UNITS	fixed binary (15);
+
+    declare
+	C	fixed binary (15),
+        T	fixed binary (15),
+	VP	fixed binary (15);
+
+    declare
+	SIZETBL (1 : NUMBER_OF_TYPES, 0 : 1) fixed binary (15)
+                                             static initial (
+
+	/* Type				N-units		Units */
+	/* ----				-------		----- */
+
+	/* PICTURED_		*/	1,		BYTES,
+	/* FIXED_BIN_		*/	1,		HALF_WORDS,
+	/* FLOAT_BIN_		*/	1,		WORDS,
+	/* FIXED_DEC_		*/	1,		BYTES,
+	/* FLOAT_DEC_		*/	6,		HALF_WORDS,
+	/* COMPLEX_FIXED_BIN_	*/	0,		0,
+	/* COMPLEX_FLOAT_BIN_	*/	8,		BYTES,
+	/* COMPLEX_FIXED_DEC_	*/	0,		0,
+	/* COMPLEX_FLOAT_DEC_	*/	0,		0,
+	/* CHAR_		*/	1,		BYTES,
+	/* CHAR_VAR_		*/	1,		BYTES,
+	/* BIT_			*/	1,		BITS,
+	/* BIT_VAR_		*/	1,		BITS,
+	/* BIT_ALIGNED_		*/	1,		BITS,
+	/* POINTER_		*/	1,		WORDS,
+	/* OFFSET_		*/	0,		0,
+	/* AREA_		*/	0,		0,
+	/* FILE_		*/	1,		WORDS,
+	/* LABEL_		*/	2,		WORDS,
+	/* ENTRY_		*/	2,		WORDS,
+	/* FORMAT_		*/	1,		WORDS,
+	/* DOPE_		*/	0,		0,
+	/* STRUCTURE_		*/	0,		0,
+	/* BIF_			*/	0,		0,
+	/* COND_		*/	0,		0,
+	/* GENERIC_		*/	0,		0,
+	/* ARRAY_		*/	0,		0,
+	/* LOGICAL_		*/	0,		0,
+	/* RIGHT_OVERPUNCH_	*/	1,		BYTES,
+	/* LEFT_OVERPUNCH_	*/	1,		BYTES,
+	/* RIGHT_SEPARATE_	*/	1,		BYTES,
+	/* LEFT_SEPARATE_	*/	1,		BYTES,
+	/* DECIMAL_UNSIGNED_	*/	1,		BYTES,
+	/* COMP_		*/	1,		BYTES,
+	/* COMP_UNSIGNED_	*/	1,		BYTES,
+	/* FIXED_DEC_UNSIGNED	*/	1,		BYTES,
+	/* CHAR_JUSTIFIED_	*/	1,		BYTES,
+	/* CHAR_PICTURED_	*/	1,		BYTES,
+	/* FIXED_BIN_UNSIGNED_	*/	1,		HALF_WORDS,
+	/* FIXED_DEC_STRIPPED_	*/	1,		BYTES,
+	/* RM_COMP_		*/	1,		BYTES,
+	/* RM_COMP_UNSIGNED_	*/	1,		BYTES,
+	/* MF_COMP_		*/	1,		BYTES,  /* ? */
+	/* MF_COMP_UNSIGNED_	*/	1,		BYTES,  /* ? */
+	/* RM_COMP_1		*/	1,		BYTES,  /* ? */
+	/* FIXED_BIN_QUAD_	*/	1,		BYTES,  /* ? */
+	/* MF_LEFT_OVERPUNCH_	*/	1,		BYTES,  /* ? */
+	/* MF_RIGHT_OVERPUNCH_	*/	1,		BYTES   /* ? */
+    );
+
+
+    T = P->V_TYPE;
+    if T > 100 then
+        T = T - 100;
+
+    if (T <= 0) | (T > NUMBER_OF_TYPES) then do;
+        UNITS = 0;
+        goto EXIT;
+    end;
+
+    NUNITS = SIZETBL(T,0);
+    UNITS  = SIZETBL(T,1);
+    VP = P->V_P;
+
+    goto GET_SIZE(T);
+
+  GET_SIZE(FIXED_BIN_):
+    if VP > FIXED_BIN_DFT_P then
+        UNITS = WORDS;
+    goto EXIT;
+
+  GET_SIZE(FIXED_BIN_UNSIGNED_):
+    if VP > (FIXED_BIN_DFT_P + 1) then
+        UNITS = WORDS;
+    goto EXIT;
+
+  GET_SIZE(FLOAT_BIN_):
+    if VP > FLOAT_BIN_DFT_P then
+        UNITS = DOUBLE_WORDS;
+    goto EXIT;
+
+  GET_SIZE(FIXED_DEC_UNSIGNED_):;    
+  GET_SIZE(FIXED_DEC_):
+    NUNITS = divide (VP + 2, 2, 31);
+    goto EXIT;
+
+  GET_SIZE(FLOAT_DEC_):
+
+    /* FLOAT_DEC is always the same size
+    ** memory units regardless of precision,
+    ** i.e. (96 bits) = (6 half-words).  DGM 07.09.86.
+    ** ...........................
+
+    if VP > FLOAT_DEC_DFT_P then
+        UNITS = DOUBLE_WORDS;
+    ** ...........................
+    **/
+
+    goto EXIT;
+
+  GET_SIZE(BIT_ALIGNED_):;
+    if VP = 1 then
+        UNITS = BYTES;
+
+  GET_SIZE(CHAR_):;
+  GET_SIZE(CHAR_VAR_):;
+  GET_SIZE(BIT_):;
+  GET_SIZE(BIT_VAR_):;
+  GET_SIZE(RIGHT_OVERPUNCH_):;       
+  GET_SIZE(LEFT_OVERPUNCH_):;    
+  GET_SIZE(DECIMAL_UNSIGNED_):;      
+  GET_SIZE(CHAR_JUSTIFIED_):; 
+  GET_SIZE(RM_COMP_UNSIGNED_):;
+  GET_SIZE(MF_COMP_UNSIGNED_):;		/* ? */
+  GET_SIZE(MF_RIGHT_OVERPUNCH_):;	/* ? */
+  GET_SIZE(MF_LEFT_OVERPUNCH_):;	/* ? */
+    NUNITS = VP;
+    goto EXIT;
+
+  GET_SIZE(FIXED_DEC_STRIPPED_):;
+    NUNITS = divide (VP + 1, 2, 31);
+    goto EXIT;
+
+  GET_SIZE(COMP_):;
+  GET_SIZE(COMP_UNSIGNED_):;
+    if VP >= 10 then
+         UNITS = DOUBLE_WORDS;
+    else if VP >= 5 then
+         UNITS = WORDS;
+    else UNITS = HALF_WORDS;
+    goto EXIT;
+    
+  GET_SIZE(RIGHT_SEPARATE_):;     
+  GET_SIZE(LEFT_SEPARATE_):;     
+  GET_SIZE(RM_COMP_):;
+  GET_SIZE(RM_COMP_1_):;	/* ? */
+  GET_SIZE(MF_COMP_):;		/* ? */
+  GET_SIZE(FIXED_BIN_QUAD_):;	/* ? */
+    NUNITS = VP + 1;
+    goto EXIT;
+
+  GET_SIZE(PICTURED_):;
+  GET_SIZE(CHAR_PICTURED_):;     
+    NUNITS = VP;
+    goto EXIT;
+
+  GET_SIZE(COMPLEX_FLOAT_BIN_):
+    if VP > FLOAT_BIN_DFT_P then
+        NUNITS = 2 * NUNITS;
+    goto EXIT;
+
+  GET_SIZE(COMPLEX_FIXED_BIN_):;
+  GET_SIZE(COMPLEX_FIXED_DEC_):;
+  GET_SIZE(COMPLEX_FLOAT_DEC_):;
+  GET_SIZE(POINTER_):;
+  GET_SIZE(OFFSET_):;
+  GET_SIZE(AREA_):;
+  GET_SIZE(FILE_):;
+  GET_SIZE(LABEL_):;
+  GET_SIZE(ENTRY_):;
+  GET_SIZE(FORMAT_):;
+  GET_SIZE(DOPE_):;
+  GET_SIZE(STRUCTURE_):;
+  GET_SIZE(BIF_):;
+  GET_SIZE(COND_):;
+  GET_SIZE(GENERIC_):;
+  GET_SIZE(ARRAY_):;
+  GET_SIZE(LOGICAL_):;
+
+  EXIT:
+
+end DDASIZ;

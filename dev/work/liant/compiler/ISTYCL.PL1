@@ -1,0 +1,223 @@
+/* C++ istycl.pl1 - Determine the class/category of type for overloading */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  02.10.92  DGM  005	Name changes; clash with CodeWatch.
+ *  01.09.92  PKT  004	Added support for lvalue indication.
+ *  09.25.90  DGM  003  Preprocessor include file name changes.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  08.21.90  TLF  001  Added code to hangle REFERENCE_TYPE.  DGM.
+ *  06.29.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 01.10.92 004 ISTYCL');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%NOLIST;
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_UTL_ADD_XREF_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_PP_TOKEN_POD_IN;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_INITIALIZE_STRING_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_OPERATOR_NAME_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_FOLD_VALUE_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_PROCESS_CONSTANT_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_INTEGRAL_PROMOTION_PKG;
+%include CXX_EVALUATE_INTEGER_PKG;
+%include CXX_EVALUATE_POINTER_PKG;
+%include CXX_MAKE_TEMPORARY_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_LOOKUP_BUILTIN_PKG;
+%include CXX_CHECK_ARGUMENT_LIST_PKG;
+%include CXX_EXPRESSION_COMPATIBILITY_PKG;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_CHECK_REFERENCE_TYPE_PKG;
+
+%LIST;
+%include CXX_TYPE_CLASS_IN;
+
+/* ---------------------------------------------------------------------
+ * IS_TYPE_CLASS
+ * ------------------------------------------------------------------- */
+IS_TYPE_CLASS: procedure (ARG_BT, ARG_CLASS_TYPE)
+	       returns ( type (BOOL_T) )
+	       external (X_IS_TYPE_CLASS);
+ 
+declare
+	ARG_BT			type (SHORT_T),
+	ARG_CLASS_TYPE		type (SHORT_T),
+	BASIC_TYPE_CLASS	type (SHORT_T);
+
+declare
+	RETCODE			type (BOOL_T);
+
+	if ARG_BT < LB_ALL_TYPES | ARG_BT > HB_ALL_TYPES then
+		return (FALSE);
+
+	BASIC_TYPE_CLASS = UNRESTRICTED_TYPE (ARG_CLASS_TYPE);
+
+	goto CASE (BASIC_TYPE_CLASS);
+
+CASE(NULL_TK):
+	RETCODE = FALSE;
+	goto EXIT_LABEL;
+ 
+CASE(INTONLY_TK):
+	RETCODE = IS_INTEGRAL_TYPE (ARG_BT) & ARG_BT ^= ENUMERATOR_BT
+				       & ARG_BT ^= ENUM_BT;
+	goto EXIT_LABEL;
+ 
+CASE(POINTER_TK):
+	RETCODE = (ARG_BT = POINTER_DT);
+	goto EXIT_LABEL;
+
+CASE(ARITHORPTR_TK):
+	RETCODE = IS_ARITHMETIC_TYPE (ARG_BT) | ARG_BT = POINTER_DT;
+	goto EXIT_LABEL;
+ 
+CASE(SCALAR_TK):
+	RETCODE = IS_SCALAR_TYPE (ARG_BT);
+	goto EXIT_LABEL;
+ 
+CASE(ARITHMETIC_TK):
+	RETCODE = IS_ARITHMETIC_TYPE (ARG_BT);
+	goto EXIT_LABEL;
+ 
+CASE(INTEGER_TK):
+	RETCODE = IS_INT_TYPE (ARG_BT);
+	goto EXIT_LABEL;
+ 
+CASE(REFERENCE_TK):
+	RETCODE = (ARG_BT = REFERENCE_DT);
+	goto EXIT_LABEL;
+
+CASE(TRUE_INT_TK):
+	RETCODE = IS_INTEGRAL_TYPE (ARG_BT) & ARG_BT ^= ENUMERATOR_BT
+				       & ARG_BT ^= ENUM_BT;
+	goto EXIT_LABEL;
+ 
+CASE(TRUE_ARITH_TK):
+	RETCODE = IS_ARITHMETIC_TYPE (ARG_BT);
+	goto EXIT_LABEL;
+ 
+EXIT_LABEL:
+ 
+	return (RETCODE);
+
+end IS_TYPE_CLASS;
+
+/* ---------------------------------------------------------------------
+ * UNRESTRICTED_TYPE
+ * 
+ * Returns the type class which is the same as the input type class,
+ * except with no restrictions on lvalueness.
+ * ------------------------------------------------------------------- */
+UNRESTRICTED_TYPE: procedure (TYPE_CLASS)
+		   returns (type (SHORT_T))
+		   external (X_UNRESTRICTED_TYPE);
+
+	declare
+		TYPE_CLASS	type (SHORT_T);
+
+
+	return (divide (TYPE_CLASS, TYPE_CLASS_FACTOR, 15)
+			   * TYPE_CLASS_FACTOR);
+	
+end UNRESTRICTED_TYPE;
+
+/* ---------------------------------------------------------------------
+ * LVALUE_TYPE_CLASS
+ *
+ * Given a basic type class code and a restriction,
+ * return a composite type class code.
+ * TYPE_CLASS may not already entail a restriction.
+ * ------------------------------------------------------------------- */
+LVALUE_TYPE_CLASS: procedure (TYPE_CLASS, RESTRICTION)
+		   returns (type (SHORT_T))
+		   external (X_LVALUE_TYPE_CLASS);
+
+	declare
+		TYPE_CLASS	type (SHORT_T),
+		RESTRICTION	type (SHORT_T);
+
+	return (TYPE_CLASS + RESTRICTION);
+
+end LVALUE_TYPE_CLASS;
+
+/* ---------------------------------------------------------------------
+ * TYPE_HAS_RESTRICTION
+ *
+ * Returns whether TYPE_CLASS has the given RESTRICTION.
+ * ------------------------------------------------------------------- */
+TYPE_HAS_RESTRICTION: procedure (TYPE_CLASS, RESTRICTION)
+		      returns (type (SHORT_T))
+		      external (X_TYPE_HAS_RESTRICTION);
+
+	declare
+		TYPE_CLASS	type (SHORT_T),
+		RESTRICTION	type (SHORT_T);
+
+	declare
+		TYPE_CLASS_RESTRICTION
+				type (SHORT_T);
+
+	TYPE_CLASS_RESTRICTION 
+		= TYPE_CLASS - divide (TYPE_CLASS, TYPE_CLASS_FACTOR, 15) 
+				* TYPE_CLASS_FACTOR;
+
+	return (TYPE_CLASS_RESTRICTION >= RESTRICTION);
+
+end TYPE_HAS_RESTRICTION;

@@ -1,0 +1,257 @@
+/* C++ cxoper.pl1 - */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.15.92  PKT  007	Incorporated support for DUMP_EMIT_TREE.
+ *  04.01.92  PKT  006  Bug fix for new value-node scheme.
+ *  03.26.92  DGM  005  New value-node scheme.
+ *  09.26.91  PKT  004  Updated includes.
+ *  07.24.91  DGM  003  Updated.
+ *  02.01.91  DGM  001  Updated to new global names scheme.
+ *  11.07.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.15.92 007 CXOPER');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_OPERATOR_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_UTL_WRITE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_EMIT_VALUE_TREE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_PSECT_IN;
+%include CXX_GENERATE_INIT_FINI_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_SOURCE_MGR_PKG;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+
+/* --------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 PSECT_TABLE		static internal,
+   2 CURRENT_PSECT	type (SHORT_T)
+			initial (NULL_PSECT),
+   2 PSECT_TREE 	(PSECT_TAB_LLIM : PSECT_TAB_ULIM) type (CXX_VID_T)
+			initial ((PSECT_TAB_ULIM) null ()),
+   2 PSECT_LINK 	(PSECT_TAB_LLIM : PSECT_TAB_ULIM) type (PSECT_LINK_T)
+			initial ((PSECT_TAB_ULIM) NULL_PSECT_LINK);
+
+/* ---------------------------------------------------------------------
+/* EMIT_CPLUS_TREE
+/*
+/* Emit a tree.  If the tree is being emitted into a psect other
+/* than a normal psect, then do not emit the tree, but hang it
+/* off of the tree list for the psect, as part of a comma operation.
+/* ------------------------------------------------------------------- */
+
+EMIT_CPLUS_TREE: procedure (V)
+		 returns   (type (OID_T))
+	         external  (X_EMIT_CPLUS_TREE);
+
+	declare
+		V	type (CXX_VID_T);
+	declare
+		PV	type (CXX_VID_T);
+
+	if TRACE_EMIT_TREE then
+		call DUMP_EMIT_TREE_DATA (V);
+ 
+	if PSECT_TABLE.CURRENT_PSECT ^= NULL_PSECT then do;
+		PV = PSECT_TABLE.PSECT_TREE (PSECT_TABLE.CURRENT_PSECT);
+		if PV = null () then
+			PV = NULL_CXX_VID;
+		PSECT_TABLE.PSECT_TREE (PSECT_TABLE.CURRENT_PSECT) =
+			CONCATENATE_STATEMENTS (PV, V);
+		call COUNT_UP_VALUE (V);
+		return (NULL_OID);
+	end;
+	return (EMIT_TREE (V));
+
+end EMIT_CPLUS_TREE;
+
+/* ---------------------------------------------------------------------
+/* DUMP_EMIT_TREE_DATA
+/* ------------------------------------------------------------------- */
+
+DUMP_EMIT_TREE_DATA: procedure (V) internal;
+
+	declare V type (CXX_VID_T);
+	declare L character (80) varying;
+
+   	call WRITE_DEBUG_LINE (
+'=============================================================================='
+	);
+	L = 'EMITT: line ' || trim (char (CURRENT_SOURCE.LINE)) ||
+	    ', "' || TOKEN_NAME (CURRENT_SOURCE.FILE) || '"';
+   	call WRITE_DEBUG_LINE (L);
+   	call WRITE_DEBUG_LINE (
+'- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -'
+	);
+	if V ^= NULL_CXX_VID then
+		call DUMPVT (V);
+
+end DUMP_EMIT_TREE_DATA;
+
+/* ---------------------------------------------------------------------
+/* ALLOCATE_CPLUS_OPERATOR
+/*
+/* Allocate an operator.  If the operator is to be inserted into some
+/* non-contiguous psect, then do it, otherwise just do a normal operator
+/* allocation.
+/*
+/* IMPORTANT NOTE:
+/*
+/* This procedure is intended to be used when we are 'backing up' in
+/* the operator file.  This procedure is never called at present (11.14.90).
+/* ------------------------------------------------------------------- */
+
+ALLOCATE_CPLUS_OPERATOR: procedure (OPCODE, N)
+			 external  (X_ALLOCATE_CPLUS_OPERATOR);
+
+	declare
+		OPCODE		type (SHORT_T),
+		N		type (SHORT_T);
+ 
+	if PSECT_TABLE.CURRENT_PSECT ^= NULL_PSECT then do;
+		if PSECT_TABLE.PSECT_LINK (PSECT_TABLE.CURRENT_PSECT)
+			^= NULL_PSECT_LINK then do;
+			/*  The current operator is to be placed
+			/*  AFTER the operator denoted by the relevant
+			/*  PSECT_LINK.
+			/**/
+ 
+			/*  -TODO- Insert the current operator, using the
+			/*  new util utilities.
+			/**/
+
+			/* Set the psect link field to the operator just
+			/* emitted.  This value denotes the operator
+			/* after which the next operator for the same psect
+			/* is to be emitted.
+			/**/
+			call SET_PSECT_LINK ();
+
+		end;
+	end;
+	else	call ALLOCATE_NEXT_OPERATOR (OPCODE, N);
+
+end ALLOCATE_CPLUS_OPERATOR;
+
+/* ---------------------------------------------------------------------
+/* SET_STARTUP_PSECT
+/*
+/* Set the current psect field in the psect structure to the global 
+/* startup psect.
+/* -------------------------------------------------------------------- */
+
+SET_STARTUP_PSECT: procedure external (X_SET_STARTUP_PSECT);
+ 
+	PSECT_TABLE.CURRENT_PSECT = STARTUP_PSECT;
+ 
+end SET_STARTUP_PSECT;
+
+/* ---------------------------------------------------------------------
+/* SET_CLEANUP_PSECT
+/*
+/* Set the current psect field in the psect structure to the global 
+/* cleanup psect.
+/* -------------------------------------------------------------------- */
+
+SET_CLEANUP_PSECT: procedure external (X_SET_CLEANUP_PSECT);
+ 
+	PSECT_TABLE.CURRENT_PSECT = CLEANUP_PSECT;
+ 
+end SET_CLEANUP_PSECT;
+
+/* -------------------------------------------------------------------------
+/* SET_PSECT
+/*
+/* Set the input code into the psect structure.
+/* ------------------------------------------------------------------------- */
+
+SET_PSECT: procedure (PSECT) external (X_SET_PSECT);
+ 
+	declare PSECT type (SHORT_T);
+ 
+	PSECT_TABLE.CURRENT_PSECT = PSECT;
+
+end SET_PSECT;
+ 
+/* ---------------------------------------------------------------------------
+/* RESET_PSECT
+/*
+/* Reset the psect code in the psect structure to a 'null' value.
+/* ------------------------------------------------------------------------- */
+
+RESET_PSECT: procedure external (X_RESET_PSECT);
+ 
+	PSECT_TABLE.CURRENT_PSECT = NULL_PSECT;
+ 
+end RESET_PSECT;
+ 
+/* ----------------------------------------------------------------------------
+/* SET_PSECT_LINK
+/*
+/* Set the link entry in the psect table for the current psect to a value
+/* that denotes the current operator.  (For now, the value used to denote
+/* the current operator is the current operator id.  Later, for new utils,
+/* we may want to save the current operator pointer.)
+/* ------------------------------------------------------------------------- */
+
+SET_PSECT_LINK: procedure external (X_SET_PSECT_LINK);
+ 
+	if PSECT_TABLE.CURRENT_PSECT ^= NULL_PSECT then
+		PSECT_TABLE.PSECT_LINK (PSECT_TABLE.CURRENT_PSECT) = 
+			LAST_OPERATOR_ID;
+ 
+end SET_PSECT_LINK;
+
+/* --------------------------------------------------------------------------
+/* GET_STARTUP_INIT_VID
+/*
+/* Return the value-id of the comma expression that is the body of the
+/* global startup procedure.
+/* -------------------------------------------------------------------------- */
+
+GET_STARTUP_INIT_VID: procedure ()
+		      returns   (type (CXX_VID_T))
+		      external  (X_GET_STARTUP_INIT_VID);
+
+	if PSECT_TABLE.PSECT_TREE (STARTUP_PSECT) = null () then
+		return (NULL_CXX_VID);
+	else	return (PSECT_TABLE.PSECT_TREE (STARTUP_PSECT));
+
+end GET_STARTUP_INIT_VID;

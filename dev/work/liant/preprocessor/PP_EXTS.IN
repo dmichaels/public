@@ -1,0 +1,37 @@
+/* C++ CPP_EXTERNAL_NAME_MAP_IN - External (short) name map */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.25.90  DGM  001  Include file name changes.
+ *  06.04.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* External name map
+/*
+/* Note that only the external names which are used *exclusively*
+/* within this ANSI-C/C++ preprocessor component are defined here.
+/* The others (i.e. the interface names, e.g. TGET, TOKEN_SPELLING)
+/* are defined in the appropriate include file (i.e. in
+/* CPP_TOKEN_POD_MGR_IN, CPP_TOKEN_POD_SPELLING_IN, CPP_TOKEN_POD_DEBUG_IN).
+/* ------------------------------------------------------------------- */
+
+%replace X_SCAN_ERROR                     by 'SCAN_ERROR';
+%replace X_SCAN_ERROR_I                   by 'SCAN_ERROR_I';
+%replace X_SCAN_ERROR_ON_LINE             by 'SCAN_ERROR_ON_LINE';
+%replace X_SCAN_ERROR_I_ON_LINE           by 'SCAN_ERROR_I_ON_LINE';
+%replace X_PP_ABORT                       by 'PP_ABORT';
+%replace X_PP_ERROR                       by 'PP_ERROR';
+%replace X_PP_ERROR_I                     by 'PP_ERROR_I';
+%replace X_PP_WARNING                     by 'PP_WARNING';
+

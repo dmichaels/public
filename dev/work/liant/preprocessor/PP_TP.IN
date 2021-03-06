@@ -1,0 +1,103 @@
+/* CPP CPP_TOKEN_POD_DEF_IN - Token pod definitions */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT  HISTORY
+ *
+ *  06.18.92  DGM  004  Updated.
+ *  11.12.91  DGM  003  Updated.
+ *  07.08.91  DGM  002  Updated.
+ *  09.25.90  DGM  001  Include file name changes.
+ *  06.05.90  DGM  000  First CPP component version.
+ *  --------------------------------------------------------------------
+ *  06.05.90  DGM  003  Added BASED_TOKEN/BASED_SPELLING for compatibility.
+ *  04.19.90  DGM  002  Addeed TOKEN_SPELLING_POD.SPELLING_DATA.TEXT.
+ *  12.08.89  DGM  001  Addeed TOKEN_SPELLING_POD spelling union.
+ *  09.28.89  DGM  000  Orignal fro C++; cloned & modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* None */
+
+/* ---------------------------------------------------------------------
+/* TOKEN_POD and TOKEN_SPELLING_POD type definitions
+/* ------------------------------------------------------------------- */
+
+declare   
+
+1 TOKEN_POD			based,
+
+  2 NEXT			pointer,
+  2 TYPE			fixed binary (15),
+  2 union_one			union,
+    3 SPELLING_PTR		pointer,
+    3 SPELLING_NODE		fixed binary (15),
+    3 SPELLING			fixed binary (15),
+    3 VALUE			fixed binary (15),
+    3 data_one,
+      4 VALUE_ONE		character (1),
+      4 VALUE_TWO		character (1),
+      4 VALUE_THREE		character (1),
+      4 VALUE_FOUR		character (1),
+  2 union_two			union,
+    3 LINE			fixed binary (31),
+    3 POSITION			fixed binary (15),
+    3 data_two,
+      4 VALUE_FIVE		fixed binary (15),
+      4 VALUE_SIX		fixed binary (15),
+    3 VALUE_SEVEN		pointer;
+
+declare     
+
+1 TOKEN_SPELLING_POD		based,
+
+  2 SIZE			fixed binary (15),
+  2 NEXT			pointer,
+  2 union_one			union,
+    3 SPELLING			character (32767) varying,
+    3 SPELLING_DATA,
+      4 LENGTH			fixed binary (15),
+      4 TEXT			character (32767);
+
+/* ---------------------------------------------------------------------
+/* The following BASED_TOKEN and BASED_SPELLING are equivalent to
+/* TOKEN_POD and TOKEN_SPELLING_POD respectively and are here only
+/* for compatibility with the ANSI-C front-end.
+/* ------------------------------------------------------------------- */
+
+declare   
+
+1 BASED_TOKEN	based,
+  2 NEXT_PP	pointer,
+  2 TYPE	fixed binary (15),
+  2 AFL_CIO	union,
+    3 SPELLPTR	pointer,
+    3 SPELLNODE	fixed binary (15),
+    3 VALUE	fixed binary (15),
+  2 TEAMSTERS	union,
+    3 LINE	fixed binary (31),
+    3 POSITION	fixed binary (15);
+
+declare     
+
+1 BASED_STRING		based,
+  2 ALLOC_LEN		fixed binary (15),
+  2 NEXT_SP		pointer,
+  2 SPELLING_UNION	union,
+    3 BASED_SPELLING	character (32767) varying,
+    3 VARYING_STRING	,
+      4 VLENGTH		fixed binary (15),
+      4 CHARS		character (32767);
+
+

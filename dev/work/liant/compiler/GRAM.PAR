@@ -1,0 +1,2272 @@
+-- C++ gram.par - LPI-C++ grammar (parser driver)
+
+--------------------------------------------------------------------------
+-- This product is the property of Liant Software Corporation and is    --
+-- licensed pursuant to a written license agreement.  No portion of     --
+-- this product may be reproduced without the written permission of     --
+-- Liant Software Corporation except pursuant to the license agreement. --
+--------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+--
+--  LPI EDIT HISTORY
+--
+--  06.11.92  DGM  057	Just a littel more performance tweaking.
+--  06.08.92  DGM  056R	One more %PICK enhancement.
+--  05.29.92  DGM  056	Much compile-time performance tweaking.
+--  05.19.92  DGM  055	Support for deferring the processing of certain
+--			functions until the end of the compilation unit.
+--  05.06.92  DGM  054	Added set_linkage_specifier_group action
+--			to help catch ``extern "C" extern int x''.
+--  04.30.92  DGM  053	Added begin/end_paren_type_name.
+--  04.18.92  PKT  052  Oops!  This is identical to 051 and 050.
+--  04.18.92  PKT  051	Oops!  This is identical to 050.
+--  03.30.92  DGM  050	Fix for global qualified names in expressions.
+--  03.26.92  PKT  049  Fixed calls to SET_TYPE_SPECIFIER.
+--  02.05.92  DGM  048	Removed else_statement.
+--  01.24.92  DGM  047  Commented out DEBUG_GRAMMAR.
+--  01.21.92  DGM  046	Allow global scope qualified defined type names.
+--  01.13.92  DGM  045	Added &set_declarator to help handle:
+--				class A { typedef int T; void f (T); };
+--				void A::f (T x) { }
+--  12.23.91  PKT  044	Re-fixed controlled statement of iteration and
+--			selection statements.
+--  11.20.91  DGM  043  Merge.
+--  11.19.91  PKT  042  Removed buggy "check_not_loop_body" check,
+--			controlled statement of iteration now has own scope.
+--  11.12.91  DGM  041  Updated for enum <integral-type-specifier>.
+--  07.18.91  DGM  040  StatementId work for CodeWatch.
+--  07.09.91  DGM  039  Commented out DEBUG for production.
+--  06.18.91  PKT  038  Changed the production for initializer_item,
+--			eliminating STRING to handle it via expression.
+--  05.29.91  PKT  037  Support for int::~int.
+--  05.29.91  DGM  036  Added LPI extension "enum extern".
+--  05.19.91  PKT  035  Bug fix to new_type_name for pointers/references.
+--  04.01.91  DGM  034  Added %BIG_TABLES to generate big/fast tables in
+--			which each entry consists of 2 16-bit words rather
+--			than than the old 1 16-bit word entries.
+--  03.26.91  PKT  033  Added support for -ztemp with ?:, ||, and &&.
+--  03.12.91  DGM  032  Added "throw", "try", and "asm" keywords and fix
+--			for null enumerator list.
+--  01.18.91  DGM  031  More ambiguity related changes.
+--  01.10.91  DGM  030  Many ambiguity related changes.
+--  12.17.90  DGM  029  Fix in abstract_declarator.
+--  11.06.90  DGM  028  Added support for "protected" base classes.
+--  10.16.90  PKT  027  Implemented actions for base and member
+--			initialization.
+--  10.10.90  DGM  026  Minor updates for initializers.
+--  09.17.90  PKT  025  Enhanced for direct call of destructor
+--			and new initializer with empty argument list.
+--  09.05.90  PKT  024  Non-constant dimensions.
+--  08.31.90  DGM  023  Fix in external_declaration for extern "C".
+--  08.27.90  TLF  022  Modified to handle overloaded '->' and '[]'.
+--  08.14.90  DGM  021  Fix for pointer/reference type qualifiers.
+--  08.07.90  PKT  020  Better support for destructors and symbol definition.
+--  07.20.90  PKT  019  Check for declarations in iterations.
+--  07.10.90  DGM  018  Minor bug fix in member_declaration
+--  06.14.90  PKT  017  Fixes for old-style parameter declaration lists.
+--  05.31.90  PKT  016  Changed for constructor calls.
+--  05.04.90  DGM  014  Fix in class_specifier
+--  04.23.90  DGM  013  Changes/fixes for old-style function declarators.
+--  04.19.90  DGM  012  Changes for initialization.
+--  03.27.90  DGM  011  Updated.
+--  03.14.90  PKT  010  Support for sizeof, switch, and minor updates.
+--			Also empty argument list in functional cast.
+--  02.20.90  PKT  009  Added statement actions.
+--  02.09.90  DGM  008  Miscellaneous fixes, reworked scope/name parsing;
+--			PKT added more expression/statement actions.
+--  02.05.90  PKT  007  Added actions for expression parsing.
+--  02.05.90  DGM  006  Updated.
+--  12.12.89  DGM  004  Original.
+--
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+-- Parse Table Configuration:
+---------------------------------------------------------------------------
+--
+-- Default:
+--
+-- For default packed tables, each "long" entry is two 16-bit words:
+--
+--      15                           6 5    4 3          0
+--     +------------------------------+------+------------+
+--     +           opcode             +action+  OPC_LONG  +
+--     +------------------------------+------+------------+
+--     +                    operand                       +
+--     +--------------------------------------------------+
+--
+-- For default packed tables, each "short" entry is one 16-bit words:
+--
+--      15                           6 5    4 3          0
+--     +------------------------------+------+------------+
+--     +           operand            +action+   opcode   +
+--     +------------------------------+------+------------+
+--
+---------------------------------------------------------------------------
+--
+-- %BIG_TABLES:
+--
+-- For big/fast tables, each entry is one 32-bit word:
+--
+--      31                    24 23                     16
+--     +------------------------+-------------------------+
+--     +          opcode        +         action          +
+--     +------------------------+-------------------------+
+--     +                     operand                      +
+--     +--------------------------------------------------+
+--      15                                               0
+--
+---------------------------------------------------------------------------
+--
+-- %HUGE_TABLES:
+--
+-- For huge/fast tables, each entry is three 16-bit words:
+--
+--      15                                               0
+--     +--------------------------------------------------+
+--     +                     opcode                       +
+--     +--------------------------------------------------+
+--     +                     action                       +
+--     +--------------------------------------------------+
+--     +                     operand                      +
+--     +--------------------------------------------------+
+--
+---------------------------------------------------------------------------
+-- N.B. The target specific header CXX_PARSE_TABLE_ENTRY_TYPE_IN
+-- contains the data structure used to access the parse table entries.
+---------------------------------------------------------------------------
+
+%BIG_TABLES
+
+---------------------------------------------------------------------------
+-- TERMINALS  (see CXX_PARSER_TERMINAL_CODES_IN for corresponding list)
+---------------------------------------------------------------------------
+-- This is the list of C++ language terminals is used by the parser; this list
+-- is duplicated in CXX_PARSER_TERMINAL_CODES_IN (parterm.in) and must exactly
+-- correspond.  Tokens from the lexer are mapped to one of these terminal
+-- codes (in PARDRI (pardri.pl1)) via the TOKEN_TO_TERMINAL array defined
+-- in C_PAR_GLOBAL_IN (parglob.in).  Note the use of ranges for statements;
+-- overloadable, postix, unary, binary operators; and declaration/type
+-- specifiers.  These are used in the implementation of many of the
+-- builtins (see %BUILTINS below).
+--
+-- P.S. It would be real nice if our parse tool were enhanced
+-- to emit a file of %replace statement for these terminals.
+---------------------------------------------------------------------------
+
+%TERMINALS
+
+IDENTIFIER;		-- identifiers
+CONSTANT;		-- integral, floating, and character constants
+STRING;			-- string literals
+
+			-- ---------------------TYPE_SPEC-----+
+TYPE;			-- void     **          type_spec     |
+			-- char     **          type_spec     |
+			-- short    **          type_spec     |
+			-- int      **          type_spec     |
+			-- long     **          type_spec     |
+			-- unsigned **          type_spec     |
+			-- float    **          type_spec     |
+			-- double   **          type_spec     |
+			-- ------------DCL_SPEC-type_spec--+  |
+TYPE_QUALIFIER;		-- const    ** dcl_spec-type_spec  |  |
+			-- volatile ** dcl_spec-type_spec  |  |
+			-- noalias  ** dcl_spec-type_spec  |  |
+STORAGE_CLASS;		-- auto     ** dcl_spec-type_spec  |  |
+			-- extern   ** dcl_spec-type_spec  |  |
+			-- register ** dcl_spec-type_spec  |  |
+			-- static   ** dcl_spec-type_spec  |  |
+			-- typedef  ** dcl_spec-type_spec  |  |
+CLASS;			-- class    ** dcl_spec-type_spec  |  |
+			-- struct   ** dcl_spec-type_spec  |  |
+			-- union    ** dcl_spec-type_spec  |  |
+KW_ENUM;		-- enum     ** dcl_spec-type_spec  |  |
+KW_FRIEND;		-- friend   ** dcl_spec-type_spec  |  |
+KW_INLINE;		-- inline   ** dcl_spec-type_spec  |  |
+KW_OVERLOAD;		-- overload ** dcl_spec-type_spec  |  |
+KW_VIRTUAL;		-- virtual  ** dcl_spec-type_spec  |  |
+			-- ------------DCL_SPEC-type_spec--+  |
+			-- ---------------------TYPE_SPEC-----+
+
+KW_PRIVATE;		-- private
+KW_PROTECTED;		-- protected
+KW_PUBLIC;		-- public
+KW_OPERATOR;		-- operator
+KW_TEMPLATE;		-- template
+KW_THIS;		-- this
+KW_CATCH;		-- catch
+KW_THROW;		-- throw
+KW_TRY;			-- try
+KW_ASM;			-- asm
+
+KW_NEW;			-- new
+KW_DELETE;		-- delete
+KW_SIZEOF;		-- sizeof
+
+KW_ELSE;		-- else
+
+			-- ------------STATEMENT--+
+KW_BREAK;		-- break    ** statement  |
+KW_CASE;		-- case     ** statement  |
+KW_CONTINUE;		-- continue ** statement  |
+KW_DEFAULT;		-- default  ** statement  |
+KW_DO;			-- do       ** statement  |
+KW_FOR;			-- for      ** statement  |
+KW_GOTO;		-- goto     ** statement  |
+KW_IF;			-- if       ** statement  |
+KW_RETURN;		-- return   ** statement  |
+KW_SWITCH;		-- switch   ** statement  |
+KW_WHILE;		-- while    ** statement  |
+			--          ** statement  |
+SEMI_COLON;		-- ;   	    ** statement  |
+LEFT_BRACE;		-- {   	    ** statement  |
+			-- ------------STATEMENT--+
+
+RIGHT_BRACE;		-- }
+COMMA;			-- ,
+COLON;			-- :
+COLON_COLON;		-- ::
+ELLIPSIS;		-- ...
+RIGHT_BRACKET;		-- ]
+RIGHT_PAREN;		-- )
+
+			-- ------------------------POSTFIX- +
+LEFT_BRACKET;		-- [    **                 postfix  |
+LEFT_PAREN;		-- (    **                 postfix  |
+DOT;			-- .   	**                 postfix  |
+			-- --------OVERLOAD--------postfix--+--+
+ARROW;			-- ->   ** overload        postfix  |  |
+			--      ** overload        postfix  |  |
+			--      ** overload        postfix  |  |
+			-- --------overload-UNARY--postfix--+--+--+
+PLUS_PLUS;		-- ++   ** overload-unary--postfix  |  |  |
+MINUS_MINUS;		-- --   ** overload-unary--POSTFIX--+  |  |
+NOT;			-- !    ** overload-unary              |  |
+TILDE;			-- ~    ** overload-unary              |  |
+			--      ** overload-unary              |  |
+			-- --------overload-unary--BINARY---+  |  |
+PLUS;			-- +    ** overload-unary--binary   |  |  |
+MINUS;			-- -    ** overload-unary--binary   |  |  |
+STAR;			-- *    ** overload-unary--binary   |  |  |
+AND;			-- &    ** overload-unary--binary   |  |  |
+			-- --------overload-UNARY--binary---+--+--+
+			--      ** overload        binary   |  |
+			--      ** overload        binary   |  |
+SLASH;			-- /    ** overload        binary   |  |
+PERCENT;		-- %    ** overload        binary   |  |
+LEFT_SHIFT;		-- <<   ** overload        binary   |  |
+RIGHT_SHIFT;		-- >>   ** overload        binary   |  |
+AND_AND;		-- &&   ** overload        binary   |  |
+OR_OR;			-- ||   ** overload        binary   |  |
+OR;			-- |    ** overload        binary   |  |
+XOR;			-- ^    ** overload        binary   |  |
+LESS_THAN;		-- <    ** overload        binary   |  |
+LESS_EQUAL;		-- <=   ** overload        binary   |  |
+GREATER_THAN;		-- >    ** overload        binary   |  |
+GREATER_EQUAL;		-- >=   ** overload        binary   |  |
+EQUAL_EQUAL;		-- ==   ** overload        binary   |  |
+NOT_EQUAL;		-- !=   ** overload        binary   |  |
+			--      ** overload        binary   |  |
+ARROW_STAR;		-- ->*  ** overload        binary   |  |
+			-- --------overload-ASSIGN-binary---+--+--+
+EQUAL;			-- =    ** overload-assign-binary   |  |  |
+PLUS_EQUAL;		-- +=   ** overload-assign-binary   |  |  |
+MINUS_EQUAL;		-- -=   ** overload-assign-binary   |  |  |
+STAR_EQUAL;		-- *=   ** overload-assign-binary   |  |  |
+SLASH_EQUAL;		-- /=   ** overload-assign-binary   |  |  |
+PERCENT_EQUAL;		-- %=   ** overload-assign-binary   |  |  |
+AND_EQUAL;		-- &=   ** overload-assign-binary   |  |  |
+OR_EQUAL;		-- |=   ** overload-assign-binary   |  |  |
+XOR_EQUAL;		-- ^=   ** overload-assign-binary   |  |  |
+LEFT_SHIFT_EQUAL;	-- <<=  ** overload-assign-binary   |  |  |
+RIGHT_SHIFT_EQUAL;	-- >>=  ** overload-assign-binary   |  |  |
+			-- --------OVERLOAD-ASSIGN-binary---+--+--+
+			--      **                 binary   |
+DOT_STAR;		-- .*  	**                 binary   |
+QUESTION;		-- ?    **                 binary   |
+			-- ------------------------BINARY---+
+
+BOF;			-- beginning-of-file
+EOF;			-- end-of-file
+
+---------------------------------------------------------------------------
+-- BUILTINS  (see PAR_DRIVER for implementation)
+---------------------------------------------------------------------------
+
+-- %BUILTINS
+
+@define (BEGIN_LOOK_AHEAD,PERFORM			 (0))
+@define (END_LOOK_AHEAD,PERFORM				 (1))
+@define (SUCCEED_LOOK_AHEAD,PERFORM			 (2))
+
+@define (PEEK_DEFINED_TYPE_SPECIFIER,PERFORM		 (3))
+-- @define (PEEK_LINKAGE_SPECIFICATION,PERFORM		 (4))
+@define (PICK_DECLARATION_LIST_ITEM,PERFORM		 (4))
+@define (PEEK_NAME_QUALIFIER,PERFORM			 (5))
+@define (PEEK_MEMBER_FUNCTION_BODY,PERFORM		 (7))
+@define (PEEK_DEFERRABLE_FUNCTION_BODY,PERFORM		 (8))
+@define (PEEK_BIT_FIELD_SPECIFIER,PERFORM		 (9))
+@define (PEEK_POSSIBLE_FUNCTION_DECLARATOR,PERFORM	(11))
+@define (PEEK_POSSIBLE_PAREN_TYPE_NAME,PERFORM		(12))
+@define (PEEK_UNAMBIGUOUS_CONSTRUCT,PERFORM		(14))
+@define (PEEK_UNAMBIGUOUS_PARAMETER_DECLARATION,PERFORM	(15))
+@define (PEEK_OLD_FUNCTION_DEFINITION,PERFORM		(16))
+@define (PEEK_ALLOCATION_EXPRESSION,PERFORM		(17))
+@define (PEEK_DEALLOCATION_EXPRESSION,PERFORM		(18))
+@define (PEEK_LEFT_PAREN,PERFORM			(20))
+@define (PEEK_LEFT_BRACE,PERFORM			(21))
+@define (PEEK_LAX_INITIALIZATION,PERFORM		(23))
+
+@define (PICK_BINARY_OP,PERFORM				(26))
+@define (PICK_POSTFIX_OP,PERFORM			(27))
+@define (PICK_OVERLOAD_OP,PERFORM			(28))
+@define (PICK_DECLARATION_SPECIFIER,PERFORM		(30))
+@define (PICK_UNARY_EXPRESSION,PERFORM			(31))
+@define (PICK_CAST_EXPRESSION,PERFORM			(33))
+@define (PICK_POSTFIX_EXPRESSION,PERFORM		(34))
+@define (PICK_MEMBER_DECLARATION,PERFORM		(35))
+@define (PICK_DECLARATOR,PERFORM			(36))
+@define (PICK_POINTER_OR_REFERENCE_DECLARATOR,PERFORM	(37))
+@define (PICK_NEW_DECLARATOR,PERFORM			(38))
+@define (PICK_ABSTRACT_DECLARATOR,PERFORM		(39))
+@define (PICK_PARAMETER_DECLARATOR,PERFORM		(40))
+@define (PICK_INITIALIZER,PERFORM			(41))
+@define (PICK_POSTFIX_DECLARATOR,PERFORM		(42))
+@define (PICK_DECLARATION,PERFORM			(43))
+@define (PICK_BASE_CLASS_SPECIFIER,PERFORM		(44))
+@define (PICK_INITIALIZER_ITEM,PERFORM			(45))
+@define (PICK_PARAMETER_DECLARATION,PERFORM		(46))
+@define (PICK_STATEMENT,PERFORM				(47))
+@define (PICK_FOR_STATEMENT_INITIALIZER,PERFORM		(48))
+@define (PICK_DECLARATOR_NAME,PERFORM			(49))
+@define (PICK_NAME,PERFORM				(50))
+@define (PICK_COMPLETE_CLASS_OR_TYPE_NAME,PERFORM	(52))
+@define (PICK_EXTERNAL_DECLARATION_TAIL,PERFORM		(53))
+@define (PICK_DECLARATION_STATEMENT_TAIL,PERFORM	(54))
+
+@define (CLEAR_DECLARATION_SPECIFIER,PERFORM		(55))
+@define (CLEAR_TYPE_SPECIFIER,PERFORM			(56))
+@define (SET_DECLARATION_SPECIFIER,PERFORM		(57))
+@define (SET_TYPE_SPECIFIER,PERFORM			(58))
+@define (SET_DECLARATOR_NAME,PERFORM			(59))
+@define (SET_DECLARATOR,PERFORM				(60))
+@define (SET_TAG_NAME,PERFORM				(61))
+@define (BEGIN_PROTOTYPE_SCOPE,PERFORM			(62))
+@define (END_PROTOTYPE_SCOPE,PERFORM			(63))
+
+@define (END_MAIN_PRODUCTION,PERFORM			(64))
+
+---------------------------------------------------------------------------
+-- MACROS
+---------------------------------------------------------------------------
+
+-- %MACROS
+
+-- @define (DEBUG_GRAMMAR,1)
+
+@if (@is_defined(<DEBUG_GRAMMAR>))
+@define (END_,?THIS_PRODUCTION(#1))
+@else
+@define (END_,)
+@end_if
+
+@define (null_production,)
+
+---------------------------------------------------------------------------
+-- PRODUCTIONS
+---------------------------------------------------------------------------
+
+%NONTERMINALS
+
+---------------------------------------------------------------------------
+-- EXTERNAL DECLARATIONS
+---------------------------------------------------------------------------
+
+compilation_unit ::=
+
+	BOF					&begin_global_scope
+	declaration_list
+	EOF					&end_global_scope
+
+	END_('compilation_unit') ;
+
+declaration_list ::=
+
+--	[ linkage_specification
+--	| external_declaration
+--	] ...
+
+	[ %PICK_DECLARATION_LIST_ITEM
+	  { linkage_specification
+	  | external_declaration
+	  }
+	] ...
+
+	END_('declaration_list') ;
+
+---------------------------------------------------------------------------
+
+linkage_specification ::=
+
+--	%PEEK_LINKAGE_SPECIFICATION
+
+	STORAGE_CLASS
+	STRING					&begin_linkage_specifier
+	{ LEFT_BRACE				&set_linkage_specifier_group
+	  declaration_list
+	  RIGHT_BRACE
+	| external_declaration
+	}					&end_linkage_specifier
+
+	END_('linkage_specification') ;
+
+---------------------------------------------------------------------------
+
+asm_declaration ::=
+
+	KW_ASM					&begin_asm_declaration
+	LEFT_PAREN
+	STRING					&set_asm_declaration
+	RIGHT_PAREN
+	SEMI_COLON
+
+	END_('asm_expression') ;
+
+---------------------------------------------------------------------------
+
+external_declaration ::=
+
+	[ optional_declaration_specifiers ]	&set_base_type
+	{ declarator				&set_declaration
+	  %PICK_EXTERNAL_DECLARATION_TAIL
+	  { EQUAL				&parse_initializer
+	    { COMMA
+	      init_declarator_list SEMI_COLON
+	    | SEMI_COLON
+	    }
+	  | LEFT_PAREN				&begin_class_initializer
+	    expression_list			&set_initializer_arguments
+	    RIGHT_PAREN				&end_class_initializer
+	    { COMMA
+	      init_declarator_list SEMI_COLON
+	    | SEMI_COLON
+	    }
+	  | function_body
+	  | null_production			&set_null_initializer
+	    { COMMA
+	      init_declarator_list SEMI_COLON
+	    | SEMI_COLON
+	    }
+	  }
+	| SEMI_COLON				&set_declaration
+	}
+
+	END_('external_declaration') ;
+
+---------------------------------------------------------------------------
+-- FUNCTION BODY
+---------------------------------------------------------------------------
+
+function_body ::=
+
+	[ old_parameter_declaration_list ]
+	raw_function_body
+
+	END_('function_body') ;
+
+raw_function_body ::=
+
+	{ %PEEK_DEFERRABLE_FUNCTION_BODY	&save_function_body
+	| { LEFT_BRACE				&begin_function_body
+						&begin_member_initial_list
+	  | base_initializer
+	    LEFT_BRACE
+	  }					&emit_function_begin
+	  [ statement ] ...
+	  RIGHT_BRACE				&end_function_body
+	}
+
+	END_('raw_function_body') ;
+
+---------------------------------------------------------------------------
+-- MEMBER INITIALIZATION LISTS
+---------------------------------------------------------------------------
+
+base_initializer ::=
+
+	COLON					&begin_function_body
+						&begin_member_initial_list
+						&check_member_initial_list
+	member_initializer_list
+
+	END_('base_initializer') ;
+
+member_initializer_list ::=
+
+	member_initializer
+	[ COMMA member_initializer ] ...
+
+	END_('member_initializer_list') ;
+
+member_initializer ::=
+
+	[ complete_class_or_type_name ]		&base_member_value
+						&set_member_init_op
+						&push_value_with_op
+	function_argument_list			&set_member_initializer
+
+	END_('member_initializer') ;
+
+---------------------------------------------------------------------------
+-- DECLARATION SPECIFIERS
+---------------------------------------------------------------------------
+
+declaration_specifiers ::=			%CLEAR_DECLARATION_SPECIFIER
+
+	{ declaration_specifier } ...		&set_base_type
+
+	END_('declaration_specifiers') ;
+
+
+optional_declaration_specifiers ::=		%CLEAR_DECLARATION_SPECIFIER
+
+	{ declaration_specifier } ...
+
+	END_('optional_declaration_specifiers') ;
+
+---------------------------------------------------------------------------
+
+declaration_specifier ::=
+
+	%PICK_DECLARATION_SPECIFIER
+
+	{ STORAGE_CLASS				&set_storage_class_specifier
+	| KW_INLINE				&set_inline_specifier
+	| KW_VIRTUAL				&set_virtual_specifier
+	| KW_FRIEND				&set_friend_specifier
+	| KW_OVERLOAD				&set_overload_specifier
+	| TYPE_QUALIFIER			&set_type_qualifier
+	| TYPE					&set_simple_type
+						%SET_TYPE_SPECIFIER
+	| class_specifier			%SET_TYPE_SPECIFIER
+	| enum_specifier			%SET_TYPE_SPECIFIER
+	| defined_type_specifier		%SET_TYPE_SPECIFIER
+	}					%SET_DECLARATION_SPECIFIER
+
+	END_('declaration_specifier') ;
+
+---------------------------------------------------------------------------
+-- TYPE SPECIFIERS
+---------------------------------------------------------------------------
+
+simple_type_specifier ::=			%CLEAR_TYPE_SPECIFIER
+						&clear_type_specifiers
+	{ defined_type_specifier
+	| elementary_type_specifier
+	}					&set_base_type
+
+	END_('simple_type_specifier') ;
+
+---------------------------------------------------------------------------
+
+type_specifiers ::=				%CLEAR_TYPE_SPECIFIER
+						&clear_type_specifiers
+	{ type_specifier } ...			&set_base_type
+
+	END_('type_specifiers') ;
+
+---------------------------------------------------------------------------
+
+type_specifier ::=
+
+	{ elementary_type_specifier		%SET_TYPE_SPECIFIER
+	| elaborated_type_specifier		%SET_TYPE_SPECIFIER
+	| type_qualifier_specifier
+	| defined_type_specifier		%SET_TYPE_SPECIFIER
+	}
+
+	END_('type_specifier') ;
+
+---------------------------------------------------------------------------
+
+defined_type_specifier ::=
+
+	%PEEK_DEFINED_TYPE_SPECIFIER
+	complete_class_or_type_name		&set_type_name
+
+	END_('defined_type_specifier') ;
+
+---------------------------------------------------------------------------
+
+elementary_type_specifiers ::=			&clear_type_specifiers
+
+	{ elementary_type_specifier } ...	&set_base_type
+
+	END_('elementary_type_specifiers') ;
+
+---------------------------------------------------------------------------
+
+elementary_type_specifier ::=
+
+	TYPE					&set_simple_type
+
+	END_('elementary_type_specifier') ;
+
+---------------------------------------------------------------------------
+
+elaborated_type_specifier ::=
+
+	{ class_specifier
+	| enum_specifier
+	}
+
+	END_('elaborated_type_specifier') ;
+
+---------------------------------------------------------------------------
+-- TYPE QUALIFIER SPECIFIERS
+---------------------------------------------------------------------------
+
+type_qualifier_specifiers ::=
+
+	{ type_qualifier_specifier } ...
+
+	END_('type_qualifier_specifiers') ;
+
+type_qualifier_specifier ::=
+
+	TYPE_QUALIFIER				&set_type_qualifier
+
+	END_('type_qualifier_specifier') ;
+
+---------------------------------------------------------------------------
+-- CLASS DECLARATIONS
+---------------------------------------------------------------------------
+
+class_specifier ::=
+
+	CLASS					&begin_class_declaration
+	[ class_extended_specifiers ]
+	{ tag_name
+	  [ [ class_derivation_specifier ]
+	    class_body
+	  ]					&set_tag_name
+	| class_body
+	}					&set_class_declaration
+
+	END_('class_specifier') ;
+
+---------------------------------------------------------------------------
+
+class_derivation_specifier ::=
+
+	COLON					&begin_class_derivation
+	class_derivation_list			&set_class_derivation
+
+	END_('class_derivation_specifier') ;
+
+class_derivation_list ::=
+
+	class_derivation
+	[ COMMA class_derivation ] ...
+
+	END_('class_derivation_list') ;
+
+class_derivation ::=
+
+	[ base_class_type_specifiers ]
+	complete_class_or_type_name		&set_base_class
+
+	END_('class_derivation') ;
+
+base_class_type_specifiers ::=
+
+	{ base_class_type_specifier } ...
+
+	END_('base_class_type_specifiers') ;
+
+base_class_type_specifier ::=
+
+	%PICK_BASE_CLASS_SPECIFIER
+
+	{ KW_PUBLIC				&set_public_base_class
+	| KW_PRIVATE				&set_private_base_class
+	| KW_PROTECTED				&set_protected_base_class
+	| KW_VIRTUAL				&set_virtual_base_class
+	}
+
+	END_('base_class_type_specifier') ;
+
+---------------------------------------------------------------------------
+
+class_body ::=
+
+	LEFT_BRACE				&begin_class_body
+	[ member_declaration_list ]
+	RIGHT_BRACE				&end_class_body
+
+	END_('class_body') ;
+
+---------------------------------------------------------------------------
+
+class_extended_specifiers ::=
+
+	-- As an extension we allow:
+	--       class extern
+
+	STORAGE_CLASS				&set_tag_extern
+
+	END_('class_extended_specifiers') ;
+
+---------------------------------------------------------------------------
+-- MEMBER DECLARATIONS
+---------------------------------------------------------------------------
+
+member_declaration_list ::=
+
+	{ member_declaration_item } ...
+
+	END_('member_declaration_list') ;
+
+member_declaration_item ::=
+
+	%PICK_MEMBER_DECLARATION
+
+	{
+	| KW_PUBLIC COLON			&set_public_member_access
+	| KW_PRIVATE COLON			&set_private_member_access
+	| KW_PROTECTED COLON			&set_protected_member_access
+	| member_declaration
+	}
+
+	END_('member_declaration_item') ;
+
+member_declaration ::=
+
+	[ optional_declaration_specifiers ]	&set_base_type
+	{ member_declarator			&set_member_declaration
+	  { SEMI_COLON
+	  | %PEEK_MEMBER_FUNCTION_BODY		&save_member_function_body
+	    [ SEMI_COLON ]
+	  | COMMA member_declarator_list
+	    SEMI_COLON
+	  }
+	| SEMI_COLON				&set_member_declaration
+	}
+
+	END_('member_declaration') ;
+
+member_declarator_list ::=
+
+	member_declarator			&set_member_declaration
+	[ COMMA
+	  member_declarator			&set_member_declaration
+	] ...
+
+	END_('member_declarator_list') ;
+
+member_declarator ::=
+
+	{ unambiguous_declarator
+	  [ %PEEK_BIT_FIELD_SPECIFIER
+	    bit_field_specifier
+	  ]
+	| bit_field_specifier
+	}
+	[ pure_specifier ]
+
+	END_('member_declarator') ;
+
+bit_field_specifier ::=
+
+	COLON					&begin_bit_field
+	constant_expression			&set_bit_field
+
+	END_('bit_field_specifier') ;
+
+pure_specifier ::=
+
+	EQUAL
+	constant_expression			&set_pure_specifier
+
+	END_('pure_specifier') ;
+
+------------------------------------------------------------------------------
+-- ENUMERATION & ENUMERATOR DECLARATIONS
+------------------------------------------------------------------------------
+		
+enum_specifier ::=
+
+	KW_ENUM					&begin_enum_declaration
+	[ enum_extended_specifiers ]
+	{ tag_name
+	  [ enum_body ]				&set_tag_name
+	| enum_body
+	}					&set_enum_declaration
+
+	END_('enum_specifier') ;
+
+enum_body ::=
+
+	LEFT_BRACE				&begin_enum_body
+	[ enumerator_list ]
+	RIGHT_BRACE				&end_enum_body
+
+	END_('enum_body') ;
+
+enumerator_list ::=
+
+	enumerator
+	[ COMMA
+	  { enumerator
+	  | null_production			&warn_extra_enum_comma
+	  }
+	] ...
+
+	END_('enumerator_list') ;
+
+enumerator ::=
+
+	IDENTIFIER				&set_simple_name
+						&set_enumerator_declaration
+	[ EQUAL					&set_enumerator_initialized
+	  constant_expression
+	]					&set_enumerator_value
+
+	END_('enumerator') ;
+
+---------------------------------------------------------------------------
+
+enum_extended_specifiers ::=
+
+	-- As an extension we allow:
+	--       enum unsigned char
+	--       enum extern
+	--       enum size_t extern
+
+	[ elementary_type_specifiers
+	]					&set_enum_base_type
+	[ class_extended_specifiers ]
+
+	END_('extended_enum_specifiers') ;
+
+---------------------------------------------------------------------------
+-- DECLARATORS
+---------------------------------------------------------------------------
+
+declarator ::=
+
+	%PICK_DECLARATOR
+
+	{ reference declarator			&set_reference_type
+	| pointer declarator			&set_pointer_type
+	| member_pointer declarator		&set_member_pointer_type
+	| declarator_name
+	| LEFT_PAREN unambiguous_declarator RIGHT_PAREN
+	}
+	[ ambiguous_postfix_declarator ] ...	%SET_DECLARATOR
+
+	END_('declarator') ;
+
+unambiguous_declarator ::=
+
+	%PICK_DECLARATOR
+
+	{ reference unambiguous_declarator	&set_reference_type
+	| pointer unambiguous_declarator	&set_pointer_type
+	| member_pointer unambiguous_declarator	&set_member_pointer_type
+        | declarator_name
+	| LEFT_PAREN unambiguous_declarator RIGHT_PAREN
+	}
+	[ postfix_declarator ] ...		%SET_DECLARATOR
+
+	END_('unambiguous_declarator') ;
+
+---------------------------------------------------------------------------
+-- AMBIGUOUS POSTFIX DECLARATORS
+---------------------------------------------------------------------------
+
+ambiguous_postfix_declarator ::=
+
+	-- If we are looking at a postfix declarator, this production
+	-- will parse the (possibly ambiguous) postfix declarator ands
+	-- return success; if we are not lookng at a postfix declarator,
+	-- then return failure.
+
+	%PICK_POSTFIX_DECLARATOR
+
+	{ ambiguous_function_declarator
+	| array_declarator
+	}
+
+	END_('ambiguous_postifix_declarator') ;
+
+ambiguous_function_declarator ::=
+
+	-- If we are looking at a function declarator, this production will
+	-- parse the (possibly ambiguous) function declarator (this includes
+	-- an old-style function definition declarator) and return success;
+	-- if we are not looking at a function declarator, return failure.
+	-- N.B. we will only do look-ahead if we need to, i.e. if we are
+	-- looking at an ambiguous function declarator.
+
+	%PEEK_POSSIBLE_FUNCTION_DECLARATOR
+	{ %PEEK_UNAMBIGUOUS_CONSTRUCT
+	  function_declarator
+	| peek_function_declarator
+	  function_declarator
+	| peek_old_function_definition_declarator
+	  old_function_definition_declarator
+	}
+
+	END_('ambiguous_function_declarator') ;
+
+peek_function_declarator ::=
+
+	-- Return success if we are looking at the beginning of a function
+	-- declarator; we will disambiguate using look-ahead since a function
+	-- declarator can look like a class object initializer; if it can be
+	-- a function declarator, then it assumed to be a function declarator.
+
+	%BEGIN_LOOK_AHEAD
+	LEFT_PAREN				%BEGIN_PROTOTYPE_SCOPE
+	[ peek_parameter_declaration ]
+	[ COMMA peek_parameter_declaration
+	| ELLIPSIS
+	] ...
+	RIGHT_PAREN				%END_PROTOTYPE_SCOPE
+	%END_LOOK_AHEAD
+
+	END_('peek_function_declarator') ;
+
+peek_parameter_declaration ::=
+
+	-- This production is assumed to have been called by a production
+	-- doing look-ahead! If we are looking at an unambiguous parameter
+	-- declaration, then we will return immediately and successfully
+	-- from the production which originally initiated the look-ahead.
+	-- Otherwise, simply proceed in a normal look-ahead parse (of a
+	-- parameter declaration); i.e. if the parse succeeds then this
+	-- production will return successfully; if the parse fails then
+	-- return immediately and unsuccessfully from the production which
+	-- originally initiated the look-ahead.
+
+	{ %PEEK_UNAMBIGUOUS_PARAMETER_DECLARATION
+	  %SUCCEED_LOOK_AHEAD
+	| parameter_declaration
+	}
+
+	END_('peek_parameter_declaration') ;
+
+peek_old_function_definition_declarator ::=
+
+	-- Return success if we are looking at an old-style function
+	-- declarator (i.e. for an old-style function definition).
+	-- Otherwise, return failure.
+
+	%BEGIN_LOOK_AHEAD
+	old_function_definition_declarator
+	{ declaration_specifier
+	| LEFT_BRACE
+	}
+	%END_LOOK_AHEAD
+
+	END_('peek_old_function_definition_declarator') ;
+
+---------------------------------------------------------------------------
+-- POSTIX DECLARATORS
+---------------------------------------------------------------------------
+
+postfix_declarator ::=
+
+	%PICK_POSTFIX_DECLARATOR
+
+	{ function_declarator
+	| array_declarator
+	}
+
+	END_('postfix_declarator') ;
+
+---------------------------------------------------------------------------
+
+array_declarator ::=
+
+	LEFT_BRACKET
+        { RIGHT_BRACKET				&set_incomplete_array_type
+        | null_production			&begin_array_type
+	  comma_expression
+	  RIGHT_BRACKET				&set_array_type
+        }
+
+	END_('array_declarator') ;
+
+---------------------------------------------------------------------------
+
+function_declarator ::=
+
+	LEFT_PAREN				&begin_function_type
+						%BEGIN_PROTOTYPE_SCOPE
+	{ RIGHT_PAREN
+	| { parameter_declaration 
+	    [ COMMA
+	      parameter_declaration
+	    | ELLIPSIS				&warn_extra_ellipsis
+	    ] ...
+	  }
+	  RIGHT_PAREN
+	}					%END_PROTOTYPE_SCOPE
+	[ type_qualifier_specifiers ]		&set_function_type
+
+	END_('function_declarator') ;
+
+old_function_definition_declarator ::=
+
+	LEFT_PAREN				&begin_old_function_type
+	{ RIGHT_PAREN
+	| old_parameter_name_list
+	  RIGHT_PAREN
+	}					&set_function_type
+
+	END_('old_function_definition_declarator') ;
+
+---------------------------------------------------------------------------
+-- PREFIX DECLARATORS
+---------------------------------------------------------------------------
+
+reference ::=
+
+	AND
+	[ type_qualifier_specifiers ]		&set_derived_type_qualifier
+
+	END_('reference') ;
+
+pointer ::=
+
+	STAR
+	[ type_qualifier_specifiers ]		&set_derived_type_qualifier
+
+	END_('pointer') ;
+
+member_pointer ::=
+
+	global_or_class_scope_qualifier		&set_derived_class_qualifier
+	STAR
+	[ type_qualifier_specifiers ]		&set_derived_type_qualifier
+
+	END_('member_pointer') ;
+
+pointer_or_reference_declarator ::=
+
+	%PICK_POINTER_OR_REFERENCE_DECLARATOR
+
+	{ reference				&set_reference_type
+	| pointer				&set_pointer_type
+	| member_pointer			&set_member_pointer_type
+	}
+
+	END_('pointer_or_reference_declarator') ;
+
+---------------------------------------------------------------------------
+-- PARAMETER DECLARATIONS
+---------------------------------------------------------------------------
+
+parameter_declaration_list ::=
+
+	{ parameter_declaration 
+	  [ COMMA
+	    parameter_declaration
+	  | ELLIPSIS				&warn_extra_ellipsis
+	  ] ...
+	}
+
+	END_('parameter_declaration_list') ;
+
+parameter_declaration ::=
+
+	%PICK_PARAMETER_DECLARATION
+
+	{ ELLIPSIS				&set_ellipsis
+	| declaration_specifiers
+	  [ parameter_declarator ]		&set_parameter_declaration
+	  [ parameter_initializer ]
+	}
+
+	END_('parameter_declaration') ;
+
+parameter_initializer ::=
+
+	EQUAL
+	expression				&set_parameter_initializer
+
+	END_('parameter_initializer') ;
+
+---------------------------------------------------------------------------
+
+parameter_declarator ::=
+
+	%PICK_PARAMETER_DECLARATOR
+
+	[ reference parameter_declarator	&set_reference_type
+	| pointer parameter_declarator		&set_pointer_type
+	| member_pointer parameter_declarator	&set_member_pointer_type
+        | simple_declarator_name
+	| LEFT_PAREN
+	  parameter_declarator
+	  RIGHT_PAREN
+	]
+	[ postfix_declarator ] ...
+
+	END_('parameter_declarator') ;
+
+---------------------------------------------------------------------------
+-- OLD-STYLE PARAMETER NAME LIST
+---------------------------------------------------------------------------
+
+old_parameter_name_list ::=
+
+	old_parameter_name
+	[ COMMA old_parameter_name ] ...
+
+	END_('old_parameter_name_list') ;
+
+old_parameter_name ::=
+
+	IDENTIFIER				&set_simple_name
+						&set_old_parameter_name
+	END_('old_parameter_name') ;
+
+---------------------------------------------------------------------------
+-- OLD-STYLE PARAMETER DECLARATION LIST
+---------------------------------------------------------------------------
+
+old_parameter_declaration_list ::=
+
+	%PEEK_OLD_FUNCTION_DEFINITION		&begin_old_parameter_list
+	[ old_parameter_declaration ] ...	&set_old_parameter_list
+
+	END_('old_parameter_declaration_list') ;
+
+old_parameter_declaration ::=
+
+	declaration_specifiers
+	old_parameter_declarator_list
+	SEMI_COLON
+
+	END_('old_parameter_declaration') ;
+
+old_parameter_declarator_list ::=
+
+	old_parameter_declarator
+	[ COMMA old_parameter_declarator ] ...
+
+	END_('old_parameter_declarator_list') ;
+
+old_parameter_declarator ::=
+
+	unambiguous_declarator			&set_old_parameter_declaration
+
+	END_('old_parameter_declarator') ;
+
+---------------------------------------------------------------------------
+-- SCOPE QUALIFIERS
+---------------------------------------------------------------------------
+
+simple_global_scope_qualifier ::=		&clear_scope_qualifier
+
+	-- N.B. if no scope qualifier
+	-- is specified, then the scope
+	-- qualifier *will* be cleared.
+
+	COLON_COLON				&set_global_scope_qualifier
+
+	END_('simple_global_scope_qualifier') ;
+
+class_scope_qualifier ::=			&clear_scope_qualifier
+
+	-- N.B. if no scope qualifier
+	-- is specified, then the scope
+	-- qualifier *will* be cleared.
+
+	{ %PEEK_NAME_QUALIFIER
+	  { IDENTIFIER
+	  | TYPE
+	  }					&set_class_scope_qualifier
+	  COLON_COLON
+	} ...					&check_class_scope_qualifier
+
+	END_('class_scope_qualifier') ;
+
+global_scope_qualifier ::=
+
+	-- N.B. if no scope qualifier
+	-- is specified, then the scope
+	-- qualifier *will* be cleared.
+
+	simple_global_scope_qualifier
+	[ %PEEK_NAME_QUALIFIER
+	  { IDENTIFIER
+	  | TYPE
+	  }					&set_class_scope_qualifier
+	  COLON_COLON
+	] ...					&check_class_scope_qualifier
+
+	END_('global_scope_qualifier') ;
+
+global_or_class_scope_qualifier ::=
+
+	-- N.B. if no scope qualifier
+	-- is specified, then the scope
+	-- qualifier *will* be cleared.
+
+	{ simple_global_scope_qualifier
+	  [ %PEEK_NAME_QUALIFIER
+	    { IDENTIFIER
+	    | TYPE
+	    }					&set_class_scope_qualifier
+	    COLON_COLON
+	  ] ...					&check_class_scope_qualifier
+	| { %PEEK_NAME_QUALIFIER
+	    { IDENTIFIER
+	    | TYPE
+	    }					&set_class_scope_qualifier
+	    COLON_COLON
+	  } ...					&check_class_scope_qualifier
+	}
+
+	END_('global_or_class_scope_qualifier') ;
+
+---------------------------------------------------------------------------
+-- QUALIFIED NAMES
+---------------------------------------------------------------------------
+
+declarator_name ::=
+
+	-- N.B. even if no scope qualifier is specified, the
+	-- scope qualifier *will* be cleared; the "qualified_name"
+	-- production must be before "operator_or_conversion_function_name"
+	-- and "destructor_name" in order to accomplish this.
+	
+	%PICK_DECLARATOR_NAME
+
+	{ simple_declarator_name
+	| qualified_name
+	| operator_or_conversion_function_name
+	| destructor_name			&check_declared_destructor
+	}					&set_declarator_scope
+
+	END_('declarator_name') ;
+
+name ::=
+
+	-- N.B. even if no scope qualifier is specified,
+	-- the scope qualifier *will* be cleared; the
+	-- "qualified_name" production must be before
+	-- "operator_or_conversion_function_name" in
+	-- order to accomplish this.
+
+	%PICK_NAME
+
+	{ IDENTIFIER				&set_simple_name
+	| qualified_name
+	| operator_or_conversion_function_name
+	}
+
+	END_('NAME') ;
+
+qualified_name ::=
+
+	-- N.B. even if no scope qualifier is specified,
+	-- the scope qualifier *will* be cleared.
+
+	class_scope_qualifier
+	{ operator_or_conversion_function_name
+	| destructor_name
+	| IDENTIFIER				&set_vanilla_name
+	}
+
+	END_('qualified_name') ;
+
+global_qualified_name ::=
+
+	-- N.B. even if no scope qualifier is specified,
+	-- the scope qualifier *will* be cleared.
+
+	global_scope_qualifier
+	{ operator_or_conversion_function_name
+	| IDENTIFIER				&set_vanilla_name
+	}
+
+	END_('global_qualified_name') ;
+
+complete_class_or_type_name ::=
+
+	-- N.B. even if no scope qualifier is specified,
+	-- the scope qualifier *will* be cleared.
+
+	%PICK_COMPLETE_CLASS_OR_TYPE_NAME
+
+	{ global_or_class_scope_qualifier
+	  IDENTIFIER				&set_vanilla_name
+	| IDENTIFIER				&set_simple_name
+	}
+
+	END_('complete_class_or_type_name') ;
+
+---------------------------------------------------------------------------
+-- SIMPLE UNQUALIFIED NAMES
+---------------------------------------------------------------------------
+
+simple_name ::=
+
+	-- N.B. the scope qualifier
+	-- *will* be cleared.
+
+	IDENTIFIER				&set_simple_name
+
+	END_('simple_name') ;
+
+simple_declarator_name ::=
+
+	-- N.B. the scope qualifier
+	-- *will* be cleared.
+
+	IDENTIFIER				&set_simple_name
+						%SET_DECLARATOR_NAME
+	END_('simple_declarator_name') ;
+
+tag_name ::=
+
+	-- N.B. the scope qualifier
+	-- *will* be cleared.
+
+	IDENTIFIER				&set_simple_name
+						%SET_TAG_NAME
+	END_('tag_name') ;
+
+---------------------------------------------------------------------------
+-- UNQUALIFIED NAMES
+---------------------------------------------------------------------------
+
+vanilla_name ::=
+
+	-- N.B. the scope qualifier
+	-- will *not* be cleared.
+
+	IDENTIFIER				&set_vanilla_name
+
+	END_('vanilla_name') ;
+
+---------------------------------------------------------------------------
+
+destructor_name ::=
+
+	-- N.B. the scope qualifier
+	-- will *not* be cleared.
+
+	TILDE
+	{ IDENTIFIER
+	| TYPE
+	}					&set_destructor_name
+
+	END_('destructor_name') ;
+
+---------------------------------------------------------------------------
+
+operator_or_conversion_function_name ::=
+
+	-- N.B. the scope qualifier
+	-- will *not* be cleared.
+
+	KW_OPERATOR
+	{ operator
+	| conversion_type_name
+	}
+
+	END_('operator_or_conversion_function_name') ;
+
+operator_function_name ::=
+
+	-- N.B. the scope qualifier
+	-- will *not* be cleared.
+
+	KW_OPERATOR
+	operator
+
+	END_('operator_function_name') ;
+
+---------------------------------------------------------------------------
+
+conversion_type_name ::=			&begin_conversion_name
+
+	type_specifiers
+	[ pointer_or_reference_declarator ]	&set_conversion_name
+
+	END_('conversion_type_name') ;
+
+operator ::=
+
+	{ simple_overloadable_operator
+	| special_overloadable_operator
+	}
+
+	END_('operator') ;
+
+simple_overloadable_operator ::=
+
+	%PICK_OVERLOAD_OP
+
+	{ ARROW
+	| PLUS_PLUS
+	| MINUS_MINUS
+	| NOT
+	| TILDE
+	| PLUS
+	| MINUS
+	| STAR
+	| AND
+	| SLASH
+	| PERCENT
+	| LEFT_SHIFT
+	| RIGHT_SHIFT
+	| AND_AND
+	| OR_OR
+	| OR
+	| XOR
+	| LESS_THAN
+	| LESS_EQUAL
+	| GREATER_THAN
+	| GREATER_EQUAL
+	| EQUAL_EQUAL
+	| NOT_EQUAL
+	| ARROW_STAR
+	| EQUAL
+	| PLUS_EQUAL
+	| MINUS_EQUAL
+	| STAR_EQUAL
+	| SLASH_EQUAL
+	| PERCENT_EQUAL
+	| AND_EQUAL
+	| OR_EQUAL
+	| XOR_EQUAL
+	| LEFT_SHIFT_EQUAL
+	| RIGHT_SHIFT_EQUAL
+	}					&set_operator_name
+
+	END_('simple_overloadable_operator') ;
+
+special_overloadable_operator ::=
+
+	{ LEFT_PAREN				&set_operator_name
+	  RIGHT_PAREN
+	| LEFT_BRACKET				&set_operator_name
+	  RIGHT_BRACKET
+	| KW_NEW				&set_operator_name
+	| KW_DELETE				&set_operator_name
+	| COMMA					&set_operator_name
+	}
+
+	END_('special_overloadable_operator') ;
+
+---------------------------------------------------------------------------
+-- INITIALIZERS
+---------------------------------------------------------------------------
+
+initializer ::=
+
+	-- N.B. this production always returns
+	-- success due to the null_intializer.
+
+	%PICK_INITIALIZER
+
+	{ EQUAL					&parse_initializer
+	| LEFT_PAREN				&begin_class_initializer
+	  expression_list			&set_initializer_arguments
+	  RIGHT_PAREN				&end_class_initializer
+	| null_production			&set_null_initializer
+	}
+
+	END_('initializer') ;
+
+vanilla_initializer ::=
+
+	EQUAL					&parse_initializer
+
+	END_('vanilla_initializer') ;
+
+initializer_item ::=
+
+	-- Unfortunately, we currently parse initializers by
+	-- hand not via the grammar (as in the ANSI-C grammar).
+
+	%PICK_INITIALIZER_ITEM
+
+	{ COMMA					&set_initializer_delimiter
+	| LEFT_BRACE				&set_initializer_begin
+	| RIGHT_BRACE				&set_initializer_end
+	| expression				&set_initializer_expression
+	| null_production			&set_initializer_unknown
+	}
+
+	END_('initializer_item') ;
+
+class_initializer ::=
+
+	LEFT_PAREN				&begin_class_initializer
+	expression_list				&set_initializer_arguments
+	RIGHT_PAREN				&end_class_initializer
+					
+	END_('class_initializer') ;
+
+null_initializer ::=				&set_null_initializer
+
+	-- A class initializer may be empty, because C++ may
+	-- need to generate a call to a default constructor.
+
+	null_production
+
+	END_('null_initializer') ;
+
+new_initializer ::=
+
+	-- A "new" initializer is like a class initializer
+	-- but it also permits an empty argument list.
+	--
+	-- N.B. this production always returns
+	-- success due to the null_intializer.
+
+	{ function_argument_list
+	| null_production			&null_value
+	}
+					
+	END_('new_initializer') ;
+
+---------------------------------------------------------------------------
+-- LOOK-AHEAD INITIALIZERS
+--
+-- These are needed because the parsing of vanilla initializers is done
+-- by hand (not via the grammar), and there are thus no producitons for
+-- vanilla initializers, such productions are however needed when doing
+-- disambiguating between a declaration statement and an expression.
+---------------------------------------------------------------------------
+
+la_initializer ::=
+
+	{ la_vanilla_initializer
+	| class_initializer
+	| null_initializer
+	}
+
+	END_('la_initializer') ;
+
+la_vanilla_initializer ::=
+
+	EQUAL
+	{ LEFT_BRACE
+	  la_vanilla_initializer_list
+	  [ COMMA ] ...
+	  RIGHT_BRACE
+	| expression
+	}
+
+	END_('la_vanilla_initializer') ;
+
+la_vanilla_initializer_list ::=
+
+	la_initializer_item
+	[ COMMA la_initializer_item ] ...
+
+	END_('la_vanilla_initializer_list') ;
+
+la_initializer_item ::=
+
+	{ expression
+	| LEFT_BRACE expression RIGHT_BRACE
+	}
+
+	END_('la_initializer_item') ;
+
+la_init_declarator_list ::=
+
+	la_init_declarator
+	[ COMMA la_init_declarator ] ...
+
+	END_('la_init_declarator_list') ;
+
+la_init_declarator ::=
+
+	declarator
+	la_initializer
+
+	END_('la_init_declarator') ;
+
+---------------------------------------------------------------------------
+-- INITIALIZED DECLARATOR LISTS
+---------------------------------------------------------------------------
+
+init_declarator_list ::=
+
+	init_declarator
+	[ COMMA init_declarator ] ...
+
+	END_('init_declarator_list') ;
+
+init_declarator ::=
+
+	declarator				&set_declaration
+	{ EQUAL					&parse_initializer
+	| LEFT_PAREN				&begin_class_initializer
+	  expression_list			&set_initializer_arguments
+	  RIGHT_PAREN				&end_class_initializer
+	| null_production			&set_null_initializer
+	}
+
+	END_('init_declarator') ;
+
+---------------------------------------------------------------------------
+-- TYPE NAMES & ABSTRACT DECLARATORS
+---------------------------------------------------------------------------
+
+type_name ::=
+
+	declaration_specifiers
+	abstract_declarator			&set_type_declaration
+
+	END_('type_name') ;
+
+abstract_declarator ::=
+
+	%PICK_ABSTRACT_DECLARATOR
+
+	[ reference abstract_declarator		&set_reference_type
+	| pointer abstract_declarator		&set_pointer_type
+	| member_pointer abstract_declarator	&set_member_pointer_type
+	| LEFT_PAREN
+	  abstract_declarator
+	  RIGHT_PAREN 
+	]
+	[ postfix_declarator ] ...
+
+	END_('abstract_declarator') ;
+
+---------------------------------------------------------------------------
+
+paren_type_name ::=
+
+	LEFT_PAREN				&begin_paren_type_name
+	type_name				&type_value
+	RIGHT_PAREN				&end_paren_type_name
+
+	END_('paren_type_name') ;
+
+ambiguous_paren_type_name ::=
+
+	peek_paren_type_name
+	paren_type_name
+
+	END_('ambiguous_paren_type_name') ;
+
+peek_paren_type_name ::=
+
+	%PEEK_POSSIBLE_PAREN_TYPE_NAME
+	{ %PEEK_UNAMBIGUOUS_CONSTRUCT
+	| peek_actual_paren_type_name
+	}
+
+	END_('peek_paren_type_name') ;
+
+peek_actual_paren_type_name ::=
+
+	%BEGIN_LOOK_AHEAD
+	paren_type_name
+	%END_LOOK_AHEAD
+
+	END_('peek_actual_paren_type_name') ;
+
+---------------------------------------------------------------------------
+-- EXPRESSIONS
+---------------------------------------------------------------------------
+
+constant_expression ::=
+
+	expression				&set_constant_expression
+
+	END_('constant_expression') ;
+
+---------------------------------------------------------------------------
+
+comma_expression ::=
+
+	expression
+	[ COMMA 				&set_comma_op
+						&push_value_with_op
+	  expression	 			&binary_operation
+	] ...
+
+	END_('comma_expression') ;
+
+---------------------------------------------------------------------------
+
+expression_list ::=
+
+	expression				&set_argument_op
+						&push_value_with_op
+	[ COMMA
+	  { expression				&set_argument_op
+						&push_value_with_op
+	  | null_production			&warn_extra_argument_comma
+						&pop_marker
+	  }
+	] ...
+
+	END_('expression_list') ;
+
+---------------------------------------------------------------------------
+
+expression ::=
+
+						&push_marker
+	cast_expression
+	[ binary_operator 			&pop_for_precedence
+						&push_value_with_op
+	  cast_expression
+	] ...					&pop_all_values
+						&pop_marker
+
+	END_('expression') ;
+
+---------------------------------------------------------------------------
+
+binary_operator ::=
+
+	%PICK_BINARY_OP
+
+	{ PLUS
+	| MINUS
+	| STAR
+	| AND
+	| SLASH
+	| PERCENT
+	| LEFT_SHIFT
+	| RIGHT_SHIFT
+	| AND_AND
+	| OR_OR
+	| OR
+	| XOR
+	| LESS_THAN
+	| LESS_EQUAL
+	| GREATER_THAN
+	| GREATER_EQUAL
+	| EQUAL_EQUAL
+	| NOT_EQUAL
+	| ARROW_STAR
+	| EQUAL
+	| PLUS_EQUAL
+	| MINUS_EQUAL
+	| STAR_EQUAL
+	| SLASH_EQUAL
+	| PERCENT_EQUAL
+	| AND_EQUAL
+	| OR_EQUAL
+	| XOR_EQUAL
+	| LEFT_SHIFT_EQUAL
+	| RIGHT_SHIFT_EQUAL
+	| DOT_STAR
+        | QUESTION				&set_binary_op
+						&pop_for_precedence
+						&push_value_with_op
+	  comma_expression
+	  COLON					&affix_destructors
+	}					&set_binary_op
+
+	END_('binary_operator') ;
+
+---------------------------------------------------------------------------
+
+cast_expression ::=
+
+	%PICK_CAST_EXPRESSION
+
+	{ ambiguous_paren_type_name		&set_cast_op
+						&push_value_with_op
+	  cast_expression			&binary_operation
+	| unary_expression
+	}
+
+	END_('cast_expression') ;
+
+---------------------------------------------------------------------------
+
+unary_expression ::=
+
+	%PICK_UNARY_EXPRESSION
+
+	{ sizeof_expression
+	| allocation_expression
+	| deallocation_expression
+	| postfix_expression
+        | PLUS_PLUS			&set_unary_op &push_prefix
+	  cast_expression		&pop_prefix
+        | MINUS_MINUS			&set_unary_op &push_prefix
+	  cast_expression		&pop_prefix
+        | NOT				&set_unary_op &push_prefix
+	  cast_expression		&pop_prefix
+        | TILDE				&set_unary_op &push_prefix
+	  cast_expression		&pop_prefix
+        | PLUS				&set_unary_op &push_prefix
+	  cast_expression		&pop_prefix
+        | MINUS				&set_unary_op &push_prefix
+	  cast_expression		&pop_prefix
+        | STAR				&set_unary_op &push_prefix
+	  cast_expression		&pop_prefix
+        | AND				&set_unary_op &push_prefix
+	  cast_expression		&pop_prefix
+	}
+
+	END_('unary_expression') ;
+
+---------------------------------------------------------------------------
+
+sizeof_expression ::=
+
+	KW_SIZEOF				&set_sizeof_op
+						&push_prefix
+	{ ambiguous_paren_type_name
+	| unary_expression
+	}					&pop_prefix
+
+	END_('sizeof_expression') ;
+
+---------------------------------------------------------------------------
+
+allocation_expression ::=
+
+	%PEEK_ALLOCATION_EXPRESSION
+	[ simple_global_scope_qualifier ]
+	KW_NEW					&push_new
+	placement_and_type_name
+	new_initializer				&pop_new
+
+	END_('allocation_expression') ;
+
+placement_and_type_name ::=
+
+	{ new_type_name
+	| ambiguous_paren_type_name
+	| placement
+	  { new_type_name
+	  | paren_type_name
+	  }
+	}					&enter_type_for_new
+
+	END_('placement_and_type_name') ;
+
+placement ::=
+
+	LEFT_PAREN
+	expression_list				&pop_argument_values
+	RIGHT_PAREN				&enter_placement
+
+	END_('placement') ;
+
+new_type_name ::=
+
+	type_specifiers
+	[ new_declarator ]			&set_type_declaration
+
+	END_('new_type_name') ;
+
+new_declarator ::=
+
+	%PICK_NEW_DECLARATOR
+
+	{ reference new_declarator		&set_reference_type
+	| pointer new_declarator		&set_pointer_type
+	| member_pointer new_declarator		&set_member_pointer_type
+	| [ array_declarator ] ...
+	}
+
+	END_('new_declarator') ;
+
+---------------------------------------------------------------------------
+
+deallocation_expression ::=
+
+	%PEEK_DEALLOCATION_EXPRESSION
+	[ simple_global_scope_qualifier ]
+	KW_DELETE				&push_delete
+	[ LEFT_BRACKET
+	  { RIGHT_BRACKET
+	  | comma_expression
+	    RIGHT_BRACKET
+	  }					&enter_delete_dimension
+	]
+	cast_expression				&pop_delete
+
+	END_('deallocation_expression') ;
+
+---------------------------------------------------------------------------
+
+postfix_expression ::=
+
+	%PICK_POSTFIX_EXPRESSION
+
+	-- function_style_cast_expression
+
+	{ simple_type_specifier			&set_type_declaration
+						&type_value
+						&set_functional_cast_op
+						&push_value_with_op
+	  function_argument_list		&binary_operation
+
+	-- primary_expression/simple_expression
+
+	| CONSTANT 				&constant_value
+	| STRING				&constant_value
+	| KW_THIS				&set_this_name
+
+	-- primary_expression/primary_expression_name
+
+	| global_qualified_name			&ref_value
+--	| name					&ref_value
+
+	-- primary_expression/primary_expression_name/name
+
+	| IDENTIFIER				&set_simple_name
+						&ref_value
+	| qualified_name			&ref_value
+	| operator_or_conversion_function_name	&ref_value
+
+	-- primary_expression/parenthesized_expression
+
+	| LEFT_PAREN
+	  comma_expression
+	  RIGHT_PAREN
+	}
+
+	[ postfix_operator ] ...
+
+	END_('postfix_expression') ;
+
+---------------------------------------------------------------------------
+
+postfix_operator ::=
+
+	%PICK_POSTFIX_OP
+
+	{ array_subscript
+	| %PEEK_LEFT_PAREN			&set_call_op
+						&push_value_with_op
+	  function_argument_list		&binary_operation
+	| DOT
+	  { name
+	  | destructor_name
+	  }					&dot_value
+	| ARROW					&dereference_arrow
+	  { name
+	  | destructor_name
+	  }					&dot_value
+	| PLUS_PLUS				&postincrement_value
+	| MINUS_MINUS				&postdecrement_value
+	}
+
+	END_('postfix_operator') ;
+
+array_subscript ::=
+
+	LEFT_BRACKET				&set_ssadd_op
+						&push_value_with_op
+	comma_expression
+	RIGHT_BRACKET				&binary_operation
+						&dereference_value
+	END_('array_subscript_list') ;
+
+---------------------------------------------------------------------------
+
+function_argument_list ::=
+
+	LEFT_PAREN
+	{ RIGHT_PAREN
+	| expression_list RIGHT_PAREN
+	}					&pop_argument_values
+
+	END_('function_argument_list') ;
+
+---------------------------------------------------------------------------
+-- STATEMENTS
+---------------------------------------------------------------------------
+
+statement ::=
+
+	%PICK_STATEMENT
+
+	{ unambiguous_declaration_statement
+	| ambiguous_declaration_statement
+	| expression_statement
+	| labelled_statement
+	| break_statement
+	| case_statement
+	| continue_statement
+	| default_statement
+	| do_statement
+	| for_statement
+	| goto_statement
+	| if_statement
+	| return_statement
+	| switch_statement
+	| while_statement
+	| null_statement
+	| compound_statement
+	}
+
+	END_('statement') ;
+
+---------------------------------------------------------------------------
+
+labelled_statement ::=
+
+	IDENTIFIER				&set_simple_name
+						&set_label_definition
+	COLON
+	statement
+
+	END_('labelled_statement') ;
+
+---------------------------------------------------------------------------
+
+unambiguous_declaration_statement ::=
+
+	declaration_specifiers
+	{ declarator				&set_declaration
+	  %PICK_DECLARATION_STATEMENT_TAIL
+	  { EQUAL				&parse_initializer
+	    { COMMA
+	      init_declarator_list SEMI_COLON
+	    | SEMI_COLON
+	    }
+	  | LEFT_PAREN				&begin_class_initializer
+	    expression_list			&set_initializer_arguments
+	    RIGHT_PAREN				&end_class_initializer
+	    { COMMA
+	      init_declarator_list SEMI_COLON
+	    | SEMI_COLON
+	    }
+	  | null_production			&set_null_initializer
+	    { COMMA
+	      init_declarator_list SEMI_COLON
+	    | SEMI_COLON
+	    }
+	  }
+	| COMMA					&set_declaration
+	  init_declarator_list SEMI_COLON
+	| SEMI_COLON				&set_declaration
+	}
+
+	END_('unambiguous_declaration_statement') ;
+
+ambiguous_declaration_statement ::=
+
+	peek_declaration_statement
+	unambiguous_declaration_statement
+
+	END_('ambiguous_declaration_statement') ;
+
+peek_declaration_statement ::=
+
+	%BEGIN_LOOK_AHEAD
+	declaration_specifiers
+	[ declarator la_initializer ]
+	[ COMMA la_init_declarator_list ]
+	SEMI_COLON
+	%END_LOOK_AHEAD
+
+	END_('peek_declaration_statement') ;
+
+---------------------------------------------------------------------------
+
+expression_statement ::=			&statement_start
+
+	comma_expression
+	SEMI_COLON				&emit_expression
+
+	END_('expression_statement') ;
+
+---------------------------------------------------------------------------
+
+break_statement ::=				&statement_start
+
+	KW_BREAK				&emit_branch_exit
+	SEMI_COLON
+
+	END_('break_statement') ;
+
+case_statement ::=				&statement_start
+
+	KW_CASE
+	constant_expression
+	COLON					&define_switch_case
+	statement
+
+	END_('case_statement') ;
+
+continue_statement ::=				&statement_start
+
+	KW_CONTINUE				&emit_branch_continue
+	SEMI_COLON
+
+	END_('continue_statement') ;
+
+default_statement ::=				&statement_start
+
+	KW_DEFAULT
+	COLON					&define_switch_default
+	statement
+
+	END_('default_statement') ;
+
+do_statement ::=				&statement_start
+
+	KW_DO					&start_do_loop
+	controlled_statement
+	KW_WHILE				&emit_loop_continue_label
+	LEFT_PAREN
+	comma_expression
+	RIGHT_PAREN				&test_do_loop
+	SEMI_COLON				&finish_do_loop
+
+	END_('do_statement') ;
+
+for_statement ::=				&statement_start
+
+	KW_FOR
+	LEFT_PAREN
+	for_statement_initializer		&start_for_loop
+	{ SEMI_COLON
+	| comma_expression SEMI_COLON }		&test_for_loop
+	{ RIGHT_PAREN
+	| comma_expression RIGHT_PAREN }	&set_loop_expression
+	controlled_statement			&finish_for_loop
+
+	END_('for_statement') ;
+
+for_statement_initializer ::=			&set_for_loop_initializer
+
+	%PICK_FOR_STATEMENT_INITIALIZER
+
+	{ SEMI_COLON
+	| unambiguous_declaration_statement
+	| ambiguous_declaration_statement
+	| comma_expression SEMI_COLON		&emit_expression
+	}
+
+	END_('for_statement_initializer') ;
+
+goto_statement ::=				&statement_start
+
+	KW_GOTO
+	IDENTIFIER				&set_simple_name
+						&emit_goto
+	SEMI_COLON
+
+	END_('goto_statement') ;
+
+if_statement ::=				&statement_start
+
+	KW_IF					&start_if
+	LEFT_PAREN
+	comma_expression
+	RIGHT_PAREN				&if_header
+	controlled_statement
+	[ KW_ELSE				&else_header
+	  controlled_statement
+	]
+						&if_trailer
+
+	END_('if_statement') ;
+
+return_statement ::=				&statement_start
+
+	KW_RETURN
+	{ SEMI_COLON				&null_value
+	| comma_expression
+	  SEMI_COLON
+	}					&emit_return
+
+	END_('return_statement') ;
+
+switch_statement ::=				&statement_start
+
+	KW_SWITCH
+	LEFT_PAREN				&start_switch_loop
+	comma_expression
+	RIGHT_PAREN				&test_switch_loop
+	controlled_statement			&finish_switch_loop
+
+	END_('switch_statement') ;
+
+while_statement ::=				&statement_start
+
+	KW_WHILE				&start_while_loop
+	LEFT_PAREN
+	comma_expression
+	RIGHT_PAREN				&test_while_loop
+	controlled_statement			&finish_while_loop
+
+	END_('while_statement') ;
+
+null_statement ::=				&statement_start
+
+	SEMI_COLON
+
+	END_('null_statement') ;
+
+compound_statement ::=				&statement_start
+
+	LEFT_BRACE				&begin_block_body
+	[ statement ] ...
+	RIGHT_BRACE				&end_block_body
+
+	END_('compound_statement') ;
+
+---------------------------------------------------------------------------
+
+controlled_statement ::=
+
+	-- A controlled statement has its own scope if it's a
+	-- compound statement or if we're doing C++.
+	-- We avoid a redundant call to begin_block_body
+	-- when the controlled statement is a compound statement.
+
+	{ %PEEK_LAX_INITIALIZATION
+	  statement
+
+	| %PEEK_LEFT_BRACE
+	  compound_statement
+
+	| null_production			&begin_block_body
+	  statement				&end_block_body
+	}
+
+	END_('controlled_statement') ;
+
+---------------------------------------------------------------------------
+		
+%ENDTERMINALS
+
+---------------------------------------------------------------------------
+-- MAIN PRODUCTIONS
+---------------------------------------------------------------------------
+
+	compilation_unit		-- PAR_COMPILATION_UNIT
+	%END_MAIN_PRODUCTION
+
+	raw_function_body		-- PAR_RAW_FUNCTION_BODY
+	%END_MAIN_PRODUCTION
+
+	initializer_item		-- PAR_INITIALIZER_ITEM
+	%END_MAIN_PRODUCTION
+
+---------------------------------------------------------------------------
+        
+%END
+

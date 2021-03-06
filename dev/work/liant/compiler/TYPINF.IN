@@ -1,0 +1,58 @@
+/* C++ CXX_TYPE_INFO_IN - type information for symbols and values */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  04.01.91  DGM  005  Rearranged order of fields to avoid P$ASB calls.
+ *  09.14.90  DGM  004  Changed include file names and VOP names.
+ *  08.08.90  DGM  003  New type-node.
+ *  05.31.90  PKT  002  Added TYPE_INFO_T.BOUNDARY.
+ *  03.14.90  PKT  001  Added EXTRA_PTR_LEVEL and explanation.
+ *  01.16.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* TYPE_INFO_T
+/*
+/* This represents a data type in EXPAND_VALUE.  Other than the
+/* NOT_AN_LVALUE bit, it's got nothing which couldn't be done with
+/* a type node.  The supposed advantage of TYPE_INFO_T is that 
+/* EXPAND_VALUE doesn't have to allocate and deallocating a
+/* type-node every time it wants to tweak a type.
+/*
+/* Nevertheless, a TYPE_INFO_T is always based on a type-node type.
+/* But it is not necessarily the top type of that node which is
+/* signified -- DERIVED_TYPE_SKIP gives the number of derivation
+/* to skip in the type-node.  In addition, EXTRA_PTR_LEVEL may be
+/* set to indicate that the signified type is a pointer to the type.
+/* In this case, TOP_TYPE will be POINTER_DT.
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 TYPE_INFO_T,						/* 18 bytes */
+
+  2 TYPE			type (NID_T),
+  2 DERIVED_TYPE_SKIP		type (SHORT_T),
+  2 TOP_TYPE			type (TYPE_DATA_T),
+  2 EXTRA_PTR_LEVEL		type (BIT_T),
+  2 NOT_AN_LVALUE		type (BIT_T),
+  2 available_03		type (BIT_T),
+  2 available_04		type (BIT_T),
+  2 available_05		type (BIT_T),
+  2 available_06		type (BIT_T),
+  2 available_07		type (BIT_T),
+  2 available_08		type (BIT_T),
+  2 SIZE			type (LONG_T),
+  2 SIZE_UNITS			type (SHORT_T),
+  2 BOUNDARY			type (SHORT_T);
+

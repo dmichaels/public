@@ -1,0 +1,530 @@
+/* C++ newval.pl1 - Value-node utilities */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.01.92  PKT  002	Updated interface to ALLOC_DELETE_CXX_VALUE_NODE.
+ *  03.26.92  DGM  001	New value-node scheme.
+ *
+ *  11.20.90  TLF  000 
+ *       Original.  Cloned from util version.
+ *       This set of utilities actually performs the value
+ *       manipulations, instead of calling the util (or utl) versions.
+ *       GET_CPLUS_VAL has been modified from the util routine
+ *       so that the maximum number of values that can be in
+ *       use at any time is limited by the size of the value id
+ *       (a fixed bin(15), i.e., 32767 max), instead of the 
+ *       arbitrary limit of 1024 in the util version.
+ *
+ ************************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.01.92 002 NEWVAL');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG; 
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+CXX_VALUE_NODE_AREA		(XVALUE_WORD_SIZE)
+				type (LONG_T)
+				based (CXX_VALUE_NODE_PTR);
+
+declare
+
+CXX_VALUE_NODE_FREE_LIST	type (CXX_VID_T)
+				static internal initial (null ());
+
+/* ---------------------------------------------------------------------
+/* ALLOC_AND_COPY_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_AND_COPY_CXX_VALUE_NODE: procedure (V)
+			       returns   (type (CXX_VID_T))
+			       external  (X_ALLOC_AND_COPY_CXX_VALUE_NODE);
+
+	declare V type (CXX_VID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE = V->CXX_VALUE_NODE;
+	return (CXX_VALUE_NODE_PTR);
+	    
+end ALLOC_AND_COPY_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_EMPTY_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_EMPTY_CXX_VALUE_NODE: procedure ()
+			    returns   (type (CXX_VID_T))
+			    external  (X_ALLOC_EMPTY_CXX_VALUE_NODE);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_EMPTY_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_CXX_VALUE_NODE: procedure (OP)
+		      returns   (type (CXX_VID_T))
+		      external  (X_ALLOC_CXX_VALUE_NODE);
+
+	declare
+		OP	type (SHORT_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= OP;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_CXX_VALUE_NODE_L
+/* ------------------------------------------------------------------- */
+
+ALLOC_CXX_VALUE_NODE_L: procedure (OP, LEFT)
+			returns   (type (CXX_VID_T))
+			external  (X_ALLOC_CXX_VALUE_NODE_L);
+
+	declare
+		OP	type (SHORT_T),
+		LEFT	type (CXX_VID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= OP;
+	CXX_VALUE_NODE.LEFT		= LEFT;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_CXX_VALUE_NODE_L;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_CXX_VALUE_NODE_LR
+/* ------------------------------------------------------------------- */
+
+ALLOC_CXX_VALUE_NODE_LR: procedure (OP, LEFT, RIGHT)
+			 returns   (type (CXX_VID_T))
+			 external  (X_ALLOC_CXX_VALUE_NODE_LR);
+
+	declare
+		OP	type (SHORT_T),
+		LEFT	type (CXX_VID_T),
+		RIGHT	type (CXX_VID_T);
+
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= OP;
+	CXX_VALUE_NODE.LEFT		= LEFT;
+	CXX_VALUE_NODE.RIGHT		= RIGHT;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_CXX_VALUE_NODE_LR;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_CXX_VALUE_NODE_LRT
+/* ------------------------------------------------------------------- */
+
+ALLOC_CXX_VALUE_NODE_LRT: procedure (OP, LEFT, RIGHT, THIRD)
+			  returns   (type (CXX_VID_T))
+			  external  (X_ALLOC_CXX_VALUE_NODE_LRT);
+
+	declare
+		OP	type (SHORT_T),
+		LEFT	type (CXX_VID_T),
+		RIGHT	type (CXX_VID_T),
+		THIRD	type (CXX_VID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= OP;
+	CXX_VALUE_NODE.LEFT		= LEFT;
+	CXX_VALUE_NODE.RIGHT		= RIGHT;
+	CXX_VALUE_NODE.THIRD		= THIRD;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_CXX_VALUE_NODE_LRT;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_SYMBOL_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_SYMBOL_CXX_VALUE_NODE: procedure (OP, SYMBOL_NODE_ID)
+			     returns   (type (CXX_VID_T))
+			     external  (X_ALLOC_SYMBOL_CXX_VALUE_NODE);
+
+	declare
+		OP		type (SHORT_T),
+		SYMBOL_NODE_ID	type (NID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= OP;
+	CXX_VALUE_NODE.LEFT_NID		= SYMBOL_NODE_ID;
+	CXX_VALUE_NODE.LEFT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.LEFT_IS_NOT_VID	= TRUE;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_SYMBOL_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_REF_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_REF_CXX_VALUE_NODE: procedure (SYMBOL_NODE_ID)
+			  returns   (type (CXX_VID_T))
+			  external  (X_ALLOC_REF_CXX_VALUE_NODE);
+
+	declare SYMBOL_NODE_ID type (NID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= REF_VO;
+	CXX_VALUE_NODE.LEFT_NID		= SYMBOL_NODE_ID;
+	CXX_VALUE_NODE.LEFT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.LEFT_IS_NOT_VID	= TRUE;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_REF_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_LABEL_REF_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_LABEL_REF_CXX_VALUE_NODE: procedure (SYMBOL_NODE_ID)
+				returns   (type (CXX_VID_T))
+				external  (X_ALLOC_LABEL_REF_CXX_VALUE_NODE);
+
+	declare SYMBOL_NODE_ID type (NID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= LABEL_VO;
+	CXX_VALUE_NODE.LEFT_NID		= SYMBOL_NODE_ID;
+	CXX_VALUE_NODE.LEFT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.LEFT_IS_NOT_VID	= TRUE;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_LABEL_REF_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_DOT_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_DOT_CXX_VALUE_NODE: procedure (LEFT, RIGHT_NID)
+			  returns   (type (CXX_VID_T))
+			  external  (X_ALLOC_DOT_CXX_VALUE_NODE);
+	declare
+		LEFT		type (CXX_VID_T),
+		RIGHT_NID	type (NID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= DOT_VO;
+	CXX_VALUE_NODE.LEFT		= LEFT;
+	CXX_VALUE_NODE.RIGHT_NID	= RIGHT_NID;
+	CXX_VALUE_NODE.RIGHT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.RIGHT_IS_NOT_VID	= TRUE;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_DOT_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_MEMBER_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_MEMBER_CXX_VALUE_NODE: procedure (LEFT_NID, RIGHT_NID)
+			     returns   (type (CXX_VID_T))
+			     external  (X_ALLOC_MEMBER_CXX_VALUE_NODE);
+	declare
+		LEFT_NID	type (NID_T),
+		RIGHT_NID	type (NID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= MEMBER_PTR_VO;
+	CXX_VALUE_NODE.LEFT_NID		= LEFT_NID;
+	CXX_VALUE_NODE.LEFT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.LEFT_IS_NOT_VID	= TRUE;
+	CXX_VALUE_NODE.RIGHT_NID	= RIGHT_NID;
+	CXX_VALUE_NODE.RIGHT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.RIGHT_IS_NOT_VID	= TRUE;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_MEMBER_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_NEW_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_NEW_CXX_VALUE_NODE: procedure (LEFT_NID)
+			  returns   (type (CXX_VID_T))
+			  external  (X_ALLOC_NEW_CXX_VALUE_NODE);
+	declare
+		LEFT_NID	type (NID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= NEW_VO;
+	CXX_VALUE_NODE.LEFT_NID		= LEFT_NID;
+	CXX_VALUE_NODE.LEFT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.LEFT_IS_NOT_VID	= TRUE;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_NEW_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_DELETE_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_DELETE_CXX_VALUE_NODE: procedure (LEFT_NID)
+			     returns   (type (CXX_VID_T))
+			     external  (X_ALLOC_DELETE_CXX_VALUE_NODE);
+	declare
+		LEFT_NID	type (NID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= DELETE_VO;
+	CXX_VALUE_NODE.LEFT_NID		= LEFT_NID;
+	CXX_VALUE_NODE.LEFT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.LEFT_IS_NOT_VID	= TRUE;
+	CXX_VALUE_NODE.RIGHT_SHORT	= 0;
+	CXX_VALUE_NODE.RIGHT_IS_NOT_VID	= TRUE;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_DELETE_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_INIT_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_INIT_CXX_VALUE_NODE: procedure (LEFT_NID, RIGHT)
+			   returns   (type (CXX_VID_T))
+			   external  (X_ALLOC_INIT_CXX_VALUE_NODE);
+	declare
+		LEFT_NID	type (NID_T),
+		RIGHT		type (CXX_VID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= INITIAL_VO;
+	CXX_VALUE_NODE.LEFT_NID		= LEFT_NID;
+	CXX_VALUE_NODE.LEFT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.LEFT_IS_NOT_VID	= TRUE;
+	CXX_VALUE_NODE.RIGHT		= RIGHT;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_INIT_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_INIT_REF_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_INIT_REF_CXX_VALUE_NODE: procedure (LEFT_NID, RIGHT_NID)
+			       returns   (type (CXX_VID_T))
+			       external  (X_ALLOC_INIT_REF_CXX_VALUE_NODE);
+	declare
+		LEFT_NID	type (NID_T),
+		RIGHT_NID	type (NID_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= INITIAL_VO;
+	CXX_VALUE_NODE.LEFT_NID		= LEFT_NID;
+	CXX_VALUE_NODE.LEFT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.LEFT_IS_NOT_VID	= TRUE;
+	CXX_VALUE_NODE.RIGHT_NID	= RIGHT_NID;
+	CXX_VALUE_NODE.RIGHT_IS_NID	= TRUE;
+	CXX_VALUE_NODE.RIGHT_IS_NOT_VID	= TRUE;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_INIT_REF_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* ALLOC_CONSTANT_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+ALLOC_CONSTANT_CXX_VALUE_NODE: procedure (LEFT, RIGHT_SHORT)
+			       returns   (type (CXX_VID_T))
+			       external  (X_ALLOC_CONSTANT_CXX_VALUE_NODE);
+	declare
+		LEFT		type (CXX_VID_T),
+		RIGHT_SHORT	type (SHORT_T);
+
+	if CXX_VALUE_NODE_FREE_LIST ^= null () then do;
+		CXX_VALUE_NODE_PTR = CXX_VALUE_NODE_FREE_LIST;
+		CXX_VALUE_NODE_FREE_LIST = CXX_VALUE_NODE.LEFT;
+	end;
+	else	allocate CXX_VALUE_NODE set (CXX_VALUE_NODE_PTR);
+	CXX_VALUE_NODE_AREA = 0;
+
+	CXX_VALUE_NODE.OP		= CONSTANT_VO;
+	CXX_VALUE_NODE.LEFT		= LEFT;
+	CXX_VALUE_NODE.RIGHT_SHORT	= RIGHT_SHORT;
+	CXX_VALUE_NODE.RIGHT_IS_NOT_VID	= TRUE;
+        CXX_VALUE_NODE.COUNT		= 1;
+        CXX_VALUE_NODE.IN_USE		= TRUE;
+	return (CXX_VALUE_NODE_PTR);
+
+end ALLOC_CONSTANT_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* FREE_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+FREE_CXX_VALUE_NODE: procedure (V) external (X_FREE_CXX_VALUE_NODE);
+
+	declare V type (CXX_VID_T);
+
+	V->CXX_VALUE_NODE.LEFT = CXX_VALUE_NODE_FREE_LIST;
+	CXX_VALUE_NODE_FREE_LIST = V;
+
+end FREE_CXX_VALUE_NODE;
+
+/* ---------------------------------------------------------------------
+/* PURGE_CXX_VALUE_NODE
+/* ------------------------------------------------------------------- */
+
+PURGE_CXX_VALUE_NODES: procedure ()
+		       external  (X_PURGE_CXX_VALUE_NODES);
+
+end PURGE_CXX_VALUE_NODES;
+

@@ -1,0 +1,3203 @@
+/* C++ parini.pl1 - Initializer parser */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  10.20.92  DGM  067	Bit-field initialization fixes (from 054)
+ *			for little-endian machines (e.g. i386/486);
+ *			This is now incredibly hackish --
+ *			I wish I had time to clean it up ...
+ *  10.06.92  DGM  066	New interface to WRITE_RELOCATION_DATA to
+ *			accomodate the relocation symbol reordering
+ *			required by the deficient UNIX-V output-editor.
+ *  08.19.92  DGM  065	Fixes for initializing (non-static) anonymous
+ *			union members of classes.
+ *  06.04.92  DGM  064	Fix for setting initialized data which isn't
+ *			really initialized (until constructor calls)
+ *			to zeros (e.g. arrays of objects of class type).
+ *  05.19.92  DGM  063	Do not emit statement-id ops for global scope
+ *			initializations.
+ *  05.14.92  DGM  062R	More regression fixes.
+ *  05.13.92  DGM  062 	More regression fixes.
+ *  05.12.92  DGM  061R	Fix for regression (pkt/init59.cxx) in 059.
+ *  05.12.92  DGM  061	Set SYM_NODE.INITIAL_AT to TRUE and SYM_NODE.
+ *			VALUE to a dummy DATA_INITIAL_NODE for:
+ *				struct T { T(int x); }; T (1);
+ *  05.07.92  PKT  060R	Fix initialization of array of struct, when
+ *			array dimension unspecified, regression from 059.
+ *			Also fix aggregate initialized w/1 value.
+ *  04.13.92  PKT  060	Complete initialization of aggregates objects
+ *			from incomplete initialization lists.
+ *  04.30.92  DGM  059  Fix for Plum Hall sampler test a040.c.
+ *			Fix for initializing automatic structure
+ *			containing both constant and non-constant
+ *			(fixes PKTs init56.cxx test & part of init55.cxx).
+ *  04.19.92  PKT  058	Merged 054->055 with 054->057.
+ *  03.27.92  PKT  057	Updated.
+ *  03.26.92  DGM  056  New value-node scheme.
+ *  03.31.92  DGM  055  Yet another bit-field initialization fix
+ *			(orthogonal to previous fixes).
+ *  03.24.92  DGM  054  Bit-field initialization fixes.
+ *  03.17.92  DGM  053  Give violations for non-constant static/global
+ *			initialization in -classicc & -ansic mode.
+ *  01.24.91  DGM  052  Changed PAR_DRIVER to PARSE_INITIALIZER_ITEM.
+ *  01.08.92  PKT  051	Fixed front end compiler crash.
+ *  01.13.92  DGM  050  (Re)Initialize ACTUAL_CURRENT_SCOPE_TYPE upon
+ *			each call to PARSE_INITIALIZER; this fixed a
+ *			bug which only showed up on UNIX/486/386
+ *			systems (Eckels/Saks test cbp017.cpp failed).
+ *  11.20.91  DGM  049  Fix for: class A { char *s; A (char *); };
+ *			         f () { A x[] = { "a", "b", "c" };
+ *  11.12.91  DGM  045  Updated for new GET_INTEGRAL_CONSTANT_VALUE.
+ *  10.03.91  DGM  044  Updated for short enums.
+ *  09.30.91  PKT  043  Loosened restrictions determining which classes
+ *			can be initialized as aggregates.  Fixed bugs
+ *			to give correct scope to empty initializer,
+ *			and to watch out for null current symbol.
+ *  09.06.91  DGM  042  Statement-id fix for CodeWatch.
+ *  08.23.91  DGM  041  Set SYM_NODE.HAS_BEEN_SET_OR_ALIASED for -lint
+ *			used-before-set warning.
+ *  08.19.91  DGM  040  Picked up ANSI-C FE changes (from 06.05.90)
+ *			for floating point constant folding.
+ *  08.14.91  TLF  039R Fixed bug in local static destructors.
+ *  07.30.91  TLF  039  Modified to support local static destructors.
+ *  07.24.91  DGM  038  Updated.
+ *  07.18.91  DGM  037  More StatementId work for CodeWatch.
+ *  07.08.91  DGM  036  Added statement ids for initializers.
+ *  06.28.91  PKT  035  Eliminated STRING_VO and SET_INITIALIZER_STRING,
+ *			in favor of processing all string literals as 
+ *			subexpressions, then fudging char array inits.
+ *			Fix to initializers of const symbols.
+ *			Fixed size of array initialized w/ string literal.
+ *  05.10.91  PKT  034  Fixed THIS_SYMBOL confusion.
+ *  05.02.91  DGM  033  Fix in INIT_STATIC for "char x[]={0};".
+ *  04.24.91  PKT  032  Updated.
+ *  04.18.91  DGM  031  Added missing check for SCHAR_BT.
+ *  03.12.91  DGM  030  Updated WRITE_RELOCATION_DATA call.
+ *  03.08.91  PKT  029  Fixed for aggregate value in initial value list.
+ *  02.21.91  DGM  028  Fix for char s[] = "abc" in INIT_ARRAY_OF_CHAR.
+ *  02.21.91  PKT  027  Major changes for fixes and for member pointers. 
+ *  02.11.91  DGM  026  Minor fix in INIT_STRUCTURE & END_INITIALIZATION,
+ *			and check for uninitialized "const" array.
+ *  01.31.91  DGM  025  Check for ``char s[4] = "asdf";'' which is legal
+ *			in ANSI-C but illegal in C++ (C++ARM, sec.8.4.2).
+ *  01.11.91  PKT  024  Updated.
+ *  01.10.91  DGM  023  Evaluate a static member initializer in the scope
+ *			of its containing class (C++ARM, sec.8.4, p.150).
+ *  12.17.90  DGM  022  Integral const value in SYM_NODE.CONST_INITIALIZER.
+ *  12.10.90  TLF  021  Bug fix in INITIALIZE_FROM_ARGUMENT_LIST.  If the
+ *                      value returned from GET_CONSTRUCTOR_VALUE is an
+ *                      UNINITIALIZED_VO, then there was no initial value,
+ *                      and we do not generate the first-time test and
+ *                      jump code.
+ *  11.19.90  TLF  020  Many changes to support non-constant initializers
+ * 			at file scope.
+ *  11.15.90  DGM  019  Fix in INIT_STATIC (for completing array types).
+ *  11.02.90  TLF  018  Many changes to support non-constant initializers.
+ *  10.17.90  PKT  017  Bug fix.
+ *  10.12.90  DGM  016  Short circuit in CHECK_SYMBOL_DEFINITION.
+ *  10.10.90  DGM  015  Fix for initializing automatic arrays.
+ *  09.14.90  DGM  014  Changed include file names and VOP names.
+ *  09.13.90  DGM  013  Changed xxx_SC names to xxx_ST.
+ *  09.05.90  PKT  012  Updated for variable-sized array dimensions.
+ *  08.31.90  DGM  011  Minor fix in INIT_STATIC.
+ *  08.29.90  DGM  010  Optionally suppress uninitialized const
+ *			diagnostic with SW_X_UNINITIALIZED_CONST.
+ *  08.15.90  DGM  009  New type-node.  And PKT changes in INITIALIZE_
+ *			FROM_ARG_LIST and MAYBE_SYMBOL_DEFINITION.
+ *  08.07.90  PKT  008  Revised for more destruction support.  Added 
+ *			CHECK_SYMBOL_DEFINITION and MAYBE_SYMBOL_DEFINITION.
+ *  07.10.90  PKT  007  Added destruction of automatic objects.
+ *  06.19.90  PKT  006  Fixed static initialization bug.
+ *  06.14.90  PKT  005  Fixes relating to storage class & tentative defns.
+ *  06.06.90  DGM  004  Updated for the new utilities.
+ *  05.31.90  PKT  003  Added INITIALIZE_FROM_ARGUMENT_LIST.
+ *  05.17.90  DGM  002  Call COMPLETE_ARRAY_TYPE to fill in unspecified
+ *			array dimension rather than setting it here.
+ *  05.02.90  DGM  001  Use SYM_NODE.IN_INITIALIZER to guard against
+ *			error for assigning to (initializing) a "const".
+ *  02.19.90  DGM  000  Original; derived from ANSI-C dinit.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 10.20.92 067 PARINI');
+
+/* ---------------------------------------------------------------------
+/* Miscellaneous development notes
+/*
+/* The are 12 general cases to deal with.
+/*
+/*   1. Global constant scalar initialization.
+/*	The scalar value will simply resides
+/*	in the appropriate place in the data section.
+/*   2. Global constant aggregate initialization.
+/*	The values comprising the aggregate will simply reside
+/*	in the appropriate place in the data section.
+/*   3. Local static constant scalar initialization.
+/*	The scalar value will simply reside
+/*	in the appropriate place in the data section (like #1).
+/*   4. Local static constant aggregate initialization.
+/*	The values comprising the aggregate will simply reside
+/*	in the appropriate place in the data section (like #2).
+/*   5. Local automatic constant scalar initialization.
+/*	An appropriate assignment will be generated to
+/*	set the value of the scalar at the start of the function.
+/*   6. Local automatic constant aggregate initialization.
+/*	An appropriate block-copy will be generated to copy the values
+/*	comprising the aggregate from a place in the data section
+/*	to the automatic aggregate variable.
+/*
+/*   7. Global non-constant scalar initialization.
+/*	An appropriate assignment will be generated and placed
+/*	in some global start-up routine, e.g. __init_globals__.
+/*	N.B. this will require the ability to "go back" in the op-stream.
+/*   8. Global non-constant aggregate initialization.
+/*	A combination of assignments and/or block-copy operations
+/*	will be generated and placed in __init_globals__.
+/*	N.B. this will require the ability to "go back" in the op-stream.
+/*   9. Local static non-constant scalar initialization.
+/*	An appropriate assignment will be generated to set the
+/*	value of the scalar the *first* time the function is called only.
+/*  10. Local static non-constant aggregate initialization.
+/*	A combination of assignments and/or block-copy operations
+/*	will be generated to fill in the values comprising the aggregate
+/*	the *first* time the function is called only.
+/*  11. Local automatic non-constant scalar initialization.
+/*	An appropriate assignment will be generated to
+/*	set the value of the scalar at the start of the function (like #5).
+/*  12. Local automatic non-constant aggregate initialization.
+/*	An appropriate block-copy will be generated to copy the values
+/*	comprising the aggregate from a place in the data section
+/*	to the automatic aggregate variable (like #6).
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_UTL_ROUNDU_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_DATA_INITIAL_FILE_PKG;
+%include CXX_INITIALIZE_STRING_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_DECLARATION_STACK_PKG;
+%include CXX_LEXER_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_SET_SCOPE_PKG;
+%include CXX_SCOPE_STACK_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_TARGET_DATA_CONVERSION_PKG;
+%include CXX_PARSER_PKG;
+%include CXX_BIND_EXPRESSION_UTL_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;		/* for EMIT_EXPRESSION! */
+%include CXX_PROCESS_EXPRESSION_PKG;		/* for STRING_VALUE! */
+%include CXX_PROCESS_DECLARATION_PKG;		/* for STRING_VALUE! */
+%include CXX_CLASS_UTL_PKG;
+%include CXX_OVERLOAD_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_CHECK_FLOW_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PROCESS_BASE_MBR_INIT_PKG;
+
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_COPY_VALUE_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_EXPAND_VALUE_PKG;
+%include CXX_CHECK_REFERENCE_TYPE_PKG;
+%include CXX_CONVERT_VALUE_PKG;
+%include CXX_EVALUATE_POINTER_PKG;
+%include CXX_EVALUATE_INTEGER_PKG;
+%include CXX_INTEGER_VALUE_PKG;
+%include CXX_MEMBER_POINTER_PKG;
+%include CXX_BASSYM_PKG;
+%include CXX_PSECT_PKG;
+%include CXX_SOURCE_MGR_PKG;
+
+%include CXX_DUMP_VALUE_TREE_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local definitions
+/* ------------------------------------------------------------------- */
+
+%replace NULL_ITEM			by '10000000'B;
+%replace BRACE_ITEM			by '01000000'B;
+%replace LEFT_BRACE_ITEM		by '01100000'B;
+%replace RIGHT_BRACE_ITEM		by '01010000'B;
+%replace COMMA_ITEM			by '00001000'B;
+%replace EXPRESSION_ITEM		by '00000100'B;
+%replace CONSTANT_EXPRESSION_ITEM	by '00000110'B;
+
+/* ---------------------------------------------------------------------
+/* Local type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+1 INITIALIZER_DATA_T,
+  2 union_item			union,
+    3 ITEM			type (BYTE_BITS_T),
+    3 item_bits,
+      4 IS_NULL			type (BIT_T),
+      4 IS_BRACE		type (BIT_T),
+      4 IS_LEFT_BRACE		type (BIT_T),
+      4 IS_RIGHT_BRACE		type (BIT_T),
+      4 IS_COMMA		type (BIT_T),
+      4 IS_EXPRESSION		type (BIT_T),
+      4 IS_CONSTANT_EXPRESSION	type (BIT_T),
+  2 union_value			union,
+    3 CONSTANT_VALUE		type (LONG_T),
+    3 EXPRESSION_VALUE		type (CXX_VID_T);
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+CURRENT_INITIALIZER_ITEM 	type (INITIALIZER_DATA_T) static internal,
+END_OF_INITIALIZER    	 	type (BOOL_T) static internal initial (FALSE),
+THIS_REPEAT     	 	type (SHORT_T) static internal initial (0),
+AGGREGATE_LIST_OPENED	 	type (BOOL_T) static internal initial (FALSE);
+
+declare
+
+BASE_SYMBOL			type (NID_T) static internal,
+BASE_DIF_OFFSET			type (LONG_T) static internal,
+CURRENT_DIF_OFFSET		type (LONG_T) static internal,
+BLOCK_MOVE_LABEL		type (CXX_VID_T) static internal,
+NON_CONST_INIT_LABEL    	type (CXX_VID_T) static internal,
+AGGREGATE_DONE_LABEL    	type (CXX_VID_T) static internal,
+CONST_INIT			type (BOOL_T) static internal,
+DIF_INIT			type (BOOL_T) static internal,
+ACTUAL_CURRENT_SCOPE_TYPE	type (SHORT_T) static internal;
+
+/* ---------------------------------------------------------------------
+/* PARSE_INITIALIZER
+/* ------------------------------------------------------------------- */
+
+PARSE_INITIALIZER: procedure external (X_PARSE_INITIALIZER);
+
+	ACTUAL_CURRENT_SCOPE_TYPE = NULL_SCOPE;
+
+	call INITIALIZE_STATEMENT_QUEUE ();
+
+	if CURRENT_SCOPE_TYPE ^= GLOBAL_SCOPE then
+		call EMIT_STATEMENT_ID ();
+	BASE_SYMBOL = CURRENT_SYMBOL;
+	call CHECK_SYMBOL_DEFINITION ();
+	call BEGIN_INITIALIZATION ();
+	call SAVE_DECLARATION_STATE ();
+	call DO_INITIALIZATION ();
+	call RESTORE_DECLARATION_STATE ();
+	call END_INITIALIZATION ();
+
+end PARSE_INITIALIZER;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_INITIALIZATION
+/* DO_INITIALIZATION
+/* END_INITIALIZATION
+/* ------------------------------------------------------------------- */
+
+declare
+
+STATIC_INITIAL		type (BOOL_T) static internal initial (FALSE),
+AGGREGATE_INITIAL	type (BOOL_T) static internal initial (FALSE);
+
+/* ---------------------------------------------------------------------
+/* BEGIN_INITIALIZATION 
+/*
+/* Set-up to do the initialization on the currently paged in symbol.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BEGIN_INITIALIZATION: procedure internal;
+
+	declare
+		STORAGE_CLASS		type (SHORT_T),
+		ENCLOSING_SCOPE_TYPE	type (SHORT_T),
+		TOP_TYPE		type (SHORT_T),
+		IS_UNION		type (BOOL_T);
+
+	BLOCK_MOVE_LABEL = NULL_CXX_VID;
+	CONST_INIT = FALSE;
+	DIF_INIT = FALSE;
+
+	/* See if this symbol has already been initialized */
+
+	if SYM_NODE.INITIAL_AT then do;
+		if ^SW_TENTATIVE_DEFN then do;
+			/*
+			/* Error; redefinition; already diagnosed.
+			/**/
+			;
+		end;
+		else 	call SEMANTIC_ERROR (ERR_DUP_INITIAL);
+	end;
+
+	/* Note gotos which might bypass this initialization */
+
+	call NOTE_BYPASSING_GOTOS ((CURRENT_NODE_ID));
+
+	/* Get/set the pertinent symbol data */
+
+	STORAGE_CLASS		= rank (SYM_NODE.STORAGE_CLASS);
+	ENCLOSING_SCOPE_TYPE	= rank (SYM_NODE.ENCLOSING_SCOPE_TYPE);
+	TOP_TYPE		= rank (SYM_NODE.TOP_TYPE.CODE);
+	IS_UNION		= FALSE;
+
+	/* Set the IS_UNION flag appropriately */
+
+	do while (TOP_TYPE = UNION_BT);
+		/*
+		/* This is union, get the sym-node of its first member.
+		/**/
+		IS_UNION = TRUE;
+		call SET_SYM_NODE_R (SYM_NODE.TOP_TYPE.TAG_SYMBOL);
+		call SET_SYM_NODE_R (GET_FIRST_MEMBER (NODE_PTR));
+		TOP_TYPE = rank (SYM_NODE.TOP_TYPE.CODE);
+	end;
+	
+	if (TOP_TYPE = ARRAY_DT) |
+	   (TOP_TYPE = CLASS_BT) |
+	   (TOP_TYPE = STRUCT_BT) then
+		AGGREGATE_INITIAL = TRUE;
+	else	AGGREGATE_INITIAL = FALSE;
+
+        if IS_UNION then do;
+		call SET_SYM_NODE (CURRENT_SYMBOL);
+		TOP_TYPE = UNION_BT;
+		AGGREGATE_INITIAL = TRUE;
+	end;
+
+	STATIC_INITIAL = DETERMINE_STATIC (STORAGE_CLASS,
+					   ENCLOSING_SCOPE_TYPE,
+				  	   AGGREGATE_INITIAL);
+	call START_SAVING_STRINGS ();
+
+end BEGIN_INITIALIZATION;
+
+/* ---------------------------------------------------------------------
+/* GET_FIRST_MEMBER 
+/*
+/* Return the sym-node id representing the first member to initialize
+/* of the class, struct, or union represented by the sym-node pointed
+/* to by the given pointer SYMBOL_PTR.  Preserves current-node-id.
+/*
+/* N.B. The reason we can't just start with SYM_NODE.FIELD1 of the
+/* class symbol and traverse through the members via SYM_NODE.BROTHER
+/* is that we have to handle anonymous union members which are not
+/* on this non-static-data-member list.
+/* ------------------------------------------------------------------- */
+
+GET_FIRST_MEMBER: procedure (CLASS_PTR) returns (type (NID_T)) internal;
+
+	declare
+		CLASS_PTR		type (POINTER_T);
+	declare
+		P			type (POINTER_T),
+		(SYMBOLS, S, NEXT_S, M)	type (NID_T);
+
+	call GET_SCOPE_NODE_R (CLASS_PTR->SYM_NODE.DEFINED_SCOPE, P);
+	SYMBOLS = P->SCOPE_NODE.SYMBOLS;
+	call RELEASE_SCOPE_NODE (CLASS_PTR->SYM_NODE.DEFINED_SCOPE);
+	do S = SYMBOLS repeat (NEXT_S) while (S ^= NULL_NID);
+		call GET_SYM_NODE_R (S, P);
+		if P->SYM_NODE.IS_NON_STATIC_DATA_MEMBER then do;
+			call RELEASE_SYM_NODE (S);
+			return (S);
+		end;
+		else if P->SYM_NODE.IS_ANON_UNION_TAG &
+			(P->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST))
+		then do;
+			M = GET_FIRST_MEMBER (P);
+			call RELEASE_SYM_NODE (S);
+			return (M);
+		end;
+		else do;
+			NEXT_S = P->SYM_NODE.NEXT_SYMBOL;
+			call RELEASE_SYM_NODE (S);
+		end;
+	end;
+	return (CLASS_PTR->SYM_NODE.FIELD1);
+
+end GET_FIRST_MEMBER;
+
+/* ---------------------------------------------------------------------
+/* GET_NEXT_MEMBER 
+/*
+/* Return the sym-node id representing the next member to initialize
+/* for the containing class, struct, or union of the current member
+/* being initialized represented by the sym-node pointed to by the
+/* given pointer CURRENT_MEMBER_PTR; return NULL_NID if there are
+/* no more members to initialize.  Preserves current-node-id.
+/*
+/* N.B. The reason we can't just start with SYM_NODE.FIELD1 of the
+/* class symbol and traverse through the members via SYM_NODE.BROTHER
+/* is that we have to handle anonymous union members which are not
+/* on this non-static-data-member list.
+/* ------------------------------------------------------------------- */
+
+GET_NEXT_MEMBER: procedure (CURRENT_MEMBER_PTR)
+		 returns   (type (NID_T))
+		 internal;
+	declare
+		CURRENT_MEMBER_PTR	type (POINTER_T);
+	declare
+		(P, Q, R)		type (POINTER_T),
+		(MEMBER, NEXT_MEMBER)	type (NID_T),
+		(S, NEXT_S, PREV_S, M)	type (NID_T);
+
+	if CURRENT_MEMBER_PTR->SYM_NODE.IS_UNION_MEMBER then do;
+		if ^CURRENT_MEMBER_PTR->SYM_NODE.IS_ANON_UNION_MEMBER then
+			return (NULL_NID);
+		PREV_S = CURRENT_MEMBER_PTR->SYM_NODE.FATHER;
+		do S = PREV_S repeat (NEXT_S) while (S ^= NULL_NID);
+			call GET_SYM_NODE_R (S, P);
+			if ^P->SYM_NODE.IS_ANON_UNION_TAG then do;
+				if P->SYM_NODE.IS_UNION_TAG then do;
+					call RELEASE_SYM_NODE (S);
+					return (NULL_NID);
+				end;
+				else if P->SYM_NODE.IS_AGGREGATE_TAG then do;
+					call GET_SYM_NODE_R (PREV_S, Q);
+					NEXT_MEMBER = Q->SYM_NODE.NEXT_SYMBOL;
+					call RELEASE_SYM_NODE (PREV_S);
+					goto DO_GET_NEXT_MEMBER;
+				end;
+				else do;
+					call RELEASE_SYM_NODE (S);
+					return (NULL_NID);
+				end;
+			end;
+			PREV_S = S;
+			/* NEXT_S = P->SYM_NODE.ENCLOSING_SCOPE_OWNER; */
+			call GET_SCOPE_NODE_R (P->SYM_NODE.DEFINED_SCOPE, Q);
+			call GET_SCOPE_NODE_R
+			     (Q->SCOPE_NODE.ENCLOSING_SCOPE, R);
+			NEXT_S = R->SCOPE_NODE.OWNER;
+			call RELEASE_SCOPE_NODE
+			     (Q->SCOPE_NODE.ENCLOSING_SCOPE);
+			call RELEASE_SCOPE_NODE (P->SYM_NODE.DEFINED_SCOPE);
+			call RELEASE_SYM_NODE (S);
+		end;
+		return (NULL_NID);
+	end;
+	else	NEXT_MEMBER = CURRENT_MEMBER_PTR->SYM_NODE.NEXT_SYMBOL;
+
+	DO_GET_NEXT_MEMBER:
+
+	do S = NEXT_MEMBER repeat (NEXT_S) while (S ^= NULL_NID);
+		call GET_SYM_NODE_R (S, P);
+		if P->SYM_NODE.IS_NON_STATIC_DATA_MEMBER then do;
+			call RELEASE_SYM_NODE (S);
+			return (S);
+		end;
+		else if P->SYM_NODE.IS_ANON_UNION_TAG &
+			(P->SYM_NODE.STORAGE_CLASS ^= byte (STATIC_ST))
+		then do;
+			MEMBER = GET_FIRST_MEMBER (P);
+			call RELEASE_SYM_NODE (S);
+			return (MEMBER);
+		end;
+		else do;
+			NEXT_S = P->SYM_NODE.NEXT_SYMBOL;
+			call RELEASE_SYM_NODE (S);
+		end;
+	end;
+	return (CURRENT_MEMBER_PTR->SYM_NODE.BROTHER);
+
+end GET_NEXT_MEMBER;
+
+/* ---------------------------------------------------------------------
+/* DETERMINE_STATIC 
+/*
+/* Determine whether CURRENT_SYMBOL is static.
+/* ------------------------------------------------------------------- */
+
+DETERMINE_STATIC: procedure (STORAGE_CLASS, 
+			     ENCLOSING_SCOPE_TYPE, 
+			     IS_AGGREGATE_INITIAL)
+		  returns (type (BOOL_T))
+		  internal;
+	declare
+		STORAGE_CLASS		type (SHORT_T),
+		ENCLOSING_SCOPE_TYPE	type (SHORT_T),
+		IS_AGGREGATE_INITIAL	type (BOOL_T),
+		SP			type (POINTER_T);
+
+	if STORAGE_CLASS = NULL_ST then do;
+		if ENCLOSING_SCOPE_TYPE = GLOBAL_SCOPE then
+			return (TRUE);
+	end;
+	else if STORAGE_CLASS = EXTERN_ST then do;
+		if ENCLOSING_SCOPE_TYPE ^= GLOBAL_SCOPE then do;
+			/*
+			/* If the declaration of an identifier has block
+			/* scope, and the initializer has external or
+			/* internal linkage, there shall be no initializer
+			/* for the identifier (ANSI-C, 3.5.7).  Emit a
+			/* warning, ignore the initializer, and continue.
+			/**/
+			call SEMANTIC_ERROR (ERR_BAD_INITIAL_PLACEMENT);
+			return (TRUE);
+		end;
+		else do;
+			/*
+			/* If the declaration of an identifier for an object
+			/* has FILE scope and an initializer, the declaration
+			/* is an external DEFINITION for the identifier
+			/* (ANSI-C, 3.7.2).  Make this a defining instance.
+			/*
+			/* -TODO- Option to ignore the initializer in this
+			/* case thus making this an external DECLARATION.
+			/**/
+			return (TRUE);
+		end;
+	end;
+	else if STORAGE_CLASS = STATIC_ST then
+		return (TRUE);
+	else if (STORAGE_CLASS = AUTO_ST) then do;
+		call GET_SYM_NODE_R (CURRENT_SYMBOL, SP);
+		if SP->SYM_NODE.REGISTER_AT &
+		   IS_AGGREGATE_INITIAL &
+		   SW_STRICT_REGISTER then do;
+			/*
+			/* Error; register class aggregates
+			/* cannot be initialized.
+			/**/
+			call SEMANTIC_ERROR (ERR_AUTO_INITIALIZER);
+		end;
+		call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+	end;
+	else do;
+                /*
+		/* Error; invalid storage class for an initializer.
+		/**/
+		call SEMANTIC_ERROR (ERR_CLASS_INITIALIZER);
+	end;
+	
+	return (FALSE);
+
+end DETERMINE_STATIC;
+
+/* ---------------------------------------------------------------------
+/* DO_INITIALIZATION
+/*
+/* Do the initialization for the currently paged in symbol.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DO_INITIALIZATION: procedure internal;
+
+	if AGGREGATE_INITIAL & IS_AGGREGATE_TAG_TYPE
+			       (rank (SYM_NODE.TOP_TYPE.CODE)) then do;
+		if CURRENT_TOKEN.TYPE ^= LCURLY_TOKEN then do;
+			/*
+			/* A struct/union is allowed to have an
+			/* initializer of compatible struct/union type.
+			/* However, this can run afoul of pre-ANSI programs
+			/* which initialize the first member without {}.
+			/*
+			/* Setting AGGREGATE_INITIAL false will act
+			/* like assignment of a single expression.
+			/**/
+			if ^(STATIC_INITIAL & SW_X_NO_BRACE_INIT) then
+				AGGREGATE_INITIAL = FALSE;
+		end;
+	end;
+
+	if ^STATIC_INITIAL then do;
+		/*
+		/* This initializes an automatic variable
+		/**/
+		call INITIALIZE (TRUE, AGGREGATE_INITIAL);  /* automatic */
+		return;
+	end;
+
+	/*
+	/* Here, we are initializing a static variable.
+	/* If it is a static data member, then we must initialize
+	/* it in the scope of its containing class (C++ARM, sec.8.4, p.150).
+	/**/
+
+	ACTUAL_CURRENT_SCOPE_TYPE = CURRENT_SCOPE_TYPE;
+
+	if SYM_NODE.IS_AGGREGATE_MEMBER &
+	   (SYM_NODE.STORAGE_CLASS = byte (STATIC_ST)) then do;
+		call SAVE_SCOPE_STATE ();
+		call SET_CURRENT_SCOPE (SYM_NODE.ENCLOSING_SCOPE);
+		call INITIALIZE (FALSE, AGGREGATE_INITIAL);
+		call RESTORE_SCOPE_STATE ();
+	end;
+	else	call INITIALIZE (FALSE, AGGREGATE_INITIAL);
+
+end DO_INITIALIZATION;
+
+/* ---------------------------------------------------------------------
+/* END_INITIALIZATION
+/*
+/* Finish the initialization for the currently paged in symbol.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+END_INITIALIZATION: procedure internal;
+
+	declare
+		V		type (CXX_VID_T),
+		V_NID		type (NID_T),
+		V_IS_NID	type (BOOL_T),
+		SYMBOL  	type (NID_T),
+		SNID		type (SNID_T);
+
+	call STOP_SAVING_STRINGS ();
+
+	if STATIC_INITIAL then do;
+		call EMIT_ANY_QUEUED_STATEMENTS ();
+		return;
+	end;
+
+	/* Here, we are initializing an automatic */
+
+	call SAVE_NODE (SNID);
+
+	if AGGREGATE_INITIAL then do;
+		V_NID = SYM_NODE.VALUE;
+		V_IS_NID = TRUE;
+	end;
+	else do;
+		V = CURRENT_VALUE;
+		V_IS_NID = FALSE;
+	end;
+
+	/*
+	/* If an automatic aggregate, then if necessary, emit a branch to
+	/* the aggregate initialization done label, and then place
+	/* the label at which the block move is done.
+	/**/
+
+	if AGGREGATE_INITIAL & (BLOCK_MOVE_LABEL ^= NULL_CXX_VID) then do;
+	
+		SYMBOL = CURRENT_SYMBOL;  /* Save it */
+
+		if CONST_INIT then do;
+			if BASE_SYMBOL ^= NULL_NID then do;
+				if V_IS_NID then
+					call EMIT_STATEMENT
+					     (GET_INIT_REF_AND_EXPAND
+					      (BASE_SYMBOL, V_NID));
+				else	call EMIT_STATEMENT
+					     (GET_INIT_AND_EXPAND
+					      (BASE_SYMBOL, V));
+				call EMIT_ANY_QUEUED_STATEMENTS ();
+			end;
+			else	call COUNT_DOWN_VALUE (V);
+		end;
+		else	call EMIT_ANY_QUEUED_STATEMENTS ();
+
+		call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L
+				     (BRANCH_VO, AGGREGATE_DONE_LABEL));
+		call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L
+				     (LABEL_VO, BLOCK_MOVE_LABEL));
+
+		CURRENT_SYMBOL = SYMBOL;  /* Restore it */
+	end;
+
+	/*
+	/* Emit the automatic scalar or aggregate.
+	/* If this is not an aggregate, then do a scalar initialization.
+	/* If an aggregate, CONST_INIT is on if any *ONE* element of
+	/* the aggregate was initialized with a constant initializer.
+	/* In that case, do a block move to the aggregate here.
+	/**/
+
+	else if ^AGGREGATE_INITIAL | CONST_INIT then do;
+		if BASE_SYMBOL ^= NULL_NID then do;
+			if V_IS_NID then
+				call EMIT_STATEMENT
+				     (GET_INIT_REF_AND_EXPAND
+				      (BASE_SYMBOL, V_NID));
+			else	call EMIT_STATEMENT
+				     (GET_INIT_AND_EXPAND
+				      (BASE_SYMBOL, V));
+			call EMIT_ANY_QUEUED_STATEMENTS ();
+		end;
+		else	call COUNT_DOWN_VALUE (V);
+	end;
+
+	else	call EMIT_ANY_QUEUED_STATEMENTS ();
+
+	/*
+	/* If an automatic aggregate, then if necessary, emit a branch
+	/* (backward) to the start of the non-constant initialization code,
+	/* and then place the aggregate done label.
+	/**/
+
+	if AGGREGATE_INITIAL & (BLOCK_MOVE_LABEL ^= NULL_CXX_VID) then do;
+
+		if ^SW_C_PLUS_PLUS then
+			call SEMANTIC_ERROR (ERR_NON_CONST_INIT);
+
+		call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L
+				     (BRANCH_VO, NON_CONST_INIT_LABEL));
+
+		call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_L
+				     (LABEL_VO, AGGREGATE_DONE_LABEL));
+	end;
+
+	call RESTORE_NODE (SNID);
+
+end END_INITIALIZATION;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE
+/* INIT_STATIC
+/* INIT_STRUCTURE
+/* INIT_ARRAY
+/* INIT_ARRAY_OF_CHAR
+/* INIT_SCALAR
+/* INIT_SCALAR_FROM_VALUE
+/* INIT_BIT
+/* INIT_OBJECT_FROM_VALUE
+/* ------------------------------------------------------------------- */
+
+declare
+
+CURRENT_DIF	type (DIFILE_T) static internal;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE
+/*
+/* Parse and process the initializer for the currently paged in symbol.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+INITIALIZE: procedure (AUTOMATIC, AGGREGATE) internal;
+
+	declare
+		AUTOMATIC		type (BOOL_T),
+		AGGREGATE		type (BOOL_T);
+	declare
+		WORD_SIZE       	type (SHORT_T);
+	declare
+		TEMP_SYMBOL		type (SHORT_T),
+		THIS_SYMBOL		type (SHORT_T),
+		NUM_FOUND		type (SHORT_T),
+		DIN			type (NID_T),
+		P			type (POINTER_T),
+		K			type (CXX_VID_T),
+		SNID			type (SNID_T);
+
+	/* Save the current-node-id */
+
+	call SAVE_NODE (SNID);
+
+	/* Initialize the current-initializer-item */
+
+	CURRENT_INITIALIZER_ITEM.ITEM = NULL_ITEM;
+
+        /* Initialize an automatic scalar symbol */
+    
+	if AUTOMATIC & ^AGGREGATE then do;
+		CURRENT_VALUE = NULL_CXX_VID;
+		K = GET_NEXT_ITEM (NUM_FOUND);
+		if NUM_FOUND > 1 then do;
+			/*
+			/* Error; more than one initial value for this scalar.
+			/**/
+			call SEMANTIC_ERROR (ERR_TOO_MANY_SCALAR);
+		end;
+		CURRENT_VALUE = K;
+		if SYM_NODE.TOP_TYPE.CONST &
+		   IS_INTEGRAL_TYPE (rank (SYM_NODE.TOP_TYPE.CODE)) then do;
+			call COUNT_UP_VALUE (CURRENT_VALUE);
+			if GET_INTEGRAL_CONSTANT_VALUE
+			   (CURRENT_VALUE, SYM_NODE.CONST_INITIALIZER, 0)
+			then do;
+				SYM_NODE.HAS_CONST_INITIALIZER	 = TRUE;
+				SYM_NODE.INITIAL_AT		 = TRUE;
+				SYM_NODE.HAS_BEEN_SET_OR_ALIASED = TRUE;
+			end;
+			else	call COUNT_DOWN_VALUE (CURRENT_VALUE);
+		end;
+		goto DONE_INITIALIZE;
+	end;
+
+	/* This initializes both STATIC and AUTOMATIC aggregate variables */
+    
+	THIS_SYMBOL = CURRENT_NODE_ID;       /* Static or auto symbol */
+
+	CURRENT_VALUE = NULL_CXX_VID;
+	AGGREGATE_LIST_OPENED = FALSE;
+	
+	/* Open/align the data-initial-file */
+
+	call OPEN_ALIGNED_DATA_INITIAL_FILE (CURRENT_DIF,
+					     rank (SYM_NODE.BOUNDARY));
+	
+	/* Save the current byte offset of the CURRENT_DIF */
+
+	BASE_DIF_OFFSET = GET_DATA_INITIAL_BYTE_OFFSET (CURRENT_DIF);
+
+	/* Do the initialization */
+
+	call INIT_STATIC (AGGREGATE);
+
+	if DIF_INIT | AGGREGATE then do;
+
+		/* Allocate and fill in a data-initial-node */
+
+		DIN = MAKE_DATA_INITIAL_NODE (CURRENT_DIF);
+
+		/* Handle automatic and static symbols */
+
+		if AUTOMATIC then do;
+			/*
+			/* Automatic; make a temporary symbol.
+			/**/
+			TEMP_SYMBOL = COPY_SYM_NODE (THIS_SYMBOL);
+			SYM_NODE.IS_DUMMY		 = TRUE;
+			SYM_NODE.NAME			 = NULL_NID;
+			SYM_NODE.INITIAL_AT		 = TRUE;
+			SYM_NODE.HAS_BEEN_SET_OR_ALIASED = TRUE;
+			SYM_NODE.VALUE			 = DIN;
+			SYM_NODE.STORAGE_CLASS		 = byte (STATIC_ST);
+			SYM_NODE.INTERNAL_LINKAGE	 = TRUE;
+			SYM_NODE.DEFINED		 = TRUE;
+			SYM_NODE.REFERENCED		 = TRUE;
+			call INSTALL_SYMBOL (TEMP_SYMBOL, CURRENT_SCOPE);
+			call SET_SYM_NODE (THIS_SYMBOL);
+			SYM_NODE.VALUE			= TEMP_SYMBOL;
+		end;
+		else do;
+			call SET_SYM_NODE (THIS_SYMBOL);
+			SYM_NODE.INITIAL_AT		 = TRUE;
+			SYM_NODE.HAS_BEEN_SET_OR_ALIASED = TRUE;
+			SYM_NODE.VALUE			 = DIN;
+		end;
+
+		/* Advance the data-initial-file */
+
+		call ADVANCE_DATA_INITIAL_FILE (CURRENT_DIF,
+						SYM_NODE.SIZE,
+						rank (SYM_NODE.SIZE_UNITS));
+
+		/* Set the data-initial-file */
+
+		call SET_DATA_INITIAL_FILE (CURRENT_DIF);
+	end;
+
+	/* Close the data-initial-file */
+
+	call CLOSE_DATA_INITIAL_FILE (CURRENT_DIF);
+
+	/* Write out the relocation data */
+
+	call WRITE_RELOCATION_DATA (DIN, BASE_SYMBOL);
+
+	DONE_INITIALIZE:
+
+	/* Restore the current-node-id */
+
+	call RESTORE_NODE (SNID);
+
+	return;
+
+end INITIALIZE;
+
+/* ---------------------------------------------------------------------
+/* INIT_STATIC
+/*
+/* Initialize the symbol represented by the currently paged in sym-node.
+/* AGGREGATE indicates whether to consider the current initial value
+/* as applying to the first member of the class rather than to the
+/* entirety.
+/*
+/* Note that this routine is also called for automatics that are
+/* initalized aggregate-wise.
+/* ------------------------------------------------------------------- */
+
+INIT_STATIC: procedure (AGGREGATE) recursive internal;
+
+	declare
+		AGGREGATE	type (BOOL_T);
+	declare
+		TI		type (TYPE_INFO_T),
+		(J, K)		type (SHORT_T),
+		THIS_SYMBOL	type (SHORT_T),
+		THIS_TYPE_CODE  type (SHORT_T),
+		NDIMS		type (SHORT_T),
+		FIRST_MEMBER	type (NID_T),
+		(TP, P)		type (POINTER_T),
+		COMPLETED_DIMENSION
+				type (LONG_T);
+	declare
+		SIZE		type (LONG_T),
+		SIZE_UNITS	type (SHORT_T),
+		BOUNDARY	type (SHORT_T);
+
+	THIS_SYMBOL = CURRENT_NODE_ID;
+
+	call GET_SYMBOL_TYPE (TI);
+	call DETERMINE_SIZE (TI);
+
+	/*
+	/* Set up to handle an array (of array (of array (of array ...)))
+	/* initialization; get the number of (adjacent) dimensions
+	/* and the array element type.
+	/**/
+
+	do NDIMS = 0 repeat (NDIMS + 1)
+	while (TI.TOP_TYPE.CODE = byte (ARRAY_DT));
+		call STRIP_TOP_TYPE (TI, TRUE);
+	end;
+
+	TI.NOT_AN_LVALUE = FALSE;
+	THIS_TYPE_CODE = rank (TI.TOP_TYPE.CODE);
+
+	/* Handle an array initialization */
+
+	if NDIMS > 0 then do;
+		if IS_AGGREGATE_TAG_TYPE (rank (TI.TOP_TYPE.CODE)) then do;
+			call GET_SYM_NODE_R (TI.TOP_TYPE.TAG_SYMBOL, P);
+			FIRST_MEMBER = GET_FIRST_MEMBER (P);
+			call RELEASE_SYM_NODE (TI.TOP_TYPE.TAG_SYMBOL);
+		end;
+		else	FIRST_MEMBER = NULL_NID;
+		call GET_TYPE_NODE_R (TI.TYPE, TP);
+		call INIT_ARRAY (NDIMS,
+				 1,
+				 TP,
+				 rank (TP->TYPE_NODE.LEVEL),
+				 FIRST_MEMBER,
+				 TI,
+				 COMPLETED_DIMENSION);
+		call RELEASE_TYPE_NODE (TI.TYPE);
+		if COMPLETED_DIMENSION > 0 then do;
+			/*
+			/* Here, we had an incomplete array type which has
+			/* now been completed through the initializer. For
+			/* example "int a[] = { 1, 2, 3 };" now needs to
+			/* become "int a[3]", but we can't just bang the
+			/* appropriate field the appropriate dim-node because
+			/* type may have been derived from a typedef and
+			/* BUILD_TYPE.EXPAND_TYPEDEF works in such a way that
+			/* the dim-nodes of the typedef would be shared with
+			/* the type derived from it; we would therefore
+			/* corrupt the type of the typedef, for example
+			/* consider "typedef int AI[]; A a[]"
+			/**/
+			call COMPLETE_ARRAY_TYPE (TI.TYPE, COMPLETED_DIMENSION);
+			call TYPE_SIZE (TI.TYPE, SIZE, SIZE_UNITS, BOUNDARY);
+			call GET_TOP_TYPE (TI.TYPE, TI.TOP_TYPE);
+			call SET_SYM_NODE (THIS_SYMBOL);
+			SYM_NODE.TYPE	    = TI.TYPE;
+			SYM_NODE.TOP_TYPE   = TI.TOP_TYPE;
+			SYM_NODE.SIZE	    = SIZE;
+			SYM_NODE.SIZE_UNITS = byte (SIZE_UNITS);
+			SYM_NODE.BOUNDARY   = byte (BOUNDARY);
+			/*
+			/* This was deferred from
+			/* CHECK_SYMBOL_DEFINITION until
+			/* this point do deal with cases like:
+			/*
+			/*   class A { char *s; A (char *); };
+			/*   f () { A x[] = { "a", "b", "c" };
+			/**/
+			call NOTE_CURRENT_DESTRUCTOR ();
+		end;
+	end;
+
+	/* Initialize a class/struct/union */
+
+	else if AGGREGATE &
+		IS_AGGREGATE_TAG_TYPE (THIS_TYPE_CODE) then do;
+		call SET_SYM_NODE_R (TI.TOP_TYPE.TAG_SYMBOL);
+		call INIT_STRUCTURE (TI.TOP_TYPE,
+				     GET_FIRST_MEMBER (NODE_PTR));
+	end;
+
+	/* Initialize a scalar */
+
+	else 	call INIT_SCALAR (TI, THIS_SYMBOL);
+
+end INIT_STATIC;
+
+/* ---------------------------------------------------------------------
+/* INIT_STRUCTURE
+/*
+/* Initialize (recursively) the members of a structure/class/union.
+/* ------------------------------------------------------------------- */
+
+INIT_STRUCTURE: procedure (TYPE_DATA, FIRST_MEMBER) recursive internal;
+
+	declare
+		TYPE_DATA	type (TYPE_DATA_T),
+		FIRST_MEMBER	type (NID_T);
+	declare
+		(M, NEXT_M)	type (NID_T),
+		WITHIN_LIST	type (BOOL_T),
+		(MP, P)		type (POINTER_T),
+		CLASS_SYM	type (NID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		IS_WHOLE	type (BOOL_T),
+		DUM_SYM		type (NID_T),
+		OTH_SYM		type (NID_T),
+		IS_BIT_FIELD	type (BOOL_T),
+		NEEDS_INIT	type (BOOL_T),
+		I		type (SHORT_T),
+		X		type (LONG_T),
+		V		type (CXX_VID_T);
+	declare
+		SAVE_DIF	type (DIFILE_T);
+
+	/* Is this a "{" or a value ?  Premature ";" will force return */
+
+	if ^GET_NEXT_INITIAL (WITHIN_LIST) then
+		return;
+
+	/* */
+
+	IS_WHOLE = FALSE;
+
+	if WITHIN_LIST then
+		AGGREGATE_LIST_OPENED = TRUE;
+
+	else if CURRENT_VALUE ^= NULL_CXX_VID then do;
+		/*
+		/* Initializer has no curly braces, so CURRENT_VALUE
+		/* should initialize the whole structure, but
+		/* there's that nasty ambiguity with elided curlies.
+		/* Try to make sure that if there's any chance that
+		/* CURRENT_VALUE is a legal initializer for the whole,
+		/* we take it as initializing the whole.
+		/**/
+		call GET_SYM_NODE_R (TYPE_DATA.TAG_SYMBOL, P);
+		DUM_SYM = QUIET_USER_CONVERSIONS (P->SYM_NODE.TYPE,
+					          CURRENT_VALUE,
+					          FALSE /* IS_CAST */,
+					          FALSE /* IS_ZERO_FLAG */,
+						  OTH_SYM);
+		if ^P->SYM_NODE.PERMITS_AGGREGATE_INIT then
+			IS_WHOLE = TRUE;
+		call RELEASE_SYM_NODE (TYPE_DATA.TAG_SYMBOL);
+		if DUM_SYM ^= NULL_NID then
+			IS_WHOLE = TRUE;
+
+		/* Also check derived type initializer. */
+		CXX_VALUE_NODE_PTR = CURRENT_VALUE;
+		call GET_VALUE_TYPE (TYPE_INFO);
+		if rank (TYPE_INFO.TYPE_CODE) = REFERENCE_DT then
+			call STRIP_TOP_TYPE (TYPE_INFO, FALSE);
+		if IS_AGGREGATE_TAG_TYPE (rank (TYPE_INFO.TYPE_CODE)) then do;
+			if IS_ANY_BASE_CLASS_OF (TYPE_INFO.TAG_SYMBOL,
+						 TYPE_DATA.TAG_SYMBOL) then
+				IS_WHOLE = TRUE;
+		end;
+	end;
+
+	if IS_WHOLE then do;
+		call SET_SYM_NODE_R (TYPE_DATA.TAG_SYMBOL);
+		call GET_SYMBOL_TYPE (TYPE_INFO);
+		call INIT_SCALAR (TYPE_INFO, TYPE_DATA.TAG_SYMBOL);
+	end;
+
+	else do;
+		/*
+		/* Initialized class may have no private members, etc. 
+		/* 8.4.1
+		/**/
+		call GET_SYM_NODE_R (TYPE_DATA.TAG_SYMBOL, P);
+		NEEDS_INIT = P->SYM_NODE.NEEDS_INIT;
+		if P->SYM_NODE.HAS_NON_PUBLIC_MEMBER then
+			call SEMANTIC_ERROR (ERR_PRIV_AGGREGATE_INIT);
+		else if P->SYM_NODE.NBASE_CLASSES > 0 then
+			call SEMANTIC_ERROR (ERR_BASE_AGGREGATE_INIT);
+		else if ^P->SYM_NODE.PERMITS_AGGREGATE_INIT then
+			call SEMANTIC_ERROR (ERR_CTOR_AGGREGATE_INIT);
+		call RELEASE_SYM_NODE (TYPE_DATA.TAG_SYMBOL);
+
+		/*
+	        /* Save the current data-initial-file position;
+		/* restore after each member is initialized.
+		/**/
+
+		SAVE_DIF = CURRENT_DIF;
+
+		/* If FIRST_MEMBER = NULL_NID, then incomplete type */
+
+		do M = FIRST_MEMBER repeat (NEXT_M)
+		while (M ^= NULL_NID) until (END_OF_INITIALIZER & ^NEEDS_INIT);
+
+			call SET_SYM_NODE_R (M);
+
+			NEXT_M = GET_NEXT_MEMBER (NODE_PTR);
+
+			if SYM_NODE.SIZE_UNITS = byte (BITS) then do;
+				/*
+				/* This is a bit-field member.
+				/**/
+				if (SYM_NODE.SIZE = 0) |
+				   (SYM_NODE.NAME = NULL_NID) then do;
+					/*
+					/* Skip an unnamed or 0 width bit-field.
+					/* We skip unnamed because ANSI C 3.5.7
+					/* says unnamed members are skipped.
+					/**/
+					IS_BIT_FIELD = FALSE;
+					goto CONTINUE_LOOP;
+				end;
+				else	IS_BIT_FIELD = TRUE;
+			end;
+			else	IS_BIT_FIELD = FALSE;
+
+			call ADVANCE_DATA_INITIAL_FILE
+			     (CURRENT_DIF,
+			      SYM_NODE.LOCATION,
+			      rank (SYM_NODE.OFFSET_UNITS));
+
+			if ^END_OF_INITIALIZER | M = FIRST_MEMBER then
+				call INIT_STATIC (TRUE);
+			else do;
+				/* Initialize this member implicitly. */
+				V = IMPLICIT_INITIALIZER
+				    ((SYM_NODE.TYPE), NULL_NID, 
+				     FALSE, FALSE, M);
+
+				if V ^= NULL_CXX_VID then do;
+					call SET_SYM_NODE_R (M);
+					call GET_SYMBOL_TYPE (TYPE_INFO);
+					call DETERMINE_SIZE (TYPE_INFO);
+					TYPE_INFO.NOT_AN_LVALUE = FALSE;
+
+					call INIT_FROM_VALUE (TYPE_INFO, V, M);
+				end;
+			end;
+
+	        	/* Restore the current data-initial-file position */
+
+			CURRENT_DIF = SAVE_DIF;
+
+		CONTINUE_LOOP:
+		end;
+
+		/* */
+
+		if WITHIN_LIST then
+			call CLOSE_INITIAL_LIST (ERR_TOO_MANY_STRUCT);
+
+	end; /* ^IS_WHOLE, i.e. init memberwise */
+
+end INIT_STRUCTURE;
+
+/* ---------------------------------------------------------------------
+/* INIT_ARRAY
+/*
+/* Initialize a single dimension of an array.
+/* Assumes the sym-node id of the array symbol is paged in.
+/*
+/* TOTAL_NDIMS	= Total number of dimensions.
+/* DIM_NUMBER	= The dimension ordinal minus one.
+/* TP		= Type-node pointer representing the array type.
+/* TYPE_INDEX	= Index into the type-node for this dimension.
+/* FIRST_MEMBER	= If element type is CLASS_BT, STRUCT_BT, or UNION_BT
+/*		  then sym-node id of first member,
+/* TYPE_INFO	= Array element type.
+/* COMPLETED_DIMENSION
+/*		= Set to number of initialized elements,
+/*		  if current dimension is incomplete.
+/* ------------------------------------------------------------------- */
+
+INIT_ARRAY: procedure (TOTAL_NDIMS,
+		       DIM_NUMBER,
+		       TP,
+		       TYPE_INDEX,
+		       FIRST_MEMBER,
+		       TYPE_INFO,
+		       COMPLETED_DIMENSION)
+	    recursive
+	    internal;
+
+	declare
+		TOTAL_NDIMS		type (SHORT_T),
+		DIM_NUMBER		type (SHORT_T),
+		TP			type (POINTER_T),
+		TYPE_INDEX		type (SHORT_T),
+		FIRST_MEMBER		type (NID_T),
+		TYPE_INFO		type (TYPE_INFO_T),
+		COMPLETED_DIMENSION	type (LONG_T),
+		SNID			type (SNID_T);
+	declare
+		ELEMENT_TYPE		type (SHORT_T),
+		DIM_SIZE		type (SHORT_T),
+		ELEMENT_SIZE		type (LONG_T),
+		ELEMENT_SIZE_UNITS	type (SHORT_T),
+		THIS_SYMBOL		type (NID_T),
+		NEXT_DIM		type (NID_T),
+		I			type (SHORT_T),
+		WITHIN_LIST		type (BOOL_T),
+		NEEDS_INIT		type (BOOL_T),
+		TYPE_NID		type (NID_T),
+		V			type (CXX_VID_T);
+	declare
+		SAVE_DIF		type (DIFILE_T);
+
+	ELEMENT_TYPE = rank (TYPE_INFO.TOP_TYPE.CODE);
+	COMPLETED_DIMENSION = 0;
+
+	/* Is this a "{" or a value ?  Premature ";" will force return */
+
+	if ^GET_NEXT_INITIAL (WITHIN_LIST) then
+		return;
+
+	/* */
+
+	if WITHIN_LIST then
+		AGGREGATE_LIST_OPENED = TRUE;
+
+	THIS_SYMBOL = CURRENT_NODE_ID;
+
+	/* Get pertinent data from the dim-node */
+
+	call SAVE_NODE (SNID);
+	call SET_DIM_NODE_R (TP->TYPE_NODE.TYPE_NID (TYPE_INDEX));
+	ELEMENT_SIZE		= DIM_NODE.ELEMENT_SIZE;
+	ELEMENT_SIZE_UNITS	= rank (DIM_NODE.ELEMENT_SIZE_UNITS);
+	if DIM_NODE.INCOMPLETE then
+		DIM_SIZE	= 0;
+	else	DIM_SIZE	= DIM_NODE.VALUE;
+	call RESTORE_NODE (SNID);
+
+	/* TYPE_INDEX = TYPE_INDEX - 1; */
+
+	/* Set the current data-initial-file position */
+
+	call ALIGN_DATA_INITIAL_FILE (CURRENT_DIF, ELEMENT_SIZE_UNITS);
+
+        /* Save the current data-initial-file position */
+
+	SAVE_DIF = CURRENT_DIF;
+	
+	/* Determine whether element needs initialization conservatively. */
+	NEEDS_INIT = IS_AGGREGATE_TAG_TYPE (ELEMENT_TYPE) & DIM_SIZE > 0;
+	TYPE_NID = NULL_NID;
+
+	/* Do the initialization */
+
+	I = 0;        
+
+	if (DIM_NUMBER = TOTAL_NDIMS) &
+	   ((ELEMENT_TYPE = CHAR_BT) |
+	    (ELEMENT_TYPE = UCHAR_BT) |
+	    (ELEMENT_TYPE = SCHAR_BT) |
+	    (ELEMENT_TYPE = GET_WCHAR_T_TYPE_CODE ())) then
+		call INIT_ARRAY_OF_CHAR (I, ELEMENT_SIZE, ELEMENT_SIZE_UNITS,
+					 DIM_SIZE, TYPE_INFO, THIS_SYMBOL);
+
+	else if ^AGGREGATE_LIST_OPENED then do; 
+		/*
+		/* In case i[] = 0;
+		/**/
+		I = 1;
+		call INIT_SCALAR (TYPE_INFO, THIS_SYMBOL);
+	end;
+	else do until ((I = DIM_SIZE) | (END_OF_INITIALIZER & ^NEEDS_INIT));
+		I = I + 1;
+		if DIM_NUMBER < TOTAL_NDIMS then 
+			call INIT_ARRAY (TOTAL_NDIMS,
+					 DIM_NUMBER + 1,
+					 TP,
+					 TYPE_INDEX - 1,
+					 FIRST_MEMBER,
+					 TYPE_INFO,
+					 COMPLETED_DIMENSION);
+		else if END_OF_INITIALIZER & I > 1 then do;
+			/* Initialize this element implicitly. */
+			if TYPE_NID = NULL_NID then
+				TYPE_NID = DIRECT_TYPE_ID (TYPE_INFO);
+			V = IMPLICIT_INITIALIZER
+			    (TYPE_NID, NULL_NID, FALSE, TRUE, THIS_SYMBOL);
+
+			if V = NULL_CXX_VID then do;
+				/* Error: not enough values. */
+				call SEMANTIC_ERROR
+				     (ERR_NEED_INIT_FOR_ELEMENT);
+
+				/* Suppress further messages. */
+				NEEDS_INIT = FALSE;
+			end;
+			else
+				call INIT_FROM_VALUE (TYPE_INFO, V,
+						      THIS_SYMBOL);
+		end;
+		else if IS_AGGREGATE_TAG_TYPE (ELEMENT_TYPE) then 
+			call INIT_STRUCTURE (TYPE_INFO.TOP_TYPE, FIRST_MEMBER);
+		else	call INIT_SCALAR (TYPE_INFO, THIS_SYMBOL);
+		call ADVANCE_DATA_INITIAL_FILE (CURRENT_DIF,
+						ELEMENT_SIZE,
+						ELEMENT_SIZE_UNITS);
+	end;
+
+	if DIM_SIZE <= 0 then do;
+		/*
+		/* Implicit: int j[] = {...}
+		/*
+		/*   DIM_NUMBER = 1 here !
+		/**/
+		COMPLETED_DIMENSION = I;
+	end;
+	else 	call SET_SYM_NODE_R (THIS_SYMBOL);
+
+       	/* Restore the current data-initial-file position */
+
+	CURRENT_DIF = SAVE_DIF;
+
+	/* */
+
+	if WITHIN_LIST then
+		call CLOSE_INITIAL_LIST (ERR_TOO_MANY_ARRAY);
+
+/* ---------------------------------------------------------------------
+/* INIT_ARRAY_OF_CHAR
+/* ------------------------------------------------------------------- */
+
+INIT_ARRAY_OF_CHAR: procedure (I, ELEMENT_SIZE, ELEMENT_SIZE_UNITS,
+			       DIM_SIZE, TYPE_INFO, THIS_SYMBOL) internal;
+
+	declare
+		I			type (SHORT_T),
+		ELEMENT_SIZE		type (LONG_T),
+		ELEMENT_SIZE_UNITS	type (SHORT_T),
+		DIM_SIZE		type (SHORT_T),
+		TYPE_INFO		type (TYPE_INFO_T),
+		THIS_SYMBOL		type (NID_T);
+	declare
+		K			type (CXX_VID_T),
+		ARRAY_SIZE		type (LONG_T),
+		STRING_LENGTH		type (LONG_T),
+		DONE			type (BOOL_T),
+		NUM_FOUND		type (SHORT_T),
+		EXCESS			type (SHORT_T),
+		P			type (POINTER_T);
+
+	K = GET_NEXT_ITEM (NUM_FOUND);
+	if NUM_FOUND > 1 then do;
+		/*
+		/* Error; more than one initial constant
+		/* string for this array of char.
+		/**/
+		call SEMANTIC_ERROR (ERR_TOO_MANY_STRINGS);
+	end;
+
+	if RECYCLE_STRING_SYMBOL (K, P, STRING_LENGTH) then do;
+		CONST_INIT = TRUE;
+		P = addr (P->TOKEN_SPELLING_POD.SPELLING_DATA.TEXT);
+		ARRAY_SIZE = divide (STRING_LENGTH,
+				     ROUNDU (ELEMENT_SIZE,
+					     ELEMENT_SIZE_UNITS,
+					     BYTES), 31);
+		call TARGET_CONVERSION (P, 0, (STRING_LENGTH));
+		call WRITE_DATA_INITIAL_FILE (CURRENT_DIF, P, STRING_LENGTH);
+
+		if DIM_SIZE > 0 then do;
+			EXCESS = ARRAY_SIZE - DIM_SIZE;
+			if EXCESS > 1 then do;
+				/*
+				/* Error; too many initial values
+				/* for this array of char symbol.
+				/**/
+				call SEMANTIC_ERROR (ERR_TOO_MANY_CHAR_ARRAY);
+			end;
+			else if (EXCESS > 0) & SW_C_PLUS_PLUS then do;
+				/*
+				/* Error; this string is too long (including
+				/* the implicit null) for this array of char
+				/* symbol.  This is legal in ANSI-C.
+				/**/
+				call SEMANTIC_ERROR
+				     (ERR_TOO_MANY_CHAR_ARRAY_ANSIC);
+			end;
+			I = DIM_SIZE;
+		end;
+		else	I = ARRAY_SIZE; 
+
+		DIF_INIT = TRUE;
+		call SET_SYM_NODE_R (THIS_SYMBOL);
+		return;
+	end;
+
+	/*
+	/* Handle array of char: e.g. char [] = {'a', 'b', 'c'} ;
+	/*
+	/*   Note the case char [3][4] = { "abc", "def", 0 } will
+	/*   produce END_OF_INITIALIZER true at the start of this loop!
+	/*
+	/**/
+
+	THIS_REPEAT = THIS_REPEAT + 1;  /* Denote CURRENT_VALUE unused */
+
+	do while ((I ^= DIM_SIZE) | (DIM_SIZE <= 0));
+		call INIT_SCALAR (TYPE_INFO, THIS_SYMBOL);
+		call ADVANCE_DATA_INITIAL_FILE (CURRENT_DIF,
+						ELEMENT_SIZE,
+						ELEMENT_SIZE_UNITS);
+		I = I + 1;
+		if END_OF_INITIALIZER then
+			leave;
+	end;
+
+end INIT_ARRAY_OF_CHAR;
+
+end INIT_ARRAY;
+
+/* ---------------------------------------------------------------------
+/* INIT_SCALAR
+/*
+/* Initialize a scalar variable or a scalar element of an array.
+/* ------------------------------------------------------------------- */
+
+INIT_SCALAR: procedure (TYPE_INFO, THIS_SYMBOL) internal;
+
+	declare
+		TYPE_INFO			type (TYPE_INFO_T),
+		THIS_SYMBOL			type (NID_T);
+	declare
+		NUM_FOUND			type (SHORT_T),
+		V				type (CXX_VID_T);
+
+	/*
+	/* Pick up the expression tree for this value. Check if too many
+	/* initial values, or possibly a premature semicolon. Note that
+	/* commas and {} never returned.
+	/**/ 
+
+	V = GET_NEXT_ITEM (NUM_FOUND);
+	if NUM_FOUND > 1 then do;
+		/*
+		/* Error; more than one initial value for this scalar.
+		/**/
+		call SEMANTIC_ERROR (ERR_TOO_MANY_SCALAR);
+	end;
+	else if NUM_FOUND = 0 then  /* Hit premature semicolon */
+		return;
+
+	call INIT_FROM_VALUE (TYPE_INFO, V, THIS_SYMBOL);
+
+end INIT_SCALAR;
+
+/* ---------------------------------------------------------------------
+ * INIT_FROM_VALUE
+ * ------------------------------------------------------------------- */
+
+INIT_FROM_VALUE: procedure (TYPE_INFO, V, THIS_SYMBOL)
+		 internal;
+
+	declare
+		TYPE_INFO			type (TYPE_INFO_T),
+		V				type (CXX_VID_T),
+		THIS_SYMBOL			type (NID_T);
+
+	if IS_AGGREGATE_TAG_TYPE (rank (TYPE_INFO.TOP_TYPE.CODE)) then
+		/* A non-aggregate initialization of an aggregate object */
+		call INIT_OBJECT_FROM_VALUE (TYPE_INFO, V, THIS_SYMBOL);
+
+	else if rank (TYPE_INFO.TOP_TYPE.CODE) = MEMBER_POINTER_DT then
+		call INIT_MEMBER_POINTER_FROM_VALUE (TYPE_INFO, V, 
+						     THIS_SYMBOL);
+
+	else
+		call INIT_SCALAR_FROM_VALUE (TYPE_INFO, V, THIS_SYMBOL);
+
+end INIT_FROM_VALUE;
+
+/* ---------------------------------------------------------------------
+/* INIT_SCALAR_FROM_VALUE
+/* ------------------------------------------------------------------- */
+
+INIT_SCALAR_FROM_VALUE: procedure (TYPE_INFO, V, THIS_SYMBOL) internal;
+
+	declare
+		TYPE_INFO			type (TYPE_INFO_T),
+		V				type (CXX_VID_T),
+		THIS_SYMBOL			type (NID_T);
+	declare
+		(P, Q)				type (POINTER_T),
+		TYPE				type (SHORT_T),
+		THIS_SIZE			type (LONG_T),
+		THIS_SIZE_UNITS			type (SHORT_T),
+		THIS_BOUNDARY			type (SHORT_T),
+		FLAG_ID				type (NID_T),
+		WORK_INFO			type (TYPE_INFO_T),
+		(SV, T_VID)			type (CXX_VID_T),
+		(LABEL_VID, SAVE_VALUE)		type (CXX_VID_T),
+		(IT, T)				type (SHORT_T),
+		(LONG, BIT_RESULT)		type (LONG_T),
+		IS_NON_CONSTANT			type (BOOL_T),
+		THIS_CONST_INITIALIZATION	type (BOOL_T),
+		THIS_INTEGRAL_CONST_SYMBOL	type (BOOL_T),
+		IN_BIT_FIELD			type (BOOL_T),
+		THIS_TEMP_INTEGER		type (LONG_T),
+		N				type (LONG_T);
+	declare
+		LAST_OFFSET			type (LONG_T)
+						static internal initial (-1),
+		BUFFER				type (LONG_T)
+						static internal initial (0);
+	declare
+		TEMP_AREA		float binary (52),
+		1 TEMP1			based (P),
+		  2 TEMP_INTEGER	type (LONG_T),
+		1 TEMP2			based (P),
+		  2 TEMP_SHORT_INTEGER	type (SHORT_T),
+		1 TEMP3			based (P),
+		  2 TEMP_BYTE		character (1),
+		1 TEMP4			based (P),
+		  2 TEMP_DOUBLE		float binary (52),
+		1 TEMP5			based (P),
+		  2 TEMP_FLOAT		float binary (23),
+		1 TEMP6			based (P),
+		  2 TEMP_INTEGER_BITS	bit (32) aligned;
+
+
+	THIS_CONST_INITIALIZATION = FALSE;
+
+	call SET_SYM_NODE_R (THIS_SYMBOL);
+	THIS_INTEGRAL_CONST_SYMBOL =
+		SYM_NODE.TOP_TYPE.CONST &
+	        IS_INTEGRAL_TYPE (rank (SYM_NODE.TOP_TYPE.CODE));
+
+	if TYPE_INFO.TOP_TYPE.CODE = byte (ENUM_BT) then
+		TYPE = GET_ENUM_INTEGRAL_TYPE (TYPE_INFO.TOP_TYPE);
+	else	TYPE = rank (TYPE_INFO.TOP_TYPE.CODE);
+
+	/* Get the current DIF offset */
+
+	CURRENT_DIF_OFFSET = GET_DATA_INITIAL_BYTE_OFFSET (CURRENT_DIF);
+
+	/* Set flag if we are in a bit-field */
+
+	WORK_INFO = TYPE_INFO;
+	call SET_SYM_NODE_R (THIS_SYMBOL);
+	IN_BIT_FIELD = (SYM_NODE.SIZE_UNITS = byte (BITS));
+
+	/* Pick up the expression tree for this value. */
+
+	CXX_VALUE_NODE_PTR = V;
+
+	if TYPE = REFERENCE_DT then do;
+		/*  The symbol being initialized is a REFERENCE type.
+		/*  Call a utility to do semantic checks, and any unique
+		/*  conversions that are necessary to convert the
+		/*  RIGHT so that a reference to it can be taken.
+		/**/
+		V = INIT_REF_CHECK (WORK_INFO, V, INITIAL_VO, 
+				    0, THIS_SYMBOL, NULL_CXX_VID);
+		/*  Now make the type of the target POINTER,
+		/*  instead of REFERENCE.
+		/**/
+		call STRIP_TOP_TYPE (WORK_INFO, FALSE);
+		call ADD_POINTER_LEVEL (WORK_INFO);
+		WORK_INFO.NOT_AN_LVALUE = FALSE;
+	end;
+
+	else
+		/* Convert initializer expression */
+		V = GENERAL_CONVERT_VALUE (V, WORK_INFO, INITIAL_VO);
+
+	/*
+	/* Bug out here, if it's a pointer to member, because
+	/* it must be treated as a struct.  We could punt here
+	/* and continue on down, but TARGET_CONVERSION would
+	/* fail for (hypothetical cross-compilation).
+	/* There's a problem with this.  We don't want to bug out
+	/* if it's a non-constant pointer to member, but we still
+	/* need to get the members initialized to zero, as is done
+	/* for structs.  Our problem seems
+	/* to arise because the initializing expression is a unit,
+	/* while the zeros have to be handled one member at a time.
+	/**/
+
+	/*
+	/* Now, determine the type/size info of the (converted) initial 
+	/* expression on right and set up the initial value in IDATA Space
+	/* as required. 
+	/**/
+
+	CXX_VALUE_NODE_PTR = V;  /* Pickup right-hand side again */
+	THIS_SIZE  = CXX_VALUE_NODE.SIZE;
+	THIS_SIZE_UNITS = rank (CXX_VALUE_NODE.SIZE_UNITS);
+
+	/* Now setup the initial value in IDATA Space */
+
+	P = addr (TEMP_AREA);               /* Initialize for below */
+	TEMP_INTEGER = 0;
+
+	/* First, check for simple integer; this is the most common case */
+
+	call EVALUATE_INTEGER (V, THIS_TEMP_INTEGER, IS_NON_CONSTANT);
+
+	if ^IS_NON_CONSTANT then do;
+		THIS_CONST_INITIALIZATION = TRUE;
+		if IN_BIT_FIELD then do; 
+			call SET_SYM_NODE_R (THIS_SYMBOL);
+			THIS_TEMP_INTEGER = BIT_FIELD_VALUE
+					    (THIS_TEMP_INTEGER,
+					     SYM_NODE.SIZE,
+					     SYM_NODE.FIELD2);
+			call SIMPLE_TYPE_SIZE
+			     (TYPE, THIS_SIZE, THIS_SIZE_UNITS, 0);
+		end;
+
+		/* EVALUATE_INTEGER returns result as LONG_T */
+
+		if (TYPE = SHORT_BT) | (TYPE  = USHORT_BT) then
+			TEMP_SHORT_INTEGER = THIS_TEMP_INTEGER;
+		else if (TYPE = CHAR_BT)  |
+			(TYPE = UCHAR_BT) |
+			(TYPE = SCHAR_BT) then
+			TEMP_BYTE = byte (THIS_TEMP_INTEGER);
+		else	TEMP_INTEGER = THIS_TEMP_INTEGER;
+
+		if THIS_INTEGRAL_CONST_SYMBOL then do;
+			call SET_SYM_NODE (THIS_SYMBOL);
+			SYM_NODE.CONST_INITIALIZER = TEMP_INTEGER;
+			SYM_NODE.HAS_CONST_INITIALIZER = TRUE;
+		end;
+	end;
+	else if EVALUATE_POINTER (V, T, LONG, IT) then do;
+		/*
+		/* Else, check for all the various incarnations of pointer
+		/**/
+		TEMP_INTEGER = LONG; /* Offset from symbol, or constant */
+		if T > 0 then do;
+			/*
+			/* This symbol needs to be relocated.
+			/* If the initializer is an automatic, then we cannot
+			/* do relocation.  Relocation can be done only for
+			/* initializers that are static or external.
+			/**/
+			call SET_SYM_NODE_R (T);
+			if SYM_NODE.STORAGE_CLASS ^= byte (AUTO_ST) then do;
+				THIS_CONST_INITIALIZATION = TRUE;
+				call SET_RELOCATION_DATA (T, LONG, CURRENT_DIF);
+			end;
+		end;
+		else	THIS_CONST_INITIALIZATION = TRUE;
+	end;
+	else do;
+		/*
+		/* Now eliminate all casts/converts that may have been 
+		/* generated from the call to GENERAL_CONVERT_VALUE above.
+		/* (Actually, EVALUATE_POINTER did the following already, 
+		/* but this is a dangerous side effect).
+		/**/
+		SV = V;              
+		CXX_VALUE_NODE_PTR = SV;
+		do while ((CXX_VALUE_NODE.OP = CAST_VO) |
+			  (CXX_VALUE_NODE.OP = IMPLICIT_CAST_VO) |
+			  (CXX_VALUE_NODE.OP = CONVERT_VO));           
+			SV = CXX_VALUE_NODE.LEFT;
+			CXX_VALUE_NODE_PTR = SV;
+		end;
+		if CXX_VALUE_NODE.OP = CONSTANT_VO then do;
+			THIS_CONST_INITIALIZATION = TRUE;
+			CXX_VALUE_NODE_PTR = CXX_VALUE_NODE.LEFT;
+			if TYPE = FLOAT_BT then
+				TEMP_FLOAT  = CXX_VALUE_NODE.FLT23;
+			else	TEMP_DOUBLE = CXX_VALUE_NODE.FLT52;
+		end;
+	end;
+
+	/* Else, it must some kind of non-constant initial expression */
+
+	if ^THIS_CONST_INITIALIZATION then do;
+		if ^SW_C_PLUS_PLUS then
+			call SEMANTIC_ERROR (ERR_NON_CONST_INIT);
+		/*
+		/* Set a default value of 0, converted to the proper type,
+		/* into the field to be written to the data file.
+		/*
+		/* "The default initialization of all static objects
+		/*  to zero is performed before any dynamic (that is,
+		/*  run-time) initialization." C++ARM, sec. 3.4.
+		/*
+		/* TEMP_INTEGER of 0 takes care of INT and pointers.
+		/**/
+		TEMP_INTEGER = 0;
+		if (TYPE = SHORT_BT) | (TYPE  = USHORT_BT) then  
+			TEMP_SHORT_INTEGER = TEMP_INTEGER;
+		else if (TYPE = CHAR_BT) |
+			(TYPE = UCHAR_BT) |
+			(TYPE = SCHAR_BT) then
+			TEMP_BYTE = byte (TEMP_INTEGER);
+		else if TYPE = DOUBLE_BT then
+			TEMP_DOUBLE = 0.0;
+		else if TYPE = FLOAT_BT then
+			TEMP_FLOAT = 0.0;
+
+		if (ACTUAL_CURRENT_SCOPE_TYPE ^= GLOBAL_SCOPE) &
+		    STATIC_INITIAL then do;
+			/*
+			/* Make a first time flag, and emit operators to
+			/* to test it and jump if not the first time.
+			/**/
+			FLAG_ID = MAKE_FIRST_TIME_FLAG (THIS_SYMBOL, FALSE);
+			/*
+			/* Save the CURRENT_VALUE, which is the initializer
+			/* expression, because we are about to generate
+			/* operators to do the test and jump, and these
+			/* operators reset CURRENT_VALUE.
+			/**/
+			SAVE_VALUE = CURRENT_VALUE;
+			LABEL_VID = FIRST_TIME_TEST (FLAG_ID);
+			/* Restore saved value */
+			CURRENT_VALUE = SAVE_VALUE;
+		end;
+		else do;	
+			LABEL_VID = NULL_CXX_VID;
+			/*
+			/* Set the psect flag so that these operators
+			/* are emitted into the global startup routine.
+			/**/
+			if ACTUAL_CURRENT_SCOPE_TYPE = GLOBAL_SCOPE then
+				call SET_STARTUP_PSECT ();
+		end;
+
+		/*
+		/* If this is an initialization for a non-static aggregate,
+		/* do first-time initialization to set up for jumping to
+		/* and back from the block move for the aggregate.
+		/**/
+
+		if  AGGREGATE_INITIAL &
+		   ^STATIC_INITIAL &
+		   (BLOCK_MOVE_LABEL = NULL_CXX_VID) then
+			call INIT_FOR_BLOCK_MOVE ();
+
+		T_VID = GET_REF_AND_EXPAND (BASE_SYMBOL);
+		call GET_SYM_NODE_R (THIS_SYMBOL, Q);
+		if ^Q->SYM_NODE.IS_BIT_FIELD then do;
+			call SET_VALUE_TYPE (WORK_INFO);
+			if (THIS_SYMBOL ^= BASE_SYMBOL) |
+			   (CURRENT_DIF_OFFSET ^= BASE_DIF_OFFSET) then
+				T_VID = REF_PLUS_OFFSET
+					(T_VID,
+					 CURRENT_DIF_OFFSET - BASE_DIF_OFFSET,
+					 BYTES,
+					 WORK_INFO);
+		end;
+		T_VID = GET_VALUE_AND_EXPAND_L (VALUE_VO, T_VID);
+		if Q->SYM_NODE.IS_BIT_FIELD then
+			T_VID = GET_DOT_AND_EXPAND (T_VID, Q->SYM_NODE.NAME);
+		call RELEASE_SYM_NODE (THIS_SYMBOL);
+		T_VID = GET_VALUE_AND_EXPAND_LR (COPY_VO, T_VID, V);
+		/* call EMIT_STATEMENT (T_VID); */
+		call QUEUE_STATEMENT_FOR_EMISSION (T_VID);
+			
+
+		/*
+		/* If first-time operators were emitted, place the label
+		/* to which to jump on all times other than the first.
+		/**/
+
+		if LABEL_VID ^= NULL_CXX_VID then
+			call QUEUE_STATEMENT_FOR_EMISSION
+			     (GET_VALUE_AND_EXPAND_L (LABEL_VO, LABEL_VID));
+	end;
+
+	/*
+	/* Now convert the size and offset in bytes and put the initial
+	/* value into IDATA space. Relocation info (if required) will
+	/* handled by a call to WRITE_RELOCATION_DATA in the calling routine.
+	/*
+	/* Note that we write zeroes to the static image for those
+ 	/* variables that have non-constant initializers.
+	/**/
+
+	call TARGET_CONVERSION (P, TYPE, 0);
+
+	THIS_SIZE = ROUNDU (THIS_SIZE, THIS_SIZE_UNITS, BYTES);
+
+	call WRITE_DATA_INITIAL_FILE (CURRENT_DIF, P, THIS_SIZE);
+
+	/*
+	/* If this is a non-constant initializer, then operators have already
+	/* been emitted to do the initialization, and the initial value 
+	/* expression has already been counted down.
+	/*
+	/* On the other hand, if this is a constant initializer,
+	/* its value must be counted down now.
+	/**/
+
+	if THIS_CONST_INITIALIZATION then
+		call COUNT_DOWN_VALUE (V);
+
+	CONST_INIT = CONST_INIT | THIS_CONST_INITIALIZATION;
+	DIF_INIT = TRUE;
+
+	call SET_SYM_NODE (THIS_SYMBOL);
+        
+end INIT_SCALAR_FROM_VALUE;
+
+/* ---------------------------------------------------------------------
+/* INIT_MEMBER_POINTER_FROM_VALUE
+/* ------------------------------------------------------------------- */
+
+INIT_MEMBER_POINTER_FROM_VALUE: procedure (WORK_INFO, V, THIS_SYMBOL) internal;
+
+	declare
+		WORK_INFO			type (TYPE_INFO_T),
+		V				type (CXX_VID_T),
+		THIS_SYMBOL			type (NID_T);
+	declare
+		TYPE_DATA			type (TYPE_DATA_T),
+		IS_DATA				type (BOOL_T),
+		IS_VIRTUAL			type (BOOL_T),
+		THIS_SIZE			type (LONG_T),
+		THIS_SIZE_UNITS			type (SHORT_T),
+		THIS_BOUNDARY			type (SHORT_T),
+		FLAG_ID				type (NID_T),
+		(SV, T_VID)			type (CXX_VID_T),
+		(LABEL_VID, SAVE_VALUE)		type (CXX_VID_T),
+		THIS_CONST_INITIALIZATION	type (BOOL_T),
+		SAVE_CONST_INIT			type (BOOL_T),
+		(MEMBER_INDEX, MEMBER_OFFSET, MEMBER_UNION)
+						type (CXX_VID_T),
+		TYPE_ID				type (NID_T),
+		(INTERNAL_TYPE, INFO)		type (TYPE_INFO_T),
+		(OFFSET_SYM, INDEX_SYM, UNION_SYM)
+						type (NID_T),
+		SAVE_DIF			type (DIFILE_T);
+
+	/* Get the current DIF offset */
+
+	CURRENT_DIF_OFFSET = GET_DATA_INITIAL_BYTE_OFFSET (CURRENT_DIF);
+
+	/* Convert initializer expression */
+	V = GENERAL_CONVERT_VALUE (V, WORK_INFO, INITIAL_VO);
+
+	/*
+	/* Now, determine the type/size info of the (converted) initial 
+	/* expression on right and set up the initial value in IDATA Space
+	/* as required. 
+	/**/
+
+	CXX_VALUE_NODE_PTR = V; /* Pickup right-hand side again */
+	THIS_SIZE  = CXX_VALUE_NODE.SIZE;
+	THIS_SIZE_UNITS = rank (CXX_VALUE_NODE.SIZE_UNITS);
+
+	THIS_CONST_INITIALIZATION = IS_CONSTANT_MEMBER_POINTER (V, TRUE);
+
+	if THIS_CONST_INITIALIZATION then do;
+	end;
+	else do;
+		SAVE_CONST_INIT = CONST_INIT;
+
+		if (ACTUAL_CURRENT_SCOPE_TYPE ^= GLOBAL_SCOPE) &
+		   STATIC_INITIAL then do;
+			/* Make a first time flag, and emit
+			/* operators to test it and jump
+			/* if not the first time.
+			/**/
+			FLAG_ID = MAKE_FIRST_TIME_FLAG (THIS_SYMBOL, FALSE);
+			/* Save the CURRENT_VALUE, which is
+			/* the initializer expression, because
+			/* we are about to generate operators
+			/* to do the test and jump, and these
+			/* operators reset CURRENT_VALUE.
+			/**/
+			SAVE_VALUE = CURRENT_VALUE;
+			LABEL_VID = FIRST_TIME_TEST (FLAG_ID);
+			/* Restore saved value */
+			CURRENT_VALUE = SAVE_VALUE;
+		end;
+		else do;	
+			LABEL_VID = NULL_CXX_VID;
+			/*
+			/* Set the psect flag so that these operators
+			/* are emitted into the global startup routine.
+			/**/
+			if ACTUAL_CURRENT_SCOPE_TYPE = GLOBAL_SCOPE then
+				call SET_STARTUP_PSECT ();
+		end;
+
+		/* If this is an initialization for a non-static
+		/* aggregate, do first-time initialization to set
+		/* up for jumping to and back from the block move
+		/* for the aggregate.
+		/**/
+		if AGGREGATE_INITIAL & ^STATIC_INITIAL 
+			& BLOCK_MOVE_LABEL = NULL_CXX_VID then
+			call INIT_FOR_BLOCK_MOVE ();
+
+		T_VID = GET_REF_AND_EXPAND (BASE_SYMBOL);
+		call SET_VALUE_TYPE (WORK_INFO);
+		if   THIS_SYMBOL ^= BASE_SYMBOL
+		   | CURRENT_DIF_OFFSET ^= BASE_DIF_OFFSET then
+			T_VID = REF_PLUS_OFFSET (T_VID, 
+					CURRENT_DIF_OFFSET -
+					BASE_DIF_OFFSET,
+					BYTES,
+					WORK_INFO);
+		T_VID = GET_VALUE_AND_EXPAND_L (VALUE_VO, T_VID);
+		V     = GET_VALUE_AND_EXPAND_LR (COPY_VO, T_VID, V);
+		/* call EMIT_STATEMENT (V); */
+		call QUEUE_STATEMENT_FOR_EMISSION (V);
+			
+		/* If first-time operators were emitted, place the
+		/* label to which to jump on all times other than 
+		/* the first.
+		/**/
+		if LABEL_VID ^= NULL_CXX_VID then
+			call QUEUE_STATEMENT_FOR_EMISSION
+			     (GET_VALUE_AND_EXPAND_L (LABEL_VO, LABEL_VID));
+
+		V = INTEGER_VALUE_ZERO ();
+		call SET_VALUE_TYPE (WORK_INFO);
+	end;
+
+	/* The value can go into the data initial file. */
+	call MEMBER_POINTER_CONSTANTS (V,
+				       IS_DATA,
+				       IS_VIRTUAL,
+				       MEMBER_OFFSET,
+				       MEMBER_INDEX,
+				       MEMBER_UNION);
+
+	/* 
+	/* Now, we have constant expressions to use in initializing
+	/* the individual members representing the member function pointer.
+	/*
+	/* 			IS_DATA		IS_VIRTUAL	^IS_VIRTUAL
+	/* MEMBER_OFFSET	x		x		x
+	/* MEMBER_INDEX				x		x
+	/* MEMBER_UNION				x		x
+	/**/
+
+	/* Get the type which represents this member pointer. */
+
+	call GET_TOP_LEVEL_TYPE_INFO (WORK_INFO, 1, TYPE_DATA);
+	TYPE_ID = GET_MEMBER_POINTER_TYPE (TYPE_DATA);
+	call SET_TYPE_NODE_R (TYPE_ID);
+	call GET_TYPE_NODE_TYPE (INTERNAL_TYPE);
+
+	if IS_DATA then
+		call INIT_SCALAR_FROM_VALUE (INTERNAL_TYPE, MEMBER_OFFSET,
+					     THIS_SYMBOL);
+
+	else do;
+		/* a pointer to member function */
+
+		call SET_SYM_NODE_R (INTERNAL_TYPE.TAG_SYMBOL);
+		OFFSET_SYM = SYM_NODE.FIELD1_FIRST_MEMBER;
+
+		/* Save the current data-initial-file position. */
+		SAVE_DIF = CURRENT_DIF;
+
+		/* Initialize the delta. */
+
+		call SET_SYM_NODE_R (OFFSET_SYM);
+		INDEX_SYM = SYM_NODE.BROTHER;
+		call GET_SYMBOL_TYPE (INFO);
+		call DETERMINE_SIZE (INFO);
+
+		/* Set up the data-initial-file position. */
+		call ADVANCE_DATA_INITIAL_FILE (CURRENT_DIF,
+						SYM_NODE.LOCATION,
+						rank (SYM_NODE.OFFSET_UNITS));
+
+		call INIT_SCALAR_FROM_VALUE (INFO, MEMBER_OFFSET, OFFSET_SYM);
+
+		/* Initialize the virtual function table index. */
+
+		call SET_SYM_NODE_R (INDEX_SYM);
+		UNION_SYM = SYM_NODE.BROTHER;
+		call GET_SYMBOL_TYPE (INFO);
+		call DETERMINE_SIZE (INFO);
+
+		/* Set up the data-initial-file position. */
+		CURRENT_DIF = SAVE_DIF;
+		call ADVANCE_DATA_INITIAL_FILE (CURRENT_DIF,
+						SYM_NODE.LOCATION,
+						rank (SYM_NODE.OFFSET_UNITS));
+
+		call INIT_SCALAR_FROM_VALUE (INFO, MEMBER_INDEX, INDEX_SYM);
+
+		/* Initialize the union vftp-offset/address. */
+
+		call SET_SYM_NODE_R (UNION_SYM);
+		CURRENT_DIF = SAVE_DIF;
+		call ADVANCE_DATA_INITIAL_FILE (CURRENT_DIF,
+						SYM_NODE.LOCATION,
+						rank (SYM_NODE.OFFSET_UNITS));
+
+		call SET_SYM_NODE_R (SYM_NODE.TOP_TYPE.TAG_SYMBOL);
+		call SET_SYM_NODE_R (SYM_NODE.FIELD1_FIRST_MEMBER);/* address*/
+		if IS_VIRTUAL then	
+			call SET_SYM_NODE_R (SYM_NODE.BROTHER);	   /* voffset*/
+		call GET_SYMBOL_TYPE (INFO);
+		call DETERMINE_SIZE (INFO);
+
+		/* Set up the data-initial-file position */
+		call ADVANCE_DATA_INITIAL_FILE (CURRENT_DIF,
+						SYM_NODE.LOCATION,
+						rank (SYM_NODE.OFFSET_UNITS));
+
+		call INIT_SCALAR_FROM_VALUE (INFO, MEMBER_UNION,
+						   (CURRENT_NODE_ID));
+		CURRENT_DIF = SAVE_DIF;
+	end; /* pointer to member function */
+
+	/*
+	/* The stuff we fed to INIT_SCALAR_FROM_VALUE made it think
+	/* there was a member which could require a block copy.
+	/* This is not the case if we have a run-time value.
+	/**/
+	if ^THIS_CONST_INITIALIZATION then
+		CONST_INIT = SAVE_CONST_INIT;
+
+	call SET_SYM_NODE (THIS_SYMBOL);
+        
+end INIT_MEMBER_POINTER_FROM_VALUE;
+
+/* ---------------------------------------------------------------------
+/* BIT_FIELD_VALUE
+/* ------------------------------------------------------------------- */
+
+BIT_FIELD_VALUE: procedure (BIT_VALUE, SIZE, REMAINING_BITS)
+		 returns   (type (LONG_T))
+		 internal;
+	declare
+		BIT_VALUE	type (LONG_T),
+		SIZE		type (LONG_T),
+		REMAINING_BITS	type (SHORT_T);
+	declare
+		K		type (LONG_T),
+		BIT_SIZE	type (SHORT_T),
+		SZ		type (LONG_T),
+		SZU		type (SHORT_T),
+		VALUE		type (LONG_T),
+		V		type (CXX_VID_T);
+
+	BIT_SIZE = SIZE;
+	K = REMAINING_BITS;
+
+	if ^BITS_PACKED_LEFT_TO_RIGHT then do;
+		/*
+		/* Little-endian (e.g. i386/486).
+		/**/
+		call SIMPLE_TYPE_SIZE (rank (SYM_NODE.TOP_TYPE.CODE),
+				       SZ, SZU, 0);
+		K = ROUNDU (SZ, SZU, BITS) - (BIT_SIZE + K);
+	end;
+
+	
+	V = GET_VALUE_AND_EXPAND_LR
+	    (LSHIFT_VO,
+	     GET_VALUE_AND_EXPAND_LR (AND_VO,
+				      INTEGER_VALUE (BIT_VALUE, INT_BT),
+				      BIT_FIELD_MASK (BIT_SIZE)),
+	     INTEGER_VALUE (K, INT_BT));
+
+	VALUE = V->CXX_VALUE_NODE.OFFSET;
+
+	call COUNT_DOWN_VALUE (V);
+
+	return (VALUE);
+
+end BIT_FIELD_VALUE;
+
+/* ---------------------------------------------------------------------
+/* BIT_FIELD_MASK
+/* ------------------------------------------------------------------- */
+
+BIT_FIELD_MASK: procedure (K) returns (type (CXX_VID_T)) internal;
+
+	declare
+		K	type (SHORT_T);
+	declare
+		I	type (SHORT_T),
+		M	type (LONG_T);
+
+	if K < 32 then do;
+		M = 0;
+		do I = 1 to K; M = (M * 2) + 1; end;
+	end;
+	else	M = -1;
+
+	return (INTEGER_VALUE (M, 0));
+
+end BIT_FIELD_MASK;
+
+/* ---------------------------------------------------------------------
+/* LSHIFT
+/* ------------------------------------------------------------------- */
+
+LSHIFT: procedure (A, N) returns (type (LONG_T)) internal;
+
+	declare
+		A	type (LONG_T),
+		N	type (LONG_T);
+	declare
+		R	type (LONG_T),
+		I	type (SHORT_T);
+
+	R = A;
+	do I = 1 to N;
+		R = R * 2;
+	end;
+	return (R);
+
+end LSHIFT;
+
+/* ---------------------------------------------------------------------
+/* RSHIFT
+/* ------------------------------------------------------------------- */
+
+RSHIFT: procedure (A, N) returns (type (LONG_T)) internal;
+
+	declare
+		A	type (LONG_T),
+		N	type (LONG_T);
+	declare
+		R	type (LONG_T),
+		I	type (SHORT_T);
+
+	R = A;
+	do I = 1 to N;
+		R = divide (R, 2, 31);
+	end;
+	return (R);
+
+end RSHIFT;
+
+/* ---------------------------------------------------------------------
+/* INIT_OBJECT_FROM_VALUE
+/* 
+/* Initialize an object in non-aggregate fashion,
+/* analogous to INIT_SCALAR_FROM_VALUE, but for class types.
+/*
+/* The data initial file is totally ignored here, because
+/* static class objects need not be set to all-zeros prior
+/* to program start-up, and this kind of initialization does not
+/* occur as part of an aggregate.
+/* ------------------------------------------------------------------- */
+
+INIT_OBJECT_FROM_VALUE: procedure (WORK_INFO, V, THIS_SYMBOL) internal;
+
+	declare
+		WORK_INFO			type (TYPE_INFO_T),
+		V				type (CXX_VID_T),
+		THIS_SYMBOL			type (NID_T);
+	declare
+		FLAG_ID				type (NID_T),
+		T_VID				type (CXX_VID_T),
+		(LABEL_VID, SAVE_VALUE)		type (CXX_VID_T);
+
+	/* Get the current DIF offset */
+
+	CURRENT_DIF_OFFSET = GET_DATA_INITIAL_BYTE_OFFSET (CURRENT_DIF);
+
+	/* Convert initializer expression */
+	V = GENERAL_CONVERT_VALUE (V, WORK_INFO, INITIAL_VO);
+
+	if (ACTUAL_CURRENT_SCOPE_TYPE ^= GLOBAL_SCOPE) &
+	   STATIC_INITIAL then do;
+		/* Make a first time flag, and emit
+		/* operators to test it and jump
+		/* if not the first time.
+		/**/
+		FLAG_ID = MAKE_FIRST_TIME_FLAG (THIS_SYMBOL, FALSE);
+		LABEL_VID = FIRST_TIME_TEST (FLAG_ID);
+	end;
+	else do;	
+		LABEL_VID = NULL_CXX_VID;
+		/*
+		/* Set the psect flag so that these operators
+		/* are emitted into the global startup routine.
+		/**/
+		if ACTUAL_CURRENT_SCOPE_TYPE = GLOBAL_SCOPE then
+			call SET_STARTUP_PSECT ();
+	end;
+
+	T_VID = GET_REF_AND_EXPAND (BASE_SYMBOL);
+	call SET_VALUE_TYPE (WORK_INFO);
+	if   THIS_SYMBOL ^= BASE_SYMBOL
+	   | CURRENT_DIF_OFFSET ^= BASE_DIF_OFFSET then
+		T_VID = REF_PLUS_OFFSET (T_VID, 
+					 CURRENT_DIF_OFFSET - BASE_DIF_OFFSET,
+					 BYTES,
+					 WORK_INFO);
+	call SET_VALUE_TYPE (WORK_INFO);
+	CXX_VALUE_NODE.NOT_AN_LVALUE = FALSE;
+	T_VID = GET_VALUE_AND_EXPAND_L (VALUE_VO, T_VID);
+	V     = GET_VALUE_AND_EXPAND_LR (COPY_VO, T_VID, V);
+	/* call EMIT_STATEMENT (V); */
+	call QUEUE_STATEMENT_FOR_EMISSION (V);
+
+	/* If first-time operators were emitted, place the
+	/* label to which to jump on all times other than 
+	/* the first.
+	/**/
+	if LABEL_VID ^= NULL_CXX_VID then
+		call QUEUE_STATEMENT_FOR_EMISSION
+		     (GET_VALUE_AND_EXPAND_L (LABEL_VO, LABEL_VID));
+
+	call SET_SYM_NODE (THIS_SYMBOL);
+        
+end INIT_OBJECT_FROM_VALUE;
+
+/* ---------------------------------------------------------------------
+/* GET_NEXT_INITIAL
+/*
+/* Processes saved-up initializing expression if available.
+/* Otherwise, do as below.
+/*
+/* Advance the CURRENT_INITIALIZER_ITEM to the next non-comma item
+/* in the initializer.  Return whether the item reached is part of
+/* the intializer and _not_ a terminating semicolon.
+/*
+/* WITHIN_LIST is set true iff the item reached is '{' or '}'.
+/*
+/* END_OF_INITIALIZER is set true if a semicolon or '}' is reached.
+/*
+/* If an expression is reached, THIS_REPEAT is incremented to indicate
+/* that it is available to be consumed.
+/* ------------------------------------------------------------------- */
+
+GET_NEXT_INITIAL: procedure (WITHIN_LIST) returns (type (BOOL_T)) internal;
+
+	declare
+		WITHIN_LIST	type (BOOL_T);
+	declare
+		LAST_ITEM	type (BYTE_BITS_T),
+		SNID		type (SNID_T);
+
+	WITHIN_LIST = FALSE;
+
+	if THIS_REPEAT > 0 then do;
+		if CURRENT_VALUE ^= NULL_CXX_VID then /* unconsumed value */
+			return (TRUE);
+	end;
+
+	NEXT_INITIAL_ITEM:
+	
+	if CURRENT_TOKEN.TYPE = SEMICOLON_TOKEN then do;
+		END_OF_INITIALIZER = TRUE;
+		return (FALSE);
+	end;
+
+	LAST_ITEM = CURRENT_INITIALIZER_ITEM.ITEM;
+	CURRENT_INITIALIZER_ITEM.ITEM = NULL_ITEM;
+
+	/* Parse the next initializer item */
+
+	call SAVE_NODE (SNID);
+	call PARSE_INITIALIZER_ITEM ();
+	call RESTORE_NODE (SNID);
+
+	/* Here, CURRENT_INITIALIZER_ITEM represents MATCHED_TOKEN */
+
+	WITHIN_LIST = CURRENT_INITIALIZER_ITEM.IS_BRACE;
+
+	if CURRENT_INITIALIZER_ITEM.IS_EXPRESSION then
+		THIS_REPEAT = THIS_REPEAT + 1;
+
+	/* See if this is the last item */
+
+	if CURRENT_TOKEN.TYPE = COMMA_TOKEN then do;
+		/*
+		/* Allow for a trailing comma.
+		/**/
+		call SET_PEEK_TOKEN ();
+		END_OF_INITIALIZER = (PEEK_TOKEN.TYPE = RCURLY_TOKEN);
+	end;
+        else	END_OF_INITIALIZER = (CURRENT_TOKEN.TYPE = RCURLY_TOKEN);
+    
+	if (LAST_ITEM = LEFT_BRACE_ITEM) |
+	   (LAST_ITEM = NULL_ITEM) then do;
+		if CURRENT_INITIALIZER_ITEM.IS_LEFT_BRACE |
+		   CURRENT_INITIALIZER_ITEM.IS_EXPRESSION then
+			return (TRUE);
+	end;
+	else if LAST_ITEM = RIGHT_BRACE_ITEM then do;
+		if CURRENT_INITIALIZER_ITEM.IS_COMMA then do;
+			/*
+			/* Skip over the comma.
+			/**/
+			goto NEXT_INITIAL_ITEM;
+		end;
+		else if CURRENT_INITIALIZER_ITEM.IS_RIGHT_BRACE then
+			return (TRUE);
+	end;
+	else if LAST_ITEM = COMMA_ITEM then do;
+		if CURRENT_INITIALIZER_ITEM.IS_BRACE |
+		   CURRENT_INITIALIZER_ITEM.IS_EXPRESSION then do;
+			/*
+			/* { 1, 2, 3,  4, }
+			/* { 1, { 2, 3 }, 4 }
+			/**/
+			return (TRUE);
+		end;
+	end;
+	else if (LAST_ITEM & EXPRESSION_ITEM) = EXPRESSION_ITEM then do;
+		if CURRENT_INITIALIZER_ITEM.IS_COMMA then
+			goto NEXT_INITIAL_ITEM;
+		else if CURRENT_INITIALIZER_ITEM.IS_RIGHT_BRACE then
+			return (TRUE);
+	end;
+
+	/* Here, syntax abort! */
+
+	call SYNTAX_ERROR (ERR_BAD_INITIAL_DECLARATION);
+
+end GET_NEXT_INITIAL;
+
+/* ---------------------------------------------------------------------
+/* GET_NEXT_ITEM
+/*
+/* Pick up an expression tree.  If the next item begins with '{',
+/* then the list is parsed up to the maching '}', and only one
+/* value is retained.  N is set to the number of values found so
+/* that the caller of GET_NEXT_ITEM can report the error if N ^= 1.
+/* ------------------------------------------------------------------- */
+
+GET_NEXT_ITEM: procedure (N) returns (type (CXX_VID_T)) internal;
+
+	declare
+		N		type (SHORT_T);  /* initial values parsed */
+	declare
+		WITHIN_LIST	type (BOOL_T),
+		J		type (SHORT_T),
+		K		type (CXX_VID_T);
+
+	N = 0;
+
+	if ^GET_NEXT_INITIAL (WITHIN_LIST) then 
+		return (NULL_CXX_VID);
+
+	if WITHIN_LIST then do;
+		call PUSH_LIST (J);
+		K = CURRENT_VALUE;
+		N = 1;
+		THIS_REPEAT = THIS_REPEAT - 1;
+		do while (^END_OF_INITIALIZER &
+			  CURRENT_INITIALIZER_ITEM.IS_EXPRESSION);
+			if ^GET_NEXT_INITIAL (WITHIN_LIST) then
+				goto DONE_GET_NEXT_ITEM;
+			else if CURRENT_INITIALIZER_ITEM.IS_EXPRESSION then do;
+			    	N = N + 1;
+				THIS_REPEAT = THIS_REPEAT - 1;
+			    	call COUNT_DOWN_VALUE (CURRENT_VALUE);
+			end;
+		end;
+		call POP_LIST (J);
+	end;
+	else do;
+		K = CURRENT_VALUE;
+		N = 1;
+		THIS_REPEAT = THIS_REPEAT - 1;
+	end;
+
+	DONE_GET_NEXT_ITEM:
+	
+	return (K);
+
+end GET_NEXT_ITEM;
+
+/* ---------------------------------------------------------------------
+/* PUSH_LIST, POP_LIST
+/* ------------------------------------------------------------------- */
+
+declare
+	BRACE_COUNT	type (SHORT_T) static internal initial (0);
+
+/* ---------------------------------------------------------------------
+/* PUSH_LIST
+/* ------------------------------------------------------------------- */
+
+PUSH_LIST: procedure (OLD_BRACE_COUNT) internal;
+
+	declare
+		OLD_BRACE_COUNT	type (SHORT_T);
+	declare
+		LBRACE		type (BOOL_T);
+
+	OLD_BRACE_COUNT = BRACE_COUNT;
+
+	do while (TRUE);
+		BRACE_COUNT = BRACE_COUNT + 1;
+		if ^GET_NEXT_INITIAL (LBRACE) then
+			return;
+		if ^LBRACE then
+			return;
+	end;
+	
+end PUSH_LIST;
+        
+/* ---------------------------------------------------------------------
+/* POP_LIST
+/* ------------------------------------------------------------------- */
+
+POP_LIST: procedure (STOP_COUNT) internal;
+
+	declare
+		STOP_COUNT	type (SHORT_T);
+	declare
+		RBRACE		type (BOOL_T);
+
+	do while (END_OF_INITIALIZER & (BRACE_COUNT > STOP_COUNT));
+		BRACE_COUNT = BRACE_COUNT - 1;
+		if ^GET_NEXT_INITIAL (RBRACE) then
+			leave;
+	end;
+	if BRACE_COUNT ^= STOP_COUNT then do;
+		/*
+		/* Error; syntax abort!
+		/**/
+		call SYNTAX_ERROR (ERR_BAD_INITIAL_DECLARATION);
+	end;
+
+end POP_LIST;
+
+/* ---------------------------------------------------------------------
+/* CLOSE_INITIAL_LIST
+/* ------------------------------------------------------------------- */
+
+CLOSE_INITIAL_LIST: procedure (ERROR_CODE) internal;
+
+	declare
+		ERROR_CODE	type (SHORT_T);
+	declare
+		I		type (CXX_VID_T),
+		LIST		type (BOOL_T),
+		N		type (SHORT_T);
+
+	if CURRENT_TOKEN.TYPE = SEMICOLON_TOKEN then do;
+		call SYNTAX_ERROR (ERR_BAD_INITIAL_DECLARATION);
+		return;
+	end;
+	else if ^END_OF_INITIALIZER then do; 
+		call SEMANTIC_ERROR (ERROR_CODE);
+		/*
+		/* Skip excess values.
+		/**/
+		N = 1;
+		do while (^END_OF_INITIALIZER & (N ^= 0));
+			I = GET_NEXT_ITEM (N);
+		end;
+	end;
+
+	if ^GET_NEXT_INITIAL (LIST) then  /* Pop outer right '}' */
+		;
+
+	if ^LIST THEN 
+		call SYNTAX_ERROR (ERR_BAD_INITIAL_DECLARATION);
+
+ end CLOSE_INITIAL_LIST;
+
+/* ---------------------------------------------------------------------
+/* SET_INITIALIZER_BEGIN
+/* ------------------------------------------------------------------- */
+
+SET_INITIALIZER_BEGIN: procedure external (X_SET_INITIALIZER_BEGIN);
+	
+	CURRENT_INITIALIZER_ITEM.ITEM = LEFT_BRACE_ITEM;
+
+end SET_INITIALIZER_BEGIN;
+
+/* ---------------------------------------------------------------------
+/* SET_INITIALIZER_END
+/* ------------------------------------------------------------------- */
+
+SET_INITIALIZER_END: procedure external (X_SET_INITIALIZER_END);
+
+	CURRENT_INITIALIZER_ITEM.ITEM = RIGHT_BRACE_ITEM;
+
+end SET_INITIALIZER_END;
+
+/* ---------------------------------------------------------------------
+/* SET_INITIALIZER_DELIMITER
+/* ------------------------------------------------------------------- */
+
+SET_INITIALIZER_DELIMITER: procedure external (X_SET_INITIALIZER_DELIMITER);
+
+	CURRENT_INITIALIZER_ITEM.ITEM = COMMA_ITEM;
+
+end SET_INITIALIZER_DELIMITER;
+
+/* ---------------------------------------------------------------------
+/* SET_INITIALIZER_EXPRESSION
+/* ------------------------------------------------------------------- */
+
+SET_INITIALIZER_EXPRESSION: procedure external (X_SET_INITIALIZER_EXPRESSION);
+
+	CURRENT_INITIALIZER_ITEM.ITEM = EXPRESSION_ITEM;
+	CURRENT_INITIALIZER_ITEM.EXPRESSION_VALUE = CURRENT_VALUE;
+
+end SET_INITIALIZER_EXPRESSION;
+
+/* ---------------------------------------------------------------------
+/* SET_INITIALIZER_UNKNOWN
+/* ------------------------------------------------------------------- */
+
+SET_INITIALIZER_UNKNOWN: procedure external (X_SET_INITIALIZER_UNKNOWN);
+
+	/* See if we've reached end-of-file (hacky; see the grammar) */
+
+	if CURRENT_TOKEN.TYPE = EOF_TOKEN then
+		return;
+
+	/* Error; illegal/misplaced token within initializer; ignored */
+
+	call SYNTAX_ERROR (ERR_BAD_INITIAL_DECLARATION);
+
+	CURRENT_INITIALIZER_ITEM.ITEM = NULL_ITEM;
+
+end SET_INITIALIZER_UNKNOWN;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_CLASS_INITIALIZER
+/* ------------------------------------------------------------------- */
+
+BEGIN_CLASS_INITIALIZER: procedure external (X_BEGIN_CLASS_INITIALIZER);
+
+	declare
+		EFFECTIVE_SCOPE	type (NID_T);
+
+	/* call EMIT_STATEMENT_ID (); */
+	call CHECK_SYMBOL_DEFINITION ();
+	call SAVE_DECLARATION_STATE ();
+	call CLEAR_DECLARATION_SPECIFIERS ();
+	call PUSH_MARKER ();
+
+	if CURRENT_SYMBOL ^= NULL_NID then do;
+		call SET_SYM_NODE (CURRENT_SYMBOL);
+		EFFECTIVE_SCOPE = SYM_NODE.ENCLOSING_SCOPE;
+	end;
+	else
+		EFFECTIVE_SCOPE = CURRENT_SCOPE;
+	ACTUAL_CURRENT_SCOPE_TYPE = CURRENT_SCOPE_TYPE;
+	call SAVE_SCOPE_STATE ();
+	call SET_CURRENT_SCOPE (EFFECTIVE_SCOPE);
+
+end BEGIN_CLASS_INITIALIZER;
+
+/* ---------------------------------------------------------------------
+/* SET_INITIALIZER_ARGUMENTS
+/* ------------------------------------------------------------------- */
+
+SET_INITIALIZER_ARGUMENTS: procedure
+			   external  (X_SET_INITIALIZER_ARGUMENTS);
+
+	call POP_ARGUMENT_VALUES ();
+
+end SET_INITIALIZER_ARGUMENTS;
+
+/* ---------------------------------------------------------------------
+/* END_CLASS_INITIALIZER
+/* ------------------------------------------------------------------- */
+
+END_CLASS_INITIALIZER: procedure external (X_END_CLASS_INITIALIZER);
+
+	call POP_MARKER ();
+	call RESTORE_DECLARATION_STATE ();
+	call INITIALIZE_FROM_ARGUMENT_LIST ();
+	call RESTORE_SCOPE_STATE ();
+
+end END_CLASS_INITIALIZER;
+
+/* ---------------------------------------------------------------------
+/* SET_NULL_INITIALIZER
+/* ------------------------------------------------------------------- */
+
+SET_NULL_INITIALIZER: procedure external (X_SET_NULL_INITIALIZER);
+
+	declare
+		EFFECTIVE_SCOPE	type (NID_T);
+
+	call MAYBE_SYMBOL_DEFINITION ();
+	CURRENT_VALUE = NULL_CXX_VID;
+
+	if CURRENT_SYMBOL ^= NULL_NID then do;
+		call SET_SYM_NODE (CURRENT_SYMBOL);
+		EFFECTIVE_SCOPE = SYM_NODE.ENCLOSING_SCOPE;
+	end;
+	else
+		EFFECTIVE_SCOPE = CURRENT_SCOPE;
+
+	if EFFECTIVE_SCOPE ^= CURRENT_SCOPE then do;
+		ACTUAL_CURRENT_SCOPE_TYPE = CURRENT_SCOPE_TYPE;
+		call SAVE_SCOPE_STATE ();
+		call SET_CURRENT_SCOPE (SYM_NODE.ENCLOSING_SCOPE);
+
+		call INITIALIZE_FROM_ARGUMENT_LIST ();
+
+		call RESTORE_SCOPE_STATE ();
+	end;
+	else
+		call INITIALIZE_FROM_ARGUMENT_LIST ();
+
+end SET_NULL_INITIALIZER;
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_FROM_ARGUMENT_LIST
+/*
+/* Call with a constructor argument list in CURRENT_VALUE,
+/* and CURRENT_SYMBOL the symbol to initialize with it.
+/* This is called even when there are no arguments.
+/*   
+/* At first PKT considered doing static constant scalar initialization
+/* with constructor initializers the way it's done for classic initializers,
+/* but this was changed for simplicity and lack of compelling reason
+/* to do it differently.
+/*
+/* Instead of 12 cases, there are 3:
+/*
+/*   1. Global initialization.
+/*	An appropriate operation will be generated and placed
+/*	in some global start-up routine, e.g. __init_globals__.
+/*	N.B. this will require the ability to "go back" in the op-stream.
+/*   2. Local static initialization.
+/*	An appropriate operation will be generated to set the
+/*	value of the scalar the *first* time the function is called only.
+/*   3. Local automatic initialization.
+/*	An appropriate operation will be generated to
+/*	set the value of the scalar at the start of the function.
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_FROM_ARGUMENT_LIST: procedure internal;
+
+	declare
+		STORAGE_CLASS		type (SHORT_T),
+		ENCLOSING_SCOPE_TYPE	type (SHORT_T),
+		IS_STATIC_MEMBER	type (BOOL_T),
+		IS_STATIC		type (BOOL_T),
+		INITIALIZING_NOW	type (BOOL_T),
+		INITIALIZED_EARLIER	type (BOOL_T),
+		VALUE			type (CXX_VID_T),
+		LABEL_VID		type (CXX_VID_T),
+		SAVE_VALUE		type (CXX_VID_T),
+		FLAG_ID			type (NID_T),
+		SAVE_SYMBOL		type (NID_T),
+		SP			type (POINTER_T),
+		TD			type (TYPE_DATA_T);
+
+	if CURRENT_SYMBOL = NULL_NID then do;
+		call COUNT_DOWN_VALUE (CURRENT_VALUE);
+		return;
+	end;
+
+	/* Get the current symbol */
+
+	call GET_SYM_NODE_R (CURRENT_SYMBOL, SP);
+
+	/* Get/set the pertinent symbol data */
+
+	STORAGE_CLASS		= rank (SP->SYM_NODE.STORAGE_CLASS);
+	ENCLOSING_SCOPE_TYPE	= rank (SP->SYM_NODE.ENCLOSING_SCOPE_TYPE);
+	IS_STATIC_MEMBER	= (STORAGE_CLASS = STATIC_ST) &
+				  SP->SYM_NODE.IS_AGGREGATE_MEMBER;
+
+	/*
+	/* If there is no explicit argument list, don't do anything
+	/* unless this is a definition.  Don't do anything for tentative
+	/* definitions either.  ARM 3.1; X3J11 3.7.2.
+	/**/
+
+	if CURRENT_VALUE = NULL_CXX_VID then do;
+		if SP->SYM_NODE.IS_FUNCTION |
+		   SP->SYM_NODE.IS_TYPE |
+		   (CURRENT_STORAGE_CLASS = EXTERN_ST) | /* sic */
+		   (SW_TENTATIVE_DEFN &
+		    ENCLOSING_SCOPE_TYPE = GLOBAL_SCOPE) then do;
+			call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+			return;
+		end;
+	end;
+
+	/* Symbol considered initialized if the arg list is non-trivial */
+
+	INITIALIZING_NOW	= (CURRENT_VALUE ^= NULL_CXX_VID);
+	/*
+	/* Setting INITIAL_AT causes an error 32 in the allocator
+	/* for aggregate objects defined at file scope.
+	/*
+	/* INITIALIZED_EARLIER	= SP->SYM_NODE.INITIAL_AT;
+	/**/
+	INITIALIZED_EARLIER	= (SP->SYM_NODE.VALUE ^= NULL_NID);
+
+	IS_STATIC = DETERMINE_STATIC (STORAGE_CLASS,
+				      ENCLOSING_SCOPE_TYPE,
+				      FALSE);
+
+	VALUE = GET_CONSTRUCTOR_VALUE (SP->SYM_NODE.TYPE,
+				       CURRENT_VALUE,
+				       NULL_NID,
+				       INITIAL_VO);
+
+	LABEL_VID = NULL_CXX_VID;
+
+	if ^IS_STATIC_MEMBER &
+	    IS_STATIC &
+	    (ENCLOSING_SCOPE_TYPE ^= GLOBAL_SCOPE) then do;
+		/*
+		/* This initializes a static variable.
+		/*
+		/* Define the first-time flag, and emit operators
+		/* to test and jump over the initializing code.
+		/* Note that if the value returned by GET_CONSTRUCTOR_VALUE
+		/* is an UNINITIALIZED_VO, then there is no actual initial
+		/* so we do not need the first-time flag.
+		/**/
+		CXX_VALUE_NODE_PTR = VALUE;
+		if CXX_VALUE_NODE.OP ^= UNINITIALIZED_VO then do;
+			FLAG_ID = MAKE_FIRST_TIME_FLAG (CURRENT_SYMBOL, FALSE);
+			LABEL_VID = FIRST_TIME_TEST (FLAG_ID);
+		end;
+	end;
+	else do;
+		if (ENCLOSING_SCOPE_TYPE = GLOBAL_SCOPE) |
+		   IS_STATIC_MEMBER then do;
+			SAVE_SYMBOL = CURRENT_SYMBOL;
+			SAVE_VALUE  = CURRENT_VALUE;
+			call SET_STARTUP_PSECT ();
+			CURRENT_SYMBOL = SAVE_SYMBOL;
+			CURRENT_VALUE  = SAVE_VALUE;
+		end;
+	end;
+
+	/* This initializes an automatic variable */
+
+	VALUE = INITIALIZE_OBJECT
+		(GET_REF_AND_EXPAND (CURRENT_SYMBOL), VALUE);
+
+	/* Symbol considered initialized 
+	/* if a default constructor is invoked.
+	/* I'm not comfortable with this.
+	/* The ARM doesn't seem to give a clear indication of
+	/* what constitutes initialization for purposes of
+	/* what can be jumped past and what can't.
+	/**/
+
+	call EMIT_ANY_QUEUED_STATEMENTS ();
+
+	if VALUE ^= NULL_CXX_VID then do;
+		INITIALIZING_NOW = TRUE;
+		declare L type (LONG_T);
+		L = CURRENT_SOURCE.LINE;
+		CURRENT_SOURCE.LINE = MATCHED_TOKEN.LINE;
+		call EMIT_STATEMENT_ID ();
+		CURRENT_SOURCE.LINE = L;
+	end;
+
+	call EMIT_STATEMENT (VALUE);
+
+	/* If first-time operators were emitted, place the
+	/* label to which to jump on all times other than 
+	/* the first.
+	/**/
+	if LABEL_VID ^= NULL_CXX_VID then
+		call EMIT_STATEMENT
+		     (GET_VALUE_AND_EXPAND_L (LABEL_VO, LABEL_VID));
+
+	/* See if this symbol has already been initialized */
+
+	if INITIALIZING_NOW then do;
+		if INITIALIZED_EARLIER then do;
+			if ^SW_TENTATIVE_DEFN then do;
+				/*
+				/* Error; redefinition -- already diagnosed.
+				/**/
+				;
+			end;
+			else 	call SEMANTIC_ERROR (ERR_DUP_INITIAL);
+		end;
+
+		call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+		call GET_SYM_NODE (CURRENT_SYMBOL, SP);
+	
+		/*
+		/* Setting INITIAL_AT causes an error 32 in the allocator
+		/* for aggregate objects defined at file scope.
+		/*
+		/* SP->SYM_NODE.INITIAL_AT		= TRUE;
+		/**/
+
+		SP->SYM_NODE.HAS_BEEN_SET_OR_ALIASED	= TRUE;
+		SP->SYM_NODE.EXPRESSION			= VALUE;
+
+		SP->SYM_NODE.INITIAL_AT = TRUE;  /* 061 */
+
+		/*
+		/* Initialize this to zeros; since it is data rather
+		/* than bss, UNIX will not initialize it to zero for us.
+		/**/
+
+		declare I type (LONG_T);
+		declare N type (LONG_T);
+		declare ZERO_BYTE type (CHAR_T);
+		call OPEN_ALIGNED_DATA_INITIAL_FILE
+		     (CURRENT_DIF, rank (SP->SYM_NODE.BOUNDARY));
+		ZERO_BYTE = byte (0);
+		N = ROUNDU (SP->SYM_NODE.SIZE,
+			    rank (SP->SYM_NODE.SIZE_UNITS), BYTES);
+		do I = 0 to N;
+			call WRITE_DATA_INITIAL_FILE
+			     (CURRENT_DIF, addr (ZERO_BYTE), 1);
+		end;
+		SP->SYM_NODE.VALUE = MAKE_DATA_INITIAL_NODE (CURRENT_DIF);
+		call ADVANCE_DATA_INITIAL_FILE (CURRENT_DIF, N, BYTES);
+		call SET_DATA_INITIAL_FILE (CURRENT_DIF);
+		call CLOSE_DATA_INITIAL_FILE (CURRENT_DIF);
+
+		/* Note gotos which might bypass this initialization */
+
+		call NOTE_BYPASSING_GOTOS (CURRENT_SYMBOL);
+	end;
+	else if ^SW_X_UNINITIALIZED_CONST then do;
+		if SP->SYM_NODE.TOP_TYPE.CONST then
+			call SEMANTIC_ERROR (ERR_UNINITIALIZED_CONSTANT);
+		else if SP->SYM_NODE.TOP_TYPE.CODE = byte (ARRAY_DT) then do;
+			call GET_TOP_LEVEL_TYPE (SP->SYM_NODE.TYPE, 1, TD);
+			if TD.CONST then
+				call SEMANTIC_ERROR
+				      (ERR_UNINITIALIZED_CONSTANT);
+		end;
+	end;
+
+	/*
+	/* Setting the REFERENCED bit below is done becuase otherwise
+	/* it is *always* set TRUE even for simple variables declared
+	/* with no initializer and no constructor call (due at least
+	/* to a call to NOTE_CURRENT_DESTRUCTOR); I don't want this
+	/* set all the time specifically for the -lint test in CXXBE
+	/* for variables declared/defined but never used.  I hooked
+	/* this on SW_LINT because DGM is paranoid at this late date
+	/* (ship in one week!) and doesn't want to break anything
+	/* by default (i.e. unless -lint is specified).
+	/**/
+
+	if SW_LINT then
+		SP->SYM_NODE.REFERENCED = INITIALIZING_NOW;
+
+	call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+
+end INITIALIZE_FROM_ARGUMENT_LIST;
+
+/* ---------------------------------------------------------------------
+/* CHECK_SYMBOL_DEFINITION
+/*
+/* Sets SYM_NODE.DEFINED if applicable.
+/* Emit and flush destructors of temporaries if this is a
+/* nontrivial initialization, i.e. if it's a reference or
+/* a class with a destructor.
+/* Also, sets up the symbol's destructor calls.
+/* ------------------------------------------------------------------- */
+
+CHECK_SYMBOL_DEFINITION: procedure internal;
+
+	declare
+		STORAGE_CLASS		type (SHORT_T),
+		ENCLOSING_SCOPE_TYPE	type (SHORT_T),
+		TOP_TYPE		type (SHORT_T),
+		P			type (POINTER_T);
+
+	if CURRENT_SYMBOL = NULL_NID then
+		return;
+
+	call GET_SYM_NODE (CURRENT_SYMBOL, P);
+
+	STORAGE_CLASS		= rank (P->SYM_NODE.STORAGE_CLASS);
+	ENCLOSING_SCOPE_TYPE	= rank (P->SYM_NODE.ENCLOSING_SCOPE_TYPE);
+	TOP_TYPE		= rank (P->SYM_NODE.TOP_TYPE.CODE);
+
+	if TOP_TYPE = REFERENCE_DT then
+		call FLUSH_TEMPORARIES ();
+
+	else if HAS_DESTRUCTOR (P->SYM_NODE.TYPE) then
+		call FLUSH_TEMPORARIES ();
+
+	if P->SYM_NODE.DEFINED then do;
+		if ^SW_TENTATIVE_DEFN then do;
+			call SEMANTIC_ERROR_I
+				(ERR_REDEFINITION,
+				 QUALIFIED_SYMBOL_NAME (CURRENT_SYMBOL));
+		end;
+		else if HAS_DESTRUCTOR (P->SYM_NODE.TYPE) then
+			call SEMANTIC_ERROR (ERR_REDEFINITION_OBJECT);
+	end;
+	else if ((STORAGE_CLASS = EXTERN_ST) &
+		 (ENCLOSING_SCOPE_TYPE ^= GLOBAL_SCOPE)) |
+		(STORAGE_CLASS = TYPEDEF_ST) then do;
+		/*
+		/* Error; bad initializer.
+		/* Diagnosed later in DETERMINE_STATIC.
+		/**/
+		;
+	end;
+	else do;
+		/*
+		/* Symbol may need destruction.
+		/**/
+		P->SYM_NODE.DEFINED = TRUE;
+		if (STORAGE_CLASS = STATIC_ST) |
+		   (ENCLOSING_SCOPE_TYPE = GLOBAL_SCOPE) then do;
+			/*
+			/* Destruction of static objects not yet supported.
+			/**/
+			if (P->SYM_NODE.TOP_TYPE.CODE ^= byte (ARRAY_DT)) |
+			   ^P->SYM_NODE.TOP_TYPE.INCOMPLETE then
+		     		call NOTE_CURRENT_DESTRUCTOR ();
+		end;
+		else do;
+			if (P->SYM_NODE.TOP_TYPE.CODE ^= byte (ARRAY_DT)) |
+			   ^P->SYM_NODE.TOP_TYPE.INCOMPLETE then
+				call NOTE_CURRENT_DESTRUCTOR ();
+		end;
+	end;
+
+	call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+
+end CHECK_SYMBOL_DEFINITION;
+
+/* ---------------------------------------------------------------------
+/* MAYBE_SYMBOL_DEFINITION
+/*
+/* There is no explicit argument list, determine whether this is
+/* a definition or a tentative definition.  Process tentative
+/* definitions here; call CHECK_SYMBOL_DEFINITION for real definitions.
+/* ARM 3.1; X3J11 3.7.2.
+/* ------------------------------------------------------------------- */
+
+MAYBE_SYMBOL_DEFINITION: procedure internal;
+
+	declare P type (POINTER_T);
+
+	if CURRENT_SYMBOL = NULL_NID then
+		return;
+
+	call GET_SYM_NODE_R (CURRENT_SYMBOL, P);
+
+	if (CURRENT_STORAGE_CLASS = EXTERN_ST) |	/* sic */
+	   P->SYM_NODE.IS_FUNCTION |
+	   P->SYM_NODE.IS_TYPE then do;
+		call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+		return;
+	end;
+
+	if SW_TENTATIVE_DEFN &
+	   (P->SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (GLOBAL_SCOPE)) then do;
+		/*
+		/* This is a tentative definition.  We can't handle
+		/* constructors and destructors for such things, so
+		/* that's an error. 
+		/**/
+		if HAS_CONSTRUCTOR (P->SYM_NODE.TYPE) |
+		   HAS_DESTRUCTOR (P->SYM_NODE.TYPE) then
+			call SEMANTIC_ERROR (ERR_TENTATIVE_DEFN_OBJ);
+
+		call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+		call GET_SYM_NODE (CURRENT_SYMBOL, P);
+		P->SYM_NODE.DEFINED = TRUE;
+		call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+		return;
+	end;
+
+	if P->SYM_NODE.STORAGE_CLASS = byte (AUTO_ST) then do;
+		if P->SYM_NODE.SIZE = 0 then do;
+			if P->SYM_NODE.TOP_TYPE.CODE = byte (ARRAY_DT) then
+				call SEMANTIC_ERROR_I (ERR_ARRAY_ZERO_SIZE,
+						       QUALIFIED_SYMBOL_NAME
+						       (CURRENT_SYMBOL));
+			else	call SEMANTIC_ERROR (ERR_UNKNOWN_SIZE);
+		end;
+	end;
+	
+	call RELEASE_SYM_NODE (CURRENT_SYMBOL);
+	call CHECK_SYMBOL_DEFINITION ();
+
+end MAYBE_SYMBOL_DEFINITION;
+
+/*-------------------------------------------------------------------------
+/* 
+/* FIRST_TIME_TEST
+/*
+/* Emit operators that test the first-time flag used to control
+/* the initialization of non-file scope static variables that are
+/* initialized by non-constant initializers.
+/* FLAG_ID is the symbol_node id of the first-time flag variable,
+/* which is assumed to be of INT_BT type, and is also assumed to
+/* have an initial value of 0, indicating 'first-time'.
+/* The value-id of a DECLARE_LABEL value, for the label to which
+/* control is to be passed if the first_time flag is set is 
+/* returned.  
+/* This procedure also emits operators to set the first-time flag to
+/* 1, indicating not 'first-time'.
+/*
+/*--------------------------------------------------------------------------*/
+ 
+FIRST_TIME_TEST: procedure (FLAG_ID)
+                           returns   (type (CXX_VID_T))
+			   internal;
+
+
+	declare
+		FLAG_ID		type (NID_T);
+ 
+	declare
+		TEMP_VID	type (CXX_VID_T),
+		DEF_LABEL_VID	type (CXX_VID_T);
+ 
+
+	/* Emit a NOT of the first-time flag variable */
+	TEMP_VID = GET_VALUE_AND_EXPAND_L
+		   (NOT_VO, GET_VALUE_REF_AND_EXPAND (FLAG_ID));
+
+	/* Define the label to which to jump if not first-time */
+	DEF_LABEL_VID = GET_VALUE_AND_EXPAND (DECLARE_LABEL_VO);
+ 
+	/* This label is referenced twice: once in the branch,
+	/* and once when the label is placed into the operator 
+	/* stream.
+	/**/
+	CXX_VALUE_NODE.COUNT = 2;
+
+	/* Emit a branch-false to this label */
+	/*
+	call EMIT_STATEMENT (GET_VALUE_AND_EXPAND_LR
+			     (BRANCH_FALSE_VO, DEF_LABEL_VID, TEMP_VID));
+	*/
+	call QUEUE_STATEMENT_FOR_EMISSION
+		(GET_VALUE_AND_EXPAND_LR
+		 (BRANCH_FALSE_VO, DEF_LABEL_VID, TEMP_VID));
+
+	/* Emit operators to set the first-time flag to 1 */
+
+	TEMP_VID = GET_VALUE_AND_EXPAND_LR
+		   (COPY_VO,
+		    GET_VALUE_REF_AND_EXPAND (FLAG_ID),
+		    INTEGER_VALUE_ONE ());
+	/*
+	call EMIT_STATEMENT (TEMP_VID);
+	*/
+	call QUEUE_STATEMENT_FOR_EMISSION (TEMP_VID);
+
+	return (DEF_LABEL_VID);
+
+end FIRST_TIME_TEST;
+
+
+/*------------------------------------------------------------------------
+/* INIT_FOR_BLOCK_MOVE
+/*
+/* If an automatic aggregate, define the labels used in
+/* the initialization, emit a branch (forward) to the block 
+/* move code, and then place the label to be branched to in
+/* order to do non-constant initializations.
+/*-------------------------------------------------------------------------*/
+
+INIT_FOR_BLOCK_MOVE: procedure
+		     internal;
+
+
+	BLOCK_MOVE_LABEL = GET_VALUE_AND_EXPAND (DECLARE_LABEL_VO);
+
+	/* This value is used twice, here where it is declared,
+	/* and later when it is placed into the operator stream.
+	/**/
+
+	CXX_VALUE_NODE.COUNT  = 2;
+
+	NON_CONST_INIT_LABEL = GET_VALUE_AND_EXPAND (DECLARE_LABEL_VO);
+
+	CXX_VALUE_NODE.COUNT  = 2;
+
+	AGGREGATE_DONE_LABEL = GET_VALUE_AND_EXPAND (DECLARE_LABEL_VO);
+
+	CXX_VALUE_NODE.COUNT  = 2;
+
+	/* Emit a forward branch to the block move code, since
+	/* the block move is always done first.
+	/**/
+	/*
+	call EMIT_STATEMENT
+	     (GET_VALUE_AND_EXPAND_L (BRANCH_VO, BLOCK_MOVE_LABEL));
+	*/
+	call QUEUE_STATEMENT_FOR_EMISSION
+	     (GET_VALUE_AND_EXPAND_L (BRANCH_VO, BLOCK_MOVE_LABEL));
+
+	/* Place the label to which to branch, after
+	/* the block move is done. Note that the branch
+	/* to this label is a backward branch from the
+	/* end of the block move code.
+	/**/
+	/*
+	call EMIT_STATEMENT
+	     (GET_VALUE_AND_EXPAND_L (LABEL_VO, NON_CONST_INIT_LABEL));
+	*/
+	call QUEUE_STATEMENT_FOR_EMISSION
+	     (GET_VALUE_AND_EXPAND_L (LABEL_VO, NON_CONST_INIT_LABEL));
+
+
+end INIT_FOR_BLOCK_MOVE;
+
+declare
+
+SAVED_STATEMENTS	type (CXX_VID_T) static internal;
+
+INITIALIZE_STATEMENT_QUEUE: procedure internal;
+
+	SAVED_STATEMENTS = NULL_CXX_VID;
+
+end INITIALIZE_STATEMENT_QUEUE;
+
+QUEUE_STATEMENT_FOR_EMISSION: procedure (V) internal;
+
+	declare
+		V	type (CXX_VID_T);
+
+	SAVED_STATEMENTS = CONCATENATE_STATEMENTS (SAVED_STATEMENTS, V);
+
+end QUEUE_STATEMENT_FOR_EMISSION;
+
+EMIT_ANY_QUEUED_STATEMENTS: procedure internal;
+
+	call EMIT_STATEMENT (SAVED_STATEMENTS);
+	SAVED_STATEMENTS = NULL_CXX_VID;
+
+end EMIT_ANY_QUEUED_STATEMENTS;
+

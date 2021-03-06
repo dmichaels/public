@@ -1,0 +1,281 @@
+/* C++ namdat.pl1 - Global name data intialization */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.09.92  DGM  011	Changes ALLOCA_NAME to refer to "alloca"
+ *			rather than "alloc" -- typo!
+ *			Added BUILTIN_ALLOCA_NAME.
+ *  04.18.92  PKT  010	Merged 007R->008 with 007R->009.
+ *  03.26.92  DGM  009  New value-node scheme.
+ *  03.30.92  DGM  008  Added ____lpi_profile_mark.
+ *  11.25.91  DGM  007R Make .init/.fini. names external.
+ *  11.12.91  DGM  007  Updated for .init/.fini.
+ *  07.17.91  DGM  006  Added EXIT_NAME, ALLOCA_NAME, and SETJMP_NAME.
+ *  05.14.91  PKT  005  Updated for ARRAY_CONSTRUCTOR_NAME and
+ *			MFP_UNION_TAG_NAME.
+ *  04.30.91  DGM  004  Minor update for the new utilities.
+ *  02.27.91  DGM  003  New scheme for special names.
+ *  02.11.91  DGM  001  Give constructor, destructor, conversion, and
+ *			operator names names real non-null spelling
+ *			so that PRINTS gets called from the allocator
+ *			(alloc/div/unix/acodew.pl1); I also may have
+ *			to set the SIZE field correctly at some point;
+ *			then I'd have some general reworking to do.
+ *  02.01.91  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 09.09.92 011 NAMDAT');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include GBL_FILE_NAMES_IN;		/* SOURCE_FILE_NAME */
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_PP_EXTERNAL_NAME_MAP_IN;
+%include CXX_PP_TOKEN_TYPE_CODES_IN;
+%include CXX_SYMBOL_TABLE_DEFS_IN;
+%include CXX_GLOBAL_NAMES_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_PP_KEYWORD_PKG;
+%include CXX_PP_TOKEN_POD_SPELLING_PKG;
+%include CXX_ERROR_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+LB_OPERATOR_NAME_ID	type (NID_T) static internal initial (NULL_NID),
+HB_OPERATOR_NAME_ID	type (NID_T) static internal initial (NULL_NID);
+
+/* ---------------------------------------------------------------------
+/* INITIALIZE_GLOBAL_NAMES
+/*
+/* Initializes all pertinent keyword, pre-defined, and special names.
+/* This should be called exactly once at compiler start-up.
+/*
+/* N.B. We make a VERY IMPORTANT ASSUMPTION that consecutively allocated
+/* token-nodes are assigned consecutively increasing token-node ids, but
+/* don't worry, if this is not the case for some reason, it will be
+/* detected immediately at compiler start-up time, and once it works,
+/* it is guaranteed to always work.
+/* ------------------------------------------------------------------- */
+
+INITIALIZE_GLOBAL_NAMES: procedure external (X_INITIALIZE_GLOBAL_NAMES);
+
+declare
+	I		type (SHORT_T),
+	P		type (POINTER_T),
+	ID		type (NID_T),
+	OPNAME		character (16) varying,
+	TMPNAME		character (FILE_NAME_SIZE) varying,
+	FILENAME	character (FILE_NAME_SIZE) varying;
+declare
+	FIRST_TIME	type (BOOL_T) static internal initial (TRUE);
+
+if ^FIRST_TIME then
+	return;
+
+FIRST_TIME = FALSE;
+
+/* Initialize the keyword tables (in the pre-processor) */
+
+call INITIALIZE_KEYWORD_TABLES ();
+
+/* Initialize special constructor, destructor, and conversion names */
+
+CONSTRUCTOR_NAME	= FORM_IDENTIFIER_TOKEN ('<constructor-name>');
+DESTRUCTOR_NAME		= FORM_IDENTIFIER_TOKEN ('<destructor-name>');
+CONVERSION_NAME		= FORM_IDENTIFIER_TOKEN ('<conversion-name>');
+
+/* Initialize special operator names */
+
+do I = LB_OVERLOAD_OP_TOKEN to HB_OVERLOAD_OP_TOKEN;
+	if I = LSQUARE_TOKEN then
+		OPNAME = '[]';
+	else if I = LPAREN_TOKEN then
+		OPNAME = '()';
+	else if I = KW_NEW_TOKEN then
+		OPNAME = ' new';
+	else if I = KW_DELETE_TOKEN then
+		OPNAME = ' delete';
+	else if I = KW_TYPEDEF_TOKEN then	/* OBSOLETE! */
+		OPNAME = ' <type>';
+	else	OPNAME = SIMPLE_TOKEN_SPELLING (I);
+	OPNAME = 'operator' || OPNAME;
+	OPERATOR_NAME (I) = FORM_IDENTIFIER_TOKEN (OPNAME);
+	call GET_TOKEN_NODE (OPERATOR_NAME (I), P);
+	P->TOKEN_NODE.REPLACEMENT = I;
+	call RELEASE_TOKEN_NODE (OPERATOR_NAME (I));
+	/*
+	/* N.B. This is where we check the VERY IMPORTANT ASSUMPTION that
+	/* consecutively allocated token-nodes are assigned consecutively
+	/* increasing token-node ids.
+	/**/
+	if I = LB_OVERLOAD_OP_TOKEN then
+		LB_OPERATOR_NAME_ID = OPERATOR_NAME (I);
+	else if I = HB_OVERLOAD_OP_TOKEN then
+		HB_OPERATOR_NAME_ID = OPERATOR_NAME (I);
+	if (I ^= LB_OVERLOAD_OP_TOKEN) &
+	   (OPERATOR_NAME (I) ^= (OPERATOR_NAME (I - 1) + 1)) then do;
+		/*
+		/* Fatal error; a different/slower implementation must be used
+		/* since consecutively allocated token-nodes do not seem to be
+		/* assigned consecutively increasing token-node ids.  Don't
+		/* worry, this fatal error will always be detected immediately.
+		/**/
+		call COMPILER_ERROR_I (ERR_GENERIC_SEV_4,
+				       'Name initialization error');
+		return;
+	end;
+end;
+
+/* Initialize pre-defined (user-visible) names */
+
+MAIN_NAME		   = FORM_IDENTIFIER_TOKEN ('main');
+THIS_PARAMETER_NAME	   = FORM_IDENTIFIER_TOKEN ('this');
+EXIT_NAME		   = FORM_IDENTIFIER_TOKEN ('exit');
+ALLOCA_NAME		   = FORM_IDENTIFIER_TOKEN ('alloca');
+BUILTIN_ALLOCA_NAME	   = FORM_IDENTIFIER_TOKEN ('__builtin_alloca');
+SETJMP_NAME		   = FORM_IDENTIFIER_TOKEN ('setjmp');
+PROFILE_MARK_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_mark');
+
+/* Initialize pre-defined (internal) names */
+
+RETURN_PARAMETER_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_return');
+VFT_NAME		   = FORM_IDENTIFIER_TOKEN ('____lpi_vft');
+VFT_POINTER_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_vftp');
+VFT_ENTRY_TAG_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_vft_entry_tag');
+VFT_ENTRY_TYPE_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_vfte_t');
+VFT_TYPE_NAME		   = FORM_IDENTIFIER_TOKEN ('____lpi_vft_t');
+VFT_POINTER_TYPE_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_vftp_t');
+VFT_FUNCTION_ADDRESS_NAME  = FORM_IDENTIFIER_TOKEN ('____lpi_faddress');
+VFT_DELTA_NAME		   = FORM_IDENTIFIER_TOKEN ('____lpi_delta');
+PURE_VIRTUAL_FUNCTION_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_cxx_pvf');
+NOT_MOST_DERIVED_FLAG_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_not_most_derived');
+ARRAY_INIT_NAME		   = FORM_IDENTIFIER_TOKEN ('____lpi_cxx_array_init');
+ARRAY_APPLY_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_cxx_array_apply');
+ARRAY_FINI_NAME		   = FORM_IDENTIFIER_TOKEN ('____lpi_cxx_array_fini');
+ARRAY_CONSTRUCTOR_NAME     = FORM_IDENTIFIER_TOKEN ('____lpi_array_ctor');
+DTOR_RETURN_LABEL_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_return_label');
+COPY_PARAM_NAME		   = FORM_IDENTIFIER_TOKEN ('____lpi_copy_param');
+ASSIGN_PARAM_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_assign_param');
+MFP_TYPE_NAME		   = FORM_IDENTIFIER_TOKEN ('____lpi_pmf_t');
+MFP_THIS_DELTA_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_delta');
+MFP_VIRTUAL_INDEX_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_index');
+MFP_ADDRESS_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_address');
+MFP_VIRTUAL_DELTA_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_voffset');
+MFP_UNION_NAME		   = FORM_IDENTIFIER_TOKEN ('____lpi_u');
+MFP_UNION_TAG_NAME	   = FORM_IDENTIFIER_TOKEN ('____lpi_u_tag');
+
+if SW_SYSTEM_HAS_INIT_FINI_SECTIONS then do;
+	call GET_SOURCE_FILE_BASE_NAME ();
+	XLINK_STARTUP_PROC_NAME =
+		FORM_IDENTIFIER_TOKEN ('____lpi_cxx_init_' || FILENAME);
+	XLINK_CLEANUP_PROC_NAME =
+		FORM_IDENTIFIER_TOKEN ('____lpi_cxx_fini_' || FILENAME);
+end;
+else do;
+	XROOT_VARIABLE_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_cxx_init_root');
+	XLINK_TAG_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_xlink_tag');
+	XLINK_TYPE_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_xlink_t');
+	XLINK_NEXT_MEMBER_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_xlink_next');
+	XLINK_STARTUP_MEMBER_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_startup');
+	XLINK_CLEANUP_MEMBER_NAME = FORM_IDENTIFIER_TOKEN ('____lpi_cleanup');
+	call GET_SOURCE_FILE_BASE_NAME ();
+	TMPNAME			= '____lpi_cxx_link_' || FILENAME;
+	XLINK_STRUCT_NAME	= FORM_IDENTIFIER_TOKEN (TMPNAME);
+	TMPNAME			= '____lpi_cxx_init_' || FILENAME;
+	XLINK_STARTUP_PROC_NAME = FORM_IDENTIFIER_TOKEN (TMPNAME);
+	TMPNAME			= '____lpi_cxx_fini_' || FILENAME;
+	XLINK_CLEANUP_PROC_NAME	= FORM_IDENTIFIER_TOKEN (TMPNAME);
+end;
+
+/* Done */
+
+return;
+
+/* ---------------------------------------------------------------------
+/* GET_SOURCE_FILE_BASE_NAME
+/*
+/* Return in FILENAME, the base name of SOURCE_FILE_NAME, i.e. the source
+/* file-name, with any directory prefix and any suffix stripped off.
+/* ------------------------------------------------------------------- */
+ 
+GET_SOURCE_FILE_BASE_NAME: procedure internal;
+
+	FILENAME = SOURCE_FILE_NAME;
+
+	/* Remove any directory prefix */
+
+	do I = length (FILENAME) to 1 by -1;
+        	if substr (FILENAME, I, 1) = FILENAME_SEPARATOR then do;
+			FILENAME = substr (FILENAME, I + 1);
+			I = 0; /* TERMINATE LOOP */
+		end;
+	end;
+
+	/* Remove any suffix */
+
+	do I = length (FILENAME) to 1 by -1;
+        	if substr (FILENAME, I, 1) = SUFFIX_DELIMITER_CHAR then do;
+			FILENAME = substr (FILENAME, 1, I - 1);
+			I = 0; /* TERMINATE LOOP */
+		end;
+	end;
+	
+end GET_SOURCE_FILE_BASE_NAME;
+
+end INITIALIZE_GLOBAL_NAMES;
+
+/* ---------------------------------------------------------------------
+/* GET_OPERATOR_NAME_TOKEN_CODE
+/*
+/* Return the token code corresponding the the operator name represented
+/* by the given token-node id; return zero if it's not a operator name.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_OPERATOR_NAME_TOKEN_CODE: procedure (NAME)
+			      returns   (type (SHORT_T))
+			      external  (X_GET_OPERATOR_NAME_TOKEN_CODE);
+	declare
+		NAME	type (NID_T);
+	declare
+		P	type (POINTER_T),
+		CODE	type (SHORT_T);
+
+	if (NAME < LB_OPERATOR_NAME_ID) | (NAME > HB_OPERATOR_NAME_ID) then
+		return (0);
+	call GET_TOKEN_NODE_R (NAME, P);
+	CODE = P->TOKEN_NODE.REPLACEMENT;
+	call RELEASE_TOKEN_NODE (NAME);
+	return (CODE);
+
+end GET_OPERATOR_NAME_TOKEN_CODE;
+
+

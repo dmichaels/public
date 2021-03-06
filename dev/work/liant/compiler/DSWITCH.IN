@@ -1,0 +1,45 @@
+/* C++ CXX_DEBUG_SWITCHES_IN - Debugging switches */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  01.24.90  TLF  001  Added debugging switch for EXPAND_VALUE.
+ *  10.18.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+declare
+
+1 CDEBSW			static external,
+
+  /* BYTE ONE */
+
+  2 TRACE_PARSE			bit (1),
+  2 TRACE_PAR_CALLS		bit (1),
+  2 TRACE_PAR_ENTRIES		bit (1),
+  2 TRACE_EMIT_TREE		bit (1),
+  2 TRACE_EXPAND_VALUE          bit (1),
+  2 reserved_1_5		bit (1),
+  2 reserved_1_6		bit (1),
+  2 reserved_1_7		bit (1),
+
+  /* BYTE TWO */
+
+  2 reserved_2_0		bit (1),
+  2 reserved_2_1		bit (1),
+  2 reserved_2_2		bit (1),
+  2 reserved_2_3		bit (1),
+  2 reserved_2_4		bit (1),
+  2 reserved_2_5		bit (1),
+  2 reserved_2_6		bit (1),
+  2 reserved_2_7		bit (1);
+

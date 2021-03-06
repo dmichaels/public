@@ -1,0 +1,116 @@
+/* CodeWatch M68 nlgoto.pl1 - Get target of P$GOTO */
+
+/**********************************************************************/
+/* This product is the property of Liant Software Corporation         */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Liant Software Corporation except pursuant to the    */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LIANT EDIT HISTORY
+ *
+ *  08.31.92  MJF (000) Original version for M68.
+ *
+ **********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include DBGRTS_IN;
+%include TARGET_IN;
+%include SYSREADUSER_IN;
+%include SYSGETPC_IN;
+%include SYSTTY_IN;
+%include SYSCALLJUMP_IN;
+%include DBGBREAK_IN;
+%include DERROR_IN;
+%include UNXDBG_IN;
+
+/* -----------------------------------------------------------------
+ * NON_LOCAL_GOTO_ADDRESS
+ *
+ * Determine the target of a non-local goto.
+ *
+ * In:     REGAREA  -> Saved user register area.
+ *         LOCATION  = Location (address) of instruction to examine.
+ *         REPLACED -> Replaced instruction, if any.
+ * Out:    TARGET    = Address of destination.
+ *         DIPLAY    = Static ancestor display pointer.
+ * Return: TRUE if the target addres was determined, FALSE if not.
+ */
+
+NON_LOCAL_GOTO_ADDRESS: procedure (
+			REGAREA, 
+			LOCATION, 
+			REPLACED,
+			TARGET, 
+			DISPLAY ) 	
+			returns   (bit (1))
+			external (X_NON_LOCAL_GOTO_ADDRESS);
+
+    declare
+            REGAREA     pointer,
+            LOCATION    fixed binary (31),
+            REPLACED    pointer,
+            TARGET      fixed binary (31),
+            DISPLAY     fixed binary (31);
+
+    declare
+	    I           fixed binary (15);
+
+    if ^JMPADR (	REGAREA,LOCATION,
+              		REPLACED_INSTR(LOCATION),
+			TARGET ) then 
+	return (FALSE);
+
+    if RTS_ENTRY.ADDRESS(RTSENT_GOTO_) ^= TARGET then 
+	return (FALSE);
+
+    /* 
+     * Here, we are at the "jsr P$GOTO".  The top of
+     * stack points to the argument to P$GOTO, which
+     * is the target address (followed by the display
+     * pointer) of the non-local goto.
+     */
+
+    call REAUSR (	SON_ID, 
+			CURRENT_ENV.FRAME_ADDR,
+		     	SGETSP(), 
+			4, 
+			addr(TARGET), 
+			I );
+    if I ^= 0 then do;
+	call DERROR (CANNOT_READ_GOTO_RUNTIME_ARG, '', '');
+        return (FALSE);
+    end;
+
+    call REAUSR (	SON_ID, 
+			CURRENT_ENV.FRAME_ADDR,
+		     	(TARGET), 
+			4, 
+			addr(TARGET), 
+			I );
+
+    if I ^= 0 then do;
+	call DERROR (CANNOT_READ_NON_LOCAL_GOTO_TARG, '', '');
+        return (FALSE);
+    end;
+
+    call REAUSR (	SON_ID, 
+			CURRENT_ENV.FRAME_ADDR,
+		     	(TARGET+4), 
+			4, 
+			addr(DISPLAY), 
+			I );
+
+    if I ^= 0 then do;
+	call DERROR (CANNOT_READ_GOTO_RUNTIME_DISPLAY, '', '');
+        return (FALSE);
+    end;
+
+    return (TRUE);
+
+end NON_LOCAL_GOTO_ADDRESS;

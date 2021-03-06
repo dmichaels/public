@@ -1,0 +1,245 @@
+/* C++ CXX_OPERATOR_CODES_IN - C value node op-codes */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  10.08.91  PKT  019  Added VA_ARG_VO and VA_START_VO.
+ *  07.12.91  PKT  018  Added DBG_RANGE_VO and DBG_SUBSCRIPT_VO.
+ *  06.19.91  PKT  017  Removed STRING_VO.
+ *  06.02.91  PKT  016  Added DESTRUCTOR_VO.
+ *  05.02.91  DGM  015  Added VA_STACK_VO.
+ *  01.22.91  PKT  014  Added MEMBER_REF_VO, DOT_STAR_VO, changed
+ *			PTR_STAR_VO to ARROW_STAR_VO, changed some uses
+ *			of PTR_VO to ARROW_VO.
+ *  12.28.90  PKT  013  Added CAST_TO_BASE_VO.
+ *  11.09.90  PKT  012  Added IMPLICIT_STAR_VO and DECLARE_TEMP_VO.
+ *  09.17.90  PKT  011  Added EXPLICIT_COMMA_VOP.
+ *  09.14.90  DGM  010  Changed include file names and VOP names.
+ *  08.31.90  TLF  009  Added UNARY_AND_VO.
+ *  08.27.90  TLF  008  Added SSADD_VO and PTR_STAR_VO.
+ *  08.07.90  PKT  007  Added LEFT_VALUE_VO, IMPLICIT_RETURN_VO, and
+ *			UNDEFINED_VOP.  Removed VIRTUAL_DOT_VO.
+ *  07.10.90  PKT  006  Added HB_ and LB_BRANCH_VO, BRANCH_SAVE_VO,
+ *			SAVE_VO, and EXIT_VO.
+ *  07.05.90  PKT  005  Added DESTROY_VO.
+ *  05.17.90  PKT  004  Added FUNCTIONAL_CAST_VO, COPY_VO, VEC_INITIAL_VO.
+ *  04.17.90  PKT  003  Added varargs VOPs.
+ *  02.20.90  PKT  002  Added loop-delimiting VOPs.
+ *  02.05.90  TLF  001  Updated.
+ *  11.21.89  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+%replace LB_OPERATOR_CODES     by   1;
+
+%replace ASSIGN_VO             by   1;
+%replace IMPLICIT_ASSIGN_VO    by   2;
+%replace COPY_VO               by   3;
+
+%replace INTEGER_VO            by   4;
+%replace CONSTANT_VO           by   5;
+/* available code              by   6; */
+%replace REF_VO                by   7;
+%replace PARAM_REF_VO          by   8;
+%replace MEMBER_REF_VO         by   9;
+%replace MEMBER_PTR_VO         by  10;
+%replace VALUE_VO              by  11;
+%replace ADDR_VO               by  12;
+%replace IMPLICIT_ADDR_VO      by  13;
+%replace DOT_VO                by  14;
+%replace CAST_TO_BASE_VO       by  15;
+%replace CAST_VO               by  16;
+%replace FUNCTIONAL_CAST_VO    by  17;
+%replace IMPLICIT_CAST_VO      by  18;
+%replace TYPE_VO               by  19;
+%replace STAR_VO               by  20;
+%replace IMPLICIT_STAR_VO      by  21;
+%replace ARROW_VO              by  22;
+%replace ARROW_STAR_VO         by  23;
+%replace DOT_STAR_VO           by  24;
+%replace SIZEOF_VO             by  25;
+%replace EXPLICIT_COMMA_VO     by  26;
+%replace COMMA_VO              by  27;
+%replace LEFT_VALUE_VO         by  28;
+
+%replace PLUS_VO               by  29;
+%replace MINUS_VO              by  30;
+%replace COMPLEMENT_VO         by  31;
+
+%replace ADD_VO                by  32;
+%replace ADD_ASSIGN_VO         by  33;
+
+%replace SUB_VO                by  34;
+%replace SUB_ASSIGN_VO         by  35;
+
+%replace MUL_VO                by  36;
+%replace MUL_ASSIGN_VO         by  37;
+
+%replace DIV_VO                by  38;
+%replace DIV_ASSIGN_VO         by  39;
+
+%replace MOD_VO                by  40;
+%replace MOD_ASSIGN_VO         by  41;
+
+%replace LSHIFT_VO             by  42;
+%replace LSHIFT_ASSIGN_VO      by  43;
+
+%replace RSHIFT_VO             by  44;
+%replace RSHIFT_ASSIGN_VO      by  45;
+
+%replace AND_VO                by  46;
+%replace AND_ASSIGN_VO         by  47;
+
+%replace OR_VO                 by  48;
+%replace OR_ASSIGN_VO          by  49;
+
+%replace XOR_VO                by  50;
+%replace XOR_ASSIGN_VO         by  51;
+
+%replace AND_AND_VO            by  52;
+%replace OR_OR_VO              by  53;
+
+%replace NOT_VO                by  54;
+ 
+%replace UNARY_AND_VO          by  55;
+
+%replace EQ_VO                 by  56;
+%replace GE_VO                 by  57;
+%replace LE_VO                 by  58;
+%replace NE_VO                 by  59;
+%replace LT_VO                 by  60;
+%replace GT_VO                 by  61;
+
+%replace LB_BRANCH_VO          by  62;
+%replace BRANCH_VO             by  62;
+%replace BRANCH_EQ_VO          by  63;
+%replace BRANCH_GE_VO          by  64;
+%replace BRANCH_LE_VO          by  65;
+%replace BRANCH_NE_VO          by  66;
+%replace BRANCH_LT_VO          by  67;
+%replace BRANCH_GT_VO          by  68;
+%replace BRANCH_TRUE_VO        by  69;
+%replace BRANCH_FALSE_VO       by  70;
+%replace BRANCH_COMPUTED_VO    by  71;
+%replace BRANCH_SWITCH_VO      by  72;
+%replace BRANCH_SAVE_VO	       by  73;
+%replace HB_BRANCH_VO          by  73;
+
+%replace INC_VO                by  74;
+%replace POST_INC_VO           by  75;
+
+%replace DEC_VO                by  76;
+%replace POST_DEC_VO           by  77;
+
+%replace DECLARE_LABEL_VO      by  78;
+%replace LABEL_VO              by  79;
+
+%replace CONDITIONAL_VO        by  80;
+%replace COND_REF_VO           by  81;
+%replace COND_VALUE_VO         by  82;
+%replace ALTERNATE_VO          by  83;
+%replace ALT_VALUE_VO          by  84;
+%replace COLON_VO              by  85;
+%replace UNINITIALIZED_VO      by  86;
+
+%replace CALL_VO               by  87;
+%replace CALL_FUNCTION_VO      by  88;
+%replace ARG_VO                by  89;
+%replace ARG_REF_VO            by  90;
+%replace SREF_VO               by  91;
+%replace RETURN_VO             by  92;
+%replace IMPLICIT_RETURN_VO    by  93;
+
+%replace CONVERT_VO            by  94;
+%replace CONVERT_UNITS_VO      by  95;
+%replace BYTE_VO               by  96;
+%replace RANK_VO               by  97;
+%replace SRANK_VO              by  98;
+%replace FIELD_VO              by  99;
+
+%replace STMNT_ID_VO           by 100;
+%replace PROCEDURE_VO          by 101;
+%replace ENTRY_VO              by 102;
+%replace NOP_VO                by 103;
+%replace BLOCK_END_VO          by 104;
+
+%replace PTR_VO                by 105;
+%replace INITIAL_VO            by 106;
+
+%replace SSADD_VO              by 107;      /* Subscript add, used to check */
+					    /* overloading of '[]'.         */
+
+%replace ABS_VO                by 108;      /* Math Intrinsics              */
+%replace SQRT_VO               by 109;
+%replace EXP_VO                by 110;
+%replace LOG_VO                by 111;
+%replace LOG10_VO              by 112;
+%replace SIN_VO                by 113;
+%replace COS_VO                by 114;
+%replace TAN_VO                by 115;
+%replace ASIN_VO               by 116;
+%replace ACOS_VO               by 117;
+%replace ATAN_VO               by 118;
+%replace ATAN2_VO              by 119;
+%replace SINH_VO               by 120;
+%replace COSH_VO               by 121;
+%replace TANH_VO               by 122;
+%replace FMOD_VO               by 123;
+%replace POW_VO                by 124;
+%replace CEIL_VO               by 125;
+%replace FLOOR_VO              by 126;
+%replace FABS_VO               by 127;
+
+%replace STRCMP_VO             by 128;     /* String Minipulation builtins */
+%replace STRCPY_VO             by 129;
+%replace STRLEN_VO             by 130;
+%replace STRNCMP_VO            by 131;
+%replace STRNCPY_VO            by 132;
+%replace STRCAT_VO             by 133;
+%replace STRNCAT_VO            by 134;
+%replace MEMCPY_VO             by 135;
+%replace MEMCMP_VO             by 136;
+
+%replace SWITCH_VO             by 137;
+
+%replace MEMBER_INIT_VO        by 138;     /* a member initializer */
+%replace VEC_INITIAL_VO        by 139;
+%replace NEW_VO                by 140;
+%replace DELETE_VO             by 141;
+%replace DESTROY_VO            by 142;
+    
+%replace LOOP_TOP_VO           by 143;
+%replace LOOP_BODY_VO          by 144;
+%replace LOOP_EXIT_VO          by 145;
+
+%replace VA_REG_VO             by 146;
+%replace VA_MEM_VO             by 147;
+%replace VA_OFFSET_VO          by 148;
+%replace VA_REGTYP_VO          by 149;
+%replace VA_ALIGN_VO           by 150;
+
+%replace SAVE_VO               by 151;
+%replace EXIT_VO               by 152;
+
+%replace DECLARE_TEMP_VO       by 153;
+
+%replace VA_STACK_VO           by 154;
+
+%replace DESTRUCTOR_VO         by 155;
+
+%replace DBG_RANGE_VO          by 156;
+%replace DBG_SUBSCRIPT_VO      by 157;
+
+%replace VA_ARG_VO             by 158;
+%replace VA_START_VO           by 159;
+
+%replace HB_OPERATOR_CODES     by 159;
+

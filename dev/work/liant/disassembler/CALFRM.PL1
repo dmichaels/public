@@ -1,0 +1,78 @@
+/* LPI-DEBUG M68 CALFRM.PL1 - Is the given FP a CALL frame pointer ? */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+CALFRM: procedure (FRAME) returns (bit (1));
+
+/* --------------------------------------------------------------------
+ * CALFRM - Check if the given FP corresponds to a debugger CALL frame.
+ *
+ * In:     FRAME = Frame pointer
+ * Return: TRUE if FRAME corresponds to a debugger CALL frame,
+ *         otherwise return FALSE.
+ **********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  04.03.87  DGM  Original.
+ *
+ **********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include SYSREADUSER_IN;
+%include TARGET_IN;
+
+    declare 
+        FRAME           fixed binary (ADDRESS_LENGTH);
+    declare
+        FP              fixed binary (ADDRESS_LENGTH),
+        PREVIOUS_FP     fixed binary (ADDRESS_LENGTH),
+        RETURN_ADDRESS  fixed binary (ADDRESS_LENGTH),
+        DUMMY           fixed binary (31),
+        STATUS          fixed binary (15);
+
+    if FRAME = 0 then
+        return (FALSE);
+
+    if FRAME = $FP_BREAK then
+         FP = PROGRAM_REGISTER_AREA->REGS.A6;
+    else FP = FRAME;
+
+    call REAUSR (PROCESS_ID, DUMMY,
+                 FP + $PC_OFF, 4, addr(RETURN_ADDRESS), STATUS);
+
+    if STATUS ^= 0 then
+       return (FALSE);
+
+    /*
+     * If this is a debugger CALL frame, then the return address
+     * (which points to a break-point on the stack) is greater than
+     * (i.e. lower down on the stack)  the frame pointer, AND less
+     * than (i.e. higher up on the stack) the the previous frame
+     * pointer.  This assumes that when a CALL is made, the frame
+     * pointer (A6) is preserved.
+     */
+
+    if RETURN_ADDRESS > FP then do;
+        call REAUSR (PROCESS_ID, DUMMY,
+                     FP, 4, addr(PREVIOUS_FP), STATUS);
+        if STATUS ^= 0 then
+           return (FALSE);
+        if RETURN_ADDRESS < PREVIOUS_FP then
+            return (TRUE);
+    end;
+
+    return (FALSE);
+
+end CALFRM;
+

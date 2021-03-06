@@ -1,0 +1,565 @@
+/* C++ typinf.pl1 - Type information for symbols and values routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.18.92  PKT  025	Merged 022L->023 with 022L->024.
+ *  03.26.92  DGM  024  New value-node scheme.
+ *  03.30.92  DGM  023  Added TYPE_INFO_NAME.
+ *  10.27.91  PKT  022L Moved check for incomplete type / unknown size
+ *			out of DETERMINE_SIZE, to VALUE_OF.
+ *  07.09.91  PKT  020  Updated for debugger use of DBG_SUBSCRIPT_VO.
+ *  06.28.91  PKT  019  Eliminated STRING_VO.
+ *  04.11.91  PKT  018  Bug fixes; coded ADD_REFERENCE_LEVEL.
+ *  02.21.91  PKT  017  Bug fix and update for member pointers.
+ *  12.17.90  PKT  016  Changed GET_VALUE_TYPE to set 
+ *			TYPE_INFO_T.NOT_AN_LVALUE based on CPLUS_VAL.VOP
+ *			as well as on CPLUS_VAL.NOT_AN_LVALUE.
+ *  09.14.90  DGM  015  Changed include file names and VOP names.
+ *  08.29.90  DGM  014  Substituted GET_SIMPLE_TYPE/GET_SIMPLE_POINTER_TYPE
+ *			with the new GET_BASIC_TYPE/GET_BASIC_POINTER_TYPE.
+ *  08.21.90  DGM  013  Added SET_VALUE_SIMPLE_TYPE_DATA.
+ *  08.15.90  DGM  012  New type-node.
+ *  06.29.90  DGM  011  Fixes and added SET_VALUE_CLASS_POINTER_TYPE
+ *  06.25.90  DGM  010  Added SET_VALUE_SIMPLE_POINTER_TYPE.
+ *  06.14.90  PKT  009  Bug fix.  Also added parameter to STRIP_TOP_TYPE.
+ *  06.06.90  DGM  008  Updated for the new utilities.
+ *  05.31.90  PKT  007  Added GET_TYPE_NODE_TYPE, TYPE_INFO_T.BOUNDARY.
+ *  04.19.90  DGM  006  Fixed up includes.
+ *  04.17.90  PKT  005  Changed names of ADD_PTR_QUAL and STRIP_RIGHT_QUAL.
+ *  04.13.90  TLF  004  Documenting and formatting changes.
+ *  03.14.90  PKT  004  Updated for TYPE_INFO_T.EXTRA_PTR_LEVEL.
+ *  02.27.90  PKT  003  Completed DETERMINE_SIZE.
+ *  02.15.90  TLF  002  Updated GET_SYMBOL_TYPE and GET_VALUE_TYPE for 
+ *                      the new TYPE_NODE scheme.
+ *                      Added real code for DETERMINE_SIZE.
+ *  02.12.90  DGM  001  Updated for the new TYPE_NODE scheme.
+ *  01.16.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.18.92 025 TYPINF');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_TYPE_SIZE_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_INFO_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* GET_SYMBOL_TYPE
+/*
+/* Fill in the given type-info record with the pertinent type data
+/* for the currently paged in sym-node.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_SYMBOL_TYPE: procedure (TYPE_INFO)
+		 external  (X_GET_SYMBOL_TYPE);
+
+	declare TYPE_INFO type (TYPE_INFO_T);
+
+	TYPE_INFO.TYPE			= SYM_NODE.TYPE;
+	TYPE_INFO.TOP_TYPE		= SYM_NODE.TOP_TYPE;
+	TYPE_INFO.DERIVED_TYPE_SKIP	= 0;
+	TYPE_INFO.EXTRA_PTR_LEVEL	= FALSE;
+        TYPE_INFO.SIZE			= SYM_NODE.SIZE;
+        TYPE_INFO.SIZE_UNITS		= rank (SYM_NODE.SIZE_UNITS);
+
+end GET_SYMBOL_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_TYPE_NODE_TYPE
+/*
+/* Fill in the given type-info record with the pertinent type data
+/* for the currently paged in type-node.  Leaves size undetermined.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_TYPE_NODE_TYPE: procedure (TYPE_INFO)
+		    external  (X_GET_TYPE_NODE_TYPE);
+
+	declare TYPE_INFO type (TYPE_INFO_T);
+
+	TYPE_INFO.TYPE		    = CURRENT_NODE_ID;
+	TYPE_INFO.TOP_TYPE	    = TYPE_NODE.DATA (rank (TYPE_NODE.LEVEL));
+	TYPE_INFO.DERIVED_TYPE_SKIP = 0;
+	TYPE_INFO.EXTRA_PTR_LEVEL   = FALSE;
+        TYPE_INFO.SIZE		    = 0;
+        TYPE_INFO.SIZE_UNITS	    = 0;
+
+end GET_TYPE_NODE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* GET_VALUE_TYPE
+/*
+/* Fill in the given type-info record with the pertinent type data
+/* for the currently paged in value-node.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+GET_VALUE_TYPE: procedure (TYPE_INFO)
+		external  (X_GET_VALUE_TYPE);
+
+	declare TYPE_INFO	type (TYPE_INFO_T),
+		VOP		type (SHORT_T);
+
+	TYPE_INFO.TYPE			= CXX_VALUE_NODE.TYPE;
+        TYPE_INFO.TOP_TYPE		= CXX_VALUE_NODE.TOP_TYPE;
+	TYPE_INFO.DERIVED_TYPE_SKIP	= CXX_VALUE_NODE.DERIVED_TYPE_SKIP;
+	TYPE_INFO.EXTRA_PTR_LEVEL	= CXX_VALUE_NODE.EXTRA_PTR_LEVEL;
+        TYPE_INFO.SIZE			= CXX_VALUE_NODE.SIZE;
+        TYPE_INFO.SIZE_UNITS		= rank (CXX_VALUE_NODE.SIZE_UNITS);
+        TYPE_INFO.NOT_AN_LVALUE		= CXX_VALUE_NODE.NOT_AN_LVALUE;    
+
+	VOP = CXX_VALUE_NODE.VOP;
+	if ^(  VOP = VALUE_VO | VOP = COMMA_VO | VOP = LEFT_VALUE_VO
+	     | VOP = REF_VO | VOP = CONDITIONAL_VO | VOP = COLON_VO
+	     | VOP = DOT_STAR_VO | VOP = DBG_SUBSCRIPT_VO) then
+		TYPE_INFO.NOT_AN_LVALUE = TRUE;
+
+end GET_VALUE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* SET_VALUE_TYPE
+/*
+/* Set the pertinent type data for the currently paged in value-node
+/* according to the data in the given type-info record.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SET_VALUE_TYPE: procedure (TYPE_INFO)
+		external  (X_SET_VALUE_TYPE);
+
+	declare TYPE_INFO type (TYPE_INFO_T);
+
+	CXX_VALUE_NODE.TYPE		= TYPE_INFO.TYPE;
+        CXX_VALUE_NODE.TOP_TYPE		= TYPE_INFO.TOP_TYPE;
+	CXX_VALUE_NODE.DERIVED_TYPE_SKIP= TYPE_INFO.DERIVED_TYPE_SKIP;
+	CXX_VALUE_NODE.EXTRA_PTR_LEVEL	= TYPE_INFO.EXTRA_PTR_LEVEL;
+        CXX_VALUE_NODE.SIZE		= TYPE_INFO.SIZE;
+        CXX_VALUE_NODE.SIZE_UNITS	= byte (TYPE_INFO.SIZE_UNITS);
+        CXX_VALUE_NODE.NOT_AN_LVALUE	= TYPE_INFO.NOT_AN_LVALUE; 
+
+end SET_VALUE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* SET_VALUE_SIMPLE_TYPE_DATA
+/*
+/* Change the type of the current value-node to the given simple type
+/* described be the given type-data record, with full size information.
+/* The not-an-lvalue flag of the value-node will be set true.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SET_VALUE_SIMPLE_TYPE_DATA: procedure (T)
+			    external  (X_SET_VALUE_SIMPLE_TYPE_DATA);
+	declare
+		T		type (TYPE_DATA_T);
+	declare
+		SIZE_UNITS	type (SHORT_T);	
+
+	CXX_VALUE_NODE.TYPE = GET_SCALAR_TYPE (NULL_DT,
+					  NULL_TQ,
+					  rank (T.CODE),
+					  T.NID,
+					  T.QUALIFIERS);
+
+        CXX_VALUE_NODE.TOP_TYPE			= T;
+	CXX_VALUE_NODE.DERIVED_TYPE_SKIP	= 0;
+	CXX_VALUE_NODE.EXTRA_PTR_LEVEL		= FALSE;
+        CXX_VALUE_NODE.NOT_AN_LVALUE		= TRUE;
+
+	call SIMPLE_TYPE_SIZE (rank (T.CODE),
+			       CXX_VALUE_NODE.SIZE,
+			       SIZE_UNITS,
+			       0);
+
+	CXX_VALUE_NODE.SIZE_UNITS		= byte (SIZE_UNITS);
+
+end SET_VALUE_SIMPLE_TYPE_DATA;
+
+/* ---------------------------------------------------------------------
+/* SET_VALUE_SIMPLE_TYPE
+/*
+/* Change the type of the current value-node to the given simple type
+/* (xxx_BT), with full size information.  The not-an-lvalue flag of
+/* the value-node will be set true.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SET_VALUE_SIMPLE_TYPE: procedure (T) external (X_SET_VALUE_SIMPLE_TYPE);
+
+	declare T		type (SHORT_T);
+	declare SIZE_UNITS	type (SHORT_T);	
+
+        CXX_VALUE_NODE.TOP_TYPE.CODE		= byte (T);
+	CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS	= NULL_TQ;
+	CXX_VALUE_NODE.TOP_TYPE.NID		= NULL_NID;
+	CXX_VALUE_NODE.DERIVED_TYPE_SKIP	= 0;
+	CXX_VALUE_NODE.EXTRA_PTR_LEVEL		= FALSE;
+        CXX_VALUE_NODE.NOT_AN_LVALUE		= TRUE;
+
+	if T ^= NULL_BT then do;
+		CXX_VALUE_NODE.TYPE		= GET_BASIC_TYPE (T);
+		call SIMPLE_TYPE_SIZE (T, CXX_VALUE_NODE.SIZE, SIZE_UNITS, 0);
+		CXX_VALUE_NODE.SIZE_UNITS	= byte (SIZE_UNITS);
+	end;
+	else do;
+		CXX_VALUE_NODE.TYPE = NULL_NID;
+		CXX_VALUE_NODE.SIZE = 0;
+		CXX_VALUE_NODE.SIZE_UNITS = byte (0);
+	end;
+
+end SET_VALUE_SIMPLE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* SET_VALUE_SIMPLE_POINTER_TYPE
+/*
+/* Change the type of the current value-node to a pointer to the given
+/* simple type (xxx_BT), with full size information.  The not-an-lvalue
+/* flag of the value-node will be set true.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SET_VALUE_SIMPLE_POINTER_TYPE: procedure (T)
+			       external (X_SET_VALUE_SIMPLE_POINTER_TYPE);
+	declare
+		T		type (SHORT_T);
+	declare SIZE_UNITS	type (SHORT_T);	
+
+	CXX_VALUE_NODE.TYPE			= GET_BASIC_POINTER_TYPE (T);
+        CXX_VALUE_NODE.TOP_TYPE.CODE		= byte (POINTER_DT);
+	CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS	= NULL_TQ;
+	CXX_VALUE_NODE.TOP_TYPE.NID		= NULL_NID;
+	CXX_VALUE_NODE.DERIVED_TYPE_SKIP	= 0;
+	CXX_VALUE_NODE.EXTRA_PTR_LEVEL		= FALSE;
+        CXX_VALUE_NODE.NOT_AN_LVALUE		= TRUE;
+
+	call SIMPLE_TYPE_SIZE (POINTER_DT, CXX_VALUE_NODE.SIZE, SIZE_UNITS, 0);
+
+	CXX_VALUE_NODE.SIZE_UNITS		= byte (SIZE_UNITS);
+
+end SET_VALUE_SIMPLE_POINTER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* SET_VALUE_CLASS_POINTER_TYPE
+/*
+/* Change the type of the current value-node to a pointer to the given
+/* class (sym-node id), with full size information.  The not-an-lvalue
+/* flag of the value-node will be set true.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SET_VALUE_CLASS_POINTER_TYPE: procedure (CLASS)
+			      external  (X_SET_VALUE_CLASS_POINTER_TYPE);
+	declare
+		CLASS		type (NID_T);
+	declare
+		CP		type (POINTER_T),
+		TAG_TYPE	type (SHORT_T),
+		SIZE_UNITS	type (SHORT_T);	
+
+	call GET_SYM_NODE_R (CLASS, CP);
+	TAG_TYPE = rank (CP->SYM_NODE.TOP_TYPE.CODE);
+	call RELEASE_SYM_NODE (CLASS);
+
+	CXX_VALUE_NODE.TYPE = GET_CLASS_POINTER_TYPE (TAG_TYPE, CLASS);
+        CXX_VALUE_NODE.TOP_TYPE.CODE		= byte (POINTER_DT);
+	CXX_VALUE_NODE.TOP_TYPE.QUALIFIERS	= NULL_TQ;
+	CXX_VALUE_NODE.TOP_TYPE.NID		= NULL_NID;
+	CXX_VALUE_NODE.DERIVED_TYPE_SKIP	= 0;
+	CXX_VALUE_NODE.EXTRA_PTR_LEVEL		= FALSE;
+        CXX_VALUE_NODE.NOT_AN_LVALUE		= TRUE;
+
+	call SIMPLE_TYPE_SIZE (POINTER_DT, CXX_VALUE_NODE.SIZE, SIZE_UNITS, 0);
+
+	CXX_VALUE_NODE.SIZE_UNITS		= byte (SIZE_UNITS);
+
+end SET_VALUE_CLASS_POINTER_TYPE;
+
+/* ---------------------------------------------------------------------
+/* STRIP_TOP_TYPE
+/*
+/* Strip the top-most derived type from the type represented
+/* by the given type-info record.  Preserves current-node-id.
+/*
+/* The extra-pointer-level flag of the type-info will be set false.
+/* The not-an-lvalue flag of the type-info will be set false.
+/*
+/* GET_SIZE tells whether or not to set the size of the resulting type.
+/* ------------------------------------------------------------------- */
+
+STRIP_TOP_TYPE: procedure (TYPE_INFO, GET_SIZE)
+		recursive
+		external  (X_STRIP_TOP_TYPE);
+
+	declare
+		TYPE_INFO	type (TYPE_INFO_T),
+		GET_SIZE	type (BOOL_T);
+
+	if TYPE_INFO.EXTRA_PTR_LEVEL then
+		TYPE_INFO.EXTRA_PTR_LEVEL = FALSE;
+
+	else	TYPE_INFO.DERIVED_TYPE_SKIP =
+			TYPE_INFO.DERIVED_TYPE_SKIP + 1;
+
+	/* Get the top type info */
+
+	call GET_TOP_LEVEL_TYPE (TYPE_INFO.TYPE,
+				 TYPE_INFO.DERIVED_TYPE_SKIP,
+				 TYPE_INFO.TOP_TYPE);
+
+	/* Get the size type data if desired */
+
+	if GET_SIZE then
+		call DETERMINE_SIZE (TYPE_INFO);
+
+	TYPE_INFO.NOT_AN_LVALUE = FALSE;
+
+end STRIP_TOP_TYPE;
+
+/* ---------------------------------------------------------------------
+/* ADD_POINTER_LEVEL
+/*
+/* Changes the type represented  by the given type-info record to
+/* pointer-to that type.  Preserves current-node-id.
+/*
+/* The not-an-lvalue flag of the type-info will be set true.
+/* ------------------------------------------------------------------- */
+
+ADD_POINTER_LEVEL: procedure (TI) external (X_ADD_POINTER_LEVEL);
+
+	declare
+		TI			type (TYPE_INFO_T);
+	declare
+		SKIP_LEVEL		type (SHORT_T),
+		THIS_TOP_TYPE		type (TYPE_DATA_T);
+
+	TI.NOT_AN_LVALUE = TRUE;
+
+	if ^TI.EXTRA_PTR_LEVEL then do;
+		TI.EXTRA_PTR_LEVEL	= TRUE;
+		TI.TOP_TYPE.CODE	= byte (POINTER_DT);
+		TI.TOP_TYPE.QUALIFIERS	= NULL_TQ;
+		TI.TOP_TYPE.NID		= NULL_NID;
+		call SIMPLE_TYPE_SIZE (POINTER_DT,
+				       TI.SIZE,
+				       TI.SIZE_UNITS,
+				       TI.BOUNDARY);
+		return;
+	end;
+
+	/*
+	/* The type is already using extra-pointer-level.  Look in
+	/* the type-node on the (off) chance that derived-type-skip
+	/* can be bumped in order to pick up a pointer level.
+	/**/
+
+	if TI.DERIVED_TYPE_SKIP > 0 then do;
+		SKIP_LEVEL = TI.DERIVED_TYPE_SKIP - 1;
+		call GET_TOP_LEVEL_TYPE (TI.TYPE, SKIP_LEVEL, THIS_TOP_TYPE);
+		if THIS_TOP_TYPE.CODE = byte (POINTER_DT)
+		   & THIS_TOP_TYPE.QUALIFIERS = NULL_TQ then do;
+			TI.DERIVED_TYPE_SKIP = SKIP_LEVEL;
+			TI.TOP_TYPE	     = THIS_TOP_TYPE;
+			return;
+		end;
+	end;
+
+	/* Sigh; we have to make a new type-node */
+
+	TI.TYPE			= MODIFY_TYPE
+				  (TI.TYPE, TI.DERIVED_TYPE_SKIP, TRUE);
+	TI.DERIVED_TYPE_SKIP	= 0;
+
+end ADD_POINTER_LEVEL;
+
+/* ---------------------------------------------------------------------
+/* ADD_REFERENCE_LEVEL
+/*
+/* Changes the type represented  by the given type-info record to
+/* reference-to that type.  Preserves current-node-id.
+/*
+/* The not-an-lvalue flag of the type-info will be set true.
+/* ------------------------------------------------------------------- */
+
+ADD_REFERENCE_LEVEL: procedure (TI) external (X_ADD_REFERENCE_LEVEL);
+
+	declare
+		TI			type (TYPE_INFO_T);
+	declare
+		SKIP_LEVEL		type (SHORT_T),
+		THIS_TOP_TYPE		type (TYPE_DATA_T);
+
+	TI.NOT_AN_LVALUE = TRUE;
+
+	/*
+	/* Look in the type-node on the (off) chance that derived-type-skip
+	/* can be bumped in order to pick up a reference level.
+	/**/
+
+	if TI.DERIVED_TYPE_SKIP > 0 & ^TI.EXTRA_PTR_LEVEL then do;
+		SKIP_LEVEL = TI.DERIVED_TYPE_SKIP - 1;
+		call GET_TOP_LEVEL_TYPE (TI.TYPE, SKIP_LEVEL, THIS_TOP_TYPE);
+		if THIS_TOP_TYPE.CODE = byte (REFERENCE_DT) 
+		   & THIS_TOP_TYPE.QUALIFIERS = NULL_TQ then do;
+			TI.DERIVED_TYPE_SKIP = SKIP_LEVEL;
+			TI.TOP_TYPE	     = THIS_TOP_TYPE;
+			return;
+		end;
+	end;
+
+	/* Sigh; we have to make a new type-node */
+
+	TI.TYPE			= MODIFY_TYPE (TI.TYPE, 
+					       TI.DERIVED_TYPE_SKIP,
+					       (TI.EXTRA_PTR_LEVEL));
+	TI.TOP_TYPE.CODE	= byte (REFERENCE_DT);
+	TI.TOP_TYPE.QUALIFIERS	= NULL_TQ;
+	TI.TYPE			= ADD_TOP_TYPE (TI.TYPE, TI.TOP_TYPE);
+	TI.DERIVED_TYPE_SKIP	= 0;
+	TI.EXTRA_PTR_LEVEL	= FALSE;
+
+end ADD_REFERENCE_LEVEL;
+
+/* ---------------------------------------------------------------------
+/* DIRECT_TYPE_ID
+/*
+/* Returns a type-node id represents the given type-info,
+/* i.e. with no derived-type-skip or extra-pointer-level
+/* fudging.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DIRECT_TYPE_ID: procedure (TI)
+		returns   (type (NID_T))
+		external  (X_DIRECT_TYPE_ID);
+
+	declare TI type (TYPE_INFO_T);
+
+	return (MODIFY_TYPE (TI.TYPE,
+			     TI.DERIVED_TYPE_SKIP,
+			     TI.EXTRA_PTR_LEVEL = TRUE));
+
+end DIRECT_TYPE_ID;
+
+/* ---------------------------------------------------------------------
+/* DETERMINE_SIZE
+/*
+/* Determines and fills in the size data for the type represented
+/* by the given TYPE_INFO_T record.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+DETERMINE_SIZE: procedure (TYPE_INFO)
+		external (X_DETERMINE_SIZE);
+
+	declare
+		TYPE_INFO	type (TYPE_INFO_T);
+	declare
+		TP		type (POINTER_T),
+		TOP_TYPE	type (TYPE_DATA_T),
+		SNID		type (SNID_T);
+
+	if TYPE_INFO.EXTRA_PTR_LEVEL then do;
+		call SIMPLE_TYPE_SIZE (POINTER_DT, 
+				       TYPE_INFO.SIZE,
+				       TYPE_INFO.SIZE_UNITS,
+				       TYPE_INFO.BOUNDARY);
+		return;
+	end;
+
+	call GET_TYPE_NODE_R (TYPE_INFO.TYPE, TP);
+
+	call ANY_TYPE_SIZE (TP,
+			    TYPE_INFO.DERIVED_TYPE_SKIP,
+			    TYPE_INFO.SIZE,
+			    TYPE_INFO.SIZE_UNITS,
+			    TYPE_INFO.BOUNDARY);
+
+	call RELEASE_TYPE_NODE (TYPE_INFO.TYPE);
+
+end DETERMINE_SIZE;
+
+/* ---------------------------------------------------------------------
+/* GET_TOP_LEVEL_TYPE_INFO
+/*
+/* Returns in the given type-data parameter, the top-type of the given
+/* type-info record, *after* the specified number of derived type levels
+/* have been skipped.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+	
+GET_TOP_LEVEL_TYPE_INFO: procedure (TYPE_INFO, SKIP_NLEVELS, TOP_TYPE)
+			 external  (X_GET_TOP_LEVEL_TYPE_INFO);
+	declare
+		TYPE_INFO		type (TYPE_INFO_T),
+		SKIP_NLEVELS		type (SHORT_T),
+		TOP_TYPE		type (TYPE_DATA_T);
+	declare
+		THIS_SKIP_NLEVELS	type (SHORT_T);
+
+	if TYPE_INFO.EXTRA_PTR_LEVEL then
+		THIS_SKIP_NLEVELS = SKIP_NLEVELS - 1;
+	else	THIS_SKIP_NLEVELS = SKIP_NLEVELS;
+
+	call GET_TOP_LEVEL_TYPE (TYPE_INFO.TYPE,
+				 TYPE_INFO.DERIVED_TYPE_SKIP +
+					THIS_SKIP_NLEVELS,
+				 TOP_TYPE);
+end GET_TOP_LEVEL_TYPE_INFO;
+
+/* ---------------------------------------------------------------------
+/* TYPE_INFO_NAME
+/* ------------------------------------------------------------------- */
+
+TYPE_INFO_NAME: procedure (TI)
+		returns   (character (512) varying)
+		external  (X_TYPE_INFO_NAME);
+	declare
+		TI	type (TYPE_INFO_T);
+	declare
+		DSM	type (DSM_T),
+		TP	type (POINTER_T),
+		S	character (512) varying;
+
+	DSM = BASE_TYPE_SPECIFIER_DSM |
+	      QUALIFIED_TYPE_NAME_DSM |
+	      DECLARATOR_TYPE_DSM |
+	      DIMENSIONS_DSM |
+	      SIGNATURES_DSM |
+	      EXPAND_TYPEDEF_DSM |
+	      CONSERVE_SPACE_DSM;
+	if TI.EXTRA_PTR_LEVEL then
+		DSM = DSM | ADD_POINTER_TYPE_DSM;
+	call GET_TYPE_NODE_R (TI.TYPE, TP);
+	S = ANY_TYPE_NAME (TP, TI.DERIVED_TYPE_SKIP, DSM, '');
+	call RELEASE_TYPE_NODE (TI.TYPE);
+	return (S);
+
+end TYPE_INFO_NAME;
+

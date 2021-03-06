@@ -1,0 +1,95 @@
+/* C++ defext.pl1 - Static external data initialization (-defext) */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.18.92  DGM  012	Added %include CXX_PRAGMA_DATA_SECTION_IN.
+ *  03.26.92  DGM  011	New value-node scheme.
+ *  01.24.92  DGM  010	Removed CXX_PARSER_PKG & CXX_PARSE_TABLE_IN;
+ *			no longer necessary to recompile this module
+ *			when grammar changes are made.
+ *  01.10.92  PKT  009	Added CXX_TYPE_CLASS_IN.
+ *  10.07.91  DGM  008R Changed GLOBAL_IN to GBL_TYPE_DEFINITIONS_IN &
+ *			GBL_CONSTANTS_IN; added NODE_PTR & CURRENT_OP.
+ *  10.04.91  DGM  008  Added GLOBAL_IN
+ *  07.18.91  DGM  008  Updated.
+ *  07.13.91  DGM  007  Updated.
+ *  05.13.91  DGM  006  Updated.
+ *  02.01.91  DGM  005  Updated.
+ *  09.25.90  DGM  004  Preprocessor include file name changes.
+ *  09.25.90  DGM  003  Removed CXX_TYPE_SIZE_IN and
+ *			CXX_TYPE_COMPATIBILITY_PKG.
+ *  09.14.90  DGM  002  Changed include file names and VOP names.
+ *  08.21.90  DGM  001  Updated.
+ *  08.17.90  DGM  000  Original; from cgbldf.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.18.92 012 DEFEXT');
+
+/* ---------------------------------------------------------------------
+/* DEFEXT
+/*
+/* Include here, any initialized external data; compile -defext.
+/*
+/* IMPORTANT!!!! If you add a new include file here which the debugger
+/* also needs, please notify someone on the debugger project so they
+/* can add it to their defext module -- MJ.
+/* ------------------------------------------------------------------- */
+
+DEFEXT: procedure;
+
+%include 'incfil';
+%include GBL_CONSTANTS_IN;
+%include GBL_TYPE_DEFINITIONS_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYSTEM_IN;
+%include CXX_GLOBAL_IN;
+%include CXX_DEBUG_SWITCHES_IN;
+%include CXX_LEXER_PKG;
+%include CXX_DATA_INITIAL_FILE_PKG;
+%include CXX_PARSER_TERMINAL_CODES_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_TYPE_CLASS_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_OPERATOR_TOKEN_MAP_IN;
+%include CXX_TOKEN_MAP_TERMINAL_IN;
+%include CXX_TOKEN_MAP_DECLARATION_IN;
+%include CXX_PP_TOKEN_MAP_SPELLING_IN;
+%include CXX_TOKEN_MAP_OPERATOR_IN;
+%include CXX_SOURCE_MGR_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_GLOBAL_STATEMENT_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_NAMES_IN;
+%include CXX_INTERNAL_PARSE_IN;
+%include CXX_PRAGMA_DATA_SECTION_IN;
+
+declare
+
+NODE_PTR	pointer,
+CURRENT_OP	pointer;
+
+end DEFEXT;
+

@@ -1,0 +1,85 @@
+########################################################################
+# PROGRAM:	VALID System Utilities
+# FILE:		Makefile
+# DATE:		June 1984
+# AUTHOR:	David Michaels (david@ll-sst)
+########################################################################
+
+########################################################################
+#		Directories
+########################################################################
+
+HOME_DIR =	/u0/david
+
+LIB_DIR =	$(HOME_DIR)/libc
+
+LIB_HDIR =	$(LIB_DIR)/h
+
+########################################################################
+#		Flags
+########################################################################
+
+CFLAGS =	-O -I$(LIB_HDIR)
+
+########################################################################
+#		Files
+########################################################################
+
+CFILES =	gedlist.c xnetlist.c xprtlist.c
+
+OFILES =	gedlist.o xnetlist.o xprtlist.o
+
+LIB =		$(HOME_DIR)/libc/lib.a
+
+########################################################################
+#		Make Directions
+########################################################################
+
+all:
+		make gedlist
+		make xnetlist
+		make xprtlist
+
+gedlist:	gedlist.o
+		cc $(CLFAGS) -o gedlist gedlist.o $(LIB)
+
+xnetlist:	xnetlist.o
+		cc $(CLFAGS) -o xnetlist xnetlist.o $(LIB)
+
+xprtlist:	xprtlist.o
+		cc $(CFLAGS) -o xprtlist xprtlist.o $(LIB)
+
+
+gedlist.o:	gedlist.c
+		cc $(CFLAGS) -c gedlist.c
+
+xnetlist.o:	xnetlist.c
+		cc $(CFLAGS) -c xnetlist.c
+
+xprtlist.o:	xprtlist.c
+		cc $(CFLAGS) -c xprtlist.c
+
+########################################################################
+#		Utilities
+########################################################################
+
+tape:
+		tar rv $(CFILES) Makefile Manual
+
+list:
+		ipf -2 $(CFILES) Makefile
+
+man:
+		tbl Manual | nroff | colcrt | more -s
+
+printman:
+		tbl Manual | itroff -man
+
+clean:
+		rm *.o
+
+protect:
+		chmod 444 $(CFILES) Makefile Manual
+
+unprotect:
+		chmod 664 $(CFILES) Makefile Manual

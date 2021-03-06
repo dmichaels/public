@@ -1,0 +1,30 @@
+/* ------ CVALUE1.IN, based cvalue spelling --------*/
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  01.19.90  TLF  000  Original.  Derived from ANSI-C version.
+ *
+ ***********************************************************************/
+
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+
+
+%include C_BASED_TOKENS_IN;
+
+Declare CPLUS_VAL_SPELLING char (32767) varying based 
+                           (addr(CPLUS_VAL.SPTR->BASED_STRING.BASED_SPELLING));
+

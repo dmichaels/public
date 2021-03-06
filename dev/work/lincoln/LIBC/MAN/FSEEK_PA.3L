@@ -1,0 +1,40 @@
+.TH FSEEK_PAT 3L LOCAL
+
+.SH NAME
+fseek_pat - seek to a pattern in a file
+
+.SH SYNOPSIS
+.ft B
+long
+.br
+fseek_pat(f, pat)
+.br
+FILE *f;
+.br
+char *pat;
+.ft P
+
+.SH DESCRIPTION
+Sets the IO pointer of file \fIf\fP to the position of the next
+occurrence of the pattern string \fIpat\fP.  If the pattern is
+found, then the old file offset is returned.
+.PP
+If the pattern is not found,
+then the IO pointer will be left intact, and -1 will be returned.
+.PP
+If the pattern is found,
+the IO pointer will be set to the last character in the pattern
+string.  That is, the next \fIgetc(f)\fP will yield the character
+immediately following the last character of the chosen pattern string.
+
+.SH WARNINGS
+This function coordinates with the buffering used by the
+standard C input/output library, and should only be used
+in conjunction with other functions within the library
+(e.g. use \fIfseek(3S)\fP rather than \fIlseek(2)\fP).
+
+.SH FILES
+fseek_pat.c
+
+.SH SEE ALSO
+ftell_pat(3L), fseek_npat(3L), findline(3L), sindex(3L), fseek(3)

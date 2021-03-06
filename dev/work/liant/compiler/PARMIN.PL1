@@ -1,0 +1,956 @@
+/* C++ parmin.pl1 - Parser semantic actions for base & mbr initializers */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  04.14.92  PKT  018	Fixed member initializers for unions.
+ *  04.12.92  PKT  018	Fixed bug with base initializer when base is a
+ *			nested class.
+ *  04.30.92  DGM  017	Minor fix for nested class as base class
+ *			initializer.
+ *  03.26.92  DGM  016	New value-node scheme.
+ *  01.30.92  PKT  015	Removed superfluous destructor access check.
+ *  01.10.92  PKT  014	Revamped for better destructor access checking.
+ *  10.01.91  PKT  013  Diagnose uninitialized arrays, consts, and
+ *			references.
+ *  07.23.91  PKT  012  Updated access checking.
+ *  07.08.91  DGM  011  Hook ERR_OMITTED_BASE_NAME on
+ *			SW_OPTIONAL_BASE_CLASS_NAME.
+ *  03.27.91  PKT  010  Updated.
+ *  03.22.91  PKT  009  Updated.
+ *  03.05.91  PKT  008  Fixed access to base class destructor.
+ *  02.21.91  DGM  007	Fixed unbalanced GET_SYM_NODE/RELEASE_SYM_NODE.
+ *  01.11.91  PKT  006  Fixed access to base class constructor.
+ *  01.10.90  DGM  005  Added support for (multi) qualified in member
+ *			initializers (in BASE_MEMBER_VALUE).
+ *  12.17.90  PKT  004  Fixed SET_MEMBER_INITIAL_LIST to find list of
+ *			class's non-static data members.
+ *			Improved access control.
+ *  12.12.90  DGM  003  Updated to use the vbc-node list instead of
+ *			calling GET/DELETE_VIRTUAL_BASE_CLASS_LIST.
+ *  11.05.90  TLF  002  Simple fix in SUBOBJECT_REF: set NOT_AN_LVALUE
+ *                      after call to GET_SYMBOL_TYPE.
+ *  10.24.90  PKT  001  Fixes for arrays, robustness.
+ *  10.03.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 04.30.92 018 PARMIN');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_EXPRESSION_DATA_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_PROCESS_STATEMENT_PKG;
+%include CXX_PROCESS_EXPRESSION_PKG;
+%include CXX_CLASS_UTL_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_COUNT_DOWN_VALUE_PKG;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_EMIT_CONSTRUCTOR_CODE_PKG;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_GET_EXPANDED_VALUE_PKG;
+%include CXX_DUMP_VALUE_TREE_PKG;
+%include CXX_CONVERT_CLASS_POINTER_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_OVERLOAD_PKG;
+%include CXX_ACCESS_CONTROL_PKG;
+%include CXX_DEFAULT_PROC_GENERATION_PKG;
+%include CXX_DECLARATION_STACK_PKG;
+%include CXX_SEMANTIC_STACK_PKG;
+
+/* ---------------------------------------------------------------------
+ * Local static data definitions
+ * ------------------------------------------------------------------- */
+
+declare
+
+IMPLICIT_INITIAL	type (CXX_VID_T) static internal initial (null ());
+
+/* ---------------------------------------------------------------------
+/* BASE_MEMBER_VALUE
+/* 
+/* Verify that the current name is appropriate for base/member
+/* initialization.  The name may be a direct base class or a
+/* virtual base class of the current constructor's class, or a direct member
+/* of the current constructor's class.  The name may be missing, in
+/* which case for compatibility with cfront 1.2 we check that the
+/* class has just 1 direct base class, provide a warning, and initialize
+/* that.
+/*
+/* Set CURRENT_SYMBOL to the sym-node id of the
+/* base class or member being initialized.  If the symbol doesn't
+/* make sense or the current function is not a constructor, use
+/* NULL_NID.
+/*
+/* For the sake of good pointers in error messages, we check
+/* here that the name is suitable for a base or member initializer.
+/* ------------------------------------------------------------------- */
+BASE_MEMBER_VALUE: procedure
+		   external (X_BASE_MEMBER_VALUE);
+
+	declare 
+		SYM		type (NID_T),
+		CTOR_SYM	type (NID_T),
+		CLASS_SYM	type (NID_T),
+		CLASS_SCOPE_ID	type (NID_T),
+		CLASS_NAME	type (NID_T),
+		REF_NODE	type (CXX_VID_T),
+		DEREF_NODE	type (CXX_VID_T),
+		THIS_SYM	type (NID_T),
+		THIS_VAL	type (CXX_VID_T),
+		BASE_CLASS_LIST	type (NID_T),
+		THIS_BASE_CLASS	type (NID_T),
+		ACCESS		type (SHORT_T),
+		NEXT_BASE_CLASS	type (NID_T),
+		P		type (POINTER_T),
+		SP		type (POINTER_T),
+		BP		type (POINTER_T),
+		IS_CTOR		type (BOOL_T),
+		VIRT		type (BOOL_T),
+		OK		type (BOOL_T);
+	
+	/* If the current function is not a constructor set current
+	/* value null.
+	/**/
+
+	call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, SP);
+	CTOR_SYM = SP->SCOPE_NODE.OWNER;
+	call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+	call GET_SYM_NODE_R (CTOR_SYM, P);
+	IS_CTOR = P->SYM_NODE.IS_CONSTRUCTOR_FUNCTION;
+	CLASS_SYM = P->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+	CLASS_SCOPE_ID = P->SYM_NODE.ENCLOSING_SCOPE;
+	call RELEASE_SYM_NODE (CTOR_SYM);
+	if ^IS_CTOR then do;
+		CURRENT_NAME = NULL_NID;
+		CURRENT_SYMBOL = NULL_NID;
+		return;
+	end;
+
+	if CURRENT_NAME ^= NULL_NID then do;
+		if CURRENT_NAME_SCOPE = NULL_NID then
+			SYM = LOOKUP_NAME (CURRENT_NAME,
+					   ANY_SK,
+					   CLASS_SCOPE_ID);
+		else	SYM = SEARCH_CLASS (CURRENT_NAME_SCOPE_SYMBOL,
+					    CURRENT_NAME,
+					    AGGREGATE_TAG_SK);
+		if SYM = NULL_NID then do;
+			/*
+			/* Error, not a base or member of CLASS_SYM.
+			/**/
+			if CURRENT_NAME_SCOPE = NULL_NID then do;
+				call SEMANTIC_ERROR_II
+				     (ERR_NOT_BASE_OR_MEMBER,
+				      TOKEN_NAME (CURRENT_NAME),
+				      QUALIFIED_SYMBOL_NAME (CLASS_SYM));
+			end;
+			else do;
+				call SEMANTIC_ERROR_II
+				     (ERR_NOT_BASE_OR_MEMBER,
+				      TOKEN_NAME (CURRENT_NAME),
+				      QUALIFIED_SYMBOL_NAME
+				      (CURRENT_NAME_SCOPE_SYMBOL));
+			end;
+		end;
+	end;
+	else do;
+		/* For compatibility, permit missing name as meaning
+		/* the base class (if there's only 1).
+		/**/
+		call GET_SYM_NODE (CLASS_SYM, P);
+		if P->SYM_NODE.NBASE_CLASSES = 1 then do;
+			call GET_BASE_CLASS_NODE_R(P->SYM_NODE.BASE_CLASSES,P);
+			SYM = P->BASE_CLASS_NODE.SYMBOL;
+			call RELEASE_BASE_CLASS_NODE(P->SYM_NODE.BASE_CLASSES);
+			call SET_SYM_NODE (SYM);
+			/* Warning, name missing in base initializer. */
+ 			if ^SW_OPTIONAL_BASE_CLASS_NAME then
+				call SEMANTIC_ERROR_I
+				     (ERR_OMITTED_BASE_NAME,
+				      SYMBOL_NAME (SYM));
+		end;
+		else if P->SYM_NODE.NBASE_CLASSES > 1 then do;
+			SYM = NULL_NID;
+			/* Error, name missing in base initializer. */
+			call SEMANTIC_ERROR_I (ERR_BASE_NAME_REQUIRED,
+						SYMBOL_NAME (CLASS_SYM));
+		end;
+		else do;
+			SYM = NULL_NID;
+			call SEMANTIC_ERROR_I (ERR_NO_BASE_TO_INIT,
+						SYMBOL_NAME (CLASS_SYM));
+		end;
+		call RELEASE_SYM_NODE (CLASS_SYM);
+	end;
+
+	if SYM = NULL_NID then do;
+		/* Error already diagnosed. */
+	end;
+	else if SYM_NODE.IS_MEMBER & ^SYM_NODE.IS_TYPE then do;
+		if SYM_NODE.ENCLOSING_SCOPE_OWNER ^= CLASS_SYM then do;
+			/* Error, symbol is not a direct member. */
+			call SEMANTIC_ERROR_II (ERR_NOT_DIRECT_MEMBER,
+						TOKEN_NAME (CURRENT_NAME), 
+						SYMBOL_NAME (CLASS_SYM));
+			SYM = NULL_NID;
+		end;
+		else if ^SYM_NODE.IS_DATA then do;
+			/* Error, symbol is member function. */
+			call SEMANTIC_ERROR (ERR_BAD_MEMBER_FUNC_INIT);
+			SYM = NULL_NID;
+		end;
+		else if ^SYM_NODE.IS_NON_STATIC_DATA_MEMBER then do;
+			/* Error, symbol is static member. */
+			call SEMANTIC_ERROR (ERR_BAD_STATIC_MEMBER_INIT);
+			SYM = NULL_NID;
+		end;
+	end;
+	else do;
+		THIS_BASE_CLASS = LOOKUP_DOV_BASE_CLASS (SYM, CLASS_SYM);
+		if THIS_BASE_CLASS ^= NULL_NID then do;
+			call GET_BASE_CLASS_NODE_R (THIS_BASE_CLASS, BP);
+			VIRT = BP->BASE_CLASS_NODE.VIRTUAL;
+			call RELEASE_BASE_CLASS_NODE (THIS_BASE_CLASS);
+
+			/* Check access */
+			ACCESS = EFFECTIVE_ACCESS (NULL_NID, SYM, CLASS_SYM, 
+							     PUBLIC_ACCESS);
+			if ACCESS^=PUBLIC_ACCESS & ^SW_LAX_ACCESS_CONTROL then
+				call SEMANTIC_ERROR_I (ERR_PRIV_BASE,
+						       SYMBOL_NAME (SYM));
+		end;
+		else if IS_ANY_BASE_CLASS_OF (SYM, CLASS_SYM) then do;
+			/* Error, SYM is an indirect, non-virtual
+			/* base class of CLASS_SYM.
+			/**/
+			call SEMANTIC_ERROR_II (ERR_NOT_IMMEDIATE_OR_VIRTUAL,
+						TOKEN_NAME (CURRENT_NAME), 
+						SYMBOL_NAME (CLASS_SYM));
+			SYM = NULL_NID;
+		end;
+		else do;
+			SYM = NULL_NID;
+			/* Error, SYM is not a member or base of class. */
+			call SEMANTIC_ERROR_II (ERR_NOT_BASE_OR_MEMBER,
+						TOKEN_NAME (CURRENT_NAME), 
+						SYMBOL_NAME (CLASS_SYM));
+		end;
+	end;
+
+	CURRENT_SYMBOL = SYM;
+	CURRENT_NAME = NULL_NID;
+	return;
+
+end BASE_MEMBER_VALUE;
+
+/* ---------------------------------------------------------------------
+/* SUBOBJECT_REF
+/*
+/* The context must be a member function body (or base/mbr initializer).
+/* SYM is the symbol of a member or unambiguous base of the function's class.
+/* Returns a ref for the symbol, based on
+/* the member function's this pointer, at the given offset.
+/* The value node is paged in upon return.
+/* ------------------------------------------------------------------- */
+SUBOBJECT_REF: procedure (SYM, OFFSET, OFFSET_UNITS)
+	       internal
+	       returns (type (CXX_VID_T));
+
+	declare
+		SYM		type (NID_T),
+		OFFSET		type (LONG_T),
+		OFFSET_UNITS	type (SHORT_T);
+	declare
+		CTOR_SYM	type (NID_T),
+		THIS_VAL	type (CXX_VID_T),
+		SP		type (POINTER_T),
+		RESULT		type (CXX_VID_T),
+		TYPE_INFO	type (TYPE_INFO_T);
+
+	call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, SP);
+	CTOR_SYM = SP->SCOPE_NODE.OWNER;
+	call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+
+	THIS_VAL = GET_VALUE_REF_AND_EXPAND
+		   (LOOKUP_THIS_PARAMETER (CTOR_SYM));
+
+	/* Set up ref with 'this' as locator. */
+	RESULT = ALLOC_REF_CXX_VALUE_NODE (SYM);
+        CXX_VALUE_NODE.THIRD = THIS_VAL; /* locator */
+
+	/* Set type of ref node according to subobject symbol. */
+	call SET_SYM_NODE_R (SYM);
+	call GET_SYMBOL_TYPE (TYPE_INFO);
+	call SET_VALUE_TYPE (TYPE_INFO);
+
+	CXX_VALUE_NODE.NOT_AN_LVALUE = FALSE;
+
+	/* Set up offset from 'this'. */
+        CXX_VALUE_NODE.OFFSET = OFFSET;
+        CXX_VALUE_NODE.OFFSET_UNITS = byte (OFFSET_UNITS);
+
+	return (RESULT);
+
+end SUBOBJECT_REF;
+
+/* ---------------------------------------------------------------------
+/* BEGIN_MEMBER_INITIAL_LIST
+/*
+/* Initialize for a member initialization list.
+/* We do this even when the list is not actually present,
+/* because base/member initialization must be done in either case,
+/* and doing this makes it a little cleaner.
+/* This happens at the same time the scope of the function becomes active,
+/* so that the initializing expressions can be analyzed.
+/* ------------------------------------------------------------------- */
+
+BEGIN_MEMBER_INITIAL_LIST: procedure
+			        external (X_BEGIN_MEMBER_INITIAL_LIST);
+
+	/* Push a null value onto the expresion stack to mark
+	/* the last initialized symbol.
+	/**/
+	/* call PUSH_MARKER (); */
+	call PUSH_NODE (NULL_NID);
+
+	/* Intialize current symbol. */
+
+	CURRENT_NAME = NULL_NID;
+
+end BEGIN_MEMBER_INITIAL_LIST;
+
+/* ---------------------------------------------------------------------
+/* CHECK_MEMBER_INITIAL_LIST
+/*
+/* Report error if the current function is not a constructor,
+/* so it doesn't get reported for every base/member initializer present.
+/* function body.  To analyze the initializing expressions, the
+/* function scope is actually activated before we get here.
+/* ------------------------------------------------------------------- */
+
+CHECK_MEMBER_INITIAL_LIST: procedure
+			   external
+			   (X_CHECK_MEMBER_INITIAL_LIST);
+	
+	declare
+		SP		type (POINTER_T),
+		P		type (POINTER_T),
+		CTOR_SYM	type (NID_T);
+
+	/* The current function must be a constructor. */
+
+	call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, SP);
+	CTOR_SYM = SP->SCOPE_NODE.OWNER;
+	call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+	call GET_SYM_NODE_R (CTOR_SYM, P);
+	if ^P->SYM_NODE.IS_CONSTRUCTOR_FUNCTION then
+                call SEMANTIC_ERROR (ERR_MEMBER_INIT_LIST_PLACEMENT);
+	call RELEASE_SYM_NODE (CTOR_SYM);
+
+end CHECK_MEMBER_INITIAL_LIST;
+
+/* ---------------------------------------------------------------------
+/* SET_MEMBER_INITIALIZER
+/* ------------------------------------------------------------------- */
+
+SET_MEMBER_INITIALIZER: procedure
+			external (X_SET_MEMBER_INITIALIZER);
+
+	declare
+		SYM_VID		type (CXX_VID_T),
+		SYM		type (NID_T),
+		TYPE_INFO	type (TYPE_INFO_T),
+		TID		type (NID_T),
+		V		type (CXX_VID_T),
+		IS_TAG		type (BOOL_T),
+		MOST_DERIVED	type (NID_T),
+		P		type (POINTER_T),
+		F		type (NID_T);
+
+	/*
+	/* The following has just been done by the grammar:
+	/*
+	/* call BASE_MEMBER_VALUE ();
+	/* call SET_MEMBER_INIT_OP ();
+	/* call PUSH_VALUE_WITH_OP ();
+	/*
+	/**/
+
+	/* CURRENT_VALUE is the initializing argument list. */
+
+	SYM_VID = POP_CXX_VALUE_NODE ();
+	SYM = SYM_VID->CXX_VALUE_NODE.LEFT_NID;
+	call COUNT_DOWN_VALUE (SYM_VID);
+
+	if SYM = NULL_NID then do;
+		/* Diagnostic already issued.  Leave nothing on stack. */
+		call COUNT_DOWN_VALUE (CURRENT_VALUE);
+	end;
+	else do;
+		call SET_SYM_NODE (SYM);
+		IS_TAG = SYM_NODE.IS_AGGREGATE_TAG;
+		call GET_SYMBOL_TYPE (TYPE_INFO);   /* type of subobject */
+		call DETERMINE_SIZE (TYPE_INFO);    /* eliminate bit-field */
+
+		if IS_TAG then do;
+			call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, P);
+			F = P->SCOPE_NODE.OWNER;  /* The constructor */
+			call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+
+			call GET_SYM_NODE_R (F, P);
+			MOST_DERIVED = P->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+			call RELEASE_SYM_NODE (F);
+		end;
+		else
+			MOST_DERIVED = NULL_NID;
+
+		/* Convert right argument list to type of symbol. */
+		TID = DIRECT_TYPE_ID (TYPE_INFO);
+		V = GET_CONSTRUCTOR_VALUE (TID, CURRENT_VALUE, MOST_DERIVED,
+					   INITIAL_VO);
+
+		/* Leave symbol on top of stack;
+		/* initializing expression just under it.
+		/**/
+		call PUSH_CXX_VALUE_NODE (V);
+		call PUSH_NODE (SYM);
+	end;	
+
+	/* Reinitialize current name. */
+
+	CURRENT_NAME = NULL_NID;
+
+end SET_MEMBER_INITIALIZER;
+
+/* ---------------------------------------------------------------------
+/* SET_MEMBER_INITIAL_LIST
+/*
+/* The expression stack has (symbol, initializing statement) pairs,
+/* followed by a marker.
+/*
+/* Prepare all of the symbols' SYM_NODE.EXPRESSION;
+/* pop symbols off of the value stack, filling in SYM_NODE.EXPRESSION;
+/* traverse all of the base/member symbols and initialize.
+/* ------------------------------------------------------------------- */
+
+SET_MEMBER_INITIAL_LIST: procedure (CTOR_SYM)
+			 external
+			 (X_SET_MEMBER_INITIAL_LIST);
+
+	declare
+		CTOR_SYM	type (NID_T);
+	declare
+		CLASS_SYM		type (NID_T),
+		BASE_CLASS		type (NID_T),
+		(VBC, NEXT_VBC)		type (NID_T),
+		NEXT			type (NID_T),
+		SYM			type (NID_T),
+		SYM_NID			type (NID_T),
+		INIT_STMT		type (CXX_VID_T),
+		(P, SP, BP, VBCP, SCP)	type (POINTER_T),
+		NEXT_BP			type (POINTER_T),
+		IS_CTOR			type (BOOL_T);
+
+	call GET_SYM_NODE_R (CTOR_SYM, P);
+	CLASS_SYM = P->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+	IS_CTOR = P->SYM_NODE.IS_CONSTRUCTOR_FUNCTION;
+	call RELEASE_SYM_NODE (CTOR_SYM);
+	if ^IS_CTOR then do;
+		/* Handle non-constructor case.  There's a marker on the
+		/* expression stack for consistency, because for error recovery
+		/* purposes, the stack of member initializers sort of exists
+		/* for non-constructors.  However, by the time we get here
+		/* it's known that nothing but the marker is on the stack.
+		/* Pop the marker. */
+		/**/
+		/* call POP_MARKER (); */
+		SYM = POP_NODE ();
+		return;
+	end;
+
+	/* Prepare SYM_NODE.EXPRESSION for every non-inherited non-static
+	/* data member, for every immediate base class, and for every
+	/* virtual base class.
+	/**/
+
+	call GET_SYM_NODE_R (CLASS_SYM, SP);
+	if SP->SYM_NODE.IS_UNION_TAG then
+		SP->SYM_NODE.EXPRESSION = IMPLICIT_INITIAL;
+	else do;
+		call GET_SCOPE_NODE_R (SP->SYM_NODE.DEFINED_SCOPE, SCP);
+		NEXT = SCP->SCOPE_NODE.SYMBOLS;	/* first member */
+		do SYM = NEXT repeat NEXT while (SYM ^= NULL_NID);
+			call GET_SYM_NODE (SYM, P);
+			if   P->SYM_NODE.IS_NON_STATIC_DATA_MEMBER
+			   | P->SYM_NODE.IS_ANON_UNION_TAG then
+				P->SYM_NODE.EXPRESSION = IMPLICIT_INITIAL;
+			NEXT = P->SYM_NODE.NEXT_SYMBOL;
+			call RELEASE_SYM_NODE (SYM);
+		end;
+		call RELEASE_SCOPE_NODE (SP->SYM_NODE.DEFINED_SCOPE);
+	end;
+
+	NEXT = SP->SYM_NODE.BASE_CLASSES;
+	do BASE_CLASS = NEXT repeat (NEXT) while (BASE_CLASS ^= NULL_NID);
+		call GET_BASE_CLASS_NODE_R (BASE_CLASS, BP);
+		SYM = BP->BASE_CLASS_NODE.SYMBOL;
+		NEXT = BP->BASE_CLASS_NODE.NEXT;
+		call RELEASE_BASE_CLASS_NODE (BASE_CLASS);
+
+		call GET_SYM_NODE (SYM, P);
+		P->SYM_NODE.EXPRESSION = IMPLICIT_INITIAL;
+		call RELEASE_SYM_NODE (SYM);
+	end;
+
+	do VBC = SP->SYM_NODE.VIRTUAL_BASE_CLASSES
+	repeat NEXT_VBC while (VBC ^= NULL_NID);
+		call GET_VBC_NODE_R (VBC, VBCP);
+		call GET_SYM_NODE (VBCP->VBC_NODE.SYMBOL, P);
+		P->SYM_NODE.EXPRESSION = IMPLICIT_INITIAL;
+		call RELEASE_SYM_NODE (VBCP->VBC_NODE.SYMBOL);
+		NEXT_VBC = VBCP->VBC_NODE.NEXT;
+		call RELEASE_VBC_NODE (VBC);
+	end;
+	call RELEASE_SYM_NODE (CLASS_SYM);
+
+	/* Pop the member initializers on the expression stack,
+	/* setting SYM_NODE.EXPRESSION.  Note that the marker initially
+	/* pushed on the stack is also freed.
+	/**/
+
+	SYM_NID = POP_NODE ();
+
+	do SYM = SYM_NID repeat SYM_NID while (SYM ^= NULL_NID);
+		INIT_STMT = POP_CXX_VALUE_NODE ();
+		call GET_SYM_NODE (SYM, P);
+		call CHECK_INIT_UNION (P, SYM);
+		if P->SYM_NODE.EXPRESSION ^= IMPLICIT_INITIAL then do;
+			call COUNT_DOWN_VALUE (P->SYM_NODE.EXPRESSION);
+			call SEMANTIC_ERROR_I (ERR_DUPLICATE_MEMBER_INIT,
+					       SYMBOL_NAME (SYM));
+		end;
+		P->SYM_NODE.EXPRESSION = INIT_STMT;
+		call RELEASE_SYM_NODE (SYM);
+		SYM_NID = POP_NODE ();
+	end;
+
+end SET_MEMBER_INITIAL_LIST;
+
+/* ---------------------------------------------------------------------
+/* CHECK_INIT_UNION
+/*
+/* If the given symbol is a previously uninitialized union member,
+/* notes that the containing union is initialized.
+/* If the present symbol's containing union is anonymous, 
+/* recursively marks parent unions.
+/* Thus by recursion, all containing union symbols no longer indicate
+/* implicitly initialized. 
+/* In case of duplicate initialization of a union, diagnoses it.
+/* 
+/* SYM_P must be writable!
+/*
+/* Note that union members don't get their SYM_NODE.EXPRESSIONs
+/* initialized until this procedure marks their containing union
+/* as no longer implicitly initialized.
+/*
+/* The first time a union is marked initialized, all immediately
+/* contained non-static members (including anonymous unions) have
+/* their SYM_NODE.EXPRESSIONs initialized to IMPLICIT_INITIAL.
+/* ------------------------------------------------------------------- */
+
+CHECK_INIT_UNION: procedure (SYM_P, DIAGNOSTIC_SYM)
+	          recursive
+	          internal;
+
+	declare
+		SYM_P		pointer,
+		DIAGNOSTIC_SYM	type (NID_T);
+	declare
+		(P, UP, SCP)	pointer,
+		NEXT		type (NID_T),
+		S		type (NID_T),
+		UNION_SYM	type (NID_T);
+
+	if ^( SYM_P->SYM_NODE.IS_UNION_MEMBER
+	    | SYM_P->SYM_NODE.IS_ANON_UNION_MEMBER) then
+		return;
+	UNION_SYM = SYM_P->SYM_NODE.FATHER;
+	
+	call GET_SYM_NODE (UNION_SYM, UP);
+	if UP->SYM_NODE.IS_ANON_UNION_TAG then
+		call CHECK_INIT_UNION (UP, DIAGNOSTIC_SYM);
+	
+	if UP->SYM_NODE.EXPRESSION ^= IMPLICIT_INITIAL then do;
+		/* This is a duplicate initialization of the union. */
+		if ^SW_X_UNION_MEMBER_INIT then
+			call SEMANTIC_ERROR_I (ERR_DUP_UNION_MEMBER_INIT,
+					       SYMBOL_NAME (DIAGNOSTIC_SYM));
+	end;
+	else do;
+		/* 
+		/* The union has never been initialized before;
+		/* Mark it initialized, and set up its member
+		/* symbols' SYM_NODE.EXPRESSIONs.
+		/**/
+		UP->SYM_NODE.EXPRESSION = NULL_CXX_VID;
+
+		/* This union's members not set up yet. */
+		call GET_SCOPE_NODE_R (UP->SYM_NODE.DEFINED_SCOPE, SCP);
+		NEXT = SCP->SCOPE_NODE.SYMBOLS;	/* first member */
+		do S = NEXT repeat NEXT while (S ^= NULL_NID);
+			call GET_SYM_NODE (S, P);
+			if P->SYM_NODE.IS_NON_STATIC_DATA_MEMBER then
+				P->SYM_NODE.EXPRESSION = IMPLICIT_INITIAL;
+			if P->SYM_NODE.IS_ANON_UNION_TAG then
+				P->SYM_NODE.EXPRESSION = IMPLICIT_INITIAL;
+			NEXT = P->SYM_NODE.NEXT_SYMBOL;
+			call RELEASE_SYM_NODE (S);
+		end;
+		call RELEASE_SCOPE_NODE (UP->SYM_NODE.DEFINED_SCOPE);
+	end;
+	call RELEASE_SYM_NODE (UNION_SYM);
+
+end CHECK_INIT_UNION;
+
+/* ---------------------------------------------------------------------
+/* GET_UNION_INIT
+/*
+/* Returns a statement to initialize the union.
+/* ------------------------------------------------------------------- */
+
+GET_UNION_INIT: procedure (UNION_SYM)
+		recursive
+		returns (type (CXX_VID_T))
+		external (X_GET_UNION_INIT);
+
+	declare
+		UNION_SYM	type (NID_T);
+	declare
+		(SCP, P)	pointer,
+		UP		pointer,
+		(SYM, NEXT)	type (NID_T),
+		V		type (CXX_VID_T),
+		RESULT		type (CXX_VID_T),
+		SCOPE		type (NID_T);
+
+	call GET_SYM_NODE (UNION_SYM, UP);
+	V = UP->SYM_NODE.EXPRESSION;
+	UP->SYM_NODE.EXPRESSION = NULL_CXX_VID;
+	SCOPE = UP->SYM_NODE.DEFINED_SCOPE;
+	call RELEASE_SYM_NODE (UNION_SYM);
+
+	if V = IMPLICIT_INITIAL then
+		return (NULL_CXX_VID);
+
+	RESULT = NULL_CXX_VID;
+	call GET_SCOPE_NODE_R (SCOPE, SCP);
+	NEXT = SCP->SCOPE_NODE.SYMBOLS; /* first member */
+	call RELEASE_SCOPE_NODE (SCOPE);
+	do SYM = NEXT repeat NEXT while (SYM ^= NULL_NID);
+		call GET_SYM_NODE (SYM, P);
+		NEXT = P->SYM_NODE.NEXT_SYMBOL;
+
+		V = NULL_CXX_VID;
+		if ^(  P->SYM_NODE.IS_NON_STATIC_DATA_MEMBER
+		    | P->SYM_NODE.IS_ANON_UNION_TAG) then
+			/* uninteresting member */
+			;
+		else if P->SYM_NODE.EXPRESSION = IMPLICIT_INITIAL then
+			P->SYM_NODE.EXPRESSION = NULL_CXX_VID;
+		else if P->SYM_NODE.IS_NON_STATIC_DATA_MEMBER then
+			V = GET_BASE_MEMBER_INIT
+			    (SYM, P->SYM_NODE.LOCATION,
+				  rank (P->SYM_NODE.OFFSET_UNITS),
+				  NULL_NID);
+		else if P->SYM_NODE.IS_ANON_UNION_TAG then
+			V = GET_UNION_INIT (SYM);
+		RESULT = CONCATENATE_STATEMENTS (RESULT, V);
+
+		call RELEASE_SYM_NODE (SYM);
+	end;
+	return (RESULT);
+
+end GET_UNION_INIT;
+
+/* ---------------------------------------------------------------------
+/* GET_BASE_MEMBER_INIT
+/*
+/* Called in the context of a constructor body,
+/* SYM is the symbol node of one of the following:
+/* an immediate base class of the class being constructed,
+/* a virtual base class of the class being constructed,
+/* or a non-inherited, non-static data member of class.
+/*
+/* MOST_DERIVED is the symbol node id of the most derived class
+/* of the object being constructed, if SYM is a base class.
+/* Otherwise it may be NULL_NID.
+/*
+/* Returns a (possibly null) expression tree for a statement
+/* initializing the subobject.
+/* ------------------------------------------------------------------- */
+GET_BASE_MEMBER_INIT: procedure (SYM, OFFSET, OFFSET_UNITS, MOST_DERIVED_IN)
+		      returns (type (CXX_VID_T))
+		      external (X_GET_BASE_MEMBER_INIT);
+
+	declare
+		SYM		type (NID_T),
+		OFFSET		type (LONG_T),
+		OFFSET_UNITS	type (SHORT_T),
+		MOST_DERIVED_IN	type (NID_T);
+	declare
+		P		type (POINTER_T),
+		IS_BASE		type (BOOL_T),
+		IS_IMPLICIT	type (BOOL_T),
+		TYPE_ID		type (NID_T),
+		INIT_EXPR	type (CXX_VID_T),
+		REF		type (CXX_VID_T),
+		INIT_STMT	type (CXX_VID_T);
+
+	/* Grab symbol's type and value information;
+	/* restore SYM_NODE.EXPRESSION to NULL_CXX_VID.
+	/**/
+
+	call GET_SYM_NODE (SYM, P);
+	IS_IMPLICIT = (P->SYM_NODE.EXPRESSION = IMPLICIT_INITIAL);
+	INIT_EXPR = P->SYM_NODE.EXPRESSION;
+	P->SYM_NODE.EXPRESSION = NULL_CXX_VID;
+	IS_BASE = P->SYM_NODE.IS_TAG;
+	TYPE_ID = P->SYM_NODE.TYPE;
+	call RELEASE_SYM_NODE (SYM);
+
+	if ^IS_IMPLICIT & INIT_EXPR = NULL_CXX_VID then do;
+		/* Error, attempt to initialize two subobjects with
+                /* same name.  Reported elsewhere.
+		/**/
+		IS_IMPLICIT = TRUE;
+	end;
+
+	if IS_IMPLICIT then do;
+		/* The member was not explicitly initialized;
+		/* do it implicitly.
+		/**/
+
+		INIT_EXPR = IMPLICIT_INITIALIZER
+			    (TYPE_ID, MOST_DERIVED_IN, IS_BASE, FALSE, SYM);
+		if INIT_EXPR = NULL_CXX_VID then
+			/* error reported */
+			return (NULL_CXX_VID);
+	end;
+
+	REF = SUBOBJECT_REF (SYM, OFFSET, OFFSET_UNITS);
+	INIT_STMT = INITIALIZE_OBJECT (REF, INIT_EXPR);
+	
+	return (INIT_STMT);
+	
+end GET_BASE_MEMBER_INIT;
+
+/* ---------------------------------------------------------------------
+/* GET_BASE_MEMBER_FINI
+/*
+/* Called in the context of a destructor body,
+/* SYM is the symbol node of one of the following:
+/* an immediate base class of the class being constructed,
+/* a virtual base class of the class being constructed,
+/* or a non-inherited, non-static data member of class.
+/*
+/* MOST_DERIVED is the top type of the object being destroyed
+/* (the most derived class if this is the destructor for a base class).
+/*
+/* Returns a (possibly null) expression tree for a statement
+/* destroying the subobject.
+/* ------------------------------------------------------------------- */
+GET_BASE_MEMBER_FINI: procedure (SYM, OFFSET, OFFSET_UNITS, MOST_DERIVED)
+		      returns (type (CXX_VID_T))
+		      external (X_GET_BASE_MEMBER_FINI);
+
+	declare
+		SYM		type (NID_T),
+		OFFSET		type (LONG_T),
+		OFFSET_UNITS	type (SHORT_T),
+		MOST_DERIVED	type (TYPE_DATA_T);
+	declare
+		P		type (POINTER_T),
+		REF		type (CXX_VID_T),
+		STMT		type (CXX_VID_T),
+		DESTRUCTOR	type (NID_T),
+		DTOR_CLASS_SYM	type (NID_T);
+
+	call GET_SYM_NODE_R (SYM, P);
+	DESTRUCTOR = DESTRUCTOR_OF_TYPE (P->SYM_NODE.TYPE, 0);
+	call RELEASE_SYM_NODE (SYM);
+
+	/* Check access to DESTRUCTOR. */
+	if DESTRUCTOR ^= NULL_NID then do;
+		if IS_AGGREGATE_TAG_TYPE (rank (MOST_DERIVED.TYPE_CODE)) then
+			DTOR_CLASS_SYM = MOST_DERIVED.TAG_SYMBOL;
+		else do;
+			call GET_SYM_NODE_R (DESTRUCTOR, P);
+			DTOR_CLASS_SYM = P->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+			call RELEASE_SYM_NODE (DESTRUCTOR);
+		end;
+		if ^IS_ACCESSIBLE (DESTRUCTOR, DTOR_CLASS_SYM) then
+			call SEMANTIC_ERROR_I (ERR_PRIV_DTOR, 
+				FULL_SYMBOL_NAME (DESTRUCTOR));
+	end;
+	
+	REF = SUBOBJECT_REF (SYM, OFFSET, OFFSET_UNITS);
+	STMT = DESTROY_OBJECT (REF,
+			       NULL_CXX_VID,
+			       MOST_DERIVED,
+			       FALSE,
+			       NULL_NID);
+	
+	return (STMT);
+	
+end GET_BASE_MEMBER_FINI;
+
+/* ---------------------------------------------------------------------
+/* IMPLICIT_INITIALIZER
+/*
+/* Given the node id of a type, return an expression for the default
+/* initializer of that type.  Provide diagnostic if the default
+/* constructor is inaccessible.  If IS_BASE, then we're looking to initialize
+/* the base class subobject of an object of type MOST_DERIVED_IN.
+/* Otherwise, if IS_ELEMENT is not set, then we're initializing an
+/* a member.
+/*
+/* SYM is the symbol id of the member, base, or array being initialized.
+/*
+/* If the type requires explicit initialization returns NULL_CXX_VID.
+/* In this case a diagnostic is provided unless it's an array element
+/* being initialized.
+/* ------------------------------------------------------------------- */
+
+IMPLICIT_INITIALIZER: procedure (TYPE_ID, MOST_DERIVED_IN, IS_BASE,
+							   IS_ELEMENT, SYM)
+		      returns (type (CXX_VID_T))
+		      external (X_IMPLICIT_INITIALIZER);
+
+	declare
+		TYPE_ID		type (NID_T),
+		MOST_DERIVED_IN	type (NID_T),
+		IS_BASE		type (BOOL_T),
+		IS_ELEMENT	type (BOOL_T),
+		SYM		type (NID_T); 
+
+	declare
+		NEEDS_INIT	type (BOOL_T),
+		CTOR		type (NID_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		TAG_SYMBOL	type (NID_T),
+		P		pointer,
+		ACCESS_TAG	type (NID_T),
+		INIT_EXPR	type (CXX_VID_T),
+		MOST_DERIVED	type (NID_T);
+
+	NEEDS_INIT = FALSE;
+	CTOR = NULL_NID;
+	call GET_TOP_TYPE (TYPE_ID, TYPE_DATA);
+	if MOST_DERIVED_IN ^= NULL_NID then
+		MOST_DERIVED = MOST_DERIVED_IN;
+	else if ^IS_AGGREGATE_TAG_TYPE (rank (TYPE_DATA.CODE)) then
+		MOST_DERIVED = NULL_NID;
+	else
+		MOST_DERIVED = TYPE_DATA.TAG_SYMBOL;
+	TAG_SYMBOL = CHECK_TYPE_TAG_SYMBOL (TYPE_ID);
+	if TAG_SYMBOL ^= NULL_NID then do;
+		call GET_SYM_NODE_R (TAG_SYMBOL, P);
+		NEEDS_INIT = P->SYM_NODE.NEEDS_INIT;
+		CTOR = P->SYM_NODE.CONSTRUCTOR;
+		call RELEASE_SYM_NODE (TAG_SYMBOL);
+
+		if CTOR ^= NULL_NID then
+			CTOR = OVERLOAD
+			       (NULL_CXX_VID, CTOR, NULL_NID, 0);
+
+	end;
+	else if rank (TYPE_DATA.CODE) = REFERENCE_DT then
+		NEEDS_INIT = TRUE;
+	else if TYPE_DATA.CONST & SW_C_PLUS_PLUS then
+		NEEDS_INIT = TRUE;
+
+	if CTOR ^= NULL_NID then do;
+		if MOST_DERIVED ^= NULL_NID then
+			ACCESS_TAG = MOST_DERIVED;
+		else
+			ACCESS_TAG = TAG_SYMBOL;
+		if ^IS_ACCESSIBLE (CTOR, ACCESS_TAG) then do;
+			/* We've gone out of our way to check access
+			/* here, rather than get the error out of
+			/* GET_CONSTRUCTOR_VALUE, so that the
+			/* programmer can understand it.
+			/**/
+			if IS_BASE then
+				call SEMANTIC_ERROR_II (
+					ERR_DFT_CTOR_CLASS_INACCESS,
+					FULL_SYMBOL_NAME (CTOR),
+					SYMBOL_NAME (SYM));
+			else if ^IS_ELEMENT then
+				call SEMANTIC_ERROR_II (
+					ERR_DFT_CTOR_MEMBER_INACCESS,
+					FULL_SYMBOL_NAME (CTOR),
+					SYMBOL_NAME (SYM));
+			else
+				call SEMANTIC_ERROR_II (
+					ERR_DFT_CTOR_ELEMENT_INACCESS,
+					FULL_SYMBOL_NAME (CTOR),
+					SYMBOL_NAME (SYM));
+		end;
+	end;
+
+	else if NEEDS_INIT then do;
+		/* We've gone out of our way to report the error here,
+		/* rather than get the error out of
+		/* GET_CONSTRUCTOR_VALUE, so that the programmer
+		/* can understand it.
+		/**/
+		if IS_BASE then
+			call SEMANTIC_ERROR_I (ERR_NEED_INIT_FOR_BASE,
+						SYMBOL_NAME (SYM));
+		else if ^IS_ELEMENT then
+			call SEMANTIC_ERROR_I (ERR_NEED_INIT_FOR_MEMBER,
+						SYMBOL_NAME (SYM));
+		return (NULL_CXX_VID);
+	end;
+
+	INIT_EXPR = GET_CONSTRUCTOR_VALUE (TYPE_ID, NULL_CXX_VID,
+					   MOST_DERIVED, INITIAL_VO);
+
+	return (INIT_EXPR);
+
+end IMPLICIT_INITIALIZER;

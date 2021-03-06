@@ -1,0 +1,118 @@
+/* C++ crddr.pl1 - Decodes a message for the compacted error table */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  09.14.90  DGM  003  Changed include file names and VOP names.
+ *  06.06.90  DGM  Updated for the new utilities.
+ *  11.20.89  DGM  Original; cloned & modified from ANSI-C.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (80) varying static internal initial
+
+('@(#)CRDDR  003  9/14/90  (c) 1990 Language Processors, Inc.');
+
+CRDDR: procedure (MSGNO, BP);
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_ERROR_TABLE_IN;
+
+Declare
+    MSGNO       fixed binary(31),
+    BP          pointer,
+    DBUFFER     char(DFILE_RECORD_SIZE) based (BP);
+
+Declare
+    RECORD_BUFFER(0:WORDS_PER_RECORD-1)     fixed bin(15),
+    (L, R)                                  fixed bin(15),
+    P                                       pointer static,
+    MSG                                     char(DFILE_ERROR_TEXT) varying;
+
+Declare
+    1 MESSAGE BASED,
+      2 SEVERITY        fixed bin(15),
+      2 INSERT,
+        3 FIRST         fixed bin(15),
+        3 SECOND        fixed bin(15),
+      2 SIZE            fixed bin(15),
+      2 TEXT            char(DFILE_ERROR_TEXT);
+Declare
+    1 COMPRESSED_MESSAGE BASED,
+      2 SEVERITY        fixed bin(15),
+      2 LLEN            fixed bin(15),
+      2 RLEN            fixed bin(15),
+      2 TRUE_PTR        fixed bin(15),
+      2 SIZE            fixed bin(15),
+      2 TEXT            char(DFILE_ERROR_TEXT);
+
+    /* Get correct index block                          */
+
+    call MOVREC(DIVIDE(MSGNO-1,WORDS_PER_RECORD,15)+1);
+    call POINT_MSG ( RECORD_BUFFER(MOD(MSGNO-1,WORDS_PER_RECORD)) );
+
+    if P->MESSAGE.SEVERITY >= 0 then
+    do;
+        substr(BP->DBUFFER,1,P->MESSAGE.SIZE+8)
+                                     = SUBSTR(P->DBUFFER,1,P->MESSAGE.SIZE+8);
+        return;
+    end;
+
+    BP->MESSAGE.SEVERITY = -(P->COMPRESSED_MESSAGE.SEVERITY);
+    L = P->COMPRESSED_MESSAGE.LLEN;
+    R = P->COMPRESSED_MESSAGE.RLEN;
+    MSG = SUBSTR(P->COMPRESSED_MESSAGE.TEXT,1,P->COMPRESSED_MESSAGE.SIZE);
+
+    call POINT_MSG ( P->COMPRESSED_MESSAGE.TRUE_PTR );
+
+    BP->MESSAGE.FIRST = P->MESSAGE.FIRST;
+    BP->MESSAGE.SECOND = P->MESSAGE.SECOND;
+    BP->MESSAGE.SIZE = L + R + length(MSG);
+
+    substr(BP->MESSAGE.TEXT,1,L) = substr(P->MESSAGE.TEXT,1,L);
+    substr(BP->MESSAGE.TEXT,L+1,LENGTH(MSG)) = substr(MSG,1, length(MSG));
+    substr(BP->MESSAGE.TEXT,L+length(MSG)+1,R) =
+                              substr (P->MESSAGE.TEXT,P->MESSAGE.SIZE+1-R,R);
+    return;
+
+    /*-------------------------------------------*/
+    POINT_MSG: procedure (I);
+        Declare
+            I       fixed bin(15),
+            J       fixed bin(15);
+    
+        /* Get block containing text */
+
+        J = I;
+        call MOVREC(mod(J,512) + INDEX_BLOCKS+1);
+        if J < 0 then
+            P = addr(RECORD_BUFFER(divide(J + 65536, 512, 31)));
+        else
+            P = addr(RECORD_BUFFER(divide(J, 512, 15)));
+    END; 
+    
+    /*-------------------------------------------*/
+    MOVREC: procedure (K);
+        dcl K       fixed bin (15);
+        dcl (I,J)   fixed bin (15);
+    
+        do J = 0 to WORDS_PER_RECORD-1;
+            RECORD_BUFFER(J) = ERRTBL(K,J);
+        end;
+    end;
+    /*-------------------------------------------*/
+
+end; /* CRDDR */

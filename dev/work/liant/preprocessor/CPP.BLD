@@ -1,0 +1,436 @@
+# cpp.bld - ANSI-C/C++ Preprocessor Component List
+
+########################################################################
+#  This product is the property of Liant Software Corporation and is   #
+#  licensed pursuant to a written license agreement.  No portion of    #
+#  this product may be reproduced without the written permission of    #
+#  Liant Software Corporation except pursuant to the license agreement.#
+########################################################################
+
+-def(cpp_version)='052'
+
+########################################################################
+#
+#  LPI EDIT HISTORY    [ Update CPP_VERSION above ]
+#
+#  11.11.93  DGM  052R Updated to pp_err.008.pl1 (PL/I bug workaround).
+#  02.18.93  DGM  052  Updated pp.047.pl1 for __STDCPP_ & __ANSI_CPP__.
+#  10.29.92  DGM  051R Updated pp.046.pl1 for -nochm.
+#  10.27.92  DGM  051  Very minor coding style change in pp_ifile.002.c.
+#  09.30.92  DGM  050  New pp.045.pl1 to optionally not emit
+#		       #pragma data_sections implicitly for #idents.
+#  09.17.92  DGM  049R Fix in pp_scan.004.c for regression caused
+#		       by previous line-splicing fixes.
+#  09.11.92  DGM  049R Line-splicing fixes to pp_scan.003.c.
+#  09.09.92  DGM  049  Increase MAX_SKIP_FILES in pp.044.pl1.
+#  07.15.92  DGM  048  Fix in pp.043.pl1.
+#  06.25.92  DGM  047  Prepare for TOKEN_NODE space split.
+#  06.22.92  DGM  046  Implemented #pragma varargs_used (for completeness).
+#		       Use "fwrite" rather than "write" for faster
+#		       preprocessor output.
+#  06.18.92  DGM  045  Implemented #pragma LPI data_section.
+#  06.11.92  DGM  044  New pp.040.pl1/pp_ts.006.pl1 for
+#		       for #pragma C-header (on | off).
+#  06.03.92  DGM  043  New pp.039.pl1 (SW_DEFINE_C_HEADER_STDC_AS_ZERO).
+#  05.11.92  DGM  042  New pp.038.pl1 to fix #pragma weak processing.
+#  04.30.92  DGM  041  New pp.037.pl1 to predefine c_plusplus if -cfront.
+#  03.30.92  DGM  040  Strongly favor our <prof.h>.
+#		       Gray-space skipping fix.
+#  03.19.92  DGM  039  Minor fix for blowup after #line 1 L"s".
+#  02.26.92  DGM  038  Fix for #pragma comment (pp.034.pl1).
+#  02.20.92  DGM  037  Minor updates.
+#  02.06.92  DGM  036R Fix to pp_dmp.008.pl1.
+#  02.05.92  DGM  036  Updated.
+#  01.31.92  DGM  035  Violation for eof in line only on switch.
+#  01.28.92  DGM  034  Accept null second argument to va_start macro.
+#  01.21.92  DGM  033  Accept sizeof in #if.
+#  01.13.92  DGM  032  Misc fixes/enhancements.
+#  11.12.91  DGM  031  Misc fixes/enhancements.
+#		       Removed pp_[cl]file.[ch] layer!
+#		       #pragma weak, pack, int_to_unsigned, ident.
+#		       Allow __STDC__ to be set in non-ANSI C mode.
+#		       Factored out consant conversion stuff into
+#		       front-end module CPP_CONVERT_CONSTANT_PKG.
+#  10.15.91  DGM  030  Fix in to open sysdef.h when a system header
+#		       wrapper is opened.
+#  10.03.91  DGM  029  #pragma allow_asm (on | off).
+#  10.01.91  DGM  028  Fix in pp.pl1 for -ipathc.
+#  08.23.91  DGM  027  Updated error message file and minor fix from
+#		       PLB to pp_lfile.c.
+#  08.19.91  DGM  026  Minor fixes/enhancements.
+#  08.14.91  DGM  025  Misc fixes/enhancements.
+#  08.06.91  DGM  024  Misc fixes/enhancements.
+#  07.31.91  DGM  023  Misc fixes/enhancements.
+#  07.24.91  DGM  022  #pragma LPI wrapper_redeclarations; misc fixes.
+#  07.22.91  PKT  021  Fix for -imath and -istring.
+#  07.18.91  DGM  020  Misc enhancements.
+#  07.08.91  DGM  019  Added #assert & many minor misc enhancements.
+#  06.17.91  DGM  018  Misc. fixes and enhancements for dumping macros
+#		       etc. and implemented old-style token-pasting.
+#  05.29.91  DGM  017  Implement -oldstream for C++ in pp.015.pl1
+#			(#defines __LPI_CXX_OLD_STREAM_HEADER__) and
+#			fix for -exp -noincludes in pp_src.002.[ch]
+#  05.03.91  DGM  016  Fix to pp.014.pl1 for #include lookup.
+#  05.02.91  DGM  015  Update to pp.013.pl1 to always find our <stdarg.h>
+#		       and <varargs.h> even when "-sys" is given.
+#  04.29.91  DGM  014  Fix in pp.012.pl1; change in pp_exp.005.pl1.
+#  04.18.91  DGM  013  Fix in pp.011.pl1.
+#  04.08.91  DGM  012  Fixes in pp.010.pl1 and pp_tm.003.pl1.
+#  04.08.91  DGM  011  Added %(H) build directive to indicate a *header*
+#		       module which is shared between the front-end and
+#		       debugger; changed %(B) to %(S) for "shared".
+#  03.20.91  DGM  010  New include file lookup scheme, etc.
+#  03.12.91  DGM  009  Added "asm", "throw", and "try" keywords.
+#  03.08.91  DGM  008  Added #once functionality; see pp.pl1.
+#  02.01.91  DGM  007  Minor update to pp_kw.pl1.
+#  01.28.91  DGM  006  Fix for ".*".
+#  11.12.90  DGM  005  Updated to new error message facility
+#  10.10.90  DGM  004  Minor fixes; prevent "defined" from being
+#		       #defined, gray space problem; also changed pp_exp
+#		       to use the PL/I "type" feature for portability.
+#  09.25.90  DGM  003  Updated pp_kw.003.pl1 and pp.005.pl1 for a new
+#		       faster keyword lookup implementation; fixed a
+#		       minor bug in pp_td.002.pl1
+#  07.19.90  DGM  002  Macro expansion fixes in SHOULD_EXPAND_MACRO,
+#		       #include file name construction fixes, and added
+#		       a switch (SW_IGNORE_GRAY_SPACE) to forgo a warning
+#		       for gray-space within preprocessing directives.
+#  06.13.90  DGM  001  Updated.
+#  06.05.90  DGM  000  Original.
+#
+########################################################################
+
+-replace CPP_VERSION=%"'%(cpp_version)'"
+
+# ----------------------------------------------------------------------
+# Interface Responsibilities
+#
+# Any component which wishes to use this ANSI-C/C++ preprocessor
+# component may do so by using the following line in their component
+# build list:
+#
+#	-component=cpp
+#	@cpp.bld -v=nnn
+#
+# N.B. by default, a pure ANSI-C preprocessor will be built, if a C++
+# preprocessor is desired (i.e. which handles C++ comments, additional
+# keywords, and tokens), then the consumer component build list must
+# provide the following definition:
+#
+#	-def(CXX_PREPROCESSOR)
+#
+# In addition, the consumer component build list MUST provide the
+# following include files (described below):
+#
+#	CPP_COMPILATION_DATA_IN
+#	CPP_COMPILATION_SWITCHES_IN
+#	CPP_HOST_SYSTEM_IN
+#	CPP_TARGET_SYSTEM_IN
+#	CPP_TARGET_HARDWARE_IN
+#
+# CPP_COMPILATION_DATA_IN must supply the following data declarations:
+#
+#	DEFINE_LIST.HEAD		pointer
+#	DEFINE_LIST.TAIL		pointer
+#	PP_MAX_TOKENS			fixed binary (31)
+#	STANDARD_INCUDE_PATH		character (x) varying
+#	STARTUP_INCLUDE_FILE		character (x) varying
+#
+# CPP_COMPILATION_SWITCHES_IN must supply the following data declarations:
+#
+#	SW_ALLOW_DOLLAR			bit (1)
+#	SW_DUMP_MACROS			bit (1)
+#	SW_DUMP_PREDEF_MACROS		bit (1)
+#	SW_DUMP_TOKENS			bit (1)
+#	SW_IDENT_NOWARN			bit (1)
+#	SW_IGNORE_GRAY_SPACE		bit (1)
+#	SW_IMATH			bit (1)
+#	SW_ISTRING			bit (1)
+#	SW_PRAGMA_WARN			bit (1)
+#	SW_SYSTEM_MACROS		bit (1)
+#	SW_X_CHARIZE_WARN		bit (1)
+#	SW_X_NOTRIGRAPH			bit (1)
+#	SW_X_STRINGIZE			bit (1)
+#	SW_X_TRAILING_TEXT		bit (1)
+#	SW_X_CHARIZE			bit (1)
+#	SW_X_NON_CONFORMING		bit (1)
+#	SW_X_STRINGIZE_WARN		bit (1)
+#	SW_X_PERNICIOUS_MACRO_REDEF	bit (1)
+#	SW_X_INNOCUOUS_MACRO_REDEF 	bit (1)
+#	SW_X_EMPTY_MACRO_ARGUMENT	bit (1)
+#	SW_USE_OLD_CXX_STREAM_HEADER	bit (1)
+#	SW_C_PLUS_PLUS			bit (1)
+#	SW_ANSI_C_MODE			bit (1)
+#	SW_FAVOR_SYSTEM_HEADER_DIR	bit (1)
+#
+# CPP_HOST_SYSTEM_IN must supply the following data declarations:
+#
+#	DEFAULT_STD_INCLUDE_PATH	character (x) varying
+#	DEFAULT_SYS_INCLUDE_PATH	character (x) varying
+#	HOST_DIR_DELIM			character (x) varying
+#	IMATH_INCLUDE_FILE		character (x) varying
+#	ISTRING_INCLUDE_FILE		character (x) varying
+#	SYSDEF_INCLUDE_FILE		character (x) varying
+#
+# CPP_TARGET_SYSTEM_IN must supply the following data declarations:
+#
+#	TARGET_DIR_DELIM		character (x) varying
+#
+# N.B. None of the data items are modified by the preprocessor.
+# ----------------------------------------------------------------------
+#
+# Below is a list of other global data referenced by the preprocessor
+# but which are provided by the "globals" component; i.e. the consumer
+# component build list need not worry about these, however it MUST
+# supply the global component build list:
+#
+#	INCLUDE_SEARCH_PATH		character (x) varying
+#	LISTING				bit (1)
+#	NO_INCLUDES			bit (1)
+#	TOTAL_LINES			fixed binary (31)
+#	SOURCE_FILE_NAME		character (x) varying
+#	SYMBOL_TABLE			bit (1)
+#
+# N.B. Only the TOTAL_LINES data item is modified by the preprocessor.
+# ----------------------------------------------------------------------
+ 
+# ----------------------------------------------------------------------
+# Interface Privileges
+#
+# The following (replace constant names for) include files define the
+# interface to this ANSI-C/C++ preprocessor component; i.e. consumers
+# of this component may use these include files freely:
+#
+# --> CPP_CHARACTER_SET_IN       # Character set codes (xxx_CHAR)
+#     CPP_TOKEN_TYPE_CODES_IN    # Token-pod type codes (xxx_TOKEN)
+#     CPP_TOKEN_LIMITS_IN        # Token (length) limits
+# --> CPP_TOKEN_POD_MGR_PKG      # Token-pod manager interface
+#     CPP_TOKEN_POD_MGR_IN       # Token-pod manager interface data
+# --> CPP_TOKEN_POD_IN           # Token-pod data (structures & constants)
+#     CPP_TOKEN_POD_DEF_IN       # Token-pod data structure definitions
+# --> CPP_TOKEN_POD_SPELLING_PKG # Token-pod spelling interface
+#     CPP_TOKEN_POD_SPELLING_IN  # Token-pod spelling interface data
+#     CPP_TOKEN_MAP_SPELLING_IN  # Token type-to-spelling map 
+#     CPP_TOKEN_POD_DEBUG_IN     # Token-pod debug (dump) interface data
+# --> CPP_TOKEN_POD_DEBUG_PKG    # Token-pod debug (dump) interface
+#
+# No other include files should be used.  Typically, only the ones
+# marked with "-->" need be used.
+#
+# Note that all include file replace constants in this component have
+# a name of the form CPP_xxx and all component module names begin
+# with "pp_" (or just "pp" in the case of "pp.pl1") so as not to clash
+# with any consumer modules.
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# Interface Overview
+#
+# The interface provided to this ANSI-C/C++ preprocessor can most simply
+# be accessed by a consumer (e.g. an ANSI-C or C++ front-end) by including 
+# CPP_TOKEN_POD_MGR_PKG.  To get things started, the consumer must first
+# call INITIALIZE_TGET() which initializes the token-pod manager, then
+# subsequent calls to TGET() will each return a pointer to a token-pod
+# representing a token from source file (SOURCE_FILE_NAME); the token-pod
+# data structure is defined in CPP_TOKEN_POD_DEF_IN and the token type
+# codes are in C_TOKEN_TYPE_CODES_IN.  The end-of-file may be detected by
+# checking for tp->TOKEN_POD.TYPE = EOF_TOKEN.  The consumer is responsible
+# for freeing the token-pods via the routine TFREE(tp).  At the end of
+# processing, the routine TFREEB() should be called to free all of the
+# token-pods.
+#
+# The preprocessor and the consumer work together in tandem; the consumer
+# gets tokens produced by the preprocessor, N at a time, where N has been
+# tuned for optimal space/time savings.  If the consumer may change N to
+# any number by setting PP_MAX_TOKENS before processing begins (i.e. before
+# calling INITIALIZE_TGET()).  This is of course invisible to the consumer
+# but may effect performance.
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# ANSI-C/C++ Preprocessor Component list (cpp.bld)
+# ----------------------------------------------------------------------
+
+-ifndef(cpp_build_list_included)
+
+-def(cpp_build_list_included)
+
+# -------------
+# Configuration
+# -------------
+
+-ifdef(cxx_debugger)	# DEBUGGER WITH C++:
+ -def(P)="-ignore"	# %(P) -- Preprocessor only module.
+ -def(S)="-o=%N"	# %(S) -- Shared preprocessor & debugger module.
+ -def(H)="-name=%F"	# %(H) -- Shared preprocessor & debugger header module.
+-elseifdef(debugger)	# DEBUGGER WITHOUT C++:
+ -def(P)="-ignore"	# %(P) -- Preprocessor only module.
+ -def(S)="-ignore"	# %(S) -- Shared preprocessor & debugger module.
+ -def(H)="-name=%F"	# %(H) -- Shared preprocessor & debugger header module.
+-else			# PREPROCESSOR:
+ -def(P)="-o=%N"	# %(P) -- Preprocessor only module.
+ -def(S)="%(P)"		# %(S) -- Shared preprocessor & debugger module.
+ -def(H)="-name=%F"	# %(H) -- Shared preprocessor & debugger header module.
+-endif
+
+# -------------------------------
+# ANSI-C/C++ Preprocessor Modules
+# -------------------------------
+
+-component=cpp
+
+# -------------------------
+# Token-pod manager modules
+# -------------------------
+
+pp_tm.dcl  -v=002 %(H) -replace=CPP_TOKEN_POD_MGR_PKG
+pp_tm.in   -v=002 %(H) -replace=CPP_TOKEN_POD_MGR_IN
+pp_tm.pl1  -v=004 %(S)
+
+pp_tp.dcl  -v=001 %(H) -replace=CPP_TOKEN_POD_IN
+pp_tp.in   -v=004 %(H) -replace=CPP_TOKEN_POD_DEF_IN
+pp_tlim.in -v=001 %(H) -replace=CPP_TOKEN_LIMITS_IN
+pp_tc.in   -v=010 %(H) -replace=CPP_TOKEN_TYPE_CODES_IN
+
+# Token-pod spelling modules
+
+pp_tsm.in  -v=004 %(H) -replace=CPP_TOKEN_MAP_SPELLING_IN
+pp_ts.in   -v=001 %(H) -replace=CPP_TOKEN_POD_SPELLING_IN
+pp_ts.dcl  -v=001 %(H) -replace=CPP_TOKEN_POD_SPELLING_PKG
+pp_ts.pl1  -v=008 %(S)
+
+# Token-pod debugging modules
+
+pp_td.in   -v=001 %(H) -replace=CPP_TOKEN_POD_DEBUG_IN
+pp_td.dcl  -v=001 %(H) -replace=CPP_TOKEN_POD_DEBUG_PKG
+pp_td.pl1  -v=008 %(P)
+
+# -------------------------------------
+# Low level source file manager modules
+# -------------------------------------
+
+pp_src.in  -v=005 %(P) -replace=CPP_SOURCE_MGR_PKG
+pp_src.h   -v=005 %(P)
+pp_src.c   -v=004 %(P) # Source file manager routines
+pp_str.h   -v=000 %(P) # String declarations
+
+# ---------------------------------
+# Low level lexical scanner modules
+# ---------------------------------
+
+pp_char.in -v=001 %(H) -replace=CPP_CHARACTER_SET_IN
+pp_char.h  -v=000 %(P)
+
+pp_defs.h  -v=000 %(P) # Miscellaneous C definitions
+
+pp_scan.c  -v=004 %(P)
+pp_ifile.h -v=001 %(P) # Lowest level source file input macros & data
+pp_ifile.c -v=002 %(P) # Lowest level source file input routines
+
+# -----------------------------------------
+# Lexical analyzer and preprocessor modules
+# -----------------------------------------
+
+# To get a pp_lex.in from a pp_lex.lex, run the LPI utility "lextable"
+# (revision 003 or later) with pp_lex.lex copied to lextab.lex; the
+# output will be lextab.in which should then be copied to pp_lex.in.
+
+pp_lex.lex -v=001 %(P) -ignore
+pp_lex.in  -v=001 %(P) -replace=CPP_LEX_TABLE_IN
+
+pp_glob.in -v=005 %(P) -replace=CPP_GLOBAL_IN
+pp.pl1     -v=047 %(P) # The preprocessor and lexical analyzer.
+
+pp_mac.in  -v=003 %(P) -replace=CPP_MACRO_DEFS_IN
+pp_mact.in -v=002 %(P) -replace=CPP_MACRO_TABLES_IN
+
+pp_mac.dcl -v=005 %(P) -replace=CPP_MACRO_UTL_PKG
+pp_mac.pl1 -v=008 %(P) # Preprocessor macro related functions.
+
+pp_op.in   -v=001 %(P) -replace=CPP_EXPRESSION_OP_PKG
+pp_op.c    -v=000 %(P) # Low level preprocessor expression operations.
+
+pp_exp.dcl -v=002 %(P) -replace=CPP_EXPRESSION_PKG
+pp_exp.pl1 -v=009 %(P) # Preprocessor expression handler.
+
+pp_kw.in   -v=000 %(H) -replace=CPP_KEYWORD_IN
+pp_kw.dcl  -v=003 %(H) -replace=CPP_KEYWORD_PKG
+pp_kw.pl1  -v=011 %(P) # Keyword table initialization and lookup.
+
+pp_err.dcl -v=003 %(H) -replace=CPP_ERROR_MGR_PKG
+pp_err.pl1 -v=008 %(P) # Preprocessor error output routines.
+
+pp_dmp.dcl -v=003 %(P) -replace=CPP_DUMP_MACRO_PKG
+pp_dmp.in  -v=002 %(P) -replace=CPP_DUMP_MACRO_IN
+pp_dmp.pl1 -v=009 %(P) # Preprocessor macro dumping routines.
+
+pp_ls.pl1  -v=004 %(P) # Print source line to listing file.
+
+pp_write.c -v=001 %(P) # Preprocessor print routines.
+
+# ----------------------------
+# Miscellaneous header modules
+# ----------------------------
+
+pp_defs.in -v=002 %(H) -replace=CPP_STANDARD_DEFS_IN
+
+pp_extl.in -v=008 %(H) -replace=CPP_EXTERNAL_NAME_MAP_IN
+pp_exts.in -v=001 %(H) -replace=CPP_EXTERNAL_NAME_MAP_IN -ignore
+
+# -------------------------------------------
+# External initialized data definition module
+# -------------------------------------------
+
+pp_dfx.pl1 -v=002 %(P) -defext
+
+# -------------------
+# Utilities interface
+# -------------------
+
+utldef.in  -v=001 %(H) -replace=CPP_UTL_DEFS_IN
+utlsym.dcl -v=001 %(H) -replace=CPP_UTL_SYMBOL_TABLE_PKG
+utlstt.dcl -v=001 %(P) -replace=CPP_UTL_STORE_TOKEN_PKG
+utlwrt.dcl -v=001 %(P) -replace=CPP_UTL_WRITE_PKG
+utlmsg.dcl -v=001 %(P) -replace=CPP_UTL_MESSAGES_PKG
+utlrnd.dcl -v=001 %(P) -replace=CPP_UTL_ROUNDU_PKG
+utlabt.dcl -v=002 %(P) -replace=CPP_UTL_ABORT_PKG
+utlall.dcl -v=001 %(P) -replace=CPP_UTL_PKG
+
+# -----------------------
+# System specific modules
+# -----------------------
+
+# System specific modules (TODO: put this in div/unix!)
+
+pp_sys.h   -v=001 %(P)
+
+# ----------------------------------------------------------------------
+# Diagnostic/error message component
+# ----------------------------------------------------------------------
+
+-component=msgs
+
+-note='**** NOTE: Messages component 021 or greater required.'
+
+# Bldmsg tool output; verify existence.  Corresponds to errmsg.txt
+
+cpp.txt     -v=010 %(P) -verify			     # Bldmsg tool output
+
+-component=cpp
+
+bldmsg.sh   -v=000 %(P) -ignore			     # Bldmsg make script 
+bldmsg.c    -v=000 %(P) -ignore			     # Bldmsg tool
+
+pp_err.txt  -v=010 %(P) -ignore			     # Bldmsg input
+pp_err.in   -v=010 %(H)  -replace=CPP_ERROR_CODES_IN # Bldmsg output
+    
+# ----------------------------------------------------------------------
+# Done
+# ----------------------------------------------------------------------
+
+-endif # cpp_build_list_included
+
+# ----------------------------------------------------------------------
+# End-of ANSI-C/C++ Preprocessor Component list (cpp.bld)
+# ----------------------------------------------------------------------
+

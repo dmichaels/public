@@ -1,0 +1,2183 @@
+/* C++ chkdcl.pl1 - Miscellaneous declaration checking routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  11.06.92  DGM  033	Don't diagnose default arguments for new & delete.
+ *  08.19.92  DGM  032	Fix for typedefed nested class name with
+ *			constructor/destructor definition.
+ *  07.02.92  PKT  031	Added CHECK_NESTED_TYPES.
+ *  06.25.92  DGM  030	Fix in VALID_FIRST_PARAMETER.
+ *  05.29.92  DGM  029	Added SW_ALLOW_DECORATED_CLASSES.
+ *  05.13.92  DGM  028	Fix for extern "C" { struct S {}; } regression.
+ *  04.30.92  PKT  027	Updated for 'this' qualifiers in SIG_NODE.
+ *  04.30.92  DGM  026	Minor fix (typo) in VALID_DECLARATOR_NAME;
+ *			minor fix in CHECK_NULL_DECLARATOR
+ *			(for PlumHall++ negative tests).
+ *  04.27.92  PKT  025R	Fixed old and new bugs for operator delete.
+ *  04.03.92  PKT  025R	Fixed for compiler-generated constructor name
+ *			conflicting with declared name.
+ *  03.06.92  PKT  025	Fixes.  Changed for PARAMETER_NODEs.
+ *  03.26.92  DGM  024	New value-node scheme.
+ *  03.24.92  DGM  023	Fix for default destructors on unnamed classes.
+ *  01.21.92  DGM  022	Parameter link-node changes.
+ *  10.26.91  PKT  021  Added VALID_COPY_ASSIGNMENT.
+ *  08.23.91  DGM  020  Minor diagnostic format update (ERR_HIDDEN_xxx)
+ *			to give line number of previous declaration.
+ *		   019  ?
+ *  07.31.91  DGM  018  Updated.
+ *  07.24.91  DGM  017  Minor update to CHECK_MAIN_DECLARTION.
+ *  07.18.91  DGM  016  Minor update to CHECK_NON_VISIBLE_DECLARATIONS.
+ *  07.08.91  DGM  015  Minor update to CHECK_NULL_DECLARATOR.
+ *  06.17.91  DGM  014  Minor update to CHECK_NULL_DECLARATOR.
+ *  06.04.91  DGM  013  Added CHECK_NON_VISIBLE_DECLARATIONS, etc.
+ *  05.15.91  DGM  012  Fix for class A { A (), A (int); };
+ *  04.29.91  DGM  011  New handling of anonymous unions.
+ *  04.24.91  PKT  010  Fixed check for ERR_QUALIFIED_CDTOR.
+ *  04.18.91  DGM  009  Fix in VALID_CONVERSION_NAME.
+ *  03.12.91  DGM  008  Check for class type parameter for non-member
+ *			operator functions.
+ *  02.01.91  DGM  007  Updated to the new global names scheme.
+ *  01.31.91  DGM  006  Added CHECK_DEFAULT_ARGUMENT_ORDER.
+ *  01.18.91  DGM  005  Minor fix for anonymous unions.
+ *  01.10.91  DGM  004  Fix; don't warn for (file scope) definitions of
+ *			operators new/delete not being explicitly static.
+ *			Changes for multi-qualified names.
+ *  09.14.90  DGM  003  Changed include file names and VOP names.
+ *  09.12.90  DGM  002  Updated to use CURRENT_BASE_TYPE_UNSPECIFIED,
+ *			and other miscellaneous fixes.
+ *  09.06.90  PKT  001  Bug fix.
+ *  08.31.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 11.06.92 033 CHKDCL');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_COMPILATION_SWITCHES_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_OVERLOAD_PKG;
+%include CXX_PROCESS_DECLARATION_PKG;
+%include CXX_COMPOSITE_TYPE_PKG;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_CHECK_DECLARATION_IN;
+%include CXX_LEXER_TOKENS_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_PARSER_PKG;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TOKEN_MAP_OPERATOR_IN;
+%include CXX_GLOBAL_DECLARATION_DATA_IN;
+%include CXX_GLOBAL_TYPE_DATA_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_GLOBAL_NAMES_PKG;
+
+/* ---------------------------------------------------------------------
+/* VALID_SPECIAL_FUNCTION
+/*
+/* Sanity check the current operator function declaration (called
+/* after PROCESS_DECLARATOR_NAME).  Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+VALID_SPECIAL_FUNCTION: procedure
+			returns   (type (BOOL_T))
+			external  (X_VALID_SPECIAL_FUNCTION);
+
+	if CURRENT_TOP_TYPE.CODE ^= byte (FUNCTION_DT) then
+		return (TRUE);
+
+	if CURRENT_NAME_KIND = CONSTRUCTOR_NK then
+		return (VALID_CONSTRUCTOR_FUNCTION ());
+
+	else if CURRENT_NAME_KIND = DESTRUCTOR_NK then
+		return (VALID_DESTRUCTOR_FUNCTION ());
+
+	else if CURRENT_NAME_KIND = CONVERSION_NK then
+		return (VALID_CONVERSION_FUNCTION ());
+
+	else if CURRENT_NAME_KIND = OPERATOR_NK then
+		return (VALID_OPERATOR_FUNCTION ());
+
+	else	return (TRUE);
+
+/* ---------------------------------------------------------------------
+/* VALID_CONSTRUCTOR_FUNCTION
+/* ------------------------------------------------------------------- */
+
+VALID_CONSTRUCTOR_FUNCTION: procedure returns (type (BOOL_T)) internal;
+
+	/*
+	/* Note that we already checked for no return
+	/* type and membership in VALID_DECLARATOR_NAME.
+	/**/
+
+	if CURRENT_VIRTUAL then do;
+		/*
+		/* Error; a constructor may not be virtual.
+		/**/
+		call SEMANTIC_ERROR (ERR_VIRTUAL_CTOR);
+		CURRENT_VIRTUAL = FALSE;
+	end;
+
+	if CURRENT_STORAGE_CLASS = STATIC_ST then do;
+		/*
+		/* Error; constructors and destructors
+		/* may not be declared as static.
+		/**/
+		call SEMANTIC_ERROR (ERR_STATIC_CDTOR);
+		CURRENT_STORAGE_CLASS = NULL_ST;
+	end;
+
+	if CURRENT_SIGNATURE_QUALIFIED () then do;
+		/*
+		/* Error; constructors and destructors
+		/* may not be declared const or volatile.
+		/**/
+		call SEMANTIC_ERROR (ERR_QUALIFIED_CDTOR);
+	end;
+
+	return (TRUE);
+
+end VALID_CONSTRUCTOR_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* VALID_DESTRUCTOR_FUNCTION
+/* ------------------------------------------------------------------- */
+
+VALID_DESTRUCTOR_FUNCTION: procedure returns (type (BOOL_T)) internal;
+
+	declare SP type (POINTER_T);
+
+	call GET_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE, SP);
+
+	/* Note that we already checked for no return
+	/* type and membership in VALID_DECLARATOR_NAME.
+	/**/
+
+	if CURRENT_STORAGE_CLASS = STATIC_ST then do;
+		/*
+		/* Error; constructors and destructors
+		/* may not be declared as static.
+		/**/
+		call SEMANTIC_ERROR (ERR_STATIC_CDTOR);
+		CURRENT_STORAGE_CLASS = NULL_ST;
+	end;
+
+	if (SP->SIG_NODE.EXPLICIT_NPARAMETERS > 0) |
+	    SP->SIG_NODE.ELLIPSIS then do;
+		/*
+		/* Error; a destructor should specify no parameters.
+		/**/
+		call SEMANTIC_ERROR (ERR_DTOR_PARAM_TYPE);
+		call REMOVE_ALL_PARAMETERS ();
+	end;
+
+	if CURRENT_SIGNATURE_QUALIFIED () then do;
+		/*
+		/* Error; constructors and destructors
+		/* may not be declared const or volatile.
+		/**/
+		call SEMANTIC_ERROR (ERR_QUALIFIED_CDTOR);
+	end;
+
+	call RELEASE_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE);
+	return (TRUE);
+
+end VALID_DESTRUCTOR_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* CURRENT_SIGNATURE_QUALIFIED
+/* ------------------------------------------------------------------- */
+CURRENT_SIGNATURE_QUALIFIED: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		SP		type (POINTER_T);
+	declare
+		QUALIFIERS	type (BYTE_BITS_T);
+
+	call GET_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE, SP);
+	QUALIFIERS = SP->SIG_NODE.THIS_QUALIFIERS.QUALIFIERS;
+	call RELEASE_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE);
+
+	return ((QUALIFIERS & ALL_TQ) ^= NULL_TQ);
+
+end CURRENT_SIGNATURE_QUALIFIED;
+
+/* ---------------------------------------------------------------------
+/* VALID_CONVERSION_FUNCTION
+/* ------------------------------------------------------------------- */
+
+VALID_CONVERSION_FUNCTION: procedure returns (type (BOOL_T)) internal;
+
+	declare SP type (POINTER_T);
+
+	call GET_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE, SP);
+
+	/*
+	/* Note that we already checked for no return
+	/* type and membership in VALID_DECLARATOR_NAME.
+	/**/
+
+	if (SP->SIG_NODE.EXPLICIT_NPARAMETERS > 0) |
+	    SP->SIG_NODE.ELLIPSIS then do;
+		/*
+		/* Error; a conversion function should specify no parameters.
+		/**/
+		call SEMANTIC_ERROR (ERR_CONV_PARAM_TYPE);
+		call REMOVE_ALL_PARAMETERS ();
+	end;
+
+	call RELEASE_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE);
+	return (TRUE);
+
+end VALID_CONVERSION_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* VALID_OPERATOR_FUNCTION
+/* ------------------------------------------------------------------- */
+
+VALID_OPERATOR_FUNCTION: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		OP			type (SHORT_T),
+		SP			type (POINTER_T);
+	declare
+		IS_MEMBER		type (BOOL_T),
+		ELLIPSIS		type (BOOL_T),
+		NPARAMETERS		type (SHORT_T),
+		PARAMETERS		type (NID_T);
+
+	/*
+	/* Get the parameter data.
+	/* This data is global to the VALID_xxx_OPERATOR routines.
+	/**/
+
+	call GET_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE, SP);
+	PARAMETERS	= SP->SIG_NODE.EXPLICIT_PARAMETERS;
+	NPARAMETERS	= SP->SIG_NODE.EXPLICIT_NPARAMETERS;
+	ELLIPSIS	= SP->SIG_NODE.ELLIPSIS;
+	if SP->SIG_NODE.DEFAULT_ARGUMENT then do;
+		if (CURRENT_NAME ^= OPERATOR_NEW_NAME) &
+		   (CURRENT_NAME ^= OPERATOR_DELETE_NAME) then
+			call SEMANTIC_ERROR (ERR_OP_WITH_DEFAULT_ARG);
+	end;
+	call RELEASE_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE);
+
+	/*
+	/* Determine if this declarator name refers to a member.
+	/* This data is global to the VALID_xxx_OPERATOR routines.
+	/**/
+
+	IS_MEMBER = (CURRENT_NAME_SCOPE ^= NULL_NID) |
+		    ((CURRENT_SCOPE_TYPE = CLASS_SCOPE) & ^CURRENT_FRIEND);
+
+	/* Handle operator new */
+
+	if CURRENT_NAME = OPERATOR_NEW_NAME then
+		return (VALID_NEW_OPERATOR ());
+
+	/* Handle operator delete */
+
+	else if CURRENT_NAME = OPERATOR_DELETE_NAME then
+		return (VALID_DELETE_OPERATOR ());
+
+	/*
+	/* Check for operators which must be
+	/* non-static members or non-members.
+	/**/
+
+	if (CURRENT_NAME = OPERATOR_CALL_NAME) |
+	   (CURRENT_NAME = OPERATOR_SUBSCRIPT_NAME) |
+	   (CURRENT_NAME = OPERATOR_ARROW_NAME) |
+	   (CURRENT_NAME = OPERATOR_ASSIGNMENT_NAME) then do;
+		if ^IS_MEMBER then do;
+			/*
+			/* Error; this operator function must be
+			/* declared as a non-static member function.
+			/**/
+			call SEMANTIC_ERROR (ERR_NON_STATIC_MEMBER_OP);
+			return (TRUE);
+		end;
+		else if CURRENT_STORAGE_CLASS = STATIC_ST then do;
+			/*
+			/* Error; this operator function must be
+			/* declared as a non-static member function.
+			/**/
+			call SEMANTIC_ERROR (ERR_NON_STATIC_MEMBER_OP);
+			CURRENT_STORAGE_CLASS = NULL_ST;
+		end;
+	end;
+	else if IS_MEMBER & (CURRENT_STORAGE_CLASS = STATIC_ST) then do;
+		/*
+		/* Error; this operator function must be declared as a
+		/* non-static member function or as non-member function.
+		/**/
+		call SEMANTIC_ERROR (ERR_NON_STATIC_OP);
+		CURRENT_STORAGE_CLASS = NULL_ST;
+	end;
+
+	/* Handle an increment/decrement operator */
+
+	if (CURRENT_NAME = OPERATOR_INCREMENT_NAME) |
+	   (CURRENT_NAME = OPERATOR_DECREMENT_NAME) then
+		return (VALID_CREMENT_OPERATOR ());
+
+	/* Get the operator token code */
+
+	OP = GET_OPERATOR_NAME_TOKEN_CODE (CURRENT_NAME);
+
+	/* Hande a unary/binary operator */
+
+	if IS_UNARY_OVERLOAD_OP (OP) & IS_BINARY_OVERLOAD_OP (OP) then
+		return (VALID_NARY_OPERATOR ());
+
+	/* Handle a unary (only) operator */
+
+	else if IS_UNARY_OVERLOAD_OP (OP) then
+		return (VALID_UNARY_OPERATOR ());
+
+	/* Handle a binary operator */
+
+	else if IS_BINARY_OVERLOAD_OP (OP) then
+		return (VALID_BINARY_OPERATOR ());
+
+	else	return (TRUE);
+
+/* ---------------------------------------------------------------------
+/* VALID_NEW_OPERATOR
+/*
+/* Check the current new operator function declaration.
+/* ------------------------------------------------------------------- */
+
+VALID_NEW_OPERATOR: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		SP		type (POINTER_T),
+		ERROR_CODE	type (SHORT_T);
+
+	if IS_MEMBER &
+	   (CURRENT_SCOPE_TYPE = CLASS_SCOPE) &
+	   (CURRENT_STORAGE_CLASS ^= STATIC_ST) then do;
+		/*
+		/* Note; operator new as a member
+		/* function is implicitly static.
+		/**/
+		if SW_LINT then
+			call SEMANTIC_ERROR (ERR_STATIC_NEW_DELETE_OP);
+		CURRENT_STORAGE_CLASS = STATIC_ST;
+	end;
+	if CURRENT_VIRTUAL then do;
+		/*
+		/* Error; operator new may not be virtual.
+		/**/
+		call SEMANTIC_ERROR (ERR_VIRTUAL_NEW_DELETE_OP);
+		CURRENT_VIRTUAL = FALSE;
+	end;
+	if ^COMPATIBLE_ANY_TYPES
+	    (CURRENT_TYPE, 1, GET_VOID_POINTER_TYPE (), 0) then do;
+		/*
+		/* Error; operator new must return "void *".
+		/**/
+		call SEMANTIC_ERROR (ERR_NEW_OP_RETURN_TYPE);
+		call SET_RETURN_TYPE (GET_VOID_POINTER_TYPE ());
+	end;
+	ERROR_CODE = ERR_NEW_OP_PARAM_TYPE;
+	if NPARAMETERS < 1 then do;
+		/*
+		/* Error; operator new must take at least one
+		/* parameter of type "size_t".
+		/**/
+		call SEMANTIC_ERROR (ERROR_CODE); ERROR_CODE = 0;
+		return (TRUE);
+	end;
+	call GET_PARAMETER_NODE_R (PARAMETERS, SP);
+	if ^COMPATIBLE_TYPES
+	    (SP->PARAMETER_NODE.TYPE, GET_SIZET_TYPE ()) then do;
+		/*
+		/* Error; operator new must take at least
+		/* one parameter of type "size_t".
+		/**/
+		if ERROR_CODE ^= 0 then do;
+			call SEMANTIC_ERROR (ERROR_CODE);
+			ERROR_CODE = 0;
+		end;
+		call FREE_TYPE_NODE (SP->PARAMETER_NODE.TYPE);
+		SP->PARAMETER_NODE.TYPE = GET_SIZET_TYPE ();
+		call GET_TOP_TYPE (SP->PARAMETER_NODE.TYPE,
+				   SP->PARAMETER_NODE.TOP_TYPE);
+	end;
+	call RELEASE_PARAMETER_NODE (PARAMETERS);
+	return (TRUE);
+
+end VALID_NEW_OPERATOR;
+
+/* ---------------------------------------------------------------------
+/* VALID_DELETE_OPERATOR
+/*
+/* Check the current delete operator function declaration.
+/* ------------------------------------------------------------------- */
+
+VALID_DELETE_OPERATOR: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		(SP, SP2)	type (POINTER_T),
+		ERROR_CODE	type (SHORT_T);
+
+	if IS_MEMBER &
+	   (CURRENT_SCOPE_TYPE = CLASS_SCOPE) &
+	   (CURRENT_STORAGE_CLASS ^= STATIC_ST) then do;
+		/*
+		/* Note; operator delete as a member
+		/* function is implicitly static.
+		/**/
+		if SW_LINT then
+			call SEMANTIC_ERROR (ERR_STATIC_NEW_DELETE_OP);
+		CURRENT_STORAGE_CLASS = STATIC_ST;
+	end;
+	if CURRENT_VIRTUAL then do;
+		/*
+		/* Error; operator delete may not be virtual.
+		/**/
+		call SEMANTIC_ERROR (ERR_VIRTUAL_NEW_DELETE_OP);
+		CURRENT_VIRTUAL = FALSE;
+	end;
+	if ^COMPATIBLE_ANY_TYPES
+	    (CURRENT_TYPE, 1, GET_VOID_TYPE (), 0) then do;
+		/*
+		/* Error; operator delete must return "void".
+		/**/
+		call SEMANTIC_ERROR (ERR_DELETE_OP_RETURN_TYPE);
+		call SET_RETURN_TYPE (GET_VOID_TYPE ());
+	end;
+	if IS_MEMBER then
+		ERROR_CODE = ERR_MEMBER_DELETE_OP_PARAM_TYPE;
+	else	ERROR_CODE = ERR_DELETE_OP_PARAM_TYPE;
+	if NPARAMETERS = 0 then do;
+		/*
+		/* Error; operator delete must specify a at
+		/* least a one parameter of type "void *".
+		/**/
+		call SEMANTIC_ERROR (ERROR_CODE); ERROR_CODE = 0;
+		return (TRUE);
+	end;
+	if ^IS_MEMBER then do;
+		if NPARAMETERS < 1 then do;
+			/*
+			/* Error; operator delete as a non-member
+			/* function must specify exactly one
+			/* parameter of type "void *".
+			/**/
+			if ERROR_CODE ^= 0 then do;
+				call SEMANTIC_ERROR (ERROR_CODE);
+				ERROR_CODE = 0;
+			end;
+			return (TRUE);
+		end;
+		else if (NPARAMETERS > 1) | ELLIPSIS then do;
+			/*
+			/* Error; operator delete as a non-member
+			/* function must specify exactly one
+			/* parameter of type "void *".
+			/**/
+			if ERROR_CODE ^= 0 then do;
+				call SEMANTIC_ERROR (ERROR_CODE);
+				ERROR_CODE = 0;
+			end;
+			call REMOVE_ALL_BUT_NPARAMETERS (1);
+		end;
+	end;
+	else if NPARAMETERS < 1 then do;
+		/*
+		/* Error; operator delete as a member function
+		/* must specify a first parameter of type "void *",
+		/* and an optional second parameter of type "size_t".
+		/**/
+		if ERROR_CODE ^= 0 then do;
+			call SEMANTIC_ERROR (ERROR_CODE);
+			ERROR_CODE = 0;
+		end;
+		return (TRUE);
+	end;
+	else if (NPARAMETERS > 2) | ELLIPSIS then do;
+		/*
+		/* Error; operator delete as a member function
+		/* must specify a first parameter of type "void *",
+		/* and an optional second parameter of type "size_t".
+		/**/
+		if ERROR_CODE ^= 0 then do;
+			call SEMANTIC_ERROR (ERROR_CODE);
+			ERROR_CODE = 0;
+		end;
+		call REMOVE_ALL_BUT_NPARAMETERS (2);
+	end;
+	call GET_PARAMETER_NODE_R (PARAMETERS, SP);
+	if ^COMPATIBLE_TYPES
+	    (SP->PARAMETER_NODE.TYPE, GET_VOID_POINTER_TYPE ()) then do;
+		/*
+		/* Error; operator delete must specify
+		/* a first parameter of type "void *".
+		/**/
+		if ERROR_CODE ^= 0 then do;
+			call SEMANTIC_ERROR (ERROR_CODE);
+			ERROR_CODE = 0;
+		end;
+		call FREE_TYPE_NODE (SP->PARAMETER_NODE.TYPE);
+		SP->PARAMETER_NODE.TYPE = GET_VOID_POINTER_TYPE ();
+		call GET_TOP_TYPE (SP->PARAMETER_NODE.TYPE,
+				   SP->PARAMETER_NODE.TOP_TYPE);
+	end;
+	if NPARAMETERS > 1 then do;
+		call GET_PARAMETER_NODE (SP->PARAMETER_NODE.NEXT, SP2);
+		if ^COMPATIBLE_TYPES
+		    (SP2->PARAMETER_NODE.TYPE, GET_SIZET_TYPE ()) then do;
+			/*
+			/* Error; operator delete must specify a first
+			/* parameter of type "void *", and an optional
+			/* second parameter of type "size_t".
+			/**/
+			if ERROR_CODE ^= 0 then do;
+				call SEMANTIC_ERROR (ERROR_CODE);
+				ERROR_CODE = 0;
+			end;
+			call FREE_TYPE_NODE (SP2->PARAMETER_NODE.TYPE);
+			SP2->PARAMETER_NODE.TYPE = GET_SIZET_TYPE ();
+			call GET_TOP_TYPE (SP2->PARAMETER_NODE.TYPE,
+					   SP2->PARAMETER_NODE.TOP_TYPE);
+		end;
+		call RELEASE_PARAMETER_NODE (SP->PARAMETER_NODE.NEXT);
+	end;
+
+	call RELEASE_PARAMETER_NODE (PARAMETERS);
+
+	return (TRUE);
+
+end VALID_DELETE_OPERATOR;
+
+/* ---------------------------------------------------------------------
+/* VALID_CREMENT_OPERATOR
+/*
+/* Check the current increment/decrement operator function declaration.
+/* ------------------------------------------------------------------- */
+
+VALID_CREMENT_OPERATOR: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		(SP, LP, P)		type (POINTER_T),
+		(S, L)			type (NID_T),
+		HAS_OPTIONAL_PARAMETER	type (BOOL_T),
+		ERROR_CODE		type (SHORT_T);
+
+	if IS_MEMBER then
+		ERROR_CODE = ERR_MEMBER_INCDEC_OP_PARAM;
+	else	ERROR_CODE = ERR_INCDEC_OP_PARAM;
+
+	if IS_MEMBER then do;
+		if (NPARAMETERS > 1) | ELLIPSIS then do;
+			/*
+			/* Error; a increment/decrement operator
+			/* member function must specify no parameters,
+			/* or one parameter of type "int".
+			/**/
+			call SEMANTIC_ERROR (ERROR_CODE); ERROR_CODE = 0;
+			call REMOVE_ALL_BUT_NPARAMETERS (1);
+			NPARAMETERS = 1;
+		end;
+	end;
+	else if NPARAMETERS < 1 then do;
+		/*
+		/* Error; a increment/decrement operator non-member
+		/* function must specify a first parameter, and an
+		/* optional second parameter of type "int".
+		/**/
+		call SEMANTIC_ERROR (ERROR_CODE); ERROR_CODE = 0;
+		return (TRUE);
+	end;
+	else if (NPARAMETERS > 2) | ELLIPSIS then do;
+		/*
+		/* Error; a increment/decrement operator non-member
+		/* function must specify a first parameter, and an
+		/* optional second parameter of type "int".
+		/**/
+		call SEMANTIC_ERROR (ERROR_CODE); ERROR_CODE = 0;
+		call REMOVE_ALL_BUT_NPARAMETERS (2);
+		NPARAMETERS = 2;
+	end;
+	else	call CHECK_FOR_CLASS_PARAMETER ();
+
+	HAS_OPTIONAL_PARAMETER = (IS_MEMBER  & (NPARAMETERS >= 1)) |
+				 (^IS_MEMBER & (NPARAMETERS >= 2));
+
+	if HAS_OPTIONAL_PARAMETER then do;
+		if NPARAMETERS > 1 then do;
+			call GET_PARAMETER_NODE_R (PARAMETERS, SP);
+			S = SP->PARAMETER_NODE.NEXT;
+			call RELEASE_PARAMETER_NODE (PARAMETERS);
+			call GET_PARAMETER_NODE_R (S, SP);
+		end;
+		else	S = PARAMETERS;
+		call GET_PARAMETER_NODE (S, SP);
+		if ^COMPATIBLE_TYPES
+		    (SP->PARAMETER_NODE.TYPE, GET_INT_TYPE ()) then do;
+			if ERROR_CODE ^= 0 then
+				call SEMANTIC_ERROR (ERROR_CODE);
+			call FREE_TYPE_NODE (SP->PARAMETER_NODE.TYPE);
+			SP->PARAMETER_NODE.TYPE = GET_INT_TYPE ();
+			call GET_TOP_TYPE (SP->PARAMETER_NODE.TYPE,
+					   SP->PARAMETER_NODE.TOP_TYPE);
+		end;
+		call RELEASE_PARAMETER_NODE (S);
+	end;
+
+	return (TRUE);
+
+end VALID_CREMENT_OPERATOR;
+
+/* ---------------------------------------------------------------------
+/* VALID_NARY_OPERATOR
+/*
+/* Check the current unary/binary operator function declaration.
+/* ------------------------------------------------------------------- */
+
+VALID_NARY_OPERATOR: procedure returns (type (BOOL_T)) internal;
+
+	if IS_MEMBER then do;
+		if (NPARAMETERS > 1) | ELLIPSIS then do;
+			/*
+			/* Error; a unary operator member function must
+			/* take no arguments; a binary operator member
+			/* function must take one argument.
+			/**/
+			call SEMANTIC_ERROR (ERR_MEMBER_OP_PARAM);
+			call REMOVE_ALL_BUT_NPARAMETERS (1);
+		end;
+	end;
+	else if NPARAMETERS < 1 then do;
+		/*
+		/* Error; a unary operator non-member function must
+		/* take one argument; a non-member binary operator
+		/* function must take two arguments.
+		/**/
+		call SEMANTIC_ERROR (ERR_NON_MEMBER_OP_PARAM);
+		return (TRUE);
+	end;
+	else if (NPARAMETERS > 2) | ELLIPSIS then do;
+		/*
+		/* Error; a unary operator non-member function must
+		/* take one argument; a non-member binary operator
+		/* function must take two arguments.
+		/**/
+		call SEMANTIC_ERROR (ERR_NON_MEMBER_OP_PARAM);
+		call REMOVE_ALL_BUT_NPARAMETERS (1);
+	end;
+	else	call CHECK_FOR_CLASS_PARAMETER ();
+
+	return (TRUE);
+
+end VALID_NARY_OPERATOR;
+
+/* ---------------------------------------------------------------------
+/* VALID_UNARY_OPERATOR
+/*
+/* Check the current unary (only) operator function declaration.
+/* ------------------------------------------------------------------- */
+
+VALID_UNARY_OPERATOR: procedure returns (type (BOOL_T)) internal;
+
+	declare
+		TD	type (TYPE_DATA_T);
+
+	if IS_MEMBER then do;
+		if (NPARAMETERS > 0) | ELLIPSIS then do;
+			/*
+			/* Error; a unary operator member
+			/* function must take no arguments.
+			/**/
+			call SEMANTIC_ERROR (ERR_MEMBER_UNOP_PARAM);
+			call REMOVE_ALL_PARAMETERS ();
+		end;
+	end;
+	else if NPARAMETERS < 1 then do;
+		/*
+		/* Error; a unary operator non-member 
+		/* function must take exactly one argument.
+		/**/
+		call SEMANTIC_ERROR (ERR_NON_MEMBER_UNOP_PARAM);
+		return (TRUE);
+	end;
+	else if (NPARAMETERS > 1) | ELLIPSIS then do;
+		/*
+		/* Error; a unary operator non-member 
+		/* function must take exactly one argument.
+		/**/
+		call SEMANTIC_ERROR (ERR_NON_MEMBER_UNOP_PARAM);
+		call REMOVE_ALL_BUT_NPARAMETERS (1);
+	end;
+	else	call CHECK_FOR_CLASS_PARAMETER ();
+
+	/* Check for a proper return type for operator-> */
+
+	if CURRENT_NAME = OPERATOR_ARROW_NAME then do;
+		call GET_TOP_LEVEL_TYPE (CURRENT_TYPE, 1, TD);
+		if (TD.CODE = byte (POINTER_DT)) |
+		   (TD.CODE = byte (REFERENCE_DT)) then do;
+			call GET_TOP_LEVEL_TYPE (CURRENT_TYPE, 2, TD);
+			if ^IS_AGGREGATE_TAG_TYPE (rank (TD.CODE)) then
+				call SEMANTIC_ERROR (ERR_ARROW_OP_RET_TYPE);
+		end;
+		else if ^IS_AGGREGATE_TAG_TYPE (rank (TD.CODE)) then
+			call SEMANTIC_ERROR (ERR_ARROW_OP_RET_TYPE);
+	end;
+
+	return (TRUE);
+
+end VALID_UNARY_OPERATOR;
+
+/* ---------------------------------------------------------------------
+/* VALID_BINARY_OPERATOR
+/*
+/* Check the current binary (only) operator function declaration.
+/* ------------------------------------------------------------------- */
+
+VALID_BINARY_OPERATOR: procedure returns (type (BOOL_T)) internal;
+
+	if IS_MEMBER then do;
+		if NPARAMETERS < 1 then do;
+			/*
+			/* Error; a binary operator member
+			/* function must take exactly one argument.
+			/**/
+			call SEMANTIC_ERROR (ERR_MEMBER_BINOP_PARAM);
+			return (TRUE);
+		end;
+		else if (NPARAMETERS > 1) | ELLIPSIS then do;
+			/*
+			/* Error; a binary operator member
+			/* function must take exactly one argument.
+			/**/
+			call SEMANTIC_ERROR (ERR_MEMBER_BINOP_PARAM);
+			call REMOVE_ALL_BUT_NPARAMETERS (1);
+		end;
+	end;
+	else if NPARAMETERS < 2 then do;
+		/*
+		/* Error; a non-member binary operator
+		/* function must take exactly two arguments.
+		/**/
+		call SEMANTIC_ERROR (ERR_NON_MEMBER_BINOP_PARAM);
+		return (TRUE);
+	end;
+	else if (NPARAMETERS > 2) | ELLIPSIS then do;
+		/*
+		/* Error; a non-member binary operator
+		/* function must take exactly two arguments.
+		/**/
+		call SEMANTIC_ERROR (ERR_NON_MEMBER_BINOP_PARAM);
+		call REMOVE_ALL_BUT_NPARAMETERS (2);
+	end;
+	else	call CHECK_FOR_CLASS_PARAMETER ();
+
+	return (TRUE);
+
+end VALID_BINARY_OPERATOR;
+
+/* ---------------------------------------------------------------------
+/* CHECK_FOR_CLASS_PARAMETER
+/*
+/* Make sure that the parameter list represented by the given sym-node
+/* id contains at least one parameter of class type or reference to
+/* class type.  If not, then give an appropriate diagnostic, i.e. to
+/* the effect that a non-member operator function must have declare a
+/* parameter of class type of reference to class type (C++ARM, sec.13.4).
+/* ------------------------------------------------------------------- */
+
+CHECK_FOR_CLASS_PARAMETER: procedure internal;
+
+	declare
+		(P, NEXT_P)		type (NID_T),
+		SP			type (POINTER_T),
+		T			type (TYPE_DATA_T),
+		HAS_CLASS_PARAMETER	type (BOOL_T);
+
+	HAS_CLASS_PARAMETER = FALSE;
+
+	do P = PARAMETERS repeat (NEXT_P) while (P ^= NULL_NID);
+		call GET_PARAMETER_NODE_R (P, SP);
+		if (rank (SP->PARAMETER_NODE.TOP_TYPE.CODE) = REFERENCE_DT) then do;
+			call GET_TOP_LEVEL_TYPE (SP->PARAMETER_NODE.TYPE, 1, T);
+			if IS_AGGREGATE_TAG_TYPE (rank (T.CODE)) then
+				HAS_CLASS_PARAMETER = TRUE;
+		end;
+		else if IS_AGGREGATE_TAG_TYPE
+			(rank (SP->PARAMETER_NODE.TOP_TYPE.CODE)) then
+			HAS_CLASS_PARAMETER = TRUE;
+		NEXT_P = SP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (P);
+	end;
+
+	if ^HAS_CLASS_PARAMETER then do;
+		/*
+		/* Error; a non-member operator function
+		/* must specify at least one parameter of
+		/* class type or reference to class type.
+		/**/
+		call SEMANTIC_ERROR (ERR_OPERATOR_NON_CLASS_PARAM);
+	end;
+
+end CHECK_FOR_CLASS_PARAMETER;
+
+end VALID_OPERATOR_FUNCTION;
+
+end VALID_SPECIAL_FUNCTION;
+
+/* ---------------------------------------------------------------------
+/* VALID_COPY_CONSTRUCTOR
+/*
+/* If the member function represented by the given sym-node id is
+/* a copy constructor (i.e. one which may be called with a single
+/* argument of the parent class type), then return TRUE, otherwise
+/* return FALSE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+VALID_COPY_CONSTRUCTOR: procedure (MEMBER_FUNCTION)
+			returns   (type (BOOL_T))
+			external  (X_VALID_COPY_CONSTRUCTOR);
+	declare
+		MEMBER_FUNCTION		type (NID_T);
+	declare
+		MFP			type (POINTER_T),
+		TOP_REFERENCE_TYPE	type (BOOL_T),
+		VALID			type (BOOL_T);
+
+	call GET_SYM_NODE_R (MEMBER_FUNCTION, MFP);
+
+	if ^MFP->SYM_NODE.IS_CONSTRUCTOR_FUNCTION then
+		VALID = FALSE;
+	else
+		VALID = VALID_FIRST_COPY_PARAMETER (MFP, TOP_REFERENCE_TYPE);
+
+	call RELEASE_SYM_NODE (MEMBER_FUNCTION);
+
+	if VALID & ^TOP_REFERENCE_TYPE then do;
+		/*
+		/* Error; a copy constructor for class X may
+		/* not be declared with a parameter of type X.
+		/* See C++ARM, sec.12.1, p.264.
+		/**/
+		call SEMANTIC_ERROR (ERR_COPY_CTOR_PARAM);
+	end;
+
+	return (VALID);
+
+end VALID_COPY_CONSTRUCTOR;
+
+/* ---------------------------------------------------------------------
+/* VALID_COPY_ASSIGNMENT
+/*
+/* If the member function represented by the given sym-node id is
+/* a copy assignment (i.e. one which may be called with a single
+/* argument of the parent class type), then return TRUE, otherwise
+/* return FALSE.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+VALID_COPY_ASSIGNMENT: procedure (MEMBER_FUNCTION)
+		       returns   (type (BOOL_T))
+		       external  (X_VALID_COPY_ASSIGNMENT);
+	declare
+		MEMBER_FUNCTION		type (NID_T);
+	declare
+		MFP			type (POINTER_T),
+		TOP_REFERENCE_TYPE	type (BOOL_T),
+		VALID			type (BOOL_T);
+
+	call GET_SYM_NODE_R (MEMBER_FUNCTION, MFP);
+
+	if MFP->SYM_NODE.NAME ^= OPERATOR_ASSIGNMENT_NAME then
+		VALID = FALSE;
+	else
+		VALID = VALID_FIRST_ASSIGNMENT_PARAMETER
+			(MFP, TOP_REFERENCE_TYPE);
+
+	call RELEASE_SYM_NODE (MEMBER_FUNCTION);
+
+	return (VALID);
+
+end VALID_COPY_ASSIGNMENT;
+
+/* ---------------------------------------------------------------------
+/* VALID_FIRST_COPY_PARAMETER
+/* VALID_FIRST_ASSIGNMENT_PARAMETER
+/*
+/* Check whether parameter list is valid for a copy constructor
+/* or copy assignment.  If valid, sets TOP_REFERENCE_TYPE
+/* so that copy constructor can be further checked.
+/* ------------------------------------------------------------------- */
+
+VALID_FIRST_COPY_PARAMETER: procedure (MFP, TOP_REFERENCE_TYPE)
+			    returns   (type (BOOL_T))
+			    internal;
+	declare
+		MFP			type (POINTER_T),
+		TOP_REFERENCE_TYPE	type (BOOL_T);
+	declare
+		P			type (POINTER_T),
+		PARENT_CLASS		type (NID_T),
+		PARAMETERS		type (NID_T),
+		NPARAMETERS		type (SHORT_T),
+		FIRST_PARAMETER		type (NID_T),
+		SECOND_PARAMETER	type (NID_T),
+		DEFAULT_ARGUMENT	type (BOOL_T),
+		PARAMETER_TYPE		type (NID_T),
+		PARAMETER_TOP_TYPE	type (TYPE_DATA_T);
+	declare
+		ASSIGNMENT		type (BOOL_T);
+
+	ASSIGNMENT = FALSE;
+	goto COMMON_VALID_FIRST_PARAMETER;
+
+VALID_FIRST_ASSIGNMENT_PARAMETER: entry   (MFP, TOP_REFERENCE_TYPE)
+				  returns (type (BOOL_T));
+
+	ASSIGNMENT = TRUE;
+
+	COMMON_VALID_FIRST_PARAMETER:
+
+	/* Get the pertinent data */
+
+	PARENT_CLASS = MFP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+	call GET_SIG_NODE_R (MFP->SYM_NODE.TOP_TYPE.SIGNATURE, P);
+	PARAMETERS = P->SIG_NODE.EXPLICIT_PARAMETERS;
+	NPARAMETERS = P->SIG_NODE.EXPLICIT_NPARAMETERS;
+	call RELEASE_SIG_NODE (MFP->SYM_NODE.TOP_TYPE.SIGNATURE);
+
+	if NPARAMETERS < 1 then
+		return (FALSE);
+
+	else if NPARAMETERS = 1 then
+		FIRST_PARAMETER = PARAMETERS;
+
+	else if NPARAMETERS > 1 then do;
+
+		/*
+		/* Here, the function takes more than one argument;
+		/* see if the ones after the first have default values.
+		/**/
+
+		FIRST_PARAMETER = PARAMETERS;
+
+		call GET_PARAMETER_NODE_R (FIRST_PARAMETER, P);
+		SECOND_PARAMETER = P->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (FIRST_PARAMETER);
+
+		call GET_PARAMETER_NODE_R (SECOND_PARAMETER, P);
+		DEFAULT_ARGUMENT = P->PARAMETER_NODE.VALUE ^= NULL_CXX_VID;
+		call RELEASE_PARAMETER_NODE (SECOND_PARAMETER);
+
+		if ^DEFAULT_ARGUMENT then
+			return (FALSE);
+	end;
+
+	/*
+	/* Here, the function is callable with one argument;
+	/* see if the parameter type is the parent class type,
+	/* or a reference to it (ignoring all type qualifiers).
+	/**/
+
+	call GET_PARAMETER_NODE_R (FIRST_PARAMETER, P);
+	PARAMETER_TOP_TYPE = P->PARAMETER_NODE.TOP_TYPE;
+	PARAMETER_TYPE	   = P->PARAMETER_NODE.TYPE;
+	call RELEASE_PARAMETER_NODE (FIRST_PARAMETER);
+
+	if PARAMETER_TOP_TYPE.CODE = byte (REFERENCE_DT) then do;
+		call GET_TOP_LEVEL_TYPE
+			(PARAMETER_TYPE, 1, PARAMETER_TOP_TYPE);
+		TOP_REFERENCE_TYPE = TRUE;
+	end;
+	else	TOP_REFERENCE_TYPE = FALSE;
+
+	if ASSIGNMENT then do;
+		if CAN_CONVERT_FROM_CLASS_TO_TYPE
+		   (PARENT_CLASS, PARAMETER_TYPE) then
+			return (TRUE);
+	end;
+
+	if ^IS_AGGREGATE_TAG_TYPE (rank (PARAMETER_TOP_TYPE.CODE)) then
+		return (FALSE);
+
+	if PARAMETER_TOP_TYPE.TAG_SYMBOL ^= PARENT_CLASS then
+		return (FALSE);
+
+	return (TRUE);
+
+end VALID_FIRST_COPY_PARAMETER;
+
+/* ---------------------------------------------------------------------
+/* VALID_DECLARATOR_NAME
+/*
+/* Sanity check and process the current declarator name (and qualifiers).
+/* Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+VALID_DECLARATOR_NAME: procedure (DECLARATION_KIND)
+		       returns   (type (BOOL_T))
+		       external  (X_VALID_DECLARATOR_NAME);
+	declare
+		DECLARATION_KIND	type (SHORT_T);
+	declare
+		IS_MEMBER_NAME		type (BOOL_T),
+		ENCLOSING_CLASS_NAME	type (NID_T);
+
+	/* See if we even *have* a declarator name to process */
+
+	if CURRENT_NAME = NULL_NID then
+		return (TRUE);
+
+	/* See if we require a simple unqualified name */
+
+	if DECLARATION_KIND = SIMPLE_DCL then do;
+		if (CURRENT_NAME_SCOPE ^= NULL_NID) |
+		   (CURRENT_NAME_KIND ^= VANILLA_NK) then do;
+			/*
+			/* Error; a simple unqualified
+			/* name is required here.
+			/**/
+			return (FALSE);
+		end;
+		else	return (TRUE);
+	end;
+
+	/* Determine if this declarator name refers to a member */
+
+	IS_MEMBER_NAME	     = FALSE;
+	ENCLOSING_CLASS_NAME = NULL_NID;
+
+	if DECLARATION_KIND = MEMBER_DCL then do;
+		if (CURRENT_NAME_SCOPE = NULL_NID) |
+		   (CURRENT_NAME_SCOPE_SYMBOL = CURRENT_CLASS) then do;
+			IS_MEMBER_NAME	     = TRUE;
+			ENCLOSING_CLASS_NAME = CURRENT_CLASS_NAME;
+		end;
+		else do;
+			/*
+			/* Error; member declarations may only be
+			/* qualified (redundantly) with the name
+			/* of the enclosing class.
+			/**/
+			call SEMANTIC_ERROR (ERR_MEMBER_QUALIFIED_NAME);
+			call CLEAR_SCOPE_QUALIFIER ();
+		end;
+	end;
+	else if CURRENT_NAME_SCOPE ^= NULL_NID then do;
+		if (DECLARATION_KIND = FRIEND_DCL) &
+		   (CURRENT_NAME_SCOPE_SYMBOL = CURRENT_CLASS) then do;
+			/*
+			/* Error; a class cannot befriend
+			/* one of its own members.
+			/**/
+			call SEMANTIC_ERROR (ERR_BEFRIEND_MEMBER);
+			return (FALSE);
+		end;
+		else do;
+			IS_MEMBER_NAME = TRUE;
+			/*
+			/* We don't simply do this:
+			/*
+			/*   ENCLOSING_CLASS_NAME = CURRENT_NAME_SCOPE_NAME;
+			/*
+			/* because we want to handle cases like:
+			/*
+			/*   struct A { struct B { B (); } };
+			/*   typedef A::B AB;
+			/*   AB::B () {}
+			/*
+			/* and in this case, although CURRENT_NAME_SCOPE
+			/* and CURRENT_NAME_SCOPE_SYMBOL represent A::B,
+			/* CURRENT_NAME_SCOPE_NAME represents AB.
+			/**/
+			call SET_SYM_NODE_R (CURRENT_NAME_SCOPE_SYMBOL);
+			ENCLOSING_CLASS_NAME = SYM_NODE.NAME;
+		end;
+	end;
+
+	/*
+	/* Make sure a global scope qualifier was not specified
+	/* (at all), and that a qualified declarator name was
+	/* not specified at local scope.
+	/**/
+
+	if CURRENT_NAME_SCOPE = CURRENT_GLOBAL_SCOPE then do;
+		/*
+		/* Error; the global scope qualifier may not
+		/* be used to qualify declarator names.
+		/*
+		/* TODO: I think "friend void ::f();" is legal,
+		/* and at local/global declarations also, but I
+		/* think its superflous in these cases. Uh oh,
+		/* how bout this gem:
+		/*
+		/*	class T {
+		/*		int f ();
+		/*	};
+		/*	T f ();
+		/*	class A {
+		/*		T f ();
+		/*		class B {
+		/*			friend T :: f ();
+		/*		}; //          ^ base-type ?
+		/*	};
+		/**/
+		call SEMANTIC_ERROR (ERR_GLOBAL_QUALIFIED_NAME);
+		call CLEAR_SCOPE_QUALIFIER ();
+	end;
+	else if (CURRENT_NAME_SCOPE ^= NULL_NID) &
+		((DECLARATION_KIND = VANILLA_DCL) &
+		 ((CURRENT_SCOPE_TYPE = FUNCTION_SCOPE) |
+		  (CURRENT_SCOPE_TYPE = BLOCK_SCOPE))) then do;
+		/*
+		/* Error; declarations of scope qualified names may only
+		/* appear within a class definition (as a base member access
+		/* declaration or just as a redundant class qualifier or for
+		/* friend declarations), or at global scope to *define*
+		/* class member functions or static class data members).
+		/**/
+		call SEMANTIC_ERROR (ERR_QUAL_NAME);
+		call CLEAR_SCOPE_QUALIFIER ();
+		return (FALSE);
+	end;
+
+	/* Check for an operator name */
+
+	if CURRENT_NAME_KIND = OPERATOR_NK then do;
+		if (CURRENT_TOP_TYPE.CODE ^= byte (FUNCTION_DT)) &
+		   (DECLARATION_KIND ^= MEMBER_ACCESS_DCL) then do;
+			/*
+			/* Error; this operator name does not specify
+			/* a function (note that it shouldn't for an
+			/* access declaration).
+			/**/
+			call SEMANTIC_ERROR (ERR_OPERATOR_FUN);
+			return (FALSE);
+		end;
+		else	return (TRUE);
+	end;
+
+	/* Check for a conversion name */
+
+	else if CURRENT_NAME_KIND = CONVERSION_NK then do;
+		if ^VALID_CONVERSION_NAME () then
+			return (FALSE);
+		else if ^IS_MEMBER_NAME then do;
+			/*
+			/* Error; a conversion function
+			/* must be a member function.
+			/**/
+			call SEMANTIC_ERROR (ERR_NON_MEMBER_CONV);
+			return (FALSE);
+		end;
+		else	return (TRUE);
+	end;
+
+	/* Check for a destructor name */
+
+	else if CURRENT_NAME_KIND = DESTRUCTOR_NK then do;
+		if ^IS_MEMBER_NAME then do;
+			/*
+			/* Error; a destructor may only be declared
+			/* within a class, or as a friend of another class
+			/* appropriately modified, or for a definition,
+			/* outside a class appropriately modified.  I.e.
+			/* a destructor must be a member function.
+			/**/
+			call SEMANTIC_ERROR (ERR_NON_MEMBER_DTOR);
+			CURRENT_NAME_KIND = VANILLA_NK;
+			return (FALSE);
+		end;
+		else if DECLARATION_KIND = MEMBER_ACCESS_DCL then do;
+			/*
+			/* N.B. "A::~B;" as an access declaration is
+			/* (sort-of) legal, but since destructors and
+			/* constructors are not inherited, we will get an
+			/* error anyways (in SET_MEMBER_ACCESS_DECLARATION).
+			/**/
+			CURRENT_NAME = DESTRUCTOR_NAME;
+			return (TRUE);
+		end;
+		else if (CURRENT_NAME ^= ENCLOSING_CLASS_NAME) &
+			(CURRENT_NAME ^= DESTRUCTOR_NAME) then do;
+			/*
+			/* Error; this destructor is not for the named class.
+			/**/
+			call SEMANTIC_ERROR (ERR_WRONG_DTOR);
+			return (FALSE);
+		end;
+		if CURRENT_TOP_TYPE.CODE ^= byte (FUNCTION_DT) then do;
+			/*
+			/* Error; this destructor name
+			/* does not specify a function.
+			/**/
+			call SEMANTIC_ERROR (ERR_DTOR_NOT_FUN);
+			return (FALSE);
+		end;
+		/*
+		/* Check that *no* return type was specified.
+		/**/
+		if CURRENT_TYPE_LEVEL > 1 then do;
+			/*
+			/* Error; a constructor function may
+			/* not specify a (derived) return type.
+			/**/
+			call SEMANTIC_ERROR (ERR_DTOR_RETURN_TYPE);
+		end;
+		else if ^CURRENT_BASE_TYPE_UNSPECIFIED |
+			(CURRENT_BASE_TYPE_QUALIFIER ^= NULL_TQ) then do;
+			/*
+			/* Error; a destructor function may
+			/* not specify a return value; ignored.
+			/**/
+			call SEMANTIC_ERROR (ERR_DTOR_RETURN_TYPE);
+		end;
+		call SET_RETURN_TYPE (GET_VOID_TYPE ());
+		CURRENT_NAME = DESTRUCTOR_NAME;
+		return (TRUE);
+	end;
+
+	/*
+	/* Check for a constructor name; in general this won't happen,
+	/* but it will happen for internal parsing, e.g. when a default
+	/* or copy constructor or default destructor is implicitly
+	/* declared by the compiler for an *unnamed* class.
+	/**/
+
+	else if CURRENT_NAME_KIND = CONSTRUCTOR_NK then
+		goto HAVE_CONSTRUCTOR;
+
+	/*
+	/* Here, we have a vanilla name; check for a constructor.
+	/*
+	/* Note the assumption that a declarator name of the form
+	/* "A::A" is a constructor name, this is a valid assumption
+	/* since "A" may not be not be a (nested) type name or a
+	/* static data member (see C++ARM, sec.9.2, page 164).
+	/**/
+
+	if ^IS_MEMBER_NAME | (ENCLOSING_CLASS_NAME ^= CURRENT_NAME) then
+		return (TRUE);
+
+	else if DECLARATION_KIND = MEMBER_ACCESS_DCL then do;
+		/*
+		/* Note that for member access declarations, constructor
+		/* names will never be recognized; no big deal since
+		/* constructors/destructors aren't inherited anyways.
+		/*
+		/*	class D     { int C; };
+		/*	class C : D { C ();  };
+		/*	class B : C { int B; };
+		/*	class A : B {
+		/*		B::C;	// C is not a constructor name.
+		/*		C::C;	// C is not a constructor name.
+		/*		B::B;	// B is not a constructor name.
+		/*	}
+		/**/
+		CURRENT_NAME_KIND = CONSTRUCTOR_NK;
+		CURRENT_NAME      = CONSTRUCTOR_NAME;
+		return (TRUE);
+	end;
+
+	else if DECLARATION_KIND ^= MEMBER_DCL then
+		goto HAVE_CONSTRUCTOR;
+
+	/*
+	/* Here, we have a class member declaration of a vanilla
+	/* name which is the same as its enclosing class name.
+	/**/
+
+	if CURRENT_TOP_TYPE.CODE ^= byte (FUNCTION_DT) then do;
+		call SET_SYM_NODE (CURRENT_CLASS);
+		if SYM_NODE.CONSTRUCTOR ^= NULL_NID then do;
+			/*
+			/* Error; this (non-function) member (which
+			/* has the same name as the containing class)
+			/* has been previously declared as a constructor.
+			/* For example: "class T { T (); int T; };"
+			/**/
+			call SEMANTIC_ERROR (ERR_REDEF_CTOR_MEMBER);
+			return (FALSE);
+		end;
+		return (TRUE);
+	end;
+
+	/*
+	/* We have to check for members of this name which have
+	/* been previously declared as (non-function) members.
+	/* For example: "class T { int T; T (); }"
+	/**/
+
+	else if SEARCH_SCOPE
+		(CURRENT_SCOPE, CURRENT_NAME, ANY_SK) ^= NULL_NID then do;
+		/*
+		/* Error; this constructor name has been previously
+		/* declared as a (non-function) member.
+		/**/
+		call SEMANTIC_ERROR (ERR_REDEF_MEMBER_CTOR);
+		return (FALSE);
+	end;
+
+	/*
+	/* Here, we definitely have a constructor name.
+	/* Set the current name to the (one and only) constructor token.
+	/**/
+
+	HAVE_CONSTRUCTOR:
+
+	/*
+	/* Check that *no* return type was specified.
+	/**/
+
+	if CURRENT_TYPE_LEVEL > 1 then do;
+		/*
+		/* Error; a constructor function may
+		/* not specify a (derived) return type.
+		/**/
+		call SEMANTIC_ERROR (ERR_CTOR_RETURN_TYPE);
+	end;
+	else if ^CURRENT_BASE_TYPE_UNSPECIFIED |
+		(CURRENT_BASE_TYPE_QUALIFIER ^= NULL_TQ) then do;
+		/*
+		/* Error; a constructor function may not specify a return
+		/* type, a storage class, or a friend specifier; ignored.
+		/**/
+		call SEMANTIC_ERROR (ERR_CTOR_RETURN_TYPE);
+	end;
+	call SET_RETURN_TYPE (GET_VOID_TYPE ());
+
+	CURRENT_NAME_KIND = CONSTRUCTOR_NK;
+	CURRENT_NAME      = CONSTRUCTOR_NAME;
+
+	return (TRUE);
+
+/* ---------------------------------------------------------------------
+/* VALID_CONVERSION_NAME
+/*
+/* Fix up a complete type for this conversion function name and type.
+/* CURRENT_NAME is assumed to be the type-node id (yes, type-node id) of
+/* the type to be converted to, and CURRENT_TYPE should be the type-node
+/* representing a function taking no parameters and returning NULL_BT
+/* (not VOID_BT).  The complete function type is returned in a type-node
+/* pointed to by CURRENT_TYPE, and CURRENT_NAME is set to the the (one-
+/* and-only) special conversion-name token-node.  Also, the return type
+/* alone (i.e. which CURRENT_NAME referred to upon entry to this routine)
+/* be referred to by CURRENT_BASE_TYPE_ID (this is getting hacky).  If
+/* all is well, then return TRUE, otherwise issue a diagnostic and return
+/* FALSE.  Trashes current-node-id.
+/*
+/* For example, given
+/*
+/*	operator const int * ();	// member declaration
+/* or	A::operator const int *;	// member access declaration
+/*
+/* on entry to this routine we would have:
+/*
+/*   CURRENT_NAME                --> TYPE_NODE --> const int *
+/*   CURRENT_TYPE                --> TYPE_NODE --> NULL_BT ()
+/*   CURRENT_TOP_TYPE            --> ()
+/*   CURRENT_BASE_TYPE           --> NULL_BT
+/*   CURRENT_BASE_TYPE_QUALIFIER --> NULL_TQ
+/*
+/* and on exit we would have:
+/*
+/*   CURRENT_NAME                --> TOKEN_NODE --> CONVERSION_NAME
+/*   CURRENT_TYPE                --> TYPE_NODE  --> const int * ()
+/*   CURRENT_TOP_TYPE            --> ()
+/*   CURRENT_BASE_TYPE           --> INT_BT
+/*   CURRENT_BASE_TYPE_QUALIFIER --> CONST_BT
+/*   CURRENT_BASE_TYPE_ID        --> TYPE_NODE --> const int *
+/*
+/* N.B. if DECLARATION_KIND is MEMBER_ACCESS_DCL, then CURRENT_TYPE,
+/* CURRENT_TOP_TYPE, CURRENT_BASE_TYPE,  CURRENT_BASE_TYPE_QUALIFIER,
+/* CURRENT_BASE_TYPE_ID, and CURRENT_NAME are all are unused!
+/* ------------------------------------------------------------------- */
+
+VALID_CONVERSION_NAME: procedure returns (type (BOOL_T)) internal;
+
+	declare TP type (POINTER_T);
+
+	/* Process this conversion member function */
+
+	if (DECLARATION_KIND ^= MEMBER_ACCESS_DCL) &
+	   (CURRENT_TOP_TYPE.CODE ^= byte (FUNCTION_DT)) then do;
+		/*
+		/* Error; this conversion name doesn't specify a function
+		/* (note that it shouldn't for an access declaration).
+		/**/
+		call SEMANTIC_ERROR (ERR_CONV_NOT_FUN);
+		return (FALSE);
+	end;
+
+	if (CURRENT_TYPE_LEVEL > 1) | ^CURRENT_BASE_TYPE_UNSPECIFIED then do;
+		/*
+		/* Error; this conversion function
+		/* specifies a return type.
+		/**/
+		call SEMANTIC_ERROR (ERR_CONV_RETURN_TYPE);
+	end;
+
+	if DECLARATION_KIND = MEMBER_ACCESS_DCL then
+		return (TRUE);
+
+	/*
+	/* Make a function type-node which has the current-top-type
+	/* signature and type qualifier, and the return type specified
+	/* by the type-node referred to by CURRENT_NAME.
+	/**/
+
+	CURRENT_BASE_TYPE_ID = CURRENT_NAME;  /* hackish */
+
+	call GET_TYPE_NODE_R (CURRENT_BASE_TYPE_ID, TP);
+	CURRENT_BASE_TYPE	    = rank (TP->TYPE_NODE.TYPE_CODE (0));
+	CURRENT_BASE_TYPE_QUALIFIER = TP->TYPE_NODE.TYPE_QUALIFIERS (0);
+	call RELEASE_TYPE_NODE (CURRENT_BASE_TYPE_ID);
+
+	call FREE_TYPE_NODE (CURRENT_TYPE);
+
+	CURRENT_TYPE = ADD_TOP_TYPE (CURRENT_NAME, CURRENT_TOP_TYPE);
+
+	CURRENT_NAME = CONVERSION_NAME;
+
+	/*
+	/* CURRENT_TYPE refers to the whole function type,
+	/* CURRENT_BASE_TYPE_ID refers to the return type, and
+	/* CURRENT_NAME refers to the special conversion name.
+	/**/
+
+	return (TRUE);
+
+end VALID_CONVERSION_NAME;
+
+end VALID_DECLARATOR_NAME;
+
+/* ---------------------------------------------------------------------
+/* CHECK_NULL_DECLARATOR
+/*
+/* Assuming that we have reached the end of a declaration, and have
+/* processed the current declaration specifiers, and that no declarator
+/* is present, issue an appropriate diagnostic unless a (class, struct,
+/* union, or enum) tag name, an enumerator (enum member), or bit-field
+/* (if we are within a class, struct, or union definition) is being
+/* declared.  Trashes current-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_NULL_DECLARATOR: procedure external (X_CHECK_NULL_DECLARATOR);
+
+	declare
+		UNNAMED_TAG			type (BOOL_T),
+		DEFINED_ENUMERATION		type (BOOL_T),
+		ANONYMOUS_UNION			type (BOOL_T),
+		NON_TYPE_SPECIFIERS		type (BOOL_T),
+		NON_TYPE_NON_STORAGE_SPECIFIERS	type (BOOL_T);
+
+	/* See if we really do have a declarator name (paranoid) */
+
+	if CURRENT_NAME ^= NULL_NID then
+		return;
+
+	/* See if we have a bit-field (at class scope of course) */
+
+	if (CURRENT_SCOPE_TYPE = CLASS_SCOPE) & (CURRENT_BIT_FIELD >= 0) then
+		return;
+
+	/* See if any non-type declaration-specifiers were given */
+
+	if (CURRENT_BASE_TYPE_QUALIFIER ^= NULL_TQ) |
+	    CURRENT_FRIEND |
+	    CURRENT_INLINE |
+	    CURRENT_VIRTUAL |
+	    CURRENT_OVERLOAD then do;
+		NON_TYPE_SPECIFIERS = TRUE;
+		NON_TYPE_NON_STORAGE_SPECIFIERS = TRUE;
+	end;
+	else if CURRENT_STORAGE_CLASS ^= NULL_ST then do;
+		NON_TYPE_SPECIFIERS = TRUE;
+		NON_TYPE_NON_STORAGE_SPECIFIERS = FALSE;
+	end;
+	else do;
+		NON_TYPE_SPECIFIERS = FALSE;
+		NON_TYPE_NON_STORAGE_SPECIFIERS = FALSE;
+	end;
+
+	/* See if a tag or enumerator was declared */
+
+	if IS_TAG_TYPE (CURRENT_BASE_TYPE) then do;
+		/*
+		/* Here, if we have a (class/struct/union/enum) tag name
+		/* or enumerator (enum member) declaration, then all's well.
+		/**/
+		UNNAMED_TAG = FALSE;
+		ANONYMOUS_UNION = FALSE;
+		DEFINED_ENUMERATION = FALSE;
+		if CURRENT_BASE_TYPE_ID ^= NULL_NID then do;
+			call SET_SYM_NODE_R (CURRENT_BASE_TYPE_ID);
+			if SYM_NODE.NAME = NULL_NID then do;
+				UNNAMED_TAG = TRUE;
+				if SYM_NODE.IS_ANON_UNION_TAG then
+					ANONYMOUS_UNION = TRUE;
+				else if SYM_NODE.IS_ENUM_TAG &
+					SYM_NODE.DEFINED then
+					DEFINED_ENUMERATION = TRUE;
+			end;
+		end;
+		if NON_TYPE_SPECIFIERS then do;
+			if ^ANONYMOUS_UNION then do;
+				/*
+				/* Error; a class declaration may not be
+				/* decorated with other declaration specifiers.
+				/* A special error for anonymous unions was
+				/* already given in SET_TAG_DECLARATION.  Due
+				/* to the common occurrences of typedef enum
+				/* XYZZY { } in InterViews we'll give a special
+				/* warning for this.
+				/**/
+				if (CURRENT_STORAGE_CLASS = TYPEDEF_ST) &
+				   ^UNNAMED_TAG &
+				   ^NON_TYPE_NON_STORAGE_SPECIFIERS then do;
+					if ^SW_ALLOW_EXTRANEOUS_TYPEDEF then do;
+					if CURRENT_BASE_TYPE = ENUM_BT then
+						call SEMANTIC_ERROR_I
+						     (ERR_ENUM_DCL_TYPEDEF,
+						      QUALIFIED_SYMBOL_NAME
+						      (CURRENT_BASE_TYPE_ID));
+					else	call SEMANTIC_ERROR_I
+						     (ERR_CLASS_DCL_TYPEDEF,
+						      QUALIFIED_SYMBOL_NAME
+						      (CURRENT_BASE_TYPE_ID));
+					end;
+				end;
+				else if SW_ALLOW_DECORATED_CLASSES then
+					;
+				else if CURRENT_BASE_TYPE = UNION_BT then
+					call SEMANTIC_ERROR
+					     (ERR_UNION_DCL_SPEC);
+				else	call SEMANTIC_ERROR
+					     (ERR_CLASS_DCL_SPEC);
+			end;
+		end;
+		if ^UNNAMED_TAG | ANONYMOUS_UNION | DEFINED_ENUMERATION then
+			return;
+	end;
+
+	/* Error, issue an appropriate diagnostic */
+
+	if ^NON_TYPE_SPECIFIERS & (CURRENT_BASE_TYPE = NULL_BT) then do;
+		if ^SW_ALLOW_EXTRANEOUS_SEMICOLON then
+			call SYNTAX_ERROR (ERR_EXTRA_SEMI_COLON);
+	end;
+	else if CURRENT_SCOPE_TYPE = CLASS_SCOPE then
+		call SYNTAX_ERROR (ERR_NO_MEMBER_DECLARATOR);
+	else	call SYNTAX_ERROR (ERR_NO_DECLARATOR);
+
+end CHECK_NULL_DECLARATOR;
+
+/* ---------------------------------------------------------------------
+/* CHECK_DEFAULT_ARGUMENT_ORDER
+/*
+/* Check the default argument ordering of the type represented by the
+/* given type-node id.  If there is an error then simply give an
+/* appropriate diagnostic and return.  Preserves current-node-id.
+/* 
+/* This merely checks that an argument in any signature within the type
+/* (top level or otherwise) does not contain any parameters which have
+/* a default argument which is not the first parameter and is not
+/* immediately preceeded by a parameter which has a default argument.
+/* Unfortunately, this check must be made for all declarations (function
+/* or non-function since a non-function type could *contain* function
+/* types).  This routine should *not* be called in the case of duplicate
+/* declarations which may occur at global scope or local scope (for
+/* functions), and for typedef and friend declarations; in these cases,
+/* the routine COMPLETE_CURRENT_DECLARATION does this processing.
+/* ------------------------------------------------------------------- */
+
+CHECK_DEFAULT_ARGUMENT_ORDER: procedure (TP)
+			      external  (X_CHECK_DEFAULT_ARGUMENT_ORDER);
+	declare
+		TP		type (POINTER_T);
+	declare
+		I		type (SHORT_T);
+	declare
+		FOUND_ERROR	type (BOOL_T);
+
+	FOUND_ERROR = FALSE;
+
+	if ^TP->TYPE_NODE.CONTAINS_DEFAULT_ARGUMENT then
+		return;
+
+	do I = rank (TP->TYPE_NODE.LEVEL) to 0 by -1;
+		if (TP->TYPE_NODE.DATA (I).CODE = byte (FUNCTION_DT)) &
+		   TP->TYPE_NODE.DATA (I).DEFAULT_ARGUMENT then
+			if HAS_MISORDERED_DEFAULT_ARGUMENT
+			   (TP->TYPE_NODE.DATA (I).SIGNATURE) then do;
+				/*
+				/* Error; a default parameter may only be
+				/* specified after a parameter without at
+				/* default parameter.
+				/**/
+				call SEMANTIC_ERROR (ERR_DEFAULT_ARG_PLACEMENT);
+				FOUND_ERROR = TRUE;
+				return;
+			end;
+	end;
+
+	return;
+
+/* ---------------------------------------------------------------------
+/* HAS_MISORDERED_DEFAULT_ARGUMENT
+/* ------------------------------------------------------------------- */
+
+HAS_MISORDERED_DEFAULT_ARGUMENT: procedure (SIGNATURE)
+				 returns   (type (BOOL_T))
+				 internal;
+	declare
+		SIGNATURE			type (NID_T);
+	declare
+		(PARAMETERS, P, NEXT_P)		type (NID_T),
+		(SP, TP, PP)			type (POINTER_T),
+		LAST_HAD_DEFAULT_ARGUMENT	type (BOOL_T);
+
+	LAST_HAD_DEFAULT_ARGUMENT = FALSE;
+	call GET_SIG_NODE_R (SIGNATURE, SP);
+	PARAMETERS = SP->SIG_NODE.EXPLICIT_PARAMETERS;
+	call RELEASE_SIG_NODE (SIGNATURE);
+	do P = PARAMETERS repeat (NEXT_P) while (P ^= NULL_NID);
+		call GET_PARAMETER_NODE_R (P, PP);
+		if PP->PARAMETER_NODE.VALUE ^= NULL_CXX_VID then
+			LAST_HAD_DEFAULT_ARGUMENT = TRUE;
+		else if LAST_HAD_DEFAULT_ARGUMENT then do;
+			call RELEASE_PARAMETER_NODE (P);
+			return (TRUE);
+		end;
+		else if IS_DERIVED_TYPE
+			(rank (PP->PARAMETER_NODE.TOP_TYPE.CODE)) then do;
+			call GET_TYPE_NODE_R (PP->PARAMETER_NODE.TYPE, TP);
+			call CHECK_DEFAULT_ARGUMENT_ORDER (TP);
+			call RELEASE_TYPE_NODE (PP->PARAMETER_NODE.TYPE);
+			if FOUND_ERROR then do;
+				call RELEASE_PARAMETER_NODE (P);
+				return (TRUE);
+			end;
+
+		end;
+		NEXT_P = PP->PARAMETER_NODE.NEXT;
+		call RELEASE_PARAMETER_NODE (P);
+	end;
+	return (FALSE);
+
+end HAS_MISORDERED_DEFAULT_ARGUMENT;
+
+end CHECK_DEFAULT_ARGUMENT_ORDER;
+
+/* ---------------------------------------------------------------------
+/* CHECK_MAIN_DECLARATION
+/*
+/* Sanity check the current declaration data assuming this is a
+/* declaration for the "main" function.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_MAIN_DECLARATION: procedure external (X_CHECK_MAIN_DECLARATION);
+
+	declare TD type (TYPE_DATA_T);
+
+	if (CURRENT_STORAGE_CLASS = STATIC_ST) | CURRENT_INLINE then do;
+		/*	
+		/* Error; the function "main" may not
+		/* be declared as "static" or "inline".
+		/**/
+		call SEMANTIC_ERROR (ERR_STATIC_MAIN);
+		CURRENT_INLINE = FALSE;
+		CURRENT_STORAGE_CLASS = NULL_ST;
+	end;
+	if CURRENT_TYPE_LEVEL > 1 then do;
+		/*
+		/* Warning; "main" should return "int".
+		/**/
+		if ^SW_CLASSIC_C_MODE then
+			call SEMANTIC_ERROR (ERR_MAIN_RET_VAL);
+	end;
+	else do;
+		call GET_TOP_LEVEL_TYPE (CURRENT_TYPE, 1, TD);
+		if TD.CODE ^= byte (INT_BT) then do;
+			/*
+			/* Warning; "main" should return "int".
+			/**/
+			if ^SW_CLASSIC_C_MODE then
+				call SEMANTIC_ERROR (ERR_MAIN_RET_VAL);
+		end;
+	end;
+
+end CHECK_MAIN_DECLARATION;
+
+/* ---------------------------------------------------------------------
+/* CHECK_UNSPECIFIED_BASE_TYPE
+/* ------------------------------------------------------------------- */
+
+CHECK_UNSPECIFIED_BASE_TYPE: procedure
+			     external (X_CHECK_UNSPECIFIED_BASE_TYPE);
+
+	/*
+	/* Constructors, destructors, and conversion
+	/* operators have no base type specifier.
+	/**/
+
+	if (CURRENT_NAME_KIND ^= VANILLA_NK) &
+	   (CURRENT_NAME_KIND ^= OPERATOR_NK) then
+		return;
+
+	if CURRENT_OVERLOAD then
+		return;
+
+	if SW_NO_BASE_TYPE_WARN then
+		call SEMANTIC_ERROR (ERR_NO_BASE_TYPE);
+
+	if (CURRENT_STORAGE_CLASS = NULL_ST) &
+	   (CURRENT_BASE_TYPE_QUALIFIER = NULL_TQ) &
+	   ^CURRENT_FRIEND &
+	   ^CURRENT_VIRTUAL &
+	   ^CURRENT_INLINE then do;
+		/*
+		/* Here, there are *no* declaration specifiers at all!
+		/* In C++ this is ok only for function declarations.
+		/* In ANSI-C this is ok only for function *definitions*!
+		/**/
+		if CURRENT_TOP_TYPE.CODE ^= byte (FUNCTION_DT) then do;
+			if ^SW_C_PLUS_PLUS then do;
+				if CURRENT_SCOPE_TYPE = CLASS_SCOPE then
+					call SEMANTIC_ERROR
+					     (ERR_NO_MEMBER_DCL_SPEC_ANSI_C);
+				else if ^SW_CLASSIC_C_MODE then
+					call SEMANTIC_ERROR
+					     (ERR_NO_DCL_SPEC_ANSI_C);
+			end;
+			else do;
+				if CURRENT_SCOPE_TYPE = CLASS_SCOPE then
+					call SEMANTIC_ERROR
+					     (ERR_NO_MEMBER_DCL_SPEC);
+				else	call SEMANTIC_ERROR (ERR_NO_DCL_SPEC);
+			end;
+		end;
+		else if ^SW_C_PLUS_PLUS then do;
+			if ((CURRENT_SCOPE_TYPE ^= GLOBAL_SCOPE) &
+			    (CURRENT_SCOPE_TYPE ^= CLASS_SCOPE)) |
+			   AT_END_OF_DECLARATION () then do;
+				if ^SW_CLASSIC_C_MODE then
+					call SEMANTIC_ERROR
+					     (ERR_NO_DCL_SPEC_ANSI_C);
+			end;
+		end;
+	end;
+
+end CHECK_UNSPECIFIED_BASE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* VALID_BASE_TYPE
+/* ------------------------------------------------------------------- */
+
+VALID_BASE_TYPE: procedure
+		 returns  (type (BOOL_T))
+		 external (X_VALID_BASE_TYPE);
+
+	/* Warn for an unspecified base type */
+
+	if CURRENT_BASE_TYPE_UNSPECIFIED then
+		call CHECK_UNSPECIFIED_BASE_TYPE ();
+
+	/*
+	/* Warn for tag definition base type if this is a function
+	/* type, but only if C++ (C++ARM 8.2.5); this is the only
+	/* use of CURRENT_BASE_TYPE_TAG_DEFINITION!
+	/**/
+
+	if (CURRENT_TOP_TYPE.CODE = byte (FUNCTION_DT)) &
+	   CURRENT_BASE_TYPE_TAG_DEFINITION &
+	   SW_C_PLUS_PLUS then
+		call SEMANTIC_ERROR (ERR_RET_TAG_DEF);
+
+	return (TRUE);
+
+end VALID_BASE_TYPE;
+
+/* ---------------------------------------------------------------------
+/* CHECK_NON_VISIBLE_DECLARATIONS
+/*
+/* Assuming that no previous visible declarations of the name represented
+/* by the token-node id CURRENT_NAME were found, and also assuming that
+/* this name is currently being declared is represented by the currently
+/* paged-in sym-node, and it is at file or block scope with external
+/* linkage and has a type represented by the type-node id CURRENT_TYPE,
+/* check for any non-visible external linkage declarations of the same
+/* name (at block scope), and give a warning if the types are not compatible.
+/* According to ANSI-C, this yields undefined behavior (3.3.2.2, footnote
+/* 35).  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+CHECK_NON_VISIBLE_DECLARATIONS: procedure ()
+				external  (X_CHECK_NON_VISIBLE_DECLARATIONS);
+	declare
+		(S, NEXT_S)			type (NID_T),
+		(NP, SP)			type (POINTER_T),
+		STATUS				type (SHORT_T),
+		FOUND_EXTERNAL_LINKAGE_MATCH	type (BOOL_T),
+		FOUND_EXTERNAL_LINKAGE_CONFLICT	type (BOOL_T);
+
+	FOUND_EXTERNAL_LINKAGE_MATCH	= FALSE;
+	FOUND_EXTERNAL_LINKAGE_CONFLICT	= FALSE;
+
+	/*
+	/* Look for previous non-visible external linkage declarations of
+	/* this name.  If any are found and the current symbol is internal
+	/* linkage, then give a linkage conflict warning and continue.
+	/* If the types are incompatible, then give a warning and continue.
+	/**/
+
+	call GET_TOKEN_NODE_R (SYM_NODE.NAME, NP);
+
+	do S = NP->TOKEN_NODE.ADDRESS repeat (NEXT_S) while (S ^= NULL_NID);
+
+		call GET_SYM_NODE_R (S, SP);
+		NEXT_S = SP->SYM_NODE.NEXT_OF_NAME;
+
+		/* Make sure this isn't a type, label, or member */
+
+		if SP->SYM_NODE.IS_TYPE |
+		   SP->SYM_NODE.IS_LABEL |
+		   SP->SYM_NODE.IS_MEMBER then
+			goto CONTINUE;
+
+		/* Make sure this is an external linkage declaration */
+
+		if ^SP->SYM_NODE.EXTERNAL_LINKAGE then
+			goto CONTINUE;
+
+		/* Make sure this isn't a global scope symbol */
+
+		if SP->SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (GLOBAL_SCOPE) then
+			goto CONTINUE;
+		
+		/* Make sure this is in a different scope (paranoid) */
+
+		if SP->SYM_NODE.ENCLOSING_SCOPE = SYM_NODE.ENCLOSING_SCOPE then
+			goto CONTINUE;
+
+		/*
+		/* Here, we found a previous non-visible external linkage
+		/* object or function declaration of the current symbol name.
+		/**/
+
+		STATUS = CHECK_EXTERNAL_LINKAGE_SYMBOLS ();
+
+		if STATUS < 0 then do;
+			if ^FOUND_EXTERNAL_LINKAGE_CONFLICT then do;
+				/*
+				/* Warning; this name was previously
+				/* declared in a different scope with
+				/* external linkage and type which is
+				/* incompatible with this declaration.
+				/**/
+				call SEMANTIC_ERROR_II
+				     (ERR_HIDDEN_EXTERN_LINKAGE_REDCL,
+				      FULL_QUALIFIED_SYMBOL_NAME (S),
+				      SYMBOL_LOCATION_NAME (S));
+				FOUND_EXTERNAL_LINKAGE_CONFLICT = TRUE;
+			end;
+			goto CONTINUE;
+		end;
+		else if STATUS = 0 then
+			goto CONTINUE;
+
+		/*
+		/* Here, we found a previous non-visible external linkage
+		/* object or function declaration of the current symbol
+		/* name which is not in conflict with the current declaration.
+		/**/
+
+		FOUND_EXTERNAL_LINKAGE_MATCH = TRUE;
+
+		if SP->SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL ^= NULL_NID
+		then do;
+			SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL =
+				SP->SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL;
+		end;
+		else if SP->SYM_NODE.IS_FIRST_EXTERNAL_LINKAGE_SYMBOL then do;
+			SYM_NODE.FIRST_EXTERNAL_LINKAGE_SYMBOL = S;
+			if SYM_NODE.INTERNAL_LINKAGE then do;
+				/*
+				/* Warning; this name was previously declared
+				/* with external linkage (in a non-visible
+				/* scope), and is thus in conflict with this
+				/* internal linkage declaration; will assume
+				/* that all such external linkage declarations
+				/* are intended to refer to the same internal
+				/* linkage entity.
+				/**/
+				if ^SW_NOWARN_EXTERN_INTERN_CONFLICT then do;
+					call SEMANTIC_ERROR_II
+					     (ERR_HIDDEN_LINKAGE_CONFLICT,
+					      FULL_QUALIFIED_SYMBOL_NAME (S),
+					      SYMBOL_LOCATION_NAME (S));
+				end;
+			end;
+		end;
+
+		CONTINUE:
+		call RELEASE_SYM_NODE (S);
+	end;
+
+	/*
+	/* If no previous (non-visible) external linkage declarations
+	/* the current symbol name with the same type and the same
+	/* linkage-kind were found, then mark this external declaration
+	/* as the first.
+	/**/
+
+	if ^FOUND_EXTERNAL_LINKAGE_MATCH then
+		SYM_NODE.IS_FIRST_EXTERNAL_LINKAGE_SYMBOL = TRUE;
+
+	/* Done */
+
+	call RELEASE_TOKEN_NODE (SYM_NODE.NAME);
+	return;
+
+/* ---------------------------------------------------------------------
+/* CHECK_EXTERNAL_LINKAGE_SYMBOLS
+/* ------------------------------------------------------------------- */
+
+CHECK_EXTERNAL_LINKAGE_SYMBOLS: procedure ()
+				returns   (type (SHORT_T))
+				internal;
+	declare
+		(S, NEXT_S, T)	type (NID_T),
+		P		type (POINTER_T);
+
+	/*
+	/* For non-function types and/or for C mode,
+	/* just do a simple type compatibility check.
+	/**/
+
+	if ^SP->SYM_NODE.IS_FUNCTION |
+	   ^SYM_NODE.IS_FUNCTION |
+	   ^SW_C_PLUS_PLUS then do;
+		if COMPATIBLE_TYPES
+		   (SP->SYM_NODE.TYPE, SYM_NODE.TYPE) then
+			return (1);
+		else	return (-1);
+	end;
+
+	/*
+	/* Here, we are in C++ mode and are comparing two functions.
+	/* If the current function is non-C++ linkage, then there is
+	/* no conflict as long as there is no previous non-C++ linkage
+	/* function, or if there is a previous non-C++ linkage function
+	/* it must be compatible with the current function.
+	/**/
+
+	else if SYM_NODE.LINKAGE_KIND ^= byte (CXX_LINKAGE) then do;
+		if SP->SYM_NODE.C_OVERLOAD = NULL_NID then
+			return (0);
+		call GET_SYM_NODE_R (SP->SYM_NODE.C_OVERLOAD, P);
+		T = P->SYM_NODE.TYPE;
+		call RELEASE_SYM_NODE (SP->SYM_NODE.C_OVERLOAD);
+		if COMPATIBLE_TYPES (T, SYM_NODE.TYPE) then
+			return (1);
+		else	return (-1);
+	end;
+
+	/*
+	/* Here, we are in C++ mode and are comparing two functions,
+	/* the current one of which has C++ linkage.  Compare this
+	/* current one to the previous function (SP) and each of its
+	/* overloaded functions (if any), but skip non-C++ linkage
+	/* ones since it can't be in conflict with any of those.
+	/**/
+
+	if SP->SYM_NODE.LINKAGE_KIND = byte (CXX_LINKAGE) then do;
+		if COMPATIBLE_TYPES
+		    (SP->SYM_NODE.TYPE, SYM_NODE.TYPE) then
+			return (1);
+		if ^DISTINCT_FUNCTION_TYPES
+		    (SP->SYM_NODE.TYPE, SYM_NODE.TYPE, FALSE) then
+			return (-1);
+	end;
+	do S = SP->SYM_NODE.NEXT_OVERLOAD repeat (NEXT_S) while (S ^= NULL_NID);
+		call GET_SYM_NODE_R (S, P);
+		if SP->SYM_NODE.LINKAGE_KIND = byte (CXX_LINKAGE) then do;
+			if COMPATIBLE_TYPES
+			   (P->SYM_NODE.TYPE, SYM_NODE.TYPE) then do;
+				call RELEASE_SYM_NODE (S);
+				return (1);
+			end;
+			if ^DISTINCT_FUNCTION_TYPES
+			    (P->SYM_NODE.TYPE, SYM_NODE.TYPE, FALSE) then do;
+				call RELEASE_SYM_NODE (S);
+				return (-1);
+			end;
+		end;
+		NEXT_S = P->SYM_NODE.NEXT_OF_NAME;
+		call RELEASE_SYM_NODE (S);
+	end;
+
+	/*
+	/* Here, non of the previous functions were compatible with the
+	/* current function, but neither were any of them insufficiently
+	/* distinct from the current function; i.e. the current function
+	/* is distinct from the previous function.
+	/**/
+
+	return (0);
+
+end CHECK_EXTERNAL_LINKAGE_SYMBOLS;
+
+end CHECK_NON_VISIBLE_DECLARATIONS;
+
+/* ---------------------------------------------------------------------
+/* SET_RETURN_TYPE
+/*
+/* (Re)Set the return type of the current *function* type to the type
+/* represented by the given type-node id.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SET_RETURN_TYPE: procedure (RT) internal;
+
+	declare
+		RT	type (NID_T);
+	declare
+		RTP	type (POINTER_T);
+
+	CURRENT_TYPE = ADD_TOP_TYPE (RT, CURRENT_TOP_TYPE);
+
+	call GET_TYPE_NODE_R (RT, RTP);
+	CURRENT_BASE_TYPE	    = rank (RTP->TYPE_NODE.DATA (0).CODE);
+	CURRENT_BASE_TYPE_QUALIFIER = RTP->TYPE_NODE.DATA (0).QUALIFIERS;
+	CURRENT_BASE_TYPE_ID	    = RTP->TYPE_NODE.DATA (0).NID;
+	call RELEASE_TYPE_NODE (RT);
+
+end SET_RETURN_TYPE;
+
+/* ---------------------------------------------------------------------
+/* REMOVE_ALL_PARAMETERS
+/*
+/* Removes all of the explicit parameters of the current
+/* function type.  This should only be used for error recovery.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+REMOVE_ALL_PARAMETERS: procedure internal;
+
+	call REMOVE_ALL_BUT_NPARAMETERS (0);
+
+end REMOVE_ALL_PARAMETERS;
+
+/* ---------------------------------------------------------------------
+/* REMOVE_ALL_BUT_NPARAMETERS
+/*
+/* Removes all but N of the explicit parameters of the current
+/* function type.  This should only be used for error recovery.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+REMOVE_ALL_BUT_NPARAMETERS: procedure (N) internal;
+
+	declare
+		N			type (SHORT_T);
+	declare
+		P			type (POINTER_T),
+		IMPLICIT_NPARAMETERS	type (SHORT_T);
+
+	call GET_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE, P);
+
+	P->SIG_NODE.ELLIPSIS = FALSE;
+
+	if P->SIG_NODE.EXPLICIT_NPARAMETERS <= N then do;
+		call RELEASE_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE);
+		return;
+	end;
+
+	P->SIG_NODE.NPARAMETERS = (P->SIG_NODE.NPARAMETERS -
+				   P->SIG_NODE.EXPLICIT_NPARAMETERS) + N;
+
+	P->SIG_NODE.EXPLICIT_NPARAMETERS = N;
+
+	if P->SIG_NODE.EXPLICIT_NPARAMETERS = 0 then
+		P->SIG_NODE.EXPLICIT_PARAMETERS  = NULL_NID;
+
+	if P->SIG_NODE.NPARAMETERS = 0 then
+		P->SIG_NODE.PARAMETERS		 = NULL_NID;
+
+	call RELEASE_SIG_NODE (CURRENT_TOP_TYPE.SIGNATURE);
+
+end REMOVE_ALL_BUT_NPARAMETERS;
+
+/* ---------------------------------------------------------------------
+/* CHECK_NESTED_TYPES
+/*
+/* Help catch the problem of what was intended to be a global type
+/* first declared nested in a class.
+/* ------------------------------------------------------------------- */
+
+CHECK_NESTED_TYPES: procedure (CP)
+		    external  (X_CHECK_NESTED_TYPES);
+	declare
+		CP		type (POINTER_T);
+
+	declare
+		(SCP, SP)	type (POINTER_T),
+		(S, NEXT_S)	type (NID_T);
+
+	if SW_NO_NESTED_TYPE_NAMES | ^CP->SYM_NODE.IS_AGGREGATE_TAG then
+		return;
+
+	call GET_SCOPE_NODE_R (CP->SYM_NODE.DEFINED_SCOPE, SCP);
+
+	do S = SCP->SCOPE_NODE.SYMBOLS
+	repeat (NEXT_S) while (S ^= NULL_NID);
+
+		/* Get this symbol and the next */
+
+		call GET_SYM_NODE_R (S, SP);
+		NEXT_S = SP->SYM_NODE.NEXT_SYMBOL;
+
+		if SP->SYM_NODE.IS_TAG & ^SP->SYM_NODE.DEFINED then
+			call SEMANTIC_ERROR_III
+				(ERR_UNDEFINED_NESTED_CLASS,
+				 TOKEN_NAME (SP->SYM_NODE.NAME),
+				 QUALIFIED_SYMBOL_NAME
+					(CP->SYM_NODE.TOP_TYPE.TAG_SYMBOL),
+				 SYMBOL_LOCATION_NAME (S));
+
+		call RELEASE_SYM_NODE (S);
+	end;
+
+	call RELEASE_SCOPE_NODE (CP->SYM_NODE.DEFINED_SCOPE);
+
+end CHECK_NESTED_TYPES;
+
+

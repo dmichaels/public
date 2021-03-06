@@ -1,0 +1,70 @@
+/* LPI-DEBUG M68 DIS.IN - MC68020/68881 instruction definitions */
+
+/**********************************************************************
+ * This product is the property of Language Processors, Inc.          *
+ * and is licensed pursuant to a written license agreement.           *
+ * No portion of this product may be reproduced without the written   *
+ * permission of Language Processors, Inc. except pursuant to the     *
+ * license agreement.                                                 *
+ *********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *  12.03.91  VTF  (002) Changed declaration of DIS() to include a new
+ *                       parameter (see ~src/debug/div/m68/dis.003.pl1)
+ *
+ *  10.04.91  VTF  (001) Added DIS() declaration and removed 
+ *                       definitions for TRUE and FALSE.
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68020 User's
+ *		   Manual, and the MC68881 User's Manual.
+ *
+ *********************************************************************/
+
+/* -------------------------------------------------------------------
+ * -- Maximum Sizes of Instruction & Effective Address Extensions --
+ * ---------------------------------------------------------------- */
+
+%replace MAX_INSTRUCTION_WORDS	by 12;
+%replace MAX_INSTRUCTION_BYTES	by 24;  /* MAX_INSTRUCTION_WORDS*2 */
+%replace MAX_EAEXTENSION_WORDS	by  6;
+%replace MAX_EAEXTENSION_BYTES	by 12;  /* MAX_EAEXTENSION_WORDS*2 */
+
+/* -------------------------------------------------------------------
+ * -- Instruction Template --
+ * ---------------------------------------------------------------- */
+
+declare
+    1 INSTRUCTION	based,
+      2 WORD		(1 : MAX_INSTRUCTION_WORDS) fixed binary (15);
+declare
+    BASED_WORD_BITS	bit (16) based;
+
+/* -------------------------------------------------------------------
+ * -- Maximum Length of Disassembled Code String --
+ * ---------------------------------------------------------------- */
+
+%replace MAX_STRING_LENGTH	by 256;
+
+/* -------------------------------------------------------------------
+ * -- Effective Address and Instruction Size Codes --
+ * ---------------------------------------------------------------- */
+
+%replace SIZE_UNKNOWN	 by -2;
+%replace SIZE_NULL	 by -1;
+%replace SIZE_BYTE	 by  0;	/* do not change this definition! */
+%replace SIZE_WORD	 by  1;	/* do not change this definition! */
+%replace SIZE_LONG	 by  2;	/* do not change this definition! */
+%replace SIZE_SINGLE	 by  3;	/* do not change this definition! */
+%replace SIZE_DOUBLE	 by  4;	/* do not change this definition! */
+%replace SIZE_EXTENDED	 by  5;	/* do not change this definition! */
+%replace SIZE_PACKED	 by  6;	/* do not change this definition! */
+%replace SIZE_PACKED_DYN by  7;	/* do not change this definition! */
+
+declare
+    DIS    entry((MAX_INSTRUCTION_WORDS) fixed bin (15),
+                 fixed bin(31),
+		 char(MAX_STRING_LENGTH) varying) returns (fixed bin(15));
+

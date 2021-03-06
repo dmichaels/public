@@ -1,0 +1,55 @@
+/* C++ argprm.pl1 - perform default argument promotions  */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *  LPI EDIT HISTORY
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  09.14.90  DGM  001  Changed include file names and VOP names.
+ *  01.16.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 09.14.90 001 ARGPRM');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_INTEGRAL_PROMOTION_PKG;
+
+ARGUMENT_PROMOTION: procedure (TYPE) returns (type (SHORT_T))
+		    external  (X_ARGUMENT_PROMOTION);
+
+	declare
+		TYPE		type (SHORT_T);
+	declare
+		K		type (SHORT_T);
+
+	K = TYPE;       
+
+	if K = FLOAT_BT then 
+		K = DOUBLE_BT;
+	else
+		K = INTEGRAL_PROMOTION (K);
+    
+	return (K);
+
+end ARGUMENT_PROMOTION;

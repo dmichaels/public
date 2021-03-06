@@ -1,0 +1,134 @@
+/* C++ CXX_SYMBOL_TABLE_NAMES_IN - Symbol table names definitions */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  07.30.91  VTF  007  Added TYPE_CW_DSM.
+ *  02.21.91  DGM  006  Updated.
+ *  01.10.91  DGM  005  Updated.
+ *  11.29.90  DGM  004  Updated.
+ *  11.15.90  DGM  003  Updated.
+ *  11.06.90  DGM  002  Updated.
+ *  10.22.90  DGM  001  Updated.
+ *  09.25.90  DGM  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* None */
+
+/* ---------------------------------------------------------------------
+/* Definitions
+/* ------------------------------------------------------------------- */
+
+/* Declaration String Mode Flags */
+
+%replace STORAGE_CLASS_SPECIFIER_DSM	 by '00000000000000000000000000000001'B;
+%replace TYPEDEF_SPECIFIER_DSM		 by '00000000000000000000000000000010'B;
+%replace FUNCTION_SPECIFIER_DSM		 by '00000000000000000000000000000100'B;
+%replace FRIEND_SPECIFIER_DSM		 by '00000000000000000000000000001000'B;
+%replace ACCESS_SPECIFIER_DSM		 by '00000000000000000000000000010000'B;
+%replace BASE_TYPE_SPECIFIER_DSM	 by '00000000000000000000000000100000'B;
+%replace QUALIFIED_TYPE_NAME_DSM	 by '00000000000000000000000001000000'B;
+%replace TAG_DATA_DSM			 by '00000000000000000000000010000000'B;
+%replace TAG_KEYWORD_DSM		 by '00000000000000000000000100000000'B;
+%replace TAG_DERIVATION_LIST_DSM	 by '00000000000000000000001000000000'B;
+%replace DECLARATOR_TYPE_DSM		 by '00000000000000000000010000000000'B;
+%replace DECLARATOR_NAME_DSM		 by '00000000000000000000100000000000'B;
+%replace QUALIFIED_DECLARATOR_NAME_DSM	 by '00000000000000000001000000000000'B;
+%replace DIMENSIONS_DSM			 by '00000000000000000010000000000000'B;
+%replace SIGNATURES_DSM			 by '00000000000000000100000000000000'B;
+%replace DEFAULT_ARGUMENTS_DSM	         by '00000000000000001000000000000000'B;
+%replace PARAMETER_NAMES_DSM	         by '00000000000000010000000000000000'B;
+%replace PURE_SPECIFIER_DSM	         by '00000000000000100000000000000000'B;
+%replace INTERNAL_PARAMETERS_DSM	 by '00000000000001000000000000000000'B;
+%replace EXPAND_TYPEDEF_DSM		 by '00000000000010000000000000000000'B;
+%replace ADD_POINTER_TYPE_DSM		 by '00000000000100000000000000000000'B;
+%replace SYMBOL_NODE_ID_DSM		 by '00000000001000000000000000000000'B;
+%replace CONSERVE_SPACE_DSM		 by '00000000010000000000000000000000'B;
+
+
+%replace DECLARATION_SPECIFIERS_DSM	 by '00000000000000000000000001100111'B;
+%replace DECLARATOR_DSM			 by '00000000000000000110110000000000'B;
+%replace QUALIFIED_DECLARATOR_DSM	 by '00000000000010000111110000000000'B;
+%replace ACCESS_DECLARATION_DSM	 	 by '00000000000000000001110000010000'B;
+
+%replace VERY_TERSE_DSM			 by '00000000000000000000110001100000'B;
+%replace QUALIFIED_VERY_TERSE_DSM	 by '00000000000000000000110001100000'B;
+%replace TERSE_DSM			 by '00000000000000000110110001100000'B;
+%replace QUALIFIED_TERSE_DSM		 by '00000000000000000110110001100000'B;
+%replace DEFAULT_DSM			 by '00000000000010111110110001100000'B;
+%replace QUALIFIED_DEFAULT_DSM		 by '00000000000010111111110001100000'B;
+%replace FULL_DSM			 by '00000000000011111110110011100111'B;
+%replace QUALIFIED_FULL_DSM		 by '00000000000011111111110011100111'B;
+
+%replace VERY_TERSE_CW_DSM		 by '00000000000000000000110001100000'B;
+%replace QUALIFIED_VERY_TERSE_CW_DSM	 by '00000000000000000001110001100000'B;
+%replace TERSE_CW_DSM			 by '00000000000000000110110001100000'B;
+%replace QUALIFIED_TERSE_CW_DSM		 by '00000000000000000111110001100000'B;
+%replace DEFAULT_CW_DSM			 by '00000000000000101110110001100111'B;
+%replace QUALIFIED_DEFAULT_CW_DSM	 by '00000000000000101111110001100111'B;
+%replace FULL_CW_DSM			 by '00000000000010111110110011100111'B;
+%replace QUALIFIED_FULL_CW_DSM		 by '00000000000010111111110011100111'B;
+%replace TYPE_CW_DSM			 by '00000000000010111100010101100000'B;
+
+%replace NULL_DSM			 by '00000000000000000000000000000000'B;
+
+/* ---------------------------------------------------------------------
+/* Type definitions
+/* ------------------------------------------------------------------- */
+
+declare
+
+DSM_T					bit (32) aligned;
+
+declare
+
+1 DECLARATION_STRING_MODE_T		based,
+  2 declaration_string_mode_union	union,
+    3 FLAGS				type (DSM_T),
+    3 declaration_string_mode_flags,
+      4 available_01			type (BIT_T),
+      4 available_02			type (BIT_T),
+      4 available_03			type (BIT_T),
+      4 available_04			type (BIT_T),
+      4 available_05			type (BIT_T),
+      4 available_06			type (BIT_T),
+      4 available_07			type (BIT_T),
+      4 available_08			type (BIT_T),
+      4 available_09			type (BIT_T),
+      4 CONSERVE_SPACE			type (BIT_T),
+      4 SYMBOL_NODE_ID			type (BIT_T),
+      4 ADD_POINTER_TYPE		type (BIT_T),
+      4 EXPAND_TYPEDEF			type (BIT_T),
+      4 INTERNAL_PARAMETERS		type (BIT_T),
+      4 PURE_SPECIFIER			type (BIT_T),
+      4 PARAMETER_NAMES			type (BIT_T),
+      4 DEFAULT_ARGUMENTS		type (BIT_T),
+      4 SIGNATURES			type (BIT_T),
+      4 DIMENSIONS			type (BIT_T),
+      4 QUALIFIED_DECLARATOR_NAME	type (BIT_T),
+      4 DECLARATOR_NAME			type (BIT_T),
+      4 DECLARATOR_TYPE			type (BIT_T),
+      4 TAG_DERIVATION_LIST		type (BIT_T),
+      4 TAG_KEYWORD			type (BIT_T),
+      4 TAG_DATA			type (BIT_T),
+      4 QUALIFIED_TYPE_NAME		type (BIT_T),
+      4 BASE_TYPE_SPECIFIER		type (BIT_T),
+      4 ACCESS_SPECIFIER		type (BIT_T),
+      4 FRIEND_SPECIFIER		type (BIT_T),
+      4 FUNCTION_SPECIFIER		type (BIT_T),
+      4 TYPEDEF_SPECIFIER		type (BIT_T),
+      4 STORAGE_CLASS_SPECIFIER		type (BIT_T);
+

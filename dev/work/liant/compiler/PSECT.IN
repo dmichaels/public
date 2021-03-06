@@ -1,0 +1,43 @@
+/* C++ CXX_PSECT_CONTROL_IN -  Psect control definitions */
+
+/***********************************************************************
+ * This product is the property of Language Processors, Inc. and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Language Processors, Inc. except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  11.07.90  TLF  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Required include files
+/* ------------------------------------------------------------------- */
+
+/* %include CXX_STANDARD_DEFS_IN;     */
+/* %include CXX_EXTERNAL_NAME_MAP_IN; */
+
+/* ----------------------------------------------------------------------
+/* Replace constants
+/* -------------------------------------------------------------------- */
+
+%replace 	PSECT_TAB_LLIM		by 1;
+%replace 	NULL_PSECT		by 0;
+%replace	STARTUP_PSECT		by 1;
+%replace	CLEANUP_PSECT		by 2;
+%replace 	NORMAL_PSECT		by 3;
+%replace 	PSECT_TAB_ULIM		by 3;
+%replace	NULL_PSECT_LINK		by 0;
+ 
+/* -----------------------------------------------------------------------
+/* Typedefs
+/* ---------------------------------------------------------------------- */
+
+declare	
+	PSECT_LINK_T			fixed bin(31);
+

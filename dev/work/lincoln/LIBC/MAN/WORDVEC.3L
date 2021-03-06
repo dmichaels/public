@@ -1,0 +1,39 @@
+.TH WORDVEC 3L LOCAL
+
+.SH NAME
+wordvec - construct a word vector from a string
+
+.SH SYNOPSIS
+.ft B
+int
+.br
+wordvec(str, vec, nword, delim)
+.br
+char *str, **vec, *delim;
+.br
+unsigned int nword;
+.ft P
+
+.SH DESCRIPTION
+Constructs a word vector consisting of words in the given string
+\fIstr\fP delimited by characters in the character set \fIdelim\fP.
+Pointers to the beginning of each word are placed in order in the
+character pointer array \fIvec\fP.  Return the number of words actually
+put into the vector.
+
+.SH WARNINGS
+The string \fIstr\fP is munged since end of string (EOS) characters
+actually replace the delimiter characters;
+it should be considered totally lost.
+If the caller wants to save the contents the string \fIstr\fP, (s)he
+should copy it to a buffer before making this call.
+
+.SH NOTES
+The character pointer array \fIvec\fP is assumed to have
+at least \fInword\fP elements allocated for its use.
+
+.SH FILES
+wordvec.c
+
+.SH SEE ALSO
+sindex(3L), sdelim(3L)

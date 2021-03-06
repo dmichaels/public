@@ -1,0 +1,41 @@
+.TH FSEEK_NPAT 3L LOCAL
+
+.SH NAME
+fseek_npat - seek to a choice of patterns in a file
+
+.SH SYNOPSIS
+.ft B
+fseek_npat(f, pat_list, npat)
+.br
+FILE *f;
+.br
+char *pat_list[];
+.br
+int npat;
+.br
+
+.SH DESCRIPTION
+Sets the IO pointer of file \fIf\fP to the position of the next
+occurrence of any of the \fInpat\fP pattern strings in the string
+array \fIpat_list\fP,
+and returns an index to the found pattern into the \fIpat_list\fP string array.
+.PP
+If none of the patterns are found,
+then the IO pointer will be left intact, and -1 will be returned.
+.PP
+If a pattern is found,
+the IO pointer will be set to the last character in the pattern
+string.  That is, the next \fIgetc(f)\fP will yield the character
+immediately following the last character of the chosen pattern string.
+
+.SH WARNINGS
+This function coordinates with the buffering used by the
+standard C input/output library, and should only be used
+in conjunction with other functions within the library
+(e.g. use \fIfseek(3S)\fP rather than \fIlseek(2)\fP).
+
+.SH FILES
+fseek_npat.c
+
+.SH SEE ALSO
+fseek_pat(3L), ftell_pat(3L), findline(3L), sindex(3L), fseek(3)

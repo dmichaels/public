@@ -1,0 +1,1053 @@
+/* CodeWatch M68 DOCALL.PL1 - CALL user routine (separate process mode) */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *   7.21.92  VTF  020 Changed all FNDNOD() calls to the appropriate
+ *                     SET_xxx_NODE() call.
+ *
+ *   7.01.92  VTF  019  Added support for long double return values.
+ *
+ *  09.11.91  WDB  018  Added check for certain cases where it is not safe
+ *			to execute a CALL and exit accordingly.
+ *
+ *  07.08.91  MJF  017  Added support for C and C++ unsigned int return 
+ *			types.
+ *
+ *  06.24.91  MJF  016  Changed to check for DO_RETURN along with DO_EVALUATE
+ *		        and DO_LET.
+ *
+ *  06.05.91  MJF  015  Added support for breakpoints in called routines.
+ *                      Cloned INIT_INVOCATION, PUSH_INVOCATION, and
+ *                      POP_INVOCATION from dgmr.pl1.  The INVDAT structure
+ *                      should really be pared down someday.  These routines
+ *                      do much more than necessary now, considering we don't
+ *                      allow breakpoints in the middle of expression
+ *                      evaluation anymore.  Added PUSH_CALL_INFO, 
+ *		        POP_CALL_INFO, FINISH_CALL, RELOAD_IN_CALL, and
+ *                      SET_PROGRAM_RETURN_ADDRESS.  Added GBLPCLINE_IN.
+ *
+ *  04.08.91  MJF  014  Fixed return types char and float bin (881 mode).
+ *			Also, fixed debug output.
+ *
+ *  09.24.90  WDB  013  Added %include RELOAD_IN.
+ *
+ *  08.31.90  MJF  012  Added INTERPRET_ERROR.
+ *
+ *  08.10.90  MJF  011  Took out the enabling and disabling of user
+ *                      breakpoints and added this coded instead to
+ *                      CALLRT and DFINDV.  Also, fixed at least one
+ *                      instance of the "Cannot set breakpoint for call"
+ *                      problem.  In BUILD_CALL, RETTYPE was being 
+ *                      checked even if RETPTR was null meaning the called
+ *                      routine didn't return a value.
+ *
+ *  07.02.90  WDB  010  Changed parameter list to RESUME for reworking of
+ *                      command processing; pass a dummy here.
+ *                      ** TEMP ** Add calls to disable and then reenable
+ *                      all user breakpoints when making a call.  This is
+ *                      a stopgap measure until the logic can be reworked
+ *                      to  accommodate breakpoints within CALLs.
+ * 
+ *  02.23.90  MJF  009  Changed DERROR calls to use replace constants.
+ *
+ *  02.15.90  WDB  008  Initialize local var ALREADY_IN_CALL in routine
+ *                      START_CALL; it's not clear what (if any) problems
+ *                      this causes, but it should be done just the same.
+ *  08.10.89  DCZ  007  Added NLS support;
+ *			derror replaces verror calls.
+ *			Added DERROR_IN.
+ *
+ *  02.18.88  DGM  Removed calls to PSTATE (now done in RESUME).
+ *
+ *  12.30.87  DGM  Changed calls to STRIP & TRIM to call TRIMS & TRIMNU.
+ *
+ *  07.13.87  DGM  <recheckout> Changed SIZE_REG_AREA in DBG_DOCALL to
+ *		   SIZE_OF_REGS (declared in TARGET_IN) (oversight).
+ *
+ *  06.15.87  DGM  Fixed code to handle "bit(1)" return value types.
+ *		   Check the high bit of the low byte of D0.
+ *
+ *  06.10.87  DGM  Code to handle "bit(1)" return value types.
+ *
+ *  03.25.87  DGM  Modified DOCALL to get more data about the
+ *                 return value for functions (RETSIZE and
+ *                 RETUNITS) so that GET_RETURN_VALUE can be
+ *                 pretty much a clone of GETRVL.  We cannot
+ *                 use GETRVL itself because it uses the called
+ *                 functions stack frame which is has been
+ *                 deallocated when a CALL is finished.
+ *
+ *  11.12.86  DGM  Original.  See LPI-DEBUG document
+ *                 "System Interface Specification".
+ *
+ **********************************************************************/
+
+/***********************************************************************
+ * DOCALL Description (From "System Interface Specification"):
+ *
+ * This routine is the interface from the debugger CALL command or the
+ * evaluation of a user function to the user procedure.  It is used only
+ * when debugger is running in separate process mode.  DOCALL must
+ * prepare any argument templates and build a calling sequence to the
+ * user routine which will pass it the correct static ancestor pointer
+ * and return value area (e.g. if the return value is a string).  The
+ * debugger will then resume execution at the start of the call sequence.
+ * When the user procedure returns to the code built by DOCALL, that code
+ * must move the return value from registers to debugger memory, if
+ * necessary.  It must then activate the deubgger with a return code
+ * that indicates completion of a user procedure call.
+ *
+ * DOCALL allocates space from the program stack and builds in that
+ * space the code necessary to call the named routine and then return
+ * to the debugger.
+ *
+ * Input:  ENTRYPT  - Location and display of the routine to call.
+ *         ARGCOUNT - Number of arguments to pass to the routine.
+ *         RETPTR   - Pointer to an area in debugger space which will
+ *                    hold the return value from the routine. RETPTR is
+ *                    NULL() if the procedure does not return a value.
+ *         RETTYPE  - Data type of the value returned from the routine,
+ *                    or zero if the routine does not return a value.
+ *         RETPREC  - Precision or length of the returned value.
+ *         RETSIZE  - Size in RETUNITS of the return value.
+ *         RETUNITS - Units of size of the return value.
+ *         ARGPTR   - Array of pointers to the arguments that are to
+ *                    be passed to the procedure.  The first ARGCOUNT
+ *                    pointers actually point to data that is either
+ *                    user program memory (when the argument can be
+ *                    passed by reference) or in debugger memory (for
+ *                    arguments passed by value).  Unused arguments
+ *                    are NULL().
+ *
+ **********************************************************************/
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include DBGGLOBAL_IN;
+%include GBLPCLINE_IN;
+%include DBGDEBUG_IN;
+%include DNODES_DCL;
+%include DRESUM_IN;
+%include SYSRESUME_IN;
+%include SYSWRITUSER_IN;
+%include SYSREADUSER_IN;
+%include SYSFINDMOD_IN;
+%include SYSGETPC_IN;
+%include SYSTEMP_IN;
+%include SYSTTY_IN;
+%include UNXDBG_IN;
+%include TARGET_IN;
+%include DERROR_IN;
+%include RELOAD_IN;
+%include CVTF12_IN;
+
+declare
+    FIRST_CALL_POINTER          pointer static internal initial (NULL),
+    CURRENT_CALL_POINTER        pointer static internal initial (NULL),
+      1 CALL_NODE               based,
+	2 REGISTERS             char (SIZE_OF_REGS),
+	2 FPCONTENTS            fixed binary (ADDRESS_LENGTH),
+	2 RETADDR               fixed binary (ADDRESS_LENGTH),
+	2 NEXT                  pointer,
+	2 PREV                  pointer;
+
+DOCALL: procedure (ENTRYVAR, ARGCOUNT,
+                   RETPTR, RETTYPE, RETPREC, RETSIZE, RETUNITS,
+                   ARGPTR);
+
+    declare
+        ENTRYVAR    entry,              /* Entry variable to call */
+        ARGCOUNT    fixed binary (15),  /* Argument count */
+        RETPTR      pointer,            /* Pointer to return data area */
+        RETTYPE     fixed binary (15),  /* Return data type */
+        RETPREC     fixed binary (15),  /* Return data precision */
+        RETSIZE     fixed binary (31),  /* Return data size in RETUNITS */
+        RETUNITS    fixed binary (15),  /* Return data size units */
+        ARGPTR      (MAX_ARGUMENTS)     /* Array of argument */
+                    pointer;            /*  pointers in user memory */
+
+    declare
+        RETURN_VALUE_ADDRESS    fixed binary (ADDRESS_LENGTH),
+	I			fixed binary (15),
+        RET                     fixed binary (15),
+	LOC			fixed binary (31),
+	TEMP			fixed binary (31),
+        RETURN_ADDR             fixed binary (ADDRESS_LENGTH),
+	ARGPOS			fixed binary (ADDRESS_LENGTH),
+	BASEDSTR		character (SIZE_OF_REGS) based;
+
+    /*DEBUG*/if DBG_FLAG then
+    /*DEBUG*/call DBG_DOCALL(ENTRYVAR,ARGCOUNT,RETPTR,RETTYPE,RETPREC,ARGPTR);
+
+    if URELOAD | USTART then do;				/* #018 */
+	call DERROR (CANNOT_CALL_AFTER_PROGRAM_LOADED, '', '');
+	if SAV_COMMAND = DO_CALL then
+	    call POP_INVOCATION();
+	return;
+    end;
+    if USTATUS > 0 then do;
+	call DERROR (CANNOT_CALL_AFTER_EXCEPTION, '', '');
+	if SAV_COMMAND = DO_CALL then
+	    call POP_INVOCATION();
+	return;
+    end;							/* 018# */
+
+    call PUSH_CALL_INFO();
+
+    /* Set up the call to the user routine */
+
+    call BUILD_CALL (ENTRYVAR, ARGCOUNT, RETPTR, RETTYPE, RETPREC,
+		     RETSIZE, RETUNITS, ARGPTR, RETURN_ADDR, RET);
+
+    if RET ^= 0 then
+        goto END_DOCALL;
+
+    CURRENT_CALL_POINTER->CALL_NODE.RETADDR = RETURN_ADDR;
+
+    /* Execute the user routine */
+
+    call START_CALL (PROGRAM_REGISTER_AREA->REGS.PC,
+		     CURRENT_CALL_POINTER->CALL_NODE.RETADDR,
+		     RET);
+
+    if RET ^= 0 then do;
+	call INTERPRET_ERROR(RET,USTATUS);
+        goto END_DOCALL;
+    end;
+
+    /* Get the return value from the user routine */
+
+    call GET_RETURN_VALUE (RETTYPE,RETPREC,RETSIZE,RETUNITS,RETPTR);
+
+  END_DOCALL:
+
+    if ^IN_CALL then
+	call FINISH_CALL();
+    else
+	call SET_PROGRAM_RETURN_ADDRESS();
+
+    return;
+
+    /* --------------------------------------------------------------------
+     * BUILD_CALL will set up the user stack for the CALL.
+     * Returns in "RETADDR", the address  to which it is expected
+     * that user execution will break when returning from the
+     * CALLed routine.  All other arguments are the same as DOCALL.
+     * Returns in "RET", zero if all is well, otherwise non-zero.
+     */
+
+    BUILD_CALL: procedure (ENTRYVAR,ARGCOUNT,
+                           RETPTR,RETTYPE,RETPREC,RETSIZE,RETUNITS,
+                           ARGPTR,RETADDR,RET);
+        declare
+            ENTRYVAR        entry,
+            RETPTR          pointer,
+            RETTYPE         fixed binary (15),
+            RETPREC         fixed binary (15),
+            RETSIZE         fixed binary (31),
+            RETUNITS        fixed binary (15),
+            ARGCOUNT        fixed binary (15),
+            ARGPTR          (MAX_ARGUMENTS) pointer,
+            RETADDR         fixed binary (ADDRESS_LENGTH),
+            RET             fixed binary (15);
+
+        declare
+            N               fixed binary (31),
+            I               fixed binary (15),
+            ADDRESS         fixed binary (ADDRESS_LENGTH),
+            DUMMYADDR       fixed binary (ADDRESS_LENGTH),
+            STACKADDR       fixed binary (ADDRESS_LENGTH),
+            BASEDADDR       fixed binary (ADDRESS_LENGTH) based,
+            BASEDLONG       fixed binary (31)             based;
+
+        declare
+            1 ENTRY_VARIABLE    based,
+              2 ENTRY_ADDRESS   fixed binary (ADDRESS_LENGTH),
+              2 ENTRY_DISPLAY   fixed binary (ADDRESS_LENGTH);
+
+        declare
+            1 LONGWORD,
+              2  HIGH      fixed binary (15),
+              2  LOW       fixed binary (15);
+
+        RET = -1;
+        RETURN_VALUE_ADDRESS = 0;
+
+        /* -- PUSH RETURN VALUE TEMPORARY SPACE AND SET A0/D0 --
+         *
+         * If the return value is a non-scalar type and/or larger than
+         * four bytes (except for float-binary) then allocate user memory
+         * for it (on the stack) and set register A0 to contain the
+         * address of the temporary location which has been allocated
+         * to hold the returned string.
+         */
+
+        if (RETTYPE ^= FIXED_BIN_) &
+           (RETTYPE ^= FLOAT_BIN_) &
+           (RETTYPE ^= POINTER_) &
+	   (RETTYPE ^= 0) then do;          /* (011) */
+
+            N = SIZE_IN_BYTES (RETSIZE,RETUNITS);
+
+            call ALCTMP (N, NULL, ADDRESS, DUMMYADDR, RET);
+
+            if RET ^= 0 then do;
+		call derror ( CANNOT_ALLOC_SPACE_FOR_CALL_RET, '', '');
+                return;
+            end;
+            PROGRAM_REGISTER_AREA->REGS.A0 = ADDRESS;
+            PROGRAM_REGISTER_AREA->REGS.D0 = N;
+            RETURN_VALUE_ADDRESS = ADDRESS;
+        end;
+
+        /* -- PUSH BREAK-POINT INSTRUCTION --
+         *
+         * Write a break point instruction on the stack.
+         * This will be the point to which the user program
+         * will return upon completion of the CALL.
+         */
+
+        LONGWORD.HIGH = BREAK_OPCODE;
+        LONGWORD.LOW  = 0;
+
+        if ^PUSH_USER(ADDR(LONGWORD)->BASEDLONG,RETADDR) then do;
+	    call derror ( CANNOT_WRITE_BREAKPOINT_FOR_CALL, '', '');
+            return;
+        end;
+
+        /* -- PUSH ARGUMENTS --
+         *
+         * Push (in reverse order) each of the given
+         * ARGCOUNT arguments onto the user stack.
+         */
+
+        do I = ARGCOUNT to 1 by -1;
+            if ^PUSH_USER(ADDR(ARGPTR(I))->BASEDLONG,DUMMYADDR) then do;
+		call derror ( CANNOT_WRITE_ARGUMENT_FOR_CALL, 
+                              TRIM(char(ARGCOUNT-I+1)), '');
+                return;
+            end;
+        end;
+
+        /* -- PUSH RETURN ADDRESS --
+         *
+         * Write the return address onto the stack;
+         * this address points to the breakpoint instruction
+         * on the user stack written out above.
+         */
+
+        if ^PUSH_USER(ADDR(RETADDR)->BASEDLONG,DUMMYADDR) then do;
+	    call derror ( CANNOT_WRITE_RET_ADDR_FOR_CALL, '', '');
+            return;
+        end;
+
+        /* -- SET UP THE STATIC ANCESTOR DISPLAY POINTER --
+         *
+         * Set A1 to be the static ancestor display pointer.  For
+         * normal calls to entry constants this is simply the current
+         * frame pointer.  For calls to entry variables the static
+         * display ancestor pointer should be already contained in
+         * the entry point variable ENTRYVAR following the address
+         * of the entry point.
+         *
+         * --TODO-- To handle this second case, we will need to get
+         * another argument from our caller (DFINDV) to indicate that
+         * this call is via an entry variable.  The additional argument
+         * would probably be ENTRYSTO which contains the storage class
+         * of the entry symbol.  Then ...
+         *
+         *          if ENTRYSTO ^= STO_CONSTANT then
+         *              PROGRAM_REGISTER_AREA->REGS.A1 =
+         *                  addr(ENTRYVAR)->ENTRY_DISPLAY;
+         *          else ...
+         */
+
+        PROGRAM_REGISTER_AREA->REGS.A1 = PROGRAM_REGISTER_AREA->REGS.A6;
+
+        /*
+         * Set the user frame pointer (A6) to zero so that if the user
+         * program performs a non-local goto subsequent to this call,
+         * the goto handler (P$GOTO) won't try to unwind the stack below
+         * the frame that we just set up since the CALLed routine will
+         * (should) push A6 (i.e. zero) onto the stack (e.g. via a LINK).
+         *
+         * --TODO-- This is not really the right thing to do; we lose our
+         * environment, so that (for example) we can't refernce local
+         * variables outside our call block.  There are some major issues
+         * which need to get addressed before cleaning this up; e.g. perhaps
+         * we should allow non-local gotos to unwind past our call frame.
+         */
+
+        PROGRAM_REGISTER_AREA->REGS.A6 = 0;
+
+        /*
+         * Set up the PC to point at the address of the CALLed
+         * routine.  User program execution will start at this point.
+         */
+
+        PROGRAM_REGISTER_AREA->REGS.PC = ADDR(ENTRYVAR)->BASEDADDR;
+
+        RET = 0;
+        return;
+
+    end BUILD_CALL;
+
+    /* --------------------------------------------------------------------
+     * START_CALL will start the actual execution of the CALLed
+     * user routine at the given address "PC"; It is expected that
+     * "RETADDR" will be the address to which execution will break
+     * at when returning from the CALLed user routine.  Returns zero
+     * if all is well, else non-zero.
+     */
+
+    START_CALL: procedure (PC,RETADDR,RET);
+
+        declare
+            PC      fixed binary (ADDRESS_LENGTH),
+            RETADDR fixed binary (ADDRESS_LENGTH),
+            RET     fixed binary (15);
+
+        declare
+	    STATUS           fixed binary (15);
+
+	IN_CALL = TRUE;
+
+        CALL_RETURN_ADDR = CURRENT_CALL_POINTER->CALL_NODE.RETADDR;
+
+	IN_DEBUGGER = FALSE;
+	RET = DRESUM ();
+        if RET ^= 0 then
+	    call DERROR ( CALL_FAILED, '', '');
+
+	if PROGRAM_REGISTER_AREA->REGS.PC = CALL_RETURN_ADDR then
+	    IN_CALL = FALSE;
+	else
+	    IN_CALL = TRUE;
+
+    end START_CALL;
+
+    /* --------------------------------------------------------------------
+     * GET_RETURN_VALUE will get the value which is about to be returned from
+     * a CALLed user function and copy it to the specified debugger memory.
+     */
+
+    GET_RETURN_VALUE: procedure (TYPE,PRECISION,LENGTH,UNITS,PTR);
+
+        declare
+            TYPE      fixed binary (15),  /* Return data type */
+            PRECISION fixed binary (15),  /* Return data precision */
+            LENGTH    fixed binary (31),  /* Return data length in UNITS */
+            UNITS     fixed binary (15),  /* Return data units of size */
+            PTR       pointer;            /* Pointer to return data area */
+
+        declare
+            I               fixed binary (15),
+            B_FIXBIN_DFT    fixed binary  (FIXED_BIN_DFT_P) based,
+            B_FIXBIN_MAX    fixed binary  (FIXED_BIN_MAX_P) based,
+            B_US_FIXBIN_DFT bit (UNSIGNED_FIXED_BIN_SHORT_P) based,
+            B_US_FIXBIN_MAX bit (UNSIGNED_FIXED_BIN_LONG_P)  based,
+            B_FLTBIN_DFT    float binary  (FLOAT_BIN_SINGLE_P) based,
+            B_FLTBIN_MAX    float binary  (FLOAT_BIN_DOUBLE_P) based,
+            B_LONG_DBL(3)   fixed binary  (31)               based,
+            B_POINTER       pointer                         based,
+	    B_CHAR	    char(1)			    based;
+
+        declare
+            1  FLOATWORD    based,
+               2  HIGH      fixed binary (31),
+               2  LOW       fixed binary (31);
+
+        if DBG_FLAG then do;
+            call WRITNC ('**DOCALL-GETRVL** TYPE=');
+	    call WRITTT (trim(char(TYPE)));
+            call WRITNC ('                  PRECISION=');
+	    call WRITTT (trim(char(PRECISION)));
+            call WRITNC ('                  LENGTH=');
+	    call WRITTT (trim(char(LENGTH)));
+            call WRITNC ('                  UNITS=');
+	    call WRITTT (trim(char(UNITS)));
+            call WRITNC ('                  SIZE_IN_BYTES=');
+	    call WRITTT (trim(char(SIZE_IN_BYTES(LENGTH,UNITS))));
+        end;
+
+        if (TYPE = 0) | (LENGTH <= 0) then
+            return;
+
+        if TYPE = FIXED_BIN_ then do;
+
+            if PRECISION = FIXED_BIN_MAX_P then
+                 PTR->B_FIXBIN_MAX = PROGRAM_REGISTER_AREA->REGS.D0;
+            else PTR->B_FIXBIN_DFT = PROGRAM_REGISTER_AREA->REGS.D0;
+
+        end;
+
+        else if (TYPE = FIXED_BIN_UNSIGNED_) then do;
+
+            if PRECISION = UNSIGNED_FIXED_BIN_LONG_P then
+                 PTR->B_US_FIXBIN_MAX = unspec(PROGRAM_REGISTER_AREA->REGS.D0);
+            else 
+		 PTR->B_US_FIXBIN_DFT = 
+		     substr(unspec(PROGRAM_REGISTER_AREA->REGS.D0),
+			    UNSIGNED_FIXED_BIN_SHORT_P+1,
+			    UNSIGNED_FIXED_BIN_LONG_P);
+
+        end;
+
+        else if TYPE = POINTER_ then do;
+
+            PTR->B_POINTER = addr(PROGRAM_REGISTER_AREA->REGS.D0)->B_POINTER;
+
+        end;
+
+        else if TYPE = FLOAT_BIN_ then do;
+
+	    if (M68_FLAG_WORD.M68881_PRESENT | M68_FLAG_WORD.M68040_PRESENT)
+               & FLOATS_RETURNED_IN_FP_REGS then do;
+                if PRECISION > FLOAT_BIN_DOUBLE_P then do;  /* extended */
+                    PTR->B_LONG_DBL(1) = PROGRAM_REGISTER_AREA->FPREGS(1);
+                    PTR->B_LONG_DBL(2) = PROGRAM_REGISTER_AREA->FPREGS(2);
+                    PTR->B_LONG_DBL(3) = PROGRAM_REGISTER_AREA->FPREGS(3);
+                end;
+                else if PRECISION > FLOAT_BIN_SINGLE_P then /* double */
+		    call CF12F8 (
+			PTR->B_FLTBIN_MAX,
+			addr(PROGRAM_REGISTER_AREA->REGS.F0)->B_POINTER);
+                else 
+		    call CF12F4 (
+			PTR->B_FLTBIN_DFT,
+			addr(PROGRAM_REGISTER_AREA->REGS.F0)->B_POINTER);
+            end;
+
+	    else do;
+                if PRECISION > FLOAT_BIN_DOUBLE_P then do;
+                /* long doubles are always returned in fp0 */
+                    PTR->B_LONG_DBL(1) = PROGRAM_REGISTER_AREA->FPREGS(1);
+                    PTR->B_LONG_DBL(2) = PROGRAM_REGISTER_AREA->FPREGS(2);
+                    PTR->B_LONG_DBL(3) = PROGRAM_REGISTER_AREA->FPREGS(3);
+                end;
+                else if PRECISION > FLOAT_BIN_SINGLE_P then do;
+                    PTR->FLOATWORD.HIGH =
+                        addr(PROGRAM_REGISTER_AREA->REGS.D0)->B_FIXBIN_MAX;
+                    PTR->FLOATWORD.LOW =
+                        addr(PROGRAM_REGISTER_AREA->REGS.D1)->B_FIXBIN_MAX;
+                end;
+                else PTR->B_FLTBIN_DFT =
+                        addr(PROGRAM_REGISTER_AREA->REGS.D0)->B_FLTBIN_DFT;
+            end;
+
+        end;
+
+        else if ((TYPE = BIT_) | (TYPE = BIT_ALIGNED_)) &
+		 (PRECISION = 1) then do;
+
+	    if substr(unspec(PROGRAM_REGISTER_AREA->REGS.D0),25,1) = '1'B then
+                 PTR->B_FIXBIN_DFT = -1;
+	    else PTR->B_FIXBIN_DFT =  0;
+
+        end;
+
+	else if (TYPE = CHAR_) & (PRECISION = 1) then do;
+
+	     PTR->B_CHAR = byte(PROGRAM_REGISTER_AREA->REGS.D0);
+
+	end;
+
+        else do;
+
+            call REAUSR (SON_ID, CURRENT_ENV.FRAME_ADDR, RETURN_VALUE_ADDRESS,
+                         SIZE_IN_BYTES(LENGTH,UNITS), PTR, I);
+            if I ^= 0 then do;
+		call derror ( CANNOT_READ_CALL_RETURN_VALUE, '', '');
+                return;
+            end;
+        end;
+
+    end GET_RETURN_VALUE;
+
+    /* --------------------------------------------------------------------
+     * PUSH_USER will push the given value onto the user stack.
+     * Return in STACKADDR, the address of the data written; in
+     * this case, this is simply the SP after the push since the
+     * SP always points directly at the top of stack.  Returns
+     * TRUE if all is well, otherwise return FALSE.
+     *
+     * (This is basically a more specialized version of ALCTMP)
+     */
+
+    PUSH_USER: procedure (DATA,STACKADDR) returns (bit(1));
+
+        declare
+            DATA        fixed binary (31),
+            STACKADDR   fixed binary (ADDRESS_LENGTH);
+
+        declare
+            BASEDPTR    pointer based,
+            RET         fixed binary (15);
+
+        STACKADDR = PROGRAM_REGISTER_AREA->REGS.A7 - POINTER_SIZE;
+
+        call WRIUSR (SON_ID,
+                     CURRENT_ENV.FRAME_ADDR,
+                     STACKADDR,
+                     POINTER_SIZE,
+                     ADDR(DATA),
+                     RET);
+
+        if RET ^= 0 then
+            return (FALSE);
+
+        PROGRAM_REGISTER_AREA->REGS.A7 = STACKADDR;
+
+        return (TRUE);
+
+    end PUSH_USER;
+
+    /* --------------------------------------------------------------------
+     * SIZE_IN_BYTES will return the size in bytes of the the data
+     * with the given SIZE expressed in the given SIZE_UNITS.
+     */
+
+    SIZE_IN_BYTES: procedure (SIZE, SIZE_UNITS)
+                   returns (fixed binary (15));
+        declare
+            SIZE        fixed binary (31),
+            SIZE_UNITS  fixed binary (15);
+        declare
+            RESULT      fixed binary (15);
+
+        if SIZE_UNITS = BITS then do;
+             RESULT = divide (SIZE,BITS_PER_BYTE,15);
+             if mod (SIZE,BITS_PER_BYTE) > 0 then
+                 RESULT = RESULT + 1;
+        end;
+        else if SIZE_UNITS = BYTES then
+             RESULT = SIZE;
+        else if SIZE_UNITS = HALF_WORDS then
+             RESULT = SIZE * BYTES_PER_HALF;
+        else if SIZE_UNITS = WORDS then
+             RESULT = SIZE * BYTES_PER_WORD;
+        else if SIZE_UNITS = DOUBLE_WORDS then
+             RESULT = SIZE * BYTES_PER_DOUBLE;
+        else RESULT = 0;
+        return (RESULT);
+
+    end SIZE_IN_BYTES;
+
+    /* --------------------------------------------------------------------
+     * DBG_DOCALL - prints various debugging information.
+     */
+
+    DBG_DOCALL: procedure (ENTRYVAR,ARGCOUNT,RETPTR,RETTYPE,RETPREC,ARGPTR);
+
+        declare
+            ENTRYVAR    entry,              /* Entry variable to call */
+            ARGCOUNT    fixed binary (15),  /* Argument count */
+            RETPTR      pointer,            /* Pointer to return data area */
+            RETTYPE     fixed binary (15),  /* Return data type */
+            RETPREC     fixed binary (15),  /* Return data precision */
+            ARGPTR      (MAX_ARGUMENTS)     /* Array of argument */
+                        pointer;            /*  pointers in user memory */
+        declare
+            RET             fixed binary (15),
+            RETADDR         fixed binary (ADDRESS_LENGTH),
+            BASEDSTR        character (SIZE_OF_REGS) based;
+
+        declare
+            I               fixed binary (15),
+            BASEDADDR       fixed binary (ADDRESS_LENGTH) based,
+            EADDR           fixed binary (ADDRESS_LENGTH),
+            ENAME           character (GLOBAL_LENGTH),
+            PRNPTR         entry (fixed binary (31));
+
+        if ^DBG_FLAG then
+            return;
+        EADDR = ADDR(ENTRYVAR)->BASEDADDR;
+        call WRITNC('**DOCALL** ENTRY='); call PRNPTR(EADDR);
+        call FINMOD(EADDR,ENAME,I);
+        if I = 0 then do;
+            call WRITNC (' "');
+	    call WRITNC (TRIMS((ENAME)));
+	    call WRITTT ('" (debug routine)');
+	end;
+        else if I = 1 then do;
+             call WRITNC(' "');
+	     call WRITNC(TRIMS((ENAME)));
+	     call WRITTT('" (non-debug routine)');
+	end;
+        else 
+	     call WRITTT(' (unknown routine)');
+        call WRITNC('        ARGCOUNT=');
+	call WRITNC(trim(char(ARGCOUNT)) );
+        call WRITNC(' RETTYPE=');
+	call WRITNC(trim(char(RETTYPE)));
+        call WRITNC(' RETPREC=');
+	call WRITTT(trim(char(RETPREC)) );
+
+    end DBG_DOCALL;
+
+    /* --------------------------------------------------------------------
+     * INTERPRET_ERROR 
+     * This routine will interpret the error settings set by RESUME and
+     * produce a useful message about what went wrong and where.
+     */
+
+   INTERPRET_ERROR: procedure (REASON, STATUS);
+
+      declare (REASON, STATUS) fixed binary (15);
+      declare PC               fixed binary (ADDRESS_LENGTH);
+      declare POINTER_STR      character (246) varying;
+
+      if RET = CHILD_EXITED then 
+         call DERROR ( PROGRAM_EXITED_WITH_STATUS, TRIM(char(USTATUS)), '');
+      else if RET = CHILD_COREDUMP then 
+         call DERROR ( PROGRAM_TERMINATED_CORE_DUMPED, TRIM(char(USTATUS)), '');
+      else if RET = CHILD_BLOWUP then 
+	 call DERROR ( PROGRAM_TERMINATED_ABNORMALLY, TRIM(char(USTATUS)), '');
+      else if RET = CHILD_ERROR then 
+          call DERROR ( PROG_INTER_NOT_CORRECTLY_HANDLED, '', '');
+      else if RET = CHILD_BREAKPOINT then do;
+	  PC = SGETPC();
+	  call GETPTR (PC, POINTER_STR);
+	  call DERROR ( PROGRAM_STOP_DUE_TO_UNKNOWN_BKPT, POINTER_STR, '');
+      end;
+      else if RET = CHILD_SIGNAL then do;
+ 	  if USTATUS >= 0 then do;
+ 		POINTER_STR = trim(char(USTATUS));
+		call DERROR ( PROGRAM_STOPPED_DUE_TO_SIGNAL, POINTER_STR, '');
+          end;
+          else   
+	     call DERROR ( PROGRAM_STOPPED_DUE_TO_RUNTIME, '', '');
+  	  PC = SGETPC();
+	  call GETPTR (PC, POINTER_STR);
+	  call DERROR ( EXECUTION_WAS_AT_IN_UNKNOWN, POINTER_STR, '');
+      end;
+
+   end INTERPRET_ERROR;
+
+end DOCALL;
+
+/* ----------------------------------------------------------------------
+ * FINISH_CALL
+ * 
+ * Cleans up the stack after a call.  Calls POP_INVOCATION to
+ * to restore INVDAT and INVBIT and restore the registers.  
+ * ------------------------------------------------------------------- */
+
+FINISH_CALL: 	procedure	external (X_FINISH_CALL);
+
+	declare
+            RET                         fixed binary (15),
+	    TEMP                        fixed binary (31),
+	    LOC				fixed binary (31),
+	    RETADDR			fixed binary (31),
+	    STEPPING_ALL_THE_WAY_OUT	bit (1),
+    	    BASEDSTR            	character (SIZE_OF_REGS) based;
+
+	if IN_CALL &
+	   (SAV_COMMAND ^= DO_EVALUATE) &
+	   (SAV_COMMAND ^= DO_LET) &
+	   (SAV_COMMAND ^= DO_RETURN) then do;
+	    call FIND_PROC_NODE();
+	    if (SYMBOL_NODE.FIELD2 > 0) then  /* CALLed func returned value */
+	        call DO_COMMAND (DO_LRETURN);
+	end;
+
+	RETADDR = CURRENT_CALL_POINTER->CALL_NODE.RETADDR;
+	STEPPING_ALL_THE_WAY_OUT = POP_CALL_INFO();
+
+        /*
+         * Zero out all the temporary data we've written past 
+         * the top of the stack.
+         */
+
+        TEMP = 0;
+        do LOC = (PROGRAM_REGISTER_AREA->REGS.A7 + POINTER_SIZE) to RETADDR;
+            call WRIUSR (SON_ID, 
+			 CURRENT_ENV.FRAME_ADDR, 
+		         LOC, 
+			 POINTER_SIZE, 
+			 addr(TEMP), 
+			 RET);
+        end;
+
+	if (SAV_COMMAND ^= DO_EVALUATE) &
+	   (SAV_COMMAND ^= DO_LET) &
+	   (SAV_COMMAND ^= DO_RETURN) then do;
+	    /* 
+	     * This means we are stepping out of a
+	     * called routine (called using CALL) in 
+	     * which a breakpoint was incurred. 
+	     */
+	    call POP_INVOCATION;
+	    if IN_CALL then
+		/* Fake out DDCMD (DO_STEP) and DONBRK */
+	        ERROR_FOUND = TRUE;  
+	end;
+
+	if STEPPING_ALL_THE_WAY_OUT then 
+	    /* Stepping out of all calls within calls... */
+	    IN_CALL = FALSE;
+	else
+	    IN_CALL = TRUE;
+
+	IN_DEBUGGER = TRUE;
+
+end FINISH_CALL;
+
+/* ----------------------------------------------------------------------
+ * PUSH_INVOCATION
+ *
+ * Push a level onto the invocation stack for a recursive entry to
+ * the debugger (user function or subroutine call)
+ * ------------------------------------------------------------------- */
+
+PUSH_INVOCATION: procedure external (X_PUSH_INVOCATION);
+
+declare
+    INVOCATION_DATA_LENGTH	fixed binary (15),
+    INVOCATION_BIT_LENGTH 	fixed binary (15),
+    (IDE, ID, IDBE, IDB) 	pointer,
+    (P,Q) 			pointer,
+    INVOCATION_DATA_STRING   	character (INVOCATION_DATA_LENGTH) based,
+    INVOCATION_BIT_STRING  	character (INVOCATION_BIT_LENGTH) based,
+    FB31 			fixed binary (31) based;
+
+    IDE = addr(INVOCATION_DATA_END);
+    ID  = addr(INVDAT);
+    INVOCATION_DATA_LENGTH = 
+	(addr(IDE)->FB31 - addr(ID)->FB31) * ROUND(BYTES,ADDRESS_UNITS);
+
+    IDBE = addr(INVOCATION_BIT_END);
+    IDB  = addr(INVBIT);
+    INVOCATION_BIT_LENGTH  = 
+	(addr(IDBE)->FB31 - addr(IDB)->FB31) * ROUND(BYTES,ADDRESS_UNITS);
+
+    allocate INVOCATION_DATA_STRING set (P);
+    P->INVOCATION_DATA_STRING = addr(INVDAT)->INVOCATION_DATA_STRING;
+
+    allocate INVOCATION_BIT_STRING set (Q);
+    Q->INVOCATION_BIT_STRING = addr(INVBIT)->INVOCATION_BIT_STRING;
+
+    PREVIOUS_INVOCATION_PTR = P;
+    PREVIOUS_INVBIT_PTR = Q; 
+
+    call INIT_INVOCATION;
+    DBG_INVOCATION = DBG_INVOCATION + 1;
+
+end PUSH_INVOCATION;
+
+/* ----------------------------------------------------------------------
+ * POP_INVOCATION
+ *
+ * Pop a level off of the invocation stack after a recursive entry to
+ * the debugger (user function or subroutine call)
+ * ------------------------------------------------------------------- */
+
+POP_INVOCATION: procedure external (X_POP_INVOCATION);
+
+declare
+    INVOCATION_DATA_LENGTH	fixed binary (15),
+    INVOCATION_BIT_LENGTH	fixed binary (15),
+    (IDE, ID, IDBE, IDB) 	pointer,
+    (P,Q) 			pointer,
+    INVOCATION_DATA_STRING 	character (INVOCATION_DATA_LENGTH) based,
+    INVOCATION_BIT_STRING  	character (INVOCATION_BIT_LENGTH) based,
+    FB31 			fixed binary (31) based;
+
+    IDE = addr(INVOCATION_DATA_END);
+    ID  = addr(INVDAT);
+    INVOCATION_DATA_LENGTH = 
+	(addr(IDE)->FB31 - addr(ID)->FB31) * ROUND(BYTES,ADDRESS_UNITS);
+
+    IDBE = addr(INVOCATION_BIT_END);
+    IDB  = addr(INVBIT);
+    INVOCATION_BIT_LENGTH  = 
+	(addr(IDBE)->FB31 - addr(IDB)->FB31) * ROUND(BYTES,ADDRESS_UNITS);
+
+    P = PREVIOUS_INVOCATION_PTR;
+    addr(INVDAT)->INVOCATION_DATA_STRING = P->INVOCATION_DATA_STRING;
+    free P->INVOCATION_DATA_STRING;
+
+    Q = PREVIOUS_INVBIT_PTR;
+    addr(INVBIT)->INVOCATION_BIT_STRING = Q->INVOCATION_BIT_STRING;
+    free Q->INVOCATION_BIT_STRING;
+
+    DBG_INVOCATION = DBG_INVOCATION - 1;
+
+end POP_INVOCATION;
+
+/* ----------------------------------------------------------------------
+ * INIT_INVOCATION
+ *
+ * Initialize the INVDAT and INVBIT area for a new invocation of the 
+ * debugger.
+ * ------------------------------------------------------------------- */
+
+INIT_INVOCATION: procedure external (X_INIT_INVOCATION);
+
+    INVDAT.COMMAND_DEPTH = 0;
+    INVDAT.SP = 0;
+    INVDAT.ALLOC_COUNT = 0;
+    INVDAT.LEX_LINE = '';
+    INVDAT.LEX_LINE_LENGTH = 0;
+    INVDAT.LEX_INDEX = 32767;
+    INVDAT.LEX_CHAR = byte(0);
+    INVDAT.LEX_CHARU = byte(0);
+
+end INIT_INVOCATION;
+
+/* ----------------------------------------------------------------------
+ * PUSH_CALL_INFO 
+ *
+ * Push the current register area.  See, the register area used
+ * to get saved locally in DOCALL, and when a CALL returned the 
+ * register area was restored.  Now, if a CALL is interrupted by
+ * a breakpoint, the debugger will return to DOCALL but then
+ * return from DOCALL to continue debugger processing.  So we
+ * have to maintain a stack of register areas.  I suppose this
+ * could be done in INVDAT, but it seemed simpler to keep it 
+ * separate.
+ * ------------------------------------------------------------------- */
+ 
+PUSH_CALL_INFO: procedure internal;
+
+declare
+    I			fixed binary (15),
+    TEMP		fixed binary (31),
+    (P,Q)		pointer,
+    BASEDSTR		char (SIZE_OF_REGS) based;
+
+    allocate CALL_NODE set (Q);
+    Q->CALL_NODE.REGISTERS = PROGRAM_REGISTER_AREA->BASEDSTR;
+    Q->CALL_NODE.NEXT = null();
+    if FIRST_CALL_POINTER ^= null () then do;
+	Q->CALL_NODE.PREV = FIRST_CALL_POINTER->CALL_NODE.PREV;
+	FIRST_CALL_POINTER->CALL_NODE.PREV->CALL_NODE.NEXT = Q;
+    end;
+    else do;
+	FIRST_CALL_POINTER = Q;
+    end;
+    FIRST_CALL_POINTER->CALL_NODE.PREV = Q;
+    CURRENT_CALL_POINTER = Q;
+
+    /* Now allocate a new register area */
+    allocate BASEDSTR set (PROGRAM_REGISTER_AREA);
+
+    /* And copy the current contents (probably not necessary) */
+    PROGRAM_REGISTER_AREA->BASEDSTR = Q->CALL_NODE.REGISTERS;
+
+    return;
+
+end PUSH_CALL_INFO;
+
+/* ----------------------------------------------------------------------
+ * POP_CALL_INFO 
+ *
+ * Pop the current register area.  Return TRUE if we've popped all
+ * register areas from the stack; FALSE if there's still more to go.
+ * ------------------------------------------------------------------- */
+ 
+POP_CALL_INFO: procedure returns (bit (1)) internal;
+
+declare
+    I				fixed binary (15),
+    (Q,P) 			pointer,
+    BASEDSTR			char (SIZE_OF_REGS) based;
+
+    P = FIRST_CALL_POINTER->CALL_NODE.PREV;
+
+    /* Take itself off the list */
+    if FIRST_CALL_POINTER->CALL_NODE.NEXT = null() then
+	FIRST_CALL_POINTER = null();
+    else do;
+        P->CALL_NODE.PREV->CALL_NODE.NEXT = null();
+        FIRST_CALL_POINTER->CALL_NODE.PREV = P->CALL_NODE.PREV;
+    end;
+
+    free PROGRAM_REGISTER_AREA->BASEDSTR;
+    PROGRAM_REGISTER_AREA = addr(P->CALL_NODE.REGISTERS);
+
+    /* Write out the previous contents of the SP. */
+
+    call WRIUSR (SON_ID, 
+		 CURRENT_ENV.FRAME_ADDR, 
+		 PROGRAM_REGISTER_AREA->REGS.A7 - $FP_OFF, 
+		 4, 
+		 addr(P->CALL_NODE.FPCONTENTS), 
+		 I);
+
+    if FIRST_CALL_POINTER = null() then
+        return (TRUE);
+    else
+	return (FALSE);
+
+end POP_CALL_INFO;
+
+/* ----------------------------------------------------------------------
+ * RELOAD_IN_CALL
+ *
+ * Executes necessary clean-up when the user executes a RELOAD command
+ * in the middle of a CALLed routine.
+ * ------------------------------------------------------------------- */
+
+RELOAD_IN_CALL:	procedure external (X_RELOAD_IN_CALL);
+
+    declare
+	ALL_THE_WAY_OUT		bit (1);
+
+    do while (PREVIOUS_INVOCATION_PTR ^= null());
+	call POP_INVOCATION();
+    end;
+
+    ALL_THE_WAY_OUT = FALSE;
+    do until (ALL_THE_WAY_OUT = TRUE);
+	ALL_THE_WAY_OUT = POP_CALL_INFO();
+    end;
+
+    call INIT_INVOCATION();
+    INV_PROMPT = '';
+
+end RELOAD_IN_CALL;
+
+SET_PROGRAM_RETURN_ADDRESS: procedure internal;
+
+declare
+    CODE_BASE		fixed binary (31),
+    LBL_OFFSET		fixed binary (31),
+    OFFSET		fixed binary (31),
+    LINENO		fixed binary (15),
+    TMPFB15		fixed binary (15);
+
+    CODE_BASE = CURRENT_ENV.EXT_ENV->EXTERNAL_ENV.CODE_ADDR;
+
+    LINENO = PCLLINENO;
+    call SET_BLOCK_NODE_R (EXEC_POINT.PROCEDURE_NODEID);
+    LBL_OFFSET = -1;
+
+    PCLNODE = BLOCK_NODE.CONTEXT_LIST;
+    PCLINDEX = FIRST_PCLINDEX();
+    do PCLNODE = BLOCK_NODE.CONTEXT_LIST repeat PCLINE_NODE.NEXT
+    while (PCLNODE ^= 0);
+        call SET_PCLINE_NODE_R (PCLNODE);
+        TMPFB15 = PCLINDEX;
+        do PCLINDEX = TMPFB15 to PCLINE_NODE.NENTRIES;
+            PCLLINENO = PCLINE_NODE.LINENO(PCLINDEX);
+            OFFSET = PCLINE_NODE.PCVALUE(PCLINDEX);
+            if PCLLINENO = -1 then do;
+                INVDAT.PROGRAM_RETURN_ADDRESS = OFFSET + CODE_BASE;
+		return;
+	    end;
+        end;
+    end;
+    return;
+
+end SET_PROGRAM_RETURN_ADDRESS;

@@ -1,0 +1,258 @@
+/* C++ maktmp.pl1 - Make an automatic temporary. */
+
+/***********************************************************************
+ * This product is the property of Liant Sofware Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Sofware Corporation except pursuant to the license agreement. *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  06.08.92  PKT  014	Fixed problem in 013; not sure whether this
+ *			has any overt symptoms.  Fixed so that temps
+ *			placed on the global scope's destructor list
+ *			are static.
+ *  03.26.92  DGM  013  New value-node scheme.
+ *  01.13.92  DGM  012  Fix in MAKE_AUTO_TEMP for cbp022.cpp.
+ *  07.30.91  TLF  011  Changed interface to NOTE_DESTRUCTOR.
+ *  03.27.91  PKT  010  Fixed setting of BOUNDARY on temp refs.
+ *  03.05.91  PKT  009  Updated for destructor access fix.
+ *  01.18.91  DGM  008  Set SYM_NODE.IS_DUMMY for temporary sym-nodes.
+ *  12.17.90  PKT  007  Updated for changed NOTE_DESTRUCTOR.
+ *  11.09.90  PKT  006  Changed so that GET_TEMP_VALUE, GET_TEMP_REF
+ *			and DUPLICATE_TEMP are called during EXPAND_VALUE
+ *			tree building; MAKE_AUTO_TEMP is called during
+ *			EMIT_TREE.  This supports default arguments.
+ *  09.14.90  DGM  005  Changed include file names and VOP names.
+ *  09.13.90  DGM  004  Changed xxx_SC names to xxx_ST.
+ *  08.08.90  DGM  003  New type-node.
+ *  06.06.90  DGM  002  Updated for the new utilities.
+ *  04.17.90  PKT  001  Changed to use DIRECT_TYPE_ID.
+ *  02.28.90  PKT  000  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 06.08.92 014 MAKTMP');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_UTL_VALUE_NODE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_ERROR_MGR_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SYMBOL_TABLE_PKG;
+%include CXX_VALUE_NODE_MGR_PKG;
+%include CXX_VALUE_NODE_IN;
+%include CXX_COUNT_UP_VALUE_PKG;
+%include CXX_CALL_DESTRUCTOR_PKG;
+%include CXX_OPERATOR_CODES_IN;
+%include CXX_TYPE_INFO_PKG;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_DUMP_VALUE_TREE_PKG;
+
+/* ---------------------------------------------------------------------
+/* Automatic temps are tricky.  For one thing some of the temps we
+/* create here are static (if they're for static reference variables).
+/*
+/* Another problem is that temps can arise in default argument
+/* expressions, when the scope in which they will be exercised is
+/* unknown.  Therefore, the creation of a temp symbol is deferred
+/* until EMIT_TREE time.  Creation of destructor expressions for
+/* temps can't be deferred that long (so that EMIT_BRANCH_WITH_DESTRUCTORS
+/* can really know what the destructors are) so destructor expressions
+/* are deferred only until the temp is moved into a non-prototype scope.
+/* ------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+/* MAKE_AUTO_TEMP
+/*
+/* Make an automatic *or* static (sic) temporary symbol for the given
+/* DECLARE_TEMP_VO value node.  The temporary symbol is created in the
+/* current function scope for automatics, and in global scope for statics.
+/* Its node id is returned, and the node is paged in on return.
+/* ------------------------------------------------------------------- */
+
+MAKE_AUTO_TEMP: procedure (V)
+		returns (type (NID_T))
+		external (X_MAKE_AUTO_TEMP);
+
+	declare
+		V		type (CXX_VID_T);
+	declare
+		STORAGE		type (SHORT_T),
+		TI		type (TYPE_INFO_T),
+		TEMP_SYMBOL	type (NID_T);
+
+        TEMP_SYMBOL = MAKE_SYM_NODE (VANILLA_SK | DUMMY_SK);
+
+	CXX_VALUE_NODE_PTR = V;
+	call GET_VALUE_TYPE (TI);
+
+	STORAGE			= V->CXX_VALUE_NODE.OFFSET;
+
+        SYM_NODE.STORAGE_CLASS	= byte (STORAGE);
+        SYM_NODE.TOP_TYPE	= TI.TOP_TYPE;
+        SYM_NODE.TYPE		= DIRECT_TYPE_ID (TI);
+        SYM_NODE.SIZE		= TI.SIZE;
+        SYM_NODE.SIZE_UNITS	= byte (TI.SIZE_UNITS);
+        SYM_NODE.BOUNDARY	= byte (TI.SIZE_UNITS);
+	SYM_NODE.ALIAS		= ^V->CXX_VALUE_NODE.NOT_AN_LVALUE;
+	SYM_NODE.REFERENCED	= TRUE;
+
+	if CURRENT_SCOPE_TYPE = PROTOTYPE_SCOPE then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	if STORAGE = STATIC_ST then do;
+		SYM_NODE.INTERNAL_LINKAGE = TRUE;
+		SYM_NODE.DEFINED = TRUE;
+		call INSTALL_SYMBOL (TEMP_SYMBOL, CURRENT_GLOBAL_SCOPE);
+	end;
+	else if STORAGE = EXTERN_ST then do;
+		SYM_NODE.EXTERNAL_LINKAGE = TRUE;
+		SYM_NODE.DEFINED = TRUE;
+		call INSTALL_SYMBOL (TEMP_SYMBOL, CURRENT_GLOBAL_SCOPE);
+	end;
+	else	call INSTALL_SYMBOL (TEMP_SYMBOL, CURRENT_FUNCTION_SCOPE);
+
+        return (TEMP_SYMBOL);
+
+end MAKE_AUTO_TEMP;
+
+/* ---------------------------------------------------------------------
+/* GET_TEMP_VALUE
+/*
+/* Create a value node and return its id.  The value node is
+/* a DECLARE_TEMP_VO which, when emitted, will create a symbol.
+/*
+/* DETERMINE_SIZE is done here for the TYPE_INFO T, because so often
+/* the caller gets T out of a value node, which does not have a BOUNDARY.
+/* ------------------------------------------------------------------- */
+
+GET_TEMP_VALUE: procedure (T, SC, DESTROY)
+		returns (type (CXX_VID_T))
+		external (X_GET_TEMP_VALUE);
+
+	declare
+		T		type (TYPE_INFO_T),
+		SC		type (SHORT_T),
+		DESTROY		type (BOOL_T);
+	declare
+		V		type (CXX_VID_T),
+		TEMP_REF	type (CXX_VID_T),
+		SCOPE_P		pointer,
+		DTOR_EXPRESSION	type (CXX_VID_T);
+
+	call DETERMINE_SIZE (T);
+	V = ALLOC_CXX_VALUE_NODE (DECLARE_TEMP_VO);
+	call SET_VALUE_TYPE (T);
+	V->CXX_VALUE_NODE.OFFSET_UNITS = byte (T.BOUNDARY);
+	V->CXX_VALUE_NODE.NULARY = TRUE;
+	V->CXX_VALUE_NODE.OFFSET = SC;
+	if DESTROY then do;
+		if CURRENT_SCOPE_TYPE = PROTOTYPE_SCOPE then do;
+			V->CXX_VALUE_NODE.THIRD_SHORT = 1;
+			V->CXX_VALUE_NODE.THIRD_IS_NOT_VID = TRUE;
+		end;
+		else do;
+			call COUNT_UP_VALUE (V);
+			TEMP_REF = GET_TEMP_REF (V);
+			call GET_SCOPE_NODE (CURRENT_SCOPE, SCOPE_P);
+
+			DTOR_EXPRESSION = DESTROY_OBJECT (TEMP_REF,
+							  NULL_CXX_VID,
+							  T.TOP_TYPE,
+							  FALSE,
+							  NULL_NID);
+			call NOTE_DESTRUCTOR (SCOPE_P->SCOPE_NODE.DESTRUCTORS,
+					      DTOR_EXPRESSION,
+					      TRUE,
+					      NULL_CXX_VID);
+			call RELEASE_SCOPE_NODE (CURRENT_SCOPE);
+			if CURRENT_SCOPE_TYPE = GLOBAL_SCOPE then
+				V->CXX_VALUE_NODE.OFFSET = STATIC_ST;
+		end;
+	end;
+	V->CXX_VALUE_NODE.NOT_AN_LVALUE = TRUE;
+
+	return (V);
+
+end GET_TEMP_VALUE;
+
+/* ---------------------------------------------------------------------
+/* GET_TEMP_REF
+/* 
+/* Given the value node id returned by GET_TEMP_VALUE,
+/* make a REF value node to that temp.  The caller of GET_TEMP_REF
+/* must count up the argument V.
+/* Return the id of the REF, with that node paged in.
+/*
+/* EXPAND_VALUE (REF_VO, ..., ...) doesn't work because it assumes there's
+/* the id of a symbol in the LEFT spot.
+/* ------------------------------------------------------------------- */
+
+GET_TEMP_REF: procedure (V)
+	      returns (type (CXX_VID_T))
+	      external (X_GET_TEMP_REF);
+
+	declare
+		V		type (CXX_VID_T);
+	declare
+		R		type (CXX_VID_T),
+		TI		type (TYPE_INFO_T);
+
+	CXX_VALUE_NODE_PTR = V;
+	call GET_VALUE_TYPE (TI);
+	TI.BOUNDARY = rank (V->CXX_VALUE_NODE.OFFSET_UNITS);
+	TI.NOT_AN_LVALUE = FALSE;
+	R = ALLOC_CXX_VALUE_NODE_L (REF_VO, V);
+	call SET_VALUE_TYPE (TI);
+	R->CXX_VALUE_NODE.OFFSET_UNITS = byte (TI.BOUNDARY);
+	return (R);
+
+end GET_TEMP_REF;
+
+/* ---------------------------------------------------------------------
+/* DUPLICATE_TEMP
+/* ------------------------------------------------------------------- */
+
+DUPLICATE_TEMP: procedure (V)
+		returns  (type (CXX_VID_T))
+		external (X_DUPLICATE_TEMP);
+
+	declare
+		V		type (CXX_VID_T);
+	declare
+		SC		type (SHORT_T),
+		DESTROY		type (BOOL_T),
+		TI		type (TYPE_INFO_T),
+		R		type (CXX_VID_T),
+		NOT_AN_LVALUE	type (BOOL_T);
+
+	CXX_VALUE_NODE_PTR = V;
+	call GET_VALUE_TYPE (TI);
+	TI.BOUNDARY = rank (V->CXX_VALUE_NODE.OFFSET_UNITS);
+	SC = V->CXX_VALUE_NODE.OFFSET;
+	NOT_AN_LVALUE = V->CXX_VALUE_NODE.NOT_AN_LVALUE;
+	DESTROY = V->CXX_VALUE_NODE.THIRD_IS_NOT_VID;
+	R = GET_TEMP_VALUE (TI, SC, DESTROY);
+	R->CXX_VALUE_NODE.NOT_AN_LVALUE = NOT_AN_LVALUE;
+	return (R);
+
+end DUPLICATE_TEMP;
+

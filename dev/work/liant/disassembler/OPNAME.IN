@@ -1,0 +1,434 @@
+/* LPI-DEBUG M68 OPNAME.IN - MC68020/68881 op-code names */
+
+/**********************************************************************
+ * This product is the property of Language Processors, Inc.          *
+ * and is licensed pursuant to a written license agreement.           *
+ * No portion of this product may be reproduced without the written   *
+ * permission of Language Processors, Inc. except pursuant to the     *
+ * license agreement.                                                 *
+ *********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *   2.12.92  VTF  (002) Changed all opcodes to lowercase.
+ *
+ *  12.04.91  VTF  Added 68040 instructions.
+ *
+ *  12.10.87  DGM  Original.
+ *                 For more information, see the MC68020 User's
+ *		   Manual, and the MC68881 User's Manual.
+ *
+ *********************************************************************/
+
+/* -------------------------------------------------------------------
+ * -- Opcode Names --
+ * ---------------------------------------------------------------- */
+
+declare OPCODE_NAME (1 : MAX_OPCODES) character (9) varying
+				      static initial (
+
+	  'abcd'	/* OP_ABCD */
+	, 'add'		/* OP_ADD */
+	, 'adda'	/* OP_ADDA */
+	, 'addi'	/* OP_ADDI */
+	, 'addq'	/* OP_ADDQ */
+	, 'addx'	/* OP_ADDX */
+	, 'and'		/* OP_AND */
+	, 'andi'	/* OP_ANDI */
+	, 'asl'		/* OP_ASL */
+	, 'asr'		/* OP_ASR */
+
+	, 'bra'		/* OP_BRA */
+	, 'bsr'		/* OP_BSR */
+	, 'bhi'		/* OP_BHI */
+	, 'bls'		/* OP_BLS */
+	, 'bcc'		/* OP_BCC */
+	, 'bcs'		/* OP_BCS */
+	, 'bne'		/* OP_BNE */
+	, 'beq'		/* OP_BEQ */
+	, 'bvc'		/* OP_BVC */
+	, 'bvs'		/* OP_BVS */
+	, 'bpl'		/* OP_BPL */
+	, 'bmi'		/* OP_BMI */
+	, 'bge'		/* OP_BGE */
+	, 'blt'		/* OP_BLT */
+	, 'bgt'		/* OP_BGT */
+	, 'ble'		/* OP_BLE */
+
+	, 'bchg'	/* OP_BCHG */
+	, 'bclr'	/* OP_BCLR */
+	, 'bfchg'	/* OP_BFCHG */
+	, 'bfclr'	/* OP_BFCLR */
+	, 'bfexts'	/* OP_BFEXTS */
+	, 'bfextu'	/* OP_BFEXTU */
+	, 'bfffo'	/* OP_BFFFO */
+	, 'bfins'	/* OP_BFINS */
+	, 'bfset'	/* OP_BFSET */
+	, 'bftst'	/* OP_BFTST */
+	, 'bkpt'	/* OP_BKPT */
+	, 'bset'	/* OP_BSET */
+	, 'btst'	/* OP_BTST */
+
+	, 'callm'	/* OP_CALLM */
+	, 'cas'		/* OP_CAS */
+	, 'cas2'	/* OP_CAS2 */
+	, 'chk'		/* OP_CHK */
+	, 'chk2'	/* OP_CHK2 */
+        , 'cinva'       /* OP_CINVA - 68040 only */
+        , 'cinvl'       /* OP_CINVL - 68040 only */
+        , 'cinvp'       /* OP_CINVP - 68040 only */
+	, 'clr'		/* OP_CLR */
+	, 'cmp'		/* OP_CMP */
+	, 'cmpa'	/* OP_CMPA */
+	, 'cmpi'	/* OP_CMPI */
+	, 'cmpm'	/* OP_CMPM */
+	, 'cmp2'	/* OP_CMP2 */
+        , 'cpusha'      /* OP_CPUSHA - 68040 only */
+        , 'cpushl'      /* OP_CPUSHL - 68040 only */
+        , 'cpushp'      /* OP_CPUSHP - 68040 only */
+
+	, 'dbt'		/* OP_DBT */
+	, 'dbf' 	/* OP_DBF */
+	, 'dbhi'	/* OP_DBHI */
+	, 'dbls'	/* OP_DBLS */
+	, 'dbcc'	/* OP_DBCC */
+	, 'dbcs'	/* OP_DBCS */
+	, 'dbne'	/* OP_DBNE */
+	, 'dbeq'	/* OP_DBEQ */
+	, 'dbvc'	/* OP_DBVC */
+	, 'dbvs'	/* OP_DBVS */
+	, 'dbpl'	/* OP_DBPL */
+	, 'dbmi'	/* OP_DBMI */
+	, 'dbge'	/* OP_DBGE */
+	, 'dblt'	/* OP_DBLT */
+	, 'dbgt'	/* OP_DBGT */
+	, 'dble'	/* OP_DBLE */
+
+	, 'divs'	/* OP_DIVS */
+	, 'divsl'	/* OP_DIVSL */
+	, 'divu'	/* OP_DIVU */
+	, 'divul'	/* OP_DIVUL */
+
+	, 'eor'		/* OP_EOR */
+	, 'eori'	/* OP_EORI */
+	, 'exg'		/* OP_EXG */
+	, 'ext'		/* OP_EXT */
+	, 'extb'	/* OP_EXTB */
+
+	, 'illegal'	/* OP_ILLEGAL */
+
+	, 'jmp'		/* OP_JMP */
+	, 'jsr'		/* OP_JSR */
+
+	, 'lea'		/* OP_LEA */
+	, 'link'	/* OP_LINK */
+	, 'lsl'		/* OP_LSL */
+	, 'lsr'		/* OP_LSR */
+
+	, 'move'	/* OP_MOVE */
+        , 'move16'      /* OP_MOVE16 - 68040 only */
+	, 'movea'	/* OP_MOVEA */
+	, 'movec'	/* OP_MOVEC */
+	, 'movem'	/* OP_MOVEM */
+	, 'movep'	/* OP_MOVEP */
+	, 'moveq'	/* OP_MOVEQ */
+	, 'moves'	/* OP_MOVES */
+	, 'muls'	/* OP_MULS */
+	, 'mulsl'	/* OP_MULSL */
+	, 'mulu'	/* OP_MULU */
+	, 'mulul'	/* OP_MULUL */
+
+	, 'nbcd'	/* OP_NBCD */
+	, 'neg'		/* OP_NEG */
+	, 'negx'	/* OP_NEGX */
+	, 'nop'		/* OP_NOP */
+	, 'not'		/* OP_NOT */
+
+	, 'or'		/* OP_OR */
+	, 'ori'		/* OP_ORI */
+
+	, 'pack'	/* OP_PACK */
+	, 'pea'		/* OP_PEA */
+        , 'pflush'      /* OP_PFLUSH - 68030/40 */
+        , 'pflushn'     /* OP_PFLUSHN - 68030/40 */
+        , 'pflusha'     /* OP_PFLUSHA - 68030 only */
+        , 'pflushan'    /* OP_PFLUSHAN - 68030/40 */
+        , 'ploadr'      /* OP_PLOADR - 68030 only */
+        , 'ploadw'      /* OP_PLOADW - 68030 only */
+        , 'pmove'       /* OP_PMOVE - 68030 only */
+        , 'pmovefd'     /* OP_PMOVEFD - 68030 only */
+        , 'ptestr'      /* OP_PTESTR - 68030/40 */
+        , 'ptestw'      /* OP_PTESTW - 68030/40 */
+
+	, 'reset'	/* OP_RESET */
+	, 'rol'		/* OP_ROL */
+	, 'ror'		/* OP_ROR */
+	, 'roxl'	/* OP_ROXL */
+	, 'roxr'	/* OP_ROXR */
+	, 'rtd'		/* OP_RTD */
+	, 'rte'		/* OP_RTE */
+	, 'rtm'		/* OP_RTM */
+	, 'rtr'		/* OP_RTR */
+	, 'rts'		/* OP_RTS */
+
+	, 'sbcd'	/* OP_SBCD */
+
+	, 'st'		/* OP_ST */
+	, 'sf'		/* OP_SF */
+	, 'shi'		/* OP_SHI */
+	, 'sls'		/* OP_SLS */
+	, 'scc'		/* OP_SCC */
+	, 'scs'		/* OP_SCS */
+	, 'sne'		/* OP_SNE */
+	, 'seq'		/* OP_SEQ */
+	, 'svc'		/* OP_SVC */
+	, 'svs'		/* OP_SVS */
+	, 'spl'		/* OP_SPL */
+	, 'smi'		/* OP_SMI */
+	, 'sge'		/* OP_SGE */
+	, 'slt'		/* OP_SLT */
+	, 'sgt'		/* OP_SGT */
+	, 'sle'		/* OP_DBLE */
+
+	, 'stop'	/* OP_STOP */
+	, 'sub'		/* OP_SUB */
+	, 'suba'	/* OP_SUBA */
+	, 'subi'	/* OP_SUBI */
+	, 'subq'	/* OP_SUBQ */
+	, 'subx'	/* OP_SUBX */
+	, 'swap'	/* OP_SWAP */
+
+	, 'tas'		/* OP_TAS */
+	, 'trap'	/* OP_TRAP */
+	, 'trapv'	/* OP_TRAPV */
+
+	, 'trapt'	/* OP_TRAPT */
+	, 'trapf'	/* OP_TRAPRA */
+	, 'traphi'	/* OP_TRAPHI */
+	, 'trapls'	/* OP_TRAPLS */
+	, 'trapcc'	/* OP_TRAPCC */
+	, 'trapcs'	/* OP_TRAPCS */
+	, 'trapne'	/* OP_TRAPNE */
+	, 'trapeq'	/* OP_TRAPEQ */
+	, 'trapvc'	/* OP_TRAPVC */
+	, 'trapvs'	/* OP_TRAPVS */
+	, 'trappl'	/* OP_TRAPPL */
+	, 'trapmi'	/* OP_TRAPMI */
+	, 'trapge'	/* OP_TRAPGE */
+	, 'traplt'	/* OP_TRAPLT */
+	, 'trapgt'	/* OP_TRAPGT */
+	, 'traple'	/* OP_TRAPLE */
+
+	, 'tst'		/* OP_TST */
+
+	, 'unlk'	/* OP_UNLK */
+	, 'unpk'	/* OP_UNPK */
+
+	, 'fabs'	/* OP_FABS */
+        , 'fsabs'       /* OP_FSABS (68040 only) */
+        , 'fdabs'       /* OP_FDABS (68040 only) */
+	, 'facos'	/* OP_FACOS */
+	, 'fadd'	/* OP_FADD */
+        , 'fsadd'       /* OP_FSADD (68040 only) */
+        , 'fdadd'       /* OP_FDADD (68040 only) */
+	, 'fasin'	/* OP_FASIN */
+	, 'fatan'	/* OP_FATAN */
+	, 'fatanh'	/* OP_FATANH */
+
+	, 'fbf'		/* OP_FBF */
+	, 'fbeq'	/* OP_FBEQ */
+	, 'fbogt'	/* OP_FBOGT */
+	, 'fboge'	/* OP_FBOGE */
+	, 'fbolt'	/* OP_FBOLT */
+	, 'fbole'	/* OP_FBOLE */
+	, 'fbogl'	/* OP_FBOGL */
+	, 'fbor'	/* OP_FBOR */
+	, 'fbun'	/* OP_FBUN */
+	, 'fbueq'	/* OP_FBUEQ */
+	, 'fbugt'	/* OP_FBUGT */
+	, 'fbuge'	/* OP_FBUGE */
+	, 'fbult'	/* OP_FBULT */
+	, 'fbule'	/* OP_FBULE */
+	, 'fbne'	/* OP_FBNE */
+	, 'fbra'	/* OP_FBRA */
+	, 'fbsf'	/* OP_FBSF */
+	, 'fbseq'	/* OP_FBSEQ */
+	, 'fbgt'	/* OP_FBGT */
+	, 'fbge'	/* OP_FBGE */
+	, 'fblt'	/* OP_FBLT */
+	, 'fble'	/* OP_FBLE */
+	, 'fbgl'	/* OP_FBGL */
+	, 'fbgle'	/* OP_FBGLE */
+	, 'fbngle'	/* OP_FBNGLE */
+	, 'fbngl'	/* OP_FBNGL */
+	, 'fbnle'	/* OP_FBNLE */
+	, 'fbnlt'	/* OP_FBNLT */
+	, 'fbnge'	/* OP_FBNGE */
+	, 'fbngt'	/* OP_FBNGT */
+	, 'fbsne'	/* OP_FBSNE */
+	, 'fbst'	/* OP_FBST */
+
+	, 'fcmp'	/* OP_FCMP */
+	, 'fcos'	/* OP_FCOS */
+	, 'fcosh'	/* OP_FCOSH */
+
+	, 'fdbra'	/* OP_FDBRA */
+	, 'fdbeq'	/* OP_FDBEQ */
+	, 'fdbogt'	/* OP_FDBOGT */
+	, 'fdboge'	/* OP_FDBOGE */
+	, 'fdbolt'	/* OP_FDBOLT */
+	, 'fdbole'	/* OP_FDBOLE */
+	, 'fdbogl'	/* OP_FDBOGL */
+	, 'fdbor'	/* OP_FDBOR */
+	, 'fdbun'	/* OP_FDBUN */
+	, 'fdbueq'	/* OP_FDBUEQ */
+	, 'fdbugt'	/* OP_FDBUGT */
+	, 'fdbuge'	/* OP_FDBUGE */
+	, 'fdbult'	/* OP_FDBULT */
+	, 'fdbule'	/* OP_FDBULE */
+	, 'fdbne'	/* OP_FDBNE */
+	, 'fdbt'	/* OP_FDBT */
+	, 'fdbsf'	/* OP_FDBSF */
+	, 'fdbseq'	/* OP_FDBSEQ */
+	, 'fdbgt'	/* OP_FDBGT */
+	, 'fdbge'	/* OP_FDBGE */
+	, 'fdblt'	/* OP_FDBLT */
+	, 'fdble'	/* OP_FDBLE */
+	, 'fdbgl'	/* OP_FDBGL */
+	, 'fdbgle'	/* OP_FDBGLE */
+	, 'fdbngle'	/* OP_FDBNGLE */
+	, 'fdbngl'	/* OP_FDBNGL */
+	, 'fdbnle'	/* OP_FDBNLE */
+	, 'fdbnlt'	/* OP_FDBNLT */
+	, 'fdbnge'	/* OP_FDBNGE */
+	, 'fdbngt'	/* OP_FDBNGT */
+	, 'fdbsne'	/* OP_FDBSNE */
+	, 'fdbst'	/* OP_FDBST */
+
+	, 'fdiv'	/* OP_FDIV */
+	, 'fsdiv'	/* OP_FSDIV (68040 only) */
+	, 'fddiv'	/* OP_FDDIV (68040 only) */
+
+	, 'fetox'	/* OP_FETOX */
+	, 'fetoxm1'	/* OP_FETOXM1 */
+
+	, 'fgetexp'	/* OP_FGETEXP */
+	, 'fgetman'	/* OP_FGETMAN */
+
+	, 'fint'	/* OP_FINT */
+	, 'fintrz'	/* OP_FINTRZ */
+
+	, 'flog10'	/* OP_FLOG10 */
+	, 'flog2'	/* OP_FLOG2 */
+	, 'flogn'	/* OP_FLOGN */
+	, 'flognp1'	/* OP_FLOGNP1 */
+
+	, 'fmod'	/* OP_FMOD */
+	, 'fmove'	/* OP_FMOVE */
+	, 'fsmove'	/* OP_FSMOVE (68040 only) */
+	, 'fdmove'	/* OP_FDMOVE (68040 only) */
+	, 'fmovecr'	/* OP_FMOVECR */
+	, 'fmovem'	/* OP_FMOVEM */
+	, 'fmul'	/* OP_FMUL */
+	, 'fsmul'	/* OP_FSMUL (68040 only) */
+	, 'fdmul'	/* OP_FDMUL (68040 only) */
+
+	, 'fneg'	/* OP_FNEG */
+	, 'fsneg'	/* OP_FSNEG (68040 only) */
+	, 'fdneg'	/* OP_FDNEG (68040 only) */
+	, 'fnop'	/* OP_FNOP */
+
+	, 'frem'	/* OP_FREM */
+	, 'frestore'	/* OP_FRESTORE */
+
+	, 'fsave'	/* OP_FSAVE */
+	, 'fscale'	/* OP_FSCALE */
+
+	, 'fsf'		/* OP_FSF */
+	, 'fseq'	/* OP_FSEQ */
+	, 'fsogt'	/* OP_FSOGT */
+	, 'fsoge'	/* OP_FSOGE */
+	, 'fsolt'	/* OP_FSOLT */
+	, 'fsole'	/* OP_FSOLE */
+	, 'fsogl'	/* OP_FSOGL */
+	, 'fsor'	/* OP_FSOR */
+	, 'fsun'	/* OP_FSUN */
+	, 'fsueq'	/* OP_FSUEQ */
+	, 'fsugt'	/* OP_FSUGT */
+	, 'fsuge'	/* OP_FSUGE */
+	, 'fsult'	/* OP_FSULT */
+	, 'fsule'	/* OP_FSULE */
+	, 'fsne'	/* OP_FSNE */
+	, 'fset'	/* OP_FSET */
+	, 'fssf'	/* OP_FSSF */
+	, 'fsseq'	/* OP_FSSEQ */
+	, 'fsgt'	/* OP_FSGT */
+	, 'fsge'	/* OP_FSGE */
+	, 'fslt'	/* OP_FSLT */
+	, 'fsle'	/* OP_FSLE */
+	, 'fsgl'	/* OP_FSGL */
+	, 'fsgle'	/* OP_FSGLE */
+	, 'fsngle'	/* OP_FSNGLE */
+	, 'fsngl'	/* OP_FSNGL */
+	, 'fsnle'	/* OP_FSNLE */
+	, 'fsnlt'	/* OP_FSNLT */
+	, 'fsnge'	/* OP_FSNGE */
+	, 'fsngt'	/* OP_FSNGT */
+	, 'fssne'	/* OP_FSSNE */
+	, 'fsst'	/* OP_FSST */
+
+	, 'fsgldiv'	/* OP_FSGLDIV */
+	, 'fsglmul'	/* OP_FSGLMUL */
+	, 'fsin'	/* OP_FSIN */
+	, 'fsincos'	/* OP_FSINCOS */
+	, 'fsinh'	/* OP_FSINH */
+	, 'fsqrt'	/* OP_FSQRT */
+	, 'fssqrt'	/* OP_FSSQRT (68040 only) */
+	, 'fdsqrt'	/* OP_FDSQRT (68040 only) */
+	, 'fsub'	/* OP_FSUB */
+	, 'fssub'	/* OP_FSSUB (68040 only) */
+	, 'fdsub'	/* OP_FDSUB (68040 only) */
+
+	, 'ftan'	/* OP_FTAN */
+	, 'ftanh'	/* OP_FTANH */
+	, 'ftentox'	/* OP_FTENTOX */
+
+	, 'ftrapf'	/* OP_FTRAPF */
+	, 'ftrapeq'	/* OP_FTRAPEQ */
+	, 'ftrapogt'	/* OP_FTRAPOGT */
+	, 'ftrapoge'	/* OP_FTRAPOGE */
+	, 'ftrapolt'	/* OP_FTRAPOLT */
+	, 'ftrapole'	/* OP_FTRAPOLE */
+	, 'ftrapogl'	/* OP_FTRAPOGL */
+	, 'ftrapor'	/* OP_FTRAPOR */
+	, 'ftrapun'	/* OP_FTRAPUN */
+	, 'ftrapueq'	/* OP_FTRAPUEQ */
+	, 'ftrapugt'	/* OP_FTRAPUGT */
+	, 'ftrapuge'	/* OP_FTRAPUGE */
+	, 'ftrapult'	/* OP_FTRAPULT */
+	, 'ftrapule'	/* OP_FTRAPULE */
+	, 'ftrapne'	/* OP_FTRAPNE */
+	, 'ftrapt'	/* OP_FTRAPT */
+	, 'ftrapsf'	/* OP_FTRAPSF */
+	, 'ftrapseq'	/* OP_FTRAPSEQ */
+	, 'ftrapgt'	/* OP_FTRAPGT */
+	, 'ftrapge'	/* OP_FTRAPGE */
+	, 'ftraplt'	/* OP_FTRAPLT */
+	, 'ftraple'	/* OP_FTRAPLE */
+	, 'ftrapgl'	/* OP_FTRAPGL */
+	, 'ftrapgle'	/* OP_FTRAPGLE */
+	, 'ftrapngle'	/* OP_FTRAPNGLE */
+	, 'ftrapngl'	/* OP_FTRAPNGL */
+	, 'ftrapnle'	/* OP_FDBNLE */
+	, 'ftrapnlt'	/* OP_FTRAPNLT */
+	, 'ftrapnge'	/* OP_FTRAPNGE */
+	, 'ftrapngt'	/* OP_FTRAPNGT */
+	, 'ftrapsne'	/* OP_FTRAPSNE */
+	, 'ftrapst'	/* OP_FTRAPST */
+
+	, 'ftst'	/* OP_FTST */
+	, 'ftwotox'	/* OP_FTWOTOX */
+);
+

@@ -1,0 +1,316 @@
+/* C++ srcmgr.pl1 - Front-end source state manager */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  05.19.92  DGM  011  Modified POP_SOURCE.
+ *  03.26.92  DGM  010  New value-node scheme.
+ *  01.28.92  DGM  009  Fix in END_SOURCE which showed up when the
+ *			paged version of the symbol table was used.
+ *  01.21.92  DGM  008  Reset DIAG_FILE_ID correctly.
+ *  03.08.91  DGM  007  Set BLOCK_NODE.ENTRY_ID to MAIN_SOURCE_NODE_ID.
+ *  09.14.90  DGM  006  Changed include file names and VOP names.
+ *  06.05.90  DGM  005  Updated for the new utilities.  Set DIAG_FILE_ID.
+ *  04.19.90  DGM  004  Added GLOBAL_IN (needed by STORE_TOKEN
+ *			declaration in NODE_MGR_PKG!).
+ *  01.19.90  DGM  003  Original.
+ *  12.12.89  DGM  002  Original.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 05.19.92 011 PARDCL');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_NODE_MGR_PKG;
+%include CXX_SOURCE_MGR_IN;
+
+/* ---------------------------------------------------------------------
+/* Local static data
+/* ------------------------------------------------------------------- */
+
+declare
+
+MAIN_SOURCE_NODE_ID		type (NID_T) static internal
+				initial (NULL_NID),
+CURRENT_SOURCE_NODE_ID		type (NID_T) static internal
+				initial (NULL_NID);
+
+/* ---------------------------------------------------------------------
+/* PUSH_SOURCE
+/* ------------------------------------------------------------------- */
+
+PUSH_SOURCE: procedure (FILE, LINE) external (X_PUSH_SOURCE);
+
+	declare
+		FILE	type (NID_T),
+		LINE	type (LONG_T);
+	declare
+		P	type (POINTER_T);
+
+	call BEGIN_SOURCE (FILE, LINE);
+
+	P = CURRENT_SOURCE_PTR;
+
+	allocate CURRENT_SOURCE;
+
+	CURRENT_SOURCE.ID		= CURRENT_SOURCE_NODE_ID;
+	CURRENT_SOURCE.INCLUDED_BY	= P;
+	CURRENT_SOURCE.LINE		= 1;
+	CURRENT_SOURCE.LINE_ADJUSTMENT	= 0;
+	CURRENT_SOURCE.FILE		= FILE;
+	CURRENT_SOURCE.ASSUMED_FILE	= NULL_NID;
+
+	DIAG_FILE_ID			= FILE;
+
+end PUSH_SOURCE;
+
+/* ---------------------------------------------------------------------
+/* POP_SOURCE
+/* ------------------------------------------------------------------- */
+
+POP_SOURCE: procedure (NLINES) external (X_POP_SOURCE);
+
+	declare
+		NLINES	type (LONG_T);
+	declare
+		P	type (POINTER_T);
+
+	call END_SOURCE (NLINES);
+
+	P = CURRENT_SOURCE_PTR;
+	CURRENT_SOURCE_PTR = CURRENT_SOURCE.INCLUDED_BY;
+	DIAG_FILE_ID = CURRENT_SOURCE.FILE;
+	free P->SOURCE_STATE_DATA;
+
+end POP_SOURCE;
+
+/* ---------------------------------------------------------------------
+/* GET_SOURCE_STATE
+/*
+/* Gets and returns a pointer to the current source state statck.
+/* ------------------------------------------------------------------- */
+
+GET_SOURCE_STATE: procedure
+		  returns   (pointer)
+		  external  (X_GET_SOURCE_STATE);
+
+	return (CURRENT_SOURCE_PTR);
+
+end GET_SOURCE_STATE;
+
+/* ---------------------------------------------------------------------
+/* SET_SOURCE_STATE
+/*
+/* Sets the current source state to be the given source state statck.
+/* ------------------------------------------------------------------- */
+
+SET_SOURCE_STATE: procedure (NEW_SOURCE_PTR)
+		  external  (X_SET_SOURCE_STATE);
+
+	declare
+		NEW_SOURCE_PTR	type (POINTER_T);
+
+	CURRENT_SOURCE_PTR = NEW_SOURCE_PTR;
+	DIAG_FILE_ID = CURRENT_SOURCE.FILE;
+
+end SET_SOURCE_STATE;
+
+/* ---------------------------------------------------------------------
+/* COPY_SOURCE_STATE
+/*
+/* Copies the *entire* source state stack and returns a pointer to it.
+/* ------------------------------------------------------------------- */
+
+COPY_SOURCE_STATE: procedure
+		   returns   (pointer)
+		   external  (X_COPY_SOURCE_STATE);
+
+	declare
+		P	type (POINTER_T),
+		FIRST	type (POINTER_T),
+		NEW	type (POINTER_T),
+		LAST	type (POINTER_T);
+
+	LAST = null();
+
+	do P = CURRENT_SOURCE_PTR
+	repeat (P->SOURCE_STATE_DATA.INCLUDED_BY) while (P ^= null());
+		allocate SOURCE_STATE_DATA set (NEW);
+		NEW->SOURCE_STATE_DATA = P->SOURCE_STATE_DATA;
+		if LAST = null() then
+			FIRST = NEW;
+		else	LAST->SOURCE_STATE_DATA.INCLUDED_BY = NEW;
+		LAST = NEW;
+	end;
+
+	return (FIRST);
+
+end COPY_SOURCE_STATE;
+
+/* ---------------------------------------------------------------------
+/* PURGE_SOURCE_STATE
+/*
+/* Completely purges from memory the given source state stack
+/* and sets the given pointer to null.
+/* ------------------------------------------------------------------- */
+
+PURGE_SOURCE_STATE: procedure (THIS_SOURCE_PTR)
+		    external  (X_PURGE_SOURCE_STATE);
+
+	declare
+		THIS_SOURCE_PTR type (POINTER_T);
+	declare
+		(P, NEXT_P)	type (POINTER_T);
+
+	do P = THIS_SOURCE_PTR repeat (NEXT_P) while (P ^= null());
+		NEXT_P = P->SOURCE_STATE_DATA.INCLUDED_BY;
+		free P->SOURCE_STATE_DATA;
+	end;
+
+	THIS_SOURCE_PTR = null();
+
+end PURGE_SOURCE_STATE;
+
+/* =====================================================================
+/* SOURCE_NODE manipulation routines
+/* =================================================================== */
+
+/* ---------------------------------------------------------------------
+/* BEGIN_SOURCE
+/* ------------------------------------------------------------------- */
+
+BEGIN_SOURCE: procedure (FILE, LINE) internal;
+
+	declare
+		FILE		type (NID_T),
+		LINE		type (LONG_T);
+	declare
+		(P, Q)		type (POINTER_T),
+		THIS_SOURCE	type (NID_T),
+		THIS_SOURCE_PTR	type (POINTER_T);
+
+	call NEW_SOURCE_NODE (THIS_SOURCE, THIS_SOURCE_PTR);
+
+	THIS_SOURCE_PTR->SOURCE_NODE.FILE	  = FILE;
+	THIS_SOURCE_PTR->SOURCE_NODE.INCLUDES	  = NULL_NID;
+	THIS_SOURCE_PTR->SOURCE_NODE.NEXT_INCLUDE = NULL_NID;
+	THIS_SOURCE_PTR->SOURCE_NODE.LAST_INCLUDE = NULL_NID;
+
+	if CURRENT_SOURCE_NODE_ID ^= NULL_NID then do;
+
+		call GET_SOURCE_NODE (CURRENT_SOURCE_NODE_ID, P);
+
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT
+			= CURRENT_SOURCE_NODE_ID;
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT_FILE
+			= CURRENT_SOURCE.FILE;
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT_LINE
+			= LINE;
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT_ASSUMED_FILE
+			= CURRENT_SOURCE.ASSUMED_FILE;
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT_LINE_ADJUSTMENT
+			= CURRENT_SOURCE.LINE_ADJUSTMENT;
+		THIS_SOURCE_PTR->SOURCE_NODE.LEVEL
+			= P->SOURCE_NODE.LEVEL + 1;
+
+		if P->SOURCE_NODE.LAST_INCLUDE ^= NULL_NID then do;
+			call GET_SOURCE_NODE (P->SOURCE_NODE.LAST_INCLUDE, Q);
+			Q->SOURCE_NODE.NEXT_INCLUDE = THIS_SOURCE;
+			call RELEASE_SOURCE_NODE (P->SOURCE_NODE.LAST_INCLUDE);
+		end;
+		else	P->SOURCE_NODE.INCLUDES = THIS_SOURCE;
+		P->SOURCE_NODE.LAST_INCLUDE = THIS_SOURCE;
+
+		call RELEASE_SOURCE_NODE (CURRENT_SOURCE_NODE_ID);
+	end;
+	else do;
+		THIS_SOURCE_PTR->SOURCE_NODE.LEVEL		    = 0;
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT		    = NULL_NID;
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT_FILE	    = NULL_NID;
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT_LINE	    = 0;
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT_ASSUMED_FILE    = NULL_NID;
+		THIS_SOURCE_PTR->SOURCE_NODE.PARENT_LINE_ADJUSTMENT = 0;
+		MAIN_SOURCE_NODE_ID = THIS_SOURCE;
+	end;
+
+	CURRENT_SOURCE_NODE_ID = THIS_SOURCE;
+
+end BEGIN_SOURCE;
+
+/* ---------------------------------------------------------------------
+/* END_SOURCE
+/* ------------------------------------------------------------------- */
+
+END_SOURCE: procedure (NLINES) internal;
+
+	declare
+		NLINES	type (LONG_T);
+	declare
+		ID	type (NID_T),
+		P	type (POINTER_T);
+
+	call GET_SOURCE_NODE_R (CURRENT_SOURCE_NODE_ID, P);
+	P->SOURCE_NODE.NLINES = NLINES;
+	ID = P->SOURCE_NODE.PARENT;
+	call RELEASE_SOURCE_NODE (CURRENT_SOURCE_NODE_ID);
+	CURRENT_SOURCE_NODE_ID = ID;
+
+end END_SOURCE;
+
+/* ---------------------------------------------------------------------
+/* SET_SOURCE_MAP
+/* ------------------------------------------------------------------- */
+
+SET_SOURCE_MAP: procedure (NLINES) external (X_SET_SOURCE_MAP);
+
+	declare
+		NLINES	type (LONG_T);
+	declare
+		P	type (POINTER_T);
+
+	if BLOCK_LIST_ID ^= NULL_NID then do;
+		call GET_SOURCE_NODE (MAIN_SOURCE_NODE_ID, P);
+		P->SOURCE_NODE.NLINES = NLINES;
+		call RELEASE_SOURCE_NODE (MAIN_SOURCE_NODE_ID);
+		call GET_BLOCK_NODE (BLOCK_LIST_ID, P);
+		P->BLOCK_NODE.ENTRY_ID = MAIN_SOURCE_NODE_ID;
+		call RELEASE_BLOCK_NODE (BLOCK_LIST_ID);
+	end;
+
+end SET_SOURCE_MAP;
+
+/* ---------------------------------------------------------------------
+/* GET_SOURCE_MAP
+/* ------------------------------------------------------------------- */
+
+GET_SOURCE_MAP: procedure returns (type (NID_T)) external (X_GET_SOURCE_MAP);
+
+	return (MAIN_SOURCE_NODE_ID);
+
+end GET_SOURCE_MAP;
+
+

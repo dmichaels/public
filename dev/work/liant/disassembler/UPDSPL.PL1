@@ -1,0 +1,107 @@
+/* CodeWatch M68 UPDSPL.PL1 - Get static display ancestor pointer */
+
+/**********************************************************************/
+/* This product is the property of Language Processors, Inc.          */
+/* and is licensed pursuant to a written license agreement.           */
+/* No portion of this product may be reproduced without the written   */
+/* permission of Language Processors, Inc. except pursuant to the     */
+/* license agreement.                                                 */
+/**********************************************************************/
+
+/**********************************************************************
+ *
+ *  LPI EDIT HISTORY
+ *
+ *  04.18.91  MJF  (002)  Fixed a problem where this routine was 
+ * 		   assuming its ancestor was somewhere on the stack.
+ *		   For PL/I nested procedures implemented as entry 
+ *		   variables this is not always the case.  In this
+ *		   case we simply return the display pointer.
+ *
+ **********************************************************************/
+
+/* --------------------------------------------------------------------
+ * UPDSPL - Find the stack pointer matching the frame which is pointed
+ *          to by the static display pointer count frames away.
+ *
+ * In:     COUNT = How many frames to look through.
+ *         FRAME_ADDR = Current frame pointer or stack pointer.
+ * Return: TRUE if all goes well.
+ *         Sets FRAME_ADDR to the *stack pointer* which points to the 
+ *         frame, also pointed to by the display pointer, count frames
+ *         away.
+ *
+ * N.B. FRAME is a frame pointer if the designated stack frame is an
+ * LPI frame and FRAME is a stack poitner if the designated stack
+ * frame is a non-LPI frame.
+ **********************************************************************/
+
+UPDSPL: procedure (COUNT, FRAME_ADDR) returns (bit(1));
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include TARGET_IN;
+%include DBGGLOBAL_IN;
+%include SYSREADUSER_IN;
+
+    declare
+        COUNT       fixed binary (15),
+        FRAME_ADDR  fixed binary (ADDRESS_LENGTH);
+
+    declare
+        FRAME       fixed binary (ADDRESS_LENGTH),
+        RET_CODE    fixed binary (15),
+        DUMMY       fixed binary (31),
+        I           fixed binary (15),
+        CF          fixed binary (ADDRESS_LENGTH),
+        PF          fixed binary (ADDRESS_LENGTH);
+
+    if FRAME_ADDR = 0 then
+        return  (TRUE);
+
+    FRAME = FRAME_ADDR;
+
+    if (COUNT <= 0) then
+        return (TRUE);
+
+    if (FRAME = $FP_BREAK) then
+       FRAME = PROGRAM_REGISTER_AREA->REGS.A6;
+
+    else do;
+        call REAUSR (PROCESS_ID, DUMMY, FRAME, 4, addr(FRAME), RET_CODE);
+        if (FRAME = 0) | (RET_CODE ^= 0) then
+            return (FALSE);
+    end;
+
+    CF = FRAME;
+    RET_CODE = 0;
+
+    do I = 1 to COUNT;
+        call REAUSR (PROCESS_ID, DUMMY,
+                     FRAME + $DISPLAY_OFFSET, 4, addr(FRAME), RET_CODE);
+        if (FRAME = 0) | (RET_CODE ^= 0) then
+            return (FALSE);
+    end;
+
+    call REAUSR (PROCESS_ID, DUMMY, CF, 4, addr(PF), RET_CODE);
+    if (PF = 0) | (RET_CODE ^= 0) then
+        return (FALSE);
+
+    do while (PF ^= FRAME);
+        CF = PF;
+        call REAUSR (PROCESS_ID, DUMMY, CF, 4, addr(PF), RET_CODE);
+        if (PF = 0) | (RET_CODE ^= 0) then do;
+	    /*
+	     * Previously this routine would return FALSE here.  This
+	     * assumes that the current frame was called somehow by
+	     * its parent.  Well in this case it wasn't.
+	     */
+	    FRAME_ADDR = FRAME;
+            return (TRUE);
+	end;
+    end;
+
+    FRAME_ADDR = CF;
+    return (TRUE);
+
+end UPDSPL;

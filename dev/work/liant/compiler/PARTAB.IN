@@ -1,0 +1,2171 @@
+/************************************************************************
+ * Copyright (c) 1992 by Liant Software Corporation.                    *
+ ************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+DECLARE PENTRY FIXED BIN(15) STATIC INTERNAL INITIAL (  1587);
+DECLARE PARTBL (0: 1594) FIXED BIN(31) STATIC INTERNAL INITIAL (
+                /*                                     */
+                /*CASE_STATEMENT                                                   */
+                /*L1   :                               */
+50331649 , /*    0    ACTION      STATEMENT_START                                                 1     ERROR    */
+117440540 , /*    1    TERMINAL    KW_CASE                                                           ERROR    */
+16778066 , /*    2    CALL        L204   ERROR         */
+117440554 , /*    3    TERMINAL    COLON                                                             ERROR    */
+50331650 , /*    4    ACTION      DEFINE_SWITCH_CASE                                              2     ERROR    */
+16777731 , /*    5    CALL        L123   ERROR         */
+33554432 , /*    6    RETURN                           */
+                /*BINARY_OPERATOR                                                  */
+                /*L2   :                               */
+117440598 , /*    7    TERMINAL    QUESTION                                                          ERROR    */
+50331651 , /*    8    ACTION      SET_BINARY_OP                                                   3     ERROR    */
+16778391 , /*    9    CALL        L298   ERROR         */
+117440554 , /*   10    TERMINAL    COLON                                                             ERROR    */
+50331652 , /*   11    ACTION      AFFIX_DESTRUCTORS                                               4     ERROR    */
+33554432 , /*   12    RETURN                           */
+                /*L3   :                               */
+134217754 , /*   13    BUILTIN     26    ERROR          */
+150994991 , /*   14    SET_SELECT  L4                   */
+117571639 , /*   15    TERMINAL    PLUS                                                              EXIT     */
+117571640 , /*   16    TERMINAL    MINUS                                                             EXIT     */
+117571641 , /*   17    TERMINAL    STAR                                                              EXIT     */
+117571642 , /*   18    TERMINAL    AND                                                               EXIT     */
+117571643 , /*   19    TERMINAL    SLASH                                                             EXIT     */
+117571644 , /*   20    TERMINAL    PERCENT                                                           EXIT     */
+117571645 , /*   21    TERMINAL    LEFT_SHIFT                                                        EXIT     */
+117571646 , /*   22    TERMINAL    RIGHT_SHIFT                                                       EXIT     */
+117571647 , /*   23    TERMINAL    AND_AND                                                           EXIT     */
+117571648 , /*   24    TERMINAL    OR_OR                                                             EXIT     */
+117571649 , /*   25    TERMINAL    OR                                                                EXIT     */
+117571650 , /*   26    TERMINAL    XOR                                                               EXIT     */
+117571651 , /*   27    TERMINAL    LESS_THAN                                                         EXIT     */
+117571652 , /*   28    TERMINAL    LESS_EQUAL                                                        EXIT     */
+117571653 , /*   29    TERMINAL    GREATER_THAN                                                      EXIT     */
+117571654 , /*   30    TERMINAL    GREATER_EQUAL                                                     EXIT     */
+117571655 , /*   31    TERMINAL    EQUAL_EQUAL                                                       EXIT     */
+117571656 , /*   32    TERMINAL    NOT_EQUAL                                                         EXIT     */
+117571657 , /*   33    TERMINAL    ARROW_STAR                                                        EXIT     */
+117571658 , /*   34    TERMINAL    EQUAL                                                             EXIT     */
+117571659 , /*   35    TERMINAL    PLUS_EQUAL                                                        EXIT     */
+117571660 , /*   36    TERMINAL    MINUS_EQUAL                                                       EXIT     */
+117571661 , /*   37    TERMINAL    STAR_EQUAL                                                        EXIT     */
+117571662 , /*   38    TERMINAL    SLASH_EQUAL                                                       EXIT     */
+117571663 , /*   39    TERMINAL    PERCENT_EQUAL                                                     EXIT     */
+117571664 , /*   40    TERMINAL    AND_EQUAL                                                         EXIT     */
+117571665 , /*   41    TERMINAL    OR_EQUAL                                                          EXIT     */
+117571666 , /*   42    TERMINAL    XOR_EQUAL                                                         EXIT     */
+117571667 , /*   43    TERMINAL    LEFT_SHIFT_EQUAL                                                  EXIT     */
+117571668 , /*   44    TERMINAL    RIGHT_SHIFT_EQUAL                                                 EXIT     */
+117571669 , /*   45    TERMINAL    DOT_STAR                                                          EXIT     */
+16777223 , /*   46    CALL        L2     ERROR         */
+                /*L4   :                               */
+50331653 , /*   47    ACTION      SET_BINARY_OP                                                   5     ERROR    */
+33554432 , /*   48    RETURN                           */
+                /*LA_INIT_DECLARATOR                                               */
+                /*L5   :                               */
+16777438 , /*   49    CALL        L56    ERROR         */
+16777268 , /*   50    CALL        L6     ERROR         */
+33554432 , /*   51    RETURN                           */
+                /*LA_INITIALIZER                                                   */
+                /*L6   :                               */
+150995000 , /*   52    SET_SELECT  L7                   */
+16908838 , /*   53    CALL        L127   EXIT          */
+16909131 , /*   54    CALL        L203   EXIT          */
+16778607 , /*   55    CALL        L354   ERROR         */
+                /*L7   :                               */
+33554432 , /*   56    RETURN                           */
+                /*CLASS_SCOPE_QUALIFIER                                            */
+                /*L8   :                               */
+134217733 , /*   57    BUILTIN     5     ERROR          */
+150995005 , /*   58    SET_SELECT  L9                   */
+117571585 , /*   59    TERMINAL    IDENTIFIER                                                        EXIT     */
+117440516 , /*   60    TERMINAL    TYPE                                                              ERROR    */
+                /*L9   :                               */
+50331654 , /*   61    ACTION      SET_CLASS_SCOPE_QUALIFIER                                       6     ERROR    */
+117440555 , /*   62    TERMINAL    COLON_COLON                                                       ERROR    */
+33554432 , /*   63    RETURN                           */
+                /*L10  :                               */
+50331655 , /*   64    ACTION      CLEAR_SCOPE_QUALIFIER                                           7     ERROR    */
+16777273 ,
+16973881 , /*   66    CALL        L8     ERROR    REPEAT  */
+50331656 , /*   67    ACTION      CHECK_CLASS_SCOPE_QUALIFIER                                     8     ERROR    */
+33554432 , /*   68    RETURN                           */
+                /*EXPRESSION                                                       */
+                /*L11  :                               */
+16777229 , /*   69    CALL        L3     ERROR         */
+50331657 , /*   70    ACTION      POP_FOR_PRECEDENCE                                              9     ERROR    */
+16778114 , /*   71    CALL        L218   ERROR         */
+33554432 , /*   72    RETURN                           */
+                /*L12  :                               */
+50331658 , /*   73    ACTION      PUSH_MARKER                                                     10    ERROR    */
+16778114 , /*   74    CALL        L218   ERROR         */
+16973893 , /*   75    CALL        L11    OPTIONAL REPEAT  */
+50331659 , /*   76    ACTION      POP_ALL_VALUES                                                  11    ERROR    */
+33554432 , /*   77    RETURN                           */
+                /*GLOBAL_OR_CLASS_SCOPE_QUALIFIER                                  */
+                /*L13  :                               */
+134217733 , /*   78    BUILTIN     5     ERROR          */
+150995026 , /*   79    SET_SELECT  L14                  */
+117571585 , /*   80    TERMINAL    IDENTIFIER                                                        EXIT     */
+117440516 , /*   81    TERMINAL    TYPE                                                              ERROR    */
+                /*L14  :                               */
+50331660 , /*   82    ACTION      SET_CLASS_SCOPE_QUALIFIER                                       12    ERROR    */
+117440555 , /*   83    TERMINAL    COLON_COLON                                                       ERROR    */
+33554432 , /*   84    RETURN                           */
+                /*L15  :                               */
+16777294 ,
+16973902 , /*   86    CALL        L13    ERROR    REPEAT  */
+50331661 , /*   87    ACTION      CHECK_CLASS_SCOPE_QUALIFIER                                     13    ERROR    */
+33554432 , /*   88    RETURN                           */
+                /*L16  :                               */
+134217733 , /*   89    BUILTIN     5     ERROR          */
+150995037 , /*   90    SET_SELECT  L17                  */
+117571585 , /*   91    TERMINAL    IDENTIFIER                                                        EXIT     */
+117440516 , /*   92    TERMINAL    TYPE                                                              ERROR    */
+                /*L17  :                               */
+50331662 , /*   93    ACTION      SET_CLASS_SCOPE_QUALIFIER                                       14    ERROR    */
+117440555 , /*   94    TERMINAL    COLON_COLON                                                       ERROR    */
+33554432 , /*   95    RETURN                           */
+                /*L18  :                               */
+16777691 , /*   96    CALL        L113   ERROR         */
+16973913 , /*   97    CALL        L16    OPTIONAL REPEAT  */
+50331663 , /*   98    ACTION      CHECK_CLASS_SCOPE_QUALIFIER                                     15    ERROR    */
+33554432 , /*   99    RETURN                           */
+                /*L19  :                               */
+150995047 , /*  100    SET_SELECT  L20                  */
+16908384 , /*  101    CALL        L18    EXIT          */
+16777301 , /*  102    CALL        L15    ERROR         */
+                /*L20  :                               */
+33554432 , /*  103    RETURN                           */
+                /*PEEK_OLD_FUNCTION_DEFINITION_DECLARATOR                          */
+                /*L21  :                               */
+134217728 , /*  104    BUILTIN     0     ERROR          */
+16778397 , /*  105    CALL        L300   ERROR         */
+150995053 , /*  106    SET_SELECT  L22                  */
+16909838 , /*  107    CALL        L399   EXIT          */
+117440551 , /*  108    TERMINAL    LEFT_BRACE                                                        ERROR    */
+                /*L22  :                               */
+134217729 , /*  109    BUILTIN     1     ERROR          */
+33554432 , /*  110    RETURN                           */
+                /*ELEMENTARY_TYPE_SPECIFIER                                        */
+                /*L23  :                               */
+117440516 , /*  111    TERMINAL    TYPE                                                              ERROR    */
+50331664 , /*  112    ACTION      SET_SIMPLE_TYPE                                                 16    ERROR    */
+33554432 , /*  113    RETURN                           */
+                /*LA_VANILLA_INITIALIZER_LIST                                      */
+                /*L24  :                               */
+117440553 , /*  114    TERMINAL    COMMA                                                             ERROR    */
+16778603 , /*  115    CALL        L352   ERROR         */
+33554432 , /*  116    RETURN                           */
+                /*L25  :                               */
+16778603 , /*  117    CALL        L352   ERROR         */
+16973938 , /*  118    CALL        L24    OPTIONAL REPEAT  */
+33751040 , /*  119    RETURN                           */
+                /*OPERATOR_FUNCTION_NAME                                           */
+                /*L26  :                               */
+117440528 , /*  120    TERMINAL    KW_OPERATOR                                                       ERROR    */
+16778382 , /*  121    CALL        L295   ERROR         */
+33554432 , /*  122    RETURN                           */
+                /*NAME                                                             */
+                /*L27  :                               */
+117440513 , /*  123    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331665 , /*  124    ACTION      SET_SIMPLE_NAME                                                 17    ERROR    */
+33554432 , /*  125    RETURN                           */
+                /*L28  :                               */
+134217778 , /*  126    BUILTIN     50    ERROR          */
+150995075 , /*  127    SET_SELECT  L29                  */
+16908411 , /*  128    CALL        L27    EXIT          */
+16908757 , /*  129    CALL        L111   EXIT          */
+16777771 , /*  130    CALL        L129   ERROR         */
+                /*L29  :                               */
+33554432 , /*  131    RETURN                           */
+                /*PARAMETER_DECLARATOR                                             */
+                /*L30  :                               */
+117440560 , /*  132    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16777364 , /*  133    CALL        L34    ERROR         */
+117440558 , /*  134    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /*  135    RETURN                           */
+                /*L31  :                               */
+16777954 , /*  136    CALL        L177   ERROR         */
+16777364 , /*  137    CALL        L34    ERROR         */
+50331666 , /*  138    ACTION      SET_MEMBER_POINTER_TYPE                                         18    ERROR    */
+33554432 , /*  139    RETURN                           */
+                /*L32  :                               */
+16777414 , /*  140    CALL        L50    ERROR         */
+16777364 , /*  141    CALL        L34    ERROR         */
+50331667 , /*  142    ACTION      SET_POINTER_TYPE                                                19    ERROR    */
+33554432 , /*  143    RETURN                           */
+                /*L33  :                               */
+16778687 , /*  144    CALL        L377   ERROR         */
+16777364 , /*  145    CALL        L34    ERROR         */
+50331668 , /*  146    ACTION      SET_REFERENCE_TYPE                                              20    ERROR    */
+33554432 , /*  147    RETURN                           */
+                /*L34  :                               */
+134217768 , /*  148    BUILTIN     40    ERROR          */
+150995099 , /*  149    SET_SELECT  L35                  */
+16908432 , /*  150    CALL        L33    EXIT          */
+16908428 , /*  151    CALL        L32    EXIT          */
+16908424 , /*  152    CALL        L31    EXIT          */
+16909203 , /*  153    CALL        L224   EXIT          */
+16842884 , /*  154    CALL        L30    OPTIONAL      */
+                /*L35  :                               */
+16975066 , /*  155    CALL        L316   OPTIONAL REPEAT  */
+33751040 , /*  156    RETURN                           */
+                /*PARAMETER_DECLARATION_LIST                                       */
+                /*L36  :                               */
+117440556 , /*  157    TERMINAL    ELLIPSIS                                                          ERROR    */
+50331669 , /*  158    ACTION      WARN_EXTRA_ELLIPSIS                                             21    ERROR    */
+33554432 , /*  159    RETURN                           */
+                /*L37  :                               */
+117440553 , /*  160    TERMINAL    COMMA                                                             ERROR    */
+16777784 , /*  161    CALL        L133   ERROR         */
+33554432 , /*  162    RETURN                           */
+                /*L38  :                               */
+150995110 , /*  163    SET_SELECT  L39                  */
+16908448 , /*  164    CALL        L37    EXIT          */
+16777373 , /*  165    CALL        L36    ERROR         */
+                /*L39  :                               */
+33554432 , /*  166    RETURN                           */
+                /*L40  :                               */
+16777784 , /*  167    CALL        L133   ERROR         */
+16973987 , /*  168    CALL        L38    OPTIONAL REPEAT  */
+33751040 , /*  169    RETURN                           */
+                /*L41  :                               */
+16777383 , /*  170    CALL        L40    ERROR         */
+33554432 , /*  171    RETURN                           */
+                /*AMBIGUOUS_FUNCTION_DECLARATOR                                    */
+                /*L42  :                               */
+16777320 , /*  172    CALL        L21    ERROR         */
+16778397 , /*  173    CALL        L300   ERROR         */
+33554432 , /*  174    RETURN                           */
+                /*L43  :                               */
+16778155 , /*  175    CALL        L233   ERROR         */
+16777805 , /*  176    CALL        L141   ERROR         */
+33554432 , /*  177    RETURN                           */
+                /*L44  :                               */
+134217742 , /*  178    BUILTIN     14    ERROR          */
+16777805 , /*  179    CALL        L141   ERROR         */
+33554432 , /*  180    RETURN                           */
+                /*L45  :                               */
+134217739 , /*  181    BUILTIN     11    ERROR          */
+150995130 , /*  182    SET_SELECT  L46                  */
+16908466 , /*  183    CALL        L44    EXIT          */
+16908463 , /*  184    CALL        L43    EXIT          */
+16777388 , /*  185    CALL        L42    ERROR         */
+                /*L46  :                               */
+33554432 , /*  186    RETURN                           */
+                /*DECLARATOR_NAME                                                  */
+                /*L47  :                               */
+16778647 , /*  187    CALL        L364   ERROR         */
+50331670 , /*  188    ACTION      CHECK_DECLARED_DESTRUCTOR                                       22    ERROR    */
+33554432 , /*  189    RETURN                           */
+                /*L48  :                               */
+134217777 , /*  190    BUILTIN     49    ERROR          */
+150995140 , /*  191    SET_SELECT  L49                  */
+16909203 , /*  192    CALL        L224   EXIT          */
+16908757 , /*  193    CALL        L111   EXIT          */
+16908843 , /*  194    CALL        L129   EXIT          */
+16777403 , /*  195    CALL        L47    ERROR         */
+                /*L49  :                               */
+50331671 , /*  196    ACTION      SET_DECLARATOR_SCOPE                                            23    ERROR    */
+33554432 , /*  197    RETURN                           */
+                /*POINTER                                                          */
+                /*L50  :                               */
+117440569 , /*  198    TERMINAL    STAR                                                              ERROR    */
+16844253 , /*  199    CALL        L384   OPTIONAL      */
+50331672 , /*  200    ACTION      SET_DERIVED_TYPE_QUALIFIER                                      24    ERROR    */
+33554432 , /*  201    RETURN                           */
+                /*ENUM_EXTENDED_SPECIFIERS                                         */
+                /*L51  :                               */
+16843075 , /*  202    CALL        L80    OPTIONAL      */
+50331673 , /*  203    ACTION      SET_ENUM_BASE_TYPE                                              25    ERROR    */
+16843033 , /*  204    CALL        L72    OPTIONAL      */
+33619968 , /*  205    RETURN                           */
+                /*DECLARATOR                                                       */
+                /*L52  :                               */
+117440560 , /*  206    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16778707 , /*  207    CALL        L382   ERROR         */
+117440558 , /*  208    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /*  209    RETURN                           */
+                /*L53  :                               */
+16777954 , /*  210    CALL        L177   ERROR         */
+16777438 , /*  211    CALL        L56    ERROR         */
+50331674 , /*  212    ACTION      SET_MEMBER_POINTER_TYPE                                         26    ERROR    */
+33554432 , /*  213    RETURN                           */
+                /*L54  :                               */
+16777414 , /*  214    CALL        L50    ERROR         */
+16777438 , /*  215    CALL        L56    ERROR         */
+50331675 , /*  216    ACTION      SET_POINTER_TYPE                                                27    ERROR    */
+33554432 , /*  217    RETURN                           */
+                /*L55  :                               */
+16778687 , /*  218    CALL        L377   ERROR         */
+16777438 , /*  219    CALL        L56    ERROR         */
+50331676 , /*  220    ACTION      SET_REFERENCE_TYPE                                              28    ERROR    */
+33554432 , /*  221    RETURN                           */
+                /*L56  :                               */
+134217764 , /*  222    BUILTIN     36    ERROR          */
+150995173 , /*  223    SET_SELECT  L57                  */
+16908506 , /*  224    CALL        L55    EXIT          */
+16908502 , /*  225    CALL        L54    EXIT          */
+16908498 , /*  226    CALL        L53    EXIT          */
+16908478 , /*  227    CALL        L48    EXIT          */
+16777422 , /*  228    CALL        L52    ERROR         */
+                /*L57  :                               */
+16974557 , /*  229    CALL        L175   OPTIONAL REPEAT  */
+134217788 , /*  230    BUILTIN     60    ERROR          */
+33554432 , /*  231    RETURN                           */
+                /*DECLARATION_LIST                                                 */
+                /*L58  :                               */
+134217732 , /*  232    BUILTIN     4     ERROR          */
+150995180 , /*  233    SET_SELECT  L59                  */
+16909392 , /*  234    CALL        L278   EXIT          */
+16778019 , /*  235    CALL        L195   ERROR         */
+                /*L59  :                               */
+33554432 , /*  236    RETURN                           */
+                /*L60  :                               */
+16974056 , /*  237    CALL        L58    OPTIONAL REPEAT  */
+33751040 , /*  238    RETURN                           */
+                /*AMBIGUOUS_PAREN_TYPE_NAME                                        */
+                /*L61  :                               */
+16778213 , /*  239    CALL        L247   ERROR         */
+16777842 , /*  240    CALL        L147   ERROR         */
+33554432 , /*  241    RETURN                           */
+                /*TYPE_NAME                                                        */
+                /*L62  :                               */
+16777500 , /*  242    CALL        L73    ERROR         */
+16777594 , /*  243    CALL        L95    ERROR         */
+50331677 , /*  244    ACTION      SET_TYPE_DECLARATION                                            29    ERROR    */
+33554432 , /*  245    RETURN                           */
+                /*INITIALIZER_ITEM                                                 */
+                /*L63  :                               */
+16777289 , /*  246    CALL        L12    ERROR         */
+50331678 , /*  247    ACTION      SET_INITIALIZER_EXPRESSION                                      30    ERROR    */
+33554432 , /*  248    RETURN                           */
+                /*L64  :                               */
+117440552 , /*  249    TERMINAL    RIGHT_BRACE                                                       ERROR    */
+50331679 , /*  250    ACTION      SET_INITIALIZER_END                                             31    ERROR    */
+33554432 , /*  251    RETURN                           */
+                /*L65  :                               */
+117440551 , /*  252    TERMINAL    LEFT_BRACE                                                        ERROR    */
+50331680 , /*  253    ACTION      SET_INITIALIZER_BEGIN                                           32    ERROR    */
+33554432 , /*  254    RETURN                           */
+                /*L66  :                               */
+117440553 , /*  255    TERMINAL    COMMA                                                             ERROR    */
+50331681 , /*  256    ACTION      SET_INITIALIZER_DELIMITER                                       33    ERROR    */
+33554432 , /*  257    RETURN                           */
+                /*L67  :                               */
+134217773 , /*  258    BUILTIN     45    ERROR          */
+150995209 , /*  259    SET_SELECT  L68                  */
+16908543 , /*  260    CALL        L66    EXIT          */
+16908540 , /*  261    CALL        L65    EXIT          */
+16908537 , /*  262    CALL        L64    EXIT          */
+16908534 , /*  263    CALL        L63    EXIT          */
+50331682 , /*  264    ACTION      SET_INITIALIZER_UNKNOWN                                         34    ERROR    */
+                /*L68  :                               */
+33554432 , /*  265    RETURN                           */
+                /*ENUMERATOR                                                       */
+                /*L69  :                               */
+117440586 , /*  266    TERMINAL    EQUAL                                                             ERROR    */
+50331683 , /*  267    ACTION      SET_ENUMERATOR_INITIALIZED                                      35    ERROR    */
+16778066 , /*  268    CALL        L204   ERROR         */
+33554432 , /*  269    RETURN                           */
+                /*L70  :                               */
+117440513 , /*  270    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331684 , /*  271    ACTION      SET_SIMPLE_NAME                                                 36    ERROR    */
+16843018 , /*  272    CALL        L69    OPTIONAL      */
+50331685 , /*  273    ACTION      SET_ENUMERATOR_VALUE                                            37    ERROR    */
+33554432 , /*  274    RETURN                           */
+                /*ENUM_BODY                                                        */
+                /*L71  :                               */
+117440551 , /*  275    TERMINAL    LEFT_BRACE                                                        ERROR    */
+50331686 , /*  276    ACTION      BEGIN_ENUM_BODY                                                 38    ERROR    */
+16844004 , /*  277    CALL        L320   OPTIONAL      */
+117440552 , /*  278    TERMINAL    RIGHT_BRACE                                                       ERROR    */
+50331687 , /*  279    ACTION      END_ENUM_BODY                                                   39    ERROR    */
+33554432 , /*  280    RETURN                           */
+                /*CLASS_EXTENDED_SPECIFIERS                                        */
+                /*L72  :                               */
+117440518 , /*  281    TERMINAL    STORAGE_CLASS                                                     ERROR    */
+50331688 , /*  282    ACTION      SET_TAG_EXTERN                                                  40    ERROR    */
+33554432 , /*  283    RETURN                           */
+                /*DECLARATION_SPECIFIERS                                           */
+                /*L73  :                               */
+134217783 , /*  284    BUILTIN     55    ERROR          */
+16778766 ,
+16975374 , /*  286    CALL        L399   ERROR    REPEAT  */
+50331689 , /*  287    ACTION      SET_BASE_TYPE                                                   41    ERROR    */
+33554432 , /*  288    RETURN                           */
+                /*IF_STATEMENT                                                     */
+                /*L74  :                               */
+117440538 , /*  289    TERMINAL    KW_ELSE                                                           ERROR    */
+50331690 , /*  290    ACTION      ELSE_HEADER                                                     42    ERROR    */
+16778083 , /*  291    CALL        L209   ERROR         */
+33554432 , /*  292    RETURN                           */
+                /*L75  :                               */
+50331691 , /*  293    ACTION      STATEMENT_START                                                 43    ERROR    */
+117440546 , /*  294    TERMINAL    KW_IF                                                             ERROR    */
+50331692 , /*  295    ACTION      START_IF                                                        44    ERROR    */
+117440560 , /*  296    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16778391 , /*  297    CALL        L298   ERROR         */
+117440558 , /*  298    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331693 , /*  299    ACTION      IF_HEADER                                                       45    ERROR    */
+16778083 , /*  300    CALL        L209   ERROR         */
+16843041 , /*  301    CALL        L74    OPTIONAL      */
+50331694 , /*  302    ACTION      IF_TRAILER                                                      46    ERROR    */
+33554432 , /*  303    RETURN                           */
+                /*MEMBER_DECLARATOR_LIST                                           */
+                /*L76  :                               */
+117440553 , /*  304    TERMINAL    COMMA                                                             ERROR    */
+16777966 , /*  305    CALL        L180   ERROR         */
+50331695 , /*  306    ACTION      SET_MEMBER_DECLARATION                                          47    ERROR    */
+33554432 , /*  307    RETURN                           */
+                /*L77  :                               */
+16777966 , /*  308    CALL        L180   ERROR         */
+50331696 , /*  309    ACTION      SET_MEMBER_DECLARATION                                          48    ERROR    */
+16974128 , /*  310    CALL        L76    OPTIONAL REPEAT  */
+33751040 , /*  311    RETURN                           */
+                /*CLASS_BODY                                                       */
+                /*L78  :                               */
+117440551 , /*  312    TERMINAL    LEFT_BRACE                                                        ERROR    */
+50331697 , /*  313    ACTION      BEGIN_CLASS_BODY                                                49    ERROR    */
+16843507 , /*  314    CALL        L182   OPTIONAL      */
+117440552 , /*  315    TERMINAL    RIGHT_BRACE                                                       ERROR    */
+50331698 , /*  316    ACTION      END_CLASS_BODY                                                  50    ERROR    */
+33554432 , /*  317    RETURN                           */
+                /*CLASS_DERIVATION_SPECIFIER                                       */
+                /*L79  :                               */
+117440554 , /*  318    TERMINAL    COLON                                                             ERROR    */
+50331699 , /*  319    ACTION      BEGIN_CLASS_DERIVATION                                          51    ERROR    */
+16777728 , /*  320    CALL        L122   ERROR         */
+50331700 , /*  321    ACTION      SET_CLASS_DERIVATION                                            52    ERROR    */
+33554432 , /*  322    RETURN                           */
+                /*ELEMENTARY_TYPE_SPECIFIERS                                       */
+                /*L80  :                               */
+50331701 , /*  323    ACTION      CLEAR_TYPE_SPECIFIERS                                           53    ERROR    */
+16777327 ,
+16973935 , /*  325    CALL        L23    ERROR    REPEAT  */
+50331702 , /*  326    ACTION      SET_BASE_TYPE                                                   54    ERROR    */
+33554432 , /*  327    RETURN                           */
+                /*FUNCTION_ARGUMENT_LIST                                           */
+                /*L81  :                               */
+16778311 , /*  328    CALL        L276   ERROR         */
+117440558 , /*  329    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /*  330    RETURN                           */
+                /*L82  :                               */
+117440560 , /*  331    TERMINAL    LEFT_PAREN                                                        ERROR    */
+150995279 , /*  332    SET_SELECT  L83                  */
+117571630 , /*  333    TERMINAL    RIGHT_PAREN                                                       EXIT     */
+16777544 , /*  334    CALL        L81    ERROR         */
+                /*L83  :                               */
+50331703 , /*  335    ACTION      POP_ARGUMENT_VALUES                                             55    ERROR    */
+33554432 , /*  336    RETURN                           */
+                /*FUNCTION_BODY                                                    */
+                /*L84  :                               */
+16844328 , /*  337    CALL        L405   OPTIONAL      */
+16778428 , /*  338    CALL        L309   ERROR         */
+33554432 , /*  339    RETURN                           */
+                /*RETURN_STATEMENT                                                 */
+                /*L85  :                               */
+16778391 , /*  340    CALL        L298   ERROR         */
+117440550 , /*  341    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  342    RETURN                           */
+                /*L86  :                               */
+117440550 , /*  343    TERMINAL    SEMI_COLON                                                        ERROR    */
+50331704 , /*  344    ACTION      NULL_VALUE                                                      56    ERROR    */
+33554432 , /*  345    RETURN                           */
+                /*L87  :                               */
+50331705 , /*  346    ACTION      STATEMENT_START                                                 57    ERROR    */
+117440547 , /*  347    TERMINAL    KW_RETURN                                                         ERROR    */
+150995295 , /*  348    SET_SELECT  L88                  */
+16908631 , /*  349    CALL        L86    EXIT          */
+16777556 , /*  350    CALL        L85    ERROR         */
+                /*L88  :                               */
+50331706 , /*  351    ACTION      EMIT_RETURN                                                     58    ERROR    */
+33554432 , /*  352    RETURN                           */
+                /*EXPRESSION_STATEMENT                                             */
+                /*L89  :                               */
+50331707 , /*  353    ACTION      STATEMENT_START                                                 59    ERROR    */
+16778391 , /*  354    CALL        L298   ERROR         */
+117440550 , /*  355    TERMINAL    SEMI_COLON                                                        ERROR    */
+50331708 , /*  356    ACTION      EMIT_EXPRESSION                                                 60    ERROR    */
+33554432 , /*  357    RETURN                           */
+                /*PEEK_ACTUAL_PAREN_TYPE_NAME                                      */
+                /*L90  :                               */
+134217728 , /*  358    BUILTIN     0     ERROR          */
+16777842 , /*  359    CALL        L147   ERROR         */
+134217729 , /*  360    BUILTIN     1     ERROR          */
+33554432 , /*  361    RETURN                           */
+                /*ABSTRACT_DECLARATOR                                              */
+                /*L91  :                               */
+117440560 , /*  362    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16777594 , /*  363    CALL        L95    ERROR         */
+117440558 , /*  364    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /*  365    RETURN                           */
+                /*L92  :                               */
+16777954 , /*  366    CALL        L177   ERROR         */
+16777594 , /*  367    CALL        L95    ERROR         */
+50331709 , /*  368    ACTION      SET_MEMBER_POINTER_TYPE                                         61    ERROR    */
+33554432 , /*  369    RETURN                           */
+                /*L93  :                               */
+16777414 , /*  370    CALL        L50    ERROR         */
+16777594 , /*  371    CALL        L95    ERROR         */
+50331710 , /*  372    ACTION      SET_POINTER_TYPE                                                62    ERROR    */
+33554432 , /*  373    RETURN                           */
+                /*L94  :                               */
+16778687 , /*  374    CALL        L377   ERROR         */
+16777594 , /*  375    CALL        L95    ERROR         */
+50331711 , /*  376    ACTION      SET_REFERENCE_TYPE                                              63    ERROR    */
+33554432 , /*  377    RETURN                           */
+                /*L95  :                               */
+134217767 , /*  378    BUILTIN     39    ERROR          */
+150995328 , /*  379    SET_SELECT  L96                  */
+16908662 , /*  380    CALL        L94    EXIT          */
+16908658 , /*  381    CALL        L93    EXIT          */
+16908654 , /*  382    CALL        L92    EXIT          */
+16843114 , /*  383    CALL        L91    OPTIONAL      */
+                /*L96  :                               */
+16975066 , /*  384    CALL        L316   OPTIONAL REPEAT  */
+33751040 , /*  385    RETURN                           */
+                /*INIT_DECLARATOR                                                  */
+                /*L97  :                               */
+117440560 , /*  386    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331712 , /*  387    ACTION      BEGIN_CLASS_INITIALIZER                                         64    ERROR    */
+16778311 , /*  388    CALL        L276   ERROR         */
+50331713 , /*  389    ACTION      SET_INITIALIZER_ARGUMENTS                                       65    ERROR    */
+117440558 , /*  390    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331714 , /*  391    ACTION      END_CLASS_INITIALIZER                                           66    ERROR    */
+33554432 , /*  392    RETURN                           */
+                /*L98  :                               */
+117440586 , /*  393    TERMINAL    EQUAL                                                             ERROR    */
+50331715 , /*  394    ACTION      PARSE_INITIALIZER                                               67    ERROR    */
+33554432 , /*  395    RETURN                           */
+                /*L99  :                               */
+16777438 , /*  396    CALL        L56    ERROR         */
+50331716 , /*  397    ACTION      SET_DECLARATION                                                 68    ERROR    */
+150995346 , /*  398    SET_SELECT  L100                 */
+16908681 , /*  399    CALL        L98    EXIT          */
+16908674 , /*  400    CALL        L97    EXIT          */
+50331717 , /*  401    ACTION      SET_NULL_INITIALIZER                                            69    ERROR    */
+                /*L100 :                               */
+33554432 , /*  402    RETURN                           */
+                /*INITIALIZER                                                      */
+                /*L101 :                               */
+117440560 , /*  403    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331718 , /*  404    ACTION      BEGIN_CLASS_INITIALIZER                                         70    ERROR    */
+16778311 , /*  405    CALL        L276   ERROR         */
+50331719 , /*  406    ACTION      SET_INITIALIZER_ARGUMENTS                                       71    ERROR    */
+117440558 , /*  407    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331720 , /*  408    ACTION      END_CLASS_INITIALIZER                                           72    ERROR    */
+33554432 , /*  409    RETURN                           */
+                /*L102 :                               */
+117440586 , /*  410    TERMINAL    EQUAL                                                             ERROR    */
+50331721 , /*  411    ACTION      PARSE_INITIALIZER                                               73    ERROR    */
+33554432 , /*  412    RETURN                           */
+                /*L103 :                               */
+134217769 , /*  413    BUILTIN     41    ERROR          */
+150995362 , /*  414    SET_SELECT  L104                 */
+16908698 , /*  415    CALL        L102   EXIT          */
+16908691 , /*  416    CALL        L101   EXIT          */
+50331722 , /*  417    ACTION      SET_NULL_INITIALIZER                                            74    ERROR    */
+                /*L104 :                               */
+33554432 , /*  418    RETURN                           */
+                /*SIMPLE_OVERLOADABLE_OPERATOR                                     */
+                /*L105 :                               */
+134217756 , /*  419    BUILTIN     28    ERROR          */
+150995400 , /*  420    SET_SELECT  L106                 */
+117571634 , /*  421    TERMINAL    ARROW                                                             EXIT     */
+117571635 , /*  422    TERMINAL    PLUS_PLUS                                                         EXIT     */
+117571636 , /*  423    TERMINAL    MINUS_MINUS                                                       EXIT     */
+117571637 , /*  424    TERMINAL    NOT                                                               EXIT     */
+117571638 , /*  425    TERMINAL    TILDE                                                             EXIT     */
+117571639 , /*  426    TERMINAL    PLUS                                                              EXIT     */
+117571640 , /*  427    TERMINAL    MINUS                                                             EXIT     */
+117571641 , /*  428    TERMINAL    STAR                                                              EXIT     */
+117571642 , /*  429    TERMINAL    AND                                                               EXIT     */
+117571643 , /*  430    TERMINAL    SLASH                                                             EXIT     */
+117571644 , /*  431    TERMINAL    PERCENT                                                           EXIT     */
+117571645 , /*  432    TERMINAL    LEFT_SHIFT                                                        EXIT     */
+117571646 , /*  433    TERMINAL    RIGHT_SHIFT                                                       EXIT     */
+117571647 , /*  434    TERMINAL    AND_AND                                                           EXIT     */
+117571648 , /*  435    TERMINAL    OR_OR                                                             EXIT     */
+117571649 , /*  436    TERMINAL    OR                                                                EXIT     */
+117571650 , /*  437    TERMINAL    XOR                                                               EXIT     */
+117571651 , /*  438    TERMINAL    LESS_THAN                                                         EXIT     */
+117571652 , /*  439    TERMINAL    LESS_EQUAL                                                        EXIT     */
+117571653 , /*  440    TERMINAL    GREATER_THAN                                                      EXIT     */
+117571654 , /*  441    TERMINAL    GREATER_EQUAL                                                     EXIT     */
+117571655 , /*  442    TERMINAL    EQUAL_EQUAL                                                       EXIT     */
+117571656 , /*  443    TERMINAL    NOT_EQUAL                                                         EXIT     */
+117571657 , /*  444    TERMINAL    ARROW_STAR                                                        EXIT     */
+117571658 , /*  445    TERMINAL    EQUAL                                                             EXIT     */
+117571659 , /*  446    TERMINAL    PLUS_EQUAL                                                        EXIT     */
+117571660 , /*  447    TERMINAL    MINUS_EQUAL                                                       EXIT     */
+117571661 , /*  448    TERMINAL    STAR_EQUAL                                                        EXIT     */
+117571662 , /*  449    TERMINAL    SLASH_EQUAL                                                       EXIT     */
+117571663 , /*  450    TERMINAL    PERCENT_EQUAL                                                     EXIT     */
+117571664 , /*  451    TERMINAL    AND_EQUAL                                                         EXIT     */
+117571665 , /*  452    TERMINAL    OR_EQUAL                                                          EXIT     */
+117571666 , /*  453    TERMINAL    XOR_EQUAL                                                         EXIT     */
+117571667 , /*  454    TERMINAL    LEFT_SHIFT_EQUAL                                                  EXIT     */
+117440596 , /*  455    TERMINAL    RIGHT_SHIFT_EQUAL                                                 ERROR    */
+                /*L106 :                               */
+50331723 , /*  456    ACTION      SET_OPERATOR_NAME                                               75    ERROR    */
+33554432 , /*  457    RETURN                           */
+                /*GLOBAL_QUALIFIED_NAME                                            */
+                /*L107 :                               */
+117440513 , /*  458    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331724 , /*  459    ACTION      SET_VANILLA_NAME                                                76    ERROR    */
+33554432 , /*  460    RETURN                           */
+                /*L108 :                               */
+16778255 , /*  461    CALL        L260   ERROR         */
+150995409 , /*  462    SET_SELECT  L109                 */
+16908843 , /*  463    CALL        L129   EXIT          */
+16777674 , /*  464    CALL        L107   ERROR         */
+                /*L109 :                               */
+33554432 , /*  465    RETURN                           */
+                /*QUALIFIED_NAME                                                   */
+                /*L110 :                               */
+117440513 , /*  466    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331725 , /*  467    ACTION      SET_VANILLA_NAME                                                77    ERROR    */
+33554432 , /*  468    RETURN                           */
+                /*L111 :                               */
+16777280 , /*  469    CALL        L10    ERROR         */
+150995418 , /*  470    SET_SELECT  L112                 */
+16908843 , /*  471    CALL        L129   EXIT          */
+16909719 , /*  472    CALL        L364   EXIT          */
+16777682 , /*  473    CALL        L110   ERROR         */
+                /*L112 :                               */
+33554432 , /*  474    RETURN                           */
+                /*SIMPLE_GLOBAL_SCOPE_QUALIFIER                                    */
+                /*L113 :                               */
+50331726 , /*  475    ACTION      CLEAR_SCOPE_QUALIFIER                                           78    ERROR    */
+117440555 , /*  476    TERMINAL    COLON_COLON                                                       ERROR    */
+50331727 , /*  477    ACTION      SET_GLOBAL_SCOPE_QUALIFIER                                      79    ERROR    */
+33554432 , /*  478    RETURN                           */
+                /*OLD_PARAMETER_DECLARATION                                        */
+                /*L114 :                               */
+16777500 , /*  479    CALL        L73    ERROR         */
+16778128 , /*  480    CALL        L223   ERROR         */
+117440550 , /*  481    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  482    RETURN                           */
+                /*PARAMETER_INITIALIZER                                            */
+                /*L115 :                               */
+117440586 , /*  483    TERMINAL    EQUAL                                                             ERROR    */
+16777289 , /*  484    CALL        L12    ERROR         */
+50331728 , /*  485    ACTION      SET_PARAMETER_INITIALIZER                                       80    ERROR    */
+33554432 , /*  486    RETURN                           */
+                /*SIMPLE_TYPE_SPECIFIER                                            */
+                /*L116 :                               */
+134217784 , /*  487    BUILTIN     56    ERROR          */
+50331729 , /*  488    ACTION      CLEAR_TYPE_SPECIFIERS                                           81    ERROR    */
+150995436 , /*  489    SET_SELECT  L117                 */
+16909141 , /*  490    CALL        L205   EXIT          */
+16777327 , /*  491    CALL        L23    ERROR         */
+                /*L117 :                               */
+50331730 , /*  492    ACTION      SET_BASE_TYPE                                                   82    ERROR    */
+33554432 , /*  493    RETURN                           */
+                /*AMBIGUOUS_DECLARATION_STATEMENT                                  */
+                /*L118 :                               */
+16778520 , /*  494    CALL        L336   ERROR         */
+16777910 , /*  495    CALL        L164   ERROR         */
+33554432 , /*  496    RETURN                           */
+                /*ALLOCATION_EXPRESSION                                            */
+                /*L119 :                               */
+134217745 , /*  497    BUILTIN     17    ERROR          */
+16843227 , /*  498    CALL        L113   OPTIONAL      */
+117440535 , /*  499    TERMINAL    KW_NEW                                                            ERROR    */
+50331731 , /*  500    ACTION      PUSH_NEW                                                        83    ERROR    */
+16778333 , /*  501    CALL        L282   ERROR         */
+16778454 , /*  502    CALL        L314   ERROR         */
+50331732 , /*  503    ACTION      POP_NEW                                                         84    ERROR    */
+33554432 , /*  504    RETURN                           */
+                /*PURE_SPECIFIER                                                   */
+                /*L120 :                               */
+117440586 , /*  505    TERMINAL    EQUAL                                                             ERROR    */
+16778066 , /*  506    CALL        L204   ERROR         */
+50331733 , /*  507    ACTION      SET_PURE_SPECIFIER                                              85    ERROR    */
+33554432 , /*  508    RETURN                           */
+                /*CLASS_DERIVATION_LIST                                            */
+                /*L121 :                               */
+117440553 , /*  509    TERMINAL    COMMA                                                             ERROR    */
+16778183 , /*  510    CALL        L240   ERROR         */
+33554432 , /*  511    RETURN                           */
+                /*L122 :                               */
+16778183 , /*  512    CALL        L240   ERROR         */
+16974333 , /*  513    CALL        L121   OPTIONAL REPEAT  */
+33751040 , /*  514    RETURN                           */
+                /*STATEMENT                                                        */
+                /*L123 :                               */
+134217775 , /*  515    BUILTIN     47    ERROR          */
+150995478 , /*  516    SET_SELECT  L124                 */
+16908982 , /*  517    CALL        L164   EXIT          */
+16908782 , /*  518    CALL        L118   EXIT          */
+16908641 , /*  519    CALL        L89    EXIT          */
+16909120 , /*  520    CALL        L201   EXIT          */
+16909115 , /*  521    CALL        L200   EXIT          */
+16908288 , /*  522    CALL        L1     EXIT          */
+16909110 , /*  523    CALL        L199   EXIT          */
+16909104 , /*  524    CALL        L198   EXIT          */
+16908901 , /*  525    CALL        L146   EXIT          */
+16909265 , /*  526    CALL        L243   EXIT          */
+16909514 , /*  527    CALL        L312   EXIT          */
+16908581 , /*  528    CALL        L75    EXIT          */
+16908634 , /*  529    CALL        L87    EXIT          */
+16908823 , /*  530    CALL        L125   EXIT          */
+16909504 , /*  531    CALL        L311   EXIT          */
+16909709 , /*  532    CALL        L361   EXIT          */
+16778025 , /*  533    CALL        L197   ERROR         */
+                /*L124 :                               */
+33554432 , /*  534    RETURN                           */
+                /*SWITCH_STATEMENT                                                 */
+                /*L125 :                               */
+50331734 , /*  535    ACTION      STATEMENT_START                                                 86    ERROR    */
+117440548 , /*  536    TERMINAL    KW_SWITCH                                                         ERROR    */
+117440560 , /*  537    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331735 , /*  538    ACTION      START_SWITCH_LOOP                                               87    ERROR    */
+16778391 , /*  539    CALL        L298   ERROR         */
+117440558 , /*  540    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331736 , /*  541    ACTION      TEST_SWITCH_LOOP                                                88    ERROR    */
+16778083 , /*  542    CALL        L209   ERROR         */
+50331737 , /*  543    ACTION      FINISH_SWITCH_LOOP                                              89    ERROR    */
+33554432 , /*  544    RETURN                           */
+                /*LA_VANILLA_INITIALIZER                                           */
+                /*L126 :                               */
+117440551 , /*  545    TERMINAL    LEFT_BRACE                                                        ERROR    */
+16777333 , /*  546    CALL        L25    ERROR         */
+117637161 , /*  547    TERMINAL    COMMA                                                             OPTIONAL REPEAT  */
+117440552 , /*  548    TERMINAL    RIGHT_BRACE                                                       ERROR    */
+33554432 , /*  549    RETURN                           */
+                /*L127 :                               */
+117440586 , /*  550    TERMINAL    EQUAL                                                             ERROR    */
+150995498 , /*  551    SET_SELECT  L128                 */
+16908833 , /*  552    CALL        L126   EXIT          */
+16777289 , /*  553    CALL        L12    ERROR         */
+                /*L128 :                               */
+33554432 , /*  554    RETURN                           */
+                /*OPERATOR_OR_CONVERSION_FUNCTION_NAME                             */
+                /*L129 :                               */
+117440528 , /*  555    TERMINAL    KW_OPERATOR                                                       ERROR    */
+150995503 , /*  556    SET_SELECT  L130                 */
+16909454 , /*  557    CALL        L295   EXIT          */
+16777849 , /*  558    CALL        L148   ERROR         */
+                /*L130 :                               */
+33554432 , /*  559    RETURN                           */
+                /*PARAMETER_DECLARATION                                            */
+                /*L131 :                               */
+16777500 , /*  560    CALL        L73    ERROR         */
+16842900 , /*  561    CALL        L34    OPTIONAL      */
+50331738 , /*  562    ACTION      SET_PARAMETER_DECLARATION                                       90    ERROR    */
+16843235 , /*  563    CALL        L115   OPTIONAL      */
+33619968 , /*  564    RETURN                           */
+                /*L132 :                               */
+117440556 , /*  565    TERMINAL    ELLIPSIS                                                          ERROR    */
+50331739 , /*  566    ACTION      SET_ELLIPSIS                                                    91    ERROR    */
+33554432 , /*  567    RETURN                           */
+                /*L133 :                               */
+134217774 , /*  568    BUILTIN     46    ERROR          */
+150995516 , /*  569    SET_SELECT  L134                 */
+16908853 , /*  570    CALL        L132   EXIT          */
+16777776 , /*  571    CALL        L131   ERROR         */
+                /*L134 :                               */
+33554432 , /*  572    RETURN                           */
+                /*FUNCTION_DECLARATOR                                              */
+                /*L135 :                               */
+117440556 , /*  573    TERMINAL    ELLIPSIS                                                          ERROR    */
+50331740 , /*  574    ACTION      WARN_EXTRA_ELLIPSIS                                             92    ERROR    */
+33554432 , /*  575    RETURN                           */
+                /*L136 :                               */
+117440553 , /*  576    TERMINAL    COMMA                                                             ERROR    */
+16777784 , /*  577    CALL        L133   ERROR         */
+33554432 , /*  578    RETURN                           */
+                /*L137 :                               */
+150995526 , /*  579    SET_SELECT  L138                 */
+16908864 , /*  580    CALL        L136   EXIT          */
+16777789 , /*  581    CALL        L135   ERROR         */
+                /*L138 :                               */
+33554432 , /*  582    RETURN                           */
+                /*L139 :                               */
+16777784 , /*  583    CALL        L133   ERROR         */
+16974403 , /*  584    CALL        L137   OPTIONAL REPEAT  */
+33751040 , /*  585    RETURN                           */
+                /*L140 :                               */
+16777799 , /*  586    CALL        L139   ERROR         */
+117440558 , /*  587    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /*  588    RETURN                           */
+                /*L141 :                               */
+117440560 , /*  589    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331741 , /*  590    ACTION      BEGIN_FUNCTION_TYPE                                             93    ERROR    */
+134217790 , /*  591    BUILTIN     62    ERROR          */
+150995539 , /*  592    SET_SELECT  L142                 */
+117571630 , /*  593    TERMINAL    RIGHT_PAREN                                                       EXIT     */
+16777802 , /*  594    CALL        L140   ERROR         */
+                /*L142 :                               */
+134217791 , /*  595    BUILTIN     63    ERROR          */
+16844253 , /*  596    CALL        L384   OPTIONAL      */
+50331742 , /*  597    ACTION      SET_FUNCTION_TYPE                                               94    ERROR    */
+33554432 , /*  598    RETURN                           */
+                /*MEMBER_INITIALIZER_LIST                                          */
+                /*L143 :                               */
+117440553 , /*  599    TERMINAL    COMMA                                                             ERROR    */
+16778298 , /*  600    CALL        L272   ERROR         */
+33554432 , /*  601    RETURN                           */
+                /*L144 :                               */
+16778298 , /*  602    CALL        L272   ERROR         */
+16974423 , /*  603    CALL        L143   OPTIONAL REPEAT  */
+33751040 , /*  604    RETURN                           */
+                /*ASM_DECLARATION                                                  */
+                /*L145 :                               */
+117440534 , /*  605    TERMINAL    KW_ASM                                                            ERROR    */
+50331743 , /*  606    ACTION      BEGIN_ASM_DECLARATION                                           95    ERROR    */
+117440560 , /*  607    TERMINAL    LEFT_PAREN                                                        ERROR    */
+117440515 , /*  608    TERMINAL    STRING                                                            ERROR    */
+50331744 , /*  609    ACTION      SET_ASM_DECLARATION                                             96    ERROR    */
+117440558 , /*  610    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+117440550 , /*  611    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  612    RETURN                           */
+                /*DO_STATEMENT                                                     */
+                /*L146 :                               */
+50331745 , /*  613    ACTION      STATEMENT_START                                                 97    ERROR    */
+117440543 , /*  614    TERMINAL    KW_DO                                                             ERROR    */
+50331746 , /*  615    ACTION      START_DO_LOOP                                                   98    ERROR    */
+16778083 , /*  616    CALL        L209   ERROR         */
+117440549 , /*  617    TERMINAL    KW_WHILE                                                          ERROR    */
+50331747 , /*  618    ACTION      EMIT_LOOP_CONTINUE_LABEL                                        99    ERROR    */
+117440560 , /*  619    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16778391 , /*  620    CALL        L298   ERROR         */
+117440558 , /*  621    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331748 , /*  622    ACTION      TEST_DO_LOOP                                                    100   ERROR    */
+117440550 , /*  623    TERMINAL    SEMI_COLON                                                        ERROR    */
+50331749 , /*  624    ACTION      FINISH_DO_LOOP                                                  101   ERROR    */
+33554432 , /*  625    RETURN                           */
+                /*PAREN_TYPE_NAME                                                  */
+                /*L147 :                               */
+117440560 , /*  626    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331750 , /*  627    ACTION      BEGIN_PAREN_TYPE_NAME                                           102   ERROR    */
+16777458 , /*  628    CALL        L62    ERROR         */
+50331751 , /*  629    ACTION      TYPE_VALUE                                                      103   ERROR    */
+117440558 , /*  630    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331752 , /*  631    ACTION      END_PAREN_TYPE_NAME                                             104   ERROR    */
+33554432 , /*  632    RETURN                           */
+                /*CONVERSION_TYPE_NAME                                             */
+                /*L148 :                               */
+50331753 , /*  633    ACTION      BEGIN_CONVERSION_NAME                                           105   ERROR    */
+16778609 , /*  634    CALL        L355   ERROR         */
+16844204 , /*  635    CALL        L371   OPTIONAL      */
+50331754 , /*  636    ACTION      SET_CONVERSION_NAME                                             106   ERROR    */
+33554432 , /*  637    RETURN                           */
+                /*VANILLA_NAME                                                     */
+                /*L149 :                               */
+117440513 , /*  638    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331755 , /*  639    ACTION      SET_VANILLA_NAME                                                107   ERROR    */
+33554432 , /*  640    RETURN                           */
+                /*OPTIONAL_DECLARATION_SPECIFIERS                                  */
+                /*L150 :                               */
+134217783 , /*  641    BUILTIN     55    ERROR          */
+16778766 ,
+16975374 , /*  643    CALL        L399   ERROR    REPEAT  */
+33751040 , /*  644    RETURN                           */
+                /*UNAMBIGUOUS_DECLARATION_STATEMENT                                */
+                /*L151 :                               */
+117440550 , /*  645    TERMINAL    SEMI_COLON                                                        ERROR    */
+50331756 , /*  646    ACTION      SET_DECLARATION                                                 108   ERROR    */
+33554432 , /*  647    RETURN                           */
+                /*L152 :                               */
+117440553 , /*  648    TERMINAL    COMMA                                                             ERROR    */
+50331757 , /*  649    ACTION      SET_DECLARATION                                                 109   ERROR    */
+16778800 , /*  650    CALL        L407   ERROR         */
+117440550 , /*  651    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  652    RETURN                           */
+                /*L153 :                               */
+117440553 , /*  653    TERMINAL    COMMA                                                             ERROR    */
+16778800 , /*  654    CALL        L407   ERROR         */
+117440550 , /*  655    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  656    RETURN                           */
+                /*L154 :                               */
+50331758 , /*  657    ACTION      SET_NULL_INITIALIZER                                            110   ERROR    */
+150995605 , /*  658    SET_SELECT  L155                 */
+16908941 , /*  659    CALL        L153   EXIT          */
+117440550 , /*  660    TERMINAL    SEMI_COLON                                                        ERROR    */
+                /*L155 :                               */
+33554432 , /*  661    RETURN                           */
+                /*L156 :                               */
+117440553 , /*  662    TERMINAL    COMMA                                                             ERROR    */
+16778800 , /*  663    CALL        L407   ERROR         */
+117440550 , /*  664    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  665    RETURN                           */
+                /*L157 :                               */
+117440560 , /*  666    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331759 , /*  667    ACTION      BEGIN_CLASS_INITIALIZER                                         111   ERROR    */
+16778311 , /*  668    CALL        L276   ERROR         */
+50331760 , /*  669    ACTION      SET_INITIALIZER_ARGUMENTS                                       112   ERROR    */
+117440558 , /*  670    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331761 , /*  671    ACTION      END_CLASS_INITIALIZER                                           113   ERROR    */
+150995619 , /*  672    SET_SELECT  L158                 */
+16908950 , /*  673    CALL        L156   EXIT          */
+117440550 , /*  674    TERMINAL    SEMI_COLON                                                        ERROR    */
+                /*L158 :                               */
+33554432 , /*  675    RETURN                           */
+                /*L159 :                               */
+117440553 , /*  676    TERMINAL    COMMA                                                             ERROR    */
+16778800 , /*  677    CALL        L407   ERROR         */
+117440550 , /*  678    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  679    RETURN                           */
+                /*L160 :                               */
+117440586 , /*  680    TERMINAL    EQUAL                                                             ERROR    */
+50331762 , /*  681    ACTION      PARSE_INITIALIZER                                               114   ERROR    */
+150995629 , /*  682    SET_SELECT  L161                 */
+16908964 , /*  683    CALL        L159   EXIT          */
+117440550 , /*  684    TERMINAL    SEMI_COLON                                                        ERROR    */
+                /*L161 :                               */
+33554432 , /*  685    RETURN                           */
+                /*L162 :                               */
+16777438 , /*  686    CALL        L56    ERROR         */
+50331763 , /*  687    ACTION      SET_DECLARATION                                                 115   ERROR    */
+134217782 , /*  688    BUILTIN     54    ERROR          */
+150995637 , /*  689    SET_SELECT  L163                 */
+16908968 , /*  690    CALL        L160   EXIT          */
+16908954 , /*  691    CALL        L157   EXIT          */
+16777873 , /*  692    CALL        L154   ERROR         */
+                /*L163 :                               */
+33554432 , /*  693    RETURN                           */
+                /*L164 :                               */
+16777500 , /*  694    CALL        L73    ERROR         */
+150995643 , /*  695    SET_SELECT  L165                 */
+16908974 , /*  696    CALL        L162   EXIT          */
+16908936 , /*  697    CALL        L152   EXIT          */
+16777861 , /*  698    CALL        L151   ERROR         */
+                /*L165 :                               */
+33554432 , /*  699    RETURN                           */
+                /*POSTFIX_OPERATOR                                                 */
+                /*L166 :                               */
+117440564 , /*  700    TERMINAL    MINUS_MINUS                                                       ERROR    */
+50331764 , /*  701    ACTION      POSTDECREMENT_VALUE                                             116   ERROR    */
+33554432 , /*  702    RETURN                           */
+                /*L167 :                               */
+117440563 , /*  703    TERMINAL    PLUS_PLUS                                                         ERROR    */
+50331765 , /*  704    ACTION      POSTINCREMENT_VALUE                                             117   ERROR    */
+33554432 , /*  705    RETURN                           */
+                /*L168 :                               */
+117440562 , /*  706    TERMINAL    ARROW                                                             ERROR    */
+50331766 , /*  707    ACTION      DEREFERENCE_ARROW                                               118   ERROR    */
+150995655 , /*  708    SET_SELECT  L169                 */
+16908414 , /*  709    CALL        L28    EXIT          */
+16778647 , /*  710    CALL        L364   ERROR         */
+                /*L169 :                               */
+50331767 , /*  711    ACTION      DOT_VALUE                                                       119   ERROR    */
+33554432 , /*  712    RETURN                           */
+                /*L170 :                               */
+117440561 , /*  713    TERMINAL    DOT                                                               ERROR    */
+150995661 , /*  714    SET_SELECT  L171                 */
+16908414 , /*  715    CALL        L28    EXIT          */
+16778647 , /*  716    CALL        L364   ERROR         */
+                /*L171 :                               */
+50331768 , /*  717    ACTION      DOT_VALUE                                                       120   ERROR    */
+33554432 , /*  718    RETURN                           */
+                /*L172 :                               */
+134217748 , /*  719    BUILTIN     20    ERROR          */
+50331769 , /*  720    ACTION      SET_CALL_OP                                                     121   ERROR    */
+16777547 , /*  721    CALL        L82    ERROR         */
+50331770 , /*  722    ACTION      BINARY_OPERATION                                                122   ERROR    */
+33554432 , /*  723    RETURN                           */
+                /*L173 :                               */
+134217755 , /*  724    BUILTIN     27    ERROR          */
+150995676 , /*  725    SET_SELECT  L174                 */
+16909520 , /*  726    CALL        L313   EXIT          */
+16909007 , /*  727    CALL        L172   EXIT          */
+16909001 , /*  728    CALL        L170   EXIT          */
+16908994 , /*  729    CALL        L168   EXIT          */
+16908991 , /*  730    CALL        L167   EXIT          */
+16777916 , /*  731    CALL        L166   ERROR         */
+                /*L174 :                               */
+33554432 , /*  732    RETURN                           */
+                /*AMBIGUOUS_POSTFIX_DECLARATOR                                     */
+                /*L175 :                               */
+134217770 , /*  733    BUILTIN     42    ERROR          */
+150995681 , /*  734    SET_SELECT  L176                 */
+16908469 , /*  735    CALL        L45    EXIT          */
+16778682 , /*  736    CALL        L375   ERROR         */
+                /*L176 :                               */
+33554432 , /*  737    RETURN                           */
+                /*MEMBER_POINTER                                                   */
+                /*L177 :                               */
+16777316 , /*  738    CALL        L19    ERROR         */
+50331771 , /*  739    ACTION      SET_DERIVED_CLASS_QUALIFIER                                     123   ERROR    */
+117440569 , /*  740    TERMINAL    STAR                                                              ERROR    */
+16844253 , /*  741    CALL        L384   OPTIONAL      */
+50331772 , /*  742    ACTION      SET_DERIVED_TYPE_QUALIFIER                                      124   ERROR    */
+33554432 , /*  743    RETURN                           */
+                /*MEMBER_DECLARATOR                                                */
+                /*L178 :                               */
+134217737 , /*  744    BUILTIN     9     ERROR          */
+16778259 , /*  745    CALL        L261   ERROR         */
+33554432 , /*  746    RETURN                           */
+                /*L179 :                               */
+16778707 , /*  747    CALL        L382   ERROR         */
+16843496 , /*  748    CALL        L178   OPTIONAL      */
+33619968 , /*  749    RETURN                           */
+                /*L180 :                               */
+151061233 , /*  750    SET_SELECT  L181                 */
+16909035 , /*  751    CALL        L179   EXIT          */
+16778259 , /*  752    CALL        L261   ERROR         */
+                /*L181 :                               */
+16843257 , /*  753    CALL        L120   OPTIONAL      */
+33619968 , /*  754    RETURN                           */
+                /*MEMBER_DECLARATION_LIST                                          */
+                /*L182 :                               */
+16778276 ,
+16974884 , /*  756    CALL        L265   ERROR    REPEAT  */
+33751040 , /*  757    RETURN                           */
+                /*EXTERNAL_DECLARATION                                             */
+                /*L183 :                               */
+117440550 , /*  758    TERMINAL    SEMI_COLON                                                        ERROR    */
+50331773 , /*  759    ACTION      SET_DECLARATION                                                 125   ERROR    */
+33554432 , /*  760    RETURN                           */
+                /*L184 :                               */
+117440553 , /*  761    TERMINAL    COMMA                                                             ERROR    */
+16778800 , /*  762    CALL        L407   ERROR         */
+117440550 , /*  763    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  764    RETURN                           */
+                /*L185 :                               */
+50331774 , /*  765    ACTION      SET_NULL_INITIALIZER                                            126   ERROR    */
+150995713 , /*  766    SET_SELECT  L186                 */
+16909049 , /*  767    CALL        L184   EXIT          */
+117440550 , /*  768    TERMINAL    SEMI_COLON                                                        ERROR    */
+                /*L186 :                               */
+33554432 , /*  769    RETURN                           */
+                /*L187 :                               */
+117440553 , /*  770    TERMINAL    COMMA                                                             ERROR    */
+16778800 , /*  771    CALL        L407   ERROR         */
+117440550 , /*  772    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  773    RETURN                           */
+                /*L188 :                               */
+117440560 , /*  774    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331775 , /*  775    ACTION      BEGIN_CLASS_INITIALIZER                                         127   ERROR    */
+16778311 , /*  776    CALL        L276   ERROR         */
+50331776 , /*  777    ACTION      SET_INITIALIZER_ARGUMENTS                                       128   ERROR    */
+117440558 , /*  778    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331777 , /*  779    ACTION      END_CLASS_INITIALIZER                                           129   ERROR    */
+150995727 , /*  780    SET_SELECT  L189                 */
+16909058 , /*  781    CALL        L187   EXIT          */
+117440550 , /*  782    TERMINAL    SEMI_COLON                                                        ERROR    */
+                /*L189 :                               */
+33554432 , /*  783    RETURN                           */
+                /*L190 :                               */
+117440553 , /*  784    TERMINAL    COMMA                                                             ERROR    */
+16778800 , /*  785    CALL        L407   ERROR         */
+117440550 , /*  786    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  787    RETURN                           */
+                /*L191 :                               */
+117440586 , /*  788    TERMINAL    EQUAL                                                             ERROR    */
+50331778 , /*  789    ACTION      PARSE_INITIALIZER                                               130   ERROR    */
+150995737 , /*  790    SET_SELECT  L192                 */
+16909072 , /*  791    CALL        L190   EXIT          */
+117440550 , /*  792    TERMINAL    SEMI_COLON                                                        ERROR    */
+                /*L192 :                               */
+33554432 , /*  793    RETURN                           */
+                /*L193 :                               */
+16777438 , /*  794    CALL        L56    ERROR         */
+50331779 , /*  795    ACTION      SET_DECLARATION                                                 131   ERROR    */
+134217781 , /*  796    BUILTIN     53    ERROR          */
+150995746 , /*  797    SET_SELECT  L194                 */
+16909076 , /*  798    CALL        L191   EXIT          */
+16909062 , /*  799    CALL        L188   EXIT          */
+16908625 , /*  800    CALL        L84    EXIT          */
+16777981 , /*  801    CALL        L185   ERROR         */
+                /*L194 :                               */
+33554432 , /*  802    RETURN                           */
+                /*L195 :                               */
+16843393 , /*  803    CALL        L150   OPTIONAL      */
+50331780 , /*  804    ACTION      SET_BASE_TYPE                                                   132   ERROR    */
+150995752 , /*  805    SET_SELECT  L196                 */
+16909082 , /*  806    CALL        L193   EXIT          */
+16777974 , /*  807    CALL        L183   ERROR         */
+                /*L196 :                               */
+33554432 , /*  808    RETURN                           */
+                /*COMPOUND_STATEMENT                                               */
+                /*L197 :                               */
+50331781 , /*  809    ACTION      STATEMENT_START                                                 133   ERROR    */
+117440551 , /*  810    TERMINAL    LEFT_BRACE                                                        ERROR    */
+50331782 , /*  811    ACTION      BEGIN_BLOCK_BODY                                                134   ERROR    */
+16974339 , /*  812    CALL        L123   OPTIONAL REPEAT  */
+117440552 , /*  813    TERMINAL    RIGHT_BRACE                                                       ERROR    */
+50331783 , /*  814    ACTION      END_BLOCK_BODY                                                  135   ERROR    */
+33554432 , /*  815    RETURN                           */
+                /*DEFAULT_STATEMENT                                                */
+                /*L198 :                               */
+50331784 , /*  816    ACTION      STATEMENT_START                                                 136   ERROR    */
+117440542 , /*  817    TERMINAL    KW_DEFAULT                                                        ERROR    */
+117440554 , /*  818    TERMINAL    COLON                                                             ERROR    */
+50331785 , /*  819    ACTION      DEFINE_SWITCH_DEFAULT                                           137   ERROR    */
+16777731 , /*  820    CALL        L123   ERROR         */
+33554432 , /*  821    RETURN                           */
+                /*CONTINUE_STATEMENT                                               */
+                /*L199 :                               */
+50331786 , /*  822    ACTION      STATEMENT_START                                                 138   ERROR    */
+117440541 , /*  823    TERMINAL    KW_CONTINUE                                                       ERROR    */
+50331787 , /*  824    ACTION      EMIT_BRANCH_CONTINUE                                            139   ERROR    */
+117440550 , /*  825    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  826    RETURN                           */
+                /*BREAK_STATEMENT                                                  */
+                /*L200 :                               */
+50331788 , /*  827    ACTION      STATEMENT_START                                                 140   ERROR    */
+117440539 , /*  828    TERMINAL    KW_BREAK                                                          ERROR    */
+50331789 , /*  829    ACTION      EMIT_BRANCH_EXIT                                                141   ERROR    */
+117440550 , /*  830    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  831    RETURN                           */
+                /*LABELLED_STATEMENT                                               */
+                /*L201 :                               */
+117440513 , /*  832    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331790 , /*  833    ACTION      SET_SIMPLE_NAME                                                 142   ERROR    */
+117440554 , /*  834    TERMINAL    COLON                                                             ERROR    */
+16777731 , /*  835    CALL        L123   ERROR         */
+33554432 , /*  836    RETURN                           */
+                /*PLACEMENT                                                        */
+                /*L202 :                               */
+117440560 , /*  837    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16778311 , /*  838    CALL        L276   ERROR         */
+50331791 , /*  839    ACTION      POP_ARGUMENT_VALUES                                             143   ERROR    */
+117440558 , /*  840    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331792 , /*  841    ACTION      ENTER_PLACEMENT                                                 144   ERROR    */
+33554432 , /*  842    RETURN                           */
+                /*CLASS_INITIALIZER                                                */
+                /*L203 :                               */
+117440560 , /*  843    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331793 , /*  844    ACTION      BEGIN_CLASS_INITIALIZER                                         145   ERROR    */
+16778311 , /*  845    CALL        L276   ERROR         */
+50331794 , /*  846    ACTION      SET_INITIALIZER_ARGUMENTS                                       146   ERROR    */
+117440558 , /*  847    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331795 , /*  848    ACTION      END_CLASS_INITIALIZER                                           147   ERROR    */
+33554432 , /*  849    RETURN                           */
+                /*CONSTANT_EXPRESSION                                              */
+                /*L204 :                               */
+16777289 , /*  850    CALL        L12    ERROR         */
+50331796 , /*  851    ACTION      SET_CONSTANT_EXPRESSION                                         148   ERROR    */
+33554432 , /*  852    RETURN                           */
+                /*DEFINED_TYPE_SPECIFIER                                           */
+                /*L205 :                               */
+134217731 , /*  853    BUILTIN     3     ERROR          */
+16778787 , /*  854    CALL        L403   ERROR         */
+50331797 , /*  855    ACTION      SET_TYPE_NAME                                                   149   ERROR    */
+33554432 , /*  856    RETURN                           */
+                /*CONTROLLED_STATEMENT                                             */
+                /*L206 :                               */
+50331798 , /*  857    ACTION      BEGIN_BLOCK_BODY                                                150   ERROR    */
+16777731 , /*  858    CALL        L123   ERROR         */
+50331799 , /*  859    ACTION      END_BLOCK_BODY                                                  151   ERROR    */
+33554432 , /*  860    RETURN                           */
+                /*L207 :                               */
+134217749 , /*  861    BUILTIN     21    ERROR          */
+16778025 , /*  862    CALL        L197   ERROR         */
+33554432 , /*  863    RETURN                           */
+                /*L208 :                               */
+134217751 , /*  864    BUILTIN     23    ERROR          */
+16777731 , /*  865    CALL        L123   ERROR         */
+33554432 , /*  866    RETURN                           */
+                /*L209 :                               */
+150995815 , /*  867    SET_SELECT  L210                 */
+16909152 , /*  868    CALL        L208   EXIT          */
+16909149 , /*  869    CALL        L207   EXIT          */
+16778073 , /*  870    CALL        L206   ERROR         */
+                /*L210 :                               */
+33554432 , /*  871    RETURN                           */
+                /*NEW_DECLARATOR                                                   */
+                /*L211 :                               */
+16975290 , /*  872    CALL        L375   OPTIONAL REPEAT  */
+33751040 , /*  873    RETURN                           */
+                /*L212 :                               */
+16777954 , /*  874    CALL        L177   ERROR         */
+16778102 , /*  875    CALL        L215   ERROR         */
+50331800 , /*  876    ACTION      SET_MEMBER_POINTER_TYPE                                         152   ERROR    */
+33554432 , /*  877    RETURN                           */
+                /*L213 :                               */
+16777414 , /*  878    CALL        L50    ERROR         */
+16778102 , /*  879    CALL        L215   ERROR         */
+50331801 , /*  880    ACTION      SET_POINTER_TYPE                                                153   ERROR    */
+33554432 , /*  881    RETURN                           */
+                /*L214 :                               */
+16778687 , /*  882    CALL        L377   ERROR         */
+16778102 , /*  883    CALL        L215   ERROR         */
+50331802 , /*  884    ACTION      SET_REFERENCE_TYPE                                              154   ERROR    */
+33554432 , /*  885    RETURN                           */
+                /*L215 :                               */
+134217766 , /*  886    BUILTIN     38    ERROR          */
+150995836 , /*  887    SET_SELECT  L216                 */
+16909170 , /*  888    CALL        L214   EXIT          */
+16909166 , /*  889    CALL        L213   EXIT          */
+16909162 , /*  890    CALL        L212   EXIT          */
+16778088 , /*  891    CALL        L211   ERROR         */
+                /*L216 :                               */
+33554432 , /*  892    RETURN                           */
+                /*CAST_EXPRESSION                                                  */
+                /*L217 :                               */
+16777455 , /*  893    CALL        L61    ERROR         */
+50331803 , /*  894    ACTION      SET_CAST_OP                                                     155   ERROR    */
+16778114 , /*  895    CALL        L218   ERROR         */
+50331804 , /*  896    ACTION      BINARY_OPERATION                                                156   ERROR    */
+33554432 , /*  897    RETURN                           */
+                /*L218 :                               */
+134217761 , /*  898    BUILTIN     33    ERROR          */
+150995846 , /*  899    SET_SELECT  L219                 */
+16909181 , /*  900    CALL        L217   EXIT          */
+16778584 , /*  901    CALL        L349   ERROR         */
+                /*L219 :                               */
+33554432 , /*  902    RETURN                           */
+                /*VANILLA_INITIALIZER                                              */
+                /*L220 :                               */
+117440586 , /*  903    TERMINAL    EQUAL                                                             ERROR    */
+50331805 , /*  904    ACTION      PARSE_INITIALIZER                                               157   ERROR    */
+33554432 , /*  905    RETURN                           */
+                /*SIMPLE_NAME                                                      */
+                /*L221 :                               */
+117440513 , /*  906    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331806 , /*  907    ACTION      SET_SIMPLE_NAME                                                 158   ERROR    */
+33554432 , /*  908    RETURN                           */
+                /*OLD_PARAMETER_DECLARATOR_LIST                                    */
+                /*L222 :                               */
+117440553 , /*  909    TERMINAL    COMMA                                                             ERROR    */
+16778653 , /*  910    CALL        L366   ERROR         */
+33554432 , /*  911    RETURN                           */
+                /*L223 :                               */
+16778653 , /*  912    CALL        L366   ERROR         */
+16974733 , /*  913    CALL        L222   OPTIONAL REPEAT  */
+33751040 , /*  914    RETURN                           */
+                /*SIMPLE_DECLARATOR_NAME                                           */
+                /*L224 :                               */
+117440513 , /*  915    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331807 , /*  916    ACTION      SET_SIMPLE_NAME                                                 159   ERROR    */
+134217787 , /*  917    BUILTIN     59    ERROR          */
+33554432 , /*  918    RETURN                           */
+                /*OLD_PARAMETER_NAME_LIST                                          */
+                /*L225 :                               */
+117440553 , /*  919    TERMINAL    COMMA                                                             ERROR    */
+16778656 , /*  920    CALL        L367   ERROR         */
+33554432 , /*  921    RETURN                           */
+                /*L226 :                               */
+16778656 , /*  922    CALL        L367   ERROR         */
+16974743 , /*  923    CALL        L225   OPTIONAL REPEAT  */
+33751040 , /*  924    RETURN                           */
+                /*PEEK_PARAMETER_DECLARATION                                       */
+                /*L227 :                               */
+134217743 , /*  925    BUILTIN     15    ERROR          */
+134217730 , /*  926    BUILTIN     2     ERROR          */
+33554432 , /*  927    RETURN                           */
+                /*L228 :                               */
+150995875 , /*  928    SET_SELECT  L229                 */
+16909213 , /*  929    CALL        L227   EXIT          */
+16777784 , /*  930    CALL        L133   ERROR         */
+                /*L229 :                               */
+33554432 , /*  931    RETURN                           */
+                /*PEEK_FUNCTION_DECLARATOR                                         */
+                /*L230 :                               */
+117440553 , /*  932    TERMINAL    COMMA                                                             ERROR    */
+16778144 , /*  933    CALL        L228   ERROR         */
+33554432 , /*  934    RETURN                           */
+                /*L231 :                               */
+150995882 , /*  935    SET_SELECT  L232                 */
+16909220 , /*  936    CALL        L230   EXIT          */
+117440556 , /*  937    TERMINAL    ELLIPSIS                                                          ERROR    */
+                /*L232 :                               */
+33554432 , /*  938    RETURN                           */
+                /*L233 :                               */
+134217728 , /*  939    BUILTIN     0     ERROR          */
+117440560 , /*  940    TERMINAL    LEFT_PAREN                                                        ERROR    */
+134217790 , /*  941    BUILTIN     62    ERROR          */
+16843680 , /*  942    CALL        L228   OPTIONAL      */
+16974759 , /*  943    CALL        L231   OPTIONAL REPEAT  */
+117440558 , /*  944    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+134217791 , /*  945    BUILTIN     63    ERROR          */
+134217729 , /*  946    BUILTIN     1     ERROR          */
+33554432 , /*  947    RETURN                           */
+                /*BASE_CLASS_TYPE_SPECIFIER                                        */
+                /*L234 :                               */
+117440524 , /*  948    TERMINAL    KW_VIRTUAL                                                        ERROR    */
+50331808 , /*  949    ACTION      SET_VIRTUAL_BASE_CLASS                                          160   ERROR    */
+33554432 , /*  950    RETURN                           */
+                /*L235 :                               */
+117440526 , /*  951    TERMINAL    KW_PROTECTED                                                      ERROR    */
+50331809 , /*  952    ACTION      SET_PROTECTED_BASE_CLASS                                        161   ERROR    */
+33554432 , /*  953    RETURN                           */
+                /*L236 :                               */
+117440525 , /*  954    TERMINAL    KW_PRIVATE                                                        ERROR    */
+50331810 , /*  955    ACTION      SET_PRIVATE_BASE_CLASS                                          162   ERROR    */
+33554432 , /*  956    RETURN                           */
+                /*L237 :                               */
+117440527 , /*  957    TERMINAL    KW_PUBLIC                                                         ERROR    */
+50331811 , /*  958    ACTION      SET_PUBLIC_BASE_CLASS                                           163   ERROR    */
+33554432 , /*  959    RETURN                           */
+                /*L238 :                               */
+134217772 , /*  960    BUILTIN     44    ERROR          */
+150995910 , /*  961    SET_SELECT  L239                 */
+16909245 , /*  962    CALL        L237   EXIT          */
+16909242 , /*  963    CALL        L236   EXIT          */
+16909239 , /*  964    CALL        L235   EXIT          */
+16778164 , /*  965    CALL        L234   ERROR         */
+                /*L239 :                               */
+33554432 , /*  966    RETURN                           */
+                /*CLASS_DERIVATION                                                 */
+                /*L240 :                               */
+16844031 , /*  967    CALL        L328   OPTIONAL      */
+16778787 , /*  968    CALL        L403   ERROR         */
+50331812 , /*  969    ACTION      SET_BASE_CLASS                                                  164   ERROR    */
+33554432 , /*  970    RETURN                           */
+                /*FOR_STATEMENT                                                    */
+                /*L241 :                               */
+16778391 , /*  971    CALL        L298   ERROR         */
+117440550 , /*  972    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /*  973    RETURN                           */
+                /*L242 :                               */
+16778391 , /*  974    CALL        L298   ERROR         */
+117440558 , /*  975    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /*  976    RETURN                           */
+                /*L243 :                               */
+50331813 , /*  977    ACTION      STATEMENT_START                                                 165   ERROR    */
+117440544 , /*  978    TERMINAL    KW_FOR                                                            ERROR    */
+117440560 , /*  979    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16778506 , /*  980    CALL        L332   ERROR         */
+50331814 , /*  981    ACTION      START_FOR_LOOP                                                  166   ERROR    */
+150995929 , /*  982    SET_SELECT  L244                 */
+117571622 , /*  983    TERMINAL    SEMI_COLON                                                        EXIT     */
+16778187 , /*  984    CALL        L241   ERROR         */
+                /*L244 :                               */
+50331815 , /*  985    ACTION      TEST_FOR_LOOP                                                   167   ERROR    */
+150995933 , /*  986    SET_SELECT  L245                 */
+117571630 , /*  987    TERMINAL    RIGHT_PAREN                                                       EXIT     */
+16778190 , /*  988    CALL        L242   ERROR         */
+                /*L245 :                               */
+50331816 , /*  989    ACTION      SET_LOOP_EXPRESSION                                             168   ERROR    */
+16778083 , /*  990    CALL        L209   ERROR         */
+50331817 , /*  991    ACTION      FINISH_FOR_LOOP                                                 169   ERROR    */
+33554432 , /*  992    RETURN                           */
+                /*NEW_TYPE_NAME                                                    */
+                /*L246 :                               */
+16778609 , /*  993    CALL        L355   ERROR         */
+16843638 , /*  994    CALL        L215   OPTIONAL      */
+50331818 , /*  995    ACTION      SET_TYPE_DECLARATION                                            170   ERROR    */
+33554432 , /*  996    RETURN                           */
+                /*PEEK_PAREN_TYPE_NAME                                             */
+                /*L247 :                               */
+134217740 , /*  997    BUILTIN     12    ERROR          */
+150995945 , /*  998    SET_SELECT  L248                 */
+134348814 , /*  999    BUILTIN     14    EXIT           */
+16777574 , /* 1000    CALL        L90    ERROR         */
+                /*L248 :                               */
+33554432 , /* 1001    RETURN                           */
+                /*LA_INIT_DECLARATOR_LIST                                          */
+                /*L249 :                               */
+117440553 , /* 1002    TERMINAL    COMMA                                                             ERROR    */
+16777265 , /* 1003    CALL        L5     ERROR         */
+33554432 , /* 1004    RETURN                           */
+                /*L250 :                               */
+16777265 , /* 1005    CALL        L5     ERROR         */
+16974826 , /* 1006    CALL        L249   OPTIONAL REPEAT  */
+33751040 , /* 1007    RETURN                           */
+                /*SPECIAL_OVERLOADABLE_OPERATOR                                    */
+                /*L251 :                               */
+117440553 , /* 1008    TERMINAL    COMMA                                                             ERROR    */
+50331819 , /* 1009    ACTION      SET_OPERATOR_NAME                                               171   ERROR    */
+33554432 , /* 1010    RETURN                           */
+                /*L252 :                               */
+117440536 , /* 1011    TERMINAL    KW_DELETE                                                         ERROR    */
+50331820 , /* 1012    ACTION      SET_OPERATOR_NAME                                               172   ERROR    */
+33554432 , /* 1013    RETURN                           */
+                /*L253 :                               */
+117440535 , /* 1014    TERMINAL    KW_NEW                                                            ERROR    */
+50331821 , /* 1015    ACTION      SET_OPERATOR_NAME                                               173   ERROR    */
+33554432 , /* 1016    RETURN                           */
+                /*L254 :                               */
+117440559 , /* 1017    TERMINAL    LEFT_BRACKET                                                      ERROR    */
+50331822 , /* 1018    ACTION      SET_OPERATOR_NAME                                               174   ERROR    */
+117440557 , /* 1019    TERMINAL    RIGHT_BRACKET                                                     ERROR    */
+33554432 , /* 1020    RETURN                           */
+                /*L255 :                               */
+117440560 , /* 1021    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331823 , /* 1022    ACTION      SET_OPERATOR_NAME                                               175   ERROR    */
+117440558 , /* 1023    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /* 1024    RETURN                           */
+                /*L256 :                               */
+150995975 , /* 1025    SET_SELECT  L257                 */
+16909309 , /* 1026    CALL        L255   EXIT          */
+16909305 , /* 1027    CALL        L254   EXIT          */
+16909302 , /* 1028    CALL        L253   EXIT          */
+16909299 , /* 1029    CALL        L252   EXIT          */
+16778224 , /* 1030    CALL        L251   ERROR         */
+                /*L257 :                               */
+33554432 , /* 1031    RETURN                           */
+                /*GLOBAL_SCOPE_QUALIFIER                                           */
+                /*L258 :                               */
+134217733 , /* 1032    BUILTIN     5     ERROR          */
+150995980 , /* 1033    SET_SELECT  L259                 */
+117571585 , /* 1034    TERMINAL    IDENTIFIER                                                        EXIT     */
+117440516 , /* 1035    TERMINAL    TYPE                                                              ERROR    */
+                /*L259 :                               */
+50331824 , /* 1036    ACTION      SET_CLASS_SCOPE_QUALIFIER                                       176   ERROR    */
+117440555 , /* 1037    TERMINAL    COLON_COLON                                                       ERROR    */
+33554432 , /* 1038    RETURN                           */
+                /*L260 :                               */
+16777691 , /* 1039    CALL        L113   ERROR         */
+16974856 , /* 1040    CALL        L258   OPTIONAL REPEAT  */
+50331825 , /* 1041    ACTION      CHECK_CLASS_SCOPE_QUALIFIER                                     177   ERROR    */
+33554432 , /* 1042    RETURN                           */
+                /*BIT_FIELD_SPECIFIER                                              */
+                /*L261 :                               */
+117440554 , /* 1043    TERMINAL    COLON                                                             ERROR    */
+50331826 , /* 1044    ACTION      BEGIN_BIT_FIELD                                                 178   ERROR    */
+16778066 , /* 1045    CALL        L204   ERROR         */
+50331827 , /* 1046    ACTION      SET_BIT_FIELD                                                   179   ERROR    */
+33554432 , /* 1047    RETURN                           */
+                /*MEMBER_DECLARATION_ITEM                                          */
+                /*L262 :                               */
+117440526 , /* 1048    TERMINAL    KW_PROTECTED                                                      ERROR    */
+117440554 , /* 1049    TERMINAL    COLON                                                             ERROR    */
+50331828 , /* 1050    ACTION      SET_PROTECTED_MEMBER_ACCESS                                     180   ERROR    */
+33554432 , /* 1051    RETURN                           */
+                /*L263 :                               */
+117440525 , /* 1052    TERMINAL    KW_PRIVATE                                                        ERROR    */
+117440554 , /* 1053    TERMINAL    COLON                                                             ERROR    */
+50331829 , /* 1054    ACTION      SET_PRIVATE_MEMBER_ACCESS                                       181   ERROR    */
+33554432 , /* 1055    RETURN                           */
+                /*L264 :                               */
+117440527 , /* 1056    TERMINAL    KW_PUBLIC                                                         ERROR    */
+117440554 , /* 1057    TERMINAL    COLON                                                             ERROR    */
+50331830 , /* 1058    ACTION      SET_PUBLIC_MEMBER_ACCESS                                        182   ERROR    */
+33554432 , /* 1059    RETURN                           */
+                /*L265 :                               */
+134217763 , /* 1060    BUILTIN     35    ERROR          */
+150996010 , /* 1061    SET_SELECT  L266                 */
+16909344 , /* 1062    CALL        L264   EXIT          */
+16909340 , /* 1063    CALL        L263   EXIT          */
+16909336 , /* 1064    CALL        L262   EXIT          */
+16778489 , /* 1065    CALL        L326   ERROR         */
+                /*L266 :                               */
+33554432 , /* 1066    RETURN                           */
+                /*TYPE_SPECIFIER                                                   */
+                /*L267 :                               */
+16778069 , /* 1067    CALL        L205   ERROR         */
+134217786 , /* 1068    BUILTIN     58    ERROR          */
+33554432 , /* 1069    RETURN                           */
+                /*L268 :                               */
+16778498 , /* 1070    CALL        L329   ERROR         */
+134217786 , /* 1071    BUILTIN     58    ERROR          */
+33554432 , /* 1072    RETURN                           */
+                /*L269 :                               */
+16777327 , /* 1073    CALL        L23    ERROR         */
+134217786 , /* 1074    BUILTIN     58    ERROR          */
+33554432 , /* 1075    RETURN                           */
+                /*L270 :                               */
+150996025 , /* 1076    SET_SELECT  L271                 */
+16909361 , /* 1077    CALL        L269   EXIT          */
+16909358 , /* 1078    CALL        L268   EXIT          */
+16909480 , /* 1079    CALL        L303   EXIT          */
+16778283 , /* 1080    CALL        L267   ERROR         */
+                /*L271 :                               */
+33554432 , /* 1081    RETURN                           */
+                /*MEMBER_INITIALIZER                                               */
+                /*L272 :                               */
+16844323 , /* 1082    CALL        L403   OPTIONAL      */
+50331831 , /* 1083    ACTION      BASE_MEMBER_VALUE                                               183   ERROR    */
+16777547 , /* 1084    CALL        L82    ERROR         */
+50331832 , /* 1085    ACTION      SET_MEMBER_INITIALIZER                                          184   ERROR    */
+33554432 , /* 1086    RETURN                           */
+                /*EXPRESSION_LIST                                                  */
+                /*L273 :                               */
+16777289 , /* 1087    CALL        L12    ERROR         */
+50331833 , /* 1088    ACTION      SET_ARGUMENT_OP                                                 185   ERROR    */
+33554432 , /* 1089    RETURN                           */
+                /*L274 :                               */
+117440553 , /* 1090    TERMINAL    COMMA                                                             ERROR    */
+150996038 , /* 1091    SET_SELECT  L275                 */
+16909375 , /* 1092    CALL        L273   EXIT          */
+50331834 , /* 1093    ACTION      WARN_EXTRA_ARGUMENT_COMMA                                       186   ERROR    */
+                /*L275 :                               */
+33554432 , /* 1094    RETURN                           */
+                /*L276 :                               */
+16777289 , /* 1095    CALL        L12    ERROR         */
+50331835 , /* 1096    ACTION      SET_ARGUMENT_OP                                                 187   ERROR    */
+16974914 , /* 1097    CALL        L274   OPTIONAL REPEAT  */
+33751040 , /* 1098    RETURN                           */
+                /*LINKAGE_SPECIFICATION                                            */
+                /*L277 :                               */
+117440551 , /* 1099    TERMINAL    LEFT_BRACE                                                        ERROR    */
+50331836 , /* 1100    ACTION      SET_LINKAGE_SPECIFIER_GROUP                                     188   ERROR    */
+16777453 , /* 1101    CALL        L60    ERROR         */
+117440552 , /* 1102    TERMINAL    RIGHT_BRACE                                                       ERROR    */
+33554432 , /* 1103    RETURN                           */
+                /*L278 :                               */
+117440518 , /* 1104    TERMINAL    STORAGE_CLASS                                                     ERROR    */
+117440515 , /* 1105    TERMINAL    STRING                                                            ERROR    */
+50331837 , /* 1106    ACTION      BEGIN_LINKAGE_SPECIFIER                                         189   ERROR    */
+150996054 , /* 1107    SET_SELECT  L279                 */
+16909387 , /* 1108    CALL        L277   EXIT          */
+16778019 , /* 1109    CALL        L195   ERROR         */
+                /*L279 :                               */
+50331838 , /* 1110    ACTION      END_LINKAGE_SPECIFIER                                           190   ERROR    */
+33554432 , /* 1111    RETURN                           */
+                /*PLACEMENT_AND_TYPE_NAME                                          */
+                /*L280 :                               */
+16778053 , /* 1112    CALL        L202   ERROR         */
+150996060 , /* 1113    SET_SELECT  L281                 */
+16909281 , /* 1114    CALL        L246   EXIT          */
+16777842 , /* 1115    CALL        L147   ERROR         */
+                /*L281 :                               */
+33554432 , /* 1116    RETURN                           */
+                /*L282 :                               */
+150996065 , /* 1117    SET_SELECT  L283                 */
+16909281 , /* 1118    CALL        L246   EXIT          */
+16908527 , /* 1119    CALL        L61    EXIT          */
+16778328 , /* 1120    CALL        L280   ERROR         */
+                /*L283 :                               */
+50331839 , /* 1121    ACTION      ENTER_TYPE_FOR_NEW                                              191   ERROR    */
+33554432 , /* 1122    RETURN                           */
+                /*POSTFIX_EXPRESSION                                               */
+                /*L284 :                               */
+117440560 , /* 1123    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16778391 , /* 1124    CALL        L298   ERROR         */
+117440558 , /* 1125    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /* 1126    RETURN                           */
+                /*L285 :                               */
+16777771 , /* 1127    CALL        L129   ERROR         */
+50331840 , /* 1128    ACTION      REF_VALUE                                                       192   ERROR    */
+33554432 , /* 1129    RETURN                           */
+                /*L286 :                               */
+16777685 , /* 1130    CALL        L111   ERROR         */
+50331841 , /* 1131    ACTION      REF_VALUE                                                       193   ERROR    */
+33554432 , /* 1132    RETURN                           */
+                /*L287 :                               */
+117440513 , /* 1133    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331842 , /* 1134    ACTION      SET_SIMPLE_NAME                                                 194   ERROR    */
+33554432 , /* 1135    RETURN                           */
+                /*L288 :                               */
+16777677 , /* 1136    CALL        L108   ERROR         */
+50331843 , /* 1137    ACTION      REF_VALUE                                                       195   ERROR    */
+33554432 , /* 1138    RETURN                           */
+                /*L289 :                               */
+117440530 , /* 1139    TERMINAL    KW_THIS                                                           ERROR    */
+50331844 , /* 1140    ACTION      SET_THIS_NAME                                                   196   ERROR    */
+33554432 , /* 1141    RETURN                           */
+                /*L290 :                               */
+117440515 , /* 1142    TERMINAL    STRING                                                            ERROR    */
+50331845 , /* 1143    ACTION      CONSTANT_VALUE                                                  197   ERROR    */
+33554432 , /* 1144    RETURN                           */
+                /*L291 :                               */
+117440514 , /* 1145    TERMINAL    CONSTANT                                                          ERROR    */
+50331846 , /* 1146    ACTION      CONSTANT_VALUE                                                  198   ERROR    */
+33554432 , /* 1147    RETURN                           */
+                /*L292 :                               */
+16777703 , /* 1148    CALL        L116   ERROR         */
+50331847 , /* 1149    ACTION      SET_TYPE_DECLARATION                                            199   ERROR    */
+16777547 , /* 1150    CALL        L82    ERROR         */
+50331848 , /* 1151    ACTION      BINARY_OPERATION                                                200   ERROR    */
+33554432 , /* 1152    RETURN                           */
+                /*L293 :                               */
+134217762 , /* 1153    BUILTIN     34    ERROR          */
+150996108 , /* 1154    SET_SELECT  L294                 */
+16909436 , /* 1155    CALL        L292   EXIT          */
+16909433 , /* 1156    CALL        L291   EXIT          */
+16909430 , /* 1157    CALL        L290   EXIT          */
+16909427 , /* 1158    CALL        L289   EXIT          */
+16909424 , /* 1159    CALL        L288   EXIT          */
+16909421 , /* 1160    CALL        L287   EXIT          */
+16909418 , /* 1161    CALL        L286   EXIT          */
+16909415 , /* 1162    CALL        L285   EXIT          */
+16778339 , /* 1163    CALL        L284   ERROR         */
+                /*L294 :                               */
+16974548 , /* 1164    CALL        L173   OPTIONAL REPEAT  */
+33751040 , /* 1165    RETURN                           */
+                /*OPERATOR                                                         */
+                /*L295 :                               */
+151192721 , /* 1166    SET_SELECT  L296                 */
+16908707 , /* 1167    CALL        L105   EXIT          */
+16778241 , /* 1168    CALL        L256   ERROR         */
+                /*L296 :                               */
+33554432 , /* 1169    RETURN                           */
+                /*COMMA_EXPRESSION                                                 */
+                /*L297 :                               */
+117440553 , /* 1170    TERMINAL    COMMA                                                             ERROR    */
+50331849 , /* 1171    ACTION      SET_COMMA_OP                                                    201   ERROR    */
+16777289 , /* 1172    CALL        L12    ERROR         */
+50331850 , /* 1173    ACTION      BINARY_OPERATION                                                202   ERROR    */
+33554432 , /* 1174    RETURN                           */
+                /*L298 :                               */
+16777289 , /* 1175    CALL        L12    ERROR         */
+16974994 , /* 1176    CALL        L297   OPTIONAL REPEAT  */
+33751040 , /* 1177    RETURN                           */
+                /*OLD_FUNCTION_DEFINITION_DECLARATOR                               */
+                /*L299 :                               */
+16778138 , /* 1178    CALL        L226   ERROR         */
+117440558 , /* 1179    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /* 1180    RETURN                           */
+                /*L300 :                               */
+117440560 , /* 1181    TERMINAL    LEFT_PAREN                                                        ERROR    */
+50331851 , /* 1182    ACTION      BEGIN_OLD_FUNCTION_TYPE                                         203   ERROR    */
+150996130 , /* 1183    SET_SELECT  L301                 */
+117571630 , /* 1184    TERMINAL    RIGHT_PAREN                                                       EXIT     */
+16778394 , /* 1185    CALL        L299   ERROR         */
+                /*L301 :                               */
+50331852 , /* 1186    ACTION      SET_FUNCTION_TYPE                                               204   ERROR    */
+33554432 , /* 1187    RETURN                           */
+                /*TAG_NAME                                                         */
+                /*L302 :                               */
+117440513 , /* 1188    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331853 , /* 1189    ACTION      SET_SIMPLE_NAME                                                 205   ERROR    */
+134217789 , /* 1190    BUILTIN     61    ERROR          */
+33554432 , /* 1191    RETURN                           */
+                /*TYPE_QUALIFIER_SPECIFIER                                         */
+                /*L303 :                               */
+117440517 , /* 1192    TERMINAL    TYPE_QUALIFIER                                                    ERROR    */
+50331854 , /* 1193    ACTION      SET_TYPE_QUALIFIER                                              206   ERROR    */
+33554432 , /* 1194    RETURN                           */
+                /*RAW_FUNCTION_BODY                                                */
+                /*L304 :                               */
+16778627 , /* 1195    CALL        L359   ERROR         */
+117440551 , /* 1196    TERMINAL    LEFT_BRACE                                                        ERROR    */
+33554432 , /* 1197    RETURN                           */
+                /*L305 :                               */
+117440551 , /* 1198    TERMINAL    LEFT_BRACE                                                        ERROR    */
+50331855 , /* 1199    ACTION      BEGIN_FUNCTION_BODY                                             207   ERROR    */
+33554432 , /* 1200    RETURN                           */
+                /*L306 :                               */
+150996148 , /* 1201    SET_SELECT  L307                 */
+16909486 , /* 1202    CALL        L305   EXIT          */
+16778411 , /* 1203    CALL        L304   ERROR         */
+                /*L307 :                               */
+50331856 , /* 1204    ACTION      EMIT_FUNCTION_BEGIN                                             208   ERROR    */
+16974339 , /* 1205    CALL        L123   OPTIONAL REPEAT  */
+117440552 , /* 1206    TERMINAL    RIGHT_BRACE                                                       ERROR    */
+50331857 , /* 1207    ACTION      END_FUNCTION_BODY                                               209   ERROR    */
+33554432 , /* 1208    RETURN                           */
+                /*L308 :                               */
+134217736 , /* 1209    BUILTIN     8     ERROR          */
+50331858 , /* 1210    ACTION      SAVE_FUNCTION_BODY                                              210   ERROR    */
+33554432 , /* 1211    RETURN                           */
+                /*L309 :                               */
+150996159 , /* 1212    SET_SELECT  L310                 */
+16909497 , /* 1213    CALL        L308   EXIT          */
+16778417 , /* 1214    CALL        L306   ERROR         */
+                /*L310 :                               */
+33554432 , /* 1215    RETURN                           */
+                /*WHILE_STATEMENT                                                  */
+                /*L311 :                               */
+50331859 , /* 1216    ACTION      STATEMENT_START                                                 211   ERROR    */
+117440549 , /* 1217    TERMINAL    KW_WHILE                                                          ERROR    */
+50331860 , /* 1218    ACTION      START_WHILE_LOOP                                                212   ERROR    */
+117440560 , /* 1219    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16778391 , /* 1220    CALL        L298   ERROR         */
+117440558 , /* 1221    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+50331861 , /* 1222    ACTION      TEST_WHILE_LOOP                                                 213   ERROR    */
+16778083 , /* 1223    CALL        L209   ERROR         */
+50331862 , /* 1224    ACTION      FINISH_WHILE_LOOP                                               214   ERROR    */
+33554432 , /* 1225    RETURN                           */
+                /*GOTO_STATEMENT                                                   */
+                /*L312 :                               */
+50331863 , /* 1226    ACTION      STATEMENT_START                                                 215   ERROR    */
+117440545 , /* 1227    TERMINAL    KW_GOTO                                                           ERROR    */
+117440513 , /* 1228    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331864 , /* 1229    ACTION      SET_SIMPLE_NAME                                                 216   ERROR    */
+117440550 , /* 1230    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /* 1231    RETURN                           */
+                /*ARRAY_SUBSCRIPT                                                  */
+                /*L313 :                               */
+117440559 , /* 1232    TERMINAL    LEFT_BRACKET                                                      ERROR    */
+50331865 , /* 1233    ACTION      SET_SSADD_OP                                                    217   ERROR    */
+16778391 , /* 1234    CALL        L298   ERROR         */
+117440557 , /* 1235    TERMINAL    RIGHT_BRACKET                                                     ERROR    */
+50331866 , /* 1236    ACTION      BINARY_OPERATION                                                218   ERROR    */
+33554432 , /* 1237    RETURN                           */
+                /*NEW_INITIALIZER                                                  */
+                /*L314 :                               */
+150996185 , /* 1238    SET_SELECT  L315                 */
+16908619 , /* 1239    CALL        L82    EXIT          */
+50331867 , /* 1240    ACTION      NULL_VALUE                                                      219   ERROR    */
+                /*L315 :                               */
+33554432 , /* 1241    RETURN                           */
+                /*POSTFIX_DECLARATOR                                               */
+                /*L316 :                               */
+134217770 , /* 1242    BUILTIN     42    ERROR          */
+150996190 , /* 1243    SET_SELECT  L317                 */
+16908877 , /* 1244    CALL        L141   EXIT          */
+16778682 , /* 1245    CALL        L375   ERROR         */
+                /*L317 :                               */
+33554432 , /* 1246    RETURN                           */
+                /*ENUMERATOR_LIST                                                  */
+                /*L318 :                               */
+117440553 , /* 1247    TERMINAL    COMMA                                                             ERROR    */
+150996195 , /* 1248    SET_SELECT  L319                 */
+16908558 , /* 1249    CALL        L70    EXIT          */
+50331868 , /* 1250    ACTION      WARN_EXTRA_ENUM_COMMA                                           220   ERROR    */
+                /*L319 :                               */
+33554432 , /* 1251    RETURN                           */
+                /*L320 :                               */
+16777486 , /* 1252    CALL        L70    ERROR         */
+16975071 , /* 1253    CALL        L318   OPTIONAL REPEAT  */
+33751040 , /* 1254    RETURN                           */
+                /*MEMBER_DECLARATION                                               */
+                /*L321 :                               */
+117440550 , /* 1255    TERMINAL    SEMI_COLON                                                        ERROR    */
+50331869 , /* 1256    ACTION      SET_MEMBER_DECLARATION                                          221   ERROR    */
+33554432 , /* 1257    RETURN                           */
+                /*L322 :                               */
+117440553 , /* 1258    TERMINAL    COMMA                                                             ERROR    */
+16777524 , /* 1259    CALL        L77    ERROR         */
+117440550 , /* 1260    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /* 1261    RETURN                           */
+                /*L323 :                               */
+134217735 , /* 1262    BUILTIN     7     ERROR          */
+50331870 , /* 1263    ACTION      SAVE_MEMBER_FUNCTION_BODY                                       222   ERROR    */
+117506086 , /* 1264    TERMINAL    SEMI_COLON                                                        OPTIONAL */
+33619968 , /* 1265    RETURN                           */
+                /*L324 :                               */
+16777966 , /* 1266    CALL        L180   ERROR         */
+50331871 , /* 1267    ACTION      SET_MEMBER_DECLARATION                                          223   ERROR    */
+150996216 , /* 1268    SET_SELECT  L325                 */
+117571622 , /* 1269    TERMINAL    SEMI_COLON                                                        EXIT     */
+16909550 , /* 1270    CALL        L323   EXIT          */
+16778474 , /* 1271    CALL        L322   ERROR         */
+                /*L325 :                               */
+33554432 , /* 1272    RETURN                           */
+                /*L326 :                               */
+16843393 , /* 1273    CALL        L150   OPTIONAL      */
+50331872 , /* 1274    ACTION      SET_BASE_TYPE                                                   224   ERROR    */
+150996222 , /* 1275    SET_SELECT  L327                 */
+16909554 , /* 1276    CALL        L324   EXIT          */
+16778471 , /* 1277    CALL        L321   ERROR         */
+                /*L327 :                               */
+33554432 , /* 1278    RETURN                           */
+                /*BASE_CLASS_TYPE_SPECIFIERS                                       */
+                /*L328 :                               */
+16778176 ,
+16974784 , /* 1280    CALL        L238   ERROR    REPEAT  */
+33751040 , /* 1281    RETURN                           */
+                /*ELABORATED_TYPE_SPECIFIER                                        */
+                /*L329 :                               */
+151192837 , /* 1282    SET_SELECT  L330                 */
+16909799 , /* 1283    CALL        L387   EXIT          */
+16778619 , /* 1284    CALL        L357   ERROR         */
+                /*L330 :                               */
+33554432 , /* 1285    RETURN                           */
+                /*FOR_STATEMENT_INITIALIZER                                        */
+                /*L331 :                               */
+16778391 , /* 1286    CALL        L298   ERROR         */
+117440550 , /* 1287    TERMINAL    SEMI_COLON                                                        ERROR    */
+50331873 , /* 1288    ACTION      EMIT_EXPRESSION                                                 225   ERROR    */
+33554432 , /* 1289    RETURN                           */
+                /*L332 :                               */
+50331874 , /* 1290    ACTION      SET_FOR_LOOP_INITIALIZER                                        226   ERROR    */
+134217776 , /* 1291    BUILTIN     48    ERROR          */
+150996241 , /* 1292    SET_SELECT  L333                 */
+117571622 , /* 1293    TERMINAL    SEMI_COLON                                                        EXIT     */
+16908982 , /* 1294    CALL        L164   EXIT          */
+16908782 , /* 1295    CALL        L118   EXIT          */
+16778502 , /* 1296    CALL        L331   ERROR         */
+                /*L333 :                               */
+33554432 , /* 1297    RETURN                           */
+                /*PEEK_DECLARATION_STATEMENT                                       */
+                /*L334 :                               */
+16777438 , /* 1298    CALL        L56    ERROR         */
+16777268 , /* 1299    CALL        L6     ERROR         */
+33554432 , /* 1300    RETURN                           */
+                /*L335 :                               */
+117440553 , /* 1301    TERMINAL    COMMA                                                             ERROR    */
+16778221 , /* 1302    CALL        L250   ERROR         */
+33554432 , /* 1303    RETURN                           */
+                /*L336 :                               */
+134217728 , /* 1304    BUILTIN     0     ERROR          */
+16777500 , /* 1305    CALL        L73    ERROR         */
+16844050 , /* 1306    CALL        L334   OPTIONAL      */
+16844053 , /* 1307    CALL        L335   OPTIONAL      */
+117440550 , /* 1308    TERMINAL    SEMI_COLON                                                        ERROR    */
+134217729 , /* 1309    BUILTIN     1     ERROR          */
+33554432 , /* 1310    RETURN                           */
+                /*DEALLOCATION_EXPRESSION                                          */
+                /*L337 :                               */
+16778391 , /* 1311    CALL        L298   ERROR         */
+117440557 , /* 1312    TERMINAL    RIGHT_BRACKET                                                     ERROR    */
+33554432 , /* 1313    RETURN                           */
+                /*L338 :                               */
+117440559 , /* 1314    TERMINAL    LEFT_BRACKET                                                      ERROR    */
+150996262 , /* 1315    SET_SELECT  L339                 */
+117571629 , /* 1316    TERMINAL    RIGHT_BRACKET                                                     EXIT     */
+16778527 , /* 1317    CALL        L337   ERROR         */
+                /*L339 :                               */
+50331875 , /* 1318    ACTION      ENTER_DELETE_DIMENSION                                          227   ERROR    */
+33554432 , /* 1319    RETURN                           */
+                /*L340 :                               */
+134217746 , /* 1320    BUILTIN     18    ERROR          */
+16843227 , /* 1321    CALL        L113   OPTIONAL      */
+117440536 , /* 1322    TERMINAL    KW_DELETE                                                         ERROR    */
+50331876 , /* 1323    ACTION      PUSH_DELETE                                                     228   ERROR    */
+16844066 , /* 1324    CALL        L338   OPTIONAL      */
+16778114 , /* 1325    CALL        L218   ERROR         */
+50331877 , /* 1326    ACTION      POP_DELETE                                                      229   ERROR    */
+33554432 , /* 1327    RETURN                           */
+                /*UNARY_EXPRESSION                                                 */
+                /*L341 :                               */
+117440570 , /* 1328    TERMINAL    AND                                                               ERROR    */
+50331878 , /* 1329    ACTION      SET_UNARY_OP                                                    230   ERROR    */
+16778114 , /* 1330    CALL        L218   ERROR         */
+50331879 , /* 1331    ACTION      POP_PREFIX                                                      231   ERROR    */
+33554432 , /* 1332    RETURN                           */
+                /*L342 :                               */
+117440569 , /* 1333    TERMINAL    STAR                                                              ERROR    */
+50331880 , /* 1334    ACTION      SET_UNARY_OP                                                    232   ERROR    */
+16778114 , /* 1335    CALL        L218   ERROR         */
+50331881 , /* 1336    ACTION      POP_PREFIX                                                      233   ERROR    */
+33554432 , /* 1337    RETURN                           */
+                /*L343 :                               */
+117440568 , /* 1338    TERMINAL    MINUS                                                             ERROR    */
+50331882 , /* 1339    ACTION      SET_UNARY_OP                                                    234   ERROR    */
+16778114 , /* 1340    CALL        L218   ERROR         */
+50331883 , /* 1341    ACTION      POP_PREFIX                                                      235   ERROR    */
+33554432 , /* 1342    RETURN                           */
+                /*L344 :                               */
+117440567 , /* 1343    TERMINAL    PLUS                                                              ERROR    */
+50331884 , /* 1344    ACTION      SET_UNARY_OP                                                    236   ERROR    */
+16778114 , /* 1345    CALL        L218   ERROR         */
+50331885 , /* 1346    ACTION      POP_PREFIX                                                      237   ERROR    */
+33554432 , /* 1347    RETURN                           */
+                /*L345 :                               */
+117440566 , /* 1348    TERMINAL    TILDE                                                             ERROR    */
+50331886 , /* 1349    ACTION      SET_UNARY_OP                                                    238   ERROR    */
+16778114 , /* 1350    CALL        L218   ERROR         */
+50331887 , /* 1351    ACTION      POP_PREFIX                                                      239   ERROR    */
+33554432 , /* 1352    RETURN                           */
+                /*L346 :                               */
+117440565 , /* 1353    TERMINAL    NOT                                                               ERROR    */
+50331888 , /* 1354    ACTION      SET_UNARY_OP                                                    240   ERROR    */
+16778114 , /* 1355    CALL        L218   ERROR         */
+50331889 , /* 1356    ACTION      POP_PREFIX                                                      241   ERROR    */
+33554432 , /* 1357    RETURN                           */
+                /*L347 :                               */
+117440564 , /* 1358    TERMINAL    MINUS_MINUS                                                       ERROR    */
+50331890 , /* 1359    ACTION      SET_UNARY_OP                                                    242   ERROR    */
+16778114 , /* 1360    CALL        L218   ERROR         */
+50331891 , /* 1361    ACTION      POP_PREFIX                                                      243   ERROR    */
+33554432 , /* 1362    RETURN                           */
+                /*L348 :                               */
+117440563 , /* 1363    TERMINAL    PLUS_PLUS                                                         ERROR    */
+50331892 , /* 1364    ACTION      SET_UNARY_OP                                                    244   ERROR    */
+16778114 , /* 1365    CALL        L218   ERROR         */
+50331893 , /* 1366    ACTION      POP_PREFIX                                                      245   ERROR    */
+33554432 , /* 1367    RETURN                           */
+                /*L349 :                               */
+134217759 , /* 1368    BUILTIN     31    ERROR          */
+150996326 , /* 1369    SET_SELECT  L350                 */
+16909712 , /* 1370    CALL        L362   EXIT          */
+16908785 , /* 1371    CALL        L119   EXIT          */
+16909608 , /* 1372    CALL        L340   EXIT          */
+16909441 , /* 1373    CALL        L293   EXIT          */
+16909651 , /* 1374    CALL        L348   EXIT          */
+16909646 , /* 1375    CALL        L347   EXIT          */
+16909641 , /* 1376    CALL        L346   EXIT          */
+16909636 , /* 1377    CALL        L345   EXIT          */
+16909631 , /* 1378    CALL        L344   EXIT          */
+16909626 , /* 1379    CALL        L343   EXIT          */
+16909621 , /* 1380    CALL        L342   EXIT          */
+16778544 , /* 1381    CALL        L341   ERROR         */
+                /*L350 :                               */
+33554432 , /* 1382    RETURN                           */
+                /*LA_INITIALIZER_ITEM                                              */
+                /*L351 :                               */
+117440551 , /* 1383    TERMINAL    LEFT_BRACE                                                        ERROR    */
+16777289 , /* 1384    CALL        L12    ERROR         */
+117440552 , /* 1385    TERMINAL    RIGHT_BRACE                                                       ERROR    */
+33554432 , /* 1386    RETURN                           */
+                /*L352 :                               */
+150996334 , /* 1387    SET_SELECT  L353                 */
+16908361 , /* 1388    CALL        L12    EXIT          */
+16778599 , /* 1389    CALL        L351   ERROR         */
+                /*L353 :                               */
+33554432 , /* 1390    RETURN                           */
+                /*NULL_INITIALIZER                                                 */
+                /*L354 :                               */
+50331894 , /* 1391    ACTION      SET_NULL_INITIALIZER                                            246   ERROR    */
+33554432 , /* 1392    RETURN                           */
+                /*TYPE_SPECIFIERS                                                  */
+                /*L355 :                               */
+134217784 , /* 1393    BUILTIN     56    ERROR          */
+50331895 , /* 1394    ACTION      CLEAR_TYPE_SPECIFIERS                                           247   ERROR    */
+16778292 ,
+16974900 , /* 1396    CALL        L270   ERROR    REPEAT  */
+50331896 , /* 1397    ACTION      SET_BASE_TYPE                                                   248   ERROR    */
+33554432 , /* 1398    RETURN                           */
+                /*ENUM_SPECIFIER                                                   */
+                /*L356 :                               */
+16778404 , /* 1399    CALL        L302   ERROR         */
+16843027 , /* 1400    CALL        L71    OPTIONAL      */
+50331897 , /* 1401    ACTION      SET_TAG_NAME                                                    249   ERROR    */
+33554432 , /* 1402    RETURN                           */
+                /*L357 :                               */
+117440520 , /* 1403    TERMINAL    KW_ENUM                                                           ERROR    */
+50331898 , /* 1404    ACTION      BEGIN_ENUM_DECLARATION                                          250   ERROR    */
+16842954 , /* 1405    CALL        L51    OPTIONAL      */
+151061889 , /* 1406    SET_SELECT  L358                 */
+16909687 , /* 1407    CALL        L356   EXIT          */
+16777491 , /* 1408    CALL        L71    ERROR         */
+                /*L358 :                               */
+50331899 , /* 1409    ACTION      SET_ENUM_DECLARATION                                            251   ERROR    */
+33554432 , /* 1410    RETURN                           */
+                /*BASE_INITIALIZER                                                 */
+                /*L359 :                               */
+117440554 , /* 1411    TERMINAL    COLON                                                             ERROR    */
+50331900 , /* 1412    ACTION      BEGIN_FUNCTION_BODY                                             252   ERROR    */
+16777818 , /* 1413    CALL        L144   ERROR         */
+33554432 , /* 1414    RETURN                           */
+                /*COMPILATION_UNIT                                                 */
+                /*L360 :                               */
+117440599 , /* 1415    TERMINAL    BOF                                                               ERROR    */
+50331901 , /* 1416    ACTION      BEGIN_GLOBAL_SCOPE                                              253   ERROR    */
+16777453 , /* 1417    CALL        L60    ERROR         */
+117440600 , /* 1418    TERMINAL    EOF                                                               ERROR    */
+50331902 , /* 1419    ACTION      END_GLOBAL_SCOPE                                                254   ERROR    */
+33554432 , /* 1420    RETURN                           */
+                /*NULL_STATEMENT                                                   */
+                /*L361 :                               */
+50331903 , /* 1421    ACTION      STATEMENT_START                                                 255   ERROR    */
+117440550 , /* 1422    TERMINAL    SEMI_COLON                                                        ERROR    */
+33554432 , /* 1423    RETURN                           */
+                /*SIZEOF_EXPRESSION                                                */
+                /*L362 :                               */
+117440537 , /* 1424    TERMINAL    KW_SIZEOF                                                         ERROR    */
+50331904 , /* 1425    ACTION      SET_SIZEOF_OP                                                   256   ERROR    */
+150996373 , /* 1426    SET_SELECT  L363                 */
+16908527 , /* 1427    CALL        L61    EXIT          */
+16778584 , /* 1428    CALL        L349   ERROR         */
+                /*L363 :                               */
+50331905 , /* 1429    ACTION      POP_PREFIX                                                      257   ERROR    */
+33554432 , /* 1430    RETURN                           */
+                /*DESTRUCTOR_NAME                                                  */
+                /*L364 :                               */
+117440566 , /* 1431    TERMINAL    TILDE                                                             ERROR    */
+150996379 , /* 1432    SET_SELECT  L365                 */
+117571585 , /* 1433    TERMINAL    IDENTIFIER                                                        EXIT     */
+117440516 , /* 1434    TERMINAL    TYPE                                                              ERROR    */
+                /*L365 :                               */
+50331906 , /* 1435    ACTION      SET_DESTRUCTOR_NAME                                             258   ERROR    */
+33554432 , /* 1436    RETURN                           */
+                /*OLD_PARAMETER_DECLARATOR                                         */
+                /*L366 :                               */
+16778707 , /* 1437    CALL        L382   ERROR         */
+50331907 , /* 1438    ACTION      SET_OLD_PARAMETER_DECLARATION                                   259   ERROR    */
+33554432 , /* 1439    RETURN                           */
+                /*OLD_PARAMETER_NAME                                               */
+                /*L367 :                               */
+117440513 , /* 1440    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331908 , /* 1441    ACTION      SET_SIMPLE_NAME                                                 260   ERROR    */
+33554432 , /* 1442    RETURN                           */
+                /*POINTER_OR_REFERENCE_DECLARATOR                                  */
+                /*L368 :                               */
+16777954 , /* 1443    CALL        L177   ERROR         */
+50331909 , /* 1444    ACTION      SET_MEMBER_POINTER_TYPE                                         261   ERROR    */
+33554432 , /* 1445    RETURN                           */
+                /*L369 :                               */
+16777414 , /* 1446    CALL        L50    ERROR         */
+50331910 , /* 1447    ACTION      SET_POINTER_TYPE                                                262   ERROR    */
+33554432 , /* 1448    RETURN                           */
+                /*L370 :                               */
+16778687 , /* 1449    CALL        L377   ERROR         */
+50331911 , /* 1450    ACTION      SET_REFERENCE_TYPE                                              263   ERROR    */
+33554432 , /* 1451    RETURN                           */
+                /*L371 :                               */
+134217765 , /* 1452    BUILTIN     37    ERROR          */
+150996401 , /* 1453    SET_SELECT  L372                 */
+16909737 , /* 1454    CALL        L370   EXIT          */
+16909734 , /* 1455    CALL        L369   EXIT          */
+16778659 , /* 1456    CALL        L368   ERROR         */
+                /*L372 :                               */
+33554432 , /* 1457    RETURN                           */
+                /*ARRAY_DECLARATOR                                                 */
+                /*L373 :                               */
+50331912 , /* 1458    ACTION      BEGIN_ARRAY_TYPE                                                264   ERROR    */
+16778391 , /* 1459    CALL        L298   ERROR         */
+117440557 , /* 1460    TERMINAL    RIGHT_BRACKET                                                     ERROR    */
+50331913 , /* 1461    ACTION      SET_ARRAY_TYPE                                                  265   ERROR    */
+33554432 , /* 1462    RETURN                           */
+                /*L374 :                               */
+117440557 , /* 1463    TERMINAL    RIGHT_BRACKET                                                     ERROR    */
+50331914 , /* 1464    ACTION      SET_INCOMPLETE_ARRAY_TYPE                                       266   ERROR    */
+33554432 , /* 1465    RETURN                           */
+                /*L375 :                               */
+117440559 , /* 1466    TERMINAL    LEFT_BRACKET                                                      ERROR    */
+150996414 , /* 1467    SET_SELECT  L376                 */
+16909751 , /* 1468    CALL        L374   EXIT          */
+16778674 , /* 1469    CALL        L373   ERROR         */
+                /*L376 :                               */
+33554432 , /* 1470    RETURN                           */
+                /*REFERENCE                                                        */
+                /*L377 :                               */
+117440570 , /* 1471    TERMINAL    AND                                                               ERROR    */
+16844253 , /* 1472    CALL        L384   OPTIONAL      */
+50331915 , /* 1473    ACTION      SET_DERIVED_TYPE_QUALIFIER                                      267   ERROR    */
+33554432 , /* 1474    RETURN                           */
+                /*UNAMBIGUOUS_DECLARATOR                                           */
+                /*L378 :                               */
+117440560 , /* 1475    TERMINAL    LEFT_PAREN                                                        ERROR    */
+16778707 , /* 1476    CALL        L382   ERROR         */
+117440558 , /* 1477    TERMINAL    RIGHT_PAREN                                                       ERROR    */
+33554432 , /* 1478    RETURN                           */
+                /*L379 :                               */
+16777954 , /* 1479    CALL        L177   ERROR         */
+16778707 , /* 1480    CALL        L382   ERROR         */
+50331916 , /* 1481    ACTION      SET_MEMBER_POINTER_TYPE                                         268   ERROR    */
+33554432 , /* 1482    RETURN                           */
+                /*L380 :                               */
+16777414 , /* 1483    CALL        L50    ERROR         */
+16778707 , /* 1484    CALL        L382   ERROR         */
+50331917 , /* 1485    ACTION      SET_POINTER_TYPE                                                269   ERROR    */
+33554432 , /* 1486    RETURN                           */
+                /*L381 :                               */
+16778687 , /* 1487    CALL        L377   ERROR         */
+16778707 , /* 1488    CALL        L382   ERROR         */
+50331918 , /* 1489    ACTION      SET_REFERENCE_TYPE                                              270   ERROR    */
+33554432 , /* 1490    RETURN                           */
+                /*L382 :                               */
+134217764 , /* 1491    BUILTIN     36    ERROR          */
+150996442 , /* 1492    SET_SELECT  L383                 */
+16909775 , /* 1493    CALL        L381   EXIT          */
+16909771 , /* 1494    CALL        L380   EXIT          */
+16909767 , /* 1495    CALL        L379   EXIT          */
+16908478 , /* 1496    CALL        L48    EXIT          */
+16778691 , /* 1497    CALL        L378   ERROR         */
+                /*L383 :                               */
+16975066 , /* 1498    CALL        L316   OPTIONAL REPEAT  */
+134217788 , /* 1499    BUILTIN     60    ERROR          */
+33554432 , /* 1500    RETURN                           */
+                /*TYPE_QUALIFIER_SPECIFIERS                                        */
+                /*L384 :                               */
+16778408 ,
+16975016 , /* 1502    CALL        L303   ERROR    REPEAT  */
+33751040 , /* 1503    RETURN                           */
+                /*CLASS_SPECIFIER                                                  */
+                /*L385 :                               */
+16843070 , /* 1504    CALL        L79    OPTIONAL      */
+16777528 , /* 1505    CALL        L78    ERROR         */
+33554432 , /* 1506    RETURN                           */
+                /*L386 :                               */
+16778404 , /* 1507    CALL        L302   ERROR         */
+16844256 , /* 1508    CALL        L385   OPTIONAL      */
+50331919 , /* 1509    ACTION      SET_TAG_NAME                                                    271   ERROR    */
+33554432 , /* 1510    RETURN                           */
+                /*L387 :                               */
+117440519 , /* 1511    TERMINAL    CLASS                                                             ERROR    */
+50331920 , /* 1512    ACTION      BEGIN_CLASS_DECLARATION                                         272   ERROR    */
+16843033 , /* 1513    CALL        L72    OPTIONAL      */
+151061997 , /* 1514    SET_SELECT  L388                 */
+16909795 , /* 1515    CALL        L386   EXIT          */
+16777528 , /* 1516    CALL        L78    ERROR         */
+                /*L388 :                               */
+50331921 , /* 1517    ACTION      SET_CLASS_DECLARATION                                           273   ERROR    */
+33554432 , /* 1518    RETURN                           */
+                /*DECLARATION_SPECIFIER                                            */
+                /*L389 :                               */
+16778069 , /* 1519    CALL        L205   ERROR         */
+134217786 , /* 1520    BUILTIN     58    ERROR          */
+33554432 , /* 1521    RETURN                           */
+                /*L390 :                               */
+16778619 , /* 1522    CALL        L357   ERROR         */
+134217786 , /* 1523    BUILTIN     58    ERROR          */
+33554432 , /* 1524    RETURN                           */
+                /*L391 :                               */
+16778727 , /* 1525    CALL        L387   ERROR         */
+134217786 , /* 1526    BUILTIN     58    ERROR          */
+33554432 , /* 1527    RETURN                           */
+                /*L392 :                               */
+117440516 , /* 1528    TERMINAL    TYPE                                                              ERROR    */
+50331922 , /* 1529    ACTION      SET_SIMPLE_TYPE                                                 274   ERROR    */
+134217786 , /* 1530    BUILTIN     58    ERROR          */
+33554432 , /* 1531    RETURN                           */
+                /*L393 :                               */
+117440517 , /* 1532    TERMINAL    TYPE_QUALIFIER                                                    ERROR    */
+50331923 , /* 1533    ACTION      SET_TYPE_QUALIFIER                                              275   ERROR    */
+33554432 , /* 1534    RETURN                           */
+                /*L394 :                               */
+117440523 , /* 1535    TERMINAL    KW_OVERLOAD                                                       ERROR    */
+50331924 , /* 1536    ACTION      SET_OVERLOAD_SPECIFIER                                          276   ERROR    */
+33554432 , /* 1537    RETURN                           */
+                /*L395 :                               */
+117440521 , /* 1538    TERMINAL    KW_FRIEND                                                         ERROR    */
+50331925 , /* 1539    ACTION      SET_FRIEND_SPECIFIER                                            277   ERROR    */
+33554432 , /* 1540    RETURN                           */
+                /*L396 :                               */
+117440524 , /* 1541    TERMINAL    KW_VIRTUAL                                                        ERROR    */
+50331926 , /* 1542    ACTION      SET_VIRTUAL_SPECIFIER                                           278   ERROR    */
+33554432 , /* 1543    RETURN                           */
+                /*L397 :                               */
+117440522 , /* 1544    TERMINAL    KW_INLINE                                                         ERROR    */
+50331927 , /* 1545    ACTION      SET_INLINE_SPECIFIER                                            279   ERROR    */
+33554432 , /* 1546    RETURN                           */
+                /*L398 :                               */
+117440518 , /* 1547    TERMINAL    STORAGE_CLASS                                                     ERROR    */
+50331928 , /* 1548    ACTION      SET_STORAGE_CLASS_SPECIFIER                                     280   ERROR    */
+33554432 , /* 1549    RETURN                           */
+                /*L399 :                               */
+134217758 , /* 1550    BUILTIN     30    ERROR          */
+150996506 , /* 1551    SET_SELECT  L400                 */
+16909835 , /* 1552    CALL        L398   EXIT          */
+16909832 , /* 1553    CALL        L397   EXIT          */
+16909829 , /* 1554    CALL        L396   EXIT          */
+16909826 , /* 1555    CALL        L395   EXIT          */
+16909823 , /* 1556    CALL        L394   EXIT          */
+16909820 , /* 1557    CALL        L393   EXIT          */
+16909816 , /* 1558    CALL        L392   EXIT          */
+16909813 , /* 1559    CALL        L391   EXIT          */
+16909810 , /* 1560    CALL        L390   EXIT          */
+16778735 , /* 1561    CALL        L389   ERROR         */
+                /*L400 :                               */
+134217785 , /* 1562    BUILTIN     57    ERROR          */
+33554432 , /* 1563    RETURN                           */
+                /*COMPLETE_CLASS_OR_TYPE_NAME                                      */
+                /*L401 :                               */
+117440513 , /* 1564    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331929 , /* 1565    ACTION      SET_SIMPLE_NAME                                                 281   ERROR    */
+33554432 , /* 1566    RETURN                           */
+                /*L402 :                               */
+16777316 , /* 1567    CALL        L19    ERROR         */
+117440513 , /* 1568    TERMINAL    IDENTIFIER                                                        ERROR    */
+50331930 , /* 1569    ACTION      SET_VANILLA_NAME                                                282   ERROR    */
+33554432 , /* 1570    RETURN                           */
+                /*L403 :                               */
+134217780 , /* 1571    BUILTIN     52    ERROR          */
+150996519 , /* 1572    SET_SELECT  L404                 */
+16909855 , /* 1573    CALL        L402   EXIT          */
+16778780 , /* 1574    CALL        L401   ERROR         */
+                /*L404 :                               */
+33554432 , /* 1575    RETURN                           */
+                /*OLD_PARAMETER_DECLARATION_LIST                                   */
+                /*L405 :                               */
+134217744 , /* 1576    BUILTIN     16    ERROR          */
+50331931 , /* 1577    ACTION      BEGIN_OLD_PARAMETER_LIST                                        283   ERROR    */
+16974303 , /* 1578    CALL        L114   OPTIONAL REPEAT  */
+50331932 , /* 1579    ACTION      SET_OLD_PARAMETER_LIST                                          284   ERROR    */
+33554432 , /* 1580    RETURN                           */
+                /*INIT_DECLARATOR_LIST                                             */
+                /*L406 :                               */
+117440553 , /* 1581    TERMINAL    COMMA                                                             ERROR    */
+16777612 , /* 1582    CALL        L99    ERROR         */
+33554432 , /* 1583    RETURN                           */
+                /*L407 :                               */
+16777612 , /* 1584    CALL        L99    ERROR         */
+16975405 , /* 1585    CALL        L406   OPTIONAL REPEAT  */
+33751040 , /* 1586    RETURN                           */
+                /*--************* putting out root                                 */
+                /*L408 :                               */
+16778631 , /* 1587    CALL        L360   ERROR         */
+134217792 , /* 1588    BUILTIN     64    ERROR          */
+16778428 , /* 1589    CALL        L309   ERROR         */
+134217792 , /* 1590    BUILTIN     64    ERROR          */
+16777474 , /* 1591    CALL        L67    ERROR         */
+134217792 , /* 1592    BUILTIN     64    ERROR          */
+33554432 , /* 1593    RETURN                           */
+                /*                                     */
+0 );
+DECLARE PPTR POINTER, PLTAB (1 : 1
+) CHAR BASED (PPTR), PLINIT (0:1) FIXED BIN(15) STATIC INTERNAL INITIAL (
+ 0 ,0 );
+DECLARE PARERS (1: 1) CHAR(130) VARYING STATIC INITIAL (
+ ' ' );
+DECLARE PSEVER (1: 1) FIXED BIN(15) STATIC INITIAL (
+ 0);
+

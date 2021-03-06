@@ -1,0 +1,677 @@
+/* C++ access.pl1 - Access control routines */
+
+/***********************************************************************
+ * This product is the property of Liant Software Corporation and is   *
+ * licensed pursuant to a written license agreement.  No portion of    *
+ * this product may be reproduced without the written permission of    *
+ * Liant Software Corporation except pursuant to the license agreement.*
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  05.29.92  DGM  010  Fix for referencing private names of a class
+ *			from a class nested within that class (should
+ *			be ok dispite what the ARM says).
+ *  03.26.92  DGM  009  New value-node scheme.
+ *  07.23.91  PKT  008  Bug fix IS_ACCESSIBLE_STATIC.
+ *  07.08.91  DGM  007  Added IS_ACCESSIBLE_STATIC.
+ *  01.11.91  PKT  006  Fixes/improvements.
+ *  12.17.90  PKT  005  Fixed substantial problems in IS_ACCESSIBLE
+ *			and EFFECTIVE_ACCESS.
+ *			Removed CURRENT_FUNCTION_BASE_ACCESS and
+ *			CURRENT_FUNCTION_IS_MEMBER_OF.
+ *			Made CURRENT_FUNCTION_IS_FRIEND_OF internal.
+ *  11.06.90  DGM  004  Fix (typo) in CURRENT_FUNCTION_BASE_ACCESS.
+ *  09.14.90  DGM  003  Changed include file names and VOP names.
+ *  07.27.90  DGM  002  Reworked IS_FRIEND_OF to preserve current-node-id.
+ *  07.10.90  DGM  001  Fixes in IS_ACCESSIBLE; added CURRENT_CLASS_
+ *			SCOPE_SYMBOL (see comments there for -TODO-).
+ *  06.29.90  DGM  000  Orignal.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 05.29.92 010 ACCESS');
+
+/* ---------------------------------------------------------------------
+/* Include Files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_UTL_DEFS_IN;
+%include CXX_UTL_SYMBOL_TABLE_PKG;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_GLOBAL_SEMANTIC_DATA_IN;
+%include CXX_SYMBOL_TABLE_LOOKUP_PKG;
+%include CXX_SYMBOL_TABLE_NAMES_PKG;
+%include CXX_TYPE_COMPATIBILITY_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* IS_ACCESSIBLE
+/*
+/* Return TRUE if the given MEMBER_SYMBOL is currently accessible
+/* through an object of type SYMBOL.  Otherwise, return FALSE.
+/* Preserves current-node-id.
+/*
+/* PKT has moved a lot of the work this function was doing.
+/* This function can't grant access to a member on account of the
+/* current function being friendly with the member's class, because
+/* the member's class might not be an accessible base of SYMBOL.
+/* Nor can it grant access to a protected member on account of the
+/* current function's class being derived from the member's class,
+/* because the access is required to be through an _object_ with which the 
+/* current function is friendly.  So EFFECTIVE_ACCESS does all of
+/* the work for protected access.  
+/* ------------------------------------------------------------------- */
+
+IS_ACCESSIBLE: procedure (MEMBER_SYMBOL, SYMBOL)
+	       returns   (type (BOOL_T))
+	       external  (X_IS_ACCESSIBLE);
+
+	declare
+		MEMBER_SYMBOL		type (NID_T),
+		SYMBOL			type (NID_T);
+	declare
+		MEMBER_PARENT_SYMBOL	type (NID_T),
+		ACCESS			type (SHORT_T),
+		(MP, P)			type (POINTER_T);
+
+	call GET_SYM_NODE_R (MEMBER_SYMBOL, MP);
+
+	if ^MP->SYM_NODE.IS_AGGREGATE_MEMBER |
+	    (rank (MP->SYM_NODE.ACCESS) = NULL_ACCESS) then do;
+		call RELEASE_SYM_NODE (MEMBER_SYMBOL);
+		return (FALSE);
+	end;
+
+	MEMBER_PARENT_SYMBOL = MP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+
+	if SYMBOL = NULL_NID then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	else if IS_ANY_BASE_CLASS_OF (MEMBER_PARENT_SYMBOL, SYMBOL) then do;
+		ACCESS = EFFECTIVE_ACCESS (MEMBER_SYMBOL,
+					   MEMBER_PARENT_SYMBOL,
+					   SYMBOL,
+					   rank (MP->SYM_NODE.ACCESS));
+	end;
+	else do;
+		/*
+		/* Error, MEMBER_SYMBOL not a member of SYMBOL; 
+		/* already reported. (PKT believes)
+		/**/
+		ACCESS = PUBLIC_ACCESS;
+	end;
+
+	call RELEASE_SYM_NODE (MEMBER_SYMBOL);
+
+	return (ACCESS = PUBLIC_ACCESS);
+
+end IS_ACCESSIBLE;
+
+/* ---------------------------------------------------------------------
+/* IS_ACCESSIBLE_STATIC
+/*
+/* Return TRUE if the static member symbol represented by the given
+/* sym-node id MEMBER_SYMBOL is currently accessible.  Otherwise,
+/* return FALSE.  Preserves current-node-id.
+/*
+/* This is actually more difficult than IS_ACCESSIBLE.  
+/* The accessibility of MEMBER_SYMBOL is the combination of its
+/* accessibility when viewed in turn as a member of each derived class
+/* of the MEMBER_SYMBOL's class.  Fortunately, the accessibility
+/* can be determined fairly easily when the member was declared
+/* public or private.
+/* ------------------------------------------------------------------- */
+
+IS_ACCESSIBLE_STATIC: procedure (MEMBER_SYMBOL)
+		      returns   (type (BOOL_T))
+		      external  (X_IS_ACCESSIBLE_STATIC);
+	declare
+		MEMBER_SYMBOL		type (NID_T);
+	declare
+		MEMBER_PARENT_SYMBOL	type (NID_T),
+		START_SYMBOL		type (NID_T),
+		ACCESS			type (SHORT_T),
+		DECLARED_ACCESS		type (SHORT_T),
+		(MP, FP, BP, BCP)	type (POINTER_T),
+		BEFRIENDER		type (NID_T),
+		BEFRIENDER_CLASS	type (NID_T),
+		STATUS			type (BOOL_T),
+		(F, NEXT_F)		type (NID_T);
+
+	call GET_SYM_NODE_R (MEMBER_SYMBOL, MP);
+
+	DECLARED_ACCESS = rank (MP->SYM_NODE.ACCESS);
+	if ^MP->SYM_NODE.IS_AGGREGATE_MEMBER |
+	    DECLARED_ACCESS = NULL_ACCESS then do;
+		call RELEASE_SYM_NODE (MEMBER_SYMBOL);
+		return (FALSE);
+	end;
+
+	if DECLARED_ACCESS < PROTECTED_ACCESS then do;
+		call RELEASE_SYM_NODE (MEMBER_SYMBOL);
+		return (TRUE);
+	end;
+
+	MEMBER_PARENT_SYMBOL = MP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+
+	call RELEASE_SYM_NODE (MEMBER_SYMBOL);
+
+	if DECLARED_ACCESS > PROTECTED_ACCESS then do;
+		/* no need to consider access as inherited member */
+		ACCESS = EFFECTIVE_ACCESS (MEMBER_SYMBOL,
+					   MEMBER_PARENT_SYMBOL,
+					   MEMBER_PARENT_SYMBOL,
+					   DECLARED_ACCESS);
+		return (ACCESS = PUBLIC_ACCESS);
+	end;
+
+	/*
+	/* Declared access is protected.  
+	/* "A friend or a member function of a derived class can
+	/* access a protected static member of a base class."
+	/**/
+
+	/* Consider all classes which current scope befriends. */
+
+	BEFRIENDER = CURRENT_SCOPE_SYMBOL ();
+
+	STATUS = FALSE;
+
+	call CHECK_FOR_BASE (BEFRIENDER);
+
+	call GET_SYM_NODE_R (BEFRIENDER, BP);
+
+	/*
+	/* Search the befriends list of the symbol
+	/* for the class or function.
+	/**/
+
+	do F = BP->SYM_NODE.BEFRIENDS repeat (NEXT_F)
+				      while (F ^= NULL_NID & STATUS = FALSE);
+		call GET_FRIEND_NODE_R (F, FP);
+		NEXT_F = FP->FRIEND_NODE.NEXT;
+		call CHECK_FOR_BASE (FP->FRIEND_NODE.SYMBOL);
+		call RELEASE_FRIEND_NODE (F);
+	end;
+
+	/*
+	/* Not found; if this is a member function then search the
+	/* befriends list of its owner (tag) symbol for CLASS_SYMBOL.
+	/**/
+
+	if BP->SYM_NODE.IS_FUNCTION & BP->SYM_NODE.IS_MEMBER then do;
+
+		/* Here, BEFRIENDER is a member function sym-node */
+
+		BEFRIENDER_CLASS = BP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+
+		call CHECK_FOR_BASE (BEFRIENDER_CLASS);
+
+		call GET_SYM_NODE_R (BEFRIENDER_CLASS, BCP);
+
+		/*
+		/* Search the befriends list of the class
+		/* for the class or function.
+		/**/
+
+		do F = BCP->SYM_NODE.BEFRIENDS repeat (NEXT_F)
+				       while (F ^= NULL_NID & STATUS = FALSE);
+			call GET_FRIEND_NODE_R (F, FP);
+			NEXT_F = FP->FRIEND_NODE.NEXT;
+			call CHECK_FOR_BASE (FP->FRIEND_NODE.SYMBOL);
+			call RELEASE_FRIEND_NODE (F);
+		end;
+
+		call RELEASE_SYM_NODE (BEFRIENDER_CLASS);
+	end;
+
+	call RELEASE_SYM_NODE (BEFRIENDER);
+	return (STATUS);
+
+/* ---------------------------------------------------------------------
+/* CHECK_FOR_BASE
+/*
+/* Given a class befriended by the current context, check whether it's
+/* derived from MEMBER_PARENT_SYMBOL in such a way that it provieds
+/* access to MEMBER_SYMBOL.
+/* 
+/* If so, sets STATUS to true.
+/* ------------------------------------------------------------------- */
+
+CHECK_FOR_BASE: procedure (FRIEND) internal;
+
+	declare
+		FRIEND		type (NID_T);
+	declare
+		P		pointer,
+		ACCESS		type (SHORT_T);
+	
+	call GET_SYM_NODE_R (FRIEND, P);
+	if P->SYM_NODE.IS_AGGREGATE_TAG then do;
+		if IS_ANY_BASE_CLASS_OF (MEMBER_PARENT_SYMBOL, FRIEND) then do;
+			ACCESS = EFFECTIVE_ACCESS (MEMBER_SYMBOL,
+						   MEMBER_PARENT_SYMBOL,
+						   FRIEND,
+						   DECLARED_ACCESS);
+			if ACCESS = PUBLIC_ACCESS then
+				STATUS = TRUE;
+		end;
+	end;
+	call RELEASE_SYM_NODE (FRIEND);
+
+end CHECK_FOR_BASE;
+
+end IS_ACCESSIBLE_STATIC;
+
+/* ---------------------------------------------------------------------
+/* EFFECTIVE_ACCESS
+/*
+/* Return the effective access rights of a member MEMBER_SYMBOL of
+/* CLASS_SYMBOL when viewed as a member of START_SYMBOL.  
+/* MEMBER_SYMBOL must either be null, or an immediate member of CLASS_SYMBOL.
+/* ORIGINAL_ACCESS is the access with which MEMBER_SYMBOL is declared.
+/* If MEMBER_SYMBOL is null, then ORIGINAL_ACCESS is PUBLIC_ACCESS,
+/* and the returned level of access is appropriate
+/* for any public member of CLASS_SYMBOL.
+/* CLASS_SYMBOL must be a base class of (or the same as) START_SYMBOL.
+/*
+/* PKT has enhanced this procedure, because the
+/* accessibility of a particular member from a given function has a
+/* non-trivial relationship with the basic idea of effective access.
+/* If member M is effectively a private (not necessarily immediate)
+/* member of base class C when looked up starting at class S, and 
+/* the current function is a friend of C, then M is accessible. 
+/*
+/* The idea is that the effective access of a member is
+/* not simply as described in 11.2, but is relative to the function
+/* from which access occurs, even deep in the base class hierarchy.
+/* For examples, see PKT's tests access19, access20, and access21.
+/*
+/* Return of NO_ACCESS means the member is a private member of a base class;
+/* which behaves differently from PRIVATE_ACCESS for private of this class.
+/*
+/* There's one subtle call to this procedure, which goes beyond
+/* the above specs.  MEMBER_SYMBOL need not be an immediate member of
+/* CLASS_SYMBOL, in which case ORIGINAL_ACCESS is the effective access
+/* of MEMBER_SYMBOL in CLASS_SYMBOL rather than its declared access.
+/*
+/* If CLASS_SYMBOL is a proper base class of START_SYMBOL,
+/* we first search the base-member "adjustments" list for the START_SYMBOL
+/* to see if the user has set the access explicitly.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+EFFECTIVE_ACCESS: procedure (MEMBER_SYMBOL,
+			     CLASS_SYMBOL,
+			     START_SYMBOL,
+			     ORIGINAL_ACCESS)
+		  returns   (type (SHORT_T))
+		  external  (X_EFFECTIVE_ACCESS);
+	declare
+		MEMBER_SYMBOL	type (NID_T),
+		CLASS_SYMBOL	type (NID_T),
+		START_SYMBOL	type (NID_T),
+		ORIGINAL_ACCESS	type (SHORT_T);
+	declare
+		(SP, BMP, BCP)	type (POINTER_T),
+		(BM, NEXT_BM)	type (NID_T),
+		(BC, NEXT_BC)	type (NID_T),
+		ACCESS		type (SHORT_T),
+		FINAL_ACCESS	type (SHORT_T),
+		BEST_ACCESS	type (SHORT_T),
+		BASE_ACCESS	type (SHORT_T),
+		CURRENT_CLASS_SYMBOL
+				type (NID_T);
+
+	FINAL_ACCESS = ORIGINAL_ACCESS;
+	if COMPATIBLE_SYMBOLS (CLASS_SYMBOL, START_SYMBOL) then
+		goto DONE_EFFECTIVE_ACCESS;
+
+	call GET_SYM_NODE_R (START_SYMBOL, SP);
+
+	/* Search the base member adjustments for MEMBER_SYMBOL */
+
+	if MEMBER_SYMBOL ^= NULL_NID then do;
+		do BM = SP->SYM_NODE.BASE_MEMBERS
+		repeat (NEXT_BM) while (BM ^= NULL_NID);
+			call GET_BASE_MEMBER_NODE_R (BM, BMP);
+			NEXT_BM = BMP->BASE_MEMBER_NODE.NEXT;
+			if OVERLOAD_MATCH (BMP->BASE_MEMBER_NODE.MEMBER,
+					   MEMBER_SYMBOL) then do;
+				/* Check whether the access declaration
+				/* applies to the present path to the
+				/* member.
+				/**/
+				ACCESS = rank (BMP->BASE_MEMBER_NODE.ACCESS);
+				if ACCESS = EFFECTIVE_ACCESS (
+						MEMBER_SYMBOL, CLASS_SYMBOL,
+						BMP->BASE_MEMBER_NODE.CLASS,
+						ACCESS) then do;
+					FINAL_ACCESS = ACCESS;
+					call RELEASE_BASE_MEMBER_NODE (BM);
+					call RELEASE_SYM_NODE (START_SYMBOL);
+					goto DONE_EFFECTIVE_ACCESS;
+				end;
+			end;
+			call RELEASE_BASE_MEMBER_NODE (BM);
+		end;
+	end;
+
+	BEST_ACCESS = NO_ACCESS;
+
+	do BC = SP->SYM_NODE.BASE_CLASSES
+	repeat (NEXT_BC) while (BC ^= NULL_NID & BEST_ACCESS > PUBLIC_ACCESS);
+		call GET_BASE_CLASS_NODE_R (BC, BCP);
+		NEXT_BC = BCP->BASE_CLASS_NODE.NEXT;
+
+		BASE_ACCESS = rank (BCP->BASE_CLASS_NODE.ACCESS);
+		ACCESS = EFFECTIVE_ACCESS (MEMBER_SYMBOL,
+					   CLASS_SYMBOL,
+					   BCP->BASE_CLASS_NODE.SYMBOL,
+					   ORIGINAL_ACCESS);
+
+		if ACCESS > PROTECTED_ACCESS then
+			ACCESS = NO_ACCESS;
+		else if ACCESS < BASE_ACCESS then
+			ACCESS = BASE_ACCESS;
+
+		if ACCESS < BEST_ACCESS then
+			BEST_ACCESS = ACCESS;
+
+		call RELEASE_BASE_CLASS_NODE (BC);
+	end;
+
+	FINAL_ACCESS = BEST_ACCESS;
+
+	DONE_EFFECTIVE_ACCESS:
+
+	if FINAL_ACCESS < NO_ACCESS then do;
+		if IS_FRIEND_OF (CURRENT_SCOPE_SYMBOL (), START_SYMBOL) then
+			return (PUBLIC_ACCESS);
+	end;
+
+	return (FINAL_ACCESS);
+
+/* ---------------------------------------------------------------------
+/* OVERLOAD_MATCH
+/*
+/* Returns whether VARIANT is one of the overloaded variants of SYMBOL.
+/* If SYMBOL is not an overloaded function symbol, returns whether
+/* VARIANT = SYMBOL.  If it is an overloaded function symbol, it
+/* must be first in the NEXT_OVERLOAD list.
+/* ------------------------------------------------------------------- */
+
+OVERLOAD_MATCH: procedure (SYMBOL, VARIANT)
+		returns   (type (BOOL_T))
+		internal;
+
+	declare
+		SYMBOL		type (NID_T),
+		VARIANT		type (NID_T);
+	declare
+		SP		pointer,
+		THIS_OVERLOAD	type (NID_T),
+		NEXT_OVERLOAD	type (NID_T),
+		FOUND		type (BOOL_T);
+
+	call GET_SYM_NODE_R (SYMBOL, SP);
+	if ^(SP->SYM_NODE.IS_FUNCTION & SP->SYM_NODE.OVERLOAD) then do;
+		call RELEASE_SYM_NODE (SYMBOL);
+		return (SYMBOL = VARIANT);
+	end;
+	
+	THIS_OVERLOAD = SYMBOL;
+	FOUND = FALSE;
+	do while (TRUE);
+		if THIS_OVERLOAD = VARIANT then
+			FOUND = TRUE;
+
+		NEXT_OVERLOAD = SP->SYM_NODE.NEXT_OVERLOAD;
+		call RELEASE_SYM_NODE (THIS_OVERLOAD);
+		if NEXT_OVERLOAD = NULL_NID then
+			leave;
+		THIS_OVERLOAD = NEXT_OVERLOAD;
+		call GET_SYM_NODE_R (THIS_OVERLOAD, SP);
+	end;
+	return (FOUND);
+
+end OVERLOAD_MATCH;
+
+end EFFECTIVE_ACCESS;
+
+/* ---------------------------------------------------------------------
+/* IS_FRIEND_OF
+/*
+/* Return TRUE if the given symbol is a friend
+/* of the given class (tag) symbol, otherwise return FALSE. 
+/* If SYMBOL is not null, it must be either a function
+/* or a class (tag) symbol).
+/* If the two classes are the same, call them friends.
+/*
+/* -TODO- PKT wonders whether it would be feasible to
+/*	1. put each class on its own befriends list
+/*	2. set up the last FRIEND_NODE.NEXT of a member function's
+/*	   befriends list to point to the first FRIEND_NODE of
+/*	   its class's befriends list.
+/* Doing so would simplify IS_FRIEND_OF and IS_ACCESSIBLE_STATIC.
+/*
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+IS_FRIEND_OF: procedure (SYMBOL, CLASS_SYMBOL)
+	      returns   (type (BIT_T))
+	      external  (X_IS_FRIEND_OF);
+
+	declare
+		SYMBOL			type (NID_T),
+		CLASS_SYMBOL		type (NID_T);
+	declare
+		(THIS_SYMBOL, ID)	type (NID_T),
+		(SP, FP)		type (POINTER_T),
+		(F, NEXT_F)		type (NID_T),
+		STATUS			type (BOOL_T);
+
+	if SYMBOL = NULL_NID then
+		return (FALSE);
+
+	THIS_SYMBOL = SYMBOL;
+
+	BEGIN_IS_FRIEND_OF:
+
+	if THIS_SYMBOL = CLASS_SYMBOL then
+		return (TRUE);
+
+	STATUS = FALSE;
+
+	call GET_SYM_NODE_R (THIS_SYMBOL, SP);
+
+	/*
+	/* Search the befriends list of the symbol
+	/* for the class or function.
+	/**/
+
+	do F = SP->SYM_NODE.BEFRIENDS repeat (NEXT_F) while (F ^= NULL_NID);
+		call GET_FRIEND_NODE_R (F, FP);
+		NEXT_F = FP->FRIEND_NODE.NEXT;
+		if FP->FRIEND_NODE.SYMBOL = CLASS_SYMBOL then do;
+			STATUS = TRUE;
+			call RELEASE_FRIEND_NODE (F);
+			goto DONE_IS_FRIEND_OF;
+		end;
+		call RELEASE_FRIEND_NODE (F);
+	end;
+
+	/*
+	/* Not found; if this is a member function then search the
+	/* befriends list of its owner (tag) symbol for CLASS_SYMBOL.
+	/**/
+
+	if SP->SYM_NODE.IS_FUNCTION & SP->SYM_NODE.IS_MEMBER then do;
+		/*
+		/* Here, SYMBOL is a class function sym-node
+		/**/
+		STATUS = IS_FRIEND_OF
+			 (SP->SYM_NODE.ENCLOSING_SCOPE_OWNER,
+			  CLASS_SYMBOL);
+	end;
+
+	DONE_IS_FRIEND_OF:
+
+	if STATUS = TRUE then do;
+		call RELEASE_SYM_NODE (THIS_SYMBOL);
+		return (TRUE);
+	end;
+	else if  SP->SYM_NODE.IS_TAG &
+		 SP->SYM_NODE.IS_MEMBER &
+		(SP->SYM_NODE.ENCLOSING_SCOPE_TYPE = byte (CLASS_SCOPE)) &
+		(SP->SYM_NODE.ENCLOSING_SCOPE_OWNER ^= NULL_NID) then do;
+		ID = SP->SYM_NODE.ENCLOSING_SCOPE_OWNER;
+		call RELEASE_SYM_NODE (THIS_SYMBOL);
+		THIS_SYMBOL = ID;
+		goto BEGIN_IS_FRIEND_OF;
+	end;
+
+	else do;
+		call RELEASE_SYM_NODE (THIS_SYMBOL);
+		return (FALSE);
+	end;
+
+end IS_FRIEND_OF;
+
+/* ---------------------------------------------------------------------
+/* CURRENT_SCOPE_SYMBOL
+/*
+/* Returns the symbol id of the function or class (if any) which
+/* determines befriending in the current scope.
+/* Returns null if current scope can't make friends.
+/* ------------------------------------------------------------------- */
+
+CURRENT_SCOPE_SYMBOL: procedure returns (type (NID_T)) internal;
+
+	declare
+		(S, NEXT_S)	type (NID_T),
+		(FSP, SP)	type (POINTER_T);
+
+	if CURRENT_FUNCTION_SCOPE ^= NULL_NID then do;
+		call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, FSP);
+		S = FSP->SCOPE_NODE.OWNER;
+		call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+		return (S);
+	end;
+
+	/*
+	/* -TODO- perhaps do this differently; when a class scope qualifier
+	/* is encountered, maybe the class scope should actually be REopened
+	/* so that CURRENT_CLASS_SCOPE is actually set correctly; this may
+	/* simply things elsewhere (e.g. in REF_VALUE).  Or, maybe simply
+	/* use another global CURRENT_CLASS_SCOPE_SYMBOL which is treated
+	/* similarly to CURRENT_NAME_SCOPE_SYMBOL; CURRENT_CLASS_SCOPE_SYMBOL
+	/* is set whenever CURRENT_NAME_SCOPE_SYMBOL is set; when CURRENT_
+	/* NAME_SCOPE_SYMBOL is cleared, CURRENT_CLASS_SCOPE_SYMBOL is set
+	/* to the (class symbol) owner of CURRENT_CLASS_SCOPE; and when
+	/* a class scope is entered/exited (via BEGIN_CLASS_SCOPE and END_
+	/* CLASS_SCOPE,), CURRENT_CLASS_SCOPE_SYMBOL is set the the (class
+	/* symbol owner of the new CURRENT_CLASS_SCOPE.
+	/*
+	/* Hmmm, idunno, this may be a bit of a mess come to think of it.
+	/**/
+
+	do S = CURRENT_SCOPE repeat (NEXT_S) while (S ^= NULL_NID);
+		call GET_SCOPE_NODE_R (S, SP);
+		if rank (SP->SCOPE_NODE.TYPE) = CLASS_SCOPE then do;
+			NEXT_S = SP->SCOPE_NODE.OWNER;
+			call RELEASE_SCOPE_NODE (S);
+			return (NEXT_S);
+		end;
+		NEXT_S = SP->SCOPE_NODE.ENCLOSING_SCOPE;
+		call RELEASE_SCOPE_NODE (S);
+	end;
+
+	return (NULL_NID);
+
+end CURRENT_SCOPE_SYMBOL;
+
+/* ---------------------------------------------------------------------
+/* CURRENT_FUNCTION_IS_FRIEND_OF
+/*
+/* Return TRUE if the given symbol (assumed to be either a function or
+/* a class (tag) symbol), is a friend of the given class (tag) symbol
+/* otherwise return FALSE.  Preserves current-node-id.
+/*
+/* Note: this function is no longer needed externally.
+/* ------------------------------------------------------------------- */
+/* 
+/* CURRENT_FUNCTION_IS_FRIEND_OF: procedure (CLASS_SYMBOL)
+/* 			       returns   (type (BOOL_T))
+/* 			       internal;
+/* 	declare
+/* 		CLASS_SYMBOL	type (NID_T);
+/* 	declare
+/* 		FSP		type (POINTER_T),
+/* 		STATUS		type (BOOL_T);
+/* 
+/* 	if CURRENT_FUNCTION_SCOPE = NULL_NID then
+/* 		return (FALSE);
+/* 	call GET_SCOPE_NODE_R (CURRENT_FUNCTION_SCOPE, FSP);
+/* 	STATUS = IS_FRIEND_OF (FSP->SCOPE_NODE.OWNER, CLASS_SYMBOL);
+/* 	call RELEASE_SCOPE_NODE (CURRENT_FUNCTION_SCOPE);
+/* 	return (STATUS);
+/* 
+/* end CURRENT_FUNCTION_IS_FRIEND_OF;
+/**/
+
+/* ---------------------------------------------------------------------
+/* CURRENT_CLASS_SCOPE_SYMBOL
+/* ------------------------------------------------------------------- */
+/* 
+/* CURRENT_CLASS_SCOPE_SYMBOL: procedure returns (type (NID_T)) internal;
+/* 
+/* 	declare
+/* 		(S, NEXT_S)	type (NID_T),
+/* 		SP		type (POINTER_T);
+/* 
+/* 	/*
+/* 	/* -TODO- perhaps do this differently; when a class scope qualifier
+/* 	/* is encountered, maybe the class scope should actually be REopened
+/* 	/* so that CURRENT_CLASS_SCOPE is actually set correctly; this may
+/* 	/* simply things elsewhere (e.g. in REF_VALUE).  Or, maybe simply
+/* 	/* use another global CURRENT_CLASS_SCOPE_SYMBOL which is treated
+/* 	/* similarly to CURRENT_NAME_SCOPE_SYMBOL; CURRENT_CLASS_SCOPE_SYMBOL
+/* 	/* is set whenever CURRENT_NAME_SCOPE_SYMBOL is set; when CURRENT_
+/* 	/* NAME_SCOPE_SYMBOL is cleared, CURRENT_CLASS_SCOPE_SYMBOL is set
+/* 	/* to the (class symbol) owner of CURRENT_CLASS_SCOPE; and when
+/* 	/* a class scope is entered/exited (via BEGIN_CLASS_SCOPE and END_
+/* 	/* CLASS_SCOPE,), CURRENT_CLASS_SCOPE_SYMBOL is set the the (class
+/* 	/* symbol owner of the new CURRENT_CLASS_SCOPE.
+/* 	/*
+/* 	/* Hmmm, idunno, this may be a bit of a mess come to think of it.
+/* 	/**/
+/* 
+/* 	do S = CURRENT_SCOPE repeat (NEXT_S) while (S ^= NULL_NID);
+/* 		call GET_SCOPE_NODE_R (S, SP);
+/* 		if rank (SP->SCOPE_NODE.TYPE) = CLASS_SCOPE then do;
+/* 			NEXT_S = SP->SCOPE_NODE.OWNER;
+/* 			call RELEASE_SCOPE_NODE (S);
+/* 			return (NEXT_S);
+/* 		end;
+/* 		NEXT_S = SP->SCOPE_NODE.ENCLOSING_SCOPE;
+/* 		call RELEASE_SCOPE_NODE (S);
+/* 	end;
+/* 
+/* 	return (NULL_NID);
+/* 
+/* end CURRENT_CLASS_SCOPE_SYMBOL;
+/**/

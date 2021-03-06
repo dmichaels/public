@@ -1,0 +1,445 @@
+/* C++ typsiz.pl1 - Determine the machine size of a type */
+
+/************************************************************************
+ * This product is the property of Liant Software Corporation and is    *
+ * licensed pursuant to a written license agreement.  No portion of     *
+ * this product may be reproduced without the written permission of     *
+ * Liant Software Corporation except pursuant to the license agreement. *
+ ************************************************************************/
+
+/***********************************************************************
+ *
+ *  LPI EDIT HISTORY               [ Update the VERSION__ string below ]
+ *
+ *  03.10.92  DGM  023	Added EXTENDED_LONG_DOUBLE_TYPE_SIZE.
+ *  02.06.92  PKT  022	Make BACK_END_TYPE_BY_REFERENCE work for VOID_BT.
+ *  11.20.91  DGM  021  Merge.
+ *  11.19.91  PKT  020L Added BACK_END_TYPE_BY_REFERENCE.
+ *  10.03.91  DGM  017  Short enum support.
+ *  07.08.91  DGM  016  Fix for class A; f () {int n; A **p = new A *[n];}
+ *  01.27.91  PKT  015  Fix and update for member pointers.
+ *  10.10.90  DGM  014  Changed to simply set size of tag based on the
+ *			size field in the tag sym-node rather than on
+ *			the defined field; this & BUILD_CURRENT_TAG_TYPE
+ *			prevent too many diagnostics when a object of
+ *			undefined class type is declared.
+ *  09.14.90  DGM  013  Changed include file names and VOP names.
+ *  09.05.90  PKT  012  Updated.
+ *  08.08.90  DGM  011  New type-node.
+ *  05.17.90  DGM  010  Fixed bug in SUBTYPE_SIZE (struct s as[]).
+ *  05.02.90  DGM  009  Set size-units and boundary for an array type
+ *			of unspecified dimension.
+ *  04.27.90  DGM  008  Updated for BIT_FIELD_TYPE_SIZE.
+ *  04.19.90  DGM  007  C_DECLARE_MISCELLANY_PKG to CXX_DECLARE_TYPE_PKG.
+ *  04.02.90  DGM  006  Minor fix/changes and pointer-to-member support.
+ *  03.02.90  DGM  005  Removed reference to IS_BIT_FIELD; TODO, handle
+ *			bit-fields separately (?), we may not need all
+ *			of the BIT_FIELD_xxx_BT types after all.
+ *  02.27.90  PKT  004  Added SUBTYPE_SIZE, enhanced sizing of arrays.
+ *  02.22.90  DGM  003  Updated.
+ *  02.15.90  DGM  002  Updated for the new TYPE_NODE scheme.
+ *  02.12.90  DGM  001  Minor fix.
+ *  02.09.90  DGM  000  Updated (-TODO- more bit-field handling ?).
+ *  01.17.90  TLF  000  Original.  Derived from ANSI-C sizet.pl1.
+ *
+ ***********************************************************************/
+
+/* ---------------------------------------------------------------------
+/* Version and copyright stamp
+/* ------------------------------------------------------------------- */
+
+declare	VERSION__	character (28) varying static internal initial
+
+('@(#)LPI 03.10.92 023 TYPSIZ');
+
+/* ---------------------------------------------------------------------
+/* Include files
+/* ------------------------------------------------------------------- */
+
+%include 'incfil';
+%include GLOBAL_IN;
+%include CXX_STANDARD_DEFS_IN;
+%include CXX_EXTERNAL_NAME_MAP_IN;
+%include CXX_TARGET_HARDWARE_IN;
+%include CXX_SYMBOL_TABLE_IN;
+%include CXX_TYPE_MAP_IN;
+%include CXX_TYPE_SIZE_IN;
+%include CXX_DECLARE_TYPE_PKG;
+%include CXX_NODE_MGR_PKG;
+%include CXX_ERROR_MGR_PKG;
+
+/* ---------------------------------------------------------------------
+/* TYPE_SIZE
+/*
+/* Given a type-node id representing any type, return its size,
+/* size-units, and boundary; handles class, struct, union, and array
+/* types, as well as the simple types.  Preserves current-node-id.
+/*
+/* N.B. The resultant size-units are *always* the same as the resultant
+/* boundary, *except* in the case of bit-field types, in which case
+/* the size-units are *always* bits.
+/* ------------------------------------------------------------------- */
+
+TYPE_SIZE: procedure (TYPE_NODE_ID, SIZE, SIZE_UNITS, BOUNDARY)
+	   external  (X_TYPE_SIZE);
+
+	declare
+		TYPE_NODE_ID	type (NID_T),		/* in  */
+		SIZE		type (LONG_T),		/* out */
+		SIZE_UNITS	type (SHORT_T),		/* out */
+		BOUNDARY	type (SHORT_T);		/* out */
+	declare
+		TP		type (POINTER_T);
+
+	call GET_TYPE_NODE_R (TYPE_NODE_ID, TP);
+	call ANY_TYPE_SIZE (TP, 0, SIZE, SIZE_UNITS, BOUNDARY);
+	call RELEASE_TYPE_NODE (TYPE_NODE_ID);
+
+end TYPE_SIZE;
+
+/* ---------------------------------------------------------------------
+/* ANY_TYPE_SIZE
+/*
+/* Given a pointer to a type-node and a number of type levels to skip
+/* (ignore), return the type's size, size-units, and boundary;
+/* handles class, struct, union, and array types, as well as the simple
+/* types.  Preserves current-node-id.
+/*
+/* N.B. The resultant size-units are *always* the same as the resultant
+/* boundary, *except* in the case of bit-field types, in which case
+/* the size-units are *always* bits.
+/* ------------------------------------------------------------------- */
+
+ANY_TYPE_SIZE: procedure (TP, SKIP_NLEVELS, SIZE, SIZE_UNITS, BOUNDARY)
+	       recursive
+	       external  (X_ANY_TYPE_SIZE);
+
+	declare
+		TP		type (POINTER_T),	/* in  */
+		SKIP_NLEVELS	type (SHORT_T),		/* in  */
+		SIZE		type (LONG_T),		/* out */
+		SIZE_UNITS	type (SHORT_T),		/* out */
+		BOUNDARY	type (SHORT_T);		/* out */
+	declare
+		LEVEL		type (SHORT_T),
+		TOP_TYPE	type (SHORT_T),
+		TYPE_DATA	type (TYPE_DATA_T),
+		P		type (POINTER_T);
+
+	/* Compute the type level to check */
+
+	LEVEL = rank (TP->TYPE_NODE.LEVEL) - SKIP_NLEVELS;
+	if LEVEL < 0 then LEVEL = 0;
+
+	/* Get the top type code */
+
+	TOP_TYPE = rank (TP->TYPE_NODE.TYPE_CODE (LEVEL));
+
+	/*
+	/* Handle an array type; if its element size has not yet
+	/* been determined (i.e. if it has just been declared),
+	/* then determine its size if possible, and set the
+	/* (element) size fields of the dim-nodes appropriately.
+	/**/
+
+	if TOP_TYPE = ARRAY_DT then do;
+
+		call GET_DIM_NODE_R (TP->TYPE_NODE.TYPE_NID (LEVEL), P);
+		if P->DIM_NODE.ELEMENT_SIZE <= 0 then do;
+			/*
+			/* The size of this array element has not yet
+			/* been determined; determine (recursively if
+			/* necessary) the size of each element.  If
+			/* an element size is zero then it's an error,
+			/* but it was caught in BUILD_TYPE.CHECK_TYPE.
+			/**/
+			call ANY_TYPE_SIZE (TP,
+					    SKIP_NLEVELS + 1,
+					    P->DIM_NODE.ELEMENT_SIZE, 
+					    SIZE_UNITS,
+					    BOUNDARY);
+			P->DIM_NODE.ELEMENT_SIZE_UNITS = byte (SIZE_UNITS);
+		end;
+		if P->DIM_NODE.INCOMPLETE then do;
+			/*
+			/* This dimension was *not* given (e.g. "int x[]");
+			/* the size is undefined, set it to zero, *but* set
+			/* size-units & boundary according to the element type.
+			/**/
+			SIZE       = 0;
+			SIZE_UNITS = rank (P->DIM_NODE.ELEMENT_SIZE_UNITS);
+			BOUNDARY   = rank (P->DIM_NODE.ELEMENT_SIZE_UNITS);
+		end;
+		else do;
+			/*
+			/* This dimension *was* given; the size of this
+			/* type is the element size times the specified
+			/* dimension size.
+			/**/
+			SIZE       = P->DIM_NODE.VALUE *
+				     P->DIM_NODE.ELEMENT_SIZE;
+			SIZE_UNITS = rank (P->DIM_NODE.ELEMENT_SIZE_UNITS);
+			BOUNDARY   = rank (P->DIM_NODE.ELEMENT_SIZE_UNITS);
+		end;
+		call RELEASE_DIM_NODE (TP->TYPE_NODE.TYPE_NID (LEVEL));
+	end;
+
+	/*
+	/* Handle a class, struct, union, or enum type; make sure it's
+	/* been completely defined (if not, return null size data).
+	/**/
+
+	/* else if IS_AGGREGATE_TAG_TYPE (TOP_TYPE) then do; */
+
+	else if IS_TAG_TYPE (TOP_TYPE) then do;
+		call GET_SYM_NODE_R (TP->TYPE_NODE.TYPE_NID (0), P);
+		BOUNDARY   = rank (P->SYM_NODE.BOUNDARY);
+		SIZE	   = P->SYM_NODE.SIZE;
+		SIZE_UNITS = rank (P->SYM_NODE.SIZE_UNITS);
+		call RELEASE_SYM_NODE (TP->TYPE_NODE.TYPE_NID (0));
+	end;
+
+	/* Handle a pointer-to-member type */
+
+	else if TOP_TYPE = MEMBER_POINTER_DT then do;
+		if LEVEL > 0 then
+			TYPE_DATA = TP->TYPE_NODE.DATA (LEVEL - 1);
+		else	TYPE_DATA = TP->TYPE_NODE.DATA (0);
+		call TYPE_SIZE (GET_MEMBER_POINTER_TYPE (TYPE_DATA),
+				SIZE,
+				SIZE_UNITS,
+				BOUNDARY);
+	end;
+
+	/*
+	/* Handle a typedef type; note that this is an *very* unlikely case
+	/* since this kind of type-node only exists when compiling in debug
+	/* mode, AND it is ONLY ever referred to by (the TYPEDEF_ID field
+	/* of) a fully expanded type-node, NEVER by a sym-node.
+	/**/
+
+	else if TOP_TYPE = TYPEDEF_BT then do;
+		call GET_SYM_NODE_R (TP->TYPE_NODE.TYPE_NID (0), P);
+		call TYPE_SIZE (P->SYM_NODE.TYPE, SIZE, SIZE_UNITS, BOUNDARY);
+		call RELEASE_SYM_NODE (TP->TYPE_NODE.TYPE_NID (0));
+	end;
+
+	/* Handle a simple type (could call SIMPLE_TYPE_SIZE) */
+
+	else do;
+		BOUNDARY   = BOUNDARY_TABLE (TOP_TYPE);
+		SIZE	   = SIZE_TABLE (TOP_TYPE);
+		SIZE_UNITS = BOUNDARY;
+	end;
+
+end ANY_TYPE_SIZE;
+
+/* ---------------------------------------------------------------------
+/* SIMPLE_TYPE_SIZE
+/*
+/* Given a base-type code representing a simple type (i.e. xxx_BT or
+/* POINTER_DT, but not a class, struct, union, array, or typedef type),
+/* return its size, size-units, and boundary.  Preserves current-node-id.
+/*
+/* N.B. The resultant size-units are *always* the same as the resultant
+/* boundary, *except* in the case of bit-field types, in which case
+/* the size-units are *always* bits.
+/* ------------------------------------------------------------------- */
+
+SIMPLE_TYPE_SIZE: procedure (TYPE_CODE, SIZE, SIZE_UNITS, BOUNDARY)
+		  external  (X_SIMPLE_TYPE_SIZE);
+	declare
+		TYPE_CODE	type (SHORT_T),		/* in  */
+		SIZE		type (LONG_T),		/* out */
+		SIZE_UNITS	type (SHORT_T),		/* out */
+		BOUNDARY	type (SHORT_T);		/* out */
+
+	if (TYPE_CODE < lbound (SIZE_TABLE, 1)) |
+	   (TYPE_CODE > hbound (SIZE_TABLE, 1)) then do;
+		BOUNDARY   = 0;
+		SIZE	   = 0;
+		SIZE_UNITS = 0;
+	end;
+	else do;
+		BOUNDARY   = BOUNDARY_TABLE (TYPE_CODE);
+		SIZE	   = SIZE_TABLE (TYPE_CODE);
+		SIZE_UNITS = BOUNDARY;
+	end;
+
+end SIMPLE_TYPE_SIZE;
+
+/* ---------------------------------------------------------------------
+/* BIT_FIELD_TYPE_SIZE
+/*
+/* Given a base-type code representing a bit-field base-type
+/* (i.e. an integral type), return its size, size-units, and
+/* boundary.  N.B. the size is *always* expressed in terms of
+/* bits (i.e. size-units is always bits).  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BIT_FIELD_TYPE_SIZE: procedure (TYPE_CODE, SIZE, SIZE_UNITS, BOUNDARY)
+		     external  (X_BIT_FIELD_TYPE_SIZE);
+	declare
+		TYPE_CODE	type (SHORT_T),		/* in  */
+		SIZE		type (LONG_T),		/* out */
+		SIZE_UNITS	type (SHORT_T),		/* out */
+		BOUNDARY	type (SHORT_T);		/* out */
+
+	if (TYPE_CODE < lbound (BIT_FIELD_SIZE_TABLE, 1)) |
+	   (TYPE_CODE > hbound (BIT_FIELD_SIZE_TABLE, 1)) then do;
+		BOUNDARY   = 0;
+		SIZE	   = 0;
+		SIZE_UNITS = 0;
+	end;
+	else do;
+		BOUNDARY   = BIT_FIELD_BOUNDARY_TABLE (TYPE_CODE);
+		SIZE	   = BIT_FIELD_SIZE_TABLE (TYPE_CODE);
+		SIZE_UNITS = BITS;
+	end;
+
+end BIT_FIELD_TYPE_SIZE;
+
+/* ---------------------------------------------------------------------
+/* BACK_END_TYPE_SIZE
+/*
+/* Returns the back-end type code and boundary requirements for the
+/* given (front-end) type data.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BACK_END_TYPE_SIZE: procedure (TYPE_DATA,
+			       BACK_END_TYPE,
+			       BACK_END_BOUNDARY)
+		    external  (X_BACK_END_TYPE_SIZE);
+	declare
+		TYPE_DATA		type (TYPE_DATA_T), /* in  */
+		BACK_END_TYPE		type (SHORT_T),	    /* out */
+		BACK_END_BOUNDARY	type (SHORT_T);	    /* out */
+	declare
+		P			type (POINTER_T);
+
+	if TYPE_DATA.CODE = byte (MEMBER_POINTER_DT) then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	if TYPE_DATA.CODE = byte (ENUM_BT) then do;
+		call GET_SYM_NODE_R (TYPE_DATA.TAG_SYMBOL, P);
+		BACK_END_TYPE	  = BACK_END_TYPE_TABLE
+				    (rank (P->SYM_NODE.ENUM_INTEGRAL_TYPE));
+		BACK_END_BOUNDARY = BACK_END_SIZE_TABLE
+				    (rank (P->SYM_NODE.ENUM_INTEGRAL_TYPE));
+		call RELEASE_SYM_NODE (TYPE_DATA.TAG_SYMBOL);
+	end;
+	else do;
+		BACK_END_TYPE	  = BACK_END_TYPE_TABLE (rank (TYPE_DATA.CODE));
+		BACK_END_BOUNDARY = BACK_END_SIZE_TABLE (rank (TYPE_DATA.CODE));
+	end;
+
+end BACK_END_TYPE_SIZE;
+
+/* ---------------------------------------------------------------------
+/* SIMPLE_BACK_END_TYPE_SIZE
+/*
+/* Returns the back-end type code and boundary requirements for the
+/* given (front-end) type code.  Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+SIMPLE_BACK_END_TYPE_SIZE: procedure (TYPE_CODE,
+				      BACK_END_TYPE,
+				      BACK_END_BOUNDARY)
+			   external  (X_SIMPLE_BACK_END_TYPE_SIZE);
+	declare
+		TYPE_CODE		type (SHORT_T),	    /* in  */
+		BACK_END_TYPE		type (SHORT_T),	    /* out */
+		BACK_END_BOUNDARY	type (SHORT_T);	    /* out */
+
+	if TYPE_CODE = MEMBER_POINTER_DT then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+
+	BACK_END_TYPE	  = BACK_END_TYPE_TABLE (TYPE_CODE);
+	BACK_END_BOUNDARY = BACK_END_SIZE_TABLE (TYPE_CODE);
+
+end SIMPLE_BACK_END_TYPE_SIZE;
+
+/* ---------------------------------------------------------------------
+/* BACK_END_TYPE_BY_REFERENCE
+/*
+/* Returns whether this type is passed by reference.
+/* The front end transforms arguments and parameters when the type
+/* has a copy constructor.
+/* The back end transforms them when the type is an aggregate, for SPARC.
+/* The front end transforms parameters in the latter case, so that
+/* it can handle va_start for these types.
+/* Preserves current-node-id.
+/* ------------------------------------------------------------------- */
+
+BACK_END_TYPE_BY_REFERENCE: procedure (TYPE)
+			    returns   (type (BOOL_T))
+			    external  (X_BACK_END_TYPE_BY_REFERENCE);
+
+	declare
+		TYPE			type (NID_T);
+
+	declare
+		P			pointer,
+		LP			pointer,
+		TYPE_LEVEL		type (SHORT_T),
+		TYPE_DATA		type (TYPE_DATA_T),
+		TYPE_CODE		type (SHORT_T),
+		RESULT			type (BOOL_T),
+		LOW_LEVEL_TYPE		type (NID_T);
+	
+	call GET_TYPE_NODE_R (TYPE, P);
+	TYPE_LEVEL = rank (P->TYPE_NODE.LEVEL);
+	TYPE_DATA = P->TYPE_NODE.DATA (TYPE_LEVEL);
+	TYPE_CODE = rank (TYPE_DATA.CODE);
+
+	if TYPE_CODE = MEMBER_POINTER_DT then do;
+		LOW_LEVEL_TYPE = GET_MEMBER_POINTER_TYPE 
+			         (P->TYPE_NODE.DATA (TYPE_LEVEL-1));
+		call GET_TYPE_NODE_R (LOW_LEVEL_TYPE, LP);
+		TYPE_LEVEL = rank (LP->TYPE_NODE.LEVEL);
+		TYPE_DATA = LP->TYPE_NODE.DATA (TYPE_LEVEL);
+		TYPE_CODE = rank (TYPE_DATA.CODE);
+		call RELEASE_TYPE_NODE (LOW_LEVEL_TYPE);
+	end;
+
+	call RELEASE_TYPE_NODE (TYPE);
+
+	if IS_SCALAR_TYPE (TYPE_CODE) | TYPE_CODE = VOID_BT then
+		RESULT = FALSE;
+	else if ^CXX_STRUCTS_PASSED_BY_VALUE then
+		RESULT = TRUE;
+	else if IS_AGGREGATE_TAG_TYPE (TYPE_CODE) then do;
+		call GET_SYM_NODE_R (TYPE_DATA.TAG_SYMBOL, P);
+		RESULT = P->SYM_NODE.NEEDS_COPY;
+		call RELEASE_SYM_NODE (TYPE_DATA.TAG_SYMBOL);
+	end;
+	else if TYPE_CODE = MEMBER_POINTER_DT then
+		call COMPILER_ERROR (ERR_ASSERT_FAIL);
+	else	RESULT = FALSE;
+
+	return (RESULT);
+
+end BACK_END_TYPE_BY_REFERENCE;
+
+/* ---------------------------------------------------------------------
+/* EXTENDED_LONG_DOUBLE_TYPE_SIZE
+/* ------------------------------------------------------------------- */
+
+EXTENDED_LONG_DOUBLE_TYPE_SIZE: procedure (YES_EXTENDED_PRECISION)
+				external  (X_EXTENDED_LONG_DOUBLE_TYPE_SIZE);
+
+	declare YES_EXTENDED_PRECISION type (BOOL_T);
+
+	if YES_EXTENDED_PRECISION then do;
+		SIZE_TABLE	    (LDOUBLE_BT) = LDOUBLE_TYPE_SIZE;
+		BOUNDARY_TABLE	    (LDOUBLE_BT) = LDOUBLE_TYPE_BOUNDARY;
+		BACK_END_SIZE_TABLE (LDOUBLE_BT) = LDOUBLE_P;
+	end;
+	else do;
+		SIZE_TABLE	    (LDOUBLE_BT) = DOUBLE_TYPE_SIZE;
+		BOUNDARY_TABLE	    (LDOUBLE_BT) = DOUBLE_TYPE_BOUNDARY;
+		BACK_END_SIZE_TABLE (LDOUBLE_BT) = DOUBLE_P;
+	end;
+	
+end EXTENDED_LONG_DOUBLE_TYPE_SIZE;
+
