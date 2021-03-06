@@ -1,6 +1,5 @@
 tmp
 .tmp
-.DS_Store
 target
 .build
 *~
