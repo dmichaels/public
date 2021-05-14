@@ -9,6 +9,9 @@ Software Engineer. Most recent work with Java, Node.js, HP Vertica, MySQL, Kafka
 
 <ins>**Experience**
 
+<ins>**HYPR Corporation | May 2021 – Present**</ins> <br />
+Implemented Linux PAM authentication module for HYPR password-less authentication.
+
 <ins>**Cartera Commerce (Rakuten) | January 2011 – May 2021**</ins> <br />
 Transaction, member and other not-quite-Big data processing, REST services, some Kafka and other message processing, and search related backend infrastructure apps and tools, using mostly Java, Node.js, MySQL, Vertica under Linux, supporting Cartera rewards shopping malls. Some work with (PGP, OpenSSL) encryption libraries, and two-way SSL Web service consumption. Developed backoffice tools/APIs in Node.js and Web based dashboards/UIs Node.js, Angular, Express. Implemented some integrations with third-party services like Salesfoce, Everage, Okta.
 
