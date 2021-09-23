@@ -5,12 +5,12 @@ dmichaels@gmail.com <br />
 
 <ins>**Summary**
 
-Software Engineer. Most recent work with Java, Node.js, HP Vertica, MySQL, Kafka, Linux supporting backend services, transaction and other data processing, warehousing, feeds, search, et cetera; as well as backoffice tools and UI dashboards using AngularJS & Node.js. Previously, similar in .NET, C#, SQL Server. Also (dotcom boom era) large scale Web related infrastructure tools/apps in C++, ASP, XSLT. Significant experience with desktop UI library development in C++, X/Motif. And compiler and debugger development in C/C++, PL/1, UNIX. Currently learning <ins>Swift</ins>, iOS, and SwiftUI development.
+Software Engineer. Most recent work with Java, Kotlin, Sping Boot, Node.js, MySQL, Vertica, Linux supporting backend services, transaction and other data processing, warehousing, feeds, search, et cetera; as well as backoffice tools and UI dashboards using React, AngularJS & Node.js. Previously, similar in .NET, C#, SQL Server. Also (dotcom boom era) large scale Web related infrastructure tools/apps in C++, ASP, XSLT. Significant experience with desktop UI library development in C++, X/Motif. And compiler and debugger development in C/C++, PL/1, UNIX. Learning <ins>Swift</ins>, iOS, and SwiftUI development.
 
 <ins>**Experience**
 
 <ins>**HYPR Corporation | May 2021 – Present**</ins> <br />
-Implemented Linux PAM authentication module for HYPR password-less authentication.
+Implemented Linux PAM authentication module for HYPR password-less authentication. Some authentication related backend work
 
 <ins>**Cartera Commerce (Rakuten) | January 2011 – May 2021**</ins> <br />
 Transaction, member and other not-quite-Big data processing, REST services, some Kafka and other message processing, and search related backend infrastructure apps and tools, using mostly Java, Node.js, MySQL, Vertica under Linux, supporting Cartera rewards shopping malls. Some work with (PGP, OpenSSL) encryption libraries, and two-way SSL Web service consumption. Developed backoffice tools/APIs in Node.js and Web based dashboards/UIs Node.js, Angular, Express. Implemented some integrations with third-party services like Salesfoce, Everage, Okta.
