@@ -1,6 +1,4 @@
-<ins>**David Michaels**</ins> <br />
-Stoneham, Massachusetts <br />
-781-405-9301 / dmichaels@gmail.com <br />
+<ins>**David Michaels**</ins> | Stoneham, Massachusetts |  781-405-9301 | dmichaels@gmail.com <br />
 
 <ins>**Summary**
 
