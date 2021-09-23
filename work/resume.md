@@ -1,7 +1,6 @@
 <ins>**David Michaels**</ins> <br />
 Stoneham, Massachusetts <br />
-781-405-9301 <br />
-dmichaels@gmail.com <br />
+781-405-9301 / dmichaels@gmail.com <br />
 
 <ins>**Summary**
 
@@ -24,17 +23,15 @@ Developed internal editorial tools to manage rules database driving Web crawler 
 <ins>**Lycos, Waltham, MA | September 1997 – February 2006**</ins> <br />
 Implemented an editorial tool used to evaluate results for specialized search product using C# and ASP.NET. Contributed to some search engine/service work. Experimented with Lucene.NET.
 
-Worked on small team to develop search product aggregating search across a number of dating (yes, dating) sites. Developed an extensible, multi-threaded service in C# collecting disparate data from partner feeds to to database (Oracle); ported this to run on Linux using Mono. Worked with the FAST search technology supporting full text search.
+Worked on development of apps aggregating search across a number of dating sites. Developed an extensible, multi-threaded service in C# collecting disparate data from partner feeds to to database (Oracle); ported to run on Linux using Mono. Integration with FAST search technology.
 
 Built downloadable Internet Explorer plugin &quot;search assistant&quot; app, implemented in C++ as Browser Helper Object and Explorer Bar COM objects, its function controlled by remotely fetched XML config. Supported automatic silent updates. Over ten million downloads/installs; providing significant revenue stream. Built Web based real-time reporting system with UI/dashboard tracking downloads, installs, upgrades, uninstalls.
 
 Implemented .NET based engine for rapid development of Web services to with the retrieve, merge, and transform data from a variety of sources (database, HTTP, filesystem), using XML/XSLT config.
 
-Lead engineer for Lycos Entertainment. Implemented data feeds retrieving raw data from partners (movies, showtimes, theaters, celebrities, musicians, books, news), and to parse/transform and store in database (SQL Server). Created re-usable package of scripted COM objects allowing such feeds to be created using via XML config. Implemented HTTP/XML based Web API handling front-end queries and full text searches (including SOUNDEX) — retrieving/merging data from a variety of sources. Also implemented zipcode/location mapping Web service. And implemented a reference Web UI using developed API as a guide for the front-end team. Work mostly in VBScript, ASP, C++.
+Lead engineer for Lycos Entertainment. Implemented apps to retrieve data from partners (movies, showtimes, theaters, celebrities, musicians, books, news), parse/transform, store in database (SQL Server). Created re-usable package of COM objects allowing such feeds to be created using via XML config. Implemented HTTP/XML based Web API handling front-end queries and full text search (with SOUNDEX) — retrieving/merging data from variety of sources. Implemented zipcode/location mapping Web service. Implemented reference Web UI using these APIs as guide for UI team. Development in VBScript, ASP, XSLT, C++.
 
-Helped transition "My Lycos" to more flexible, scalable HTTP/XML (SOAP-like) architecture. Developed COM components in C++ supporting multiple asynchronous HTTP fetches from single request reducing page latency and improving throughput. Implemented Web diagnostic dashboards, UIs, APIs, to monitor performance.
-
-Implemented much of infrastructure for the first version of "My Lycos". Created COM components in C++ retrieving data from various feeds/APIs (weather, stocks, sports, lottery). Built the framework for much of "My Lycos" Web front-end used to generate the personalized pages, mostly in ASP.
+Helped transition "My Lycos" to more flexible, scalable HTTP/XML (SOAP-like) architecture. Developed COM components in C++ supporting multiple asynchronous HTTP fetches from single request reducing page latency and improving throughput. Implemented Web diagnostic dashboards, UIs, APIs, to monitor performance. Implemented much of infrastructure for the first version of "My Lycos". Created COM components in C++ retrieving data from various feeds/APIs (weather, stocks, sports, lottery). Built the framework for much of "My Lycos" Web front-end used to generate the personalized pages, mostly in ASP.
 
 <ins>**Intersolv, Framingham, MA | May 1996 – August 1997**</ins> <br />
 Made significant enhancements to and maintained Allegris Foundation (formerly C++/Views, acquired from Liant), an extensible cross-platform C++ class library for desktop UI development. Built many UI components, e.g. docking-toolbar, scrolling-window, mostly for Windows and X/Motif (some Mac and OS/2) under UNIX. Designed and implemented platform independent windowing geometry management system (similar, interestingly, to the SwiftUI layout machinery).
@@ -43,19 +40,19 @@ Made significant enhancements to and maintained Allegris Foundation (formerly C+
 Enhanced and maintained C++/Views, an extensible cross-platform C++ class library for desktop UI development. Designed and implemented most of the GUI editor and resource browser; created a number of reusable classes in conjunction with this work, e.g. rubber-band component.
 
 <ins>**Language Processors, Waltham, MA | February 1986 – December 1993**</ins> <br />
-Worked with small team developing a C++ compiler front-end. Adapted a C++ grammar and designed and implemented a C++ parser using proprietary parsing technology (LL table driven recursive descent); extended this tool to cleanly perform the unlimited look-ahead required to handle the syntactic ambiguities inherent in C++. Designed and implemented compiler symbol table and its API used in the front-end and associated debugger. Implemented most of declarations processing and much of semantic analysis portion of the C++ front-end. Development primarily in C and PL/I under UNIX.
+Worked with small team developing a C++ compiler front-end. Adapted a C++ grammar and designed and implemented a C++ parser using proprietary parsing technology (LL table driven recursive descent); extended this tool to cleanly perform the unlimited look-ahead required to handle the syntactic ambiguities inherent in C++. Designed and implemented compiler symbol table and its API used in the front-end and associated debugger. Implemented most of declarations processing and semantic analysis for C++ front-end. Development in C and PL/I under UNIX.
 
 Designed and implemented from scratch an ANSI-C lexical-analyzer and preprocessor. Rewrote major portions of an existing C compiler (LPI-C) front-end in conjunction with its ANSI-fication.
 
-Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compilers. Much bug fixing, development, and re-targeting debugger (originally just MC608x0, UNIX V) to Intel 80x86, Apollo, BSD UNIX, XENIX; also wrote from scratch a MC680x0 disassembler. Implemented a standard LPI software installation program to manage multiple versions of various compiler/debugger components. Development primarily in PL/I and C under UNIX.
+Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compilers. Much bug fixing, development, and re-targeting debugger (originally just MC608x0, UNIX V) to Intel 80x86, Apollo, BSD UNIX, XENIX; wrote MC680x0 disassembler from scratch. Implemented a standard LPI software install program to manage multiple versions of various compiler/debugger components. Development in PL/I and C under UNIX.
 
 <ins>**Cadmus Computer Systems, Lowell, MA | January 1985 – January 1986**</ins> <br />
-Worked primarily with the C and FORTRAN compilers for MC680x0 UNIX workstations, mostly bug fixing and porting. Also developed variety of internal tools. Development in C and MC680x0 assembler under UNIX. Some exposure to early Apple Macintosh development.
+Worked with the C and FORTRAN compilers for MC680x0 UNIX workstations, mostly bug fixing and porting. Also developed variety of internal tools. Development in C and MC680x0 assembler under UNIX. Some exposure to early Apple Macintosh development.
 
 <ins>**MIT Lincoln Laboratory, Lincoln, MA | July 1983 – December 1984**</ins> <br />
-Member of technical staff (Group 24). Assisted in the software management of a number of minicomputers (VAX, PDP-11) running BSD UNIX, maintaining existing software, writing tools, and becoming familiar with the UNIX kernel source. Worked with hardware engineers to implement two apps for a logic design workstation (VALID). Helped in the support of 50+ scientists and engineers in the use of UNIX and C. Development in C under UNIX. Granted &quot;secret&quot; security clearance.
+Member of technical staff (Group 24). Assisted in software management of various BSD UNIX systems (VAX, PDP-11), maintaining software, writing tools, getting familiar with UNIX kernel. Worked with hardware engineers implementing apps for a logic design system (VALID). Helped support of 50+ scientists/engineers in use of UNIX/C. Development in C/UNIX. Granted &quot;secret&quot; security clearance.
 
-**Education**
+<ins>**Education**
 
 <ins>**University of Massachusetts, Boston**</ins> <br />
 B.S. in Computer Science, Magna cum Laude. May 1983.
