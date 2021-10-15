@@ -50,7 +50,5 @@ Worked with the C and FORTRAN compilers for MC680x0 UNIX workstations, mostly bu
 <ins>**MIT Lincoln Laboratory, Lincoln, MA | July 1983 – December 1984**</ins> <br />
 Member of technical staff (Group 24). Assisted in software management of various BSD UNIX systems (VAX, PDP-11), maintaining software, writing tools, getting familiar with UNIX kernel. Worked with hardware engineers implementing apps for a logic design system (VALID). Helped support of 50+ scientists/engineers in use of UNIX/C. Development in C/UNIX. Granted &quot;secret&quot; security clearance.
 
-<ins>**Education**
-
 <ins>**University of Massachusetts, Boston**</ins> <br />
 B.S. in Computer Science, Magna cum Laude. May 1983.
