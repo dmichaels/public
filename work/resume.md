@@ -4,8 +4,6 @@
 
 Software Engineer. Most recent work with Java, Kotlin, Sping Boot, Node.js, MySQL, Vertica, Linux supporting backend services, transaction and other data processing, warehousing, feeds, search, et cetera; as well as backoffice tools and UI dashboards using React, AngularJS & Node.js. Previously, similar in .NET, C#, SQL Server. Also (dotcom boom era) large scale Web related infrastructure tools/apps in C++, ASP, XSLT. Significant experience with desktop UI library development in C++, X/Motif. And compiler and debugger development in C/C++, PL/1, UNIX. Learning <ins>Swift</ins>, iOS, and SwiftUI development.
 
-<ins>**Experience**
-
 <ins>**HYPR Corporation | May 2021 – Present**</ins> <br />
 Implemented Linux PAM authentication module for HYPR password-less authentication. Some authentication related backend work
 
@@ -27,7 +25,7 @@ Built downloadable Internet Explorer plugin &quot;search assistant&quot; app, im
 
 Implemented .NET based engine for rapid development of Web services to with the retrieve, merge, and transform data from a variety of sources (database, HTTP, filesystem), using XML/XSLT config.
 
-Lead engineer for Lycos Entertainment. Implemented apps to retrieve data from partners (movies, showtimes, theaters, celebrities, musicians, books, news), parse/transform, store in database (SQL Server). Created re-usable package of COM objects allowing such feeds to be created using via XML config. Implemented HTTP/XML based Web API handling front-end queries and full text search (with SOUNDEX) — retrieving/merging data from variety of sources. Implemented zipcode/location mapping Web service. Implemented reference Web UI using these APIs as guide for UI team. Development in VBScript, ASP, XSLT, C++.
+Lead engineer for Lycos Entertainment. Implemented apps to retrieve data from partners (movies, showtimes, theaters, celebrities, musicians, books, news), parse/transform, store in database (SQL Server). Created re-usable package of COM objects allowing such feeds to be created using via XML config. Implemented HTTP/XML based Web API handling front-end queries and full text search (with SOUNDEX) — retrieving/merging data from variety of sources. Implemented zipcode/location mapping Web service. Implemented "reference Web UI using these APIs as guide for UI team. Development in VBScript, ASP, XSLT, C++.
 
 Helped transition "My Lycos" to more flexible, scalable HTTP/XML (SOAP-like) architecture. Developed COM components in C++ supporting multiple asynchronous HTTP fetches from single request reducing page latency and improving throughput. Implemented Web diagnostic dashboards, UIs, APIs, to monitor performance. Implemented much of infrastructure for the first version of "My Lycos". Created COM components in C++ retrieving data from various feeds/APIs (weather, stocks, sports, lottery). Built the framework for much of "My Lycos" Web front-end used to generate the personalized pages, mostly in ASP.
 
@@ -47,8 +45,8 @@ Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compiler
 <ins>**Cadmus Computer Systems, Lowell, MA | January 1985 – January 1986**</ins> <br />
 Worked with the C and FORTRAN compilers for MC680x0 UNIX workstations, mostly bug fixing and porting. Also developed variety of internal tools. Development in C and MC680x0 assembler under UNIX. Some exposure to early Apple Macintosh development.
 
-<ins>**MIT Lincoln Laboratory, Lincoln, MA | July 1983 – December 1984**</ins> <br />
+<ins>**MIT Lincoln Laboratory, Lincoln, MA | August 1983 – December 1984**</ins> <br />
 Member of technical staff (Group 24). Assisted in software management of various BSD UNIX systems (VAX, PDP-11), maintaining software, writing tools, getting familiar with UNIX kernel. Worked with hardware engineers implementing apps for a logic design system (VALID). Helped support of 50+ scientists/engineers in use of UNIX/C. Development in C/UNIX. Granted &quot;secret&quot; security clearance.
 
 <ins>**University of Massachusetts, Boston**</ins> <br />
-B.S. in Computer Science, Magna cum Laude. May 1983.
+B.S. in Computer Science, *magna cum laude*. June 1983.
