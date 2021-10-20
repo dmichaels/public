@@ -2,7 +2,7 @@
 
 <ins>**Summary**
 
-Software Engineer. Most recent work with Java, Kotlin, Sping Boot, Node.js, MySQL, Vertica, Linux supporting backend services, transaction and other data processing, warehousing, feeds, search, et cetera; as well as backoffice tools and UI dashboards using React, AngularJS & Node.js. Previously, similar in .NET, C#, SQL Server. Also (dotcom boom era) large scale Web related infrastructure tools/apps in C++, ASP, XSLT. Significant experience with desktop UI library development in C++, X/Motif. And compiler and debugger development in C/C++, PL/1, UNIX. Learning <ins>Swift</ins>, iOS, and SwiftUI development.
+Software Engineer. Most recent work with Java, Kotlin, Sping Boot, Node.js, MySQL, Vertica, Linux supporting backend services, transaction and other data processing, warehousing, feeds, search, et cetera; as well as backoffice tools and UI dashboards using React, AngularJS & Node.js. Previously, similar in .NET, C#, SQL Server. Also (dotcom boom era) large scale Web related infrastructure tools/apps in C++, ASP, XSLT. Significant experience with desktop UI library and tools development in C++, X/Motif. And (C/C++) compiler and debugger development in C/C++, PL/1, UNIX. Currently learning <ins>Swift</ins>, iOS, and SwiftUI development.
 
 <ins>**HYPR Corporation | May 2021 – Present**</ins> <br />
 Implemented Linux PAM authentication module in C (with RPM/DEB packaging) for HYPR password-less authentication. Some authentication related backend work (Kotlin).
