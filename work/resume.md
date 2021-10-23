@@ -10,7 +10,7 @@ Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less authe
 <ins>**Cartera Commerce (Rakuten) | January 2011 – May 2021**</ins> <br />
 Transaction, member and other not-quite-Big data processing, REST services, some Kafka and other message processing, and search related backend infrastructure apps and tools, using mostly Java, Node.js, MySQL, Vertica under Linux, supporting Cartera rewards shopping malls. Some work with (PGP, OpenSSL) encryption libraries, and two-way SSL Web service consumption. Developed backoffice tools/APIs in Node.js and Web based dashboards/UIs Node.js, Angular, Express. Implemented some integrations with third-party services like Salesfoce, Everage, Okta.
 
-<ins>**Gerson Lehrman Group, Boston, MA | July 2007 – December 2011**</ins> <br />
+<ins>**Gerson Lehrman Group, Boston, MA | July 2007 – December 2010**</ins> <br />
 Backend and mid-tier development supporting finance related apps for GLG "expert" network. Message queueing and synchronization services supporting front-end apps. Third-party service integration for address validation, tax calculation, routing number verification for credit-card processing. Developed internal tools, APIs, and Web based diagnostic, testing, and monitoring services. Some SugarCRM maintenance and development. Implementation in .NET, C#, SQL Server and Service Broker, Window services.
 
 <ins>**JumpTap, Cambridge, MA | February 2006 – July 2007­­­**</ins> <br />
