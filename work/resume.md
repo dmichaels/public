@@ -1,7 +1,6 @@
 <ins>**David Michaels**</ins> <br />
 Boston, Massachusetts <br />
 dmichaels@gmail.com | 781-405-9301 | https://bit.ly/2ZrSEy4 <br />
-
 https://www.linkedin.com/in/david-michaels-b6b7621/
 
 <ins>**Summary**
