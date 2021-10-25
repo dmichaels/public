@@ -1,4 +1,4 @@
-<ins>**David Michaels**</ins>
+<ins>**David Michaels**</ins> <br />
 Boston, Massachusetts <br />
 dmichaels@gmail.com <br />
 781-405-9301 <br />
@@ -13,13 +13,13 @@ Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less authe
 <ins>**Cartera Commerce (Rakuten) | 10 years 4 months**</ins> <br />
 Transaction, member and other not-quite-Big data processing, REST services, some Kafka and other message processing, and search related backend infrastructure apps and tools, using mostly Java, Node.js, MySQL, Vertica under Linux, supporting Cartera rewards shopping malls. Some work with (PGP, OpenSSL) encryption libraries, and two-way SSL Web service consumption. Developed backoffice tools/APIs in Node.js and Web based dashboards/UIs Node.js, Angular, Express. Implemented some integrations with third-party services like Salesfoce, Everage, Okta.
 
-<ins>**Gerson Lehrman Group, Boston, MA | July 2007 – December 2010**</ins> <br />
+<ins>**Gerson Lehrman Group, Boston, MA | 3 years 5 months**</ins> <br />
 Backend and mid-tier development supporting finance related apps for GLG "expert" network. Message queueing and synchronization services supporting front-end apps. Third-party service integration for address validation, tax calculation, routing number verification for credit-card processing. Developed internal tools, APIs, and Web based diagnostic, testing, and monitoring services. Some SugarCRM maintenance and development. Implementation in .NET, C#, SQL Server and Service Broker, Window services.
 
-<ins>**JumpTap, Cambridge, MA | February 2006 – July 2007­­­**</ins> <br />
+<ins>**JumpTap, Cambridge, MA | 1 year 5 months**</ins> <br />
 Developed internal editorial tools to manage rules database driving Web crawler and search engine supporting mobile apps. Developed HTTP/XML based Web search service consumed by various mobile carriers for smart phone Web search. Enhanced Lucine search engine for custom features, e.g. site collapse, site striping, filtering, counts, etc. Some Web crawler development. Implementation in Java, JSP, MySQL, iBatis, Lucene, Tomcat, Apache, and Linux.
 
-<ins>**Lycos, Waltham, MA | September 1997 – February 2006**</ins> <br />
+<ins>**Lycos, Waltham, MA | 8 years 5 months**</ins> <br />
 Implemented an editorial tool used to evaluate results for specialized search product using C# and ASP.NET. Contributed to some search engine/service work. Experimented with Lucene.NET.
 
 Worked on development of apps aggregating search across a number of dating sites. Developed an extensible, multi-threaded service in C# collecting disparate data from partner feeds to to database (Oracle); ported to run on Linux using Mono. Integration with FAST search technology.
@@ -32,24 +32,24 @@ Lead engineer for Lycos Entertainment. Implemented apps to retrieve data from pa
 
 Helped transition "My Lycos" to more flexible, scalable HTTP/XML (SOAP-like) architecture. Developed COM components in C++ supporting multiple asynchronous HTTP fetches from single request reducing page latency and improving throughput. Implemented Web diagnostic dashboards, UIs, APIs, to monitor performance. Implemented much of infrastructure for the first version of "My Lycos". Created COM components in C++ retrieving data from various feeds/APIs (weather, stocks, sports, lottery). Built the framework for much of "My Lycos" Web front-end used to generate the personalized pages, mostly in ASP.
 
-<ins>**Intersolv, Framingham, MA | May 1996 – August 1997**</ins> <br />
+<ins>**Intersolv, Framingham, MA | 1 year 3 months**</ins> <br />
 Made significant enhancements to and maintained Allegris Foundation (formerly C++/Views, acquired from Liant), an extensible cross-platform C++ class library for desktop UI development. Built many UI components, e.g. docking-toolbar, scrolling-window, mostly for Windows and X/Motif (some Mac and OS/2) under UNIX. Designed and implemented platform independent windowing geometry management system (similar, interestingly, to the SwiftUI layout machinery).
 
-<ins>**Liant Software, Framingham, MA | January 1994 – April 1996**</ins> <br />
+<ins>**Liant Software, Framingham, MA | 2 years 3 months**</ins> <br />
 Enhanced and maintained C++/Views, an extensible cross-platform C++ class library for desktop UI development. Designed and implemented most of the GUI editor and resource browser; created a number of reusable classes in conjunction with this work, e.g. rubber-band component.
 
-<ins>**Language Processors, Waltham, MA | February 1986 – December 1993**</ins> <br />
+<ins>**Language Processors, Waltham, MA | 7 years 10 months**</ins> <br />
 Worked with small team developing a C++ compiler front-end. Adapted a C++ grammar and designed and implemented a C++ parser using proprietary parsing technology (LL table driven recursive descent); extended this tool to cleanly perform the unlimited look-ahead required to handle the syntactic ambiguities inherent in C++. Designed and implemented compiler symbol table and its API used in the front-end and associated debugger. Implemented most of declarations processing and semantic analysis for C++ front-end. Development in C and PL/I under UNIX.
 
 Designed and implemented from scratch an ANSI-C lexical-analyzer and preprocessor. Rewrote major portions of an existing C compiler (LPI-C) front-end in conjunction with its ANSI-fication.
 
 Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compilers. Much bug fixing, development, and re-targeting debugger (originally just MC608x0, UNIX V) to Intel 80x86, Apollo, BSD UNIX, XENIX; wrote MC680x0 disassembler from scratch. Implemented a standard LPI software install program to manage multiple versions of various compiler/debugger components. Development in PL/I and C under UNIX.
 
-<ins>**Cadmus Computer Systems, Lowell, MA | January 1985 – January 1986**</ins> <br />
+<ins>**Cadmus Computer Systems, Lowell, MA | 1 year 1 month**</ins> <br />
 Worked with the C and FORTRAN compilers for MC680x0 UNIX workstations, mostly bug fixing and porting. Also developed variety of internal tools. Development in C and MC680x0 assembler under UNIX. Some exposure to early Apple Macintosh development.
 
-<ins>**MIT Lincoln Laboratory, Lincoln, MA | August 1983 – December 1984**</ins> <br />
+<ins>**MIT Lincoln Laboratory, Lincoln, MA | 1 year 4 months**</ins> <br />
 Member of technical staff (Group 24). Assisted in software management of various BSD UNIX systems (VAX, PDP-11), maintaining software, writing tools, getting familiar with UNIX kernel. Worked with hardware engineers implementing apps for a logic design system (VALID). Helped support of 50+ scientists/engineers in use of UNIX/C. Development in C/UNIX. Granted &quot;secret&quot; security clearance.
 
 <ins>**University of Massachusetts, Boston**</ins> <br />
-B.S. in Computer Science, *magna cum laude*. June 1983.
+B.S. in Computer Science, *magna cum laude*.
