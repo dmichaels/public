@@ -49,7 +49,7 @@ Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compiler
 Worked with the C and FORTRAN compilers for MC680x0 UNIX workstations, mostly bug fixing and porting. Also developed variety of internal tools. Development in C and MC680x0 assembler under UNIX. Some exposure to early Apple Macintosh development.
 
 <ins>**MIT Lincoln Laboratory, Lincoln, MA |** 1 year 4 months</ins> <br />
-Member of technical staff (Group 24). Assisted in software management of various BSD UNIX systems (VAX, PDP-11), maintaining software, writing tools, getting familiar with UNIX kernel. Worked with hardware engineers implementing apps for a logic design system (VALID). Helped support of 50+ scientists/engineers in use of UNIX/C. Development in C/UNIX. Granted *secret* security clearance.
+Member of technical staff (Group 24). Assisted in software management of various BSD UNIX systems (VAX, PDP-11), maintaining software, writing tools, patching/building UNIX kernel. Worked with hardware engineers implementing apps for a logic design system (VALID). Helped support of 50+ scientists/engineers in use of UNIX/C. Development in C/UNIX. Granted *secret* security clearance.
 
 <ins>**University of Massachusetts, Boston**</ins> <br />
 B.S. in Computer Science, *magna cum laude*.
