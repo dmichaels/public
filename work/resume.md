@@ -12,9 +12,11 @@ https://www.linkedin.com/in/david-michaels-b6b7621
 
 * Significant experience with desktop UI library and tools development in C++, X/Motif, and Windows.
 
-* C and C++ compiler and debugger development in C, C++, PL/1, UNIX.
+* C and C++ compiler, disassember, debugger development in C, C++, PL/1, UNIX.
 
 * Lately, independently learning: Swift/UI, iOS ; C++14; and Arduino.
+
+* Previously grant *secret* clearance, now expired. FYI.
 
 <ins>**HYPR Corporation |** May 2021 – Present</ins> <br />
 Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less authentication. Some authentication related work in Kotlin, Java, React, MySQL, Redis, Vault.
