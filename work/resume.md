@@ -16,7 +16,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * Lately, independently learning: Swift/UI, iOS ; C++14; and Arduino.
 
-* Previously grant *secret* clearance, now expired. FYI.
+* Previously granted *secret* clearance, now expired. FYI.
 
 <ins>**HYPR Corporation |** May 2021 – Present</ins> <br />
 Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less authentication. Some authentication related work in Kotlin, Java, React, MySQL, Redis, Vault.
