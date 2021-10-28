@@ -1,8 +1,8 @@
 <ins>**David Michaels**</ins> | *Software Engineer* <br />
 Boston, Massachusetts <br />
 dmichaels@gmail.com | 781-405-9301 <br />
-https://bit.ly/2ZrSEy4 <br />
-https://www.linkedin.com/in/david-michaels-b6b7621
+Resume: https://bit.ly/2ZrSEy4 <br />
+LinkedIn: https://bit.ly/3GAwbzM <br />
 
 <ins>**Summary**
 
