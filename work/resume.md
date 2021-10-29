@@ -14,7 +14,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * C and C++ compiler, disassember, debugger development in C, C++, PL/1, UNIX.
 
-* Lately, independently learning: Swift/UI, iOS ; C++14; and Arduino.
+* Lately, independently learning: Swift/UI, iOS ; C++17; and Arduino.
 
 * Previously granted *secret* clearance (now expired). FYI.
 
