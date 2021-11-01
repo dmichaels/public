@@ -31,7 +31,6 @@ Backend and mid-tier development supporting finance related apps for GLG "expert
 Developed internal editorial tools to manage rules database driving Web crawler and search engine supporting mobile apps. Developed HTTP/XML based Web search service consumed by various mobile carriers for smart phone Web search. Enhanced Lucine search engine for custom features, e.g. site collapse, site striping, filtering, counts, etc. Some Web crawler development. Implementation in Java, JSP, MySQL, iBatis, Lucene, Tomcat, Apache, and Linux.
 
 <ins>**Lycos, Waltham, MA |** 8 years 5 months</ins> <br />
-
 Lead engineer for Lycos Entertainment. Implemented apps to retrieve data from partners (movies, showtimes, theaters, celebrities, musicians, books, news), parse/transform, store in database (SQL Server). Created re-usable package of COM objects allowing such feeds to be created using via XML config. Implemented HTTP/XML based Web API handling front-end queries and full text search (with SOUNDEX) — retrieving/merging data from variety of sources. Implemented zipcode/location mapping Web service (for theaters/showtimes). Implemented a reference Web UI using these APIs as for testing and as a guide for UI team. Development in VBScript, ASP, XSLT, C++.
 
 Worked on development of apps aggregating search across a number of dating sites. Developed an extensible, multi-threaded service in C# collecting disparate data from partner feeds to to database (Oracle); ported to run on Linux using Mono. Integration with FAST search technology.
