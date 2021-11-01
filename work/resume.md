@@ -31,7 +31,8 @@ Backend and mid-tier development supporting finance related apps for GLG "expert
 Developed internal editorial tools to manage rules database driving Web crawler and search engine supporting mobile apps. Developed HTTP/XML based Web search service consumed by various mobile carriers for smart phone Web search. Enhanced Lucine search engine for custom features, e.g. site collapse, site striping, filtering, counts, etc. Some Web crawler development. Implementation in Java, JSP, MySQL, iBatis, Lucene, Tomcat, Apache, and Linux.
 
 <ins>**Lycos, Waltham, MA |** 8 years 5 months</ins> <br />
-Implemented an editorial tool used to evaluate results for specialized search product using C# and ASP.NET. Contributed to some search engine/service work. Experimented with Lucene.NET.
+
+Lead engineer for Lycos Entertainment. Implemented apps to retrieve data from partners (movies, showtimes, theaters, celebrities, musicians, books, news), parse/transform, store in database (SQL Server). Created re-usable package of COM objects allowing such feeds to be created using via XML config. Implemented HTTP/XML based Web API handling front-end queries and full text search (with SOUNDEX) — retrieving/merging data from variety of sources. Implemented zipcode/location mapping Web service (for theaters/showtimes). Implemented a reference Web UI using these APIs as for testing and as a guide for UI team. Development in VBScript, ASP, XSLT, C++.
 
 Worked on development of apps aggregating search across a number of dating sites. Developed an extensible, multi-threaded service in C# collecting disparate data from partner feeds to to database (Oracle); ported to run on Linux using Mono. Integration with FAST search technology.
 
@@ -39,7 +40,7 @@ Built downloadable Internet Explorer plugin &quot;search assistant&quot; app, im
 
 Implemented .NET based engine for rapid development of Web services to with the retrieve, merge, and transform data from a variety of sources (database, HTTP, filesystem), using XML/XSLT config.
 
-Lead engineer for Lycos Entertainment. Implemented apps to retrieve data from partners (movies, showtimes, theaters, celebrities, musicians, books, news), parse/transform, store in database (SQL Server). Created re-usable package of COM objects allowing such feeds to be created using via XML config. Implemented HTTP/XML based Web API handling front-end queries and full text search (with SOUNDEX) — retrieving/merging data from variety of sources. Implemented zipcode/location mapping Web service (for theaters/showtimes). Implemented a reference Web UI using these APIs as for testing and as a guide for UI team. Development in VBScript, ASP, XSLT, C++.
+Implemented an editorial tool used to evaluate results for specialized search product using C# and ASP.NET. Contributed to some search engine/service work. Experimented with Lucene.NET.
 
 Helped transition *My Lycos* to more flexible, scalable HTTP/XML (SOAP-like) architecture. Developed COM components in C++ supporting multi-threaded asynchronous HTTP fetches from single request reducing page latency and improving throughput. Implemented Web diagnostic dashboards, UIs, APIs, to monitor performance. Implemented much of infrastructure for the first version of *My Lycos*. Created COM components in C++ retrieving data from various feeds/APIs (weather, stocks, sports, lottery). Built the framework for much of *My Lycos* Web front-end used to generate the personalized pages, mostly in ASP.
 
