@@ -52,9 +52,9 @@ Enhanced and maintained C++/Views, an extensible cross-platform C++ class librar
 <ins>**Language Processors, Waltham, MA |** 7 years 10 months</ins> <br />
 Worked with small team developing a C++ compiler front-end. Adapted a C++ grammar and designed and implemented a C++ parser using proprietary parsing technology (LL table driven recursive descent); extended this tool to cleanly perform the unlimited look-ahead required to handle the syntactic ambiguities inherent in C++. Designed and implemented compiler symbol table and its API used in the front-end and associated debugger. Implemented most of declarations processing and semantic analysis for C++ front-end. Development in C and PL/I under UNIX.
 
-Designed and implemented from scratch a full ANSI-C lexical-analyzer and preprocessor. Rewrote major portions of an existing C compiler (LPI-C) front-end in conjunction with its ANSI-fication.
+Designed and implemented a full ANSI-C compliant lexical-analyzer and preprocessor. Rewrote major portions of an existing C compiler (LPI-C) front-end in conjunction with its ANSI-fication.
 
-Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compilers. Much bug fixing, development, and re-targeting debugger (originally just MC608x0, UNIX V) to Intel 80x86, Apollo, BSD UNIX, XENIX. Wrote a MC680x0 disassembler from scratch. Implemented a standard LPI software install program to manage multiple versions of various compiler/debugger components. Development in PL/I and C under UNIX.
+Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compilers. Much bug fixing, development, and re-targeting debugger (originally just MC608x0, UNIX V) to Intel 80x86, Apollo, BSD UNIX, XENIX. Wrote a Motorola 680x0 disassembler. Implemented a standard LPI software install program to manage multiple versions of various compiler/debugger components. Development in PL/I and C under UNIX.
 
 <ins>**Cadmus Computer Systems, Lowell, MA |** 1 year 1 month</ins> <br />
 Worked with the C and FORTRAN compilers for MC680x0 UNIX workstations, mostly bug fixing and porting. Also developed variety of internal tools. Development in C and MC680x0 assembler under UNIX. Some exposure to early Apple Macintosh development.
