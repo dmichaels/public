@@ -57,7 +57,7 @@ Designed and implemented a full ANSI-C compliant lexical-analyzer and preprocess
 Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compilers. Much bug fixing, development, and re-targeting debugger (originally just MC608x0, UNIX V) to Intel 80x86, Apollo, BSD UNIX, XENIX. Wrote a Motorola 680x0 disassembler. Implemented a standard LPI software install program to manage multiple versions of various compiler/debugger components. Development in PL/I and C under UNIX.
 
 <ins>**Cadmus Computer Systems, Lowell, MA |** 1 year 1 month</ins> <br />
-Worked with the C and FORTRAN compilers for MC680x0 UNIX workstations, mostly bug fixing and porting. Also developed variety of internal tools. Development in C and MC680x0 assembler under UNIX. Some exposure to early Apple Macintosh development.
+Worked with the C and FORTRAN compilers for MC680x0 UNIX workstations, mostly bug fixing and porting. Also developed internal tools. Development in C and MC680x0 assembler under UNIX. Some exposure to early Apple Macintosh development.
 
 <ins>**MIT Lincoln Laboratory, Lincoln, MA |** 1 year 4 months</ins> <br />
 Member of technical staff (Group 24). Assisted in software management of various BSD UNIX systems (VAX, PDP-11), maintaining software, writing tools, patching/building UNIX kernel. Worked with hardware engineers implementing apps for a logic design / wirewrap system (VALID). Helped support of 50+ scientists/engineers in use of UNIX/C. Development in C/UNIX. Granted *secret* security clearance.
