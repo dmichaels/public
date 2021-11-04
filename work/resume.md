@@ -6,7 +6,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 <ins>**Summary**
 
-* Most recent work with Java, Kotlin, Sping Boot, C, Node.js, MySQL, Vertica, Linux supporting backend services, transaction and other data processing, feeds, search, APIs, authentication, et cetera; as well as backoffice tools and UI dashboards using AngularJS, React, & Node.js. Previously, similar in .NET, C#, SQL Server.
+* Most recent work with Java, Kotlin, Sping Boot, C, Node.js, MySQL, Vertica, Linux supporting backend services, transaction and other data processing, feeds, search, APIs, some authentication, et cetera; as well as backoffice tools and UI dashboards using AngularJS, React, & Node.js. Previously, similar in .NET, C#, SQL Server.
 
 * Dotcom boom era large scale Web related infrastructure apps, tools, APIs in C++, VB, ASP, XSLT.
 
