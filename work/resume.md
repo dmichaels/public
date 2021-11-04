@@ -14,24 +14,24 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * C and C++ compiler, disassember, debugger development in C, C++, PL/1, UNIX.
 
-* Lately, independently learning: Swift/UI, iOS ; C++17; and Arduino.
+* Lately, independently, learning: Swift/UI, iOS ; C++17; and Arduino.
 
 * Previously granted *secret* clearance (now expired). FYI.
 
 <ins>**HYPR Corporation |** May 2021 – Present</ins> <br />
-Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less authentication. Some authentication related work in Kotlin, Java, React, MySQL, Redis, Vault.
+Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault.
 
 <ins>**Cartera Commerce (Rakuten) |** 10 years 4 months</ins> <br />
 Transaction, member and other not-quite-Big data processing, REST services, some Kafka and other message processing, and search related backend infrastructure apps and tools, using mostly Java, Node.js, MySQL, Vertica under Linux, supporting Cartera rewards shopping malls. Some work with (PGP, OpenSSL) encryption libraries, and two-way SSL Web service consumption. Developed backoffice tools/APIs in Node.js and Web based dashboards/UIs Node.js, Angular, Express. Implemented some integrations with third-party services like Salesforce, Evergage, Okta.
 
 <ins>**Gerson Lehrman Group, Boston, MA |** 3 years 5 months</ins> <br />
-Backend and midtier development supporting finance related apps for GLG "expert" network. Message queueing and data synchronization services supporting front-end apps. Third-party service integration for address validation, tax calculation, routing number verification for credit-card processing. Developed internal tools, APIs, and Web based diagnostic, testing, and monitoring services. Some SugarCRM maintenance/development. Implementation in .NET, C#, SQL Server, Service Broker.
+Backend and midt-ier development supporting finance related apps for GLG "expert" network. Message queueing and data synchronization services supporting front-end apps. Third-party service integration for address validation, tax calculation, routing number verification for credit-card processing. Developed internal tools, APIs, and Web based diagnostic, testing, and monitoring services. Some SugarCRM maintenance/development. Implementation in .NET, C#, SQL Server, Service Broker.
 
 <ins>**JumpTap, Cambridge, MA |** 1 year 5 months</ins> <br />
 Developed internal editorial tools to manage rules database driving Web crawler and search engine supporting mobile apps. Developed HTTP/XML based Web search service consumed by various mobile carriers for smart phone Web search. Enhanced Lucene search engine for custom features, e.g. site collapse, site striping, filtering, counts, etc. Some Web crawler development. Implementation in Java, JSP, MySQL, iBatis, Lucene, Tomcat, Apache, and Linux.
 
 <ins>**Lycos, Waltham, MA |** 8 years 5 months</ins> <br />
-Lead engineer for Lycos Entertainment. Implemented apps to retrieve data from partners (movies, showtimes, theaters, celebrities, musicians, books, news), parse/transform, store in database (SQL Server). Created re-usable package of COM objects allowing such feeds to be created using via XML config. Implemented HTTP/XML based Web API handling front-end queries and full text search (with SOUNDEX) — retrieving/merging data from variety of sources. Implemented zipcode/location mapping Web service (for theaters/showtimes). Implemented a reference Web UI using these APIs as for testing and as a guide for UI team. Development in VBScript, ASP, XSLT, C++.
+Lead engineer for Lycos Entertainment. Implemented apps to retrieve data from partners (movies, showtimes, theaters, celebrities, musicians, books, news), parse/transform, store in database (SQL Server). Created re-usable package of COM objects allowing such feeds to be created via XML config. Implemented HTTP/XML based API handling front-end queries (with full text search), retrieving/merging data from a variety of sources; and zipcode/location mapping service (for theaters/showtimes). Implemented a reference UI using these APIs for testing and guiding UI team. Development in VBScript, ASP, XSLT, C++.
 
 Worked on development of apps aggregating search across a number of dating sites. Developed an extensible, multi-threaded service in C# collecting disparate data from partner feeds to to database (Oracle); ported to run on Linux using Mono. Integration with FAST search technology.
 
@@ -41,7 +41,7 @@ Implemented .NET based engine for rapid development of Web services to with the 
 
 Implemented an editorial tool used to evaluate results for specialized search product using C# and ASP.NET. Contributed to some search engine/service work. Experimented with Lucene.NET.
 
-Helped transition *My Lycos* to more flexible, scalable HTTP/XML (SOAP-like) architecture. Developed COM components in C++ supporting multi-threaded asynchronous HTTP fetches from single request reducing page latency and improving throughput. Implemented Web diagnostic dashboards, UIs, APIs, to monitor performance. Implemented much of infrastructure for the first version of *My Lycos*. Created COM components in C++ retrieving data from various feeds/APIs (weather, stocks, sports, lottery). Built the framework for much of *My Lycos* Web front-end used to generate the personalized pages, mostly in ASP.
+Helped transition *My Lycos* to more flexible, scalable HTTP/XML (SOAP-like) architecture. Developed COM components in C++ supporting multi-threaded asynchronous HTTP fetches to reduce page latency and improve throughput. Implemented Web diagnostic dashboards/UIs, APIs, to monitor performance. Created COM components in C++ retrieving data from various feeds/APIs (weather, stocks, sports, etc). Built the framework for much of *My Lycos* Web front-end used to generate the personalized pages, mostly in ASP.
 
 <ins>**Intersolv, Framingham, MA |** 1 year 3 months</ins> <br />
 Made significant enhancements to and maintained Allegris Foundation (formerly C++/Views), an extensible cross-platform C++ class library for desktop UI development. Built many UI components, e.g. docking-toolbar, scroll-window, mostly for Windows and X/Motif (some Mac and OS/2) under UNIX. Designed and implemented platform independent windowing geometry management system (similar to the SwiftUI layout machinery).
