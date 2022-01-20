@@ -18,7 +18,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * Previously granted *secret* clearance.
 
-<ins>**HYPR Corporation |** May 2021 – Present</ins> <br />
+<ins>**HYPR Corporation |** May 2021 – January 2022</ins> <br />
 Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault.
 
 <ins>**Cartera Commerce (Rakuten) |** 10 years 4 months</ins> <br />
