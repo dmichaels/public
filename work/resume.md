@@ -56,7 +56,7 @@ Significant enhancements to Allegris Foundation (formerly C++/Views), an extensi
 Enhanced and maintained C++/Views, an extensible cross-platform C++ class library for desktop UI development. Designed and implemented most of the GUI editor and resource browser; created a number of reusable classes in conjunction with this work, e.g. rubber-band, transparent-window, and sash components.
 
 <ins>**Language Processors, Waltham, MA |** 7 years 10 months</ins> <br />
-Worked with small team developing a C++ compiler front-end. Adapted a C++ grammar and designed and implemented a C++ parser using proprietary parsing technology (LL table driven recursive descent); extended this tool to perform unlimited look-ahead required to handle the syntactic ambiguities inherent in C++. Designed and implemented compiler symbol table and its API used in the front-end and by associated debugger. Implemented most of declarations processing and semantic analysis for C++ front-end. Development in C and PL/I under UNIX.
+With small team developed a C++ compiler front-end. Adapted a C++ grammar and designed and implemented a C++ parser using proprietary parsing technology (LL table driven recursive descent); extended to perform unlimited look-ahead required to handle the syntactic ambiguities inherent in C++. Designed and implemented compiler symbol table and its API used in the front-end and by associated debugger. Implemented most of declarations processing and semantic analysis for C++ front-end. Development in C and PL/I under UNIX.
 
 Designed and implemented a full ANSI-C compliant lexical-analyzer and preprocessor. Rewrote major portions of an existing C compiler (LPI-C) front-end in conjunction with its ANSI-fication.
 
