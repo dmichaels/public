@@ -6,7 +6,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 <ins>**Summary**
 
-* Most recent work with Java, Kotlin, Sping Boot, C, Node.js, MySQL, Vertica, Linux for backend services, transaction and other data processing, feeds, search, APIs, some authentication, etc; as well as backoffice tools and UI dashboards using AngularJS, JavaScript, Node.js. Previously, similar in .NET, C#, SQL Server.
+* Most recent work with Java, Kotlin, Sping Boot, Groovy, PHP, C, Node.js, MySQL, Vertica, Linux for backend services, transaction and other data processing, feeds, search, APIs, some authentication, etc; as well as backoffice tools and UI dashboards using AngularJS, JavaScript, Node.js. Previously, similar in .NET, C#, SQL Server.
 
 * Dotcom boom era large scale Web related infrastructure apps, tools, APIs, dashboard in C++, VB, ASP, XSLT.
 
@@ -18,8 +18,8 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * Previously granted *secret* clearance.
 
-* Notable skills lacking ...
-  - Python, Perl, machine learning, embedded software
+* Some notable skills lacking ...
+  - Python, Ruby, Perl, Hadoop, Big Data, Machine Learning, Elasticsearch, Embedded Software
 
 <ins>**HYPR Corporation |** May 2021 – January 2022</ins> <br />
 Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault.
