@@ -60,7 +60,7 @@ With small team developed a C++ compiler front-end. Adapted a C++ grammar and de
 
 Designed and implemented from scrach a full ANSI-C compliant lexical-analyzer and preprocessor. Rewrote major portions of an existing C compiler (LPI-C) front-end in conjunction with its ANSI-fication. Development in C and PL/I under UNIX.
 
-Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compilers. Much bug fixing, development, and re-targeting debugger (originally just MC608x0, UNIX V) to Intel 80x86, Apollo, BSD UNIX, XENIX. Wrote a Motorola 680x0 disassembler. Implemented a standard LPI software install program to manage multiple versions of various compiler/debugger components. Development in PL/I and C under UNIX.
+Project lead for LPI-DEBUG, a multi-language debugger for LPI family of compilers. Bug fixing, new features, re-targeting debugger (originally MC608x0, UNIX-V) to Intel 80x86, Apollo, BSD-UNIX, XENIX. Wrote a Motorola 680x0 disassembler. Implemented a standard LPI software install program to manage multiple versions of various compiler/debugger components. Development in PL/I and C under UNIX.
 
 <ins>**Cadmus Computer Systems, Lowell, MA |** 1 year 1 month</ins> <br />
 Worked with the C and FORTRAN compilers for MC680x0 UNIX workstations, features, bug fixing, porting. Developed internal tools. Development in C and MC680x0 assembler under UNIX. Some exposure to early Apple Macintosh development.
