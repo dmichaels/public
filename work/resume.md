@@ -14,12 +14,15 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * C and C++ compiler, disassember, debugger development in C, C++, PL/1, UNIX.
 
-* Lately, independently, learning: Swift/UI, iOS ; C++17; and Arduino.
+* Lately, independently, playing with: Swift/UI, iOS ; C++17; and Arduino.
 
 * Previously granted *secret* clearance.
 
-* Some notable skills lacking ...
-  - Python, Ruby, Perl, Hadoop, Big Data, Machine Learning, Elasticsearch, Embedded Software
+* Some notable skills:
+  - Java, Kotlin, Spring Boot, Groovy, PHP, C, C++, Node.js, MySQL, Vertica, Linux, Git/GitLab/GitHub,
+
+* Some notable skills **_lacking_**:
+  - Python, Ruby, Perl, Hadoop, Big Data, Machine Learning, Elasticsearch, Kubernetes, Embedded Software
 
 <ins>**HYPR Corporation |** May 2021 – January 2022</ins> <br />
 Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault.
