@@ -18,6 +18,11 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * Previously granted *secret* clearance.
 
+* Notable skills lacking ...
+  - Python
+  - Perl
+  - Embedded software development
+
 <ins>**HYPR Corporation |** May 2021 – January 2022</ins> <br />
 Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault.
 
