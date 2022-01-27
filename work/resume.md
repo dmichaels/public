@@ -24,7 +24,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 * Some notable skills **_lacking_**:
   - Python, Ruby, Perl, Hadoop, Big Data, Machine Learning, Elasticsearch, Kubernetes, Embedded Software
 
-<ins>**HYPR Corporation |** May 2021 – January 2022</ins> <br />
+<ins>**HYPR Corporation |** 9 months </ins> <br />
 Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault.
 
 <ins>**Cartera Commerce (Rakuten) |** 10 years 4 months</ins> <br />
