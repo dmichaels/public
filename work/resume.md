@@ -25,7 +25,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
   - Python, Ruby, Perl, Hadoop, Big Data, Machine Learning, Elasticsearch, Kubernetes, Embedded Software
 
 <ins>**HYPR Corporation |** 9 months </ins> <br />
-Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault.
+Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault, RADIUS.
 
 <ins>**Cartera Commerce (Rakuten) |** 10 years 4 months</ins> <br />
 Transaction, member and other not-quite-Big data processing, REST services, some Kafka and other message processing, and search related backend infrastructure apps and tools, using mostly Java, Node.js, MySQL, Vertica under Linux, supporting Cartera rewards shopping malls. Some work with (PGP, OpenSSL) encryption libraries, and two-way SSL Web service consumption. Developed backoffice tools/APIs in Node.js and Web based dashboards/UIs Node.js, Angular, Express. Implemented some integrations with third-party services like Salesforce, Evergage, Okta.
