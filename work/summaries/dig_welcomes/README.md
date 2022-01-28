@@ -126,5 +126,5 @@
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a>
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a>
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a>
-- Newer but iOS/Swift app:
+- Newer, an iOS/Swift app:
   - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a>
