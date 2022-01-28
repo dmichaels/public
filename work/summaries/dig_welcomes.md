@@ -1,9 +1,6 @@
-        Prepare for "Show & Tell" for Boston College Systems Librarian interview.
-        Maybe talk about Cartera/Rakuten DIG Welcome Emails
+**Discussion (Show & Tell) Topic**: <ins>Cartera/Rakuten Realtime Welcome Emails</ins>
 
-Discussion (Show & Tell) Topic: Cartera/Rakuten Realtime Welcome Emails
-
-* Basic Problem
+* **Basic Problem**
 
   - Have Web site (online service) where users can signup (create account), becoming "members", and can subsequently login to use site/service.
     - Send out "Welcome" email on first signup.
