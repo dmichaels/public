@@ -101,7 +101,7 @@
     - New deployment model using Chef.
     - Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
 - IMO this may have been over-engineered a bit.
-  - E.g. simpler and would have been fine to collapse the Member Augmenter and member Emails into one process.
+  - Would have been simpler and just fine to collapse the Member Augmenter and member Emails into one component.
   - But imagined possible other uses for the Kafka (_new_member_augmented_) stream of member data (never happened).
   - And we were a little eager to try out Kafka to a little greater extent.
 
