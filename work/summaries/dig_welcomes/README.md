@@ -20,7 +20,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 ---
 
-**Some More Background**
+**Some More Background** (skip if short on time)
 
 * Cartera/Rakuten provides loyalty/rewards affiliate programs (frontend/backend services) for clients to incentivize customer shopping.
   - E.g. Provide ability for United Airlines (the client) customers (the member) to signup/login (with frequent flyer number)
