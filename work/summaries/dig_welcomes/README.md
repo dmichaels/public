@@ -91,7 +91,7 @@
 **Results**
 - It worked/works (still in production).
 - Beginning to end took about three months.
-  - Long time due to new technology (Kafka) usage.
+  - Long time due to new technology (Kafka) usage, et.al.
   - Core development only a couple/few weeks.
   - Had to use hosted/managed Kafka provider for scalability, maintenance, monitoring, et cetera.
     - First Apache Kafka then switched to Eventador/Cloudera.
