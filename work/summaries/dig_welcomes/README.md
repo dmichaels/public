@@ -6,6 +6,7 @@
 * Web site where users can signup, becoming _members_, and can subsequently login to use site/services.
 * Send out _Welcome_ emails to new members on first signup.
 * Currently (historical technical reasons) Welcome emails not sent until 24-48 hours after-the-fact.
+  - Bad user experience, lowers confidence in and lessens engagement with the service.
 
 **Basic Goal**
 * Send Welcome emails (nearly) immediately after signup.
