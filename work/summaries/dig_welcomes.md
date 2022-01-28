@@ -76,7 +76,7 @@
 - <ins>New Member Emailer</ins>
   - Picks up augmented new member data from Kafka and sends to Salesforce via API.
   - And we actually wrote (yet) another Kafka messages to (yet) another Kafka topic queue indicating the record had been sent to Salesforce
-    and then (yet) another consumer process would pickup (read) from that topic queue and write to a new-members-sent-to-salesforce table;
+    and then (yet) another consumer process would pickup (read) from that topic queue and write to a _new_members_sent_to_salesforce_ table;
     but this was really a bit overkill (a bit overengineered).
 
 **Results**
