@@ -129,6 +129,6 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a>
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a>
 - Couple recent bash scripts:
-  - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh"tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh"tableload.sh</a>
+  - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a>
 - Newer, an iOS/Swift app:
   - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a>
