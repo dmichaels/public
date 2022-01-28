@@ -96,4 +96,4 @@
 
 **Diagrams**
 
-<img src="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png " width="700" />
+<img src="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png " width="700" vspace="-100"/>
