@@ -110,3 +110,4 @@
 - I implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
 - I worked closely with the email marketing team (which manages Salesforce), defining member data we send to them for emailing. 
   - Helped them figure out and setup Salesforce email triggering mechanism.
+  - Pre-COVID so in-office/in-person collaboration; also Slack, email.
