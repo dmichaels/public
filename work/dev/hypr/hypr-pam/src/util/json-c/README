@@ -1,0 +1,36 @@
+This directory contains the salient parts of the json-c source from its GitHub repo,
+https://github.com/json-c/json-c.git, copied directly into our own hypr-pam source
+directory (hypr-pam/src/util/json-c) for direct compilation and linking into
+our hypr-pam shared library (pam_hypr.so); and for direct check-in into our
+own hypr-pam GitHub repo: https://g.hypr.com/david.michaels/hypr-pam
+Copy done via: hypr-pam/etc/misc/copy-json-c-source-into-our-project.sh
+
+We do this to eliminate dependency related friction encountered when trying
+to use the json-c shared library (libjson-c.so) across Linux variants, with
+the various ways to install json-c from various distribution repos, and/or
+with the various versions of json-c installed or already present.
+
+Yes, this process will bypass the json-c build process with all its feature
+checks and header build process and so on, but it will almost certainly be fine.
+And not using a shared library also technically misses out on updates/fixes,
+et cetera, but our usage of this library is very simple/basic; we could
+almost to the JSON parsing ourselves; which would be another option too.
+
+Another option is/was to build json-c from its source as a static library and
+link to that, but then that would need to be run as part of the build on each
+platform, and that can come with its own complications; there is a script to
+do that if desired here: hypr-pam/etc/misc/install-json-c-from-source.sh.
+
+This copying/modification IS ALLOWED by the MIT licensing associated with json-c.
+See the json-c COPYING and README.html files, and the MIT license for details:
+
+  https://raw.githubusercontent.com/json-c/json-c/master/COPYING
+  https://raw.githubusercontent.com/json-c/json-c/master/README.html
+
+    "This program is free software; you can redistribute
+     it and/or modify it under the terms of the MIT License."
+
+  https://opensource.org/licenses/MIT
+
+    "Permission is hereby granted, free of charge ... without restriction, including without
+     limitation rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell ..."

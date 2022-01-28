@@ -1,0 +1,77 @@
+Copyright (c) 2021, HYPR Corporation
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+ - Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ - Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--------------------------------------------------------------------------------
+
+The packages in the 'repos' sub-directory were all built from this repo:
+
+  https://g.hypr.com/david.michaels/hypr-pam
+
+using the script:
+
+  hypr-pam/etc/packaging/build.sh
+
+The resultant RPM file is signed using the (GPG) public-key contained here:
+
+  hypr-pam/etc/keys/hypr-pam-public-key.pem
+
+Before building this key should be imported like this:
+
+  sudo rpm --import hypr-pam-public-key.pem
+
+Check the integrity of the resultant RPM file like this:
+
+  rpm --checksig hypr-pam-1.0-1.x86_64.rpm
+
+FYI: There is public (GPG) key already generated in:
+
+  hypr-pam/etc/keys/hypr-pam-public-key.pem 
+
+And its associated private (GPG) key is, for HYPR use, in 1Password7 in the Dev-Engineering space:
+
+  1Password7: Dev-Engineering/hypr-pam-public-key.pem 
+
+- hypr-pam-1.0-1.x86_64.rpm
+  Built on: Red Hat Enterprise Linux 8.3 (Ootpa) / arch: x86_64
+  Using VMWare-based virtual machine running under MacOS: rhel-8.1-x86_64-dvd.iso
+  Build dependencies:
+  sudo yum install -y gcc make automake autoconf libtool libcurl-devel openssl-devel pam-devel git rpmdevtools rpm-sign
+
+- hypr-pam-1.0-1.aarch64.rpm
+  Built on: Red Hat Enterprise Linux 8.3 (Ootpa) / arch: aarch64
+  Using AWS-based EC2 instance
+  Build dependencies:
+  sudo yum install -y gcc make automake autoconf libtool libcurl-devel openssl-devel pam-devel git rpmdevtools rpm-sign
+  Build dependencies (openSUSE):
+  sudo zypper install -y gcc make automake autoconf libtool libcurl-devel openssl-devel pam-devel rpmbuild
+
+- hypr-pam_1.0-2_amd64.deb
+  Built on: Ubuntu 20.10 (Groovy Gorilla) / arch: x86_64
+  Using VMWare-based virtual machine running under MacOS: ubuntu-20.10-desktop-amd64.iso
+  Build dependencies:
+  sudo apt install -y gcc make automake autoconf libtool libcurl4-openssl-dev libssl-dev libpam0g-dev git rpm alien
+
+- hypr-pam_1.0-2_arm64.deb
+  Built on: Ubuntu 20.04.2 LTS (Focal Fossa) / arch: aarch64
+  Using AWS-based EC2 instance
+  Build dependencies:
+  sudo apt install -y gcc make automake autoconf libtool libcurl4-openssl-dev libssl-dev libpam0g-dev git rpm alien

@@ -1,0 +1,74 @@
+# Copyright (c) 2021, HYPR Corporation
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#  - Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  - Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# ------------------------------------------------------------------------------
+
+VERSION=$(shell cat VERSION)
+#
+# To compile references to libcurl into the binaries statically set HYPR_HTTP_STATIC_LIBCURL to 1.
+# Override on 'make' command-line like this: make HYPR_HTTP_STATIC_LIBCURL=1
+#
+HYPR_HTTP_STATIC_LIBCURL = 0
+
+default: src/version.h
+	$(MAKE) HYPR_HTTP_STATIC_LIBCURL=$(HYPR_HTTP_STATIC_LIBCURL) -f makefile-legacy -s -C src/util/json-c
+	$(MAKE) HYPR_HTTP_STATIC_LIBCURL=$(HYPR_HTTP_STATIC_LIBCURL) -f makefile-legacy -s -C src/util
+	$(MAKE) HYPR_HTTP_STATIC_LIBCURL=$(HYPR_HTTP_STATIC_LIBCURL) -f makefile-legacy -s -C src/auth
+	$(MAKE) HYPR_HTTP_STATIC_LIBCURL=$(HYPR_HTTP_STATIC_LIBCURL) -f makefile-legacy -s -C src/pam
+	$(MAKE) HYPR_HTTP_STATIC_LIBCURL=$(HYPR_HTTP_STATIC_LIBCURL) -f makefile-legacy -s -C src/cli
+
+src/version.h: FORCE
+	@rm -f $@
+	@echo -n > $@
+	@echo "static const char *VERSION = \"`cat VERSION`\";" >> $@
+	@echo "static const char *COPYRIGHT = \"`cat COPYRIGHT`\";" >> $@
+	@if [ -s .git/HEAD ] ; then \
+		echo "static const char *GIT_REPO = \"`git config --get remote.origin.url`\";" >> $@ ; \
+		echo "static const char *GIT_BRANCH = \"`git rev-parse --abbrev-ref HEAD | sed -e 's/*//' | sed -e 's/ //'`\";" >> $@ ; \
+		echo "static const char *GIT_COMMIT = \"`git rev-parse HEAD`\";" >> $@ ; \
+		echo -n "static const char *GIT_COMMIT_DATE = \"" >> $@ ; \
+		date -d @`git log -1 --pretty=format:%at` +"%Y-%m-%d %H:%M:%S%z" | tr -d '\n' >> $@ ; \
+		echo "\";" >> $@ ; \
+	else \
+		echo "static const char *GIT_REPO = \"UNKNOWN\";" >> $@ ; \
+		echo "static const char *GIT_BRANCH = \"UNKNOWN\";" >> $@ ; \
+		echo "static const char *GIT_COMMIT = \"UNKNOWN\";" >> $@ ; \
+		echo "static const char *GIT_COMMIT_DATE = \"UNKNOWN\";" >> $@ ; \
+	fi
+	@echo "static const char *BUILD_DATE = \"`date +"%Y-%m-%d %H:%M:%S%z"`\";" >> $@ ;
+	@echo "static const char *BUILD_OS = \"`grep '^PRETTY_NAME=' /etc/os-release | sed 's/PRETTY_NAME=//' | sed 's/\"//g'`\";" >> $@ ;
+	@echo "static const char *BUILD_OS_VERSION = \"`grep '^VERSION=' /etc/os-release | sed 's/VERSION=//' | sed 's/\"//g'`\";" >> $@ ;
+	@echo "static const char *BUILD_ARCH = \"`arch`\";" >> $@ ;
+
+install: default
+	$(MAKE) -f makefile-legacy -s -C src/pam install
+
+clean:
+	rm -rf *.o *.so *.a a.out
+	$(MAKE) -f makefile-legacy -s -C src/util/json-c clean
+	$(MAKE) -f makefile-legacy -s -C src/util clean
+	$(MAKE) -f makefile-legacy -s -C src/auth clean
+	$(MAKE) -f makefile-legacy -s -C src/pam clean
+	$(MAKE) -f makefile-legacy -s -C src/cli clean
+
+.PHONY: FORCE
+FORCE:

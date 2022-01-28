@@ -1,0 +1,6 @@
+tmp
+.tmp
+target
+.build
+*~
+!tmp/dummy.txt

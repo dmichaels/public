@@ -1,0 +1,55 @@
+# Configuration file for the HYPR Linux PAM (pam_hypr.so)
+#
+auth_access_token     REDACTED
+api_access_token      REDACTED
+api_base_url          https://awsdevelop1.biometric.software
+api_auth_endpoint     /rp/api/oob/client/authentication
+app_id                HYPRDefaultApplication
+poll_max_time_seconds 60
+poll_interval_seconds 2
+timeout_milliseconds  30000
+
+# Optionally have HYPR specific message appear on successful login like this:
+#
+login_message HYPR authentication of %login from %remotehost: OK
+
+# This 'login_prompt' feature is still experimental (do not use in production):
+# login_prompt Enter for HYPR %username authentication, then grab your phone to complete:
+
+# Disable HYPR authentication entirely like this:
+# disabled false
+
+# Disable HYPR authentication for specific commands like this:
+# disabled command chsh
+#
+disabled command sudo
+
+# Disable HYPR authentication for specified users/logins like this:
+# disabled login dmichaels
+
+# Disable HYPR authentication for specified groups like this:
+# disabled group adm
+
+# Until (soon) we have HYPR server-side username aliasing,
+# need to add mapping from Linux login to HYPR account name like this:
+# username your-linux-login-name your-hypr-account-username
+
+# If Linux login name not mapped to HYPR username (above) then default behavior
+# is to simply use the login namae as the HYPR username.
+# To act as-if disabled in this case then use this:
+# on_unmapped_login ignore
+
+# ------------------------------------------------------------------------------
+# FYI WRT SSHD configuration for HYPR authentication via ssh/scp,
+# here are the recommended settings for /etc/ssh/sshd_config:
+#
+# ChallengeResponseAuthentication yes
+# PubkeyAuthentication no
+# PasswordAuthentication no
+# UseDNS no
+# UsePAM yes
+#
+# FYI WRT PAM configuration for HYPR authentication via ssh/scp,
+# here is one possible, recommended setting for /etc/pam.d/sshd:
+#
+# auth sufficient pam_hypr.so
