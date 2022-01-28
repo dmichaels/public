@@ -112,3 +112,4 @@
 - I worked closely with the email marketing team (which manages Salesforce), defining member data we send to them for emailing. 
   - Helped them figure out, setup, configure Salesforce event-driven email triggering mechanism.
   - Pre-COVID so in-office/in-person collaboration; also Slack, email.
+- I worked with Eventador in setting up, configuring, accessing, troubleshooting the hosted Kafka system.
