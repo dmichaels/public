@@ -98,4 +98,4 @@
 
 ![dig_welcomes diagram](https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png | width=400x500)
 
-<img src="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png " width="400" height="500" />
+<img src="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png " width="500" />
