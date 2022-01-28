@@ -51,6 +51,8 @@
     - Doing so requires consumers to be part of same _consumer group_ whereby incoming messages on the queue
       will be distributed evenly to each consumer in the group.
 
+- Implemented as Spring Boot Java app, using the Java/Kafka SDK.
+
 **Solution Components**
 
 - <ins>New Member Listener</ins>
@@ -83,14 +85,16 @@
 
 **Results**
 - It worked/works (still in production).
-- Beginning to end took about 3 months.
-- Long time due to new technology (Kafka) usage.
-  - Core development only couple/few weeks.
-  - Decided to use hosted Kafka provider, for scalability, maintainence, monitoring, et cetera.
-    - So just working with them and this was  
-  - Pretty heavy company process for new apps.
-    - E.g. Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
-  - Other new changes incorporated, e.g. getting configuration from AWS Parameter Store.
+- Beginning to end took about three months.
+  - Long time due to new technology (Kafka) usage.
+  - Core development only a couple/few weeks.
+  - Had to use hosted/managed Kafka provider for scalability, maintainence, monitoring, et cetera.
+    - First Apache Kafka then switched to Eventador/Cloudera.
+    - So just working with them and this was a lot of back/forth, troublshooting, et cetera.
+  - Pretty heavy company process for new apps, and other new configuration/deployment features incorporated.
+    - Storing/getting configuration in/from AWS Parameter Store.
+    - New deployment model using Chef.
+    - Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
 
 **Role**
 - Worked closely with team lead (architect) in defining solution.
