@@ -14,7 +14,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * C and C++ compiler, disassember, debugger development in C, C++, PL/1, UNIX.
 
-* Lately, independently, playing with: (Swift/UI)[https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame], iOS ; C++17; and Arduino.
+* Lately, independently, playing with: [Swift/UI](https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame), iOS ; C++17; and Arduino.
 
 * Previously granted *secret* clearance.
 
