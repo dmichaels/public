@@ -57,8 +57,7 @@
   - Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
   - Monitors our (MySQL) database for new members and places them on a Kafka queue.
     - The raw new member records are placed, as JSON blob/message on the Kafka "new-member" topic queue.
-    - > **_NOTE:_**  The note content.
-    - Full disclosure: We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
+    - > **_Full disclosure:_** We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
       and as a workaround, we had to implement this as a polling process which polled/queried the MySQL member table,
       periodically (every 20 seconds, say), and wrote the member data to the Kafka new-member topic queue.
 
