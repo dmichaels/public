@@ -122,11 +122,13 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 **Code**
 - Can't really show code for this as no longer with this (or any) company.
 - But got permission and access to a few <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">isolated modules here</a>.
-- Ver recent Linux PAM work (for HYPR) which will be open sourced:
+- Very recent Linux PAM work (for HYPR) which will be open sourced:
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">Linux PAM</a>
 - Some of my pretty old (no-longer-copyrighted) code here:
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a>
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a>
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a>
+- Couple recent bash scripts:
+  - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh"tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh"tableload.sh</a>
 - Newer, an iOS/Swift app:
   - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a>
