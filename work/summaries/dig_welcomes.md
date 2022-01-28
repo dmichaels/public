@@ -1,3 +1,5 @@
+IN PROGRESS ...
+
 **Discussion (Show & Tell) Topic**: <ins>Cartera/Rakuten Realtime Welcome Emails</ins>
 
 **Basic Problem**
