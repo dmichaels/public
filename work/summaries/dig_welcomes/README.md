@@ -10,7 +10,7 @@
 
 **Basic Goal**
 * Send Welcome emails (nearly) immediately after signup.
-  To engender member confidence in the service, engage with them immediately, encouraging service usage, et cetera.  
+  - To engender member confidence in the service, engage with them immediately, encouraging service usage, et cetera.  
 
 **Basic Solution**
 
