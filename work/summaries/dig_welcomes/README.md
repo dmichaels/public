@@ -115,3 +115,4 @@
 - I worked closely with the email marketing team (which manages Salesforce), defining member data we send to them for emailing. 
   - Helped them figure out, setup, configure Salesforce event-driven email triggering mechanism.
   - Pre-COVID so in-office/in-person collaboration, and Slack, email.
+- Worked within basic Agile/Scrum process (three week sprints).
