@@ -104,8 +104,10 @@
     - Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
 - IMO this may have been over-engineered a bit.
   - E.g. simpler and would have been fine to collapse the Member Augmenter and member Emails into one process.
+  - But imagined possible other uses for the Kafka (_new_member_augmented_) stream of member data (never happened).
+  - And we were a little eager to try out Kafka to a little greater extent.
 
 **Role**
-- Worked closely with team lead (architect) in defining solution.
-- Implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
-- Worked closely with Email Marketing Team which manages Salesforce, defining member data we send to them for emailing. 
+- I worked closely with team lead (architect) in defining solution.
+- I implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
+- I worked closely with the email marketing team (which manages Salesforce), defining member data we send to them for emailing. 
