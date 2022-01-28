@@ -18,7 +18,7 @@
 
 ---
 
-**Little More Background/Detail**
+**Some More Background**
 
 * Cartera/Rakuten provides loyalty/rewards affiliate programs (frontend/backend services) for clients to incentivize customer shopping.
   - E.g. Provide ability for United Airlines (the client) customers (the member) to signup/login (with frequent flyer number)
@@ -78,3 +78,17 @@
   - And we actually wrote (yet) another Kafka messages to (yet) another Kafka topic queue indicating the record had been sent to Salesforce
     and then (yet) another consumer process would pickup (read) from that topic queue and write to a new-members-sent-to-salesforce table;
     but this was really a bit overkill (a bit overengineered).
+
+**Results**
+- It worked/works (still in production).
+- Beginning to end took about 3 months.
+- Long time due to new technology (Kafka) usage.
+  - Core development only couple/few weeks
+  - Decided to use hosted Kafka provider, for scalability, maintainence, monitoring, et cetera.
+    - So just working with them and this was  
+  - Pretty heavy company process for new apps.
+  - Other new changes incorporated, e.g. getting configuration from AWS Parameter Store.
+
+**Role**
+- Worked closely with team lead (architect) in defining solution.
+- Implemented most of code (Java, Spring Boot, Kafka, MySQL).
