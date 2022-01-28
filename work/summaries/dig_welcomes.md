@@ -23,8 +23,9 @@
   - We track purchases/transactions, gets them back from transaction aggregators (e.g. Pepperjam, LinkShare, Amazon, Performics),
     processes, sends _Accrual File_ to client (validate transactions), gets confirmation from client, processes response/data, distributes funds/data, et cetera.
 * I worked largely with member data aggregation, downstream (in a _Data Warehouse_), getting it into our Salesforce system where marketing emails are sent/managed.
+* Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_).
 * Emails include"service" emails like (transaction) Confirmation emails, email for Promotions, and, Welcome emails.
-* Cartera tends to move data around in bulk (only) on a daily basis via database replication (scripts).
+* Cartera tends to move data around in bulk (only) on a <ins>daily</ins> basis via database replication (scripts).
 * So for something like Welcome emails, which get sent when a member first signs up for the program,
   these were getting sent out as much as 48 hours after the member actually joined.
 
