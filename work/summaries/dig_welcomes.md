@@ -38,7 +38,7 @@ IN PROGRESS ...
 
 ---
 
-**Solution Detail**
+**Solution**
 
 - The POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
   system could improve the user (member) experience, was to employ Kafka as a realtime data pipline.
@@ -53,29 +53,30 @@ IN PROGRESS ...
     - Doing so requires consumers to be part of same _consumer group_ whereby incoming messages on the queue
       will be distributed evenly to each consumer in the group.
 
-- Components of the new realtime Welcome emails process:
+**Solution Components**
 
-  - <ins>New Member Listener</ins>
-    - Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
-    - Monitors our (MySQL) database for new members and places them on a Kafka queue.
-      - The raw new member records are placed, as JSON blob/message on the Kafka "new-member" topic queue.
-      - Full disclosure: We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
-        and as a workaround, we had to implement this as a polling process which polled/queried the MySQL member table,
-        periodically (every 20 seconds, say), and wrote the member data to the Kafka new-member topic queue.
+- <ins>New Member Listener</ins>
+  - Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
+  - Monitors our (MySQL) database for new members and places them on a Kafka queue.
+    - The raw new member records are placed, as JSON blob/message on the Kafka "new-member" topic queue.
+    - Full disclosure: We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
+      and as a workaround, we had to implement this as a polling process which polled/queried the MySQL member table,
+      periodically (every 20 seconds, say), and wrote the member data to the Kafka new-member topic queue.
 
-  - <ins>New Member Augmenter</ins>
-    - Picks up raw new member data from Kafka, augments with unique Salesforce ID, and placed them on another Kafka queue.
-    - Monitors our (MySQL) database for new members and places them on a Kafka queue
-           - Member data sent to Salesforce need a unique ID ("Subscriber Key") which *only* the Data Warehouse
-             knows how to construct. Due to historical (hysterical) reasons, the generation of this ID is non-trivial,
-             and replicating the logic of generating this ID was ill-advised.
-           - So this service reads (member records) from the Kafka new-member topic queue (independent from the New Member Listener process).
-           - Calls an API in the Data Warehouse we set up to generate the required ID (Subscriber Key),
-             from the (per-organization) member ID (from the member table).
-           - Augments the member data (read from Kafka) with retrieved Subscriber Key for the member.
-           - Then writes the augmented member record onto another "new-member-augmented" topic (for another, any other, process to pick up).
-         - New Member Emailer
-           - Picks up augmented new member data from Kafka and sends to Salesforce via API.
-           - And we actually wrote (yet) another Kafka messages to (yet) another Kafka topic queue indicating the record had been sent to Salesforce
-             and then (yet) another consumer process would pickup (read) from that topic queue and write to a new-members-sent-to-salesforce table;
-             but this was really a bit overkill (a bit overengineered).
+- <ins>New Member Augmenter</ins>
+  - Picks up raw new member data from Kafka, augments with unique Salesforce ID, and placed them on another Kafka queue.
+  - Monitors our (MySQL) database for new members and places them on a Kafka queue
+  - Member data sent to Salesforce need a unique ID ("Subscriber Key") which *only* the Data Warehouse
+    knows how to construct. Due to historical (hysterical) reasons, the generation of this ID is non-trivial,
+    and replicating the logic of generating this ID was ill-advised.
+  - So this service reads (member records) from the Kafka new-member topic queue (independent from the New Member Listener process).
+  - Calls an API in the Data Warehouse we set up to generate the required ID (Subscriber Key),
+    from the (per-organization) member ID (from the member table).
+  - Augments the member data (read from Kafka) with retrieved Subscriber Key for the member.
+  - Then writes the augmented member record onto another "new-member-augmented" topic (for another, any other, process to pick up).
+
+- <ins>New Member Emailer</ins>
+  - Picks up augmented new member data from Kafka and sends to Salesforce via API.
+  - And we actually wrote (yet) another Kafka messages to (yet) another Kafka topic queue indicating the record had been sent to Salesforce
+    and then (yet) another consumer process would pickup (read) from that topic queue and write to a new-members-sent-to-salesforce table;
+    but this was really a bit overkill (a bit overengineered).
