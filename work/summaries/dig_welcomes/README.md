@@ -110,6 +110,7 @@
 - I implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
 - I implemented the Data Warehouse Subscriber Key API (for the Member Augmenter component).
 - I worked with Eventador in setting up, configuring, accessing, troubleshooting the hosted Kafka system.
+  - Via Slack, email.
 - I worked closely with the email marketing team (which manages Salesforce), defining member data we send to them for emailing. 
   - Helped them figure out, setup, configure Salesforce event-driven email triggering mechanism.
   - Pre-COVID so in-office/in-person collaboration; also Slack, email.
