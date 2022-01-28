@@ -1,6 +1,4 @@
-IN PROGRESS ...
-
-**Discussion (Show & Tell) Topic**: <ins>Cartera/Rakuten Realtime Welcome Emails</ins>
+**Discussion (Show & Tell) Topic**: <ins>Cartera/Rakuten Realtime Welcome Emails</ins> - _IN PROGRESS_
 
 ---
 
