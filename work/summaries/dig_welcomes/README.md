@@ -80,7 +80,7 @@
   - Writes augmented member data to another Kafka topic queue (_new_member_augmented_), for another process to pick up (below).
 
 - <ins>New Member Emailer</ins>
-  - Picks up augmented new member data from the Kafka _new_member_augmented_ topic queue
+  - Picks up augmented new member data from the Kafka _new_member_augmented_ topic queue.
   - Sends to Salesforce via a Salesforce API.
 
 - <ins><a href="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png">Diagram Here</a></ins>
@@ -108,3 +108,4 @@
 - I worked closely with team lead (architect) in defining solution.
 - I implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
 - I worked closely with the email marketing team (which manages Salesforce), defining member data we send to them for emailing. 
+  - Helped them figure out and setup Salesforce email triggering mechanism.
