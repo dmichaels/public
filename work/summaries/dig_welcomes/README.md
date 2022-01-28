@@ -128,7 +128,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a>
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a>
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a>
-- Couple recent bash scripts (with permission):
+- Couple recent-ish bash scripts (with permission):
   - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a>
 - Newer, an iOS/Swift app:
   - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a>
