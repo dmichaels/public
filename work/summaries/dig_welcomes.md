@@ -32,7 +32,7 @@ IN PROGRESS ...
 * Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_),
   the algorithm for which (for historical reasons) is arcane and non-trivial; this dependency a complicating factor.
 
----
+***
 
 **Solution Detail**
 
