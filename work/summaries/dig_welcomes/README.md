@@ -34,8 +34,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - So for something like Welcome emails, getting sent out as much as 48 hours after the member actually joined.
 * Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_),
   the algorithm for which (for historical reasons) is arcane and non-trivial; this is a data-flow bottleneck dependency is a complicating factor.
-* BTW this "Data Warehouse" was not really a "data warehouse" in any real rigourous technical sense, just a repository and aggregation system.
-  - MySQL, and Groovy, and bash scripts.
+* BTW this "Data Warehouse" was not really a "data warehouse" in any real rigourous technical sense, just a repository and aggregation system (MySQL, and Groovy, and bash scripts).
 
 ---
 
