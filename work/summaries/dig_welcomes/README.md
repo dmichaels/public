@@ -117,6 +117,8 @@
   - Pre-COVID so in-office/in-person collaboration, and Slack, email.
 - Worked within basic Agile/Scrum process (three week sprints).
 
+---
+
 **Code**
 - Can't really show code for this as no longer with this (or any) company.
 - But got permission and access to a few <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">isolated modules here</a>.
