@@ -53,6 +53,11 @@
 
 - Implemented as Spring Boot Java app, using the Java/Kafka SDK.
 
+- App component breackdown below.
+  - Deployed as single app, but written in such a way as to be easily changed to deploy as multiple independent apps.
+  - Doing so at outset seemed overkill, and would introduce more moving (deployment) parts.
+  - Each component had HTTP status port to return basic health info, some stats, et cetera, for troublshooting/monitoring.
+
 **Solution Components**
 
 - <ins>New Member Listener</ins>
@@ -97,7 +102,10 @@
     - Storing/getting configuration in/from AWS Parameter Store.
     - New deployment model using Chef.
     - Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
+- IMO this may have been over-engineered a bit.
+  - E.g. simpler and would have been fine to collapse the Member Augmenter and member Emails into one process.
 
 **Role**
 - Worked closely with team lead (architect) in defining solution.
 - Implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
+- Worked closely with Email Marketing Team which manages Salesforce, defining member data we send to them for emailing. 
