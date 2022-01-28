@@ -32,7 +32,7 @@
   - So for something like Welcome emails, getting sent out as much as 48 hours after the member actually joined.
 * I worked largely with this Data Warehouse system.
 * Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_),
-  the algorithm for which (for historical reasons) is arcane and non-trivial; this dependency a complicating factor.
+  the algorithm for which (for historical reasons) is arcane and non-trivial; this is a data-flow bottleneck dependency is a complicating factor.
 
 ---
 
@@ -78,6 +78,8 @@
   - And we actually wrote (yet) another Kafka messages to (yet) another Kafka topic queue indicating the record had been sent to Salesforce
     and then (yet) another consumer process would pickup (read) from that topic queue and write to a _new_members_sent_to_salesforce_ table;
     but this was really a bit overkill (a bit overengineered).
+
+- <ins><a href="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png">Diagram Here</a></ins>
 
 **Results**
 - It worked/works (still in production).
