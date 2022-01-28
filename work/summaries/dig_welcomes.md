@@ -22,32 +22,36 @@ IN PROGRESS ...
   - E.g. Provide ability for United Airlines (the client) customers (the member) to signup/login (with frequent flyer number)
     and shop through the United Airline portal, and to earn frequent flyer miles for each purchase.
   - Member gets reward (miles, or points, dollars) / Client (e.g. United) gets a cut. / Cartera gets a cut. / Win-win-win.
-  - Track purchases/transactions, gets back from transaction aggregators (e.g. Pepperjam, LinkShare, Amazon, Performics),
-    processes, sends _Accrual File_ to client (validate transactions), gets confirmation from client, processes response/data, distributes funds/data, et cetera.
-  - Member and other data propogated/aggregated to/in _Data Warehouse_, downstream, and sent to Salesforce where marketing emails are sent/managed.
+  - Track transactions, get back from transaction aggregators (e.g. Pepperjam, LinkShare, Performics),
+    processe, send _Accrual File_ to client (validate transactions), get confirmation from client, process response/data, distribute funds/data, et cetera.
+  - Member and other data propogated/aggregated to/in _Data Warehouse_, downstream, and sent (SFTP) to Salesforce where marketing emails are sent/managed.
   - Emails include _Service_ emails like (transaction) _Confirmation_ emails, email for _Promotions_, and, _Welcome_ emails.
   - Tend to move data around in bulk (only) on a <ins>daily</ins> basis via database (MySQL) replication (MySQL/bash scripts).
   - So for something like Welcome emails, getting sent out as much as 48 hours after the member actually joined.
 * I worked largely with this Data Warehouse system.
 * Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_),
-  the algorithm for which (for historical reasons) is arcane and non-trivial; dependency a complicating factor.
+  the algorithm for which (for historical reasons) is arcane and non-trivial; this dependency a complicating factor.
 
-* Current (old) system (in Data Warehouse), aggregated new member data (replicated from upstream) on a daily basis,
-  assigned our (globally) unique (Salesforce) member ID ("Subscriber Key") and sent (via SFTP) data to Salesforce to send the emails.
-         - Goal then was to make this more realtime, so members would get the Welcome email nearly immediately after signing up.
-         - Solution, which was a sort of POC (proof-of-concept) project, to demonstrate how a more realtime (less daily-replication driven)
-           system could improve the user (member) experience, was to employ Kafka as a realtime data pipline. Here are the components:
+---
+
+**Solution Detail**
+
+- A POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
+  system could improve the user (member) experience, was to employ Kafka as a realtime data pipline.
+
+- Kafka is a realtime, high-throughput (append-only, non-destrutive) streaming data bus (queue, pipeline).
+  - Data (_messages_, _events_) can be written (streamed) to a Kafka named _topic_ (and are timestamped), by any process (producer).
+  - Other processes (consumers) may immediately read/stream (asynchronously) the messages from the Kafka topic queue.
+  - Unlike (the default/typical behavior for, say) RabbitMQ, messages are "durable" and stay on the Kafka queue,
+    so multiple independent processes can read/stream from the queue, and starting from any point in time (e.g. for replay purposes,
+    for testing, and re-processing in the event of problems).
+  - Scalable (linearly) because can add more consumer processes to handle higher volumes of data.
+    - Doing so requires consumers to be part of same _consumer group_ whereby incoming messages on the queue
+      will be distributed evenly to each consumer in the group.
+- Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
+- Components of the new realtime Welcome emails process :
          - New Member Listener
            - Monitors our (MySQL) database for new members and places them on a Kafka queue.
-           - Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
-             - Kafka is a realtime, high-throughput (append-only, non-destrutive) streaming data bus (queue, pipeline, whatever)
-               - Data ("messages", "events") can be written (streamed) to a Kafka named "topic" (and are timestamped), by one process (producer).
-               - Other processes (consumers) may immediately read/stream (asynchronously) the messages from the Kafka topic queue.
-                 - Unlike (the default/typical behavior for) RabbitMQ, messages are "durable" and stay on the Kafka queue,
-                   so multiple independent processes can read/stream from the queue, starting from any point in time.
-               - Scalable (linearly) because can add more consumer processes to handle higher volumes of data.
-                 - Doing so requires consumers to be part of same "consumer group" whereby incoming messages on the queue
-                   will be directed evenly to each consumer in the group.
              - The raw new member records are placed, as JSON blob/message on the Kafka "new-member" topic queue.
              - Full disclosure: We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
                and as a workaround, we had to implement this as a polling process which polled/queried the MySQL member table,
