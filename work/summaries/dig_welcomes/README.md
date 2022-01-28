@@ -53,7 +53,7 @@
 
 - Implemented as Spring Boot Java app, using the Java/Kafka SDK.
 
-- App component breackdown below.
+- App component breakdown below.
   - Each component is independent; they run concurrently.
   - Deployed as single app, but written in such a way as to be easily changed to deploy as multiple independent apps.
     - Doing so at outset seemed overkill, and would introduce more moving (deployment) parts.
@@ -77,7 +77,7 @@
       and replicating the logic of generating this ID was ill-advised.
     - Calls an API in the Data Warehouse we set up to generate the required Subscriber Key,
       from the given (per-organization) member ID in the data.
-  - Writes the augmented member data to another Kafka topic queue (_new_member_augmented_), for another process (below) to pick up.
+  - Writes augmented member data to another Kafka topic queue (_new_member_augmented_), for another process to pick up (below).
 
 - <ins>New Member Emailer</ins>
   - Picks up augmented new member data from the Kafka _new_member_augmented_ topic queue
