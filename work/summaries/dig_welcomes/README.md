@@ -122,6 +122,8 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 **Code**
 - Can't really show code for this as no longer with this (or any) company.
 - But got permission and access to a few <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">isolated modules here</a>.
+- Recent Linux PAM (for HYPR) which will be open sourced:
+  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">Linux PAM</a>
 - Some of my pretty old (no-longer-copyrighted) code here:
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a>
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a>
