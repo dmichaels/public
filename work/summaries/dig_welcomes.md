@@ -19,14 +19,14 @@
 * Cartera/Rakuten provides loyalty/rewards affiliate programs (frontend/backend services) for clients to incentivize customer shopping.
   - E.g. We provide ability for United Airlines (the client) customers (the member) to signup/login (with frequent flyer number)
     and shop through the United Airline portal, and to earn frequent flyer miles for each purchase.
-  - Member gets reward (miles, or points, dollars) / Client (e.g. United) gets a cut. / Cartera gets a cut. / Win/win/win.
+  - Member gets reward (miles, or points, dollars) / Client (e.g. United) gets a cut. / Cartera gets a cut. / Win-win-win.
   - We track purchases/transactions, gets them back from transaction aggregators (e.g. Pepperjam, LinkShare, Amazon, Performics),
     processes, sends _Accrual File_ to client (validate transactions), gets confirmation from client, processes response/data, distributes funds/data, et cetera.
-  - I worked largely with member data, downstream (in a "Data Warehouse"), getting it into our Salesforce system where marketing emails are sent/managed.
-  - These emails include"service" emails like (transaction) Confirmation emails, email for Promotions, and (for example) Welcome emails.
-  - Cartera tends to move data around in bulk (only) on a daily basis via database replication (scripts).
-  - So for something like Welcome emails, which get sent when a member first signs up for the program,
-    these were getting sent out as much as 48 hours after the member actually joined.
+* I worked largely with member data aggregation, downstream (in a _Data Warehouse_), getting it into our Salesforce system where marketing emails are sent/managed.
+* Emails include"service" emails like (transaction) Confirmation emails, email for Promotions, and, Welcome emails.
+* Cartera tends to move data around in bulk (only) on a daily basis via database replication (scripts).
+* So for something like Welcome emails, which get sent when a member first signs up for the program,
+  these were getting sent out as much as 48 hours after the member actually joined.
 
   - Our current (old) system (in our Data Warehouse), aggregated new member data (replicated from upstream) on a daily basis,
            assigned our (globally) unique (Salesforce) member ID ("Subscriber Key") and sent (via SFTP) data to Salesforce to send the emails.
