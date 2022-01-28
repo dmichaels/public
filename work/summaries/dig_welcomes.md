@@ -16,6 +16,8 @@ IN PROGRESS ...
 * Delayed Welcome emails due to (mere) daily data (MySQL) replication model of overall data management system.
 * Move to more realtime event-driven data streaming architecture (Kafka) to propogate/process new member data as it arrives.
 
+---
+
 **Little More Background/Detail**
 
 * Cartera/Rakuten provides loyalty/rewards affiliate programs (frontend/backend services) for clients to incentivize customer shopping.
@@ -32,11 +34,11 @@ IN PROGRESS ...
 * Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_),
   the algorithm for which (for historical reasons) is arcane and non-trivial; this dependency a complicating factor.
 
-___
+---
 
 **Solution Detail**
 
-- A POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
+- The POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
   system could improve the user (member) experience, was to employ Kafka as a realtime data pipline.
 
 - Kafka is a realtime, high-throughput (append-only, non-destrutive) streaming data bus (queue, pipeline).
@@ -48,9 +50,10 @@ ___
   - Scalable (linearly) because can add more consumer processes to handle higher volumes of data.
     - Doing so requires consumers to be part of same _consumer group_ whereby incoming messages on the queue
       will be distributed evenly to each consumer in the group.
-- Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
+
 - Components of the new realtime Welcome emails process :
          - New Member Listener
+              - Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
            - Monitors our (MySQL) database for new members and places them on a Kafka queue.
              - The raw new member records are placed, as JSON blob/message on the Kafka "new-member" topic queue.
              - Full disclosure: We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
