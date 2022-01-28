@@ -83,6 +83,8 @@
 
 - <ins><a href="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png">Diagram Here</a></ins>
 
+---
+
 **Results**
 - It worked/works (still in production).
 - Beginning to end took about three months.
