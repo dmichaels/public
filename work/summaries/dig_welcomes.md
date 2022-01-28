@@ -56,10 +56,10 @@
 - <ins>New Member Listener</ins>
   - Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
   - Monitors our (MySQL) database for new members and places them on a Kafka queue.
-    - The raw new member records are placed, as JSON blob/message on the Kafka "new-member" topic queue.
+    - The raw new member records are placed, as JSON blob/message on the Kafka _new_member_ topic queue.
     - > **_Full disclosure:_** We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
       and as a workaround, we had to implement this as a polling process which polled/queried the MySQL member table,
-      periodically (every 20 seconds, say), and wrote the member data to the Kafka new-member topic queue.
+      periodically (every 20 seconds, say), and wrote the member data to the Kafka _new_member_ topic queue.
 
 - <ins>New Member Augmenter</ins>
   - Picks up raw new member data from Kafka, augments with unique Salesforce ID, and placed them on another Kafka queue.
@@ -67,11 +67,11 @@
   - Member data sent to Salesforce need a unique ID ("Subscriber Key") which *only* the Data Warehouse
     knows how to construct. Due to historical (hysterical) reasons, the generation of this ID is non-trivial,
     and replicating the logic of generating this ID was ill-advised.
-  - So this service reads (member records) from the Kafka new-member topic queue (independent from the New Member Listener process).
+  - So this service reads (member records) from the Kafka _new_member_ topic queue (independent from the New Member Listener process).
   - Calls an API in the Data Warehouse we set up to generate the required ID (Subscriber Key),
     from the (per-organization) member ID (from the member table).
   - Augments the member data (read from Kafka) with retrieved Subscriber Key for the member.
-  - Then writes the augmented member record onto another "new-member-augmented" topic (for another, any other, process to pick up).
+  - Then writes the augmented member record onto another _new_member_augmented_ topic (for another, any other, process to pick up).
 
 - <ins>New Member Emailer</ins>
   - Picks up augmented new member data from Kafka and sends to Salesforce via API.
