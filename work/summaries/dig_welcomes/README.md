@@ -96,4 +96,4 @@
 
 **Diagrams**
 
-![dig_welcomes diagram](https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png)
+![dig_welcomes diagram](https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png|width=400)
