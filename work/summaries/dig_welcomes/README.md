@@ -54,8 +54,9 @@
 - Implemented as Spring Boot Java app, using the Java/Kafka SDK.
 
 - App component breackdown below.
+  - Each component is independent; they run concurrently.
   - Deployed as single app, but written in such a way as to be easily changed to deploy as multiple independent apps.
-  - Doing so at outset seemed overkill, and would introduce more moving (deployment) parts.
+    - Doing so at outset seemed overkill, and would introduce more moving (deployment) parts.
   - Each component had HTTP status port to return basic health info, some stats, et cetera, for troublshooting/monitoring.
 
 **Solution Components**
@@ -63,28 +64,24 @@
 - <ins>New Member Listener</ins>
   - Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
   - Monitors our (MySQL) database for new members and places them on a Kafka queue.
-    - The raw new member records are placed, as JSON blob/message on the Kafka _new_member_ topic queue.
+    - The raw new member records are placed, as JSON blobs/messages, on the Kafka _new_member_ topic queue.
     - > **_Full disclosure:_** We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
-      and as a workaround, we had to implement this as a polling process which polled/queried the MySQL member table,
+      and as a workaround, we had to implement this as a brute polling process which polled/queried the MySQL member table,
       periodically (every 20 seconds, say), and wrote the member data to the Kafka _new_member_ topic queue.
 
 - <ins>New Member Augmenter</ins>
-  - Picks up raw new member data from Kafka, augments with unique Salesforce ID, and placed them on another Kafka queue.
-  - Monitors our (MySQL) database for new members and places them on a Kafka queue
-  - Member data sent to Salesforce need a unique ID (_Subscriber Key_) which *only* the Data Warehouse
-    knows how to construct. Due to historical (hysterical) reasons, the generation of this ID is non-trivial,
-    and replicating the logic of generating this ID was ill-advised.
-  - So this service reads (member records) from the Kafka _new_member_ topic queue (independent from the New Member Listener process).
-  - Calls an API in the Data Warehouse we set up to generate the required ID (Subscriber Key),
-    from the (per-organization) member ID (from the member table).
-  - Augments the member data (read from Kafka) with retrieved Subscriber Key for the member.
-  - Then writes the augmented member record onto another _new_member_augmented_ topic (for another process, below, to pick up).
+  - Picks up raw new member data from the Kafka _new_member_ topic queue as they come in.
+  - Augments member data with a _Subscriber Key_ - a globally unique Salesforce member ID.
+    - Any member data sent to Salesforce needs a unique ID (_Subscriber Key_) which <ins>*only*</ins> the Data Warehouse
+      knows how to construct. Due to historical (hysterical) reasons, the generation of this ID is non-trivial,
+      and replicating the logic of generating this ID was ill-advised.
+    - Calls an API in the Data Warehouse we set up to generate the required Subscriber Key,
+      from the given (per-organization) member ID in the data.
+  - Writes the augmented member data to another Kafka topic queue (_new_member_augmented_), for another process (below) to pick up.
 
 - <ins>New Member Emailer</ins>
-  - Picks up augmented new member data from Kafka and sends to Salesforce via API.
-  - And we actually wrote (yet) another Kafka messages to (yet) another Kafka topic queue indicating the record had been sent to Salesforce
-    and then (yet) another consumer process would pickup (read) from that topic queue and write to a _new_members_sent_to_salesforce_ table;
-    but this was really a bit overkill (a bit overengineered).
+  - Picks up augmented new member data from the Kafka _new_member_augmented_ topic queue
+  - Sends to Salesforce via a Salesforce API.
 
 - <ins><a href="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png">Diagram Here</a></ins>
 
