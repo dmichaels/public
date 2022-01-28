@@ -83,12 +83,13 @@
 - It worked/works (still in production).
 - Beginning to end took about 3 months.
 - Long time due to new technology (Kafka) usage.
-  - Core development only couple/few weeks
+  - Core development only couple/few weeks.
   - Decided to use hosted Kafka provider, for scalability, maintainence, monitoring, et cetera.
     - So just working with them and this was  
   - Pretty heavy company process for new apps.
+    - E.g. Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
   - Other new changes incorporated, e.g. getting configuration from AWS Parameter Store.
 
 **Role**
 - Worked closely with team lead (architect) in defining solution.
-- Implemented most of code (Java, Spring Boot, Kafka, MySQL).
+- Implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
