@@ -40,7 +40,7 @@
 **Solution**
 
 - The POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
-  system could improve the user (member) experience, was to employ Kafka as a realtime data pipline.
+  system could improve the user (member) experience, was to employ Kafka as a realtime data pipeline.
 
 - Kafka is a realtime, high-throughput (append-only, non-destrutive) streaming data bus (queue, pipeline).
   - Data (_messages_, _events_) can be written (streamed) to a Kafka named _topic_ (and are timestamped), by any process (producer).
@@ -93,7 +93,7 @@
 - Beginning to end took about three months.
   - Long time due to new technology (Kafka) usage.
   - Core development only a couple/few weeks.
-  - Had to use hosted/managed Kafka provider for scalability, maintainence, monitoring, et cetera.
+  - Had to use hosted/managed Kafka provider for scalability, maintenance, monitoring, et cetera.
     - First Apache Kafka then switched to Eventador/Cloudera.
     - So just working with them and this was a lot of back/forth, troublshooting, et cetera.
   - Pretty heavy company process for new apps, and other new configuration/deployment features incorporated.
