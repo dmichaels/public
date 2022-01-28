@@ -95,4 +95,5 @@
 - Implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
 
 **Diagrams**
+
 <img src="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png " width="700" />
