@@ -31,7 +31,7 @@
   - Emails include _Service_ emails like (transaction) _Confirmation_ emails, email for _Promotions_, and, _Welcome_ emails.
   - Tend to move data around in bulk (only) on a <ins>daily</ins> basis via database (MySQL) replication (MySQL/bash scripts).
   - So for something like Welcome emails, getting sent out as much as 48 hours after the member actually joined.
-* I worked largely with this Data Warehouse system.
+* I worked with this Data Warehouse system.
 * Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_),
   the algorithm for which (for historical reasons) is arcane and non-trivial; this is a data-flow bottleneck dependency is a complicating factor.
 
