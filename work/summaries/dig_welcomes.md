@@ -2,13 +2,15 @@
 
 **Basic Problem**
 
-* Have Web site (online service) where users can signup (create account), becoming "members", and can subsequently login to use site/service.
-  - Send out "Welcome" email on first signup.
-  - Currently (due historical technical reasons) these Welcome emails aren't sent until 24-48 after-the-fact
-  - Goal is to have the Welcome emails sent out nearly immediately after signup.
-* Basic Technical Problem/Solution:
-  - Delayed Welcome emails due to daily (MySQL) database replication based nature of our overall data management system.
-  - Use MySQL new data table watch and Kafka to stream and process data in real-time (ish).
+* Have Web site where users can signup, becoming _members_, and can subsequently login to use site/service.
+* Send out "Welcome" email on first signup.
+* Currently (historical technical reasons) Welcome emails not sent until 24-48 hours after-the-fact.
+* Goal: Send Welcome emails (nearly) immediately after signup.
+
+**Basic Technical Problem/Solution**
+
+* Delayed Welcome emails due to daily (MySQL) database replication based nature of our overall data management system.
+* Use MySQL new data table watch and Kafka to stream and process data in real-time (ish).
 
         - Cartera/Rakuten provides loyalty/rewards affiliate programs (frontend/backend services) for clients to incentivize customer shopping 
           - E.g. We provide ability for United Airlines (the client) customers (the member) to signup/login (with frequent flyer number, say)
