@@ -44,7 +44,7 @@
 - Kafka is a realtime, high-throughput (append-only, non-destrutive) streaming data bus (queue, pipeline).
   - Data (_messages_, _events_) can be written (streamed) to a Kafka named _topic_ (and are timestamped), by any process (producer).
   - Other processes (consumers) may immediately read/stream (asynchronously) the messages from the Kafka topic queue.
-  - Unlike (the default/typical behavior for, say) RabbitMQ, messages are "durable" and stay on the Kafka queue,
+  - Unlike (the default/typical behavior for, say) RabbitMQ, messages are durable, stay on the Kafka queue,
     so multiple independent processes can read/stream from the queue, and starting from any point in time (e.g. for replay purposes,
     for testing, and re-processing in the event of problems).
   - Scalable (linearly) because can add more consumer processes to handle higher volumes of data.
@@ -66,7 +66,7 @@
 - <ins>New Member Augmenter</ins>
   - Picks up raw new member data from Kafka, augments with unique Salesforce ID, and placed them on another Kafka queue.
   - Monitors our (MySQL) database for new members and places them on a Kafka queue
-  - Member data sent to Salesforce need a unique ID ("Subscriber Key") which *only* the Data Warehouse
+  - Member data sent to Salesforce need a unique ID (_Subscriber Key_) which *only* the Data Warehouse
     knows how to construct. Due to historical (hysterical) reasons, the generation of this ID is non-trivial,
     and replicating the logic of generating this ID was ill-advised.
   - So this service reads (member records) from the Kafka _new_member_ topic queue (independent from the New Member Listener process).
