@@ -1,5 +1,4 @@
 **Boston College Librarian Interview Discussion (Show & Tell) Topic**:
-
 _Cartera/Rakuten Realtime Welcome Emails_
 
 ---
