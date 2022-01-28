@@ -73,7 +73,7 @@
   - Calls an API in the Data Warehouse we set up to generate the required ID (Subscriber Key),
     from the (per-organization) member ID (from the member table).
   - Augments the member data (read from Kafka) with retrieved Subscriber Key for the member.
-  - Then writes the augmented member record onto another _new_member_augmented_ topic (for another, any other, process to pick up).
+  - Then writes the augmented member record onto another _new_member_augmented_ topic (for another process, below, to pick up).
 
 - <ins>New Member Emailer</ins>
   - Picks up augmented new member data from Kafka and sends to Salesforce via API.
