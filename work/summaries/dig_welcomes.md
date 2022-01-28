@@ -2,6 +2,8 @@ IN PROGRESS ...
 
 **Discussion (Show & Tell) Topic**: <ins>Cartera/Rakuten Realtime Welcome Emails</ins>
 
+---
+
 **Basic Problem**
 * Web site where users can signup, becoming _members_, and can subsequently login to use site/services.
 * Send out _Welcome_ emails to new members on first signup.
@@ -51,17 +53,19 @@ IN PROGRESS ...
     - Doing so requires consumers to be part of same _consumer group_ whereby incoming messages on the queue
       will be distributed evenly to each consumer in the group.
 
-- Components of the new realtime Welcome emails process :
-         - New Member Listener
-              - Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
-           - Monitors our (MySQL) database for new members and places them on a Kafka queue.
-             - The raw new member records are placed, as JSON blob/message on the Kafka "new-member" topic queue.
-             - Full disclosure: We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
-               and as a workaround, we had to implement this as a polling process which polled/queried the MySQL member table,
-               periodically (every 20 seconds, say), and wrote the member data to the Kafka new-member topic queue.
-         - New Member Augmenter
-           - Picks up raw new member data from Kafka, augments with unique Salesforce ID, and placed them on another Kafka queue.
-           - Monitors our (MySQL) database for new members and places them on a Kafka queue
+- Components of the new realtime Welcome emails process:
+
+  - <ins>New Member Listener</ins>
+    - Kafka/MySQL plugin to monitor our member table in MySQL for new (member) records.
+    - Monitors our (MySQL) database for new members and places them on a Kafka queue.
+      - The raw new member records are placed, as JSON blob/message on the Kafka "new-member" topic queue.
+      - Full disclosure: We actually had problems with the Kafka/MySQL plugin at the time (probably fixed now),
+        and as a workaround, we had to implement this as a polling process which polled/queried the MySQL member table,
+        periodically (every 20 seconds, say), and wrote the member data to the Kafka new-member topic queue.
+
+  - <ins>New Member Augmenter</ins>
+    - Picks up raw new member data from Kafka, augments with unique Salesforce ID, and placed them on another Kafka queue.
+    - Monitors our (MySQL) database for new members and places them on a Kafka queue
            - Member data sent to Salesforce need a unique ID ("Subscriber Key") which *only* the Data Warehouse
              knows how to construct. Due to historical (hysterical) reasons, the generation of this ID is non-trivial,
              and replicating the logic of generating this ID was ill-advised.
