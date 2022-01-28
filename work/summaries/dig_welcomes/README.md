@@ -42,7 +42,7 @@
 - The POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
   system could improve the user (member) experience, was to employ Kafka as a realtime data pipeline.
 
-- Kafka is a realtime, high-throughput (append-only, non-destrutive) streaming data bus (queue, pipeline).
+- Kafka is a realtime, high-throughput (append-only, non-destructive) streaming data bus (queue, pipeline).
   - Data (_messages_, _events_) can be written (streamed) to a Kafka named _topic_ (and are timestamped), by any process (producer).
   - Other processes (consumers) may immediately read/stream (asynchronously) the messages from the Kafka topic queue.
   - Unlike (the default/typical behavior for, say) RabbitMQ, messages are durable, stay on the Kafka queue,
