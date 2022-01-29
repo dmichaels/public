@@ -27,7 +27,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
     and shop through the United Airline portal, and to earn frequent flyer miles for each purchase.
   - Member gets reward (miles, or points, dollars) / Client (e.g. United) gets a cut. / Cartera gets a cut. / Win-win-win.
   - Track transactions, get back from transaction aggregators (e.g. Pepperjam, LinkShare, Performics),
-    processe, send _Accrual File_ to client (validate transactions), get confirmation from client, process response/data, distribute funds/data, et cetera.
+    processed, send _Accrual File_ to client (validate transactions), get confirmation from client, process response, fraud detection, distribute funds/data, et cetera.
   - Member and other data propogated/aggregated to/in _Data Warehouse_, downstream, and sent (SFTP) to Salesforce where marketing emails are sent/managed.
   - Emails include _Service_ emails like (transaction) _Confirmation_ emails, email for _Promotions_, and, _Welcome_ emails.
   - Tend to move data around in bulk (only) on a <ins>daily</ins> basis via database (MySQL) replication (MySQL/bash scripts).
