@@ -126,15 +126,15 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - Can't really show code for above project as no longer with this (or any) company.
 - But got permission and access to a few <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">isolated modules here</a>.
 - Recent Linux PAM work (for HYPR) in C (to be open sourced):
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">hypr-pam</a>
+  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">hypr-pam</a> (C)
 - Recent HYPR RADIUS Server testing (and load testing) command-line utility (not copyrighted):
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-radius-client">hypr-radius-client</a>
+  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-radius-client">hypr-radius-client</a> (Kotlin)
 - Some pretty old code here (no longer copyrighted):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
 - Early Java app (personal project)
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a>
+  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a> (early Java)
 - Couple recent-ish bash scripts (with permission):
   - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (MySQL, Vertica, handling various oddities)
 - Recent iOS/Swift app (personal project):
-  - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a>
+  - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a> (Swift)
