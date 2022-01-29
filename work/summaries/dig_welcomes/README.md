@@ -108,7 +108,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - And we were a little eager to try out Kafka to a little greater extent.
 - After this started using Kafka in a couple other projects, e.g. realtime order placed notification emails.
 
-**Role**
+**My Role**
 - I worked closely with team lead (architect) in defining solution.
 - I implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
 - I implemented the Data Warehouse Subscriber Key API (for the Member Augmenter component).
