@@ -125,18 +125,18 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 **My Code**
 - Can't really show code for above project as no longer with this (or any) company.
 - But got permission and access to a few isolated modules:
-  - <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">Sample modules</a> (Java / most but not all mine)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">Sample modules</a> (Java / _most but not all mine_)
 - Recent Linux PAM work (for HYPR) in C (_to be open sourced_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">hypr-pam</a> (C)
-- Recent HYPR RADIUS Server (load) testing command-line utility (not copyrighted):
+- Recent HYPR RADIUS Server (load) testing command-line utility (_not copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-radius-client">hypr-radius-client</a> (Kotlin)
-- Recent-ish bash scripts to dump/load MySQL/Vertica table handling various oddities (with permission):
+- Recent-ish bash scripts to dump/load MySQL/Vertica table handling various oddities (_with permission_):
   - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (bash, C)
-- Some pretty old code here (no longer copyrighted):
+- Some pretty old code here (_no longer copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/src">C++/Views</a> (C++ / much of it but not all mine)
-- Early Java app (personal project)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/src">C++/Views</a> (C++ / _much of it but not all mine_)
+- Early Java app (_personal project_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a> (early Java)
-- Recent iOS/Swift app (personal project):
+- Recent iOS/Swift app (_personal project_):
   - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a> (Swift)
