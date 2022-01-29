@@ -77,7 +77,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
     - Any member data sent to Salesforce needs a unique ID (_Subscriber Key_) which <ins>*only*</ins> the Data Warehouse
       knows how to construct. Due to historical (hysterical) reasons, the generation of this ID is non-trivial,
       and replicating the logic of generating this ID was ill-advised.
-    - Calls an (newly written) API (simple Java) in the Data Warehouse we set up to generate the required Subscriber Key,
+    - Calls a newly written API (simple Java) in the Data Warehouse we set up to generate the required Subscriber Key,
       from the given (per-organization) member ID in the data.
   - Writes augmented member data to another Kafka topic queue (_new_member_augmented_), for another process to pick up (below).
 
