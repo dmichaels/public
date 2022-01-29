@@ -100,8 +100,8 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - Pretty heavy company process for new apps, and other new configuration/deployment features incorporated.
     - Storing/getting configuration in/from AWS Parameter Store (integrated with Java Spring Boot).
     - New deployment model using Chef.
-    - Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
     - New CI/CD (continuous integration/deployment) pipeline (GitHub, Jenkins) and release process.
+    - Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
 - IMO this may have been over-engineered a bit.
   - Would have been simpler and just fine to collapse the Member Augmenter and member Emails into one component.
   - But imagined possible other uses for the Kafka (_new_member_augmented_) stream of member data (never happened).
