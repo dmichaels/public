@@ -77,7 +77,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
     - Any member data sent to Salesforce needs a unique ID (_Subscriber Key_) which <ins>*only*</ins> the Data Warehouse
       knows how to construct. Due to historical (hysterical) reasons, the generation of this ID is non-trivial,
       and replicating the logic of generating this ID was ill-advised.
-    - Calls an API in the Data Warehouse we set up to generate the required Subscriber Key,
+    - Calls an (newly written) API (simple Java) in the Data Warehouse we set up to generate the required Subscriber Key,
       from the given (per-organization) member ID in the data.
   - Writes augmented member data to another Kafka topic queue (_new_member_augmented_), for another process to pick up (below).
 
@@ -98,9 +98,10 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
     - First Apache Kafka then switched to Eventador/Cloudera.
     - So just working with them and this was a lot of back/forth, troublshooting, et cetera.
   - Pretty heavy company process for new apps, and other new configuration/deployment features incorporated.
-    - Storing/getting configuration in/from AWS Parameter Store.
+    - Storing/getting configuration in/from AWS Parameter Store (integrated with Java Spring Boot).
     - New deployment model using Chef.
     - Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
+    - New CI/CD (continuous integration/deployment) pipeline (GitHub, Jenkins) and release process.
 - IMO this may have been over-engineered a bit.
   - Would have been simpler and just fine to collapse the Member Augmenter and member Emails into one component.
   - But imagined possible other uses for the Kafka (_new_member_augmented_) stream of member data (never happened).
@@ -114,13 +115,15 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - I worked with Eventador helping with configuration, access, troubleshooting the hosted Kafka system (via Slack, email).
 - I worked closely with the email marketing team (which manages Salesforce), defining member data we send to them for emailing. 
   - Helped them figure out, setup, configure Salesforce event-driven email triggering mechanism.
+- I worked closely QA on testing requirements/scenarios, et cetera.
+- Worked within basic Agile/Scrum process (three week sprints)
+- All code management via GitHub/GitLab, branching, pull/merge requests, code reviews, et cetera.
 - Pre-COVID so most collaboration in-office/in-person, and Slack, email.
-- Worked within basic Agile/Scrum process (three week sprints).
 
 ---
 
 **Code**
-- Can't really show code for this as no longer with this (or any) company.
+- Can't really show code for above project as no longer with this (or any) company.
 - But got permission and access to a few <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">isolated modules here</a>.
 - Very recent Linux PAM work (for HYPR) in C, which will be open sourced:
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">Linux PAM</a>

@@ -1,8 +1,3 @@
-/**
- * NewMemberListener.java
- * <p>
- * Copyright (c) 2018 Cartera Commerce, Inc. All rights reserved.
- */
 package com.cartera.dig.service.welcomes.newmember;
 
 import com.cartera.dig.common.datawarehouse.SubscriberKeyService;
