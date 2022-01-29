@@ -126,7 +126,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - Can't really show code for above project as no longer with this (or any) company.
 - But got permission and access to a few <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">isolated modules here</a>.
 - Very recent Linux PAM work (for HYPR) in C, which will be open sourced:
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">Linux PAM</a>
+  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">hypr-pam</a>
 - Very recent HYPR RADIUS Server load testing command-line utility:
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-radius-client">hypr-radius-client</a>
 - Some of my pretty old (no-longer-copyrighted) code here:
