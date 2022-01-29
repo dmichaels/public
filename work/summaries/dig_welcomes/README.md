@@ -132,6 +132,6 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a>
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a>
 - Couple recent-ish bash scripts (with permission):
-  - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a>
+  - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (MySQL, Vertica, handling various oddities)
 - Newer, an iOS/Swift app:
   - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a>
