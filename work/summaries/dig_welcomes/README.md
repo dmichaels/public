@@ -128,7 +128,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">Sample modules</a> (Java / most but not all mine)
 - Recent Linux PAM work (for HYPR) in C (to be open sourced):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">hypr-pam</a> (C)
-- Recent HYPR RADIUS Server testing (and load testing) command-line utility (not copyrighted):
+- Recent HYPR RADIUS Server (load) testing command-line utility (not copyrighted):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-radius-client">hypr-radius-client</a> (Kotlin)
 - Recent-ish bash scripts to dump/load MySQL/Vertica table handling various oddities (with permission):
   - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (bash, C)
