@@ -124,7 +124,8 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 **My Code**
 - Can't really show code for above project as no longer with this (or any) company.
-- But got permission and access to a few <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">isolated modules here</a> (Java Spring Boot).
+- But got permission and access to a few:
+  - Isolated Realtime Welcomes Email code <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">Sample modules</a> (Java / most but not all mine)
 - Recent Linux PAM work (for HYPR) in C (to be open sourced):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">hypr-pam</a> (C)
 - Recent HYPR RADIUS Server testing (and load testing) command-line utility (not copyrighted):
