@@ -1,0 +1,77 @@
+.so /usr/LPI/bin/header
+.S 11
+.Hl
+.sp
+\f3NAME\f1
+.in +5
+.sp .5
+lc - count source program lines
+.in -5
+.sp
+\f3USAGE\f1
+.sp .5
+.in +5
+\f3lc\f1 [ \f3-b\f1 ] [ \f3-t\f1 ] [ \f3-asm\f1 | \f3-c\f1 | \f3-csh\f1 | \f3-par\f1 ] [ [ \f2file\f1 ]... | \f3-f\f1 \f2file_list_file\f1 ]
+.in -5
+.sp
+\f3DESCRIPTION\f1
+.in +5
+.sp .5
+This program will count the total number of lines in one or more
+files (or the standard input) optionally deleting blank lines, or
+comments.
+.sp .5
+If one or more file arguments are given, then the lines of those files
+will be counted.
+.sp .5
+If no file arguments are specified, then lines in the standard input
+will be counted.
+.sp .5
+If the \f3-f\f1 option is given with a file name following it, then that
+file is assumed to contain a list of file names whose lines will be
+counted.
+.sp .5
+If the \f3-t\f1 option is given, then only the total line count of the
+lines in all the files specified will be given rather than the
+default file by file count.
+.sp .5
+If the \f3-b\f1 option is given, then blank lines will not be counted.
+.sp .5
+If the \f3-asm\f1 option is given, then
+each typical assembler style comment
+will be interpreted as a single NEWLINE.
+.br
+Comment format:  PIPE \f2[comment-text]\f1 NEWLINE.
+.sp .5
+If the \f3-csh\f1 option is given, then
+each Unix C-Shell style comment
+will be interpreted as a single NEWLINE.
+.br
+Comment format:  POUND \f2[comment-text]\f1 NEWLINE.
+.sp .5
+If the \f3-c\f1 is given, then
+each C (and PL/I) style comment
+will be interpreted as a single SPACE.
+.br
+Comment format:  SLASH STAR \f2[comment-text]\f1 STAR SLASH.
+.sp .5
+If the \f3-par\f1 option is given, then
+each LPI parser/lexer generator language style comment
+will be interpreted as a single NEWLINE.
+.br
+Comment format:  DASH DASH \f2[comment-text]\f1 NEWLINE.
+.in -5
+.sp
+\f3BUGS\f1
+.in +5
+There is no way to recognize more than one kind of comment.
+.sp .5
+A start-of-comment-indicator within a string-literal or
+character-constant is (erroneously) taken to be the start of a comment
+.in -5
+.sp
+\f3SEE ALSO\f1
+.sp .5
+.in +5
+wc(1).
+.in -5
