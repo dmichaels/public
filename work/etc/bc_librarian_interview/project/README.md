@@ -85,7 +85,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - Picks up augmented new member data from the Kafka _new_member_augmented_ topic queue.
   - Sends to Salesforce via a Salesforce API.
 
-- <ins><a href="https://github.com/dmichaels/public/blob/master/work/summaries/dig_welcomes/dig_welcomes.png">Diagram Here</a></ins>
+- <ins><a href="https://github.com/dmichaels/public/blob/master/work/etc/bc_librarian_interview/project/diagram.png">Diagram Here</a></ins>
 
 ---
 
@@ -125,22 +125,22 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 **Some Code of Mine**
 - Can't really show code for above project as no longer with this (or any) company.
 - But got permission and access to a few isolated modules:
-  - <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">Sample modules</a> (Java)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/etc/bc_librarian_interview/project/code_sample">Sample modules</a> (Java)
 - Recent Linux PAM work (for HYPR) in C (_to be open sourced_):
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-pam">hypr-pam</a> (C)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam">hypr-pam</a> (C)
 - Recent HYPR RADIUS Server (load) testing command-line utility (_not copyrighted_):
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-radius-client">hypr-radius-client</a> (Kotlin)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-radius-client">hypr-radius-client</a> (Kotlin)
 - Recent-ish bash scripts to dump/load MySQL/Vertica table handling various oddities (_with permission_):
   - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (bash, C)
 - Fairly old stuff here (_no longer copyrighted_):
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/src">C++/Views UI Library</a> (C++ | _much of but not nearly all mine_)
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/lincoln">MIT Lincon Laboratory Apps</a> (C)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/src">C++/Views UI Library</a> (C++ | _much of but not nearly all mine_)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/lincoln">MIT Lincon Laboratory Apps</a> (C)
 - Early Java app (_personal project_)
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a> (early Java)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/apps/tetris">Tetris</a> (early Java)
 - Recent iOS app (_personal project_):
-  - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a> (Swift)
+  - <a href="https://github.com/dmichaels/public/tree/master/code/xcode/SetGame">SET Game</a> (Swift)
 
 ---
 
