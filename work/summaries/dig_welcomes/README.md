@@ -147,4 +147,4 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 **Links**
 
 - <a href="https://github.com/dmichaels/public/blob/master/work/resume.md">Resume</a>
-- <a href="https://docs.google.com/document/d/1IfFhVwaQIJW3q-JkraAKyGyUCCi5gGflugGdMJB1TVQ/edit#heading=h.2qpcfapfn87t">BBoston College Systems Librarian Info</a>
+- <a href="https://docs.google.com/document/d/1IfFhVwaQIJW3q-JkraAKyGyUCCi5gGflugGdMJB1TVQ/edit#heading=h.2qpcfapfn87t">Boston College Systems Librarian Info</a>
