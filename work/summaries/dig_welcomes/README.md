@@ -135,7 +135,8 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - Some pretty old code here (_no longer copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/src">C++/Views</a> (C++ | _much of but not nearly all mine_)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/src">C++/Views UI Library</a> (C++ | _much of but not nearly all mine_)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/lincoln/WIRELIST">MIT Lincon Laboratory Stuff</a> (C)
 - Early Java app (_personal project_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a> (early Java)
 - Recent iOS/Swift app (_personal project_):
