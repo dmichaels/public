@@ -141,3 +141,9 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a> (early Java)
 - Recent iOS app (_personal project_):
   - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a> (Swift)
+
+---
+
+**Links**
+
+- <a href="https://github.com/dmichaels/public/blob/master/work/resume.md" target="_top">Resume</a>
