@@ -46,8 +46,8 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   system could improve the user (member) experience, was to employ Kafka as a realtime data pipeline.
 
 - Kafka is a realtime, high-throughput (append-only, non-destructive) streaming data bus (queue, pipeline).
-  - Data (_messages_, _events_) can be written (streamed) to a Kafka named _topic_ (and are timestamped), by any process (producer).
-  - Other processes (consumers) may immediately read/stream (asynchronously) the messages from the Kafka topic queue.
+  - Data (_messages_, _events_) can be written (streamed) to a Kafka named _topic_ (and are timestamped), by one process (producer).
+  - And processes (consumers) may immediately read/stream (asynchronously) the messages from the Kafka topic queue.
   - Unlike (the default/typical behavior for, say) RabbitMQ, messages are durable, stay on the Kafka queue,
     so multiple independent processes can read/stream from the queue, and starting from any point in time (e.g. for replay purposes,
     for testing, and re-processing in the event of problems).
