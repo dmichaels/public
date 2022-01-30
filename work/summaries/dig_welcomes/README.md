@@ -132,12 +132,12 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/hypr/hypr-radius-client">hypr-radius-client</a> (Kotlin)
 - Recent-ish bash scripts to dump/load MySQL/Vertica table handling various oddities (_with permission_):
   - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (bash, C)
-- Some pretty old code here (_no longer copyrighted_):
+- Fairly old stuff here (_no longer copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/src">C++/Views UI Library</a> (C++ | _much of but not nearly all mine_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/lincoln/WIRELIST">MIT Lincon Laboratory Stuff</a> (C)
 - Early Java app (_personal project_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a> (early Java)
-- Recent iOS/Swift app (_personal project_):
+- Recent iOS app (_personal project_):
   - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a> (Swift)
