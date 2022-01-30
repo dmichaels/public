@@ -146,4 +146,4 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 **Links**
 
-- <a href="https://github.com/dmichaels/public/blob/master/work/resume.md" target="_top">Resume</a>
+- <a href="https://github.com/dmichaels/public/blob/master/work/resume.md" target="_blank">Resume</a>
