@@ -8,6 +8,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 * Send out _Welcome_ emails to new members on first signup.
 * Currently (for historical technical reasons) Welcome emails not sent until 24-48 hours after-the-fact.
   - Bad user experience, lowers confidence in and lessens engagement with the service.
+* This delay due to (once) daily data (MySQL) replication model of overall system architecture.
 
 **Basic Goal**
 * Send Welcome emails (nearly) immediately after signup.
@@ -15,25 +16,26 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 **Basic Solution**
 
-* Delayed Welcome emails due to (mere) daily data (MySQL) replication model of overall data management system.
-* Move to more realtime event-driven data streaming architecture (Kafka) to propogate/process new member data as it arrives.
+* Move to more realtime event-driven data streaming architecture to process new member data as it arrives.
+* Use Kafka as realtime data pipeline and Salesforce API to trigger email sends.
 
 ---
 
 **Some More Background** (_skip if short on time_)
 
 * Cartera/Rakuten provides loyalty/rewards affiliate programs (frontend/backend services) for clients to incentivize customer shopping.
-  - E.g. Provide ability for United Airlines (the client) customers (the member) to signup/login (with frequent flyer number)
-    and shop through the United Airline portal, and to earn frequent flyer miles for each purchase.
-  - Member gets reward (miles, or points, dollars) / Client (e.g. United) gets a cut. / Cartera gets a cut. / Win-win-win.
-  - Track transactions, get back from transaction aggregators (e.g. Pepperjam, LinkShare, Performics),
-    processed, send _Accrual File_ to client (validate transactions), get confirmation from client, process response, fraud detection, distribute funds/data, et cetera.
-  - Member and other data propogated/aggregated to/in _Data Warehouse_, downstream, and sent (SFTP) to Salesforce where marketing emails are sent/managed.
+  - For example ...
+  - United Airlines customers can signup/login (with frequent flyer number)
+    and shop via the United Airline portal, and earn frequent flyer miles for each purchase.
+  - Member gets rewards (miles, or points or dollars); client (e.g. United) gets a cut; Cartera gets a cut; win-win-win.
+  - Cartera track transactions, gets back from aggregators (e.g. Pepperjam, LinkShare, Performics),
+    sends _Accrual File_ to client (to validate transactions) for confirmation, does fraud detection, distributes funds/data, et cetera.
+  - Member and other data replicated to and aggregated in _Data Warehouse_, and sent (SFTP) to Salesforce where marketing emails are sent/managed.
   - Emails include _Service_ emails like (transaction) _Confirmation_ emails, email for _Promotions_, and, _Welcome_ emails.
-  - Tend to move data around in bulk (only) on a <ins>daily</ins> basis via database (MySQL) replication (MySQL/bash scripts).
+  - Cartera tends to move data around in bulk (only) on a <ins>daily</ins> basis via database (MySQL) replication (MySQL/bash scripts).
   - So for something like Welcome emails, getting sent out as much as 48 hours after the member actually joined.
 * Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_),
-  the algorithm for which (for historical reasons) is arcane and non-trivial; this is a data-flow bottleneck dependency is a complicating factor.
+  the algorithm for which (for historical reasons) is arcane and non-trivial; this data-flow bottleneck dependency is a complicating factor.
 * BTW this Data Warehouse was not really a "data warehouse" in any real rigourous technical sense, just a repository and aggregation system (MySQL, and Groovy, and bash scripts).
 
 ---
@@ -95,7 +97,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - Long time due to new technology (Kafka) usage, et.al.
   - Core development only a couple/few weeks.
   - Had to use hosted/managed Kafka provider for scalability, maintenance, monitoring, et cetera.
-    - First Apache Kafka then switched to Eventador/Cloudera.
+    - First Apache Kafka then switched to Eventador/Cloudera; and encryption requirements/complexities.
     - So just working with them and this was a lot of back/forth, troublshooting, et cetera.
   - Pretty heavy company process for new apps, and other new configuration/deployment features incorporated.
     - Storing/getting configuration in/from AWS Parameter Store (integrated with Java Spring Boot).
