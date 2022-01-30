@@ -122,7 +122,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 ---
 
-**My Code**
+**Some Code of Mine**
 - Can't really show code for above project as no longer with this (or any) company.
 - But got permission and access to a few isolated modules:
   - <a href="https://github.com/dmichaels/public/tree/master/work/summaries/dig_welcomes/sample_code">Sample modules</a> (Java | _most but not all mine_)
@@ -135,7 +135,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - Some pretty old code here (_no longer copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
-  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/src">C++/Views</a> (C++ | _much of it but not all mine_)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/src">C++/Views</a> (C++ | _much of but not nearly all mine_)
 - Early Java app (_personal project_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/dev/liant/views/apps/tetris">Tetris</a> (early Java)
 - Recent iOS/Swift app (_personal project_):
