@@ -142,7 +142,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - Early Java app (_personal project_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/apps/tetris">Tetris</a> (early Java)
 - Recent iOS app (_personal project_):
-  - <a href="https://github.com/dmichaels/public/tree/master/code/xcode/SetGame">SET Game</a> (Swift)
+  - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a> (Swift)
 
 ---
 
