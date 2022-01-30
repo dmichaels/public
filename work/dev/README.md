@@ -1,2 +1,2 @@
 Miscellany from the past. <br />
-This stuff is no longer copyrighted.
+All this stuff is either no longer copyrighted or is here with permission.
