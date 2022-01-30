@@ -97,7 +97,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - Long time due to new technology (Kafka) usage, et.al.
   - Core development only a couple/few weeks.
   - Had to use hosted/managed Kafka provider for scalability, maintenance, monitoring, et cetera.
-    - First Apache Kafka then switched to Eventador/Cloudera; and encryption requirements/complexities.
+    - First Apache Kafka then switched to Eventador/Cloudera; also, encryption requirements/complexities.
     - So just working with them and this was a lot of back/forth, troublshooting, et cetera.
   - Pretty heavy company process for new apps, and other new configuration/deployment features incorporated.
     - Storing/getting configuration in/from AWS Parameter Store (integrated with Java Spring Boot).
