@@ -140,7 +140,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - Fairly old stuff here (_no longer copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
-  - <a href="https://github.com/dmichaels/etc/tree/main/work/liant/lpic%2B%2B">LPI-C++ Compiler</a> (PL/I, C | _much of but not nearly all mine_)
+#  - <a href="https://github.com/dmichaels/etc/tree/main/work/liant/lpic%2B%2B">LPI-C++ Compiler</a> (PL/I, C | _much of but not nearly all mine_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/src">C++/Views UI Library</a> (C++ | _much of but not nearly all mine_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/lincoln">MIT Lincon Laboratory Apps</a> (C)
 - Early Java app (_personal project_)
