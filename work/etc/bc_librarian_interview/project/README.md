@@ -30,8 +30,8 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - Member gets rewards (miles, or points or dollars); client (e.g. United) gets a cut; Cartera gets a cut; win-win-win.
   - Cartera track transactions, gets back from aggregators (e.g. Pepperjam, LinkShare, Performics),
     sends _Accrual File_ to client (to validate transactions) for confirmation, does fraud detection, distributes funds/data, et cetera.
-  - Member and other data replicated to and aggregated in _Data Warehouse_, and sent (SFTP) to Salesforce where marketing emails are sent/managed.
-  - Emails include _Service_ emails like (transaction) _Confirmation_ emails, email for _Promotions_, and, _Welcome_ emails.
+  - Member and other data replicated to and aggregated in _Data Warehouse_, and sent from there (via SFTP) to Salesforce where marketing emails are sent/managed.
+  - Salesforce-sent mails include _Service_ emails like (transaction) _Confirmation_ emails, email for _Promotions_, and, _Welcome_ emails.
   - Cartera tends to move data around in bulk (only) on a <ins>daily</ins> basis via database (MySQL) replication (MySQL/bash scripts).
   - So for something like Welcome emails, getting sent out as much as 48 hours after the member actually joined.
 * Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_),
@@ -42,7 +42,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 **Solution**
 
-- The POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
+- The solution, which served as a POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
   system could improve the user (member) experience, was to employ Kafka as a realtime data pipeline.
 
 - Kafka is a realtime, high-throughput (append-only, non-destructive) streaming data bus (queue, pipeline).
@@ -108,10 +108,11 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - Would have been simpler and just fine to collapse the Member Augmenter and member Emails into one component.
   - But imagined possible other uses for the Kafka (_new_member_augmented_) stream of member data (never happened).
   - And we were a little eager to try out Kafka to a little greater extent.
-- After this started using Kafka in a couple other projects, e.g. realtime order placed notification emails.
+- After this started using Kafka in a couple other projects, e.g. realtime _Order Placed Notification_ emails.
 
 **My Role**
 - I worked closely with team lead (architect) in defining solution.
+- I learned about Kafka and implemented couple POC
 - I implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
 - I implemented the Data Warehouse Subscriber Key API (for the Member Augmenter component).
 - I worked with Eventador helping with configuration, access, troubleshooting the hosted Kafka system (via Slack, email).
@@ -124,7 +125,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 ---
 
-**Some Code of Mine**
+**Some of my code ...**
 - Can't really show code for above project as no longer with this (or any) company.
 - But got permission and access to a few isolated modules:
   - <a href="https://github.com/dmichaels/public/tree/master/work/etc/bc_librarian_interview/project/code_sample">Sample modules</a> (Java)
