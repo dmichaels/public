@@ -104,7 +104,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
     - New deployment model using Chef.
     - New CI/CD (continuous integration/deployment) pipeline (GitHub, Jenkins) and release process.
     - Getting logging right, setting up for Splunk, monitoring, reporting, et cetera.
-- IMO this may have been over-engineered a bit.
+- IMO this may have been over-engineered a bit, for example:
   - Would have been simpler and just fine to collapse the Member Augmenter and member Emails into one component.
   - But imagined possible other uses for the Kafka (_new_member_augmented_) stream of member data (never happened).
   - And we were a little eager to try out Kafka to a little greater extent.
