@@ -112,13 +112,15 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 **My Role**
 - I worked closely with team lead (architect) in defining solution.
-- I learned about Kafka and implemented couple POC
+- I learned about Kafka and implemented couple POC utilities.
 - I implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
 - I implemented the Data Warehouse Subscriber Key API (for the Member Augmenter component).
 - I worked with Eventador helping with configuration, access, troubleshooting the hosted Kafka system (via Slack, email).
 - I worked closely with the email marketing team (which manages Salesforce), defining member data we send to them for emailing. 
   - Helped them figure out, setup, configure Salesforce event-driven email triggering mechanism.
 - I worked closely QA on testing requirements/scenarios, et cetera.
+- I worked closely with OPs on deployment, configuration, troubleshooting.
+- I wrote some of the (internal) documentation on design, implemention, configuration, deployment, release notes.
 - Worked within basic Agile/Scrum process (three week sprints)
 - All code management via GitHub/GitLab, branching, pull/merge requests, code reviews, et cetera.
 - Pre-COVID so most collaboration in-office/in-person, and Slack, email.
