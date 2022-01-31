@@ -108,11 +108,11 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
   - Would have been simpler and just fine to collapse the Member Augmenter and member Emails into one component.
   - But imagined possible other uses for the Kafka (_new_member_augmented_) stream of member data (never happened).
   - And we were a little eager to try out Kafka to a little greater extent.
-- After this started using Kafka in a couple other projects, e.g. realtime _Order Placed Notification_ emails.
+- After this started using Kafka in some other projects, e.g. realtime _Order Placed Notification_ emails.
 
 **My Role**
 - I worked closely with team lead (architect) in defining solution.
-- I learned about Kafka and implemented couple POC utilities.
+- I learned about Kafka and implemented a couple POC utilities.
 - I implemented most of code (Java, Spring Boot, Kafka, MySQL), with some help from one or two other team members.
 - I implemented the Data Warehouse Subscriber Key API (for the Member Augmenter component).
 - I worked with Eventador helping with configuration, access, troubleshooting the hosted Kafka system (via Slack, email).
