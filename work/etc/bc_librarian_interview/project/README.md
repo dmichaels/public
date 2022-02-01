@@ -32,7 +32,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
     sends _Accrual File_ to client (to validate transactions) for confirmation, does fraud detection, distributes funds/data, et cetera.
   - Member and other data replicated to and aggregated in _Data Warehouse_, and sent from there (via SFTP) to Salesforce where marketing emails are sent/managed.
   - Salesforce-sent mails include _Service_ emails like (transaction) _Confirmation_ emails, email for _Promotions_, and, _Welcome_ emails.
-  - Cartera tends to move data around in bulk (only) on a <ins>daily</ins> basis via database (MySQL) replication (MySQL/bash scripts).
+* Cartera tends to move data around in bulk (only) on a <ins>daily</ins> basis via database (MySQL) replication (MySQL/bash scripts).
   - So for something like Welcome emails, getting sent out as much as 48 hours after the member actually joined.
 * Data Warehouse uniquely responsible for assigning globally unique Salesforce member ID (_Subscriber Key_),
   the algorithm for which (for historical reasons) is arcane and non-trivial; this data-flow bottleneck dependency is a complicating factor.
