@@ -124,7 +124,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - I worked closely QA on testing requirements/scenarios, et cetera.
 - I worked closely with OPs on deployment, configuration, troubleshooting.
 - I wrote some of the (internal) documentation on design, implemention, configuration, deployment, release notes.
-- Worked within basic Agile/Scrum process (three week sprints)
+- Worked within basic Agile/Scrum process (three week sprints).
 - All code management via GitHub/GitLab, branching, pull/merge requests, code reviews, et cetera.
 - Pre-COVID so most collaboration in-office/in-person, and Slack, email.
 
