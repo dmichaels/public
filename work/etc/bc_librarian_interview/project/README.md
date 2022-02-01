@@ -19,7 +19,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 * Move to more realtime event-driven data streaming architecture to process new member data as it arrives.
 * Use Kafka as realtime data pipeline and Salesforce API to trigger email sends.
   - Why not just have simple process pick up new members and send emails directly (via API)?
-    - Not scalable (even if async/threaded).
+    - Not scalable (even if async/threaded); especially with Data Warehouse Subscriber Key dependence (below).
     - And wanted to create a POC (proof-of-concept) for moving toward more realtime processing in general.
 
 ---
