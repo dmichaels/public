@@ -153,6 +153,6 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 - <a href="https://github.com/dmichaels/public/blob/master/work/resume.md">Resume</a>
 - <a href="https://github.com/dmichaels/public/blob/master/work/etc/bc_librarian_interview/coverletter.pdf">Cover Letter</a>
-- <a href="https://docs.google.com/document/d/1IfFhVwaQIJW3q-JkraAKyGyUCCi5gGflugGdMJB1TVQ/edit#heading=h.2qpcfapfn87t">Boston College Systems Librarian Info</a>
 - <a href="https://jobs.code4lib.org/jobs/51157-systems-librarian">Boston College Systems Librarian Job Posting</a>
 - <a href="https://bc.csod.com/ux/ats/careersite/2/home/requisition/5714?c=bc&lang=en-US">Boston College Library Applications Developer Job Posting</a>
+- <a href="https://docs.google.com/document/d/1IfFhVwaQIJW3q-JkraAKyGyUCCi5gGflugGdMJB1TVQ/edit#heading=h.2qpcfapfn87t">Boston College Systems Librarian Info</a>
