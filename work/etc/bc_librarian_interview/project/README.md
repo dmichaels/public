@@ -43,7 +43,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 ---
 
-**Solution** (<ins><a href="https://github.com/dmichaels/public/blob/master/work/etc/bc_librarian_interview/project/diagram.png">Diagram</a></ins>)
+**Solution** - <ins><a href="https://github.com/dmichaels/public/blob/master/work/etc/bc_librarian_interview/project/diagram.png">Diagram</a></ins>
 
 - The solution, which served as a POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
   system could improve the user (member) experience, was to employ Kafka as a realtime data pipeline.
