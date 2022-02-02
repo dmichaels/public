@@ -135,7 +135,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - But got permission and access to a few isolated modules:
   - <a href="https://github.com/dmichaels/public/tree/master/work/etc/bc_librarian_interview/project/code_sample">Sample modules</a> (Java)
 - Recent Linux PAM work (for HYPR) in C (_to be open sourced_):
-  - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam">hypr-pam</a> (C) / <a href=="">Diagram</a>
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam">hypr-pam</a> (C) / <a href=="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam/diagram.png">Diagram</a>
 - Recent HYPR RADIUS Server (load) testing command-line utility (_not copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-radius-client">hypr-radius-client</a> (Kotlin)
 - Recent-ish bash scripts to dump/load MySQL/Vertica table handling various oddities (_with permission_):
