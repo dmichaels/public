@@ -20,7 +20,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 * Use Kafka as realtime data pipeline and Salesforce API to trigger email sends.
   - Why not just have simple process pick up new members and send emails directly (via API)?
     - Not scalable (even if async/threaded); especially with Data Warehouse Subscriber Key dependence (below).
-    - And wanted to create a POC (proof-of-concept) for moving toward more realtime processing in general.
+    - And wanted this to serve as POC (proof-of-concept) for moving toward more realtime processing in general.
 
 ---
 
@@ -143,7 +143,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - Fairly old code here (_no longer copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
-  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/src">C++/Views UI Library</a> (C++ | _much of but not nearly all mine_)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/src">C++/Views GUI Library</a> (C++ | _much of but not nearly all mine_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/lincoln">MIT Lincon Laboratory Apps</a> (C)
 - Early Java app (_personal project_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/apps/tetris">Tetris</a> (early Java)
