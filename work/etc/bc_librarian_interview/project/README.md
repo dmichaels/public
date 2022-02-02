@@ -26,7 +26,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 **Some More Background** (_skip if short on time_)
 
-* Cartera/Rakuten provides loyalty/rewards affiliate programs (frontend/backend services) for clients to incentivize customer shopping.
+* Cartera (acquired by Rakuten in 2017) provides loyalty/rewards affiliate programs (frontend/backend services) for clients to incentivize customer shopping.
   - For example ...
   - United Airlines customers can signup/login (with frequent flyer number)
     and shop via the United Airline portal, and earn frequent flyer miles for each purchase.
