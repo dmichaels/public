@@ -43,7 +43,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 ---
 
-**Solution**
+**Solution** (<ins><a href="https://github.com/dmichaels/public/blob/master/work/etc/bc_librarian_interview/project/diagram.png">Diagram</a></ins>)
 
 - The solution, which served as a POC (proof-of-concept) project, to demonstrate how a more realtime, less daily-replication driven,
   system could improve the user (member) experience, was to employ Kafka as a realtime data pipeline.
@@ -89,8 +89,6 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - <ins>New Member Emailer</ins>
   - Picks up augmented new member data from the Kafka _new_member_augmented_ topic queue.
   - Sends to Salesforce via a Salesforce API.
-
-- <ins><a href="https://github.com/dmichaels/public/blob/master/work/etc/bc_librarian_interview/project/diagram.png">Diagram Here</a></ins>
 
 ---
 
