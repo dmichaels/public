@@ -62,7 +62,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 
 - App component breakdown below.
   - Each component is independent; they run concurrently.
-  - Deployed as single app, but written in such a way as to be easily changed to deploy as multiple independent apps.
+  - Deployed as single app; written as to be easily changed to deploy as multiple independent apps (_microservices_).
     - Doing so at outset seemed overkill, and would introduce more moving (deployment) parts.
   - Each component had HTTP status port to return basic health info, some stats, et cetera, for troublshooting/monitoring.
 
