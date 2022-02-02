@@ -139,7 +139,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - Recent HYPR RADIUS Server (load) testing command-line utility (_not copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-radius-client">hypr-radius-client</a> (Kotlin)
 - Recent-ish bash scripts to dump/load MySQL/Vertica table handling various oddities (_with permission_):
-  - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (bash, C)
+  - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (bash)
 - Fairly old code here (_no longer copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
