@@ -139,7 +139,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - Recent-ish bash scripts to dump/load MySQL/Vertica table handling various oddities (_with permission_):
   - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (bash, C)
 - Fairly old code here (_no longer copyrighted_):
-  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/preprocessor">ANSI-C Preprocessor</a> (PL/I, C)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/preprocessor">ANSI-C/C++ Preprocessor</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/src">C++/Views GUI Library</a> (C++ | _much of but not nearly all mine_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/lincoln">MIT Lincon Laboratory Apps</a> (C)
