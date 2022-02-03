@@ -120,7 +120,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - I worked closely with the email marketing team (which manages Salesforce), defining member data we send to them for emailing. 
   - Helped them figure out, setup, configure Salesforce event-driven email triggering mechanism.
 - I worked closely QA on testing requirements/scenarios, et cetera.
-- I worked closely with OPs on deployment, configuration, troubleshooting.
+- I worked with OPs on deployment, configuration, troubleshooting, et cetera.
 - I wrote some of the (internal) documentation on design, implemention, configuration, deployment, release notes.
 - Worked within basic Agile/Scrum process (three week sprints).
 - All code management via GitHub/GitLab, branching, pull/merge requests, code reviews, et cetera.
