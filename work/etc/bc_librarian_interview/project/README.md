@@ -122,6 +122,7 @@ _Cartera/Rakuten Realtime Welcome Emails_ (circa 2018)
 - I worked closely QA on testing requirements/scenarios, et cetera.
 - I worked with OPs on deployment, configuration, troubleshooting, et cetera.
 - I wrote some of the (internal) documentation on design, implemention, configuration, deployment, release notes.
+- I updated backoffic dashboard UI (which I created - Node.js/Angular) with monitoring/reporting info (<a href="https://github.com/dmichaels/public/blob/master/work/etc/bc_librarian_interview/project/dig_dashboard.png">screenshot</a>).
 - Worked within basic Agile/Scrum process (three week sprints).
 - All code management via GitHub/GitLab, branching, pull/merge requests, code reviews, et cetera.
 - Pre-COVID so most collaboration in-office/in-person, and Slack, email.
