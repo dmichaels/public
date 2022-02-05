@@ -4,6 +4,7 @@ Notes for interview for Boston College Systems Librarian and/or Applications Dev
 
 **Links**
 
+- <a href="https://github.com/dmichaels/public/blob/master/work/etc/boston_college_librarian_interview/README.md">Show & Tell Topic Notes</a>
 - <a href="https://github.com/dmichaels/public/blob/master/work/resume.md">Resume</a>
 - <a href="https://github.com/dmichaels/public/blob/master/work/etc/boston_college_librarian_interview/coverletter.pdf">Cover Letter</a>
 - <a href="https://jobs.code4lib.org/jobs/51157-systems-librarian">Boston College Systems Librarian Job Posting</a>
