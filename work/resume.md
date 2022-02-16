@@ -69,6 +69,7 @@ Member of technical staff (Group 24). Assisted in software management of various
 B.S. in Computer Science, *magna cum laude*.
 
 <ins>**Some Code Samples ...**
+<br />
 Cannot show much professionally written code due to copyright restrictions. Here are some samples for code which either is no longer copyrighted, is open sourced, or is here with permission.
 - But got permission and access to a few isolated modules:
   - <a href="https://github.com/dmichaels/public/tree/master/work/etc/boston_college_librarian_interview/project/code_sample">Sample modules</a> (Java)
