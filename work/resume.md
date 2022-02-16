@@ -67,3 +67,23 @@ Member of technical staff (Group 24). Assisted in software management of various
 
 <ins>**University of Massachusetts, Boston**</ins> <br />
 B.S. in Computer Science, *magna cum laude*.
+
+<ins>**Some Code Samples ...**
+- Can't show much professionally written code due to copyright restrictions. Here are some samples for code which either is no longer copyrighted, is open sourced, or is here with permission.
+- But got permission and access to a few isolated modules:
+  - <a href="https://github.com/dmichaels/public/tree/master/work/etc/boston_college_librarian_interview/project/code_sample">Sample modules</a> (Java)
+- Recent Linux PAM work (for HYPR) in C (_to be open sourced_):
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam">hypr-pam</a> (C) (<a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam/diagram.png?">diagram</a>)
+- Recent HYPR RADIUS Server (load) testing command-line utility (_not copyrighted_):
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-radius-client">hypr-radius-client</a> (Kotlin)
+- Recent-ish bash scripts to dump/load MySQL/Vertica table handling various oddities (_with permission_):
+  - <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tabledump.sh">tabledump.sh</a>, <a href="https://github.com/dmichaels/public/blob/master/dev/bash/tableload.sh">tableload.sh</a> (bash, C)
+- Fairly old code here (_no longer copyrighted_):
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/preprocessor">ANSI-C/C++ Preprocessor</a> (PL/I, C)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/src">C++/Views GUI Library</a> (C++ | _much of but not nearly all mine_)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/lincoln">MIT Lincon Laboratory Apps</a> (C)
+- Early Java app (_personal project_)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/apps/tetris">Tetris</a> (early Java)
+- Recent iOS app (_personal project_):
+  - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a> (Swift)
