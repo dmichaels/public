@@ -21,6 +21,8 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 * Some notable skills (to varying degrees):
   - Java, Kotlin, Spring Boot, Groovy, PHP, C, C++, Node.js, JavaScript, React, Angular, HTML/CSS, .NET/C#, MySQL, Vertica, Redis, Linux & CLI tools, autotools, Git/GitLab/GitHub, Apache server, Nginx, APIs, OAuth2, Kafka, data flows, Lucene/Solr.
 
+* See code samples [below](./resume.md#codesamples).
+
 <ins>**HYPR Corporation |** 9 months </ins> <br />
 Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault, RADIUS.
 
@@ -68,7 +70,7 @@ Member of technical staff (Group 24). Assisted in software management of various
 <ins>**University of Massachusetts, Boston**</ins> <br />
 B.S. in Computer Science, *magna cum laude*.
 
-<ins>**Code Samples**</ins>
+<ins>**Code Samples**</ins> #codesamples
 <br />
 Cannot show much professionally written code due to copyright restrictions. <br />
 Some samples for code which either is no longer copyrighted, is open sourced, or is here with permission.
