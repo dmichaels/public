@@ -80,6 +80,7 @@ Some code samples which either are no longer copyrighted, is open sourced, is he
 - Fairly old code here (_no longer copyrighted_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/preprocessor">ANSI-C/C++ Preprocessor</a> (PL/I, C)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/disassembler">Motorala 680x0 Disassembler</a> (PL/I, C)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/compiler">LPI-C++ Compiler</a> (PL/I | _much of but not all mine_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/src">C++/Views GUI Library</a> (C++ | _much of but not all mine_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/lincoln">MIT Lincon Laboratory Apps</a> (C)
 - Early Java app (_personal project_)
