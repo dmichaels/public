@@ -68,7 +68,7 @@ Member of technical staff (Group 24). Assisted in software management of various
 <ins>**University of Massachusetts, Boston**</ins> <br />
 B.S. in Computer Science, *magna cum laude*.
 
-<ins>**Code**</ins> <br />
+<ins>**Code Samples**</ins> <br />
 Cannot show much professionally written code due to copyright restrictions. <br />
 Some samples for code which either is no longer copyrighted, is open sourced, or is here with permission.
 - Recent Linux PAM work (for HYPR) in C (_to be open sourced_):
