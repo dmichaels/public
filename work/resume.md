@@ -70,7 +70,7 @@ B.S. in Computer Science, *magna cum laude*.
 
 <ins>**Code Samples**</ins> <br />
 Cannot show much professionally written code due to copyright restrictions. <br />
-Some code samples which either are no longer copyrighted, is open sourced, is here with permission, or are my own personal projects:
+Some code samples which either are no longer copyrighted, are to be open sourced, are here with permission, or are my own personal projects:
 - Recent Linux PAM work (for HYPR) in C (_to be open sourced_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam">hypr-pam</a> (C) (<a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam/diagram.png?">diagram</a>)
 - Recent HYPR RADIUS Server (load) testing command-line utility (_not copyrighted_):
