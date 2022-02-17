@@ -21,6 +21,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 * Some notable skills (to varying degrees):
   - Java, Kotlin, Spring Boot, Groovy, PHP, C, C++, Node.js, JavaScript, React, Angular, HTML/CSS, .NET/C#, MySQL, Vertica, Redis, Linux & CLI tools, autotools, Git/GitLab/GitHub, Apache server, Nginx, APIs, OAuth2, Kafka, data flows, Lucene/Solr.
 
+[Heading]: #codesamples
 * See code samples [below](./resume.md#codesamples).
 
 <ins>**HYPR Corporation |** 9 months </ins> <br />
