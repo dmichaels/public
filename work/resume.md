@@ -1,4 +1,4 @@
-<img align="right" width="100" height="100" src="https://github.com/dmichaels/public/blob/master/work/photo_davidmichaels.jpg">
+<img align="right" width="100" height="100" src="https://github.com/dmichaels/public/blob/master/work/photo_davidmichaels.jpg"/>
 <ins>**David Michaels**</ins> | *Software Engineer* <br />
 Boston, Massachusetts <br />
 dmichaels@gmail.com | 781-405-9301 <br />
