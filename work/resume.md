@@ -1,4 +1,4 @@
-<img align="right" height="150" src="https://github.com/dmichaels/public/blob/master/work/photo_davidmichaels.jpg" />
+<img align="right" height="150" src="https://github.com/dmichaels/public/blob/master/work/photo_davidmichaels_1.jpg" />
 
 <ins>**David Michaels**</ins> | *Software Engineer* <br />
 Boston, Massachusetts <br />
