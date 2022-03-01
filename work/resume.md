@@ -20,7 +20,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * Previously granted *secret* clearance.
 
-* Some notable skills (to varying degrees):
+* Some notable skills/experience (to varying degrees):
   - Java, Kotlin, Spring Boot, Groovy, PHP, C, C++, Node.js, JavaScript, React, Angular, HTML/CSS, .NET/C#, MySQL, Vertica, Redis, Linux & CLI tools, autotools, Git/GitLab/GitHub, Apache server, Nginx, REST APIs, OAuth2, Kafka, data flows, Lucene/Solr.
 
 <ins>**HYPR Corporation |** 9 months </ins> <br />
