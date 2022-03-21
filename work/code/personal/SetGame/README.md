@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/dmichaels/public/master/dev/xcode/SetGame/etc/img/SetGame.png" alt="drawing" width="300" align="left" /> My first foray into iOS/Swift development. <br />
+<img src="https://github.com/dmichaels/public/blob/master/work/code/personal/SetGame/SetGame.png" alt="drawing" width="300" align="left" /> My first foray into iOS/Swift development. <br />
 
 An iOS app implementation [SET Game®](https://www.setgame.com/set/puzzle).
 Instructions **[here](https://www.setgame.com/sites/default/files/instructions/SET%20INSTRUCTIONS%20-%20ENGLISH.pdf)**. <br />
