@@ -85,6 +85,8 @@ Some code samples below which either are no longer copyrighted, are open sourced
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/compiler">LPI-C++ Compiler</a> (PL/I | _much of but not all mine_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/src">C++/Views GUI Library</a> (C++ | _much of but not all mine_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/lincoln">MIT Lincon Laboratory Apps</a> (C)
+- Example backoffice dashboard screenshot:
+  - <a href="https://github.com/dmichaels/public/blob/master/work/code/cartera/project_sample/dig_dashboard.png">DIG-Dashboard</a> (AngularJS, JavaScript, HTML/CSS)
 - Early Java app (_personal project_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/apps/tetris">Tetris</a> (early Java)
 - Recent iOS app (_personal project_):
