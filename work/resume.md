@@ -16,7 +16,7 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 
 * C and C++ compiler, disassember, debugger development in C, C++, PL/1, UNIX.
 
-* Lately, independently, playing with: [Swift/UI](https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame), iOS ; C++17; and Arduino.
+* Lately, independently, playing with: [Swift/UI](https://github.com/dmichaels/public/tree/master/work/code/personal/SetGame), iOS ; C++17; and Arduino.
 
 * Previously granted *secret* clearance.
 
@@ -90,4 +90,4 @@ Some code samples below which either are no longer copyrighted, are open sourced
 - Early Java app (_personal project_)
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/liant/views/apps/tetris">Tetris</a> (early Java)
 - Recent iOS app (_personal project_):
-  - <a href="https://github.com/dmichaels/public/tree/master/dev/xcode/SetGame">SET Game</a> (Swift)
+  - <a href="https://github.com/dmichaels/public/tree/master/work/code/personal/SetGame">SET Game</a> (Swift)
