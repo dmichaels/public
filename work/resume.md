@@ -21,10 +21,10 @@ LinkedIn: https://bit.ly/3GAwbzM <br />
 * Previously granted *secret* clearance.
 
 * Some notable skills/experience (to varying degrees):
-  - Java, Kotlin, Spring Boot, Groovy, PHP, C, C++, Node.js, JavaScript, React, Angular, HTML/CSS, .NET/C#, MySQL, Vertica, Redis, Linux & CLI tools, autotools, Git/GitLab/GitHub, Apache server, Nginx, REST APIs, OAuth2, Kafka, data flows, Lucene/Solr.
+  - Pytho, Java, Kotlin, Spring Boot, Groovy, PHP, C, C++, Node.js, JavaScript, React, Angular, HTML/CSS, .NET/C#, MySQL, Vertica, Redis, Linux & CLI tools, autotools, Git/GitLab/GitHub, Apache server, Nginx, REST APIs, OAuth2, Kafka, data flows, Lucene/Solr.
 
 <ins>**Harvard University School |** May 2022 to present </ins> <br />
-Backend engineer on the Clinical Genome Analysis Platform (CGAP).
+Backend software engineer for the Department of Biomedical Informatics. Working primarily on the Clinical Genome Analysis Platform (CGAP). Mostly Python; a multitude of AWS services, e.g. ElasticSearch; React, JavaScript; et cetera.
 
 <ins>**HYPR Corporation |** 9 months </ins> <br />
 Implemented Linux PAM in C (with RPM/DEB packaging) for HYPR password-less ssh/scp authentication. Some authentication related backend work in Kotlin, Java, React, MySQL, Redis, Vault, RADIUS.
@@ -74,8 +74,8 @@ Member of technical staff (Group 24). Assisted in software management of various
 B.S. in Computer Science, *magna cum laude*.
 
 <ins>**Code Samples**</ins> <br />
-May not show much professionally written code due to access and copyright restrictions.
-Some code samples below which either are no longer copyrighted, are open sourced, are here with permission, or are my own personal projects:
+Copyright restrictions prevent sharing of most code written of the years.
+But some code samples below which are either no longer copyrighted, are open sourced, are here with permission, or are my own personal projects:
 - Recent Linux PAM work (for HYPR) in C (_to be open sourced_):
   - <a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam">hypr-pam</a> (C) (<a href="https://github.com/dmichaels/public/tree/master/work/code/hypr/hypr-pam/diagram.png?">diagram</a>)
 - Recent HYPR RADIUS Server (load) testing command-line utility (_not copyrighted_):
