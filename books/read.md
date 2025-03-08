@@ -1,6 +1,6 @@
 <ins>**Books Read**</ins>
 
-<a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver</a> - 2025-01-18
+<a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> **2025-01-18**
 2025 (20):
 
 
