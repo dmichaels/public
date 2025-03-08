@@ -2,6 +2,8 @@
 
 2025 (20):
 
+    <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_blank">On the Edge (Nate Silver</a> - 2025-01-18
+
     On the Edge (Nate Silver) - 2025-01-04
     Being You: A New Science of Consciousness (Anil Seth) - 2025-01-11
     Genesis: Artificial Intelligence, Hope, and the Human Spirit (Henry Kissinger, Craig Mundle, Eric Schmidt, Niall Ferguson) - 2025-01-18
