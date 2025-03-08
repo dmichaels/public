@@ -10,24 +10,24 @@
 1. <a href="https://www.amazon.com/Starry-Speculative-Corpse-Horror-Philosophy/dp/1782798919/" target="_top">Starry Speculative Corpse: Horror of Philosophy: Horror of Philosophy, Volume 2 (Eugene Thacker)</a>
 1. <a href="https://www.amazon.com/Tentacles-Longer-Than-Night-Philosophy/dp/1782798897/" target="_top">Tentacles Longer Than Night: Horror of Philosophy: Horror of Philosophy, Volume 3 (Eugene Thacker)</a>
 1. <a href="https://www.amazon.com/Better-Never-Have-Been-Existence/dp/0199549265/" target="_top">Better Never to Have Been (David Benatar)</a>
-1. <a href="todo" target="_top">Infinite Resignation (Eugene Thacker)</a>
-1. <a href="todo" target="_top">If Then: How the Simulmatics Corportation Invested the Future (Jill Lepore)</a>
-1. <a href="todo" target="_top">Eating the Dinosaur (Chuck Klosterman)</a>
-1. <a href="todo" target="_top">Nausea (Jean-Paul Sartre)</a>
-1. <a href="todo" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a>
-1. <a href="todo" target="_top">On the Beach (Neville Shute)</a>
-1. <a href="todo" target="_top">When the Clock Broke: Con Men, Conspiracists, and How America Cracked Up in the Early 1990s (John Ganz)</a>
-1. <a href="todo" target="_top">Exactly (Simon Winchester)</a>
-1. <a href="todo" target="_top">The Thomas Sowell Reader (Thomas Sowell)</a>
-1. <a href="todo" target="_top">Taking Manhattan: The Extraordinary Events That Created New York and Shaped America (Russell Shorto)</a>
-1. <a href="todo" target="_top">Basic Economics (Thomas Sowell)</a>
-1. <a href="todo" target="_top">The Best of All Possible Worlds: A Life of Leibniz in Seven Pivotal Days (Michael Kempe)</a>
-1. <a href="todo" target="_top">Pilgrim at Tinker Creek (Annie Dillard)</a>
-1. <a href="todo" target="_top">The Rigor of Angels: Borges, Heisenberg, Kant, and the Ultimate Nature of Reality (William Egginton)</a>
-1. <a href="todo" target="_top">Recoding America: Why Government Is Failing in the Digital Age and How We Can Do Better (Jennifer Pahlka)</a>
-1. <a href="todo" target="_top">The Europeans (Orlando Figes)</a>
-1. <a href="todo" target="_top">The Red Prince (Timothy Snyder)</a>
-1. <a href="todo" target="_top">A Spectre, Haunting: On the Communist Manifesto (China Miéville)</a>
+1. <a href="https://www.amazon.com/Infinite-Resignation-Pessimism-Eugene-Thacker/dp/1912248190/" target="_top">Infinite Resignation (Eugene Thacker)</a>
+1. <a href="https://www.amazon.com/If-Then-Simulmatics-Corporation-Invented/dp/1631496107/" target="_top">If Then: How the Simulmatics Corporation Invented the Future (Jill Lepore)</a>
+1. <a href="https://www.amazon.com/Eating-Dinosaur-Chuck-Klosterman/dp/1416544216/" target="_top">Eating the Dinosaur (Chuck Klosterman)</a>
+1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a>
+1. <a href="https://www.amazon.com/When-Everyone-Knows-That-Knowledge/dp/1668011573/" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a>
+1. <a href="https://www.amazon.com/Beach-Nevil-Shute/dp/0307473996/" target="_top">On the Beach (Neville Shute)</a>
+1. <a href="https://www.amazon.com/When-Clock-Broke-Conspiracists-America/dp/0374605440/" target="_top">When the Clock Broke: Con Men, Conspiracists, and How America Cracked Up in the Early 1990s (John Ganz)</a>
+1. <a href="https://www.amazon.com/Exactly-Precision-Engineers-Created-Modern/dp/0008241783/" target="_top">Exactly (Simon Winchester)</a>
+1. <a href="https://www.amazon.com/Thomas-Sowell-Reader/dp/0465022502/" target="_top">The Thomas Sowell Reader (Thomas Sowell)</a>
+1. <a href="https://www.amazon.com/Taking-Manhattan-Extraordinary-Created-America/dp/0393881164/" target="_top">Taking Manhattan: The Extraordinary Events That Created New York and Shaped America (Russell Shorto)</a>
+1. <a href="https://www.amazon.com/Basic-Economics-Thomas-Sowell/dp/0465060730/" target="_top">Basic Economics (Thomas Sowell)</a>
+1. <a href="https://www.amazon.com/Best-All-Possible-Worlds-Leibniz/dp/1324093943/" target="_top">The Best of All Possible Worlds: A Life of Leibniz in Seven Pivotal Days (Michael Kempe)</a>
+1. <a href="https://www.amazon.com/Pilgrim-Tinker-Harper-Perennial-Classics/dp/0061233323/" target="_top">Pilgrim at Tinker Creek (Annie Dillard)</a>
+1. <a href="https://www.amazon.com/Rigor-Angels-Heisenberg-Ultimate-Reality/dp/0593315073/" target="_top">The Rigor of Angels: Borges, Heisenberg, Kant, and the Ultimate Nature of Reality (William Egginton)</a>
+1. <a href="https://www.amazon.com/Recoding-America-Government-Failing-Digital/dp/1250266777/" target="_top">Recoding America: Why Government Is Failing in the Digital Age and How We Can Do Better (Jennifer Pahlka)</a>
+1. <a href="https://www.amazon.com/Europeans-Orlando-Figes/dp/0141979437/" target="_top">The Europeans (Orlando Figes)</a>
+1. <a href="https://www.amazon.com/Red-Prince-Secret-Habsburg-Archduke/dp/0465018971/" target="_top">The Red Prince: The Secret Lives of a Habsburg Archduke (Timothy Snyder)</a>
+1. <a href="https://www.amazon.com/Spectre-Haunting-Communist-Manifesto/dp/1642598917/" target="_top">A Spectre, Haunting: On the Communist Manifesto (China Miéville)</a>
 1. <a href="todo" target="_top">The Psychology of Money (Morgan Housel)</a>
 1. <a href="todo" target="_top">The War on the West (Douglas Murray)</a>
 1. <a href="todo" target="_top">The Matter of Everything: How Curiosity, Physics, and Improbable Experiments Changed the World (Suzie Sheehy)</a>
