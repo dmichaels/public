@@ -1,8 +1,8 @@
 <ins>**Books Read**</ins>
 
 **2025** (20):
-  1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-18_
-  1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-18_
+  1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
+  1. <a href="https://www.amazon.com/Being-You-New-Science-Consciousness/dp/1524742872/" target="_top">Being You: A New Science of Consciousness (Anil Seth)</a> _2025-01-11_
 
 
 <ins>**Books Read**</ins>
