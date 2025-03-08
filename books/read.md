@@ -1,6 +1,6 @@
 <ins>**Books Read**</ins>
 
-**2025** (20):
+**2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
   1. <a href="https://www.amazon.com/Being-You-New-Science-Consciousness/dp/1524742872/" target="_top">Being You: A New Science of Consciousness (Anil Seth)</a> _2025-01-11_
   1. <a href="https://www.amazon.com/Genesis-Artificial-Intelligence-Human-Spirit/dp/0316581291/" target="_top">Genesis: Artificial Intelligence, Hope, and the Human Spirit (Henry Kissinger, Craig Mundle, Eric Schmidt, Niall Ferguson)</a> _2025-01-18_
@@ -23,7 +23,7 @@
   1. <a href="https://www.amazon.com/Man-Without-Qualities-Vol-Introduction/dp/0679767878/" target="_top">The Man Without Qualities (Rober Musil)</a> _2025-03-07_
   1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> _IN PROGRESS - 2025-03-xx_
 
-2024 (19):
+**2024**:
 
   1. <a href="https://www.amazon.com/Democracy-Awakening-Notes-State-America/dp/0593652967/" target="_top">Democracy Awakening: Notes and the State of America (Heather Cox Richardson)</a>
   1. <a href="todo" target="_top">A Hacker's Mind: How the Powerful Bend Society's Rules, and How to Bend Them Back (Bruce Schneier)</a>
