@@ -51,7 +51,7 @@
   1. <a href="https://www.amazon.com/Free-World-Art-Thought-Cold-ebook/dp/B088DQ4QZR/">The Free World: Art and Thought in the Cold War (Louis Menand)</a>
   1. <a href="https://www.amazon.com/Cold-Blood-Vintage-International-ebook/dp/B000FC1IRM/">In Cold Blood (Truman Capote)</a>
   1. <a href="https://www.amazon.com/Chip-War-Worlds-Critical-Technology-ebook/dp/B09RX5F238/">Chip War (Chris Miller)</a>
-  1. <a href="https://www.amazon.com/Understandable-Economics-Because-Understanding-Important-ebook/dp/B0B3SLK3K2/">Understandable Economics (Howard Yaruss)</a> - 2023-02-25
+  1. <a href="https://www.amazon.com/Understandable-Economics-Because-Understanding-Important-ebook/dp/B0B3SLK3K2/">Understandable Economics (Howard Yaruss)</a> _2023-02-25_
   1. <a href="https://www.amazon.com/How-World-Really-Works-Science-ebook/dp/B09CDB69WT/">How the World Really Works: The Science Behind How We Got Here and Where We're Going (Vaclav Smil)</a>
   1. <a href="https://www.amazon.com/Tyranny-Twenty-Lessons-Twentieth-Century-ebook/dp/B01N4M1BQY/">On Tyranny (Timothy Snyder)</a>
   1. <a href="https://www.amazon.com/Numbers-Dont-Lie-Stories-Understand-ebook/dp/B08GJVP3GK/">Numbers Don't Lie: 71 Stories to Help Us Understand the Modern World (Vaclav Smil)</a>
