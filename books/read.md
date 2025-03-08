@@ -13,19 +13,19 @@
   1. <a href="https://www.amazon.com/Nineties-Book-Chuck-Klosterman/dp/0735217963/" target="_top">The Nineties (Chuck Klosterman)</a> _2025-02-09_
   1. <a href="https://www.amazon.com/Material-World-Materials-Modern-Civilization/dp/0593534344/" target="_top">Material World: A Substantial Story of Our Past and Future (Ed Conway)</a> _2025-02-12_
   1. <a href="https://www.amazon.com/Character-Limit-Elon-Destroyed-Twitter/dp/059365613X/" target="_top">Character Limit: How Elon Musk Destroyed Twitter (Kate Conger, Ryan Mac)</a> _2025-02-16_
-  1. <a href="todo" target="_top">On Chesil Beach (Ian McEwan)</a> _2025-02-16_
-  1. <a href="todo" target="_top">The Conspiracy Against the Human Race (Thomas Ligotti)</a> _2025-02-18_
-  1. <a href="todo" target="_top">Source Code: My Beginnings (Bill Gates)</a> _2025-02-19_
-  1. <a href="todo" target="_top">The Temptation to Exist (E.M. Cioran)</a> _2025-02-22_
-  1. <a href="todo" target="_top">Songs of a Dead Dreamer (Thomas Ligotti)</a> _2025-02-23_
-  1. <a href="todo" target="_top">Stoner (John Williams)</a> _2025-02-24_
-  1. <a href="todo" target="_top">Saturday (Ian McEwan)</a> _2025-02-27_
-  1. <a href="todo" target="_top">The Man Without Qualities (Rober Musil)</a> _2025-03-07_
-  1. <a href="todo" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> _IN PROGRESS - 2025-03-xx_
+  1. <a href="https://www.amazon.com/Chesil-Beach-Ian-McEwan/dp/0307386171/" target="_top">On Chesil Beach (Ian McEwan)</a> _2025-02-16_
+  1. <a href="https://www.amazon.com/Conspiracy-against-Human-Race-Contrivance/dp/0143133144/" target="_top">The Conspiracy Against the Human Race (Thomas Ligotti)</a> _2025-02-18_
+  1. <a href="https://www.amazon.com/Source-Code-Beginnings-Bill-Gates/dp/059380158X/" target="_top">Source Code: My Beginnings (Bill Gates)</a> _2025-02-19_
+  1. <a href="https://www.amazon.com/Temptation-Exist-M-Cioran/dp/1611457386/" target="_top">The Temptation to Exist (E.M. Cioran)</a> _2025-02-22_
+  1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Songs of a Dead Dreamer (Thomas Ligotti)</a> _2025-02-23_
+  1. <a href="https://www.amazon.com/Stoner-York-Review-Books-Classics/dp/1590171993/" target="_top">Stoner (John Williams)</a> _2025-02-24_
+  1. <a href="https://www.amazon.com/Saturday-Ian-McEwan/dp/1400076196/" target="_top">Saturday (Ian McEwan)</a> _2025-02-27_
+  1. <a href="https://www.amazon.com/Man-Without-Qualities-Vol-Introduction/dp/0679767878/" target="_top">The Man Without Qualities (Rober Musil)</a> _2025-03-07_
+  1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> _IN PROGRESS - 2025-03-xx_
 
 2024 (19):
 
-    Democracy Awakening: Notes and the State of America (Heather Cox Richardson)
+    <a href="https://www.amazon.com/Democracy-Awakening-Notes-State-America/dp/0593652967/" target="_top">Democracy Awakening: Notes and the State of America (Heather Cox Richardson)</a>
     A Hacker's Mind: How the Powerful Bend Society's Rules, and How to Bend Them Back (Bruce Schneier)
     The Nose (Nikolai Gogol) - 2024-02-04
     On Nation Under Guns: How Gun Culture Distorts Our History and Threatens Our Democracy (Dominic Erdozain)
