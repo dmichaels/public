@@ -3,36 +3,25 @@
 **2025** (20):
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
   1. <a href="https://www.amazon.com/Being-You-New-Science-Consciousness/dp/1524742872/" target="_top">Being You: A New Science of Consciousness (Anil Seth)</a> _2025-01-11_
-
-
-<ins>**Books Read**</ins>
-
-**2025** (20):
-1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-18_
-2. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-18_
-
-
-    On the Edge (Nate Silver) - 2025-01-04
-    Being You: A New Science of Consciousness (Anil Seth) - 2025-01-11
-    Genesis: Artificial Intelligence, Hope, and the Human Spirit (Henry Kissinger, Craig Mundle, Eric Schmidt, Niall Ferguson) - 2025-01-18
-    The Captive Mind (Czesław Miłosz) - 2025-01-20
-    If on a Winter's Night a Traveler (Italo Calvino) - 2025-01-23
-    The Island at the Center of the World: The Epic Story of Dutch Manhattan (Russell Shorto) - 2025-01-27
-    How Economics Explains the World: A Short History of Humanity (Andrew Leigh) - 2025-01-29
-    1959: The Year Everything Changed (Fred Kaplan) - 2025-02-01
-    Everything Must Go: The Stories We Tell About the End of the World (Dorian Lynskey) - 2025-02-04
-    The Nineties (Chuck Klosterman) - 2025-02-09
-    Material World: A Substantial Story of Our Past and Future (Ed Conway) - 2025-02-12
-    Character Limit: How Elon Musk Destroyed Twitter (Kate Conger, Ryan Mac) - 2025-02-16
-    On Chesil Beach (Ian McEwan) - 2025-02-16
-    The Conspiracy Against the Human Race (Thomas Ligotti) - 2025-02-18
-    Source Code: My Beginnings (Bill Gates) - 2025-02-19
-    The Temptation to Exist (E.M. Cioran) - 2025-02-22
-    Songs of a Dead Dreamer (Thomas Ligotti) - 2025-02-23
-    Stoner (John Williams) - 2025-02-24
-    Saturday (Ian McEwan) - 2025-02-27
-    The Man Without Qualities (Rober Musil) - 2025-03-07
-    My Work Is Not Yet Done (Thomas Ligotti) - IN PROGRESS - 2025-03-xx
+  1. <a href="todo" target="_top">Genesis: Artificial Intelligence, Hope, and the Human Spirit (Henry Kissinger, Craig Mundle, Eric Schmidt, Niall Ferguson)</a> _2025-01-18_
+  1. <a href="todo" target="_top">The Captive Mind (Czesław Miłosz)</a> _2025-01-20_
+  1. <a href="todo" target="_top">If on a Winter's Night a Traveler (Italo Calvino)</a> _2025-01-23_
+  1. <a href="todo" target="_top">The Island at the Center of the World: The Epic Story of Dutch Manhattan (Russell Shorto)</a> _2025-01-27_
+  1. <a href="todo" target="_top">How Economics Explains the World: A Short History of Humanity (Andrew Leigh)</a> _2025-01-29_
+  1. <a href="todo" target="_top">1959: The Year Everything Changed (Fred Kaplan)</a> _2025-02-01_
+  1. <a href="todo" target="_top">Everything Must Go: The Stories We Tell About the End of the World (Dorian Lynskey)</a> _2025-02-04_
+  1. <a href="todo" target="_top">The Nineties (Chuck Klosterman)</a> _2025-02-09_
+  1. <a href="todo" target="_top">Material World: A Substantial Story of Our Past and Future (Ed Conway)</a> _2025-02-12_
+  1. <a href="todo" target="_top">Character Limit: How Elon Musk Destroyed Twitter (Kate Conger, Ryan Mac)</a> _2025-02-16_
+  1. <a href="todo" target="_top">On Chesil Beach (Ian McEwan)</a> _2025-02-16_
+  1. <a href="todo" target="_top">The Conspiracy Against the Human Race (Thomas Ligotti)</a> _2025-02-18_
+  1. <a href="todo" target="_top">Source Code: My Beginnings (Bill Gates)</a> _2025-02-19_
+  1. <a href="todo" target="_top">The Temptation to Exist (E.M. Cioran)</a> _2025-02-22_
+  1. <a href="todo" target="_top">Songs of a Dead Dreamer (Thomas Ligotti)</a> _2025-02-23_
+  1. <a href="todo" target="_top">Stoner (John Williams)</a> _2025-02-24_
+  1. <a href="todo" target="_top">Saturday (Ian McEwan)</a> _2025-02-27_
+  1. <a href="todo" target="_top">The Man Without Qualities (Rober Musil)</a> _2025-03-07_
+  1. <a href="todo" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> _IN PROGRESS - 2025-03-xx_
 
 2024 (19):
 
