@@ -54,7 +54,7 @@
   1. <a href="https://www.amazon.com/Understandable-Economics-Because-Understanding-Important-ebook/dp/B0B3SLK3K2/">Understandable Economics (Howard Yaruss)</a> - 2023-02-25
   1. <a href="https://www.amazon.com/How-World-Really-Works-Science-ebook/dp/B09CDB69WT/">How the World Really Works: The Science Behind How We Got Here and Where We're Going (Vaclav Smil)</a>
   1. <a href="https://www.amazon.com/Tyranny-Twenty-Lessons-Twentieth-Century-ebook/dp/B01N4M1BQY/">On Tyranny (Timothy Snyder)</a>
-  1. <a href="todo">Numbers Don't Lie: 71 Stories to Help Us Understand the Modern World (Vaclav Smil)</a>
+  1. <a href="https://www.amazon.com/Numbers-Dont-Lie-Stories-Understand-ebook/dp/B08GJVP3GK/">Numbers Don't Lie: 71 Stories to Help Us Understand the Modern World (Vaclav Smil)</a>
   1. <a href="todo">The Story of Russia (Orlando Figes)</a>
   1. <a href="todo">The Gates of Europe: A History of Ukraine (Serhii Plokhy)</a>
   1. <a href="todo">Twilight of Democracy: The Seductive Lure of Authoritarianism (Anne Applebaum)</a>
