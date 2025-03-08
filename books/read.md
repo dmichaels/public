@@ -1,10 +1,6 @@
 <ins>**Books Read**</ins>
 
 **2025** (20):
-
-1. abc 2. def
-
-
 1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-18_
 2. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-18_
 
