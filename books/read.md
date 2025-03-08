@@ -3,8 +3,8 @@
 **2025** (20):
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
   1. <a href="https://www.amazon.com/Being-You-New-Science-Consciousness/dp/1524742872/" target="_top">Being You: A New Science of Consciousness (Anil Seth)</a> _2025-01-11_
-  1. <a href="todo" target="_top">Genesis: Artificial Intelligence, Hope, and the Human Spirit (Henry Kissinger, Craig Mundle, Eric Schmidt, Niall Ferguson)</a> _2025-01-18_
-  1. <a href="todo" target="_top">The Captive Mind (Czesław Miłosz)</a> _2025-01-20_
+  1. <a href="https://www.amazon.com/Genesis-Artificial-Intelligence-Human-Spirit/dp/0316581291/" target="_top">Genesis: Artificial Intelligence, Hope, and the Human Spirit (Henry Kissinger, Craig Mundle, Eric Schmidt, Niall Ferguson)</a> _2025-01-18_
+  1. <a href="https://www.amazon.com/Captive-Mind-Czeslaw-Milosz/dp/0679728562/" target="_top">The Captive Mind (Czesław Miłosz)</a> _2025-01-20_
   1. <a href="todo" target="_top">If on a Winter's Night a Traveler (Italo Calvino)</a> _2025-01-23_
   1. <a href="todo" target="_top">The Island at the Center of the World: The Epic Story of Dutch Manhattan (Russell Shorto)</a> _2025-01-27_
   1. <a href="todo" target="_top">How Economics Explains the World: A Short History of Humanity (Andrew Leigh)</a> _2025-01-29_
