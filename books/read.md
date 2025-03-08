@@ -21,7 +21,7 @@
   1. <a href="https://www.amazon.com/Stoner-York-Review-Books-Classics/dp/1590171993/" target="_top">Stoner (John Williams)</a> _2025-02-24_
   1. <a href="https://www.amazon.com/Saturday-Ian-McEwan/dp/1400076196/" target="_top">Saturday (Ian McEwan)</a> _2025-02-27_
   1. <a href="https://www.amazon.com/Man-Without-Qualities-Vol-Introduction/dp/0679767878/" target="_top">The Man Without Qualities (Rober Musil)</a> _2025-03-07_
-  1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> _IN PROGRESS - 2025-03-xx_
+  1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> _IN PROGRESS 2025-03-xx_
 
 **2024**:
 
@@ -47,138 +47,138 @@
 
 **2023**:
 
-    White Noise (Don DeLillo)
-    The Free World: Art and Thought in the Cold War (Louis Menand)
-    In Cold Blood (Truman Capote)
-    Chip War (Chris Miller)
-    Understandable Economics (Howard Yaruss) - 2023-02-25
-    How the World Really Works: The Science Behind How We Got Here and Where We're Going (Vaclav Smil)
-    On Tyranny (Timothy Snyder)
-    Numbers Don't Lie: 71 Stories to Help Us Understand the Modern World (Vaclav Smil)
-    The Story of Russia (Orlando Figes)
-    The Gates of Europe: A History of Ukraine (Serhii Plokhy)
-    Twilight of Democracy: The Seductive Lure of Authoritarianism (Anne Applebaum)
-    The Road to Unfreedom: Russia, Europe, America (Timothy Snyder)
-    That's Not What I Meant: How Conversational Style Makes or Breaks Relationships (Deborah Tannen)
-    The Soviet Century: Archaeology of a Lost World (Karl Schlögel)
-    War: How Conflict Shaped Us (Magaret MacMillan)
-    A Day in the Life of Abed Salema: Anatomy of a Jerusalem Tragedy (Nathan Thrall)
-    Fancy Bear Goes Phishing: The Dark History of the Information Age in Five Extraordinary Hacks (Scott J. Shapiro)
-    The Maniac (Benjamin Labatut)
-    Doppelganger: A Trip into the Mirror World (Naomi Klein)
-    Determined: A Science of Life Without Free Will (Robert M. Sapolsky)
+  1. <a href="todo">White Noise (Don DeLillo)</a>
+  1. <a href="todo">The Free World: Art and Thought in the Cold War (Louis Menand)</a>
+  1. <a href="todo">In Cold Blood (Truman Capote)</a>
+  1. <a href="todo">Chip War (Chris Miller)</a>
+  1. <a href="todo">Understandable Economics (Howard Yaruss) - 2023-02-25
+  1. <a href="todo">How the World Really Works: The Science Behind How We Got Here and Where We're Going (Vaclav Smil)</a>
+  1. <a href="todo">On Tyranny (Timothy Snyder)</a>
+  1. <a href="todo">Numbers Don't Lie: 71 Stories to Help Us Understand the Modern World (Vaclav Smil)</a>
+  1. <a href="todo">The Story of Russia (Orlando Figes)</a>
+  1. <a href="todo">The Gates of Europe: A History of Ukraine (Serhii Plokhy)</a>
+  1. <a href="todo">Twilight of Democracy: The Seductive Lure of Authoritarianism (Anne Applebaum)</a>
+  1. <a href="todo">The Road to Unfreedom: Russia, Europe, America (Timothy Snyder)</a>
+  1. <a href="todo">That's Not What I Meant: How Conversational Style Makes or Breaks Relationships (Deborah Tannen)</a>
+  1. <a href="todo">The Soviet Century: Archaeology of a Lost World (Karl Schlögel)</a>
+  1. <a href="todo">War: How Conflict Shaped Us (Magaret MacMillan)</a>
+  1. <a href="todo">A Day in the Life of Abed Salema: Anatomy of a Jerusalem Tragedy (Nathan Thrall)</a>
+  1. <a href="todo">Fancy Bear Goes Phishing: The Dark History of the Information Age in Five Extraordinary Hacks (Scott J. Shapiro)</a>
+  1. <a href="todo">The Maniac (Benjamin Labatut)</a>
+  1. <a href="todo">Doppelganger: A Trip into the Mirror World (Naomi Klein)</a>
+  1. <a href="todo">Determined: A Science of Life Without Free Will (Robert M. Sapolsky)</a>
 
-2022 (24):
+**2022**:
 
-    Galápagos (Kurt Vonnegut)
-    Sick Souls, Healthy Minds: How William James Can Save Your Life (John Kaag)
-    The Ingenious Gentleman Don Quixote of La Mancha (Miguel Cervantes)
-    Crime and Punishment (Fyodor Dostoevsky)
-    Brave New World (Aldous Huxley)
-    The Emperor of All Maladies: A Biography of Cancer (Siddhartha Mukherjee)
-    Middlematch (George Eliot)
-    Magna Carta: The Birth of Liberty (Dan Jones)
-    Journey to the Edge of Reason: The Life of Kurt Gödel (Stephen Budiansky)
-    The Code Breaker: Jennifer Doudna, Gene Editing, and the Future of the Human Race (Walter Isaacson)
-    The Man from the Future: The Visionary Life of John von Neumann (Ananyo Bhattacharya)
-    Turing's Cathedral: The Origins of the Digital Universe (George Dyson)
-    The Vital Question (Nick Lane)
-    Just For Fun (Linus Torvalds)
-    The Journey of Humanity: The Origins of Wealth and Inequality (Oded Galor)
-    Other Minds: The Octopus, the Sea, and the Deep Origins of Consciousness (Peter Godfrey-Smith)
-    Why We Did It: A Travelogue from the Republican Road to Hell (Tim Miller)
-    The True Believer (Eric Hoffer)
-    The Destructionists: The Twenty-Five-Year Crack-Up of the Republican Party (Dana Milbank)
-    Confidence Man: The Making of Donald Trump and the Breaking of Ameica (Maggie Haberman)
-    The Nazi Seizure of Power (William Sheridan Allen)
-    You Are Not Expected to Understand This: How 26 Lines of Code Changed the World (Torie Bosch)
-    The End of the World Is Just the Beginning: Mapping the Collapse of Globalization (Peter Zeihan)
-    The AI Revolution in Medicine: GPT-4 and Beyond (Peter Less, Carey Goldberg, Issac Kohane)
-    The January 6 Report - NOT FULL READ
+  1. <a href="todo">Galápagos (Kurt Vonnegut)</a>
+  1. <a href="todo">Sick Souls, Healthy Minds: How William James Can Save Your Life (John Kaag)</a>
+  1. <a href="todo">The Ingenious Gentleman Don Quixote of La Mancha (Miguel Cervantes)</a>
+  1. <a href="todo">Crime and Punishment (Fyodor Dostoevsky)</a>
+  1. <a href="todo">Brave New World (Aldous Huxley)</a>
+  1. <a href="todo">The Emperor of All Maladies: A Biography of Cancer (Siddhartha Mukherjee)</a>
+  1. <a href="todo">Middlematch (George Eliot)</a>
+  1. <a href="todo">Magna Carta: The Birth of Liberty (Dan Jones)</a>
+  1. <a href="todo">Journey to the Edge of Reason: The Life of Kurt Gödel (Stephen Budiansky)</a>
+  1. <a href="todo">The Code Breaker: Jennifer Doudna, Gene Editing, and the Future of the Human Race (Walter Isaacson)</a>
+  1. <a href="todo">The Man from the Future: The Visionary Life of John von Neumann (Ananyo Bhattacharya)</a>
+  1. <a href="todo">Turing's Cathedral: The Origins of the Digital Universe (George Dyson)</a>
+  1. <a href="todo">The Vital Question (Nick Lane)</a>
+  1. <a href="todo">Just For Fun (Linus Torvalds)</a>
+  1. <a href="todo">The Journey of Humanity: The Origins of Wealth and Inequality (Oded Galor)</a>
+  1. <a href="todo">Other Minds: The Octopus, the Sea, and the Deep Origins of Consciousness (Peter Godfrey-Smith)</a>
+  1. <a href="todo">Why We Did It: A Travelogue from the Republican Road to Hell (Tim Miller)</a>
+  1. <a href="todo">The True Believer (Eric Hoffer)</a>
+  1. <a href="todo">The Destructionists: The Twenty-Five-Year Crack-Up of the Republican Party (Dana Milbank)</a>
+  1. <a href="todo">Confidence Man: The Making of Donald Trump and the Breaking of Ameica (Maggie Haberman)</a>
+  1. <a href="todo">The Nazi Seizure of Power (William Sheridan Allen)</a>
+  1. <a href="todo">You Are Not Expected to Understand This: How 26 Lines of Code Changed the World (Torie Bosch)</a>
+  1. <a href="todo">The End of the World Is Just the Beginning: Mapping the Collapse of Globalization (Peter Zeihan)</a>
+  1. <a href="todo">The AI Revolution in Medicine: GPT-4 and Beyond (Peter Less, Carey Goldberg, Issac Kohane)</a>
+  1. <a href="todo">The January 6 Report - NOT FULL READ
 
-2021 (4):
+**2021**:
 
-    Feline Philosophy (John Gray)
-    Amazon Unbound (Brad Stone)
-    The World Beyond Your Head (Matthew Crawford)
-    War and Peace (Leo Tolstoy)
+  1. <a href="todo">Feline Philosophy (John Gray)</a>
+  1. <a href="todo">Amazon Unbound (Brad Stone)</a>
+  1. <a href="todo">The World Beyond Your Head (Matthew Crawford)</a>
+  1. <a href="todo">War and Peace (Leo Tolstoy)</a>
 
-2020 (17):
+**2020**:
 
-    Call Me By Your Name (André Aciman)
-    The Case for the Nation (Jill Lepore)
-    The Usefulness of Useless Knowledge (Abraham Flexner, Robber Dijkgraaf)
-    Hadji Murat (Leo Tolstoy)
-    Money: The Unauthorized Biography -- From Coinage to Cryptocurrencies (Felix Martin)
-    Talking Back Talking Black (John McWhorter)
-    Elon Musk (Ashlee Vance)
-    Spacefarers (Christopher Wanjek)
-    Begin Again (Eddie S. Glaude Jr.)
-    Rocket Science: From Fireworks to the Photon Drive (Mark Denny & Alan McFadzean)
-    The Shortest History of Germany (James Hawes)
-    The Third Reich: A History of Nazi Germany (Thomas Childers)
-    Hitler: Ascent 1889 - 1939 (Volker Ullrich)
-    The Silence (Don DeLillo)
-    Chess Story (Stefan Zweig)
-    Apropos of Nothing (Woody Allen)
-    The Dangling Man (Saul Bellow)
+  1. <a href="todo">Call Me By Your Name (André Aciman)</a>
+  1. <a href="todo">The Case for the Nation (Jill Lepore)</a>
+  1. <a href="todo">The Usefulness of Useless Knowledge (Abraham Flexner, Robber Dijkgraaf)</a>
+  1. <a href="todo">Hadji Murat (Leo Tolstoy)</a>
+  1. <a href="todo">Money: The Unauthorized Biography -- From Coinage to Cryptocurrencies (Felix Martin)</a>
+  1. <a href="todo">Talking Back Talking Black (John McWhorter)</a>
+  1. <a href="todo">Elon Musk (Ashlee Vance)</a>
+  1. <a href="todo">Spacefarers (Christopher Wanjek)</a>
+  1. <a href="todo">Begin Again (Eddie S. Glaude Jr.)</a>
+  1. <a href="todo">Rocket Science: From Fireworks to the Photon Drive (Mark Denny & Alan McFadzean)</a>
+  1. <a href="todo">The Shortest History of Germany (James Hawes)</a>
+  1. <a href="todo">The Third Reich: A History of Nazi Germany (Thomas Childers)</a>
+  1. <a href="todo">Hitler: Ascent 1889 - 1939 (Volker Ullrich)</a>
+  1. <a href="todo">The Silence (Don DeLillo)</a>
+  1. <a href="todo">Chess Story (Stefan Zweig)</a>
+  1. <a href="todo">Apropos of Nothing (Woody Allen)</a>
+  1. <a href="todo">The Dangling Man (Saul Bellow)</a>
 
-2019 (30):
+**2019**:
 
-    Anna Karenina (Leo Tolstoy)
-    The Double (Fyodor Dostoevsky)
-    The Fall (Albert Camus)
-    Naked Money (Charles Wheelan)
-    The Ascent of Money (Niall Ferguson)
-    Naked Economics (Charles Wheelan)
-    The Instant Economist (Timothy Taylor)
-    A Random Walk Down Wall Street (Burton Malkiel) 
-    Talking to My Daughter About the Ecomony (Yanis Varoufakis)
-    Consciousness (Annaka Harris)
-    Adam Smith: Father of Economics (Jess Norman)
-    Exhalation: Stories (Ted Chiang)
-    The War on Normal People (Andrew Yang)
-    Ni**er: The Strange Career of a Troublesome Word (Randall Kennedy)
-    The Coddling of the American Mind (Greg Lukianoff & Jonathan Haidt)
-    Letter from Birmingham Jail (Martin Luther King, Jr.)
-    The Fire Next Time (James Baldwin)
-    Narrative of the Life of Frederick Douglass (Frederick Douglass)
-    The Half Has Never Been Told (Edward Baptist)
-    Permanent Record (Edward Snowden)
-    These Truths: A History of the United States (Jill Lepore)
-    Antisocial (Andrew Marantz)
-    Human Compatible: Artificial Intelligence and the Problem of Control (Stuart Russell)
-    In the Beginning was the Command-Line (Neal Stephenson)
-    Possible Minds: Twenty-Five Ways of Looking at AI (John Brockman)
-    Between the World and Me (Ta-Nehisi Coates)
-    Stories of Your Life and Others (Ted Chiang)
-    The Children of Men (P.D. James)
-    UNIX: A History and a Memoir (Brian Kernighan)
-    Sabrina (Nick Drnaso)
+  1. <a href="todo">Anna Karenina (Leo Tolstoy)</a>
+  1. <a href="todo">The Double (Fyodor Dostoevsky)</a>
+  1. <a href="todo">The Fall (Albert Camus)</a>
+  1. <a href="todo">Naked Money (Charles Wheelan)</a>
+  1. <a href="todo">The Ascent of Money (Niall Ferguson)</a>
+  1. <a href="todo">Naked Economics (Charles Wheelan)</a>
+  1. <a href="todo">The Instant Economist (Timothy Taylor)</a>
+  1. <a href="todo">A Random Walk Down Wall Street (Burton Malkiel) 
+  1. <a href="todo">Talking to My Daughter About the Ecomony (Yanis Varoufakis)</a>
+  1. <a href="todo">Consciousness (Annaka Harris)</a>
+  1. <a href="todo">Adam Smith: Father of Economics (Jess Norman)</a>
+  1. <a href="todo">Exhalation: Stories (Ted Chiang)</a>
+  1. <a href="todo">The War on Normal People (Andrew Yang)</a>
+  1. <a href="todo">Ni**er: The Strange Career of a Troublesome Word (Randall Kennedy)</a>
+  1. <a href="todo">The Coddling of the American Mind (Greg Lukianoff & Jonathan Haidt)</a>
+  1. <a href="todo">Letter from Birmingham Jail (Martin Luther King, Jr.)</a>
+  1. <a href="todo">The Fire Next Time (James Baldwin)</a>
+  1. <a href="todo">Narrative of the Life of Frederick Douglass (Frederick Douglass)</a>
+  1. <a href="todo">The Half Has Never Been Told (Edward Baptist)</a>
+  1. <a href="todo">Permanent Record (Edward Snowden)</a>
+  1. <a href="todo">These Truths: A History of the United States (Jill Lepore)</a>
+  1. <a href="todo">Antisocial (Andrew Marantz)</a>
+  1. <a href="todo">Human Compatible: Artificial Intelligence and the Problem of Control (Stuart Russell)</a>
+  1. <a href="todo">In the Beginning was the Command-Line (Neal Stephenson)</a>
+  1. <a href="todo">Possible Minds: Twenty-Five Ways of Looking at AI (John Brockman)</a>
+  1. <a href="todo">Between the World and Me (Ta-Nehisi Coates)</a>
+  1. <a href="todo">Stories of Your Life and Others (Ted Chiang)</a>
+  1. <a href="todo">The Children of Men (P.D. James)</a>
+  1. <a href="todo">UNIX: A History and a Memoir (Brian Kernighan)</a>
+  1. <a href="todo">Sabrina (Nick Drnaso)</a>
 
-2018 (24):
+**2018**:
 
-    Enlightenment Now (Steven Pinker)
-    21 Lessons for the 21st Century (Yuval Noah Harari)
-    The Gene (Siddhartha Mukherjee)
-    Origin Story (David Christian)
-    What is Life? (Erwin Schrödinger)
-    A Mind at Play: How Claude Shannon Invented the Information Age (Soni)
-    Ludwig Wittgenstein: The Duty of Genius (Ray Monk)
-    Civilization and Its Discontents (Sigmund Freud)
-    The Double Helix (James Watson)
-    The Innovators: How a Group of Hackers, Geniuses, and Geeks Created the Digital Revolution (Walter Isaacson)
-    So You Want to Talk About Race (Ijeoma Oluo)
-    Life's Greatest Secret: The Race to Crack the Genetic Code (Matthew Cobb)
-    A Brief History of Everyone Who Ever Lived (Adam Charles Rutherford)
-    Heart of Darkness (Joseph Conrad)
-    Death in Venice (Thomas Mann)
-    The Stranger (Albert Camus)
-    Darkness Visible (William Styron)
-    The Girl at the Baggage Claim (Gish Jan)
-    Making Things Right: The Simple Philosophy of a Working Life (Ole Thorstensen)
-    Inside of a Dog (Alexandra Horowitz)
-    Our Magnificent Bastard Tongue (John McWhorter)
-    A Romance on Three Legs: Glenn Gould's Obsessive Quest for the Perfect Piano (Katie Hafner)
-    Home After Dark (David Small)
-    Gulliver's Travels (Jonathan Swift)
+  1. <a href="todo">Enlightenment Now (Steven Pinker)</a>
+  1. <a href="todo">21 Lessons for the 21st Century (Yuval Noah Harari)</a>
+  1. <a href="todo">The Gene (Siddhartha Mukherjee)</a>
+  1. <a href="todo">Origin Story (David Christian)</a>
+  1. <a href="todo">What is Life? (Erwin Schrödinger)</a>
+  1. <a href="todo">A Mind at Play: How Claude Shannon Invented the Information Age (Soni)</a>
+  1. <a href="todo">Ludwig Wittgenstein: The Duty of Genius (Ray Monk)</a>
+  1. <a href="todo">Civilization and Its Discontents (Sigmund Freud)</a>
+  1. <a href="todo">The Double Helix (James Watson)</a>
+  1. <a href="todo">The Innovators: How a Group of Hackers, Geniuses, and Geeks Created the Digital Revolution (Walter Isaacson)</a>
+  1. <a href="todo">So You Want to Talk About Race (Ijeoma Oluo)</a>
+  1. <a href="todo">Life's Greatest Secret: The Race to Crack the Genetic Code (Matthew Cobb)</a>
+  1. <a href="todo">A Brief History of Everyone Who Ever Lived (Adam Charles Rutherford)</a>
+  1. <a href="todo">Heart of Darkness (Joseph Conrad)</a>
+  1. <a href="todo">Death in Venice (Thomas Mann)</a>
+  1. <a href="todo">The Stranger (Albert Camus)</a>
+  1. <a href="todo">Darkness Visible (William Styron)</a>
+  1. <a href="todo">The Girl at the Baggage Claim (Gish Jan)</a>
+  1. <a href="todo">Making Things Right: The Simple Philosophy of a Working Life (Ole Thorstensen)</a>
+  1. <a href="todo">Inside of a Dog (Alexandra Horowitz)</a>
+  1. <a href="todo">Our Magnificent Bastard Tongue (John McWhorter)</a>
+  1. <a href="todo">A Romance on Three Legs: Glenn Gould's Obsessive Quest for the Perfect Piano (Katie Hafner)</a>
+  1. <a href="todo">Home After Dark (David Small)</a>
+  1. <a href="todo">Gulliver's Travels (Jonathan Swift)</a>
