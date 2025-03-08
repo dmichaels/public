@@ -5,11 +5,11 @@
 1. <a href="https://www.amazon.com/Freedom-Timothy-Snyder/dp/0593728726/" target="_top">On Freedom (Timothy Snyder)</a>
 1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Grimscribe (Thomas Ligotti)</a>
 1. <a href="https://www.amazon.com/Book-Disquiet-Complete-Fernando-Pessoa/dp/081122693X/" target="_top">The Book of Disquiet (Fernando Pessoa)</a>
-1. <a href="todo" target="_top">The Trouble With Being Born (E.M. Cioran)</a>
-1. <a href="todo" target="_top">In the Dust of This Planet: Horror of Philosophy, Volume 1 (Eugene Thacker)</a>
-1. <a href="todo" target="_top">Starry Speculative Corpse: Horror of Philosophy: Horror of Philosophy, Volume 2 (Eugene Thacker)</a>
-1. <a href="todo" target="_top">Tentacles Longer Than Night: Horror of Philosophy: Horror of Philosophy, Volume 3 (Eugene Thacker)</a>
-1. <a href="todo" target="_top">Better Never to Have Been (David Benatar)</a>
+1. <a href="https://www.amazon.com/Trouble-Being-Born-M-Cioran/dp/1611457408/" target="_top">The Trouble With Being Born (E.M. Cioran)</a>
+1. <a href="https://www.amazon.com/Dust-This-Planet-Horror-Philosophy/dp/184694676X/" target="_top">In the Dust of This Planet: Horror of Philosophy, Volume 1 (Eugene Thacker)</a>
+1. <a href="https://www.amazon.com/Starry-Speculative-Corpse-Horror-Philosophy/dp/1782798919/" target="_top">Starry Speculative Corpse: Horror of Philosophy: Horror of Philosophy, Volume 2 (Eugene Thacker)</a>
+1. <a href="https://www.amazon.com/Tentacles-Longer-Than-Night-Philosophy/dp/1782798897/" target="_top">Tentacles Longer Than Night: Horror of Philosophy: Horror of Philosophy, Volume 3 (Eugene Thacker)</a>
+1. <a href="https://www.amazon.com/Better-Never-Have-Been-Existence/dp/0199549265/" target="_top">Better Never to Have Been (David Benatar)</a>
 1. <a href="todo" target="_top">Infinite Resignation (Eugene Thacker)</a>
 1. <a href="todo" target="_top">If Then: How the Simulmatics Corportation Invested the Future (Jill Lepore)</a>
 1. <a href="todo" target="_top">Eating the Dinosaur (Chuck Klosterman)</a>
