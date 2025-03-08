@@ -36,16 +36,16 @@
   1. <a href="https://www.amazon.com/Wall-Marlen-Haushofer/dp/0811231941/" target="_top">The Wall (Marlen Haushofer)</a>
   1. <a href="https://www.amazon.com/Unfinished-Love-Story-Personal-History/dp/1982108665/" target="_top">An Unfinished Love Story: A Personal History of the 1960s (Doris Kearns Goodwin)</a>
   1. <a href="https://www.amazon.com/Underworld-Novel-Don-DeLillo/dp/0684848155/" target="_top">Underworld (Don DeLillo)</a>
-  1. <a href="todo" target="_top">Democracy and Solidarity: On the Cultural Roots of America's Political Crisis (James Davison Hunter)</a>
-  1. <a href="todo" target="_top">Beneath the Wheel (Herman Hesse)</a>
-  1. <a href="todo" target="_top">Triumph of the Yuppies: America, the Eighties, and the Creation of an Unequal Nation (Tom McGrath)</a>
-  1. <a href="todo" target="_top">Broken Code: Inside Facebook and the Fight to Expose Its Harmful Secrets (Jeff Horwitz)</a> _2025-08-12_
-  1. <a href="todo" target="_top">Keeping the Faith: God, Democracy, and the Trial That Riveted a Nation (Brenda Wineapple)</a>
-  1. <a href="todo" target="_top">Nexus: A Brief History of Information Networks from the Stone Age to AI (Yuval Noah Harari)</a> _2024-11-10_
-  1. <a href="todo" target="_top">Midnight in Moscow: A Memoir from the Front Lines of Russia's War Against the West (John J. Sullivan)</a> _2024-12-22_
-  1. <a href="todo" target="_top">The Exvangelicals: Loving, Living, and Leaving the White Evangelical Church (Sarah McCammon)</a> _2024-12-25_
+  1. <a href="https://www.amazon.com/Democracy-Solidarity-Cultural-Americas-Political/dp/0300274378/" target="_top">Democracy and Solidarity: On the Cultural Roots of America's Political Crisis (James Davison Hunter)</a>
+  1. <a href="https://www.amazon.com/Beneath-Wheel-Hermann-Hesse/dp/031242230X/" target="_top">Beneath the Wheel (Herman Hesse)</a>
+  1. <a href="https://www.amazon.com/Triumph-Yuppies-America-Eighties-Creation/dp/1538725991/" target="_top">Triumph of the Yuppies: America, the Eighties, and the Creation of an Unequal Nation (Tom McGrath)</a>
+  1. <a href="https://www.amazon.com/Broken-Code-Facebook-Harmful-Secrets-ebook/dp/B0BS354RMX/" target="_top">Broken Code: Inside Facebook and the Fight to Expose Its Harmful Secrets (Jeff Horwitz)</a> _2025-08-12_
+  1. <a href="https://www.amazon.com/Keeping-Faith-Democracy-Riveted-Nation-ebook/dp/B0CN8VH515/" target="_top">Keeping the Faith: God, Democracy, and the Trial That Riveted a Nation (Brenda Wineapple)</a>
+  1. <a href="https://www.amazon.com/Nexus-Brief-History-Information-Networks-ebook/dp/B0CRP6SPL1/" target="_top">Nexus: A Brief History of Information Networks from the Stone Age to AI (Yuval Noah Harari)</a> _2024-11-10_
+  1. <a href="https://www.amazon.com/Midnight-Moscow-Memoir-Russias-Against-ebook/dp/B0CH83CX9P/" target="_top">Midnight in Moscow: A Memoir from the Front Lines of Russia's War Against the West (John J. Sullivan)</a> _2024-12-22_
+  1. <a href="https://www.amazon.com/Exvangelicals-Loving-Living-Leaving-Evangelical-ebook/dp/B0C1X8213B/" target="_top">The Exvangelicals: Loving, Living, and Leaving the White Evangelical Church (Sarah McCammon)</a> _2024-12-25_
 
-2023 (20):
+**2023**:
 
     White Noise (Don DeLillo)
     The Free World: Art and Thought in the Cold War (Louis Menand)
