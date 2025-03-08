@@ -25,25 +25,25 @@
 
 2024 (19):
 
-    <a href="https://www.amazon.com/Democracy-Awakening-Notes-State-America/dp/0593652967/" target="_top">Democracy Awakening: Notes and the State of America (Heather Cox Richardson)</a>
-    A Hacker's Mind: How the Powerful Bend Society's Rules, and How to Bend Them Back (Bruce Schneier)
-    The Nose (Nikolai Gogol) - 2024-02-04
-    On Nation Under Guns: How Gun Culture Distorts Our History and Threatens Our Democracy (Dominic Erdozain)
-    Doom: The Politics of Catastrophe (Niall Ferguson)
-    Spinoza: Freedom's Messiah (Ian Buruma)
-    Burn Book: A Tech Love Story (Kara Swisher)
-    The Anxious Generation (Jonathan Haidt) - 2025-05-11
-    The Wall (Marlen Haushofer)
-    An Unfinished Love Story: A Personal History of the 1960s (Doris Kearns Goodwin)
-    Underworld (Don DeLillo)
-    Democracy and Solidarity: On the Cultural Roots of America's Political Crisis (James Davison Hunter)
-    Beneath the Wheel (Herman Hesse)
-    Triumph of the Yuppies: America, the Eighties, and the Creation of an Unequal Nation (Tom McGrath)
-    Broken Code: Inside Facebook and the Fight to Expose Its Harmful Secrets (Jeff Horwitz) - 2025-08-12
-    Keeping the Faith: God, Democracy, and the Trial That Riveted a Nation (Brenda Wineapple)
-    Nexus: A Brief History of Information Networks from the Stone Age to AI (Yuval Noah Harari) - 2024-11-10
-    Midnight in Moscow: A Memoir from the Front Lines of Russia's War Against the West (John J. Sullivan) - 2024-12-22
-    The Exvangelicals: Loving, Living, and Leaving the White Evangelical Church (Sarah McCammon) - 2024-12-25
+  1. <a href="https://www.amazon.com/Democracy-Awakening-Notes-State-America/dp/0593652967/" target="_top">Democracy Awakening: Notes and the State of America (Heather Cox Richardson)</a>
+  1. A Hacker's Mind: How the Powerful Bend Society's Rules, and How to Bend Them Back (Bruce Schneier)
+  1. The Nose (Nikolai Gogol) - 2024-02-04
+  1. On Nation Under Guns: How Gun Culture Distorts Our History and Threatens Our Democracy (Dominic Erdozain)
+  1. Doom: The Politics of Catastrophe (Niall Ferguson)
+  1. Spinoza: Freedom's Messiah (Ian Buruma)
+  1. Burn Book: A Tech Love Story (Kara Swisher)
+  1. The Anxious Generation (Jonathan Haidt) - 2025-05-11
+  1. The Wall (Marlen Haushofer)
+  1. An Unfinished Love Story: A Personal History of the 1960s (Doris Kearns Goodwin)
+  1. Underworld (Don DeLillo)
+  1.  1. ocracy and Solidarity: On the Cultural Roots of America's Political Crisis (James Davison Hunter)
+  1. Beneath the Wheel (Herman Hesse)
+  1. Triumph of the Yuppies: America, the Eighties, and the Creation of an Unequal Nation (Tom McGrath)
+  1. Broken Code: Inside Facebook and the Fight to Expose Its Harmful Secrets (Jeff Horwitz) - 2025-08-12
+  1. Keeping the Faith: God, Democracy, and the Trial That Riveted a Nation (Brenda Wineapple)
+  1. Nexus: A Brief History of Information Networks from the Stone Age to AI (Yuval Noah Harari) - 2024-11-10
+  1. Midnight in Moscow: A Memoir from the Front Lines of Russia's War Against the West (John J. Sullivan) - 2024-12-22
+  1. The Exvangelicals: Loving, Living, and Leaving the White Evangelical Church (Sarah McCammon) - 2024-12-25
 
 2023 (20):
 
