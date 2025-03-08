@@ -159,14 +159,14 @@
 **2018**:
 
   1. <a href="https://www.amazon.com/Enlightenment-Now-Science-Humanism-Progress/dp/0143111388/">Enlightenment Now (Steven Pinker)</a>
-  1. <a href="todo">21 Lessons for the 21st Century (Yuval Noah Harari)</a>
-  1. <a href="todo">The Gene (Siddhartha Mukherjee)</a>
-  1. <a href="todo">Origin Story (David Christian)</a>
-  1. <a href="todo">What is Life? (Erwin Schrödinger)</a>
-  1. <a href="todo">A Mind at Play: How Claude Shannon Invented the Information Age (Soni)</a>
-  1. <a href="todo">Ludwig Wittgenstein: The Duty of Genius (Ray Monk)</a>
-  1. <a href="todo">Civilization and Its Discontents (Sigmund Freud)</a>
-  1. <a href="todo">The Double Helix (James Watson)</a>
+  1. <a href="https://www.amazon.com/Lessons-21st-Century-Yuval-Harari/dp/0525512195/">21 Lessons for the 21st Century (Yuval Noah Harari)</a>
+  1. <a href="https://www.amazon.com/Gene-Intimate-History-Siddhartha-Mukherjee/dp/147673352X/">The Gene (Siddhartha Mukherjee)</a>
+  1. <a href="https://www.amazon.com/Origin-Story-Big-History-Everything/dp/0316392014/">Origin Story (David Christian)</a>
+  1. <a href="https://www.amazon.com/What-Life-Autobiographical-Sketches-Classics/dp/1107604664/">What is Life? (Erwin Schrödinger)</a>
+  1. <a href="https://www.amazon.com/Mind-Play-Shannon-Invented-Information/dp/147676669X/">A Mind at Play: How Claude Shannon Invented the Information Age (Soni)</a>
+  1. <a href="https://www.amazon.com/Ludwig-Wittgenstein-Genius-Ray-Monk/dp/0140159959/">Ludwig Wittgenstein: The Duty of Genius (Ray Monk)</a>
+  1. <a href="https://www.amazon.com/Civilization-Its-Discontents-Sigmund-Freud/dp/0393304515/">Civilization and Its Discontents (Sigmund Freud)</a>
+  1. <a href="https://www.amazon.com/Double-Helix-Personal-Discovery-Structure/dp/074321630X/">The Double Helix (James Watson)</a>
   1. <a href="todo">The Innovators: How a Group of Hackers, Geniuses, and Geeks Created the Digital Revolution (Walter Isaacson)</a>
   1. <a href="todo">So You Want to Talk About Race (Ijeoma Oluo)</a>
   1. <a href="todo">Life's Greatest Secret: The Race to Crack the Genetic Code (Matthew Cobb)</a>
