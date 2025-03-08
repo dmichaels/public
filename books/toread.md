@@ -28,44 +28,41 @@
 1. <a href="https://www.amazon.com/Europeans-Orlando-Figes/dp/0141979437/" target="_top">The Europeans (Orlando Figes)</a>
 1. <a href="https://www.amazon.com/Red-Prince-Secret-Habsburg-Archduke/dp/0465018971/" target="_top">The Red Prince: The Secret Lives of a Habsburg Archduke (Timothy Snyder)</a>
 1. <a href="https://www.amazon.com/Spectre-Haunting-Communist-Manifesto/dp/1642598917/" target="_top">A Spectre, Haunting: On the Communist Manifesto (China Miéville)</a>
-1. <a href="todo" target="_top">The Psychology of Money (Morgan Housel)</a>
-1. <a href="todo" target="_top">The War on the West (Douglas Murray)</a>
-1. <a href="todo" target="_top">The Matter of Everything: How Curiosity, Physics, and Improbable Experiments Changed the World (Suzie Sheehy)</a>
-1. <a href="todo" target="_top">Turing's Vision: The Birth of Computer Science (Chris Bernhardt)</a>
-1. <a href="todo" target="_top">Hitler: Downfall 1939 - 1945 (Volker Ullrich)</a>
-1. <a href="todo" target="_top">The Plague (Albert Camus)</a>
-1. <a href="todo" target="_top">The Secret Agent (Joseph Conrad)</a>
-1. <a href="todo" target="_top">Catch 22 (Joseph Heller)</a>
-1. <a href="todo" target="_top">Slaughterhouse Five (Kurt Vonnegut)</a>
-1. <a href="todo" target="_top">Byzantium (Judith Herrin)</a>
-1. <a href="todo" target="_top">1968: The Year that Rocked the World (Mark Kurlansky)</a>
-1. <a href="todo" target="_top">Study is Hard Work (William H. Armstrong)</a>
-1. <a href="todo" target="_top">In Search of Lost Time (Marcel Proust)</a>
-1. <a href="todo" target="_top">The Armies of the Night (Norman Mailer)</a>
-1. <a href="todo" target="_top">Swiss Watching (Diccon Bewes)</a>
-1. <a href="todo" target="_top">A Most Elegant Equation (David Stipp)</a>
-1. <a href="todo" target="_top">Devil in the White City (Erik Larson)</a>
-1. <a href="todo" target="_top">Escape From Rome (Walter Scheidel)</a>
-1. <a href="todo" target="_top">Uncle Tom's Cabin (Harriet Beecher Stowe)</a>
-1. <a href="todo" target="_top">Coercion, Capital, and European States AD 990-1992 (Charles Tilly)</a>
-1. <a href="todo" target="_top">The Ordeal of Change (Eric Hoffer)</a>
-1. <a href="todo" target="_top">The Mathematics of Secrets (Joshua Holden)</a>
-1. <a href="todo" target="_top">The Human Use of Human Beings (Norbert Wiener)</a>
-1. <a href="todo" target="_top">Berlin (Jason Lutes)</a>
-1. <a href="todo" target="_top">Saga (Brian K. Vaughan)</a>
-1. <a href="todo" target="_top">The Magic Mountain (Thomas Mann)</a>
-1. <a href="todo" target="_top">The Lives of Cells (Lewis Thomas)</a>
-1. <a href="todo" target="_top">Of Human Bondage (W. Somerset Maugham)</a>
-1. <a href="todo" target="_top">My Ántonia (Willa Cather)</a>
-1. <a href="todo" target="_top">O Pioneers! (Willa Cather)</a>
-1. <a href="todo" target="_top">Energy and Civilization (Vaclav Smil)</a>
-1. <a href="todo" target="_top">Something by Thomas Hardy
-1. <a href="todo" target="_top">The Struggle for Mastery in Europe: 1848-1918 (A.J.P. Taylor)</a>
-1. <a href="todo" target="_top">A Farewell to Alms: A Brief Economic History of the World (Gregory Clark)</a>
-1. <a href="todo" target="_top">Blueprint: The Evolutionary Origins of a Good Society (Nicholas A. Christakis)</a>
-1. <a href="todo" target="_top">The Last Days of Mankind: A Tragedy in Five Acts (Karl Kraus)</a>
-1. <a href="todo" target="_top">China in Ten Words (Yu Hua)</a>
-1. <a href="todo" target="_top">Reflections on the Revolution in France (Edmund Burke)</a>
-1. <a href="todo" target="_top">Coming Apart: The State of White America, 1960-2010 (Charles Murray)</a>
-1. <a href="todo" target="_top">Money (Martin Amis)</a>
-1. <a href="todo" target="_top">The Guns of August (Barbara Tuchman)</a>
+1. <a href="https://www.amazon.com/Psychology-Money-Timeless-lessons-happiness/dp/0857197681/" target="_top">The Psychology of Money (Morgan Housel)</a>
+1. <a href="https://www.amazon.com/War-West-Douglas-Murray/dp/0063162024/" target="_top">The War on the West (Douglas Murray)</a>
+1. <a href="https://www.amazon.com/Matter-Everything-Curiosity-Improbable-Experiments/dp/0525658750/" target="_top">The Matter of Everything: How Curiosity, Physics, and Improbable Experiments Changed the World (Suzie Sheehy)</a>
+1. <a href="https://www.amazon.com/Turings-Vision-Birth-Computer-Science/dp/0262533510/" target="_top">Turing's Vision: The Birth of Computer Science (Chris Bernhardt)</a>
+1. <a href="https://www.amazon.com/Hitler-Downfall-1939-1945-Volker-Ullrich/dp/1101872063/" target="_top">Hitler: Downfall 1939 - 1945 (Volker Ullrich)</a>
+1. <a href="https://www.amazon.com/Plague-Albert-Camus/dp/0679720219/" target="_top">The Plague (Albert Camus)</a>
+1. <a href="https://www.amazon.com/Secret-Agent-Simple-Penguin-Classics/dp/0141441585/" target="_top">The Secret Agent: A Simple Tale (Joseph Conrad)</a>
+1. <a href="https://www.amazon.com/Catch-22-50th-Anniversary-Joseph-Heller/dp/1451626657/" target="_top">Catch 22 (Joseph Heller)</a>
+1. <a href="https://www.amazon.com/Slaughterhouse-Five-Novel-Modern-Library-Novels/dp/0385333846/" target="_top">Slaughterhouse Five (Kurt Vonnegut)</a>
+1. <a href="https://www.amazon.com/Byzantium-Surprising-Life-Medieval-Empire/dp/0691143692/" target="_top">Byzantium (Judith Herrin)</a>
+1. <a href="https://www.amazon.com/1968-Year-That-Rocked-World/dp/0345455827/" target="_top">1968: The Year that Rocked the World (Mark Kurlansky)</a>
+1. <a href="https://www.amazon.com/Study-Hard-William-Howard-Armstrong/dp/156792025X/" target="_top">Study is Hard Work (William H. Armstrong)</a>
+1. <a href="https://www.amazon.com/Swanns-Way-Search-Penguin-Classics/dp/0142437964/" target="_top">Swan's Way: In Search of Lost Time Volume I(Marcel Proust)</a>
+1. <a href="https://www.amazon.com/Armies-Night-History-Novel/dp/0452272793/" target="_top">The Armies of the Night (Norman Mailer)</a>
+1. <a href="https://www.amazon.com/Swiss-Watching-3rd-Inside-Honey/dp/1473677416/" target="_top">Swiss Watching (Diccon Bewes)</a>
+1. <a href="https://www.amazon.com/Most-Elegant-Equation-Euler%C2%92s-Mathematics/dp/0465093779/" target="_top">A Most Elegant Equation (David Stipp)</a>
+1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">Devil in the White City (Erik Larson)</a>
+1. <a href="https://www.amazon.com/Escape-Rome-Prosperity-Princeton-Economic/dp/0691216738/" target="_top">Escape From Rome: The Failure of Empire and the Road to Prosperity (Walter Scheidel)</a>
+1. <a href="https://www.amazon.com/Harriet-Beecher-Stowe-Ministers-Oldtown/dp/0940450011/" target="_top">Uncle Tom's Cabin (Harriet Beecher Stowe)</a>
+1. <a href="https://www.amazon.com/Coercion-Capital-European-States-D/dp/1557863687/" target="_top">Coercion, Capital, and European States AD 990-1992 (Charles Tilly)</a>
+1. <a href="https://www.amazon.com/Ordeal-Change-Essays-eric-hoffer/dp/B001JL3VIC/" target="_top">The Ordeal of Change (Eric Hoffer)</a>
+1. <a href="https://www.amazon.com/Mathematics-Secrets-Cryptography-Ciphers-Encryption/dp/0691183317/" target="_top">The Mathematics of Secrets (Joshua Holden)</a>
+1. <a href="https://www.amazon.com/Human-Use-Beings-Cybernetics-Society/dp/0306803208/" target="_top">The Human Use of Human Beings (Norbert Wiener)</a>
+1. <a href="https://www.amazon.com/Berlin-Jason-Lutes/dp/1770464069/" target="_top">Berlin (Jason Lutes)</a>
+1. <a href="https://www.amazon.com/Saga-Compendium-Brian-K-Vaughan/dp/153431346X/" target="_top">Saga (Brian K. Vaughan)</a>
+1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a>
+1. <a href="https://www.amazon.com/Lives-Cell-Notes-Biology-Watcher/dp/0140047433/" target="_top">The Lives of Cells (Lewis Thomas)</a>
+1. <a href="https://www.amazon.com/Human-Bondage-Literary-Classic-Annotated-ebook/dp/B0B57TY492/" target="_top">Of Human Bondage (W. Somerset Maugham)</a>
+1. <a href="https://www.amazon.com/My-Antonia-Willa-Cather-ebook/dp/B004IPPINC/" target="_top">My Ántonia (Willa Cather)</a>
+1. <a href="https://www.amazon.com/Pioneers-Willa-Cather-ebook/dp/B0711X6LQ1/" target="_top">O Pioneers! (Willa Cather)</a>
+1. <a href="https://www.amazon.com/Farewell-Alms-Economic-History-Princeton/dp/0691141282/" target="_top">A Farewell to Alms: A Brief Economic History of the World (Gregory Clark)</a>
+1. <a href="https://www.amazon.com/Blueprint-Evolutionary-Origins-Good-Society/dp/0316230049/" target="_top">Blueprint: The Evolutionary Origins of a Good Society (Nicholas A. Christakis)</a>
+1. <a href="https://www.amazon.com/Last-Days-Mankind-Tragedy-Five/dp/9492027038/" target="_top">The Last Days of Mankind: A Tragedy in Five Acts (Karl Kraus)</a>
+1. <a href="https://www.amazon.com/China-Ten-Words-Yu-Hua/dp/0307739791/" target="_top">China in Ten Words: Essays (Yu Hua)</a>
+1. <a href="https://www.amazon.com/Reflections-Revolution-France-Oxford-Classics/dp/0199539022/" target="_top">Reflections on the Revolution in France (Edmund Burke)</a>
+1. <a href="https://www.amazon.com/Coming-Apart-State-America-1960-2010/dp/030745343X/" target="_top">Coming Apart: The State of White America, 1960-2010 (Charles Murray)</a>
+1. <a href="https://www.amazon.com/Money-Martin-Amis/dp/0099461889/" target="_top">Money (Martin Amis)</a>
+1. <a href="https://www.amazon.com/Guns-August-Pulitzer-Prize-Winning-Outbreak/dp/0345476093/" target="_top">The Guns of August (Barbara Tuchman)</a>
