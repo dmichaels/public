@@ -1,10 +1,10 @@
 <ins>**Books To Read**</ins>
 
 1. <a href="https://www.amazon.com/Orbital-Samantha-Harvey/dp/0802163629/" target="_top">Orbital (Samantha Harvey)</a>
-1. <a href="todo" target="_top">Autocracy Inc. (Anne Applebaum)</a>
-1. <a href="todo" target="_top">On Freedom (Timothy Snyder)</a>
-1. <a href="todo" target="_top">Grimscribe (Thomas Ligotti)</a>
-1. <a href="todo" target="_top">The Book of Disquiet (Fernando Pessoa)</a>
+1. <a href="https://www.amazon.com/Autocracy-Inc-Dictators-Want-World/dp/0385549938/" target="_top">Autocracy Inc. (Anne Applebaum)</a>
+1. <a href="https://www.amazon.com/Freedom-Timothy-Snyder/dp/0593728726/" target="_top">On Freedom (Timothy Snyder)</a>
+1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Grimscribe (Thomas Ligotti)</a>
+1. <a href="https://www.amazon.com/Book-Disquiet-Complete-Fernando-Pessoa/dp/081122693X/" target="_top">The Book of Disquiet (Fernando Pessoa)</a>
 1. <a href="todo" target="_top">The Trouble With Being Born (E.M. Cioran)</a>
 1. <a href="todo" target="_top">In the Dust of This Planet: Horror of Philosophy, Volume 1 (Eugene Thacker)</a>
 1. <a href="todo" target="_top">Starry Speculative Corpse: Horror of Philosophy: Horror of Philosophy, Volume 2 (Eugene Thacker)</a>
