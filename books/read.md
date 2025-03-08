@@ -26,16 +26,16 @@
 **2024**:
 
   1. <a href="https://www.amazon.com/Democracy-Awakening-Notes-State-America/dp/0593652967/" target="_top">Democracy Awakening: Notes and the State of America (Heather Cox Richardson)</a>
-  1. <a href="todo" target="_top">A Hacker's Mind: How the Powerful Bend Society's Rules, and How to Bend Them Back (Bruce Schneier)</a>
-  1. <a href="todo" target="_top">The Nose (Nikolai Gogol)</a> _2024-02-04_
-  1. <a href="todo" target="_top">On Nation Under Guns: How Gun Culture Distorts Our History and Threatens Our Democracy (Dominic Erdozain)</a>
-  1. <a href="todo" target="_top">Doom: The Politics of Catastrophe (Niall Ferguson)</a>
-  1. <a href="todo" target="_top">Spinoza: Freedom's Messiah (Ian Buruma)</a>
-  1. <a href="todo" target="_top">Burn Book: A Tech Love Story (Kara Swisher)</a>
-  1. <a href="todo" target="_top">The Anxious Generation (Jonathan Haidt)</a> _2025-05-11_
-  1. <a href="todo" target="_top">The Wall (Marlen Haushofer)</a>
-  1. <a href="todo" target="_top">An Unfinished Love Story: A Personal History of the 1960s (Doris Kearns Goodwin)</a>
-  1. <a href="todo" target="_top">Underworld (Don DeLillo)</a>
+  1. <a href="https://www.amazon.com/Hackers-Mind-Powerful-Societys-Rules/dp/1324074531/" target="_top">A Hacker's Mind: How the Powerful Bend Society's Rules, and How to Bend Them Back (Bruce Schneier)</a>
+  1. <a href="https://www.amazon.com/Nose-Other-Stories-Russian-Library/dp/0231190697/" target="_top">The Nose (Nikolai Gogol)</a> _2024-02-04_
+  1. <a href="https://www.amazon.com/One-Nation-Under-Guns-Threatens/dp/0593594312/" target="_top">One Nation Under Guns: How Gun Culture Distorts Our History and Threatens Our Democracy (Dominic Erdozain)</a>
+  1. <a href="https://www.amazon.com/Doom-Politics-Catastrophe-Niall-Ferguson/dp/0593297393/" target="_top">Doom: The Politics of Catastrophe (Niall Ferguson)</a>
+  1. <a href="https://www.amazon.com/Spinoza-Freedoms-Messiah-Jewish-Lives/dp/0300281862/" target="_top">Spinoza: Freedom's Messiah (Ian Buruma)</a>
+  1. <a href="https://www.amazon.com/Burn-Book-Tech-Love-Story/dp/1982163909/" target="_top">Burn Book: A Tech Love Story (Kara Swisher)</a>
+  1. <a href="https://www.amazon.com/Anxious-Generation-Rewiring-Childhood-Epidemic/dp/0593655036/" target="_top">The Anxious Generation (Jonathan Haidt)</a> _2025-05-11_
+  1. <a href="https://www.amazon.com/Wall-Marlen-Haushofer/dp/0811231941/" target="_top">The Wall (Marlen Haushofer)</a>
+  1. <a href="https://www.amazon.com/Unfinished-Love-Story-Personal-History/dp/1982108665/" target="_top">An Unfinished Love Story: A Personal History of the 1960s (Doris Kearns Goodwin)</a>
+  1. <a href="https://www.amazon.com/Underworld-Novel-Don-DeLillo/dp/0684848155/" target="_top">Underworld (Don DeLillo)</a>
   1. <a href="todo" target="_top">Democracy and Solidarity: On the Cultural Roots of America's Political Crisis (James Davison Hunter)</a>
   1. <a href="todo" target="_top">Beneath the Wheel (Herman Hesse)</a>
   1. <a href="todo" target="_top">Triumph of the Yuppies: America, the Eighties, and the Creation of an Unequal Nation (Tom McGrath)</a>
