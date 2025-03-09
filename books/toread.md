@@ -44,7 +44,7 @@
 1. <a href="https://www.amazon.com/Byzantium-Surprising-Life-Medieval-Empire/dp/0691143692/" target="_top">Byzantium (Judith Herrin)</a>
 1. <a href="https://www.amazon.com/1968-Year-That-Rocked-World/dp/0345455827/" target="_top">1968: The Year that Rocked the World (Mark Kurlansky)</a>
 1. <a href="https://www.amazon.com/Study-Hard-William-Howard-Armstrong/dp/156792025X/" target="_top">Study is Hard Work (William H. Armstrong)</a>
-1. <a href="https://www.amazon.com/Swanns-Way-Search-Penguin-Classics/dp/0142437964/" target="_top">Swan's Way: In Search of Lost Time Volume I(Marcel Proust)</a>
+1. <a href="https://www.amazon.com/Swanns-Way-Search-Penguin-Classics/dp/0142437964/" target="_top">Swan's Way: In Search of Lost Time Volume I (Marcel Proust)</a>
 1. <a href="https://www.amazon.com/Armies-Night-History-Novel/dp/0452272793/" target="_top">The Armies of the Night (Norman Mailer)</a>
 1. <a href="https://www.amazon.com/Swiss-Watching-3rd-Inside-Honey/dp/1473677416/" target="_top">Swiss Watching (Diccon Bewes)</a>
 1. <a href="https://www.amazon.com/Most-Elegant-Equation-Euler%C2%92s-Mathematics/dp/0465093779/" target="_top">A Most Elegant Equation (David Stipp)</a>
