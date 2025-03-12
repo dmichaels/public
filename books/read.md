@@ -22,8 +22,8 @@
   1. <a href="https://www.amazon.com/Saturday-Ian-McEwan/dp/1400076196/" target="_top">Saturday (Ian McEwan)</a> _2025-02-27_
   1. <a href="https://www.amazon.com/Man-Without-Qualities-Vol-Introduction/dp/0679767878/" target="_top">The Man Without Qualities (Robert Musil)</a> _2025-03-07_
   1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> _2025-03-09_
-  1. <a href="https://www.amazon.com/Autocracy-Inc-Dictators-Want-World/dp/0385549938/" target="_top">Autocracy Inc.: The Dictators Who Want to Run the World (Anne Applebaum)</a> _2023-03-10_
-  1. <a href="https://www.amazon.com/Freedom-Timothy-Snyder/dp/0593728726/" target="_top">On Freedom (Timothy Snyder)</a> _in progress ..._
+  1. <a href="https://www.amazon.com/Autocracy-Inc-Dictators-Want-World/dp/0385549938/" target="_top">Autocracy Inc.: The Dictators Who Want to Run the World (Anne Applebaum)</a> _2025-03-10_
+  1. <a href="https://www.amazon.com/Freedom-Timothy-Snyder/dp/0593728726/" target="_top">On Freedom (Timothy Snyder)</a> _2025-03-12_
 
 **2024**:
 
