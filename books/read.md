@@ -24,7 +24,7 @@
   1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> _2025-03-09_
   1. <a href="https://www.amazon.com/Autocracy-Inc-Dictators-Want-World/dp/0385549938/" target="_top">Autocracy Inc.: The Dictators Who Want to Run the World (Anne Applebaum)</a> _2025-03-10_
   1. <a href="https://www.amazon.com/Freedom-Timothy-Snyder/dp/0593728726/" target="_top">On Freedom (Timothy Snyder)</a> _2025-03-12_
-  1. <a href="https://www.amazon.com/Yellow-Wallpaper-Charlotte-Perkins-Gilman/dp/1684222273/" target="_top">The Yellow Wallpaper (Charlotte Perkins Gilman)</a> _in progress_
+  1. <a href="https://www.amazon.com/Yellow-Wallpaper-Charlotte-Perkins-Gilman/dp/1684222273/" target="_top">The Yellow Wallpaper (Charlotte Perkins Gilman)</a> _2025-03-12_
 
 **2024**:
 
