@@ -25,7 +25,7 @@
   1. <a href="https://www.amazon.com/Autocracy-Inc-Dictators-Want-World/dp/0385549938/" target="_top">Autocracy Inc.: The Dictators Who Want to Run the World (Anne Applebaum)</a> _2025-03-10_
   1. <a href="https://www.amazon.com/Freedom-Timothy-Snyder/dp/0593728726/" target="_top">On Freedom (Timothy Snyder)</a> _2025-03-12_
   1. <a href="https://www.amazon.com/Yellow-Wallpaper-Charlotte-Perkins-Gilman/dp/1684222273/" target="_top">The Yellow Wallpaper (Charlotte Perkins Gilman)</a> _2025-03-12_
-  1. <a href="https://www.amazon.com/Orbital-Samantha-Harvey/dp/0802163629/" target="_top">Orbital (Samantha Harvey)</a> _in progress ..._
+  1. <a href="https://www.amazon.com/Orbital-Samantha-Harvey/dp/0802163629/" target="_top">Orbital (Samantha Harvey)</a> _2025-03-13_
 
 **2024**:
 
