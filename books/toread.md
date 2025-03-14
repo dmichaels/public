@@ -1,6 +1,5 @@
 <ins>**Books To Read**</ins>
 
-1. <a href="https://www.amazon.com/Garden-Beasts-Terror-American-Hitlers/dp/030740885X/" target="_top">In the Garden of Beasts (Erik Larson)</a>
 1. <a href="https://www.amazon.com/dp/140009593X/" target="_top">Iron Curtain: The Crushing of Eastern Europe, 1944-1956 (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Gulag-History-Anne-Applebaum-ebook/dp/B0012SCJ9Y" target="_top">Gulag: A History (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Stalin-Paradoxes-1878-1928-Stephen-Kotkin/dp/0143127861/" target="_top">Stalin: Paradoxes of Power, 1878 - 1928 (Stephen Kotkin)</a>
