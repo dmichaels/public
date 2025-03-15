@@ -1,5 +1,9 @@
 <ins>**Books To Read**</ins>
 
+1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">Devil in the White City (Erik Larson)</a>
+1. <a href="https://www.amazon.com/Dead-Wake-Last-Crossing-Lusitania/dp/0307408876/" target="_top">Dead Wake (Erik Larson)</a>
+1. <a href="https://www.amazon.com/Splendid-Vile-Churchill-Family-Defiance/dp/0385348738/" target="_top">The Splendid and the Vile (Erik Larson)</a>
+1. <a href="https://www.amazon.com/dp/B00AV68GF4/" target="_top">Krakatoa: The Day the World Exploded: August 27, 1883 (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/dp/140009593X/" target="_top">Iron Curtain: The Crushing of Eastern Europe, 1944-1956 (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Gulag-History-Anne-Applebaum-ebook/dp/B0012SCJ9Y" target="_top">Gulag: A History (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Stalin-Paradoxes-1878-1928-Stephen-Kotkin/dp/0143127861/" target="_top">Stalin: Paradoxes of Power, 1878 - 1928 (Stephen Kotkin)</a>
@@ -51,8 +55,6 @@
 1. <a href="https://www.amazon.com/Armies-Night-History-Novel/dp/0452272793/" target="_top">The Armies of the Night (Norman Mailer)</a>
 1. <a href="https://www.amazon.com/Swiss-Watching-3rd-Inside-Honey/dp/1473677416/" target="_top">Swiss Watching (Diccon Bewes)</a>
 1. <a href="https://www.amazon.com/Most-Elegant-Equation-Euler%C2%92s-Mathematics/dp/0465093779/" target="_top">A Most Elegant Equation (David Stipp)</a>
-1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">Devil in the White City (Erik Larson)</a>
-1. <a href="https://www.amazon.com/dp/B00AV68GF4/" target="_top">Krakatoa: The Day the World Exploded: August 27, 1883 (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/Escape-Rome-Prosperity-Princeton-Economic/dp/0691216738/" target="_top">Escape From Rome: The Failure of Empire and the Road to Prosperity (Walter Scheidel)</a>
 1. <a href="https://www.amazon.com/Harriet-Beecher-Stowe-Ministers-Oldtown/dp/0940450011/" target="_top">Uncle Tom's Cabin (Harriet Beecher Stowe)</a>
 1. <a href="https://www.amazon.com/Coercion-Capital-European-States-D/dp/1557863687/" target="_top">Coercion, Capital, and European States AD 990-1992 (Charles Tilly)</a>
