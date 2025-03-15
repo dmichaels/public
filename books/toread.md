@@ -4,6 +4,7 @@
 1. <a href="https://www.amazon.com/Dead-Wake-Last-Crossing-Lusitania/dp/0307408876/" target="_top">Dead Wake (Erik Larson)</a>
 1. <a href="https://www.amazon.com/Splendid-Vile-Churchill-Family-Defiance/dp/0385348738/" target="_top">The Splendid and the Vile (Erik Larson)</a>
 1. <a href="https://www.amazon.com/dp/B00AV68GF4/" target="_top">Krakatoa: The Day the World Exploded: August 27, 1883 (Simon Winchester)</a>
+1. <a href="https://www.amazon.com/Exactly-Precision-Engineers-Created-Modern/dp/0008241783/" target="_top">Exactly (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/dp/140009593X/" target="_top">Iron Curtain: The Crushing of Eastern Europe, 1944-1956 (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Gulag-History-Anne-Applebaum-ebook/dp/B0012SCJ9Y" target="_top">Gulag: A History (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Stalin-Paradoxes-1878-1928-Stephen-Kotkin/dp/0143127861/" target="_top">Stalin: Paradoxes of Power, 1878 - 1928 (Stephen Kotkin)</a>
@@ -28,7 +29,6 @@
 1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/Beach-Nevil-Shute/dp/0307473996/" target="_top">On the Beach (Neville Shute)</a>
 1. <a href="https://www.amazon.com/When-Clock-Broke-Conspiracists-America/dp/0374605440/" target="_top">When the Clock Broke: Con Men, Conspiracists, and How America Cracked Up in the Early 1990s (John Ganz)</a>
-1. <a href="https://www.amazon.com/Exactly-Precision-Engineers-Created-Modern/dp/0008241783/" target="_top">Exactly (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/Thomas-Sowell-Reader/dp/0465022502/" target="_top">The Thomas Sowell Reader (Thomas Sowell)</a>
 1. <a href="https://www.amazon.com/Taking-Manhattan-Extraordinary-Created-America/dp/0393881164/" target="_top">Taking Manhattan: The Extraordinary Events That Created New York and Shaped America (Russell Shorto)</a>
 1. <a href="https://www.amazon.com/Basic-Economics-Thomas-Sowell/dp/0465060730/" target="_top">Basic Economics (Thomas Sowell)</a>
