@@ -26,7 +26,7 @@
   1. <a href="https://www.amazon.com/Freedom-Timothy-Snyder/dp/0593728726/" target="_top">On Freedom (Timothy Snyder)</a> _2025-03-12_
   1. <a href="https://www.amazon.com/Yellow-Wallpaper-Charlotte-Perkins-Gilman/dp/1684222273/" target="_top">The Yellow Wallpaper (Charlotte Perkins Gilman)</a> _2025-03-12_
   1. <a href="https://www.amazon.com/Orbital-Samantha-Harvey/dp/0802163629/" target="_top">Orbital (Samantha Harvey)</a> _2025-03-13_
-  1. <a href="https://www.amazon.com/Garden-Beasts-Terror-American-Hitlers/dp/030740885X/" target="_top">In the Garden of Beasts (Erik Larson)</a> _in progress ..._
+  1. <a href="https://www.amazon.com/Garden-Beasts-Terror-American-Hitlers/dp/030740885X/" target="_top">In the Garden of Beasts (Erik Larson)</a> _2025-03-xx ... in progress ..._
 
 **2024**:
 
