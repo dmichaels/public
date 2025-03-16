@@ -1,7 +1,7 @@
 <ins>**Books To Read**</ins>
 
 1. <a href="https://www.amazon.com/Waste-Land-World-Permanent-Crisis/dp/0593730321/" target="_top">Waste Land: A World in Permanent Crisis (Robert D. Kaplan)</a>
-1. <a href="https://www.amazon.com/Lost-Kingdom-History-Nationalism-Vladimir/dp/0141983132/" target="_top">Lost Kingdom (Serhii Plokhy)</a>
+1. <a href="https://www.amazon.com/Lost-Kingdom-History-Nationalism-Vladimir/dp/0141983132/" target="_top">Lost Kingdom: A History of Russian Nationalism from Ivan the Great to Vladimir Putin (Serhii Plokhy)</a>
 1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">Devil in the White City (Erik Larson)</a>
 1. <a href="https://www.amazon.com/Dead-Wake-Last-Crossing-Lusitania/dp/0307408876/" target="_top">Dead Wake (Erik Larson)</a>
 1. <a href="https://www.amazon.com/Splendid-Vile-Churchill-Family-Defiance/dp/0385348738/" target="_top">The Splendid and the Vile (Erik Larson)</a>
