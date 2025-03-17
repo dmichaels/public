@@ -219,6 +219,7 @@
   1. <a href="https://www.amazon.com/God-Not-Great-Religion-Everything/dp/B00G3ZR1OO/">God Is Not Great: How Religion Poisons Everything (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Hitch-22-Memoir-Christopher-Hitchens/dp/0446540331/">Hitch-22: A Memoir (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
+  1. <a href="https://www.amazon.com/Leonardo-Vinci-Walter-Isaacson/dp/1501139169/">Leonardo da Vinci (Walter Isaacson)</a>
   1. <a href="https://www.amazon.com/Confessions-Philosopher-Personal-Philosophy-Paperback/dp/0375750363/">Confessions of a Philosopher: A Personal Journey Through Western Philosophy from Plato to Popper (Bryan Magee)</a>
   1. <a href="https://www.amazon.com/Making-Philosopher-Journey-Twentieth-Century-Philosophy-ebook/dp/B005AK0HIU/">The Making of a Philosopher: My Journey Through Twentieth-Century Philosophy (Colin McGinn)</a>
   1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
