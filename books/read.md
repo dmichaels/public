@@ -227,7 +227,10 @@
   1. <a href="https://www.amazon.com/Blank-Slate-Modern-Denial-Nature-ebook/dp/B000QCTNIM/">The Blank Slate: The Modern Denial of Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/How-Mind-Works-Steven-Pinker-ebook/dp/B0042XA2XG/">How the Mind Works (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Bell-Jar-Modern-Classics/dp/0060837020/">The Bell Jar (Sylvia Plath)</a>
+  1. <a href="https://www.amazon.com/Omnivores-Dilemma-Natural-History-Meals/dp/0143038583/">The Omnivore's Dilemma: A Natural History of Four Meals (Michael Pollan)</a>
+  1. <a href="https://www.amazon.com/Botany-Desire-Plants-Eye-View-World/dp/B0B3L6G9F5">The Botany of Desire: A Plant's-Eye View of the World (Michael Pollan)</a>
   1. <a href="https://www.amazon.com/Bertrand-Russell-Bundle-Relativity-Routledge/dp/B006QB0OEO/">ABC of Relativity (Bertrand Russell)</a>
+  1. <a href="https://www.amazon.com/Christian-Essays-Religion-Related-Subjects/dp/0671203231/">Why I Am Not a Christian (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Infinite-Jest-David-Foster-Wallace/dp/0316066524/">Infinite Jest (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Pale-King-David-Foster-Wallace/dp/0316074225/">The Pale King (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Candide-Voltaire/dp/1087113490/">Candide (Voltaire)</a>
