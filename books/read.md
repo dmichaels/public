@@ -275,6 +275,7 @@
   1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Raise-High-Roof-Carpenters-Seymour/dp/0316769517/">Raise High the Roof Beam, Carpenters and Seymour: An Introduction (J.D. Salinger)</a>
+  1. <a href="https://www.amazon.com/Death-Ilyich-Stories-Penguin-Classics/dp/0140449612/">The Death of Ivan Ilyich (Leo Tolstoy)</a>
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Welcome-Monkey-House-Collection-Short/dp/0385333501/">Welcome to the Monkey House: A Collection of Short Works (Kurt Vonnegut)</a>
