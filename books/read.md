@@ -105,6 +105,7 @@
 **2021**:
 
   1. <a href="https://www.amazon.com/Rationality-What-Seems-Scarce-Matters-ebook/dp/B08WK3JNLT/">Rationality: What It Is, Why It Seems Scarce, Why It Matters (Steven Pinker)</a>
+  1. <a href="https://www.amazon.com/Fun-Home-Tragicomic-Alison-Bechdel/dp/0618871713/">Fun Home (Alison Bechdel)</a>
   1. <a href="https://www.amazon.com/Feline-Philosophy-Cats-Meaning-Life/dp/1250800250/">Feline Philosophy (John Gray)</a>
   1. <a href="https://www.amazon.com/Amazon-Unbound-Invention-Global-Empire/dp/1982132620/">Amazon Unbound (Brad Stone)</a>
   1. <a href="https://www.amazon.com/World-Beyond-Your-Head-Distraction/dp/0374535914/">The World Beyond Your Head (Matthew Crawford)</a>
