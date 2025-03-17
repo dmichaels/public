@@ -219,6 +219,7 @@
   1. <a href="https://www.amazon.com/God-Not-Great-Religion-Everything/dp/B00G3ZR1OO/">God Is Not Great: How Religion Poisons Everything (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Hitch-22-Memoir-Christopher-Hitchens/dp/0446540331/">Hitch-22: A Memoir (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
+  1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
   1. <a href="https://www.amazon.com/Annotated-Lolita-Revised-Updated-ebook/dp/B004KABE2Y/">Lolita (Vladimir Nabokov)</a>
   1. <a href="https://www.amazon.com/Real-Life-Sebastian-Knight/dp/0679727264/">The Real Life of Sebastian Knight (Vladimir Nabokov)</a>
@@ -240,7 +241,6 @@
 **1970-1999**
 
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
-  1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
