@@ -188,3 +188,11 @@
   1. <a href="https://www.amazon.com/Romance-Three-Legs-Obsessive-Perfect/dp/1596915242/">A Romance on Three Legs: Glenn Gould's Obsessive Quest for the Perfect Piano (Katie Hafner)</a>
   1. <a href="https://www.amazon.com/Home-After-Dark-David-Small/dp/0871403153/">Home After Dark (David Small)</a>
   1. <a href="https://www.amazon.com/Gullivers-Travels-Penguin-Classics-Jonathan/dp/0141439491/">Gulliver's Travels (Jonathan Swift)</a>
+
+**1970-2017**
+
+  1. <a href="todo">The World of Yesterday (Stefan Zweig)</a>
+  1. <a href="todo">Moby Dick (Herman Melville)</a>
+  1. <a href="todo">Infinite Jest (David Foster Wallace)</a>
+  1. <a href="todo">The Pale King (David Foster Wallace)</a>
+  1. <a href="todo">The Glass Bead Game (Hermann Hesse)</a>
