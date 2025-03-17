@@ -192,6 +192,8 @@
 
 **2000-2017**
 
+  1. <a href="https://www.amazon.com/Gods-Debris-Experiment-Scott-Adams/dp/0740747878/">God's Debris: A Thought Experiment (Scott Adams)</a>
+  1. <a href="https://www.amazon.com/Religion-War-Scott-Adams/dp/0740747886/">The Religion War (Scott Adams)</a>
   1. <a href="https://www.amazon.com/Sense-Ending-Julian-Barnes/dp/0307947726/">The Sense of an Ending (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Nothing-Be-Frightened-Julian-Barnes-ebook/dp/B001ANYC9Q/">Nothing to Be Frightened Of: A Memoir (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Duel-Sun-Beardsley-Americas-Greatest/dp/1594866287/">Duel in the Sun: Alberto Salazar, Dick Beardsley, and America's Greatest Marathon (John Brant)</a>
