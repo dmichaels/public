@@ -198,8 +198,12 @@
   1. <a href="https://www.amazon.com/Blind-Watchmaker-Evidence-Evolution-Universe/dp/0393351491/">The Blind Watchmaker (Richard Dawkins)</a>
   1. <a href="https://www.amazon.com/God-Delusion-Richard-Dawkins/dp/0618918248/">The God Delusion (Richard Dawkins)</a>
   1. <a href="https://www.amazon.com/Greatest-Show-Earth-Evidence-Evolution/dp/055277524X/">The Greatest Show on Earth: The Evidence for Evolution (Richard Dawkins)</a>
-  1. <a href="https://www.amazon.com/Breaking-Spell-Religion-Natural-Phenomenon/dp/0143038338/">Breaking the Spell: Religion as a Natural Phenomenon (Daniel Dennett)</a>
+  1. <a href="https://www.amazon.com/Breaking-Spell-Religion-Phenomenon-Hardcover/dp/B015X4G4HA/">Breaking the Spell: Religion as a Natural Phenomenon (Daniel Dennett)</a>
   1. <a href="https://www.amazon.com/DARWINS-DANGEROUS-IDEA-EVOLUTION-MEANINGS/dp/068482471X/">Darwin's Dangerous Idea: Evolution and the Meanings of Life (Daniel Dennett)</a>
+  1. <a href="https://www.amazon.com/Elbow-Room-Varieties-Wanting-Bradford/dp/0262527790/">Elbow Room: The Varieties of Free Will Worth Wanting (Daniel Dennett)</a>
+  1. <a href="https://www.amazon.com/Freedom-Evolves-Daniel-C-Dennett/dp/0142003840/">Freedom Evolves (Daniel Dennett)</a>
+  1. <a href="https://www.amazon.com/Minds-Fantasies-Reflections-Self-Soul/dp/0465030912/">The Mind's I: Fantasies and Reflections (Daniel Dennett, Douglas Hofstadter)</a>
+  1. <a href="https://www.amazon.com/Sweet-Dreams-Philosophical-Obstacles-Consciousness/dp/0262042258/">Sweet Dreams: Philosophical Obstacles To A Science Of Consciousness (Daniel Dennett)</a>
   1. <a href="https://www.amazon.com/Madame-Penguin-Classics-Gustave-Flaubert/dp/0140449124/">Madame Bovary (Gustave Flaubert)</a>
   1. <a href="https://www.amazon.com/Glass-Bead-Game-Magister-Novel/dp/0312278497/">The Glass Bead Game (Hermann Hesse)</a>
   1. <a href="https://www.amazon.com/Siddhartha-Indian-Penguin-Twentieth-Century-Classics/dp/0141181230/">Siddhartha (Hermann Hesse)</a>
