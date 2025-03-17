@@ -211,6 +211,7 @@
   1. <a href="https://www.amazon.com/Brothers-Karamazov-Novel-Parts-Epilogue-ebook/dp/B004ZM10OE/">The Brothes Karamazov (Fyodor Dostoevsky)</a>
   1. <a href="https://www.amazon.com/Idiot-Vintage-Classics-Fyodor-Dostoevsky-ebook/dp/B000FCKCBA/">The Idiot (Fyodor Dostoevsky)</a>
   1. <a href="https://www.amazon.com/Notes-Underground-Fyodor-Dostoevsky-ebook/dp/B0CCW2FBDP/">Notes from the Underground (Fyodor Dostoevsky)</a>
+  1. <a href="https://www.amazon.com/Logicomix-search-truth-Apostolos-Doxiadis/dp/1596914521/">Logicomix: An Epic Search for Truth (Apostolos Doxiadis, Christos Papadimitriou )</a>
   1. <a href="https://www.amazon.com/Madame-Penguin-Classics-Gustave-Flaubert/dp/0140449124/">Madame Bovary (Gustave Flaubert)</a>
   1. <a href="https://www.amazon.com/Passage-India-M-Forster/dp/163360540X/">A Passage to India (E.M. Forster)</a>
   1. <a href="https://www.amazon.com/Machine-Stops-M-Forster/dp/1434442047/">The Machine Stops (E.M. Forster)</a>
