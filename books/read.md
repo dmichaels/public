@@ -230,6 +230,13 @@
 
 **1970-2000**
 
+  1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
+  1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
+  1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
+  1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
+  1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
+  1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
+  1. <a href="https://www.amazon.com/Raise-High-Roof-Carpenters-Seymour/dp/0316769517/">Raise High the Roof Beam, Carpenters and Seymour: An Introduction (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Welcome-Monkey-House-Collection-Short/dp/0385333501/">Welcome to the Monkey House: A Collection of Short Works (Kurt Vonnegut)</a>
