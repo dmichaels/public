@@ -170,7 +170,7 @@
   1. <a href="https://www.amazon.com/Gene-Intimate-History-Siddhartha-Mukherjee/dp/147673352X/">The Gene (Siddhartha Mukherjee)</a>
   1. <a href="https://www.amazon.com/Origin-Story-Big-History-Everything/dp/0316392014/">Origin Story (David Christian)</a>
   1. <a href="https://www.amazon.com/What-Life-Autobiographical-Sketches-Classics/dp/1107604664/">What is Life? (Erwin Schrödinger)</a>
-  1. <a href="https://www.amazon.com/Mind-Play-Shannon-Invented-Information/dp/147676669X/">A Mind at Play: How Claude Shannon Invented the Information Age (Soni)</a>
+  1. <a href="https://www.amazon.com/Mind-Play-Shannon-Invented-Information/dp/147676669X/">A Mind at Play: How Claude Shannon Invented the Information Age (Jimmy Soni, Rob Goodman)</a>
   1. <a href="https://www.amazon.com/Ludwig-Wittgenstein-Genius-Ray-Monk/dp/0140159959/">Ludwig Wittgenstein: The Duty of Genius (Ray Monk)</a>
   1. <a href="https://www.amazon.com/Civilization-Its-Discontents-Sigmund-Freud/dp/0393304515/">Civilization and Its Discontents (Sigmund Freud)</a>
   1. <a href="https://www.amazon.com/Double-Helix-Personal-Discovery-Structure/dp/074321630X/">The Double Helix (James Watson)</a>
