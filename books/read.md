@@ -191,9 +191,12 @@
 
 **1970-2017**
 
-  1. <a href="todo">The World of Yesterday (Stefan Zweig)</a>
-  1. <a href="todo">Moby Dick (Herman Melville)</a>
-  1. <a href="todo">Infinite Jest (David Foster Wallace)</a>
-  1. <a href="todo">The Pale King (David Foster Wallace)</a>
-  1. <a href="todo">The Glass Bead Game (Hermann Hesse)</a>
+  1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
+  1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
+  1. <a href="https://www.amazon.com/Infinite-Jest-David-Foster-Wallace/dp/0316066524/">Infinite Jest (David Foster Wallace)</a>
+  1. <a href="https://www.amazon.com/Pale-King-David-Foster-Wallace/dp/0316074225/">The Pale King (David Foster Wallace)</a>
+  1. <a href="https://www.amazon.com/Glass-Bead-Game-Magister-Novel/dp/0312278497/">The Glass Bead Game (Hermann Hesse)</a>
+  1. <a href="https://www.amazon.com/Hitch-22-Memoir-Christopher-Hitchens/dp/0446540331/">Hitch-22 (Christopher Hitchens)</a>
+  1. <a href="https://www.amazon.com/God-Not-Great-Religion-Everything/dp/B00G3ZR1OO/">God Is Not Great : How Religion Poisons Everything (Christopher Hitchens)</a>
+  1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
   1. ...
