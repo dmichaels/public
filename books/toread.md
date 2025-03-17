@@ -1,5 +1,6 @@
 <ins>**Books To Read**</ins>
 
+1. <a href="https://www.amazon.com/Waste-Land-World-Permanent-Crisis/dp/0593730321/" target="_top">Waste Land: A World in Permanent Crisis (Robert D. Kaplan)</a> _... in progress ..._
 1. <a href="https://www.amazon.com/Lost-Kingdom-History-Nationalism-Vladimir/dp/0141983132/" target="_top">Lost Kingdom: A History of Russian Nationalism from Ivan the Great to Vladimir Putin (Serhii Plokhy)</a>
 1. <a href="https://www.amazon.com/dp/1324093463/" target="_top">Germany 1923: Hyperinflation, Hitler's Putsch, and Democracy in Crisis (Volker Ullrich)</a>
 1. <a href="https://www.amazon.com/Ordinary-Men-Reserve-Battalion-Solution/dp/0062303023/" target="_top">Ordinary Men: Reserve Police Battalion 101 and the Final Solution in Poland (Christopher R. Browning)</a>
@@ -47,7 +48,6 @@
 1. <a href="https://www.amazon.com/War-West-Douglas-Murray/dp/0063162024/" target="_top">The War on the West (Douglas Murray)</a>
 1. <a href="https://www.amazon.com/Matter-Everything-Curiosity-Improbable-Experiments/dp/0525658750/" target="_top">The Matter of Everything: How Curiosity, Physics, and Improbable Experiments Changed the World (Suzie Sheehy)</a>
 1. <a href="https://www.amazon.com/Turings-Vision-Birth-Computer-Science/dp/0262533510/" target="_top">Turing's Vision: The Birth of Computer Science (Chris Bernhardt)</a>
-1. <a href="https://www.amazon.com/Hitler-Downfall-1939-1945-Volker-Ullrich/dp/1101872063/" target="_top">Hitler: Downfall 1939 - 1945 (Volker Ullrich)</a>
 1. <a href="https://www.amazon.com/Plague-Albert-Camus/dp/0679720219/" target="_top">The Plague (Albert Camus)</a>
 1. <a href="https://www.amazon.com/Secret-Agent-Simple-Penguin-Classics/dp/0141441585/" target="_top">The Secret Agent: A Simple Tale (Joseph Conrad)</a>
 1. <a href="https://www.amazon.com/Catch-22-50th-Anniversary-Joseph-Heller/dp/1451626657/" target="_top">Catch 22 (Joseph Heller)</a>

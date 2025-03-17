@@ -27,7 +27,7 @@
   1. <a href="https://www.amazon.com/Yellow-Wallpaper-Charlotte-Perkins-Gilman/dp/1684222273/" target="_top">The Yellow Wallpaper (Charlotte Perkins Gilman)</a> _2025-03-12_
   1. <a href="https://www.amazon.com/Orbital-Samantha-Harvey/dp/0802163629/" target="_top">Orbital (Samantha Harvey)</a> _2025-03-13_
   1. <a href="https://www.amazon.com/Garden-Beasts-Terror-American-Hitlers/dp/030740885X/" target="_top">In the Garden of Beasts (Erik Larson)</a> _2025-03-16_
-  1. <a href="https://www.amazon.com/Waste-Land-World-Permanent-Crisis/dp/0593730321/" target="_top">Waste Land: A World in Permanent Crisis (Robert D. Kaplan)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Hitler-Downfall-1939-1945-Volker-Ullrich/dp/1101872063/" target="_top">Hitler: Downfall 1939 - 1945 (Volker Ullrich)</a> _... in progress ..._
 
 **2024**:
 
