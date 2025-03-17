@@ -193,8 +193,16 @@
 
   1. <a href="https://www.amazon.com/Duel-Sun-Beardsley-Americas-Greatest/dp/1594866287/">Duel in the Sun: Alberto Salazar, Dick Beardsley, and America's Greatest Marathon (John Brant)</a>
   1. <a href="https://www.amazon.com/Clockwork-Orange-Anthony-Burgess/dp/0393341763/">A Clockwork Orange (Anthony Burgess)</a>
-  1. <a href="https://www.amazon.com/Madame-Penguin-Classics-Gustave-Flaubert/dp/0140449124/">Madame Bovary (GustavE Flaubert)</a>
+  1. <a href="https://www.amazon.com/Selfish-Gene-Anniversary-Landmark-Science/dp/0198788606/">The Selfish Gene (Richard Dawkins)</a>
+  1. <a href="https://www.amazon.com/The-Ancestors-Tale-audiobook/dp/B00V501GYI/">The Ancestor's Tale (Richard Dawkins)</a>
+  1. <a href="https://www.amazon.com/Blind-Watchmaker-Evidence-Evolution-Universe/dp/0393351491/">The Blind Watchmaker (Richard Dawkins)</a>
+  1. <a href="https://www.amazon.com/God-Delusion-Richard-Dawkins/dp/0618918248/">The God Delusion (Richard Dawkins)</a>
+  1. <a href="https://www.amazon.com/Greatest-Show-Earth-Evidence-Evolution/dp/055277524X/">The Greatest Show on Earth: The Evidence for Evolution (Richard Dawkins)</a>
+  1. <a href="https://www.amazon.com/Breaking-Spell-Religion-Natural-Phenomenon/dp/0143038338/">Breaking the Spell: Religion as a Natural Phenomenon (Daniel Dennett)</a>
+  1. <a href="https://www.amazon.com/DARWINS-DANGEROUS-IDEA-EVOLUTION-MEANINGS/dp/068482471X/">Darwin's Dangerous Idea: Evolution and the Meanings of Life (Daniel Dennett)</a>
+  1. <a href="https://www.amazon.com/Madame-Penguin-Classics-Gustave-Flaubert/dp/0140449124/">Madame Bovary (Gustave Flaubert)</a>
   1. <a href="https://www.amazon.com/Glass-Bead-Game-Magister-Novel/dp/0312278497/">The Glass Bead Game (Hermann Hesse)</a>
+  1. <a href="https://www.amazon.com/Siddhartha-Indian-Penguin-Twentieth-Century-Classics/dp/0141181230/">Siddhartha (Hermann Hesse)</a>
   1. <a href="https://www.amazon.com/God-Not-Great-Religion-Everything/dp/B00G3ZR1OO/">God Is Not Great : How Religion Poisons Everything (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Hitch-22-Memoir-Christopher-Hitchens/dp/0446540331/">Hitch-22: A Memoir (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
@@ -206,6 +214,7 @@
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Welcome-Monkey-House-Collection-Short/dp/0385333501/">Welcome to the Monkey House: A Collection of Short Works (Kurt Vonnegut)</a>
+  1. <a href="https://www.amazon.com/Man-Gray-Flannel-Suit/dp/1568582463/">The Man in the Gray Flannel Suit (Sloan Wilson)</a>
   1. <a href="https://www.amazon.com/Black-Seventy-fifth-Anniversary-Richard-Wright/dp/0062964135/">Black Boy (Richard Wright)</a>
   1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
   1. ...
