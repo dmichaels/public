@@ -220,6 +220,9 @@
   1. <a href="https://www.amazon.com/Hitch-22-Memoir-Christopher-Hitchens/dp/0446540331/">Hitch-22: A Memoir (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
+  1. <a href="https://www.amazon.com/Annotated-Lolita-Revised-Updated-ebook/dp/B004KABE2Y/">Lolita (Vladimir Nabokov)</a>
+  1. <a href="https://www.amazon.com/Real-Life-Sebastian-Knight/dp/0679727264/">The Real Life of Sebastian Knight (Vladimir Nabokov)</a>
+  1. <a href="https://www.amazon.com/Better-Angels-Our-Nature-Violence-ebook/dp/B0052REUW0/">The Better Angels of Our Nature: Why Violence Has Declined (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Blank-Slate-Modern-Denial-Nature-ebook/dp/B000QCTNIM/">The Blank Slate: The Modern Denial of Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/How-Mind-Works-Steven-Pinker-ebook/dp/B0042XA2XG/">How the Mind Works (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Bell-Jar-Modern-Classics/dp/0060837020/">The Bell Jar (Sylvia Plath)</a>
@@ -239,9 +242,6 @@
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
-  1. <a href="https://www.amazon.com/Annotated-Lolita-Revised-Updated-ebook/dp/B004KABE2Y/">Lolita (Vladimir Nabokov)</a>
-  1. <a href="https://www.amazon.com/Real-Life-Sebastian-Knight/dp/0679727264/">The Real Life of Sebastian Knight (Vladimir Nabokov)</a>
-  1. <a href="https://www.amazon.com/Better-Angels-Our-Nature-Violence-ebook/dp/B0052REUW0/">The Better Angels of Our Nature: Why Violence Has Declined (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Language-Instinct-Creates-Perennial-Classics-ebook/dp/B0049B1VOU/">The Language Instinct: How The Mind Creates Language (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Stuff-Thought-Language-Window-Nature-ebook/dp/B000UZPIRA/">The Stuff of Thought: Language as a Window into Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
