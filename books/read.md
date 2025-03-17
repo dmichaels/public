@@ -198,8 +198,8 @@
   1. <a href="https://www.amazon.com/Sense-Ending-Julian-Barnes/dp/0307947726/">The Sense of an Ending (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Nothing-Be-Frightened-Julian-Barnes-ebook/dp/B001ANYC9Q/">Nothing to Be Frightened Of: A Memoir (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Duel-Sun-Beardsley-Americas-Greatest/dp/1594866287/">Duel in the Sun: Alberto Salazar, Dick Beardsley, and America's Greatest Marathon (John Brant)</a>
-  1. <a href="https://www.amazon.com/Social-Animal-Sources-Character-Achievement/dp/0812979370/">The Social Animal: The Hidden Sources of Love, Character, and Achievement (David Brooks)</a>
   1. <a href="https://www.amazon.com/Paradise-Drive-Always-Future-Tense-ebook/dp/B000FC1Q2Y/">On Paradise Drive: How We Live Now (And Always Have) in the Future Tense (David Brooks)</a>
+  1. <a href="https://www.amazon.com/Social-Animal-Sources-Character-Achievement/dp/0812979370/">The Social Animal: The Hidden Sources of Love, Character, and Achievement (David Brooks)</a>
   1. <a href="https://www.amazon.com/Clockwork-Orange-Anthony-Burgess/dp/0393341763/">A Clockwork Orange (Anthony Burgess)</a>
   1. <a href="https://www.amazon.com/Mean-Genes-Taming-Primal-Instincts/dp/0465031242/">Mean Genes (Terry Burnham, Jay Phelan)</a>
   1. <a href="https://www.amazon.com/Selfish-Gene-Anniversary-Landmark-Science/dp/0198788606/">The Selfish Gene (Richard Dawkins)</a>
