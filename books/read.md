@@ -189,8 +189,10 @@
   1. <a href="https://www.amazon.com/Home-After-Dark-David-Small/dp/0871403153/">Home After Dark (David Small)</a>
   1. <a href="https://www.amazon.com/Gullivers-Travels-Penguin-Classics-Jonathan/dp/0141439491/">Gulliver's Travels (Jonathan Swift)</a>
 
-**1970-2017**
+**2000-2017**
 
+  1. <a href="https://www.amazon.com/Sense-Ending-Julian-Barnes/dp/0307947726/">The Sense of an Ending (Julian Barnes)</a>
+  1. <a href="https://www.amazon.com/Nothing-Be-Frightened-Julian-Barnes-ebook/dp/B001ANYC9Q/">Nothing to Be Frightened Of: A Memoir (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Duel-Sun-Beardsley-Americas-Greatest/dp/1594866287/">Duel in the Sun: Alberto Salazar, Dick Beardsley, and America's Greatest Marathon (John Brant)</a>
   1. <a href="https://www.amazon.com/Clockwork-Orange-Anthony-Burgess/dp/0393341763/">A Clockwork Orange (Anthony Burgess)</a>
   1. <a href="https://www.amazon.com/Mean-Genes-Taming-Primal-Instincts/dp/0465031242/">Mean Genes (Terry Burnham, Jay Phelan)</a>
@@ -220,10 +222,15 @@
   1. <a href="https://www.amazon.com/Pale-King-David-Foster-Wallace/dp/0316074225/">The Pale King (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Candide-Voltaire/dp/1087113490/">Candide (Voltaire)</a>
   1. <a href="https://www.amazon.com/Man-Without-Country-Kurt-Vonnegut/dp/081297736X/">A Man Without a Country Kurt Vonnegut)</a>
+  1. <a href="https://www.amazon.com/Picture-Dorian-Gray-Penguin-Classics-ebook/dp/B002RI9R4S/">The Picture of Dorian Gray (Oscar Wilde)</a>
+  1. <a href="https://www.amazon.com/Importance-Being-Earnest-Oscar-Wilde/dp/1528705513/">The Importance of Being Earnest (Oscar Wilde)</a>
+  1. <a href="https://www.amazon.com/Man-Gray-Flannel-Suit/dp/1568582463/">The Man in the Gray Flannel Suit (Sloan Wilson)</a>
+  1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
+  1. ...
+
+**1970-2000**
+
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Welcome-Monkey-House-Collection-Short/dp/0385333501/">Welcome to the Monkey House: A Collection of Short Works (Kurt Vonnegut)</a>
-  1. <a href="https://www.amazon.com/Man-Gray-Flannel-Suit/dp/1568582463/">The Man in the Gray Flannel Suit (Sloan Wilson)</a>
   1. <a href="https://www.amazon.com/Black-Seventy-fifth-Anniversary-Richard-Wright/dp/0062964135/">Black Boy (Richard Wright)</a>
-  1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
-  1. ...
