@@ -219,6 +219,8 @@
   1. <a href="https://www.amazon.com/God-Not-Great-Religion-Everything/dp/B00G3ZR1OO/">God Is Not Great: How Religion Poisons Everything (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Hitch-22-Memoir-Christopher-Hitchens/dp/0446540331/">Hitch-22: A Memoir (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
+  1. <a href="https://www.amazon.com/Confessions-Philosopher-Personal-Philosophy-Paperback/dp/0375750363/">Confessions of a Philosopher: A Personal Journey Through Western Philosophy from Plato to Popper (Bryan Magee)</a>
+  1. <a href="https://www.amazon.com/Making-Philosopher-Journey-Twentieth-Century-Philosophy-ebook/dp/B005AK0HIU/">The Making of a Philosopher: My Journey Through Twentieth-Century Philosophy (Colin McGinn)</a>
   1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
   1. <a href="https://www.amazon.com/Annotated-Lolita-Revised-Updated-ebook/dp/B004KABE2Y/">Lolita (Vladimir Nabokov)</a>
@@ -241,6 +243,8 @@
   1. <a href="https://www.amazon.com/Importance-Being-Earnest-Oscar-Wilde/dp/1528705513/">The Importance of Being Earnest (Oscar Wilde)</a>
   1. <a href="https://www.amazon.com/Man-Gray-Flannel-Suit/dp/1568582463/">The Man in the Gray Flannel Suit (Sloan Wilson)</a>
   1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
+  1. <a href="https://www.amazon.com/Monstrosity-Christ-Paradox-Dialectic-Circuits-ebook/dp/B08BT3KD9S/">The Monstrosity of Christ: Paradox or Dialectic? (Slavoj Žižek)</a>
+  1. <a href="https://www.amazon.com/Violence-BIG-IDEAS-small-books-ebook/dp/B003N2PEAS/">Violence (Slavoj Žižek)</a>
   1. ...
 
 **1970-1999**
@@ -254,6 +258,7 @@
   1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
+  1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Raise-High-Roof-Carpenters-Seymour/dp/0316769517/">Raise High the Roof Beam, Carpenters and Seymour: An Introduction (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
