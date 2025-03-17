@@ -236,8 +236,10 @@
   1. <a href="https://www.amazon.com/Moral-Politics-Liberals-Conservatives-Think/dp/022641129X/">Moral Politics: How Liberals and Conservatives Think (George Lakoff)</a>
   1. <a href="https://www.amazon.com/Scattershot-Bipolar-Family-David-Lovelace/dp/0525950788/">Scattershot: My Bipolar Family (David Lovelace)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
+  1. <a href="https://www.amazon.com/Mencken-Chrestomathy-Selection-Choicest-Writing/dp/0394752090/">A Mencken Chrestomathy: His Own Selection of His Choicest Writing (H.L. Mencken)</a>
   1. <a href="https://www.amazon.com/Annotated-Lolita-Revised-Updated-ebook/dp/B004KABE2Y/">Lolita (Vladimir Nabokov)</a>
   1. <a href="https://www.amazon.com/Real-Life-Sebastian-Knight/dp/0679727264/">The Real Life of Sebastian Knight (Vladimir Nabokov)</a>
+  1. <a href="https://www.amazon.com/Audacity-Hope-Thoughts-Reclaiming-American/dp/0307237702/">The Audacity of Hope: Thoughts on Reclaiming the American Dream (Barack Obama)</a>
   1. <a href="https://www.amazon.com/Better-Angels-Our-Nature-Violence-ebook/dp/B0052REUW0/">The Better Angels of Our Nature: Why Violence Has Declined (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Blank-Slate-Modern-Denial-Nature-ebook/dp/B000QCTNIM/">The Blank Slate: The Modern Denial of Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/How-Mind-Works-Steven-Pinker-ebook/dp/B0042XA2XG/">How the Mind Works (Steven Pinker)</a>
@@ -262,6 +264,7 @@
 
 **1970-1999**
 
+  1. <a href="https://www.amazon.com/Up-Liberalism-William-F-Buckley/dp/161427925X/">Up From Liberalism (William F. Buckley, Jr.)</a>
   1. <a href="https://www.amazon.com/Lord-Flies-William-Golding/dp/0399501487/">Lord of the Flies (William Golding)</a>
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Girl-Interrupted-Susanna-Kaysen/dp/0679746048/">Girl, Interrupted (Susanna Kaysen)</a>
@@ -271,6 +274,7 @@
   1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
   1. <a href="https://www.amazon.com/Language-Instinct-Creates-Perennial-Classics-ebook/dp/B0049B1VOU/">The Language Instinct: How The Mind Creates Language (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Stuff-Thought-Language-Window-Nature-ebook/dp/B000UZPIRA/">The Stuff of Thought: Language as a Window into Human Nature (Steven Pinker)</a>
+  1. <a href="https://www.amazon.com/Fountainhead-Ayn-Rand/dp/0451191153/">The Fountainhead (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
