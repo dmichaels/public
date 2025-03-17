@@ -197,6 +197,8 @@
   1. <a href="https://www.amazon.com/Sense-Ending-Julian-Barnes/dp/0307947726/">The Sense of an Ending (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Nothing-Be-Frightened-Julian-Barnes-ebook/dp/B001ANYC9Q/">Nothing to Be Frightened Of: A Memoir (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Duel-Sun-Beardsley-Americas-Greatest/dp/1594866287/">Duel in the Sun: Alberto Salazar, Dick Beardsley, and America's Greatest Marathon (John Brant)</a>
+  1. <a href="https://www.amazon.com/Social-Animal-Sources-Character-Achievement/dp/0812979370/">The Social Animal: The Hidden Sources of Love, Character, and Achievement (David Brooks)</a>
+  1. <a href="https://www.amazon.com/Paradise-Drive-Always-Future-Tense-ebook/dp/B000FC1Q2Y/">On Paradise Drive: How We Live Now (And Always Have) in the Future Tense (David Brooks)</a>
   1. <a href="https://www.amazon.com/Clockwork-Orange-Anthony-Burgess/dp/0393341763/">A Clockwork Orange (Anthony Burgess)</a>
   1. <a href="https://www.amazon.com/Mean-Genes-Taming-Primal-Instincts/dp/0465031242/">Mean Genes (Terry Burnham, Jay Phelan)</a>
   1. <a href="https://www.amazon.com/Selfish-Gene-Anniversary-Landmark-Science/dp/0198788606/">The Selfish Gene (Richard Dawkins)</a>
@@ -217,6 +219,7 @@
   1. <a href="https://www.amazon.com/Madame-Penguin-Classics-Gustave-Flaubert/dp/0140449124/">Madame Bovary (Gustave Flaubert)</a>
   1. <a href="https://www.amazon.com/Passage-India-M-Forster/dp/163360540X/">A Passage to India (E.M. Forster)</a>
   1. <a href="https://www.amazon.com/Machine-Stops-M-Forster/dp/1434442047/">The Machine Stops (E.M. Forster)</a>
+  1. <a href="https://www.amazon.com/Assault-Reason-Information-Ecosystem-Print-ebook/dp/B000SCHC0G/">The Assault on Reason (Al Gore)</a>
   1. <a href="https://www.amazon.com/Glass-Bead-Game-Magister-Novel/dp/0312278497/">The Glass Bead Game (Hermann Hesse)</a>
   1. <a href="https://www.amazon.com/Siddhartha-Indian-Penguin-Twentieth-Century-Classics/dp/0141181230/">Siddhartha (Hermann Hesse)</a>
   1. <a href="https://www.amazon.com/God-Not-Great-Religion-Everything/dp/B00G3ZR1OO/">God Is Not Great: How Religion Poisons Everything (Christopher Hitchens)</a>
@@ -227,6 +230,7 @@
   1. <a href="https://www.amazon.com/Confessions-Philosopher-Personal-Philosophy-Paperback/dp/0375750363/">Confessions of a Philosopher: A Personal Journey Through Western Philosophy from Plato to Popper (Bryan Magee)</a>
   1. <a href="https://www.amazon.com/Making-Philosopher-Journey-Twentieth-Century-Philosophy-ebook/dp/B005AK0HIU/">The Making of a Philosopher: My Journey Through Twentieth-Century Philosophy (Colin McGinn)</a>
   1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
+  1. <a href="https://www.amazon.com/Moral-Politics-Liberals-Conservatives-Think/dp/022641129X/">Moral Politics: How Liberals and Conservatives Think (George Lakoff)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
   1. <a href="https://www.amazon.com/Annotated-Lolita-Revised-Updated-ebook/dp/B004KABE2Y/">Lolita (Vladimir Nabokov)</a>
   1. <a href="https://www.amazon.com/Real-Life-Sebastian-Knight/dp/0679727264/">The Real Life of Sebastian Knight (Vladimir Nabokov)</a>
@@ -254,6 +258,7 @@
 
 **1970-1999**
 
+  1. <a href="https://www.amazon.com/Lord-Flies-William-Golding/dp/0399501487/">Lord of the Flies (William Golding)</a>
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
