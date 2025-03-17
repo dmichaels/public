@@ -207,6 +207,9 @@
   1. <a href="https://www.amazon.com/Freedom-Evolves-Daniel-C-Dennett/dp/0142003840/">Freedom Evolves (Daniel Dennett)</a>
   1. <a href="https://www.amazon.com/Minds-Fantasies-Reflections-Self-Soul/dp/0465030912/">The Mind's I: Fantasies and Reflections (Daniel Dennett, Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Sweet-Dreams-Philosophical-Obstacles-Consciousness/dp/0262042258/">Sweet Dreams: Philosophical Obstacles To A Science Of Consciousness (Daniel Dennett)</a>
+  1. <a href="https://www.amazon.com/Brothers-Karamazov-Novel-Parts-Epilogue-ebook/dp/B004ZM10OE/">The Brothes Karamazov (Fyodor Dostoevsky)</a>
+  1. <a href="https://www.amazon.com/Brothers-Karamazov-Novel-Parts-Epilogue-ebook/dp/B004ZM10OE/">The Idiot (Fyodor Dostoevsky)</a>
+  1. <a href="https://www.amazon.com/Notes-Underground-Fyodor-Dostoevsky-ebook/dp/B0CCW2FBDP/">Notes from the Underground (Fyodor Dostoevsky)</a>
   1. <a href="https://www.amazon.com/Madame-Penguin-Classics-Gustave-Flaubert/dp/0140449124/">Madame Bovary (Gustave Flaubert)</a>
   1. <a href="https://www.amazon.com/Passage-India-M-Forster/dp/163360540X/">A Passage to India (E.M. Forster)</a>
   1. <a href="https://www.amazon.com/Machine-Stops-M-Forster/dp/1434442047/">The Machine Stops (E.M. Forster)</a>
@@ -228,7 +231,7 @@
   1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
   1. ...
 
-**1970-2000**
+**1970-1999**
 
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
