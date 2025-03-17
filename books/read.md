@@ -229,6 +229,8 @@
   1. <a href="https://www.amazon.com/Bell-Jar-Modern-Classics/dp/0060837020/">The Bell Jar (Sylvia Plath)</a>
   1. <a href="https://www.amazon.com/Omnivores-Dilemma-Natural-History-Meals/dp/0143038583/">The Omnivore's Dilemma: A Natural History of Four Meals (Michael Pollan)</a>
   1. <a href="https://www.amazon.com/Botany-Desire-Plants-Eye-View-World/dp/B0B3L6G9F5">The Botany of Desire: A Plant's-Eye View of the World (Michael Pollan)</a>
+  1. <a href="https://www.amazon.com/American-Pastoral-Trilogy-Book-ebook/dp/B003K15INU/">American Pastoral (Philip Roth)</a>
+  1. <a href="https://www.amazon.com/Everyman-Philip-Roth-ebook/dp/B003JFJHPW/">Everyman (Philip Roth)</a>
   1. <a href="https://www.amazon.com/Bertrand-Russell-Bundle-Relativity-Routledge/dp/B006QB0OEO/">ABC of Relativity (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Christian-Essays-Religion-Related-Subjects/dp/0671203231/">Why I Am Not a Christian (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Infinite-Jest-David-Foster-Wallace/dp/0316066524/">Infinite Jest (David Foster Wallace)</a>
