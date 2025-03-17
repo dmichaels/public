@@ -227,6 +227,7 @@
   1. <a href="https://www.amazon.com/Siddhartha-Indian-Penguin-Twentieth-Century-Classics/dp/0141181230/">Siddhartha (Hermann Hesse)</a>
   1. <a href="https://www.amazon.com/God-Not-Great-Religion-Everything/dp/B00G3ZR1OO/">God Is Not Great: How Religion Poisons Everything (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Hitch-22-Memoir-Christopher-Hitchens/dp/0446540331/">Hitch-22: A Memoir (Christopher Hitchens)</a>
+  1. <a href="https://www.amazon.com/Letters-Young-Contrarian-Mentoring-Paperback/dp/0465030335/">Letters to a Young Contrarian (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Leonardo-Vinci-Walter-Isaacson/dp/1501139169/">Leonardo da Vinci (Walter Isaacson)</a>
   1. <a href="https://www.amazon.com/Steve-Jobs-Walter-Isaacson/dp/1451648537/">Steve Jobs (Walter Isaacson)</a>
@@ -274,6 +275,7 @@
   1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
   1. <a href="https://www.amazon.com/Language-Instinct-Creates-Perennial-Classics-ebook/dp/B0049B1VOU/">The Language Instinct: How The Mind Creates Language (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Stuff-Thought-Language-Window-Nature-ebook/dp/B000UZPIRA/">The Stuff of Thought: Language as a Window into Human Nature (Steven Pinker)</a>
+  1. <a href="https://www.amazon.com/Anthem-Ayn-Rand/dp/1503250709/">Anthem (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/Fountainhead-Ayn-Rand/dp/0451191153/">The Fountainhead (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
