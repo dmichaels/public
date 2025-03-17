@@ -104,6 +104,7 @@
 
 **2021**:
 
+  1. <a href="https://www.amazon.com/Rationality-What-Seems-Scarce-Matters-ebook/dp/B08WK3JNLT/">Rationality: What It Is, Why It Seems Scarce, Why It Matters (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Feline-Philosophy-Cats-Meaning-Life/dp/1250800250/">Feline Philosophy (John Gray)</a>
   1. <a href="https://www.amazon.com/Amazon-Unbound-Invention-Global-Empire/dp/1982132620/">Amazon Unbound (Brad Stone)</a>
   1. <a href="https://www.amazon.com/World-Beyond-Your-Head-Distraction/dp/0374535914/">The World Beyond Your Head (Matthew Crawford)</a>
@@ -219,6 +220,8 @@
   1. <a href="https://www.amazon.com/Hitch-22-Memoir-Christopher-Hitchens/dp/0446540331/">Hitch-22: A Memoir (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
+  1. <a href="https://www.amazon.com/Blank-Slate-Modern-Denial-Nature-ebook/dp/B000QCTNIM/">The Blank Slate: The Modern Denial of Human Nature (Steven Pinker)</a>
+  1. <a href="https://www.amazon.com/How-Mind-Works-Steven-Pinker-ebook/dp/B0042XA2XG/">How the Mind Works (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Bell-Jar-Modern-Classics/dp/0060837020/">The Bell Jar (Sylvia Plath)</a>
   1. <a href="https://www.amazon.com/Bertrand-Russell-Bundle-Relativity-Routledge/dp/B006QB0OEO/">ABC of Relativity (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Infinite-Jest-David-Foster-Wallace/dp/0316066524/">Infinite Jest (David Foster Wallace)</a>
@@ -236,6 +239,7 @@
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
+  1. <a href="https://www.amazon.com/Language-Instinct-Creates-Perennial-Classics-ebook/dp/B0049B1VOU/">The Language Instinct: How The Mind Creates Language (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
