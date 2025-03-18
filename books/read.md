@@ -244,6 +244,8 @@
   1. <a href="https://www.amazon.com/Leonardo-Vinci-Walter-Isaacson/dp/1501139169/">Leonardo da Vinci (Walter Isaacson)</a>
   1. <a href="https://www.amazon.com/Steve-Jobs-Walter-Isaacson/dp/1451648537/">Steve Jobs (Walter Isaacson)</a>
   1. <a href="https://www.amazon.com/Poisonwood-Bible-Novel-Barbara-Kingsolver/dp/0061577073/">The Poisonwood Bible (Barbara Kingsolver)</a>
+  1. <a href="https://www.amazon.com/Age-Spiritual-Machines-Computers-Intelligence/dp/0140282025/">The Age of Spiritual Machines: When Computers Exceed Human Intelligence (Ray Kurzweil)</a>
+  1. <a href="https://www.amazon.com/Singularity-Near-Humans-Transcend-Biology/dp/0143037889/">The Singularity Is Near: When Humans Transcend Biology (Ray Kurzweil)</a>
   1. <a href="https://www.amazon.com/Confessions-Philosopher-Personal-Philosophy-Paperback/dp/0375750363/">Confessions of a Philosopher: A Personal Journey Through Western Philosophy from Plato to Popper (Bryan Magee)</a>
   1. <a href="https://www.amazon.com/Making-Philosopher-Journey-Twentieth-Century-Philosophy-ebook/dp/B005AK0HIU/">The Making of a Philosopher: My Journey Through Twentieth-Century Philosophy (Colin McGinn)</a>
   1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
