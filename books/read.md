@@ -278,6 +278,7 @@
   1. <a href="https://www.amazon.com/Who-Am-Memoir-Pete-Townshend-ebook/dp/B007OWRBJK/">Who I Am: Memoir (Pete Townshend)</a>
   1. <a href="https://www.amazon.com/Licks-Love-Stories-Sequel-Remembered/dp/0345442016/">Licks of Love (John Updike)</a>
   1. <a href="https://www.amazon.com/Self-Consciousness-John-Updike/dp/039457222X/">Self-Consciousness (John Updike)</a>
+  1. <a href="https://www.amazon.com/Terrorist-John-Updike/dp/0307264653/">Terrorist (John Updike)</a>
   1. <a href="https://www.amazon.com/Candide-Voltaire/dp/1087113490/">Candide (Voltaire)</a>
   1. <a href="https://www.amazon.com/Man-Without-Country-Kurt-Vonnegut/dp/081297736X/">A Man Without a Country Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Supposedly-Fun-Thing-Never-Again-ebook/dp/B002UZ5JQ8/">A Supposedly Fun Thing I'll Never Do Again (David Foster Wallace)</a>
@@ -347,6 +348,7 @@
   1. <a href="https://www.amazon.com/Rabbit-Redux-John-Updike/dp/0449911934/">Rabbit, Redux (John Updike)</a>
   1. <a href="https://www.amazon.com/Rabbit-Rich-John-Updike/dp/0449911829/">Rabbit is Rich (John Updike)</a>
   1. <a href="https://www.amazon.com/Rabbit-at-Rest-John-Updike/dp/0449911942/">Rabbit at Rest (John Updike)</a>
+  1. <a href="https://www.amazon.com/Toward-End-Time-John-Updike/dp/0375400060/">Toward the End of Time (John Updike)</a>
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Welcome-Monkey-House-Collection-Short/dp/0385333501/">Welcome to the Monkey House: A Collection of Short Works (Kurt Vonnegut)</a>
