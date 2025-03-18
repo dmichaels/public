@@ -263,6 +263,8 @@
   1. <a href="https://www.amazon.com/Everyman-Philip-Roth-ebook/dp/B003JFJHPW/">Everyman (Philip Roth)</a>
   1. <a href="https://www.amazon.com/Bertrand-Russell-Bundle-Relativity-Routledge/dp/B006QB0OEO/">ABC of Relativity (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Christian-Essays-Religion-Related-Subjects/dp/0671203231/">Why I Am Not a Christian (Bertrand Russell)</a>
+  1. <a href="https://www.amazon.com/Anthropologist-Mars-Seven-Paradoxical-Tales/dp/0679756973/">An Anthropologist On Mars: Seven Paradoxical Tales (Oliver Sacks)</a>
+  1. <a href="https://www.amazon.com/Man-Who-Mistook-His-Wife/dp/0593466675/">The Man Who Mistook His Wife for a Hat: And Other Clinical Tales (Oliver Sacks)</a>
   1. <a href="https://www.amazon.com/Frankenstein-Original-Readers-Library-Classics/dp/1954839081/">Frankenstein (Mary Shelley)</a>
   1. <a href="https://www.amazon.com/Amsterdam-History-Worlds-Most-Liberal/dp/0307743756/" target="_top">Amsterdam: A History of the World's Most Liberal City (Russell Shorto)</a>
   1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
