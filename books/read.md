@@ -300,6 +300,8 @@
   1. <a href="https://www.amazon.com/Odyssey-Homer/dp/0140268863/">The Odyssey (Homer)</a>
   1. <a href="https://www.amazon.com/Dolls-House-Henrik-Ibsen/dp/1503213803/">A Doll's House (Henrik Ibsen)</a>
   1. <a href="https://www.amazon.com/Origin-Consciousness-Breakdown-Bicameral-Mind/dp/0618057072/">The Origin of Consciousness in the Breakdown of the Bicameral Mind (Julian Jaynes)</a>
+  1. <a href="https://www.amazon.com/Metamorphosis-Franz-Kafka/dp/1557427666/">The Metamorphosis (Franz Kafka)</a>
+  1. <a href="https://www.amazon.com/Trial-Illustrated-Book-Franz-Kafka/dp/1917076304/">The Trial (Franz Kafka)</a>
   1. <a href="https://www.amazon.com/Girl-Interrupted-Susanna-Kaysen/dp/0679746048/">Girl, Interrupted (Susanna Kaysen)</a>
   1. <a href="https://www.amazon.com/Lady-Chatterleys-Lover-Classics-Evergreens/dp/1847494080/">Lady Chatterleys Lover (D.H. Lawrence)</a>
   1. <a href="https://www.amazon.com/Kill-Mockingbird-Harper-Lee/dp/0060935464/">To Kill a Mockingbird (Harper Lee)</a>
