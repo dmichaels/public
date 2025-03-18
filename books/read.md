@@ -272,6 +272,7 @@
   1. <a href="https://www.amazon.com/Up-Liberalism-William-F-Buckley/dp/161427925X/">Up From Liberalism (William F. Buckley, Jr.)</a>
   1. <a href="https://www.amazon.com/Lord-Flies-William-Golding/dp/0399501487/">Lord of the Flies (William Golding)</a>
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
+  1. <a href="https://www.amazon.com/Origin-Consciousness-Breakdown-Bicameral-Mind/dp/0618057072/">The Origin of Consciousness in the Breakdown of the Bicameral Mind (Julian Jaynes)</a>
   1. <a href="https://www.amazon.com/Girl-Interrupted-Susanna-Kaysen/dp/0679746048/">Girl, Interrupted (Susanna Kaysen)</a>
   1. <a href="https://www.amazon.com/Kill-Mockingbird-Harper-Lee/dp/0060935464/">To Kill a Mockingbird (Harper Lee)</a>
   1. <a href="https://www.amazon.com/Call-Wild-Jack-London/dp/167334951X/">Call of the Wild (Jack London)</a>
