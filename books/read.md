@@ -310,6 +310,7 @@
   1. <a href="https://www.amazon.com/Stuff-Thought-Language-Window-Nature-ebook/dp/B000UZPIRA/">The Stuff of Thought: Language as a Window into Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Anthem-Ayn-Rand/dp/1503250709/">Anthem (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/Fountainhead-Ayn-Rand/dp/0451191153/">The Fountainhead (Ayn Rand)</a>
+  1. <a href="https://www.amazon.com/Philosophy-Who-Needs-Ayn-Rand/dp/0451138937/">Philosophy: Who Needs It (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/Looking-Out-Where-Want-Life/dp/1626360405/">Looking Out for #1: How to Get from Where You Are Now to Where You Want to Be in Life (Robert Ringer)</a>
   1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
