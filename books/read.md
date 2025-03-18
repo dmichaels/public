@@ -291,12 +291,14 @@
   1. <a href="https://www.amazon.com/Fahrenheit-451-Ray-Bradbury/dp/1451673310/">Fahrenheit 451 (Ray Bradbury)</a>
   1. <a href="https://www.amazon.com/Up-Liberalism-William-F-Buckley/dp/161427925X/">Up From Liberalism (William F. Buckley, Jr.)</a>
   1. <a href="https://www.amazon.com/Canterbury-Tales-Geoffrey-Chaucer/dp/0140424385/">The Canterbury Tales (Geoffrey Chaucer)</a>
+  1. <a href="https://www.amazon.com/Johnny-Tremain-Anniversary-Esther-Hoskins/dp/1328489167/">Johnny Tremain (Esther Hoskins Forbes)</a>
   1. <a href="https://www.amazon.com/Diary-Young-Girl-Definitive/dp/0553577123/">Diary of a Young Girl (Anne Frank)</a>
   1. <a href="https://www.amazon.com/Womens-Room-Novel-Marilyn-French/dp/0143114506/">The Women's Room (Marilyn French)</a>
   1. <a href="https://www.amazon.com/Lord-Flies-William-Golding/dp/0399501487/">Lord of the Flies (William Golding)</a>
   1. <a href="https://www.amazon.com/Old-Man-Sea-Ernest-Hemingway/dp/0684801221/">The Old Man and The Sea (Ernest Hemingway)</a>
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Odyssey-Homer/dp/0140268863/">The Odyssey (Homer)</a>
+  1. <a href="https://www.amazon.com/Dolls-House-Henrik-Ibsen/dp/1503213803/">A Doll's House (Henrik Ibsen)</a>
   1. <a href="https://www.amazon.com/Origin-Consciousness-Breakdown-Bicameral-Mind/dp/0618057072/">The Origin of Consciousness in the Breakdown of the Bicameral Mind (Julian Jaynes)</a>
   1. <a href="https://www.amazon.com/Girl-Interrupted-Susanna-Kaysen/dp/0679746048/">Girl, Interrupted (Susanna Kaysen)</a>
   1. <a href="https://www.amazon.com/Kill-Mockingbird-Harper-Lee/dp/0060935464/">To Kill a Mockingbird (Harper Lee)</a>
@@ -327,5 +329,6 @@
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Welcome-Monkey-House-Collection-Short/dp/0385333501/">Welcome to the Monkey House: A Collection of Short Works (Kurt Vonnegut)</a>
+  1. <a href="https://www.amazon.com/Ethan-Frome-Edith-Wharton/dp/1704067421/">Ethan Frome (Edith Wharton)</a>
   1. <a href="https://www.amazon.com/Black-Seventy-fifth-Anniversary-Richard-Wright/dp/0062964135/">Black Boy (Richard Wright)</a>
   1. ...
