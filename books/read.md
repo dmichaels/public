@@ -265,6 +265,10 @@
   1. <a href="https://www.amazon.com/Christian-Essays-Religion-Related-Subjects/dp/0671203231/">Why I Am Not a Christian (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Anthropologist-Mars-Seven-Paradoxical-Tales/dp/0679756973/">An Anthropologist On Mars: Seven Paradoxical Tales (Oliver Sacks)</a>
   1. <a href="https://www.amazon.com/Man-Who-Mistook-His-Wife/dp/0593466675/">The Man Who Mistook His Wife for a Hat: And Other Clinical Tales (Oliver Sacks)</a>
+  1. <a href="https://www.amazon.com/Hamlet-William-Shakespeare/dp/1451669410/">Hamlet (William Shakespeare)</a>
+  1. <a href="https://www.amazon.com/Othello-Folger-Shakespeare-Library-William/dp/1501146297/">Othello (William Shakespeare)</a>
+  1. <a href="https://www.amazon.com/King-Lear-Folger-Shakespeare-Library/dp/074348276X/">King Lear (William Shakespeare)</a>
+  1. <a href="https://www.amazon.com/Macbeth-Folger-Shakespeare-Library-William/dp/0743477103/">Macbeth (William Shakespeare)</a>
   1. <a href="https://www.amazon.com/Frankenstein-Original-Readers-Library-Classics/dp/1954839081/">Frankenstein (Mary Shelley)</a>
   1. <a href="https://www.amazon.com/Amsterdam-History-Worlds-Most-Liberal/dp/0307743756/" target="_top">Amsterdam: A History of the World's Most Liberal City (Russell Shorto)</a>
   1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
@@ -311,6 +315,8 @@
   1. <a href="https://www.amazon.com/dp/0060652969/">The Problem of Pain (C.S. Lewis)</a>
   1. <a href="https://www.amazon.com/Call-Wild-Jack-London/dp/167334951X/">Call of the Wild (Jack London)</a>
   1. <a href="https://www.amazon.com/Death-Salesman-Arthur-Miller/dp/B0DT4PVKDS/">Death of a Salesman (Arthur Miller)</a>
+  1. <a href="https://www.amazon.com/Julius-Caesar-Folger-Shakespeare-Library/dp/0743482743/">Julius Ceasar (William Shakespeare)</a>
+  1. <a href="https://www.amazon.com/Romeo-Juliet-Folger-Shakespeare-Library/dp/0743477111/">Romeo and Juliet (William Shakespeare)</a>
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
