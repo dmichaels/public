@@ -218,6 +218,8 @@
   1. <a href="https://www.amazon.com/Idiot-Vintage-Classics-Fyodor-Dostoevsky-ebook/dp/B000FCKCBA/">The Idiot (Fyodor Dostoevsky)</a>
   1. <a href="https://www.amazon.com/Notes-Underground-Fyodor-Dostoevsky-ebook/dp/B0CCW2FBDP/">Notes from the Underground (Fyodor Dostoevsky)</a>
   1. <a href="https://www.amazon.com/Logicomix-search-truth-Apostolos-Doxiadis/dp/1596914521/">Logicomix: An Epic Search for Truth (Apostolos Doxiadis, Christos Papadimitriou)</a>
+  1. <a href="https://www.amazon.com/Civilization-West-Rest-Niall-Ferguson/dp/0143122061/">Civilization: The West and the Rest (Niall Ferguson)</a>
+  1. <a href="https://www.amazon.com/Square-Tower-Networks-Freemasons-Facebook/dp/0735222932/" target="_top">The Tower and the Square (Niall Ferguson)</a>
   1. <a href="https://www.amazon.com/Great-Gatsby-Original-Fitzgerald-Classic/dp/B093MYWTT5/">The Great Gatsby (F. Scott Fitzgerald)</a>
   1. <a href="https://www.amazon.com/Madame-Penguin-Classics-Gustave-Flaubert/dp/0140449124/">Madame Bovary (Gustave Flaubert)</a>
   1. <a href="https://www.amazon.com/Passage-India-M-Forster/dp/163360540X/">A Passage to India (E.M. Forster)</a>
@@ -294,7 +296,6 @@
   1. <a href="https://www.amazon.com/Monstrosity-Christ-Paradox-Dialectic-Circuits-ebook/dp/B08BT3KD9S/">The Monstrosity of Christ: Paradox or Dialectic? (Slavoj Žižek)</a>
   1. <a href="https://www.amazon.com/Violence-BIG-IDEAS-small-books-ebook/dp/B003N2PEAS/">Violence (Slavoj Žižek)</a>
   1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
-  1. <a href="https://www.amazon.com/Civilization-West-Rest-Niall-Ferguson/dp/0143122061/">Civilization: The West and the Rest (Niall Ferguson)</a>
   1. ...
 
 **1970-1999**
