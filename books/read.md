@@ -238,6 +238,7 @@
   1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Leonardo-Vinci-Walter-Isaacson/dp/1501139169/">Leonardo da Vinci (Walter Isaacson)</a>
   1. <a href="https://www.amazon.com/Steve-Jobs-Walter-Isaacson/dp/1451648537/">Steve Jobs (Walter Isaacson)</a>
+  1. <a href="https://www.amazon.com/Poisonwood-Bible-Novel-Barbara-Kingsolver/dp/0061577073/">The Poisonwood Bible (Barbara Kingsolver)</a>
   1. <a href="https://www.amazon.com/Confessions-Philosopher-Personal-Philosophy-Paperback/dp/0375750363/">Confessions of a Philosopher: A Personal Journey Through Western Philosophy from Plato to Popper (Bryan Magee)</a>
   1. <a href="https://www.amazon.com/Making-Philosopher-Journey-Twentieth-Century-Philosophy-ebook/dp/B005AK0HIU/">The Making of a Philosopher: My Journey Through Twentieth-Century Philosophy (Colin McGinn)</a>
   1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
@@ -311,12 +312,14 @@
   1. <a href="https://www.amazon.com/Anthem-Ayn-Rand/dp/1503250709/">Anthem (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/Fountainhead-Ayn-Rand/dp/0451191153/">The Fountainhead (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/Philosophy-Who-Needs-Ayn-Rand/dp/0451138937/">Philosophy: Who Needs It (Ayn Rand)</a>
+  1. <a href="https://www.amazon.com/All-Quiet-Western-Front-Novel/dp/0449213943/">All Quiet on the Western Front (Erich Maria Remarque)</a>
   1. <a href="https://www.amazon.com/Looking-Out-Where-Want-Life/dp/1626360405/">Looking Out for #1: How to Get from Where You Are Now to Where You Want to Be in Life (Robert Ringer)</a>
   1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Raise-High-Roof-Carpenters-Seymour/dp/0316769517/">Raise High the Roof Beam, Carpenters and Seymour: An Introduction (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Mice-Men-John-Steinbeck/dp/0140177396/">Of Mice and Men (John Steinbeck)</a>
+  1. <a href="https://www.amazon.com/Pearl-John-Steinbeck/dp/014017737X/">The Pearl (John Steinbeck)</a>
   1. <a href="https://www.amazon.com/Death-Ilyich-Stories-Penguin-Classics/dp/0140449612/">The Death of Ivan Ilyich (Leo Tolstoy)</a>
   1. <a href="https://www.amazon.com/Beowulf-New-Verse-Translation-Bilingual/dp/0393320979/">Beowulf (Unknown)</a>
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
