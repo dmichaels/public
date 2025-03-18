@@ -243,6 +243,7 @@
   1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Moral-Politics-Liberals-Conservatives-Think/dp/022641129X/">Moral Politics: How Liberals and Conservatives Think (George Lakoff)</a>
   1. <a href="https://www.amazon.com/Scattershot-Bipolar-Family-David-Lovelace/dp/0525950788/">Scattershot: My Bipolar Family (David Lovelace)</a>
+  1. <a href="https://www.amazon.com/Giver-Quartet-Lois-Lowry/dp/0544336267/">The Giver (Lois Lowry)</a>
   1. <a href="https://www.amazon.com/Every-Love-Story-Ghost-Wallace-ebook/dp/B007V65ODE/">Every Love Story Is a Ghost Story: A Life of David Foster Wallace (D.T. Max)</a>
   1. <a href="https://www.amazon.com/At-Home-World-Joyce-Maynard-ebook/dp/B0032N1ULK/">At Home in the World: A Memoir (Joyce Maynard)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
@@ -261,6 +262,7 @@
   1. <a href="https://www.amazon.com/Everyman-Philip-Roth-ebook/dp/B003JFJHPW/">Everyman (Philip Roth)</a>
   1. <a href="https://www.amazon.com/Bertrand-Russell-Bundle-Relativity-Routledge/dp/B006QB0OEO/">ABC of Relativity (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Christian-Essays-Religion-Related-Subjects/dp/0671203231/">Why I Am Not a Christian (Bertrand Russell)</a>
+  1. <a href="https://www.amazon.com/Frankenstein-Original-Readers-Library-Classics/dp/1954839081/">Frankenstein (Mary Shelley)</a>
   1. <a href="https://www.amazon.com/Amsterdam-History-Worlds-Most-Liberal/dp/0307743756/" target="_top">Amsterdam: A History of the World's Most Liberal City (Russell Shorto)</a>
   1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Fermats-Enigma-Greatest-Mathematical-Problem/dp/0385493622/">Fermat's Enigma: The Epic Quest to Solve the World's Greatest Mathematical Problem (Simon Singh)</a>
@@ -283,10 +285,14 @@
 
 **1970-1999**
 
+  1. <a href="https://www.amazon.com/Fahrenheit-451-Ray-Bradbury/dp/1451673310/">Fahrenheit 451 (Ray Bradbury)</a>
   1. <a href="https://www.amazon.com/Up-Liberalism-William-F-Buckley/dp/161427925X/">Up From Liberalism (William F. Buckley, Jr.)</a>
+  1. <a href="https://www.amazon.com/Diary-Young-Girl-Definitive/dp/0553577123/">Diary of a Young Girl (Anne Frank)</a>
   1. <a href="https://www.amazon.com/Womens-Room-Novel-Marilyn-French/dp/0143114506/">The Women's Room (Marilyn French)</a>
   1. <a href="https://www.amazon.com/Lord-Flies-William-Golding/dp/0399501487/">Lord of the Flies (William Golding)</a>
+  1. <a href="https://www.amazon.com/Old-Man-Sea-Ernest-Hemingway/dp/0684801221/">The Old Man and The Sea (Ernest Hemingway)</a>
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
+  1. <a href="https://www.amazon.com/Odyssey-Homer/dp/0140268863/">The Odyssey (Homer)</a>
   1. <a href="https://www.amazon.com/Origin-Consciousness-Breakdown-Bicameral-Mind/dp/0618057072/">The Origin of Consciousness in the Breakdown of the Bicameral Mind (Julian Jaynes)</a>
   1. <a href="https://www.amazon.com/Girl-Interrupted-Susanna-Kaysen/dp/0679746048/">Girl, Interrupted (Susanna Kaysen)</a>
   1. <a href="https://www.amazon.com/Kill-Mockingbird-Harper-Lee/dp/0060935464/">To Kill a Mockingbird (Harper Lee)</a>
@@ -309,6 +315,7 @@
   1. <a href="https://www.amazon.com/Raise-High-Roof-Carpenters-Seymour/dp/0316769517/">Raise High the Roof Beam, Carpenters and Seymour: An Introduction (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Mice-Men-John-Steinbeck/dp/0140177396/">Of Mice and Men (John Steinbeck)</a>
   1. <a href="https://www.amazon.com/Death-Ilyich-Stories-Penguin-Classics/dp/0140449612/">The Death of Ivan Ilyich (Leo Tolstoy)</a>
+  1. <a href="https://www.amazon.com/Beowulf-New-Verse-Translation-Bilingual/dp/0393320979/">Beowulf (Unknown)</a>
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Welcome-Monkey-House-Collection-Short/dp/0385333501/">Welcome to the Monkey House: A Collection of Short Works (Kurt Vonnegut)</a>
