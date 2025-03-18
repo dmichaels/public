@@ -237,6 +237,7 @@
   1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Moral-Politics-Liberals-Conservatives-Think/dp/022641129X/">Moral Politics: How Liberals and Conservatives Think (George Lakoff)</a>
   1. <a href="https://www.amazon.com/Scattershot-Bipolar-Family-David-Lovelace/dp/0525950788/">Scattershot: My Bipolar Family (David Lovelace)</a>
+  1. <a href="https://www.amazon.com/Every-Love-Story-Ghost-Wallace-ebook/dp/B007V65ODE/">Every Love Story Is a Ghost Story: A Life of David Foster Wallace (D.T. Max)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
   1. <a href="https://www.amazon.com/Mencken-Chrestomathy-Selection-Choicest-Writing/dp/0394752090/">A Mencken Chrestomathy: His Own Selection of His Choicest Writing (H.L. Mencken)</a>
   1. <a href="https://www.amazon.com/Annotated-Lolita-Revised-Updated-ebook/dp/B004KABE2Y/">Lolita (Vladimir Nabokov)</a>
