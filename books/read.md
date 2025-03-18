@@ -224,6 +224,12 @@
   1. <a href="https://www.amazon.com/Betraying-Spinoza-Renegade-Modernity-Encounters/dp/0805211594/">Betraying Spinoza (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Plato-Googleplex-Philosophy-Wont-Away/dp/0307456722/">Plato at the Googleplex: Why Philosophy Won't Go Away (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Assault-Reason-Information-Ecosystem-Print-ebook/dp/B000SCHC0G/">The Assault on Reason (Al Gore)</a>
+  1. <a href="https://www.amazon.com/Life-Sex-Ideas-Good-without/dp/019517755X/">Life, Sex and Ideas: The Good Life without God (A.C. Grayling)</a>
+  1. <a href="https://www.amazon.com/End-Faith-Religion-Terror-Future/dp/0393327655/">The End of Faith: Religion, Terror, and the Future of Reason (Sam Harris)</a>
+  1. <a href="https://www.amazon.com/Free-Will-Deckle-Edge-Harris/dp/1451683405/">Free Will (Sam Harris)</a>
+  1. <a href="https://www.amazon.com/Letter-Christian-Nation-Sam-Harris/dp/0307278778/">Letter to a Christian Nation (Sam Harris)</a>
+  1. <a href="https://www.amazon.com/Lying-Sam-Harris/dp/1940051002/">Lying (Sam Harris)</a>
+  1. <a href="https://www.amazon.com/Moral-Landscape-Science-Determine-Values/dp/143917122X/">The Moral Landscape: How Science Can Determine Human Values (Sam Harris)</a>
   1. <a href="https://www.amazon.com/Glass-Bead-Game-Magister-Novel/dp/0312278497/">The Glass Bead Game (Hermann Hesse)</a>
   1. <a href="https://www.amazon.com/Siddhartha-Indian-Penguin-Twentieth-Century-Classics/dp/0141181230/">Siddhartha (Hermann Hesse)</a>
   1. <a href="https://www.amazon.com/God-Not-Great-Religion-Everything/dp/B00G3ZR1OO/">God Is Not Great: How Religion Poisons Everything (Christopher Hitchens)</a>
