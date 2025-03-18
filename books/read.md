@@ -224,6 +224,7 @@
   1. <a href="https://www.amazon.com/Madame-Penguin-Classics-Gustave-Flaubert/dp/0140449124/">Madame Bovary (Gustave Flaubert)</a>
   1. <a href="https://www.amazon.com/Passage-India-M-Forster/dp/163360540X/">A Passage to India (E.M. Forster)</a>
   1. <a href="https://www.amazon.com/Machine-Stops-M-Forster/dp/1434442047/">The Machine Stops (E.M. Forster)</a>
+  1. <a href="https://www.amazon.com/36-Arguments-Existence-God-Contemporaries/dp/0307456714/">36 Arguments for the Existence of God: A Work of Fiction (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Betraying-Spinoza-Renegade-Modernity-Encounters/dp/0805211594/">Betraying Spinoza (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Plato-Googleplex-Philosophy-Wont-Away/dp/0307456722/">Plato at the Googleplex: Why Philosophy Won't Go Away (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Assault-Reason-Information-Ecosystem-Print-ebook/dp/B000SCHC0G/">The Assault on Reason (Al Gore)</a>
