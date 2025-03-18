@@ -289,6 +289,8 @@
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
+  1. <a href="https://www.amazon.com/1984-George-Orwell-ebook/dp/B003JTHWKU/">1984 (George Orwell)</a>
+  1. <a href="https://www.amazon.com/Animal-Farm-George-Orwell/dp/0451526341/">Animal Farm (George Orwell)</a>
   1. <a href="https://www.amazon.com/Language-Instinct-Creates-Perennial-Classics-ebook/dp/B0049B1VOU/">The Language Instinct: How The Mind Creates Language (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Stuff-Thought-Language-Window-Nature-ebook/dp/B000UZPIRA/">The Stuff of Thought: Language as a Window into Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Anthem-Ayn-Rand/dp/1503250709/">Anthem (Ayn Rand)</a>
