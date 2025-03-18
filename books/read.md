@@ -226,6 +226,7 @@
   1. <a href="https://www.amazon.com/Plato-Googleplex-Philosophy-Wont-Away/dp/0307456722/">Plato at the Googleplex: Why Philosophy Won't Go Away (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Assault-Reason-Information-Ecosystem-Print-ebook/dp/B000SCHC0G/">The Assault on Reason (Al Gore)</a>
   1. <a href="https://www.amazon.com/Life-Sex-Ideas-Good-without/dp/019517755X/">Life, Sex and Ideas: The Good Life without God (A.C. Grayling)</a>
+  1. <a href="https://www.amazon.com/Sapiens-Humankind-Yuval-Noah-Harari/dp/0062316117/">Sapiens (Yuval Noah Harari)</a>
   1. <a href="https://www.amazon.com/End-Faith-Religion-Terror-Future/dp/0393327655/">The End of Faith: Religion, Terror, and the Future of Reason (Sam Harris)</a>
   1. <a href="https://www.amazon.com/Free-Will-Deckle-Edge-Harris/dp/1451683405/">Free Will (Sam Harris)</a>
   1. <a href="https://www.amazon.com/Letter-Christian-Nation-Sam-Harris/dp/0307278778/">Letter to a Christian Nation (Sam Harris)</a>
@@ -275,13 +276,14 @@
   1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Fermats-Enigma-Greatest-Mathematical-Problem/dp/0385493622/">Fermat's Enigma: The Epic Quest to Solve the World's Greatest Mathematical Problem (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Who-Am-Memoir-Pete-Townshend-ebook/dp/B007OWRBJK/">Who I Am: Memoir (Pete Townshend)</a>
+  1. <a href="https://www.amazon.com/Self-Consciousness-John-Updike/dp/039457222X/">Self-Consciousness (John Updike)</a>
+  1. <a href="https://www.amazon.com/Candide-Voltaire/dp/1087113490/">Candide (Voltaire)</a>
+  1. <a href="https://www.amazon.com/Man-Without-Country-Kurt-Vonnegut/dp/081297736X/">A Man Without a Country Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Supposedly-Fun-Thing-Never-Again-ebook/dp/B002UZ5JQ8/">A Supposedly Fun Thing I'll Never Do Again (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Consider-Lobster-Essays-Foster-Wallace/dp/0316013323/">Consider the Lobster (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Oblivion-David-Foster-Wallace-audiobook/dp/B008U2PQK4/">Oblivion (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Infinite-Jest-David-Foster-Wallace/dp/0316066524/">Infinite Jest (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Pale-King-David-Foster-Wallace/dp/0316074225/">The Pale King (David Foster Wallace)</a>
-  1. <a href="https://www.amazon.com/Candide-Voltaire/dp/1087113490/">Candide (Voltaire)</a>
-  1. <a href="https://www.amazon.com/Man-Without-Country-Kurt-Vonnegut/dp/081297736X/">A Man Without a Country Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Walker-Percys-Moviegoer-Fifty-American/dp/0807162736/">The Moviegoer (Percey Walker)</a>
   1. <a href="https://www.amazon.com/Picture-Dorian-Gray-Penguin-Classics-ebook/dp/B002RI9R4S/">The Picture of Dorian Gray (Oscar Wilde)</a>
   1. <a href="https://www.amazon.com/Importance-Being-Earnest-Oscar-Wilde/dp/1528705513/">The Importance of Being Earnest (Oscar Wilde)</a>
@@ -340,6 +342,11 @@
   1. <a href="https://www.amazon.com/Pearl-John-Steinbeck/dp/014017737X/">The Pearl (John Steinbeck)</a>
   1. <a href="https://www.amazon.com/Death-Ilyich-Stories-Penguin-Classics/dp/0140449612/">The Death of Ivan Ilyich (Leo Tolstoy)</a>
   1. <a href="https://www.amazon.com/Beowulf-New-Verse-Translation-Bilingual/dp/0393320979/">Beowulf (Unknown)</a>
+  1. <a href="https://www.amazon.com/Rabbit-Run-John-Updike/dp/0449911659/">Rabbit, Run (John Updike)</a>
+  1. <a href="https://www.amazon.com/Rabbit-Redux-John-Updike/dp/0449911934/">Rabbit, Redux (John Updike)</a>
+  1. <a href="https://www.amazon.com/Rabbit-Rich-John-Updike/dp/0449911829/">Rabbit is Rich (John Updike)</a>
+  1. <a href="https://www.amazon.com/Rabbit-at-Rest-John-Updike/dp/0449911942/">Rabbit at Rest (John Updike)</a>
+  1. <a href="https://www.amazon.com/Licks-Love-Stories-Sequel-Remembered/dp/0345442016/">Licks of Love (John Updike)</a>
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Welcome-Monkey-House-Collection-Short/dp/0385333501/">Welcome to the Monkey House: A Collection of Short Works (Kurt Vonnegut)</a>
