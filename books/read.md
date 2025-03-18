@@ -251,6 +251,8 @@
   1. <a href="https://www.amazon.com/Everyman-Philip-Roth-ebook/dp/B003JFJHPW/">Everyman (Philip Roth)</a>
   1. <a href="https://www.amazon.com/Bertrand-Russell-Bundle-Relativity-Routledge/dp/B006QB0OEO/">ABC of Relativity (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Christian-Essays-Religion-Related-Subjects/dp/0671203231/">Why I Am Not a Christian (Bertrand Russell)</a>
+  1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
+  1. <a href="https://www.amazon.com/Fermats-Enigma-Greatest-Mathematical-Problem/dp/0385493622/">Fermat's Enigma: The Epic Quest to Solve the World's Greatest Mathematical Problem (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Infinite-Jest-David-Foster-Wallace/dp/0316066524/">Infinite Jest (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Pale-King-David-Foster-Wallace/dp/0316074225/">The Pale King (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Candide-Voltaire/dp/1087113490/">Candide (Voltaire)</a>
@@ -270,6 +272,7 @@
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Girl-Interrupted-Susanna-Kaysen/dp/0679746048/">Girl, Interrupted (Susanna Kaysen)</a>
   1. <a href="https://www.amazon.com/Kill-Mockingbird-Harper-Lee/dp/0060935464/">To Kill a Mockingbird (Harper Lee)</a>
+  1. <a href="https://www.amazon.com/Call-Wild-Jack-London/dp/167334951X/">Call of the Wild (Jack London)</a>
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
@@ -280,7 +283,6 @@
   1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
-  1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Raise-High-Roof-Carpenters-Seymour/dp/0316769517/">Raise High the Roof Beam, Carpenters and Seymour: An Introduction (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Mice-Men-John-Steinbeck/dp/0140177396/">Of Mice and Men (John Steinbeck)</a>
   1. <a href="https://www.amazon.com/Death-Ilyich-Stories-Penguin-Classics/dp/0140449612/">The Death of Ivan Ilyich (Leo Tolstoy)</a>
