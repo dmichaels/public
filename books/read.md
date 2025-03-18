@@ -222,6 +222,7 @@
   1. <a href="https://www.amazon.com/Passage-India-M-Forster/dp/163360540X/">A Passage to India (E.M. Forster)</a>
   1. <a href="https://www.amazon.com/Machine-Stops-M-Forster/dp/1434442047/">The Machine Stops (E.M. Forster)</a>
   1. <a href="https://www.amazon.com/Betraying-Spinoza-Renegade-Modernity-Encounters/dp/0805211594/">Betraying Spinoza (Rebecca Goldstein)</a>
+  1. <a href="https://www.amazon.com/Plato-Googleplex-Philosophy-Wont-Away/dp/0307456722/">Plato at the Googleplex: Why Philosophy Won't Go Away (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Assault-Reason-Information-Ecosystem-Print-ebook/dp/B000SCHC0G/">The Assault on Reason (Al Gore)</a>
   1. <a href="https://www.amazon.com/Glass-Bead-Game-Magister-Novel/dp/0312278497/">The Glass Bead Game (Hermann Hesse)</a>
   1. <a href="https://www.amazon.com/Siddhartha-Indian-Penguin-Twentieth-Century-Classics/dp/0141181230/">Siddhartha (Hermann Hesse)</a>
@@ -251,6 +252,7 @@
   1. <a href="https://www.amazon.com/Everyman-Philip-Roth-ebook/dp/B003JFJHPW/">Everyman (Philip Roth)</a>
   1. <a href="https://www.amazon.com/Bertrand-Russell-Bundle-Relativity-Routledge/dp/B006QB0OEO/">ABC of Relativity (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Christian-Essays-Religion-Related-Subjects/dp/0671203231/">Why I Am Not a Christian (Bertrand Russell)</a>
+  1. <a href="https://www.amazon.com/Amsterdam-History-Worlds-Most-Liberal/dp/0307743756/" target="_top">Amsterdam: A History of the World's Most Liberal City (Russell Shorto)</a>
   1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Fermats-Enigma-Greatest-Mathematical-Problem/dp/0385493622/">Fermat's Enigma: The Epic Quest to Solve the World's Greatest Mathematical Problem (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Infinite-Jest-David-Foster-Wallace/dp/0316066524/">Infinite Jest (David Foster Wallace)</a>
