@@ -311,6 +311,7 @@
   1. <a href="https://www.amazon.com/Diary-Young-Girl-Definitive/dp/0553577123/">Diary of a Young Girl (Anne Frank)</a>
   1. <a href="https://www.amazon.com/Womens-Room-Novel-Marilyn-French/dp/0143114506/">The Women's Room (Marilyn French)</a>
   1. <a href="https://www.amazon.com/Lord-Flies-William-Golding/dp/0399501487/">Lord of the Flies (William Golding)</a>
+  1. <a href="https://www.amazon.com/Black-Like-John-Howard-Griffin/dp/0451234219/">Black Like Me (John Howard Griffin)</a>
   1. <a href="https://www.amazon.com/Old-Man-Sea-Ernest-Hemingway/dp/0684801221/">The Old Man and The Sea (Ernest Hemingway)</a>
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Odyssey-Homer/dp/0140268863/">The Odyssey (Homer)</a>
