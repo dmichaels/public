@@ -356,6 +356,7 @@
   1. <a href="https://www.amazon.com/Rabbit-Redux-John-Updike/dp/0449911934/">Rabbit, Redux (John Updike)</a>
   1. <a href="https://www.amazon.com/Rabbit-Rich-John-Updike/dp/0449911829/">Rabbit is Rich (John Updike)</a>
   1. <a href="https://www.amazon.com/Rabbit-at-Rest-John-Updike/dp/0449911942/">Rabbit at Rest (John Updike)</a>
+  1. <a href="https://www.amazon.com/Collected-Poems-1953-1993-John-Updike/dp/0679422218/">Collected Poems: 1953-1993 (John Updike)</a>
   1. <a href="https://www.amazon.com/Toward-End-Time-John-Updike/dp/0375400060/">Toward the End of Time (John Updike)</a>
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
