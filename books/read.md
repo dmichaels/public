@@ -287,6 +287,7 @@
 
   1. <a href="https://www.amazon.com/Fahrenheit-451-Ray-Bradbury/dp/1451673310/">Fahrenheit 451 (Ray Bradbury)</a>
   1. <a href="https://www.amazon.com/Up-Liberalism-William-F-Buckley/dp/161427925X/">Up From Liberalism (William F. Buckley, Jr.)</a>
+  1. <a href="https://www.amazon.com/Canterbury-Tales-Geoffrey-Chaucer/dp/0140424385/">The Canterbury Tales (Geoffrey Chaucer)</a>
   1. <a href="https://www.amazon.com/Diary-Young-Girl-Definitive/dp/0553577123/">Diary of a Young Girl (Anne Frank)</a>
   1. <a href="https://www.amazon.com/Womens-Room-Novel-Marilyn-French/dp/0143114506/">The Women's Room (Marilyn French)</a>
   1. <a href="https://www.amazon.com/Lord-Flies-William-Golding/dp/0399501487/">Lord of the Flies (William Golding)</a>
@@ -298,6 +299,7 @@
   1. <a href="https://www.amazon.com/Kill-Mockingbird-Harper-Lee/dp/0060935464/">To Kill a Mockingbird (Harper Lee)</a>
   1. <a href="https://www.amazon.com/Lady-Chatterleys-Lover-Classics-Evergreens/dp/1847494080/">Lady Chatterleys Lover (D.H. Lawrence)</a>
   1. <a href="https://www.amazon.com/Call-Wild-Jack-London/dp/167334951X/">Call of the Wild (Jack London)</a>
+  1. <a href="https://www.amazon.com/Death-Salesman-Arthur-Miller/dp/B0DT4PVKDS/">Death of a Salesman (Arthur Miller)</a>
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Adventures-Tom-Sawyer-Original-Unabridged-ebook/dp/B0CFPY1T6T/">The Adventures of Tom Sawyer (Mark Twain)</a>
   1. <a href="https://www.amazon.com/Listening-Prozac-Landmark-Antidepressants-Remaking-ebook/dp/B0CJHHMR72/">Listening to Prozac: The Landmark Book About Antidepressants and the Remaking of the Self (Peter Kramer)</a>
