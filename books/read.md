@@ -301,8 +301,12 @@
   1. <a href="https://www.amazon.com/Dolls-House-Henrik-Ibsen/dp/1503213803/">A Doll's House (Henrik Ibsen)</a>
   1. <a href="https://www.amazon.com/Origin-Consciousness-Breakdown-Bicameral-Mind/dp/0618057072/">The Origin of Consciousness in the Breakdown of the Bicameral Mind (Julian Jaynes)</a>
   1. <a href="https://www.amazon.com/Girl-Interrupted-Susanna-Kaysen/dp/0679746048/">Girl, Interrupted (Susanna Kaysen)</a>
-  1. <a href="https://www.amazon.com/Kill-Mockingbird-Harper-Lee/dp/0060935464/">To Kill a Mockingbird (Harper Lee)</a>
   1. <a href="https://www.amazon.com/Lady-Chatterleys-Lover-Classics-Evergreens/dp/1847494080/">Lady Chatterleys Lover (D.H. Lawrence)</a>
+  1. <a href="https://www.amazon.com/Kill-Mockingbird-Harper-Lee/dp/0060935464/">To Kill a Mockingbird (Harper Lee)</a>
+  1. <a href="https://www.amazon.com/Great-Divorce-C-S-Lewis/dp/0060652950/">The Great Divorce (C.S. Lewis)</a>
+  1. <a href="https://www.amazon.com/Lion-Witch-Wardrobe-C-Lewis/dp/0064471047/">The Lion, the Witch, and the Wardrobe (C.S. Lewis)</a>
+  1. <a href="https://www.amazon.com/Mere-Christianity-Deluxe-C-Lewis/dp/006344397X/">Mere Christianity (C.S. Lewis)</a>
+  1. <a href="https://www.amazon.com/dp/0060652969/">The Problem of Pain (C.S. Lewis)</a>
   1. <a href="https://www.amazon.com/Call-Wild-Jack-London/dp/167334951X/">Call of the Wild (Jack London)</a>
   1. <a href="https://www.amazon.com/Death-Salesman-Arthur-Miller/dp/B0DT4PVKDS/">Death of a Salesman (Arthur Miller)</a>
   1. <a href="https://www.amazon.com/Adventures-Huckleberry-Norton-Critical-Editions/dp/0393966402/">The Adventures of Huckleberry Finn (Mark Twain)</a>
