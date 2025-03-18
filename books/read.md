@@ -229,6 +229,7 @@
   1. <a href="https://www.amazon.com/Assault-Reason-Information-Ecosystem-Print-ebook/dp/B000SCHC0G/">The Assault on Reason (Al Gore)</a>
   1. <a href="https://www.amazon.com/Life-Sex-Ideas-Good-without/dp/019517755X/">Life, Sex and Ideas: The Good Life without God (A.C. Grayling)</a>
   1. <a href="https://www.amazon.com/Sapiens-Humankind-Yuval-Noah-Harari/dp/0062316117/">Sapiens (Yuval Noah Harari)</a>
+  1. <a href="https://www.amazon.com/Homo-Deus-Brief-History-Tomorrow/dp/0062464345/">Home Deus (Yuval Noah Harari)</a>
   1. <a href="https://www.amazon.com/End-Faith-Religion-Terror-Future/dp/0393327655/">The End of Faith: Religion, Terror, and the Future of Reason (Sam Harris)</a>
   1. <a href="https://www.amazon.com/Free-Will-Deckle-Edge-Harris/dp/1451683405/">Free Will (Sam Harris)</a>
   1. <a href="https://www.amazon.com/Letter-Christian-Nation-Sam-Harris/dp/0307278778/">Letter to a Christian Nation (Sam Harris)</a>
