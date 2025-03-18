@@ -266,12 +266,13 @@
   1. <a href="https://www.amazon.com/Pale-King-David-Foster-Wallace/dp/0316074225/">The Pale King (David Foster Wallace)</a>
   1. <a href="https://www.amazon.com/Candide-Voltaire/dp/1087113490/">Candide (Voltaire)</a>
   1. <a href="https://www.amazon.com/Man-Without-Country-Kurt-Vonnegut/dp/081297736X/">A Man Without a Country Kurt Vonnegut)</a>
+  1. <a href="https://www.amazon.com/Walker-Percys-Moviegoer-Fifty-American/dp/0807162736/">The Moviegoer (Percey Walker)</a>
   1. <a href="https://www.amazon.com/Picture-Dorian-Gray-Penguin-Classics-ebook/dp/B002RI9R4S/">The Picture of Dorian Gray (Oscar Wilde)</a>
   1. <a href="https://www.amazon.com/Importance-Being-Earnest-Oscar-Wilde/dp/1528705513/">The Importance of Being Earnest (Oscar Wilde)</a>
   1. <a href="https://www.amazon.com/Man-Gray-Flannel-Suit/dp/1568582463/">The Man in the Gray Flannel Suit (Sloan Wilson)</a>
-  1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
   1. <a href="https://www.amazon.com/Monstrosity-Christ-Paradox-Dialectic-Circuits-ebook/dp/B08BT3KD9S/">The Monstrosity of Christ: Paradox or Dialectic? (Slavoj Žižek)</a>
   1. <a href="https://www.amazon.com/Violence-BIG-IDEAS-small-books-ebook/dp/B003N2PEAS/">Violence (Slavoj Žižek)</a>
+  1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
   1. ...
 
 **1970-1999**
