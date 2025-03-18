@@ -257,6 +257,7 @@
   1. <a href="https://www.amazon.com/Better-Angels-Our-Nature-Violence-ebook/dp/B0052REUW0/">The Better Angels of Our Nature: Why Violence Has Declined (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Blank-Slate-Modern-Denial-Nature-ebook/dp/B000QCTNIM/">The Blank Slate: The Modern Denial of Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/How-Mind-Works-Steven-Pinker-ebook/dp/B0042XA2XG/">How the Mind Works (Steven Pinker)</a>
+  1. <a href="https://www.amazon.com/Sense-Style-Thinking-Persons-Writing/dp/0143127799/">The Sense of Style (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Bell-Jar-Modern-Classics/dp/0060837020/">The Bell Jar (Sylvia Plath)</a>
   1. <a href="https://www.amazon.com/Omnivores-Dilemma-Natural-History-Meals/dp/0143038583/">The Omnivore's Dilemma: A Natural History of Four Meals (Michael Pollan)</a>
   1. <a href="https://www.amazon.com/Botany-Desire-Plants-Eye-View-World/dp/B0B3L6G9F5">The Botany of Desire: A Plant's-Eye View of the World (Michael Pollan)</a>
@@ -293,6 +294,7 @@
   1. <a href="https://www.amazon.com/Monstrosity-Christ-Paradox-Dialectic-Circuits-ebook/dp/B08BT3KD9S/">The Monstrosity of Christ: Paradox or Dialectic? (Slavoj Žižek)</a>
   1. <a href="https://www.amazon.com/Violence-BIG-IDEAS-small-books-ebook/dp/B003N2PEAS/">Violence (Slavoj Žižek)</a>
   1. <a href="https://www.amazon.com/World-Yesterday-Stefan-Zweig/dp/0803226616/">The World of Yesterday (Stefan Zweig)</a>
+  1. <a href="https://www.amazon.com/Civilization-West-Rest-Niall-Ferguson/dp/0143122061/">Civilization: The West and the Rest (Niall Ferguson)</a>
   1. ...
 
 **1970-1999**
