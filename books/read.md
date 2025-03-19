@@ -264,6 +264,7 @@
   1. <a href="https://www.amazon.com/Blank-Slate-Modern-Denial-Nature-ebook/dp/B000QCTNIM/">The Blank Slate: The Modern Denial of Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/How-Mind-Works-Steven-Pinker-ebook/dp/B0042XA2XG/">How the Mind Works (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Sense-Style-Thinking-Persons-Writing/dp/0143127799/">The Sense of Style (Steven Pinker)</a>
+  1. <a href="https://www.amazon.com/Stuff-Thought-Language-Window-Nature-ebook/dp/B000UZPIRA/">The Stuff of Thought: Language as a Window into Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Bell-Jar-Modern-Classics/dp/0060837020/">The Bell Jar (Sylvia Plath)</a>
   1. <a href="https://www.amazon.com/Omnivores-Dilemma-Natural-History-Meals/dp/0143038583/">The Omnivore's Dilemma: A Natural History of Four Meals (Michael Pollan)</a>
   1. <a href="https://www.amazon.com/Botany-Desire-Plants-Eye-View-World/dp/B0B3L6G9F5">The Botany of Desire: A Plant's-Eye View of the World (Michael Pollan)</a>
@@ -338,7 +339,6 @@
   1. <a href="https://www.amazon.com/Animal-Farm-George-Orwell/dp/0451526341/">Animal Farm (George Orwell)</a>
   1. <a href="https://www.amazon.com/Homage-to-Catalonia/dp/0008442746/">Homage to Catalonia (George Orwell)</a>
   1. <a href="https://www.amazon.com/Language-Instinct-Creates-Perennial-Classics-ebook/dp/B0049B1VOU/">The Language Instinct: How The Mind Creates Language (Steven Pinker)</a>
-  1. <a href="https://www.amazon.com/Stuff-Thought-Language-Window-Nature-ebook/dp/B000UZPIRA/">The Stuff of Thought: Language as a Window into Human Nature (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Anthem-Ayn-Rand/dp/1503250709/">Anthem (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/Fountainhead-Ayn-Rand/dp/0451191153/">The Fountainhead (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/Philosophy-Who-Needs-Ayn-Rand/dp/0451138937/">Philosophy: Who Needs It (Ayn Rand)</a>
@@ -352,6 +352,7 @@
   1. <a href="https://www.amazon.com/Pearl-John-Steinbeck/dp/014017737X/">The Pearl (John Steinbeck)</a>
   1. <a href="https://www.amazon.com/Death-Ilyich-Stories-Penguin-Classics/dp/0140449612/">The Death of Ivan Ilyich (Leo Tolstoy)</a>
   1. <a href="https://www.amazon.com/Beowulf-New-Verse-Translation-Bilingual/dp/0393320979/">Beowulf (Unknown)</a>
+  1. <a href="https://www.amazon.com/Bech-Back-John-Updike/dp/0394528069/">Bech is Back (John Updike)</a>
   1. <a href="https://www.amazon.com/Collected-Poems-1953-1993-John-Updike/dp/0679422218/">Collected Poems: 1953-1993 (John Updike)</a>
   1. <a href="https://www.amazon.com/Rabbit-Run-John-Updike/dp/0449911659/">Rabbit, Run (John Updike)</a>
   1. <a href="https://www.amazon.com/Rabbit-Redux-John-Updike/dp/0449911934/">Rabbit, Redux (John Updike)</a>
