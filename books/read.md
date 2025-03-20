@@ -319,6 +319,7 @@
   1. <a href="https://www.amazon.com/Womens-Room-Novel-Marilyn-French/dp/0143114506/">The Women's Room (Marilyn French)</a>
   1. <a href="https://www.amazon.com/Lord-Flies-William-Golding/dp/0399501487/">Lord of the Flies (William Golding)</a>
   1. <a href="https://www.amazon.com/Black-Like-John-Howard-Griffin/dp/0451234219/">Black Like Me (John Howard Griffin)</a>
+  1. <a href="https://www.amazon.com/Rocks-Ages-Science-Religion-Fullness/dp/034545040X/">Rock of Ages (Stephen Jay Gould)</a>
   1. <a href="https://www.amazon.com/Old-Man-Sea-Ernest-Hemingway/dp/0684801221/">The Old Man and The Sea (Ernest Hemingway)</a>
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Odyssey-Homer/dp/0140268863/">The Odyssey (Homer)</a>
@@ -335,6 +336,8 @@
   1. <a href="https://www.amazon.com/Mere-Christianity-Deluxe-C-Lewis/dp/006344397X/">Mere Christianity (C.S. Lewis)</a>
   1. <a href="https://www.amazon.com/dp/0060652969/">The Problem of Pain (C.S. Lewis)</a>
   1. <a href="https://www.amazon.com/Call-Wild-Jack-London/dp/167334951X/">Call of the Wild (Jack London)</a>
+  1. <a href="https://www.amazon.com/Bright-Lights-Big-City-McInerney/dp/0394726413/">Bright Lights, Big City (Jay McInerney)</a>
+  1. <a href="https://www.amazon.com/Ransom-Jay-McInerney/dp/0394741188/">Ransom (Jay McInerney)</a>
   1. <a href="https://www.amazon.com/Death-Salesman-Arthur-Miller/dp/B0DT4PVKDS/">Death of a Salesman (Arthur Miller)</a>
   1. <a href="https://www.amazon.com/Julius-Caesar-Folger-Shakespeare-Library/dp/0743482743/">Julius Ceasar (William Shakespeare)</a>
   1. <a href="https://www.amazon.com/Romeo-Juliet-Folger-Shakespeare-Library/dp/0743477111/">Romeo and Juliet (William Shakespeare)</a>
