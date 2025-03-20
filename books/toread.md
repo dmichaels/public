@@ -25,7 +25,7 @@
 1. <a href="https://www.amazon.com/Dust-This-Planet-Horror-Philosophy/dp/184694676X/" target="_top">In the Dust of This Planet: Horror of Philosophy, Volume 1 (Eugene Thacker)</a>
 1. <a href="https://www.amazon.com/Starry-Speculative-Corpse-Horror-Philosophy/dp/1782798919/" target="_top">Starry Speculative Corpse: Horror of Philosophy: Horror of Philosophy, Volume 2 (Eugene Thacker)</a>
 1. <a href="https://www.amazon.com/Tentacles-Longer-Than-Night-Philosophy/dp/1782798897/" target="_top">Tentacles Longer Than Night: Horror of Philosophy: Horror of Philosophy, Volume 3 (Eugene Thacker)</a>
-1. <a href="https://www.amazon.com/Better-Never-Have-Been-Existence/dp/0199549265/" target="_top">Better Never to Have Been (David Benatar)</a>
+1. <a href="https://www.amazon.com/Better-Never-Have-Been-Existence/dp/0199549265/" target="_top">Better Never to Have Been: The Harm of Coming into Existence (David Benatar)</a>
 1. <a href="https://www.amazon.com/Infinite-Resignation-Pessimism-Eugene-Thacker/dp/1912248190/" target="_top">Infinite Resignation (Eugene Thacker)</a>
 1. <a href="https://www.amazon.com/If-Then-Simulmatics-Corporation-Invented/dp/1631496107/" target="_top">If Then: How the Simulmatics Corporation Invented the Future (Jill Lepore)</a>
 1. <a href="https://www.amazon.com/Eating-Dinosaur-Chuck-Klosterman/dp/1416544216/" target="_top">Eating the Dinosaur (Chuck Klosterman)</a>
