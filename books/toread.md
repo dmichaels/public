@@ -31,6 +31,7 @@
 1. <a href="https://www.amazon.com/Eating-Dinosaur-Chuck-Klosterman/dp/1416544216/" target="_top">Eating the Dinosaur (Chuck Klosterman)</a>
 1. <a href="https://www.amazon.com/Man-Who-Sold-World-David/dp/0062024663/" target="_top">The Man Who Sold the World: David Bowie and the 1970s (Peter Doggett)</a>
 1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a>
+1. <a href="https://www.amazon.com/Report-Greco-Nikos-Kazantzakes/dp/0571195075/" target="_top">Report to Greco (Nikos Kazantzakis)</a>
 1. <a href="https://www.amazon.com/When-Everyone-Knows-That-Knowledge/dp/1668011573/" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a>
 1. <a href="https://www.amazon.com/dp/1646871642/" target="_top">Deep Utopia: Life and Meaning in a Solved World (Nick Bostrom)</a>
 1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a>
