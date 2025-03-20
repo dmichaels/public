@@ -363,7 +363,7 @@
   1. <a href="https://www.amazon.com/Death-Ilyich-Stories-Penguin-Classics/dp/0140449612/">The Death of Ivan Ilyich (Leo Tolstoy)</a>
   1. <a href="https://www.amazon.com/Beowulf-New-Verse-Translation-Bilingual/dp/0393320979/">Beowulf (Unknown)</a>
   1. <a href="https://www.amazon.com/Bech-Back-John-Updike/dp/0394528069/">Bech is Back (John Updike)</a>
-  1. <a href="https://www.amazon.com/Collected-Poems-1953-1993-John-Updike/dp/0679422218/">Collected Poems: 1953-1993 (John Updike)</a>
+  1. <a href="https://www.amazon.com/Collected-Poems-1953-1993-John-Updike/dp/0679422218/">Collected Poems: 1953 - 1993 (John Updike)</a>
   1. <a href="https://www.amazon.com/Rabbit-Run-John-Updike/dp/0449911659/">Rabbit, Run (John Updike)</a>
   1. <a href="https://www.amazon.com/Rabbit-Redux-John-Updike/dp/0449911934/">Rabbit, Redux (John Updike)</a>
   1. <a href="https://www.amazon.com/Rabbit-Rich-John-Updike/dp/0449911829/">Rabbit is Rich (John Updike)</a>
