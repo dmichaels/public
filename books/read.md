@@ -231,6 +231,7 @@
   1. <a href="https://www.amazon.com/Betraying-Spinoza-Renegade-Modernity-Encounters/dp/0805211594/">Betraying Spinoza (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Plato-Googleplex-Philosophy-Wont-Away/dp/0307456722/">Plato at the Googleplex: Why Philosophy Won't Go Away (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Assault-Reason-Information-Ecosystem-Print-ebook/dp/B000SCHC0G/">The Assault on Reason (Al Gore)</a>
+  1. <a href="https://www.amazon.com/Full-House-Spread-Excellence-Darwin/dp/0609801406/">Full House: The Spread of Excellence from Plato to Darwin (Stephen Jay Gould)</a>
   1. <a href="https://www.amazon.com/Rocks-Ages-Science-Religion-Fullness/dp/034545040X/">Rock of Ages (Stephen Jay Gould)</a>
   1. <a href="https://www.amazon.com/Life-Sex-Ideas-Good-without/dp/019517755X/">Life, Sex and Ideas: The Good Life without God (A.C. Grayling)</a>
   1. <a href="https://www.amazon.com/Sapiens-Humankind-Yuval-Noah-Harari/dp/0062316117/">Sapiens (Yuval Noah Harari)</a>
