@@ -9,7 +9,6 @@
 1. <a href="https://www.amazon.com/Ordinary-Men-Reserve-Battalion-Solution/dp/0062303023/" target="_top">Ordinary Men: Reserve Police Battalion 101 and the Final Solution in Poland (Christopher R. Browning)</a>
 1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">Devil in the White City (Erik Larson)</a>
 1. <a href="https://www.amazon.com/Dead-Wake-Last-Crossing-Lusitania/dp/0307408876/" target="_top">Dead Wake (Erik Larson)</a>
-1. <a href="https://www.amazon.com/Splendid-Vile-Churchill-Family-Defiance/dp/0385348738/" target="_top">The Splendid and the Vile (Erik Larson)</a>
 1. <a href="https://www.amazon.com/dp/B00AV68GF4/" target="_top">Krakatoa: The Day the World Exploded: August 27, 1883 (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/Exactly-Precision-Engineers-Created-Modern/dp/0008241783/" target="_top">Exactly (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/dp/140009593X/" target="_top">Iron Curtain: The Crushing of Eastern Europe, 1944-1956 (Anne Applebaum)</a>
