@@ -197,6 +197,8 @@
   1. <a href="https://www.amazon.com/Religion-War-Scott-Adams/dp/0740747886/">The Religion War (Scott Adams)</a>
   1. <a href="https://www.amazon.com/Sense-Ending-Julian-Barnes/dp/0307947726/">The Sense of an Ending (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Nothing-Be-Frightened-Julian-Barnes-ebook/dp/B001ANYC9Q/">Nothing to Be Frightened Of: A Memoir (Julian Barnes)</a>
+  1. <a href="https://www.amazon.com/Glock-Americas-Paul-M-Barrett/dp/0307719952/">Glock: The Rise of America's Gun (Paul M. Barrett)</a>
+  1. <a href="https://www.amazon.com/Gun-Guys-Road-Vintage-Departures/dp/0307742504/">Gun Guys: A Road Trip (Dan Baum)</a>
   1. <a href="https://www.amazon.com/Duel-Sun-Beardsley-Americas-Greatest/dp/1594866287/">Duel in the Sun: Alberto Salazar, Dick Beardsley, and America's Greatest Marathon (John Brant)</a>
   1. <a href="https://www.amazon.com/Paradise-Drive-Always-Future-Tense-ebook/dp/B000FC1Q2Y/">On Paradise Drive: How We Live Now (And Always Have) in the Future Tense (David Brooks)</a>
   1. <a href="https://www.amazon.com/Social-Animal-Sources-Character-Achievement/dp/0812979370/">The Social Animal: The Hidden Sources of Love, Character, and Achievement (David Brooks)</a>
@@ -259,6 +261,7 @@
   1. <a href="https://www.amazon.com/Mencken-Chrestomathy-Selection-Choicest-Writing/dp/0394752090/">A Mencken Chrestomathy: His Own Selection of His Choicest Writing (H.L. Mencken)</a>
   1. <a href="https://www.amazon.com/Annotated-Lolita-Revised-Updated-ebook/dp/B004KABE2Y/">Lolita (Vladimir Nabokov)</a>
   1. <a href="https://www.amazon.com/Real-Life-Sebastian-Knight/dp/0679727264/">The Real Life of Sebastian Knight (Vladimir Nabokov)</a>
+  1. <a href="https://www.amazon.com/Beekeepers-Lament-Billion-Honey-America/dp/006187325X/">The Beekeeper's Lament: How One Man and Half a Billion Honey Bees Help Feed America (Hannah Nordhaus)</a>
   1. <a href="https://www.amazon.com/Audacity-Hope-Thoughts-Reclaiming-American/dp/0307237702/">The Audacity of Hope: Thoughts on Reclaiming the American Dream (Barack Obama)</a>
   1. <a href="https://www.amazon.com/Better-Angels-Our-Nature-Violence-ebook/dp/B0052REUW0/">The Better Angels of Our Nature: Why Violence Has Declined (Steven Pinker)</a>
   1. <a href="https://www.amazon.com/Blank-Slate-Modern-Denial-Nature-ebook/dp/B000QCTNIM/">The Blank Slate: The Modern Denial of Human Nature (Steven Pinker)</a>
@@ -273,6 +276,7 @@
   1. <a href="https://www.amazon.com/American-Pastoral-Trilogy-Book-ebook/dp/B003K15INU/">American Pastoral (Philip Roth)</a>
   1. <a href="https://www.amazon.com/Everyman-Philip-Roth-ebook/dp/B003JFJHPW/">Everyman (Philip Roth)</a>
   1. <a href="https://www.amazon.com/Bertrand-Russell-Bundle-Relativity-Routledge/dp/B006QB0OEO/">ABC of Relativity (Bertrand Russell)</a>
+  1. <a href="https://www.amazon.com/Praise-Idleness-Routledge-Classics-46/dp/0415325064/">In Praise of Idleness (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Christian-Essays-Religion-Related-Subjects/dp/0671203231/">Why I Am Not a Christian (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Anthropologist-Mars-Seven-Paradoxical-Tales/dp/0679756973/">An Anthropologist On Mars: Seven Paradoxical Tales (Oliver Sacks)</a>
   1. <a href="https://www.amazon.com/Man-Who-Mistook-His-Wife/dp/0593466675/">The Man Who Mistook His Wife for a Hat: And Other Clinical Tales (Oliver Sacks)</a>
