@@ -207,7 +207,6 @@
   1. <a href="https://www.amazon.com/Clockwork-Orange-Anthony-Burgess/dp/0393341763/">A Clockwork Orange (Anthony Burgess)</a>
   1. <a href="https://www.amazon.com/Mean-Genes-Taming-Primal-Instincts/dp/0465031242/">Mean Genes (Terry Burnham, Jay Phelan)</a>
   1. <a href="https://www.amazon.com/dp/0525564454/">The Myth of Sisyphus (Albert Camus)</a>
-  1. <a href="https://www.amazon.com/2001-Space-Odyssey/dp/0451457994/">2001: a Space Odyssey (Arthur C. Clarke)</a>
   1. <a href="https://www.amazon.com/Selfish-Gene-Anniversary-Landmark-Science/dp/0198788606/">The Selfish Gene (Richard Dawkins)</a>
   1. <a href="https://www.amazon.com/The-Ancestors-Tale-audiobook/dp/B00V501GYI/">The Ancestor's Tale (Richard Dawkins)</a>
   1. <a href="https://www.amazon.com/Blind-Watchmaker-Evidence-Evolution-Universe/dp/0393351491/">The Blind Watchmaker (Richard Dawkins)</a>
@@ -318,6 +317,7 @@
   1. <a href="https://www.amazon.com/Fahrenheit-451-Ray-Bradbury/dp/1451673310/">Fahrenheit 451 (Ray Bradbury)</a>
   1. <a href="https://www.amazon.com/Up-Liberalism-William-F-Buckley/dp/161427925X/">Up From Liberalism (William F. Buckley, Jr.)</a>
   1. <a href="https://www.amazon.com/Canterbury-Tales-Geoffrey-Chaucer/dp/0140424385/">The Canterbury Tales (Geoffrey Chaucer)</a>
+  1. <a href="https://www.amazon.com/2001-Space-Odyssey/dp/0451457994/">2001: a Space Odyssey (Arthur C. Clarke)</a>
   1. <a href="https://www.amazon.com/Johnny-Tremain-Anniversary-Esther-Hoskins/dp/1328489167/">Johnny Tremain (Esther Hoskins Forbes)</a>
   1. <a href="https://www.amazon.com/Diary-Young-Girl-Definitive/dp/0553577123/">Diary of a Young Girl (Anne Frank)</a>
   1. <a href="https://www.amazon.com/Womens-Room-Novel-Marilyn-French/dp/0143114506/">The Women's Room (Marilyn French)</a>
