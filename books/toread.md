@@ -19,7 +19,7 @@
 1. <a href="https://www.amazon.com/dp/1324051191/" target="_top">The Russo-Ukrainian War: The Return of History (Serhii Plokhy)</a>
 1. <a href="https://www.amazon.com/dp/1627793666/" target="_top">Putin (Philip Short)</a>
 1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Grimscribe (Thomas Ligotti)</a>
-1. <a href="https://www.amazon.com/Gilded-Age-Illustrated-First-Anniversary/dp/195243355X/" target="_top">The Guilded Age (Mark Twain, Charles Dudley Warner)</a>
+1. <a href="https://www.amazon.com/Gilded-Age-Illustrated-First-Anniversary/dp/195243355X/" target="_top">The Gilded Age (Mark Twain, Charles Dudley Warner)</a>
 1. <a href="https://www.amazon.com/dp/1597805394/" target="_top">Permutation City (Greg Egan)</a>
 1. <a href="https://www.amazon.com/Book-Disquiet-Complete-Fernando-Pessoa/dp/081122693X/" target="_top">The Book of Disquiet (Fernando Pessoa)</a>
 1. <a href="https://www.amazon.com/Trouble-Being-Born-M-Cioran/dp/1611457408/" target="_top">The Trouble With Being Born (E.M. Cioran)</a>
