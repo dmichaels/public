@@ -194,7 +194,6 @@
 
 **2000-2017**
 
-  1. <a href="https://www.amazon.com/dp/1559363843/">Angels in America: A Gay Fantasia on National Themes (Tony Kushner)</a>
   1. <a href="https://www.amazon.com/Gods-Debris-Experiment-Scott-Adams/dp/0740747878/">God's Debris: A Thought Experiment (Scott Adams)</a>
   1. <a href="https://www.amazon.com/Religion-War-Scott-Adams/dp/0740747886/">The Religion War (Scott Adams)</a>
   1. <a href="https://www.amazon.com/Hope-Tragedy-Novel-Shalom-Auslander/dp/1594486468/">Hope: A Tragedy (Shalom Auslander)</a>
@@ -254,6 +253,7 @@
   1. <a href="https://www.amazon.com/Poisonwood-Bible-Novel-Barbara-Kingsolver/dp/0061577073/">The Poisonwood Bible (Barbara Kingsolver)</a>
   1. <a href="https://www.amazon.com/Age-Spiritual-Machines-Computers-Intelligence/dp/0140282025/">The Age of Spiritual Machines: When Computers Exceed Human Intelligence (Ray Kurzweil)</a>
   1. <a href="https://www.amazon.com/Singularity-Near-Humans-Transcend-Biology/dp/0143037889/">The Singularity Is Near: When Humans Transcend Biology (Ray Kurzweil)</a>
+  1. <a href="https://www.amazon.com/dp/1559363843/">Angels in America: A Gay Fantasia on National Themes (Tony Kushner)</a>
   1. <a href="https://www.amazon.com/Confessions-Philosopher-Personal-Philosophy-Paperback/dp/0375750363/">Confessions of a Philosopher: A Personal Journey Through Western Philosophy from Plato to Popper (Bryan Magee)</a>
   1. <a href="https://www.amazon.com/Making-Philosopher-Journey-Twentieth-Century-Philosophy-ebook/dp/B005AK0HIU/">The Making of a Philosopher: My Journey Through Twentieth-Century Philosophy (Colin McGinn)</a>
   1. <a href="https://www.amazon.com/Am-Strange-Loop-Douglas-Hofstadter/dp/0465030793/">I Am a Strange Loop (Douglas Hofstadter)</a>
