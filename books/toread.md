@@ -3,6 +3,7 @@
 1. <a href="https://www.amazon.com/dp/1646871642/" target="_top">Deep Utopia: Life and Meaning in a Solved World (Nick Bostrom)</a>
 1. <a href="https://www.amazon.com/dp/1668023482/" target="_top">Abundance (Ezra Klein)</a>
 1. <a href="https://www.amazon.com/Fall-Civilizations-Stories-Greatness-Decline/dp/1335013415/" target="_top">Fall of Civilizations: Stories of Greatness and Decline (Paul Cooper)</a>
+1. <a href="https://www.amazon.com/dp/1250391237/" target="_top">Careless People: A Cautionary Tale of Power, Greed, and Lost Idealism (Sarah Wynn-Williams)</a>
 1. <a href="https://www.amazon.com/dp/1612194192/" target="_top">Debt: The First 5,000 Years (David Graeber)</a>
 1. <a href="https://www.amazon.com/dp/1686203985/" target="_top">The Economic Consequences of the Peace (John Maynard Keynes )</a>
 1. <a href="https://www.amazon.com/Waste-Land-World-Permanent-Crisis/dp/0593730321/" target="_top">Waste Land: A World in Permanent Crisis (Robert D. Kaplan)</a>
