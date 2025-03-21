@@ -326,6 +326,7 @@
   1. <a href="https://www.amazon.com/Old-Man-Sea-Ernest-Hemingway/dp/0684801221/">The Old Man and The Sea (Ernest Hemingway)</a>
   1. <a href="https://www.amazon.com/G%C3%B6del-Escher-Bach-Eternal-Golden/dp/0465026567/">Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)</a>
   1. <a href="https://www.amazon.com/Odyssey-Homer/dp/0140268863/">The Odyssey (Homer)</a>
+  1. <a href="https://www.amazon.com/Philosophy-as-Ted-Honderich/dp/0140136762/">Philosophy as It Is (Ted Honderich)</a>
   1. <a href="https://www.amazon.com/Dolls-House-Henrik-Ibsen/dp/1503213803/">A Doll's House (Henrik Ibsen)</a>
   1. <a href="https://www.amazon.com/Origin-Consciousness-Breakdown-Bicameral-Mind/dp/0618057072/">The Origin of Consciousness in the Breakdown of the Bicameral Mind (Julian Jaynes)</a>
   1. <a href="https://www.amazon.com/Metamorphosis-Franz-Kafka/dp/1557427666/">The Metamorphosis (Franz Kafka)</a>
