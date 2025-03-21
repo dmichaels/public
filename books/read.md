@@ -196,6 +196,7 @@
 
   1. <a href="https://www.amazon.com/Gods-Debris-Experiment-Scott-Adams/dp/0740747878/">God's Debris: A Thought Experiment (Scott Adams)</a>
   1. <a href="https://www.amazon.com/Religion-War-Scott-Adams/dp/0740747886/">The Religion War (Scott Adams)</a>
+  1. <a href="https://www.amazon.com/Hope-Tragedy-Novel-Shalom-Auslander/dp/1594486468/">Hope: A Tragedy (Shalom Auslander)</a>
   1. <a href="https://www.amazon.com/Sense-Ending-Julian-Barnes/dp/0307947726/">The Sense of an Ending (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Nothing-Be-Frightened-Julian-Barnes-ebook/dp/B001ANYC9Q/">Nothing to Be Frightened Of: A Memoir (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Glock-Americas-Paul-M-Barrett/dp/0307719952/">Glock: The Rise of America's Gun (Paul M. Barrett)</a>
