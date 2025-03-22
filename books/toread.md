@@ -19,6 +19,7 @@
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/dp/1324051191/" target="_top">The Russo-Ukrainian War: The Return of History (Serhii Plokhy)</a>
 1. <a href="https://www.amazon.com/dp/1627793666/" target="_top">Putin (Philip Short)</a>
+1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Grimscribe (Thomas Ligotti)</a>
 1. <a href="https://www.amazon.com/Gilded-Age-Illustrated-First-Anniversary/dp/195243355X/" target="_top">The Gilded Age (Mark Twain, Charles Dudley Warner)</a>
 1. <a href="https://www.amazon.com/dp/1597805394/" target="_top">Permutation City (Greg Egan)</a>
@@ -36,7 +37,6 @@
 1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a>
 1. <a href="https://www.amazon.com/Report-Greco-Nikos-Kazantzakes/dp/0571195075/" target="_top">Report to Greco (Nikos Kazantzakis)</a>
 1. <a href="https://www.amazon.com/When-Everyone-Knows-That-Knowledge/dp/1668011573/" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a>
-1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/If-War-Goes-Reflections-Politics/dp/1786894459/" target="_top">If the War Goes On (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/Beach-Nevil-Shute/dp/0307473996/" target="_top">On the Beach (Neville Shute)</a>
 1. <a href="https://www.amazon.com/When-Clock-Broke-Conspiracists-America/dp/0374605440/" target="_top">When the Clock Broke: Con Men, Conspiracists, and How America Cracked Up in the Early 1990s (John Ganz)</a>
