@@ -365,6 +365,7 @@
   1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Raise-High-Roof-Carpenters-Seymour/dp/0316769517/">Raise High the Roof Beam, Carpenters and Seymour: An Introduction (J.D. Salinger)</a>
+  1. <a href="https://www.amazon.com/Shane-Jack-Schaefer/dp/0544239474/">Shane (Jack Schaefer)</a>
   1. <a href="https://www.amazon.com/Mice-Men-John-Steinbeck/dp/0140177396/">Of Mice and Men (John Steinbeck)</a>
   1. <a href="https://www.amazon.com/Pearl-John-Steinbeck/dp/014017737X/">The Pearl (John Steinbeck)</a>
   1. <a href="https://www.amazon.com/Death-Ilyich-Stories-Penguin-Classics/dp/0140449612/">The Death of Ivan Ilyich (Leo Tolstoy)</a>
