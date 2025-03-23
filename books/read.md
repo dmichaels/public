@@ -347,6 +347,7 @@
   1. <a href="https://www.amazon.com/Call-Wild-Jack-London/dp/167334951X/">Call of the Wild (Jack London)</a>
   1. <a href="https://www.amazon.com/Bright-Lights-Big-City-McInerney/dp/0394726413/">Bright Lights, Big City (Jay McInerney)</a>
   1. <a href="https://www.amazon.com/Ransom-Jay-McInerney/dp/0394741188/">Ransom (Jay McInerney)</a>
+  1. <a href="https://www.amazon.com/Liberty-Dover-Thrift-Editions/dp/0486421309/">On Liberty (John Stuart Mill)</a>
   1. <a href="https://www.amazon.com/Death-Salesman-Arthur-Miller/dp/B0DT4PVKDS/">Death of a Salesman (Arthur Miller)</a>
   1. <a href="https://www.amazon.com/Julius-Caesar-Folger-Shakespeare-Library/dp/0743482743/">Julius Ceasar (William Shakespeare)</a>
   1. <a href="https://www.amazon.com/Romeo-Juliet-Folger-Shakespeare-Library/dp/0743477111/">Romeo and Juliet (William Shakespeare)</a>
