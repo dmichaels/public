@@ -9,6 +9,8 @@
 1. <a href="https://www.amazon.com/dp/1686203985/" target="_top">The Economic Consequences of the Peace (John Maynard Keynes)</a>
 1. <a href="https://www.amazon.com/Waste-Land-World-Permanent-Crisis/dp/0593730321/" target="_top">Waste Land: A World in Permanent Crisis (Robert D. Kaplan)</a>
 1. <a href="https://www.amazon.com/Lost-Kingdom-History-Nationalism-Vladimir/dp/0141983132/" target="_top">Lost Kingdom: A History of Russian Nationalism from Ivan the Great to Vladimir Putin (Serhii Plokhy)</a>
+1. <a href="https://www.amazon.com/dp/0844750549/" target="_top">Riding the Tiger: Vladimir Putin's Russia and the Uses of War (Leon Aron)</a>
+1. <a href="https://www.amazon.com/dp/1627793666/" target="_top">Putin (Philip Short)</a>
 1. <a href="https://www.amazon.com/dp/1324093463/" target="_top">Germany 1923: Hyperinflation, Hitler's Putsch, and Democracy in Crisis (Volker Ullrich)</a>
 1. <a href="https://www.amazon.com/Ordinary-Men-Reserve-Battalion-Solution/dp/0062303023/" target="_top">Ordinary Men: Reserve Police Battalion 101 and the Final Solution in Poland (Christopher R. Browning)</a>
 1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">Devil in the White City (Erik Larson)</a>
@@ -18,8 +20,8 @@
 1. <a href="https://www.amazon.com/dp/140009593X/" target="_top">Iron Curtain: The Crushing of Eastern Europe, 1944 - 1956 (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Gulag-History-Anne-Applebaum-ebook/dp/B0012SCJ9Y" target="_top">Gulag: A History (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
+1. <a href="https://www.blackstonelibrary.com/stalin-volume-iii?sp=412295" target="_top">Stalin: Volume III (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/dp/1324051191/" target="_top">The Russo-Ukrainian War: The Return of History (Serhii Plokhy)</a>
-1. <a href="https://www.amazon.com/dp/1627793666/" target="_top">Putin (Philip Short)</a>
 1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Grimscribe (Thomas Ligotti)</a>
 1. <a href="https://www.amazon.com/Gilded-Age-Illustrated-First-Anniversary/dp/195243355X/" target="_top">The Gilded Age (Mark Twain, Charles Dudley Warner)</a>
