@@ -370,6 +370,9 @@
   1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Raise-High-Roof-Carpenters-Seymour/dp/0316769517/">Raise High the Roof Beam, Carpenters and Seymour: An Introduction (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Shane-Jack-Schaefer/dp/0544239474/">Shane (Jack Schaefer)</a>
+  1. <a href="https://www.amazon.com/Crazy-God-Helped-Religious-Almost/dp/0306817500/">Crazy for God: How I Grew Up as One of the Elect, Helped Found the Religious Right, and Lived to Take All (or Almost All) of It Back (Frank Schaefer)</a>
+  1. <a href="https://www.amazon.com/Keeping-Faith-Father-Son-United-States/dp/0786710977/">Keeping Faith: A Father-Son Story About Love and the United States Marine Corps (Frank Schaefer, John Schaefer)</a>
+  1. <a href="https://www.amazon.com/Portofino-Novel-Calvin-Becker-Trilogy/dp/0786713755/">Portifino (Frank Schaefer)</a>
   1. <a href="https://www.amazon.com/Mice-Men-John-Steinbeck/dp/0140177396/">Of Mice and Men (John Steinbeck)</a>
   1. <a href="https://www.amazon.com/Pearl-John-Steinbeck/dp/014017737X/">The Pearl (John Steinbeck)</a>
   1. <a href="https://www.amazon.com/Death-Ilyich-Stories-Penguin-Classics/dp/0140449612/">The Death of Ivan Ilyich (Leo Tolstoy)</a>
