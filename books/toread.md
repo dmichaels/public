@@ -1,4 +1,4 @@
-<ins>**Books To Read**</ins> | <a href="read.md">Books Read</a>
+<ins>**Books To Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; <a href="read.md">Books Read</a>
 
 1. <a href="https://www.amazon.com/Give-People-Money-Universal-Revolutionize/dp/1524758779/" target="_top">Give People Money (Annie Lowrey)</a>
 1. <a href="https://www.amazon.com/dp/1646871642/" target="_top">Deep Utopia: Life and Meaning in a Solved World (Nick Bostrom)</a>
