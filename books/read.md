@@ -335,6 +335,7 @@
   1. <a href="https://www.amazon.com/Metamorphosis-Franz-Kafka/dp/1557427666/">The Metamorphosis (Franz Kafka)</a>
   1. <a href="https://www.amazon.com/penal-colony-Franz-Kafka/dp/B0DNBGJ8LM/">The Penal Colony (Franz Kafka)</a>
   1. <a href="https://www.amazon.com/Trial-Illustrated-Book-Franz-Kafka/dp/1917076304/">The Trial (Franz Kafka)</a>
+  1. <a href="https://www.amazon.com/Boys-Summer-Harperperennial-Modern-Classics/dp/0060883960/">The Boys of Summer (Roger Kahn)</a>
   1. <a href="https://www.amazon.com/Girl-Interrupted-Susanna-Kaysen/dp/0679746048/">Girl, Interrupted (Susanna Kaysen)</a>
   1. <a href="https://www.amazon.com/Zorba-Greek-Nikos-Kazantzakis/dp/1476782814/">Zorba the Greek (Nikos Kazantzakis )</a>
   1. <a href="https://www.amazon.com/Lady-Chatterleys-Lover-Classics-Evergreens/dp/1847494080/">Lady Chatterleys Lover (D.H. Lawrence)</a>
