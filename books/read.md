@@ -321,6 +321,8 @@
   1. <a href="https://www.amazon.com/Up-Liberalism-William-F-Buckley/dp/161427925X/">Up From Liberalism (William F. Buckley, Jr.)</a>
   1. <a href="https://www.amazon.com/Canterbury-Tales-Geoffrey-Chaucer/dp/0140424385/">The Canterbury Tales (Geoffrey Chaucer)</a>
   1. <a href="https://www.amazon.com/2001-Space-Odyssey/dp/0451457994/">2001: a Space Odyssey (Arthur C. Clarke)</a>
+  1. <a href="https://www.amazon.com/Christmas-Carol-Deluxe-Gift/dp/1441339701/">A Christmas Carol (Charles Dickens)</a>
+  1. <a href="https://www.amazon.com/Copperfield-Penguin-Classics-Charles-Dickens/dp/0140439447/">David Copperfield (Charles Dickens)</a>
   1. <a href="https://www.amazon.com/Johnny-Tremain-Anniversary-Esther-Hoskins/dp/1328489167/">Johnny Tremain (Esther Hoskins Forbes)</a>
   1. <a href="https://www.amazon.com/Diary-Young-Girl-Definitive/dp/0553577123/">Diary of a Young Girl (Anne Frank)</a>
   1. <a href="https://www.amazon.com/Womens-Room-Novel-Marilyn-French/dp/0143114506/">The Women's Room (Marilyn French)</a>
