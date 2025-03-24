@@ -223,6 +223,7 @@
   1. <a href="https://www.amazon.com/Idiot-Vintage-Classics-Fyodor-Dostoevsky-ebook/dp/B000FCKCBA/">The Idiot (Fyodor Dostoevsky)</a>
   1. <a href="https://www.amazon.com/Notes-Underground-Fyodor-Dostoevsky-ebook/dp/B0CCW2FBDP/">Notes from the Underground (Fyodor Dostoevsky)</a>
   1. <a href="https://www.amazon.com/Logicomix-search-truth-Apostolos-Doxiadis/dp/1596914521/">Logicomix: An Epic Search for Truth (Apostolos Doxiadis, Christos Papadimitriou)</a>
+  1. <a href="https://www.amazon.com/Heartbreaking-Work-Staggering-Genius/dp/0375725784/">A Heartbreaking Work of Staggering Genius (Dave Eggers)</a>
   1. <a href="https://www.amazon.com/Civilization-West-Rest-Niall-Ferguson/dp/0143122061/">Civilization: The West and the Rest (Niall Ferguson)</a>
   1. <a href="https://www.amazon.com/Square-Tower-Networks-Freemasons-Facebook/dp/0735222932/" target="_top">The Tower and the Square (Niall Ferguson)</a>
   1. <a href="https://www.amazon.com/Great-Gatsby-Original-Fitzgerald-Classic/dp/B093MYWTT5/">The Great Gatsby (F. Scott Fitzgerald)</a>
