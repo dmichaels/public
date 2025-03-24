@@ -21,6 +21,7 @@
 1. <a href="https://www.amazon.com/Gulag-History-Anne-Applebaum-ebook/dp/B0012SCJ9Y" target="_top">Gulag: A History (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
 1. <a href="https://www.blackstonelibrary.com/stalin-volume-iii?sp=412295" target="_top">Stalin: Volume III (Stephen Kotkin)</a>
+1. <a href="https://www.amazon.com/dp/0520208234/" target="_top">Magnetic Mountain: Stalinism as a Civilization (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/dp/1324051191/" target="_top">The Russo-Ukrainian War: The Return of History (Serhii Plokhy)</a>
 1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Grimscribe (Thomas Ligotti)</a>
