@@ -11,7 +11,7 @@
 1. <a href="https://www.amazon.com/Lost-Kingdom-History-Nationalism-Vladimir/dp/0141983132/" target="_top">Lost Kingdom: A History of Russian Nationalism from Ivan the Great to Vladimir Putin (Serhii Plokhy)</a>
 1. <a href="https://www.amazon.com/dp/0844750549/" target="_top">Riding the Tiger: Vladimir Putin's Russia and the Uses of War (Leon Aron)</a>
 1. <a href="https://www.amazon.com/dp/1627793666/" target="_top">Putin (Philip Short)</a>
-1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin' People (Catherine Belton)</a>
+1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin's People: How the KGB Took Back Russia and Then Took On the West (Catherine Belton)</a>
 1. <a href="https://www.amazon.com/dp/1324093463/" target="_top">Germany 1923: Hyperinflation, Hitler's Putsch, and Democracy in Crisis (Volker Ullrich)</a>
 1. <a href="https://www.amazon.com/Ordinary-Men-Reserve-Battalion-Solution/dp/0062303023/" target="_top">Ordinary Men: Reserve Police Battalion 101 and the Final Solution in Poland (Christopher R. Browning)</a>
 1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">Devil in the White City (Erik Larson)</a>
