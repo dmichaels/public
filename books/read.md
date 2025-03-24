@@ -286,7 +286,6 @@
   1. <a href="https://www.amazon.com/Praise-Idleness-Routledge-Classics-46/dp/0415325064/">In Praise of Idleness (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Christian-Essays-Religion-Related-Subjects/dp/0671203231/">Why I Am Not a Christian (Bertrand Russell)</a>
   1. <a href="https://www.amazon.com/Anthropologist-Mars-Seven-Paradoxical-Tales/dp/0679756973/">An Anthropologist On Mars: Seven Paradoxical Tales (Oliver Sacks)</a>
-  1. <a href="https://www.amazon.com/Man-Who-Mistook-His-Wife/dp/0593466675/">The Man Who Mistook His Wife for a Hat: And Other Clinical Tales (Oliver Sacks)</a>
   1. <a href="https://www.amazon.com/Hamlet-William-Shakespeare/dp/1451669410/">Hamlet (William Shakespeare)</a>
   1. <a href="https://www.amazon.com/Othello-Folger-Shakespeare-Library-William/dp/1501146297/">Othello (William Shakespeare)</a>
   1. <a href="https://www.amazon.com/King-Lear-Folger-Shakespeare-Library/dp/074348276X/">King Lear (William Shakespeare)</a>
@@ -366,6 +365,7 @@
   1. <a href="https://www.amazon.com/Philosophy-Who-Needs-Ayn-Rand/dp/0451138937/">Philosophy: Who Needs It (Ayn Rand)</a>
   1. <a href="https://www.amazon.com/All-Quiet-Western-Front-Novel/dp/0449213943/">All Quiet on the Western Front (Erich Maria Remarque)</a>
   1. <a href="https://www.amazon.com/Looking-Out-Where-Want-Life/dp/1626360405/">Looking Out for #1: How to Get from Where You Are Now to Where You Want to Be in Life (Robert Ringer)</a>
+  1. <a href="https://www.amazon.com/Man-Who-Mistook-His-Wife/dp/0593466675/">The Man Who Mistook His Wife for a Hat: And Other Clinical Tales (Oliver Sacks)</a>
   1. <a href="https://www.amazon.com/Catcher-Rye-J-D-Salinger-ebook/dp/B07V8HFMTR/">The Catcher in the Rye (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Franny-Zooey-J-D-Salinger/dp/0316769495/">Franny and Zooey (J.D. Salinger)</a>
   1. <a href="https://www.amazon.com/Nine-Stories-J-D-Salinger/dp/0553263609/">Nine Stories (J.D. Salinger)</a>
