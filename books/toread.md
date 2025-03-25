@@ -27,6 +27,7 @@
 1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Grimscribe (Thomas Ligotti)</a>
 1. <a href="https://www.amazon.com/Gilded-Age-Illustrated-First-Anniversary/dp/195243355X/" target="_top">The Gilded Age (Mark Twain, Charles Dudley Warner)</a>
+1. <a href="https://www.amazon.com/Second-After-John-Matherson-Novel/dp/0765356864/" target="_top">One Second After (William R. Forstchen )</a>
 1. <a href="https://www.amazon.com/dp/1597805394/" target="_top">Permutation City (Greg Egan)</a>
 1. <a href="https://www.amazon.com/Book-Disquiet-Complete-Fernando-Pessoa/dp/081122693X/" target="_top">The Book of Disquiet (Fernando Pessoa)</a>
 1. <a href="https://www.amazon.com/Trouble-Being-Born-M-Cioran/dp/1611457408/" target="_top">The Trouble With Being Born (E.M. Cioran)</a>
