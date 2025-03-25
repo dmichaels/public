@@ -3,6 +3,8 @@
 1. <a href="https://www.amazon.com/Give-People-Money-Universal-Revolutionize/dp/1524758779/" target="_top">Give People Money (Annie Lowrey)</a>
 1. <a href="https://www.amazon.com/dp/1646871642/" target="_top">Deep Utopia: Life and Meaning in a Solved World (Nick Bostrom)</a>
 1. <a href="https://www.amazon.com/Second-After-John-Matherson-Novel/dp/0765356864/" target="_top">One Second After (William R. Forstchen )</a>
+1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
+1. <a href="https://www.blackstonelibrary.com/stalin-volume-iii?sp=412295" target="_top">Stalin: Volume III (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/dp/1668023482/" target="_top">Abundance (Ezra Klein)</a>
 1. <a href="https://www.amazon.com/Fall-Civilizations-Stories-Greatness-Decline/dp/1335013415/" target="_top">Fall of Civilizations: Stories of Greatness and Decline (Paul Cooper)</a>
 1. <a href="https://www.amazon.com/dp/1250391237/" target="_top">Careless People: A Cautionary Tale of Power, Greed, and Lost Idealism (Sarah Wynn-Williams)</a>
@@ -21,8 +23,6 @@
 1. <a href="https://www.amazon.com/Exactly-Precision-Engineers-Created-Modern/dp/0008241783/" target="_top">Exactly (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/dp/140009593X/" target="_top">Iron Curtain: The Crushing of Eastern Europe, 1944 - 1956 (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/Gulag-History-Anne-Applebaum-ebook/dp/B0012SCJ9Y" target="_top">Gulag: A History (Anne Applebaum)</a>
-1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
-1. <a href="https://www.blackstonelibrary.com/stalin-volume-iii?sp=412295" target="_top">Stalin: Volume III (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/dp/0520208234/" target="_top">Magnetic Mountain: Stalinism as a Civilization (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/dp/1324051191/" target="_top">The Russo-Ukrainian War: The Return of History (Serhii Plokhy)</a>
 1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a>
