@@ -1,0 +1,593 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		984AE8392D9904ED00DBCEDA /* PixelBabelApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AE8382D9904ED00DBCEDA /* PixelBabelApp.swift */; };
+		984AE83B2D9904ED00DBCEDA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AE83A2D9904ED00DBCEDA /* ContentView.swift */; };
+		984AE83D2D9904EE00DBCEDA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 984AE83C2D9904EE00DBCEDA /* Assets.xcassets */; };
+		984AE8402D9904EE00DBCEDA /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 984AE83F2D9904EE00DBCEDA /* Preview Assets.xcassets */; };
+		984AE84A2D9904EE00DBCEDA /* PixelBabelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AE8492D9904EE00DBCEDA /* PixelBabelTests.swift */; };
+		984AE8542D9904EE00DBCEDA /* PixelBabelUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AE8532D9904EE00DBCEDA /* PixelBabelUITests.swift */; };
+		984AE8562D9904EE00DBCEDA /* PixelBabelUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AE8552D9904EE00DBCEDA /* PixelBabelUITestsLaunchTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		984AE8462D9904EE00DBCEDA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 984AE82D2D9904ED00DBCEDA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 984AE8342D9904ED00DBCEDA;
+			remoteInfo = PixelBabel;
+		};
+		984AE8502D9904EE00DBCEDA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 984AE82D2D9904ED00DBCEDA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 984AE8342D9904ED00DBCEDA;
+			remoteInfo = PixelBabel;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		984AE8352D9904ED00DBCEDA /* PixelBabel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PixelBabel.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		984AE8382D9904ED00DBCEDA /* PixelBabelApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBabelApp.swift; sourceTree = "<group>"; };
+		984AE83A2D9904ED00DBCEDA /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		984AE83C2D9904EE00DBCEDA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		984AE83F2D9904EE00DBCEDA /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		984AE8452D9904EE00DBCEDA /* PixelBabelTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PixelBabelTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		984AE8492D9904EE00DBCEDA /* PixelBabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBabelTests.swift; sourceTree = "<group>"; };
+		984AE84F2D9904EE00DBCEDA /* PixelBabelUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PixelBabelUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		984AE8532D9904EE00DBCEDA /* PixelBabelUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBabelUITests.swift; sourceTree = "<group>"; };
+		984AE8552D9904EE00DBCEDA /* PixelBabelUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBabelUITestsLaunchTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		984AE8322D9904ED00DBCEDA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		984AE8422D9904EE00DBCEDA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		984AE84C2D9904EE00DBCEDA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		984AE82C2D9904ED00DBCEDA = {
+			isa = PBXGroup;
+			children = (
+				984AE8372D9904ED00DBCEDA /* PixelBabel */,
+				984AE8482D9904EE00DBCEDA /* PixelBabelTests */,
+				984AE8522D9904EE00DBCEDA /* PixelBabelUITests */,
+				984AE8362D9904ED00DBCEDA /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		984AE8362D9904ED00DBCEDA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				984AE8352D9904ED00DBCEDA /* PixelBabel.app */,
+				984AE8452D9904EE00DBCEDA /* PixelBabelTests.xctest */,
+				984AE84F2D9904EE00DBCEDA /* PixelBabelUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		984AE8372D9904ED00DBCEDA /* PixelBabel */ = {
+			isa = PBXGroup;
+			children = (
+				984AE8382D9904ED00DBCEDA /* PixelBabelApp.swift */,
+				984AE83A2D9904ED00DBCEDA /* ContentView.swift */,
+				984AE83C2D9904EE00DBCEDA /* Assets.xcassets */,
+				984AE83E2D9904EE00DBCEDA /* Preview Content */,
+			);
+			path = PixelBabel;
+			sourceTree = "<group>";
+		};
+		984AE83E2D9904EE00DBCEDA /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				984AE83F2D9904EE00DBCEDA /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		984AE8482D9904EE00DBCEDA /* PixelBabelTests */ = {
+			isa = PBXGroup;
+			children = (
+				984AE8492D9904EE00DBCEDA /* PixelBabelTests.swift */,
+			);
+			path = PixelBabelTests;
+			sourceTree = "<group>";
+		};
+		984AE8522D9904EE00DBCEDA /* PixelBabelUITests */ = {
+			isa = PBXGroup;
+			children = (
+				984AE8532D9904EE00DBCEDA /* PixelBabelUITests.swift */,
+				984AE8552D9904EE00DBCEDA /* PixelBabelUITestsLaunchTests.swift */,
+			);
+			path = PixelBabelUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		984AE8342D9904ED00DBCEDA /* PixelBabel */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 984AE8592D9904EE00DBCEDA /* Build configuration list for PBXNativeTarget "PixelBabel" */;
+			buildPhases = (
+				984AE8312D9904ED00DBCEDA /* Sources */,
+				984AE8322D9904ED00DBCEDA /* Frameworks */,
+				984AE8332D9904ED00DBCEDA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PixelBabel;
+			productName = PixelBabel;
+			productReference = 984AE8352D9904ED00DBCEDA /* PixelBabel.app */;
+			productType = "com.apple.product-type.application";
+		};
+		984AE8442D9904EE00DBCEDA /* PixelBabelTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 984AE85C2D9904EE00DBCEDA /* Build configuration list for PBXNativeTarget "PixelBabelTests" */;
+			buildPhases = (
+				984AE8412D9904EE00DBCEDA /* Sources */,
+				984AE8422D9904EE00DBCEDA /* Frameworks */,
+				984AE8432D9904EE00DBCEDA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				984AE8472D9904EE00DBCEDA /* PBXTargetDependency */,
+			);
+			name = PixelBabelTests;
+			productName = PixelBabelTests;
+			productReference = 984AE8452D9904EE00DBCEDA /* PixelBabelTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		984AE84E2D9904EE00DBCEDA /* PixelBabelUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 984AE85F2D9904EE00DBCEDA /* Build configuration list for PBXNativeTarget "PixelBabelUITests" */;
+			buildPhases = (
+				984AE84B2D9904EE00DBCEDA /* Sources */,
+				984AE84C2D9904EE00DBCEDA /* Frameworks */,
+				984AE84D2D9904EE00DBCEDA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				984AE8512D9904EE00DBCEDA /* PBXTargetDependency */,
+			);
+			name = PixelBabelUITests;
+			productName = PixelBabelUITests;
+			productReference = 984AE84F2D9904EE00DBCEDA /* PixelBabelUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		984AE82D2D9904ED00DBCEDA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					984AE8342D9904ED00DBCEDA = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					984AE8442D9904EE00DBCEDA = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = 984AE8342D9904ED00DBCEDA;
+					};
+					984AE84E2D9904EE00DBCEDA = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = 984AE8342D9904ED00DBCEDA;
+					};
+				};
+			};
+			buildConfigurationList = 984AE8302D9904ED00DBCEDA /* Build configuration list for PBXProject "PixelBabel" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 984AE82C2D9904ED00DBCEDA;
+			productRefGroup = 984AE8362D9904ED00DBCEDA /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				984AE8342D9904ED00DBCEDA /* PixelBabel */,
+				984AE8442D9904EE00DBCEDA /* PixelBabelTests */,
+				984AE84E2D9904EE00DBCEDA /* PixelBabelUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		984AE8332D9904ED00DBCEDA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				984AE8402D9904EE00DBCEDA /* Preview Assets.xcassets in Resources */,
+				984AE83D2D9904EE00DBCEDA /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		984AE8432D9904EE00DBCEDA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		984AE84D2D9904EE00DBCEDA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		984AE8312D9904ED00DBCEDA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				984AE83B2D9904ED00DBCEDA /* ContentView.swift in Sources */,
+				984AE8392D9904ED00DBCEDA /* PixelBabelApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		984AE8412D9904EE00DBCEDA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				984AE84A2D9904EE00DBCEDA /* PixelBabelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		984AE84B2D9904EE00DBCEDA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				984AE8562D9904EE00DBCEDA /* PixelBabelUITestsLaunchTests.swift in Sources */,
+				984AE8542D9904EE00DBCEDA /* PixelBabelUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		984AE8472D9904EE00DBCEDA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 984AE8342D9904ED00DBCEDA /* PixelBabel */;
+			targetProxy = 984AE8462D9904EE00DBCEDA /* PBXContainerItemProxy */;
+		};
+		984AE8512D9904EE00DBCEDA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 984AE8342D9904ED00DBCEDA /* PixelBabel */;
+			targetProxy = 984AE8502D9904EE00DBCEDA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		984AE8572D9904EE00DBCEDA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		984AE8582D9904EE00DBCEDA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		984AE85A2D9904EE00DBCEDA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"PixelBabel/Preview Content\"";
+				DEVELOPMENT_TEAM = N76S683655;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.PixelBabel;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		984AE85B2D9904EE00DBCEDA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"PixelBabel/Preview Content\"";
+				DEVELOPMENT_TEAM = N76S683655;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.PixelBabel;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		984AE85D2D9904EE00DBCEDA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N76S683655;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.PixelBabelTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PixelBabel.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PixelBabel";
+			};
+			name = Debug;
+		};
+		984AE85E2D9904EE00DBCEDA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N76S683655;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.PixelBabelTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PixelBabel.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PixelBabel";
+			};
+			name = Release;
+		};
+		984AE8602D9904EE00DBCEDA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N76S683655;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.PixelBabelUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PixelBabel;
+			};
+			name = Debug;
+		};
+		984AE8612D9904EE00DBCEDA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = N76S683655;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.PixelBabelUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PixelBabel;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		984AE8302D9904ED00DBCEDA /* Build configuration list for PBXProject "PixelBabel" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				984AE8572D9904EE00DBCEDA /* Debug */,
+				984AE8582D9904EE00DBCEDA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		984AE8592D9904EE00DBCEDA /* Build configuration list for PBXNativeTarget "PixelBabel" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				984AE85A2D9904EE00DBCEDA /* Debug */,
+				984AE85B2D9904EE00DBCEDA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		984AE85C2D9904EE00DBCEDA /* Build configuration list for PBXNativeTarget "PixelBabelTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				984AE85D2D9904EE00DBCEDA /* Debug */,
+				984AE85E2D9904EE00DBCEDA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		984AE85F2D9904EE00DBCEDA /* Build configuration list for PBXNativeTarget "PixelBabelUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				984AE8602D9904EE00DBCEDA /* Debug */,
+				984AE8612D9904EE00DBCEDA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 984AE82D2D9904ED00DBCEDA /* Project object */;
+}
