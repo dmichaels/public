@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/*
 @main
 struct PixelBabelApp: App {
     @State private var useGrayscale = false
@@ -27,3 +28,4 @@ class AppSettings: ObservableObject {
         didSet { print("Pixel Size changed: \(pixelSize)") }
     }
 }
+*/
