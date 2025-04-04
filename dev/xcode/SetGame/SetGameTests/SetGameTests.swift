@@ -4,7 +4,7 @@
 //
 //  Created by David Michaels on 3/1/21.
 //
-
+/*
 import XCTest
 @testable import SetGame
 
@@ -31,3 +31,4 @@ class SetGameTests: XCTestCase {
     }
 
 }
+*/

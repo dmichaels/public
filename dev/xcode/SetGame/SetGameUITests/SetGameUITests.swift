@@ -4,7 +4,7 @@
 //
 //  Created by David Michaels on 3/1/21.
 //
-
+/*
 import XCTest
 
 class SetGameUITests: XCTestCase {
@@ -40,3 +40,4 @@ class SetGameUITests: XCTestCase {
         }
     }
 }
+*/

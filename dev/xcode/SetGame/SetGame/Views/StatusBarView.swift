@@ -17,6 +17,7 @@ struct StatusBarView: View {
         HStack(alignment: .firstTextBaseline) {
             Text("SETs: \(table.state.setsFoundCount)")
                 .font(.subheadline)
+                .fontWeight(.medium)
                 .frame(alignment: .leading)
                 .foregroundColor(Color.blue)
             if (self.table.settings.showNumberOfSetsPresent) {

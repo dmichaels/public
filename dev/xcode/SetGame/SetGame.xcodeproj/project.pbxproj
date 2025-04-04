@@ -29,6 +29,7 @@
 		989FF92625F10F08002AE44A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 989FF92525F10F08002AE44A /* SettingsView.swift */; };
 		989FF92B25F11872002AE44A /* StatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 989FF92A25F11872002AE44A /* StatusBarView.swift */; };
 		98C2CA8225F3C1E40050ACDC /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C2CA8125F3C1E40050ACDC /* StatsView.swift */; };
+		98E4E3232773B0AC000EEC5A /* SetGame.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 98E4E3222773B0AC000EEC5A /* SetGame.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,14 +38,14 @@
 			containerPortal = 981190E425ED59CC0083606B /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 981190EB25ED59CC0083606B;
-			remoteInfo = SetGame2;
+			remoteInfo = SetGame;
 		};
 		9811910925ED59CD0083606B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 981190E425ED59CC0083606B /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 981190EB25ED59CC0083606B;
-			remoteInfo = SetGame2;
+			remoteInfo = SetGame;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -77,6 +78,7 @@
 		989FF92525F10F08002AE44A /* SettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		989FF92A25F11872002AE44A /* StatusBarView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatusBarView.swift; sourceTree = "<group>"; };
 		98C2CA8125F3C1E40050ACDC /* StatsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		98E4E3222773B0AC000EEC5A /* SetGame.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SetGame.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +109,7 @@
 		981190E325ED59CC0083606B = {
 			isa = PBXGroup;
 			children = (
+				98E4E3222773B0AC000EEC5A /* SetGame.xcassets */,
 				981190EE25ED59CC0083606B /* SetGame */,
 				9811910025ED59CD0083606B /* SetGameTests */,
 				9811910B25ED59CD0083606B /* SetGameUITests */,
@@ -210,7 +213,7 @@
 			dependencies = (
 			);
 			name = SetGame;
-			productName = SetGame2;
+			productName = SetGame;
 			productReference = 981190EC25ED59CC0083606B /* SetGame.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -228,7 +231,7 @@
 				981190FF25ED59CD0083606B /* PBXTargetDependency */,
 			);
 			name = SetGameTests;
-			productName = SetGame2Tests;
+			productName = SetGameTests;
 			productReference = 981190FD25ED59CD0083606B /* SetGameTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -246,7 +249,7 @@
 				9811910A25ED59CD0083606B /* PBXTargetDependency */,
 			);
 			name = SetGameUITests;
-			productName = SetGame2UITests;
+			productName = SetGameUITests;
 			productReference = 9811910825ED59CD0083606B /* SetGameUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -297,6 +300,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				98E4E3232773B0AC000EEC5A /* SetGame.xcassets in Resources */,
 				981190F725ED59CD0083606B /* Preview Assets.xcassets in Resources */,
 				981190F425ED59CD0083606B /* Assets.xcassets in Resources */,
 			);
@@ -495,8 +499,8 @@
 		9811911225ED59CD0083606B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"SetGame/Preview Content\"";
 				DEVELOPMENT_TEAM = N76S683655;
@@ -517,8 +521,8 @@
 		9811911325ED59CD0083606B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"SetGame/Preview Content\"";
 				DEVELOPMENT_TEAM = N76S683655;
@@ -543,14 +547,14 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = N76S683655;
-				INFOPLIST_FILE = SetGame2Tests/Info.plist;
+				INFOPLIST_FILE = SetGameTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.SetGame2Tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.SetGameTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -565,14 +569,14 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = N76S683655;
-				INFOPLIST_FILE = SetGame2Tests/Info.plist;
+				INFOPLIST_FILE = SetGameTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.SetGame2Tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.SetGameTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -586,17 +590,17 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = N76S683655;
-				INFOPLIST_FILE = SetGame2UITests/Info.plist;
+				INFOPLIST_FILE = SetGameUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.SetGame2UITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.SetGameUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = SetGame2;
+				TEST_TARGET_NAME = SetGame;
 			};
 			name = Debug;
 		};
@@ -606,17 +610,17 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = N76S683655;
-				INFOPLIST_FILE = SetGame2UITests/Info.plist;
+				INFOPLIST_FILE = SetGameUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.SetGame2UITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dmichaels.prufrock.SetGameUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = SetGame2;
+				TEST_TARGET_NAME = SetGame;
 			};
 			name = Release;
 		};
