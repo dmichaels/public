@@ -4,10 +4,33 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>PixelBabel DEBUG.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 		<key>PixelBabel.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>984AE8342D9904ED00DBCEDA</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>984AE8442D9904EE00DBCEDA</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>984AE84E2D9904EE00DBCEDA</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>

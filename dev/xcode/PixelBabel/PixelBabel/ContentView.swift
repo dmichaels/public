@@ -5,7 +5,6 @@ import AVFoundation
 
 @main
 struct PixelBabelApp: App {
-    @State private var useGrayscale = false
     @StateObject private var settings = AppSettings()
     var body: some Scene {
         WindowGroup {
@@ -22,12 +21,9 @@ enum ColorMode: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
 }
 
-// AppSettings model example
 class AppSettings: ObservableObject {
-    @Published var useMonochrome: Bool = false
-    @Published var useGrayscale: Bool = false
-    @Published var useColor: Bool = false
     @Published var colorMode: ColorMode = ColorMode.color
+    @Published var pixelSize: Int = 4
 }
 
 struct ContentView: View {
@@ -35,12 +31,8 @@ struct ContentView: View {
     @State private var randomImage: CGImage?
     @State private var showSettings = false  // Controls settings screen visibility
     @State private var hapticEngine: CHHapticEngine?
-    //@State private var audioPlayer: AVAudioPlayer?
-    // var audioPlayer: AVAudioPlayer?
 
     func playClickSound() {
-        print("xyzzy: playClickSound")
-        // let currentVolume = AVAudioSession.sharedInstance().outputVolume
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default, options: .mixWithOthers)
@@ -56,7 +48,6 @@ struct ContentView: View {
     }
     
     func prepareHaptics() {
-        print("xyzzy: prepareHaptics")
         do {
             hapticEngine = try CHHapticEngine()
             try hapticEngine?.start()
@@ -66,7 +57,6 @@ struct ContentView: View {
     }
     
     func triggerHaptic() {
-        print("xyzzy: triggerHaptic")
         playClickSound()
         let sharpTap = CHHapticEvent(eventType: .hapticTransient, parameters: [], relativeTime: 0)
         do {
@@ -79,7 +69,6 @@ struct ContentView: View {
     }
     
     func refreshRandomImage() {
-        print("xyzzy: refreshRandomImage")
         randomImage = RandomPixelGenerator.generate(settings: settings)
     }
     
@@ -90,15 +79,11 @@ struct ContentView: View {
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
-                    /*
-                    .onTapGesture {
-                        refreshRandomImage()
-                        triggerHaptic()
-                    }
-                    */
                     .onChange(of: settings.colorMode) { _ in
                         refreshRandomImage()
-                        //randomImage = RandomPixelGenerator.generate(settings: settings) // Regenerate on grayscale change
+                    }
+                    .onChange(of: settings.pixelSize) { _ in
+                        refreshRandomImage()
                     }
                     .gesture(
                         DragGesture()
@@ -121,15 +106,7 @@ struct ContentView: View {
             randomImage = RandomPixelGenerator.generate(settings: settings) // Ensure the image is set on appear
         }
         .onAppear(perform: prepareHaptics)
-        /*
-        .onTapGesture {
-            refreshRandomImage()
-            triggerHaptic()
-        }
-        */
-        // .disabled(showSettings)
         .simultaneousGesture(
-            // Only trigger the image refresh and haptic feedback if settings page is not shown
             TapGesture().onEnded {
                 if !showSettings {
                     refreshRandomImage()
@@ -144,45 +121,64 @@ struct SettingsView: View {
     @EnvironmentObject var settings: AppSettings
     @Binding var showSettings: Bool
     @State private var selectedMode: ColorMode = .color
-    
+
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 30) {
+
             Spacer()
             HStack {
-                // Left-justified label
                 Text("Color Mode")
                     .bold()
+                    .lineLimit(1)
+                    //.frame(width: 100, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading)
-                    .lineLimit(1)
-                
-                // Right-justified dropdown
+                Spacer()
                 Picker("Color Mode", selection: $selectedMode) {
                     ForEach(ColorMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Text(mode.rawValue)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .tag(mode)
                     }
                 }
                 .pickerStyle(MenuPickerStyle())
+                .fixedSize()
+                .frame(width: 120)
+                .padding(.trailing)
                 .onChange(of: selectedMode) { newMode in
                     settings.colorMode = newMode
                 }
-                .fixedSize()
-                .frame(width: 100) // Fixed width for the dropdown to prevent shifting
-                .padding(.trailing)
             }
+
+            HStack {
+                Text("Pixel Size")
+                    .bold()
+                    .frame(width: 100, alignment: .leading)
+                    .padding(.leading)
+                Spacer()
+                Text("\(settings.pixelSize)")
+                    .monospacedDigit()
+                    .frame(width: 80, alignment: .trailing)
+                    .padding(.trailing)
+            }
+            Slider(
+                value: Binding(
+                    get: { Double(settings.pixelSize) },
+                    set: { settings.pixelSize = Int($0) }
+                ),
+                in: 1...50,
+                step: 1
+            )
             .padding(.horizontal)
-            
-            Spacer()
-            
-            .onChange(of: selectedMode) { newMode in
-                settings.colorMode = newMode
-                // Handle mode change, update settings accordingly
-                // You can bind it to settings here if needed
+            .padding(.top, -12)
+            .onChange(of: settings.pixelSize) { newValue in
+                settings.pixelSize = newValue
             }
+
             Spacer()
             Spacer()
             Spacer()
-            //Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
@@ -190,9 +186,9 @@ struct SettingsView: View {
         .gesture(
             DragGesture()
                 .onEnded { value in
-                    if value.translation.width > 100 { // Swipe right threshold
+                    if value.translation.width > 100 {
                         withAnimation {
-                            showSettings = false // Go back to random pixel view
+                            showSettings = false
                         }
                     }
                 }
@@ -203,37 +199,93 @@ struct SettingsView: View {
     }
 }
 
+struct PixelMap {
+
+    private var _pixels: [UInt8]
+    private var _pixelsWidth: Int
+    private var _pixelsHeight: Int
+    private var _scale: Int = 1
+    private let _depth: Int = 4
+
+    init(_ width: Int, _ height: Int, scale: Int = 1) {
+        self._pixelsWidth = width
+        self._pixelsHeight = height
+        self._scale = scale
+        self._pixels = [UInt8](repeating: 0, count: self._pixelsWidth * self._pixelsHeight * self._depth)
+    }
+
+    var width: Int {
+        return (self._pixelsWidth + self._scale - 1) / self._scale
+    }
+
+    var height: Int {
+        return (self._pixelsHeight + self._scale - 1) / self._scale
+    }
+
+    var depth: Int {
+        return self._depth
+    }
+
+    var data: UnsafeMutablePointer<UInt8> {
+        return UnsafeMutablePointer(mutating: self._pixels)
+    }
+
+    mutating func xxx_write(_ x: Int, _ y: Int, red: UInt8, green: UInt8, blue: UInt8, transparency: UInt8 = 255) {
+        for dy in 0..<self._scale {
+            for dx in 0..<self._scale {
+                let ix = x * self._scale + dx
+                let iy = y * self._scale + dy
+                let i = (iy * self._pixelsWidth + ix) * self._depth
+                if (i + 3 < self._pixels.count) {
+                    self._pixels[i] = red
+                    self._pixels[i + 1] = green
+                    self._pixels[i + 2] = blue
+                    self._pixels[i + 3] = transparency
+                }
+            }
+        }
+    }
+
+    mutating func write(_ x: Int, _ y: Int, red: UInt8, green: UInt8, blue: UInt8, transparency: UInt8 = 255) {
+        for dy in 0..<self._scale {
+            for dx in 0..<self._scale {
+                let ix = x * self._scale + dx
+                let iy = y * self._scale + dy
+                let i = (iy * self._pixelsWidth + ix) * self._depth
+                if ((ix < self._pixelsWidth) && (i < self._pixels.count)) {
+                    self._pixels[i] = red
+                    self._pixels[i + 1] = green
+                    self._pixels[i + 2] = blue
+                    self._pixels[i + 3] = transparency
+                }
+            }
+        }
+    }
+}
+
 struct RandomPixelGenerator {
     static func generate(settings: AppSettings) -> CGImage {
-        let useGrayscale = settings.useGrayscale
-        let pixelSize = 1
         let screenWidth = Int(UIScreen.main.bounds.width)
         let screenHeight = Int(UIScreen.main.bounds.height)
-        let width = screenWidth / pixelSize
-        let height = screenHeight / pixelSize
-        let size = width * height * 4
-        var pixelData = [UInt8](repeating: 0, count: size)
+        var pixels: PixelMap = PixelMap(screenWidth, screenHeight, scale: settings.pixelSize)
 
-        for y in 0..<height {
-            for x in 0..<width {
-                let i = (y * width + x) * 4
-                if settings.colorMode == ColorMode.monochrome {
+        for y in 0..<pixels.height {
+            for x in 0..<pixels.width {
+                if (settings.colorMode == ColorMode.monochrome) {
                     let value: UInt8 = UInt8.random(in: 0...1) * 255
-                    pixelData[i] = value
-                    pixelData[i+1] = value
-                    pixelData[i+2] = value
+                    pixels.write(x, y, red: value, green: value, blue: value)
                 }
                 else if settings.colorMode == ColorMode.grayscale {
                     let value = UInt8.random(in: 0...255)
-                    pixelData[i] = value
-                    pixelData[i+1] = value
-                    pixelData[i+2] = value
-                } else {
-                    pixelData[i] = UInt8.random(in: 0...255)
-                    pixelData[i+1] = UInt8.random(in: 0...255)
-                    pixelData[i+2] = UInt8.random(in: 0...255)
+                    pixels.write(x, y, red: value, green: value, blue: value)
                 }
-                pixelData[i+3] = 255 // Alpha channel (fully opaque)
+                else {
+                    let rgb = UInt32.random(in: 0...0xFFFFFF)
+                    let red = UInt8((rgb >> 16) & 0xFF)
+                    let green = UInt8((rgb >> 8) & 0xFF)
+                    let blue = UInt8(rgb & 0xFF)
+                    pixels.write(x, y, red: red, green: green, blue: blue)
+                }
             }
         }
 
@@ -241,11 +293,11 @@ struct RandomPixelGenerator {
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
 
         guard let context = CGContext(
-            data: &pixelData,
-            width: width * pixelSize,
-            height: height * pixelSize,
+            data: pixels.data,
+            width: screenWidth,
+            height: screenHeight,
             bitsPerComponent: 8,
-            bytesPerRow: width * pixelSize * 4,
+            bytesPerRow: screenWidth * pixels.depth,
             space: colorSpace,
             bitmapInfo: bitmapInfo.rawValue
         ) else { fatalError("Failed to create CGContext") }
