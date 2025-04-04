@@ -187,7 +187,7 @@ struct SettingsView: View {
             DragGesture()
                 .onEnded { value in
                     if value.translation.width > 100 {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.3)) {
                             showSettings = false
                         }
                     }
