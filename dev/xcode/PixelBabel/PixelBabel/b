@@ -1,0 +1,4 @@
+    let rgb = UInt32.random(in: 0...0xFFFFFF)
+    let red = UInt8((rgb >> 16) & 0xFF)
+    let green = UInt8((rgb >> 8) & 0xFF)
+    let blue = UInt8(rgb & 0xFF)
