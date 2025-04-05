@@ -24,7 +24,8 @@ enum ColorMode: String, CaseIterable, Identifiable {
 class AppSettings: ObservableObject {
     @Published var colorMode: ColorMode = ColorMode.monochrome
     @Published var pixelSize: Int = 4
-    @Published var feedbackEnabled: Bool = true
+    @Published var soundEnabled: Bool = true
+    @Published var hapticEnabled: Bool = true
 }
 
 struct ContentView: View {
@@ -58,8 +59,10 @@ struct ContentView: View {
     }
     
     func triggerHaptic() {
-        if (settings.feedbackEnabled) {
+        if (settings.soundEnabled) {
             playClickSound()
+        }
+        if (settings.hapticEnabled) {
             let sharpTap = CHHapticEvent(eventType: .hapticTransient, parameters: [], relativeTime: 0)
             do {
                 let pattern = try CHHapticPattern(events: [sharpTap], parameters: [])
@@ -156,14 +159,25 @@ struct SettingsView: View {
             }
             
             HStack {
-                Text("Clicky Sound")
+                Text("Sounds")
                     .bold()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading)
-                Toggle("", isOn: $settings.feedbackEnabled)
+                Toggle("", isOn: $settings.soundEnabled)
                     .labelsHidden()
-                    .padding(.trailing, 30) // Align with other right-aligned controls
-            }
+                    .padding(.trailing, 30)
+                    .toggleStyle(.switch)
+            }.padding(.top, 2)
+            
+            HStack {
+                Text("Haptics")
+                    .bold()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                Toggle("", isOn: $settings.hapticEnabled)
+                    .labelsHidden()
+                    .padding(.trailing, 30)
+            }.padding(.top, 5)
 
             Divider()
                 .frame(height: 3)
