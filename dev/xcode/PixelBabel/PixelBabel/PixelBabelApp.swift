@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-/*
 @main
 struct PixelBabelApp: App {
     @State private var useGrayscale = false
@@ -20,6 +19,7 @@ struct PixelBabelApp: App {
     }
 }
 
+/*
 class AppSettings: ObservableObject {
     @Published var useGrayscale: Bool = false {
         didSet { print("Grayscale changed: \(useGrayscale)") }

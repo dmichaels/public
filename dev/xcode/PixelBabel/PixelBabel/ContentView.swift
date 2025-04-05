@@ -1,77 +1,17 @@
 import SwiftUI
-import AudioToolbox
-import CoreHaptics
-import AVFoundation
 
-@main
-struct PixelBabelApp: App {
-    @StateObject private var settings = AppSettings()
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environmentObject(settings)
-        }
-    }
-}
-
-enum ColorMode: String, CaseIterable, Identifiable {
-    case monochrome = "Monochrome"
-    case grayscale = "Grayscale"
-    case color = "Color"
-    var id: String { self.rawValue }
-}
-
-class AppSettings: ObservableObject {
-    @Published var colorMode: ColorMode = ColorMode.monochrome
-    @Published var pixelSize: Int = 4
-    @Published var soundEnabled: Bool = true
-    @Published var hapticEnabled: Bool = true
-}
-
-struct ContentView: View {
+struct ContentView: View
+{
     @EnvironmentObject var settings: AppSettings
     @State private var randomImage: CGImage?
-    @State private var showSettings = false  // Controls settings screen visibility
-    @State private var hapticEngine: CHHapticEngine?
+    @State private var showSettings = false
 
-    func playClickSound() {
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default, options: .mixWithOthers)
-            try session.setActive(true)
-            AudioServicesPlaySystemSound(1104)
-        } catch {
-            print("Error setting audio session: \(error)")
-        }
+    private var _feedback: Feedback {
+        return Feedback(settings) // TODO: Figure out how to make lazy evaluation so not creating every time.
     }
     
     init() {
         _randomImage = State(initialValue: RandomPixelGenerator.generate(settings: AppSettings()))  // Generate the initial random image
-    }
-    
-    func prepareHaptics() {
-        do {
-            hapticEngine = try CHHapticEngine()
-            try hapticEngine?.start()
-        } catch {
-            print("Haptics not supported.")
-        }
-    }
-    
-    func triggerHaptic() {
-        if (settings.soundEnabled) {
-            playClickSound()
-        }
-        if (settings.hapticEnabled) {
-            let sharpTap = CHHapticEvent(eventType: .hapticTransient, parameters: [], relativeTime: 0)
-            do {
-                let pattern = try CHHapticPattern(events: [sharpTap], parameters: [])
-                let player = try hapticEngine?.makePlayer(with: pattern)
-                try player?.start(atTime: 0)
-            } catch {
-                print("Failed to play haptic.")
-            }
-        }
     }
     
     func refreshRandomImage() {
@@ -111,188 +51,14 @@ struct ContentView: View {
         .onAppear {
             randomImage = RandomPixelGenerator.generate(settings: settings) // Ensure the image is set on appear
         }
-        .onAppear(perform: prepareHaptics)
         .simultaneousGesture(
             TapGesture().onEnded {
                 if !showSettings {
                     refreshRandomImage()
-                    triggerHaptic()
+                    self._feedback.triggerHaptic()
                 }
             }
         )
-    }
-}
-
-struct SettingsView: View {
-    @EnvironmentObject var settings: AppSettings
-    @Binding var showSettings: Bool
-    @State private var selectedMode: ColorMode = .color
-
-    var body: some View {
-        VStack(spacing: 2) {
-
-            Spacer()
-            HStack {
-                Text("Color Mode")
-                    .bold()
-                    .lineLimit(1)
-                    //.frame(width: 100, alignment: .leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading)
-                Spacer()
-                Picker("Color Mode", selection: $selectedMode) {
-                    ForEach(ColorMode.allCases) { mode in
-                        Text(mode.rawValue)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .tag(mode)
-                    }
-                }
-                .pickerStyle(MenuPickerStyle())
-                .frame(width: 200, alignment: .trailing)
-                .padding(.trailing)
-                .lineLimit(1)
-                .onChange(of: selectedMode) { newMode in
-                    settings.colorMode = newMode
-                }
-            }
-            
-            HStack {
-                Text("Sounds")
-                    .bold()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading)
-                Toggle("", isOn: $settings.soundEnabled)
-                    .labelsHidden()
-                    .padding(.trailing, 30)
-            }.padding(.top, 2)
-            
-            HStack {
-                Text("Haptics")
-                    .bold()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading)
-                Toggle("", isOn: $settings.hapticEnabled)
-                    .labelsHidden()
-                    .padding(.trailing, 30)
-            }.padding(.top, 5)
-
-            Divider()
-                .frame(height: 3)
-                .background(Color.gray.opacity(0.3))
-                .padding(.horizontal)
-                // .padding(.vertical, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 10)
-            HStack {
-                Text("Pixel Size")
-                    .bold()
-                    .frame(width: 100, alignment: .leading)
-                    .padding(.leading)
-                Spacer()
-                Text("\(settings.pixelSize)")
-                    .monospacedDigit()
-                    .frame(width: 50, alignment: .trailing)
-                    .padding(.trailing)
-            }
-            Slider(
-                value: Binding(
-                    get: { Double(settings.pixelSize) },
-                    set: { settings.pixelSize = Int($0) }
-                ),
-                in: 1...50,
-                step: 1
-            )
-            .padding(.horizontal)
-            .padding(.top, 0)
-            .onChange(of: settings.pixelSize) { newValue in
-                settings.pixelSize = newValue
-            }
-
-            Spacer()
-            Spacer()
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white)
-        .ignoresSafeArea()
-        .gesture(
-            DragGesture()
-                .onEnded { value in
-                    if value.translation.width > 100 {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showSettings = false
-                        }
-                    }
-                }
-        )
-        .onAppear {
-            selectedMode = settings.colorMode
-        }
-    }
-}
-
-struct PixelMap {
-
-    private var _pixels: [UInt8]
-    private var _pixelsWidth: Int
-    private var _pixelsHeight: Int
-    private var _scale: Int = 1
-    private let _depth: Int = 4
-
-    init(_ width: Int, _ height: Int, scale: Int = 1) {
-        self._pixelsWidth = width
-        self._pixelsHeight = height
-        self._scale = scale
-        self._pixels = [UInt8](repeating: 0, count: self._pixelsWidth * self._pixelsHeight * self._depth)
-    }
-
-    var width: Int {
-        return (self._pixelsWidth + self._scale - 1) / self._scale
-    }
-
-    var height: Int {
-        return (self._pixelsHeight + self._scale - 1) / self._scale
-    }
-
-    var depth: Int {
-        return self._depth
-    }
-
-    var data: UnsafeMutablePointer<UInt8> {
-        return UnsafeMutablePointer(mutating: self._pixels)
-    }
-
-    mutating func xxx_write(_ x: Int, _ y: Int, red: UInt8, green: UInt8, blue: UInt8, transparency: UInt8 = 255) {
-        for dy in 0..<self._scale {
-            for dx in 0..<self._scale {
-                let ix = x * self._scale + dx
-                let iy = y * self._scale + dy
-                let i = (iy * self._pixelsWidth + ix) * self._depth
-                if (i + 3 < self._pixels.count) {
-                    self._pixels[i] = red
-                    self._pixels[i + 1] = green
-                    self._pixels[i + 2] = blue
-                    self._pixels[i + 3] = transparency
-                }
-            }
-        }
-    }
-
-    mutating func write(_ x: Int, _ y: Int, red: UInt8, green: UInt8, blue: UInt8, transparency: UInt8 = 255) {
-        for dy in 0..<self._scale {
-            for dx in 0..<self._scale {
-                let ix = x * self._scale + dx
-                let iy = y * self._scale + dy
-                let i = (iy * self._pixelsWidth + ix) * self._depth
-                if ((ix < self._pixelsWidth) && (i < self._pixels.count)) {
-                    self._pixels[i] = red
-                    self._pixels[i + 1] = green
-                    self._pixels[i + 2] = blue
-                    self._pixels[i + 3] = transparency
-                }
-            }
-        }
     }
 }
 
@@ -343,6 +109,6 @@ struct RandomPixelGenerator {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
-            .environmentObject(AppSettings())  // Inject the AppSettings here for the preview
+            .environmentObject(AppSettings())
     }
 }

@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		982857762DA1796A00770B45 /* ColorMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982857752DA1796A00770B45 /* ColorMode.swift */; };
+		982857782DA179C800770B45 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982857772DA179C800770B45 /* AppSettings.swift */; };
+		9828577A2DA17A1700770B45 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982857792DA17A1700770B45 /* SettingsView.swift */; };
+		9828577C2DA17A5900770B45 /* PixelMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9828577B2DA17A5900770B45 /* PixelMap.swift */; };
+		9828577E2DA17AD000770B45 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9828577D2DA17AD000770B45 /* Feedback.swift */; };
 		984AE8392D9904ED00DBCEDA /* PixelBabelApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AE8382D9904ED00DBCEDA /* PixelBabelApp.swift */; };
 		984AE83B2D9904ED00DBCEDA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AE83A2D9904ED00DBCEDA /* ContentView.swift */; };
 		984AE83D2D9904EE00DBCEDA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 984AE83C2D9904EE00DBCEDA /* Assets.xcassets */; };
@@ -34,6 +39,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		982857752DA1796A00770B45 /* ColorMode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ColorMode.swift; sourceTree = "<group>"; };
+		982857772DA179C800770B45 /* AppSettings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		982857792DA17A1700770B45 /* SettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		9828577B2DA17A5900770B45 /* PixelMap.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PixelMap.swift; sourceTree = "<group>"; };
+		9828577D2DA17AD000770B45 /* Feedback.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		984AE8352D9904ED00DBCEDA /* PixelBabel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PixelBabel.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		984AE8382D9904ED00DBCEDA /* PixelBabelApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBabelApp.swift; sourceTree = "<group>"; };
 		984AE83A2D9904ED00DBCEDA /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -94,6 +104,11 @@
 		984AE8372D9904ED00DBCEDA /* PixelBabel */ = {
 			isa = PBXGroup;
 			children = (
+				9828577D2DA17AD000770B45 /* Feedback.swift */,
+				9828577B2DA17A5900770B45 /* PixelMap.swift */,
+				982857792DA17A1700770B45 /* SettingsView.swift */,
+				982857772DA179C800770B45 /* AppSettings.swift */,
+				982857752DA1796A00770B45 /* ColorMode.swift */,
 				984AE8382D9904ED00DBCEDA /* PixelBabelApp.swift */,
 				984AE83A2D9904ED00DBCEDA /* ContentView.swift */,
 				984AE83C2D9904EE00DBCEDA /* Assets.xcassets */,
@@ -257,8 +272,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9828577A2DA17A1700770B45 /* SettingsView.swift in Sources */,
 				984AE83B2D9904ED00DBCEDA /* ContentView.swift in Sources */,
 				984AE8392D9904ED00DBCEDA /* PixelBabelApp.swift in Sources */,
+				9828577C2DA17A5900770B45 /* PixelMap.swift in Sources */,
+				982857782DA179C800770B45 /* AppSettings.swift in Sources */,
+				9828577E2DA17AD000770B45 /* Feedback.swift in Sources */,
+				982857762DA1796A00770B45 /* ColorMode.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
