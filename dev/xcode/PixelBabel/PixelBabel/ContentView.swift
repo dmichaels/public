@@ -3,24 +3,20 @@ import SwiftUI
 struct ContentView: View
 {
     @EnvironmentObject var settings: AppSettings
-    @State private var randomImage: CGImage?
+    @State private var _randomImage: CGImage?
     @State private var showSettings = false
 
     private var _feedback: Feedback {
         return Feedback(settings) // TODO: Figure out how to make lazy evaluation so not creating every time.
     }
     
-    init() {
-        _randomImage = State(initialValue: RandomPixelGenerator.generate(settings: AppSettings()))  // Generate the initial random image
-    }
-    
     func refreshRandomImage() {
-        randomImage = RandomPixelGenerator.generate(settings: settings)
+        self._randomImage = RandomPixelGenerator.generate(settings: settings)
     }
     
     var body: some View {
         ZStack {
-            if let image = randomImage {
+            if let image = self._randomImage {
                 Image(decorative: image, scale: 1.0)
                     .resizable()
                     .scaledToFill()
@@ -49,7 +45,8 @@ struct ContentView: View
             }
         }
         .onAppear {
-            randomImage = RandomPixelGenerator.generate(settings: settings) // Ensure the image is set on appear
+            refreshRandomImage()
+            // _randomImage = RandomPixelGenerator.generate(settings: settings) // Ensure the image is set on appear
         }
         .simultaneousGesture(
             TapGesture().onEnded {
