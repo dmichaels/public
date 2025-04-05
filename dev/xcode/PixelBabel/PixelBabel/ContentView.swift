@@ -149,7 +149,6 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(MenuPickerStyle())
-                // .fixedSize()
                 .frame(width: 200, alignment: .trailing)
                 .padding(.trailing)
                 .lineLimit(1)
@@ -166,7 +165,6 @@ struct SettingsView: View {
                 Toggle("", isOn: $settings.soundEnabled)
                     .labelsHidden()
                     .padding(.trailing, 30)
-                    .toggleStyle(.switch)
             }.padding(.top, 2)
             
             HStack {
