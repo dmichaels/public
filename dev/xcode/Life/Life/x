@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 // Model
@@ -9,7 +8,7 @@ struct GridPoint: Hashable {
 
 class GameOfLife: ObservableObject {
     @Published var aliveCells: Set<GridPoint> = []
-    
+
     func toggleCell(at point: GridPoint) {
         if aliveCells.contains(point) {
             aliveCells.remove(point)
@@ -17,15 +16,15 @@ class GameOfLife: ObservableObject {
             aliveCells.insert(point)
         }
     }
-    
+
     func isAlive(_ point: GridPoint) -> Bool {
         aliveCells.contains(point)
     }
-    
+
     func step() {
         var newAliveCells: Set<GridPoint> = []
         var neighborCounts: [GridPoint: Int] = [:]
-        
+
         for cell in aliveCells {
             for dx in -1...1 {
                 for dy in -1...1 {
@@ -36,13 +35,13 @@ class GameOfLife: ObservableObject {
                 }
             }
         }
-        
+
         for (point, count) in neighborCounts {
             if count == 3 || (count == 2 && aliveCells.contains(point)) {
                 newAliveCells.insert(point)
             }
         }
-        
+
         aliveCells = newAliveCells
     }
 }
@@ -52,33 +51,23 @@ class Settings: ObservableObject {
     @Published var showGrid = true
 }
 
+// Views
 struct ContentView: View {
     @StateObject private var game = GameOfLife()
     @StateObject private var settings = Settings()
     @State private var offset = CGSize.zero
     @State private var lastDragPosition: CGSize = .zero
-    @State private var scale: CGFloat = 20.0 // Default scale for cells
-    @State private var scaleFactor: CGFloat = 1.0 // Track scale factor for smooth zoom
+    @State private var scale: CGFloat = 20.0
 
-    @State private var isPlaying = false
-    @State private var timer: Timer? = nil
-    
-    @State private var lastTapLocation: CGPoint? = nil // To track tap location
-    @State private var dragThreshold: CGFloat = 5.0 // Minimum drag distance before considered a drag
-    
     var body: some View {
         NavigationView {
             GeometryReader { geometry in
                 Canvas { context, size in
-                    // Calculate grid size based on view's geometry and zoom scale
                     let columns = Int(size.width / scale) + 2
                     let rows = Int(size.height / scale) + 2
-                    
-                    // Account for offset (scrolling) and zoom factor
                     let xOffset = Int(offset.width / scale)
                     let yOffset = Int(offset.height / scale)
 
-                    // Draw grid if enabled
                     if settings.showGrid {
                         let gridPath = Path { path in
                             for col in 0..<columns {
@@ -95,7 +84,6 @@ struct ContentView: View {
                         context.stroke(gridPath, with: .color(.gray.opacity(0.3)), lineWidth: 0.5)
                     }
 
-                    // Draw cells
                     for point in game.aliveCells {
                         let x = CGFloat(point.x - xOffset) * scale
                         let y = CGFloat(point.y - yOffset) * scale
@@ -103,21 +91,12 @@ struct ContentView: View {
                         context.fill(Path(rect), with: .color(.black))
                     }
                 }
-                .gesture(DragGesture(minimumDistance: 0)
+                .gesture(DragGesture()
                     .onChanged { value in
-                        // Handle dragging the view
-                        let dragDistance = value.translation
-                        if abs(dragDistance.width) > dragThreshold || abs(dragDistance.height) > dragThreshold {
-                            // Update the offset to drag the view
-                            offset = CGSize(width: lastDragPosition.width + dragDistance.width,
-                                            height: lastDragPosition.height + dragDistance.height)
-                        } else {
-                            // Consider it a tap for cell toggle
-                            let location = value.startLocation
-                            let x = Int((location.x + offset.width) / scale)
-                            let y = Int((location.y + offset.height) / scale)
-                            game.toggleCell(at: GridPoint(x: x, y: y))
-                        }
+                        offset = CGSize(
+                            width: lastDragPosition.width + value.translation.width,
+                            height: lastDragPosition.height + value.translation.height
+                        )
                     }
                     .onEnded { _ in
                         lastDragPosition = offset
@@ -125,16 +104,24 @@ struct ContentView: View {
                 )
                 .gesture(MagnificationGesture()
                     .onChanged { value in
-                        // Apply smooth zooming
-                        let newScale = scaleFactor * value
-                        // Scale with smooth damping effect
-                        let newScaleValue = max(5, min(80, scale * newScale / scaleFactor))
-                        scale = newScaleValue
-                        scaleFactor = value // Update scale factor for the next gesture
+                        scale = max(5, min(80, scale * value))
                     }
-                    .onEnded { _ in
-                        // Reset scale factor after zoom ends
-                        scaleFactor = 1.0
+                )
+                /*
+                .gesture(TapGesture()
+                    .onEnded { location in
+                        let x = Int((location.x + offset.width) / scale)
+                        let y = Int((location.y + offset.height) / scale)
+                        game.toggleCell(at: GridPoint(x: x, y: y))
+                    }
+                )
+                */
+                .gesture(DragGesture(minimumDistance: 0)
+                    .onEnded { value in
+                        let location = value.startLocation
+                        let x = Int((location.x + offset.width) / scale)
+                        let y = Int((location.y + offset.height) / scale)
+                        game.toggleCell(at: GridPoint(x: x, y: y))
                     }
                 )
                 .navigationTitle("Game of Life")
@@ -145,47 +132,19 @@ struct ContentView: View {
                         }
                     }
                     ToolbarItem(placement: .bottomBar) {
-                        HStack {
-                            Button("Step") {
-                                game.step()
-                            }
-                            Button(action: togglePlayPause) {
-                                Text(isPlaying ? "Pause" : "Play")
-                            }
+                        Button("Step") {
+                            game.step()
                         }
                     }
                 }
             }
         }
-        .onChange(of: isPlaying) { newValue in
-            if newValue {
-                startGameLoop()
-            } else {
-                stopGameLoop()
-            }
-        }
-    }
-    
-    private func togglePlayPause() {
-        isPlaying.toggle()
-    }
-    
-    private func startGameLoop() {
-        timer?.invalidate() // Cancel any existing timer
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            game.step()
-        }
-    }
-    
-    private func stopGameLoop() {
-        timer?.invalidate()
-        timer = nil
     }
 }
 
 struct SettingsView: View {
     @ObservedObject var settings: Settings
-    
+
     var body: some View {
         Form {
             Toggle("Show Grid", isOn: $settings.showGrid)
@@ -193,7 +152,6 @@ struct SettingsView: View {
         .navigationTitle("Settings")
     }
 }
-
 class AppSettings: ObservableObject {
     @Published var dummy: Int = 0
 }

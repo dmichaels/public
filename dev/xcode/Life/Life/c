@@ -57,8 +57,8 @@ struct ContentView: View {
     @StateObject private var settings = Settings()
     @State private var offset = CGSize.zero
     @State private var lastDragPosition: CGSize = .zero
-    @State private var scale: CGFloat = 20.0 // Default scale for cells
-    @State private var scaleFactor: CGFloat = 1.0 // Track scale factor for smooth zoom
+    @State private var scale: CGFloat = 20.0
+    @State private var scaleFactor: CGFloat = 1.0 // To track the scaling factor
 
     @State private var isPlaying = false
     @State private var timer: Timer? = nil
@@ -70,15 +70,11 @@ struct ContentView: View {
         NavigationView {
             GeometryReader { geometry in
                 Canvas { context, size in
-                    // Calculate grid size based on view's geometry and zoom scale
                     let columns = Int(size.width / scale) + 2
                     let rows = Int(size.height / scale) + 2
-                    
-                    // Account for offset (scrolling) and zoom factor
                     let xOffset = Int(offset.width / scale)
                     let yOffset = Int(offset.height / scale)
-
-                    // Draw grid if enabled
+                    
                     if settings.showGrid {
                         let gridPath = Path { path in
                             for col in 0..<columns {
@@ -94,8 +90,7 @@ struct ContentView: View {
                         }
                         context.stroke(gridPath, with: .color(.gray.opacity(0.3)), lineWidth: 0.5)
                     }
-
-                    // Draw cells
+                    
                     for point in game.aliveCells {
                         let x = CGFloat(point.x - xOffset) * scale
                         let y = CGFloat(point.y - yOffset) * scale
@@ -105,14 +100,14 @@ struct ContentView: View {
                 }
                 .gesture(DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        // Handle dragging the view
+                        // If the drag is longer than the threshold, we are dragging the view
                         let dragDistance = value.translation
                         if abs(dragDistance.width) > dragThreshold || abs(dragDistance.height) > dragThreshold {
                             // Update the offset to drag the view
                             offset = CGSize(width: lastDragPosition.width + dragDistance.width,
                                             height: lastDragPosition.height + dragDistance.height)
                         } else {
-                            // Consider it a tap for cell toggle
+                            // Otherwise, we consider it a tap
                             let location = value.startLocation
                             let x = Int((location.x + offset.width) / scale)
                             let y = Int((location.y + offset.height) / scale)
@@ -125,16 +120,14 @@ struct ContentView: View {
                 )
                 .gesture(MagnificationGesture()
                     .onChanged { value in
-                        // Apply smooth zooming
+                        // Gradually interpolate the zoom scale for smoother effect
                         let newScale = scaleFactor * value
-                        // Scale with smooth damping effect
-                        let newScaleValue = max(5, min(80, scale * newScale / scaleFactor))
-                        scale = newScaleValue
+                        scale = max(5, min(80, scale * newScale / scaleFactor)) // Restrict scale to reasonable bounds
                         scaleFactor = value // Update scale factor for the next gesture
                     }
                     .onEnded { _ in
-                        // Reset scale factor after zoom ends
-                        scaleFactor = 1.0
+                        // Optionally, smooth out the transition or reset the scale factor for next pinch
+                        scaleFactor = 1.0 // Reset the factor for next gesture
                     }
                 )
                 .navigationTitle("Game of Life")

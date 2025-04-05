@@ -22,8 +22,9 @@ enum ColorMode: String, CaseIterable, Identifiable {
 }
 
 class AppSettings: ObservableObject {
-    @Published var colorMode: ColorMode = ColorMode.color
+    @Published var colorMode: ColorMode = ColorMode.monochrome
     @Published var pixelSize: Int = 4
+    @Published var feedbackEnabled: Bool = true
 }
 
 struct ContentView: View {
@@ -57,14 +58,16 @@ struct ContentView: View {
     }
     
     func triggerHaptic() {
-        playClickSound()
-        let sharpTap = CHHapticEvent(eventType: .hapticTransient, parameters: [], relativeTime: 0)
-        do {
-            let pattern = try CHHapticPattern(events: [sharpTap], parameters: [])
-            let player = try hapticEngine?.makePlayer(with: pattern)
-            try player?.start(atTime: 0)
-        } catch {
-            print("Failed to play haptic.")
+        if (settings.feedbackEnabled) {
+            playClickSound()
+            let sharpTap = CHHapticEvent(eventType: .hapticTransient, parameters: [], relativeTime: 0)
+            do {
+                let pattern = try CHHapticPattern(events: [sharpTap], parameters: [])
+                let player = try hapticEngine?.makePlayer(with: pattern)
+                try player?.start(atTime: 0)
+            } catch {
+                print("Failed to play haptic.")
+            }
         }
     }
     
@@ -123,7 +126,7 @@ struct SettingsView: View {
     @State private var selectedMode: ColorMode = .color
 
     var body: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: 2) {
 
             Spacer()
             HStack {
@@ -143,14 +146,32 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(MenuPickerStyle())
-                .fixedSize()
-                .frame(width: 120)
+                // .fixedSize()
+                .frame(width: 200, alignment: .trailing)
                 .padding(.trailing)
+                .lineLimit(1)
                 .onChange(of: selectedMode) { newMode in
                     settings.colorMode = newMode
                 }
             }
+            
+            HStack {
+                Text("Clicky Sound")
+                    .bold()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                Toggle("", isOn: $settings.feedbackEnabled)
+                    .labelsHidden()
+                    .padding(.trailing, 30) // Align with other right-aligned controls
+            }
 
+            Divider()
+                .frame(height: 3)
+                .background(Color.gray.opacity(0.3))
+                .padding(.horizontal)
+                // .padding(.vertical, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 10)
             HStack {
                 Text("Pixel Size")
                     .bold()
@@ -159,7 +180,7 @@ struct SettingsView: View {
                 Spacer()
                 Text("\(settings.pixelSize)")
                     .monospacedDigit()
-                    .frame(width: 80, alignment: .trailing)
+                    .frame(width: 50, alignment: .trailing)
                     .padding(.trailing)
             }
             Slider(
@@ -171,7 +192,7 @@ struct SettingsView: View {
                 step: 1
             )
             .padding(.horizontal)
-            .padding(.top, -12)
+            .padding(.top, 0)
             .onChange(of: settings.pixelSize) { newValue in
                 settings.pixelSize = newValue
             }
