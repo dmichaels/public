@@ -1,12 +1,8 @@
-
-Picker("Color Mode", selection: $selectedMode) {
-    ForEach(ColorMode.allCases) { mode in
-        Text(mode.rawValue)
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .tag(mode)
-    }
-}
-.pickerStyle(MenuPickerStyle())
-.fixedSize() // Ensures the menu doesn’t grow or wrap
-.frame(width: 120) // You can adjust width to fit your longest label
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                if !showSettings {
+                    refreshRandomImage()
+                    self._feedback.triggerHaptic()
+                }
+            }
+        )

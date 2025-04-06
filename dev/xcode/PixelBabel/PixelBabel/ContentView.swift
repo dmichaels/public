@@ -4,6 +4,7 @@ struct ContentView: View
 {
     @EnvironmentObject var settings: AppSettings
     @State private var _randomImage: CGImage?
+    @State private var tapCount = 0
     @State private var showSettings = false
 
     private var _feedback: Feedback {
@@ -11,9 +12,11 @@ struct ContentView: View
     }
     
     func refreshRandomImage() {
-        self._randomImage = RandomPixelGenerator.generate(settings: settings)
+        if let randomImage = RandomPixelGenerator.generate(settings: settings, taps: tapCount) {
+            self._randomImage = randomImage
+        }
     }
-    
+
     var body: some View {
         ZStack {
             if let image = self._randomImage {
@@ -46,60 +49,80 @@ struct ContentView: View
         }
         .onAppear {
             refreshRandomImage()
-            // _randomImage = RandomPixelGenerator.generate(settings: settings) // Ensure the image is set on appear
         }
-        .simultaneousGesture(
-            TapGesture().onEnded {
-                if !showSettings {
-                    refreshRandomImage()
-                    self._feedback.triggerHaptic()
-                }
-            }
-        )
+        .gesture(TapGesture(count: 2).onEnded {
+            tapCount += 1
+            self._feedback.triggerHaptic()
+        })
+        .gesture(TapGesture(count: 1).onEnded {
+            tapCount += 1
+            self._feedback.triggerHaptic()
+            refreshRandomImage()
+        })
+        .edgesIgnoringSafeArea(.all)    
     }
 }
 
 struct RandomPixelGenerator {
-    static func generate(settings: AppSettings) -> CGImage {
-        let screenWidth = Int(UIScreen.main.bounds.width)
-        let screenHeight = Int(UIScreen.main.bounds.height)
-        var pixels: PixelMap = PixelMap(screenWidth, screenHeight, scale: settings.pixelSize)
 
-        for y in 0..<pixels.height {
-            for x in 0..<pixels.width {
-                if (settings.colorMode == ColorMode.monochrome) {
-                    let value: UInt8 = UInt8.random(in: 0...1) * 255
-                    pixels.write(x, y, red: value, green: value, blue: value)
+    static func generate(settings: AppSettings, taps: Int = 0) -> CGImage?
+    {
+        var pixels: PixelMap = PixelMap(ScreenWidth, ScreenHeight, scale: settings.pixelSize)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+        var image: CGImage? = nil
+        var randomFixedImage: Bool = false
+
+        if (settings.randomFixedImage) {
+            if (settings.randomFixedImagePeriod == RandomFixedImagePeriod.frequent) {
+                if (taps % 4 == 0) {
+                    randomFixedImage = true
                 }
-                else if settings.colorMode == ColorMode.grayscale {
-                    let value = UInt8.random(in: 0...255)
-                    pixels.write(x, y, red: value, green: value, blue: value)
+            }
+            else if (settings.randomFixedImagePeriod == RandomFixedImagePeriod.sometimes) {
+                if (taps % 8 == 0) {
+                    randomFixedImage = true
                 }
-                else {
-                    let rgb = UInt32.random(in: 0...0xFFFFFF)
-                    let red = UInt8((rgb >> 16) & 0xFF)
-                    let green = UInt8((rgb >> 8) & 0xFF)
-                    let blue = UInt8(rgb & 0xFF)
-                    pixels.write(x, y, red: red, green: green, blue: blue)
+            }
+            else if (settings.randomFixedImagePeriod == RandomFixedImagePeriod.seldom) {
+                if (taps % 16 == 0) {
+                    randomFixedImage = true
                 }
             }
         }
 
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+        if (randomFixedImage) {
+            pixels.load("flowers")
+        }
+        else {
+            pixels.randomize(settings)
+        }
 
-        guard let context = CGContext(
-            data: pixels.data,
-            width: screenWidth,
-            height: screenHeight,
-            bitsPerComponent: 8,
-            bytesPerRow: screenWidth * pixels.depth,
-            space: colorSpace,
-            bitmapInfo: bitmapInfo.rawValue
-        ) else { fatalError("Failed to create CGContext") }
+        pixels.data.withUnsafeMutableBytes { rawBuffer in
+            guard let baseAddress = rawBuffer.baseAddress else {
+                fatalError("Buffer has no base address")
+            }
 
-        guard let cgImage = context.makeImage() else { fatalError("Failed to create CGImage") }
-        return cgImage
+            let context = CGContext(
+                data: baseAddress,
+                width: ScreenWidth,
+                height: ScreenHeight,
+                bitsPerComponent: 8,
+                bytesPerRow: ScreenWidth * ScreenDepth,
+                space: colorSpace,
+                bitmapInfo: bitmapInfo.rawValue
+            )
+        
+            if let cgImage = context?.makeImage() {
+                image = cgImage
+            } else {
+                fatalError("Failed to make CGImage")
+            }
+        }
+        if (image != nil) {
+            return image!
+        }
+        return nil
     }
 }
 

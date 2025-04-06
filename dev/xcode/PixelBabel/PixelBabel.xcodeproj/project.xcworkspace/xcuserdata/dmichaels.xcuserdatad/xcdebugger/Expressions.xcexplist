@@ -3,6 +3,29 @@
    version = "1.0">
    <ContextStates>
       <ContextState
+         contextName = "PixelMap.data.getter:PixelMap.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "width*height*depth">
+            </PersistentString>
+            <PersistentString
+               value = "pixels[1339343]">
+            </PersistentString>
+            <PersistentString
+               value = "width">
+            </PersistentString>
+            <PersistentString
+               value = "pixels[1339344]">
+            </PersistentString>
+            <PersistentString
+               value = "UnsafeMutablePointer(mutating: image)">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "PixelMap.randomize():PixelMap.swift">
+      </ContextState>
+      <ContextState
          contextName = "writePixel #1 (_:pixelSize:x:y:red:green:blue:transparency:) in static RandomPixelGenerator.generate(settings:):ContentView.swift">
          <PersistentStrings>
             <PersistentString
@@ -10,6 +33,58 @@
             </PersistentString>
             <PersistentString
                value = "pixelSize">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "loadImageIntoPixelBuffer(_:width:height:depth:):PixelMap.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "pixels[1339344]">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "static RandomPixelGenerator.generate(settings:):ContentView.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "pixels._pixels.count">
+            </PersistentString>
+            <PersistentString
+               value = "UInt8(Color.white)">
+            </PersistentString>
+            <PersistentString
+               value = "pixels.depth">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "loadImageIntoPixelBuffer(_:width:height:depth:):ContentView.swift">
+      </ContextState>
+      <ContextState
+         contextName = "static RandomPixelGenerator.generate(settings:taps:):ContentView.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "settings.colorMode">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "PixelMap.randomize(_:):PixelMap.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "settings.colorMode">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "PixelMap.load(_:):PixelMap.swift">
+         <PersistentStrings>
+            <PersistentString
+               value = "width">
+            </PersistentString>
+            <PersistentString
+               value = "height">
             </PersistentString>
          </PersistentStrings>
       </ContextState>

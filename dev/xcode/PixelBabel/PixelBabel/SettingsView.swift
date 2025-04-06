@@ -6,7 +6,8 @@ import AVFoundation
 struct SettingsView: View {
     @EnvironmentObject var settings: AppSettings
     @Binding var showSettings: Bool
-    @State private var selectedMode: ColorMode = .color
+    @State private var colorModeSelected: ColorMode = .color
+    @State private var randomFixedImagePeriodSelected: RandomFixedImagePeriod = .sometimes
 
     var body: some View {
         VStack(spacing: 2) {
@@ -20,7 +21,7 @@ struct SettingsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading)
                 Spacer()
-                Picker("Color Mode", selection: $selectedMode) {
+                Picker("Color Mode", selection: $colorModeSelected) {
                     ForEach(ColorMode.allCases) { mode in
                         Text(mode.rawValue)
                             .lineLimit(1)
@@ -32,7 +33,7 @@ struct SettingsView: View {
                 .frame(width: 200, alignment: .trailing)
                 .padding(.trailing)
                 .lineLimit(1)
-                .onChange(of: selectedMode) { newMode in
+                .onChange(of: colorModeSelected) { newMode in
                     settings.colorMode = newMode
                 }
             }
@@ -61,7 +62,6 @@ struct SettingsView: View {
                 .frame(height: 3)
                 .background(Color.gray.opacity(0.3))
                 .padding(.horizontal)
-                // .padding(.vertical, 20)
                 .padding(.top, 20)
                 .padding(.bottom, 10)
             HStack {
@@ -89,6 +89,40 @@ struct SettingsView: View {
                 settings.pixelSize = newValue
             }
 
+            HStack {
+                Text("Random Image")
+                    .bold()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                Toggle("", isOn: $settings.randomFixedImage)
+                    .labelsHidden()
+                    .padding(.trailing, 30)
+            }.padding(.top, 10)
+
+            HStack {
+                Text("Random Image Period")
+                    .bold()
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                Spacer()
+                Picker("Random Image N", selection: $randomFixedImagePeriodSelected) {
+                    ForEach(RandomFixedImagePeriod.allCases) { mode in
+                        Text(mode.rawValue)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .tag(mode)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .frame(width: 200, alignment: .trailing)
+                .padding(.trailing)
+                .lineLimit(1)
+                .onChange(of: randomFixedImagePeriodSelected) { newMode in
+                    settings.randomFixedImagePeriod = newMode
+                }
+            }
+
             Spacer()
             Spacer()
             Spacer()
@@ -107,7 +141,7 @@ struct SettingsView: View {
                 }
         )
         .onAppear {
-            selectedMode = settings.colorMode
+            colorModeSelected = settings.colorMode
         }
     }
 }

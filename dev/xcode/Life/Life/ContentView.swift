@@ -105,6 +105,7 @@ struct ContentView: View {
                 }
                 .gesture(DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        print("drag: \(value)")
                         // Handle dragging the view
                         let dragDistance = value.translation
                         if abs(dragDistance.width) > dragThreshold || abs(dragDistance.height) > dragThreshold {
@@ -125,6 +126,7 @@ struct ContentView: View {
                 )
                 .gesture(MagnificationGesture()
                     .onChanged { value in
+                        print("mag: \(value)")
                         // Apply smooth zooming
                         let newScale = scaleFactor * value
                         // Scale with smooth damping effect
