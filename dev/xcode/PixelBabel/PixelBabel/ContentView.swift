@@ -50,6 +50,17 @@ struct ContentView: View
         .onAppear {
             refreshRandomImage()
         }
+        // .onAppear(perform: prepareHaptics)
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                if (!showSettings) {
+                    tapCount += 1
+                    self._feedback.triggerHaptic()
+                    refreshRandomImage()
+                }
+            }
+        )
+        /*
         .gesture(TapGesture(count: 2).onEnded {
             tapCount += 1
             self._feedback.triggerHaptic()
@@ -59,6 +70,7 @@ struct ContentView: View
             self._feedback.triggerHaptic()
             refreshRandomImage()
         })
+        */
         .edgesIgnoringSafeArea(.all)    
     }
 }
@@ -67,7 +79,7 @@ struct RandomPixelGenerator {
 
     static func generate(settings: AppSettings, taps: Int = 0) -> CGImage?
     {
-        var pixels: PixelMap = PixelMap(ScreenWidth, ScreenHeight, scale: settings.pixelSize)
+        // var pixels: PixelMap = PixelMap(ScreenWidth, ScreenHeight, scale: settings.pixelSize)
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
         var image: CGImage? = nil
@@ -75,30 +87,33 @@ struct RandomPixelGenerator {
 
         if (settings.randomFixedImage) {
             if (settings.randomFixedImagePeriod == RandomFixedImagePeriod.frequent) {
-                if (taps % 4 == 0) {
+                if (taps % 4 == 1) {
                     randomFixedImage = true
                 }
             }
             else if (settings.randomFixedImagePeriod == RandomFixedImagePeriod.sometimes) {
-                if (taps % 8 == 0) {
+                if (taps % 8 == 1) {
                     randomFixedImage = true
                 }
             }
             else if (settings.randomFixedImagePeriod == RandomFixedImagePeriod.seldom) {
-                if (taps % 16 == 0) {
+                if (taps % 16 == 1) {
                     randomFixedImage = true
                 }
             }
         }
 
         if (randomFixedImage) {
-            pixels.load("flowers")
+            // pixels.load("flowers")
+            settings.pixels.load("flowers")
         }
         else {
-            pixels.randomize(settings)
+            // pixels.randomize(settings)
+            settings.pixels.randomize(settings)
         }
 
-        pixels.data.withUnsafeMutableBytes { rawBuffer in
+        // pixels.data.withUnsafeMutableBytes { rawBuffer in
+        settings.pixels.data.withUnsafeMutableBytes { rawBuffer in
             guard let baseAddress = rawBuffer.baseAddress else {
                 fatalError("Buffer has no base address")
             }

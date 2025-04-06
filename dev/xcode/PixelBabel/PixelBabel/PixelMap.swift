@@ -28,6 +28,11 @@ struct PixelMap {
         return (self._pixelsHeight + self._scale - 1) / self._scale
     }
 
+    var scale: Int {
+        get { return self._scale }
+        set { self._scale = newValue }
+    }
+
     var data: [UInt8] {
         get { return self._pixels }
         set { self._pixels = newValue }

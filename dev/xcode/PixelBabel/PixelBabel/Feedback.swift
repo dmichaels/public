@@ -14,9 +14,13 @@ struct Feedback
     }
     
     mutating func _prepareHaptics() {
+        print("PREP-HAPTICS")
         do {
+            print("PREP-HAPTICS-A")
             self._hapticEngine = try CHHapticEngine()
+            print("PREP-HAPTICS-B")
             try self._hapticEngine?.start()
+            print("PREP-HAPTICS-C")
         } catch {
             print("Haptics not supported.")
         }

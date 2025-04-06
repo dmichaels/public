@@ -87,6 +87,7 @@ struct SettingsView: View {
             .padding(.top, 0)
             .onChange(of: settings.pixelSize) { newValue in
                 settings.pixelSize = newValue
+                settings.pixels.scale = newValue
             }
 
             HStack {
