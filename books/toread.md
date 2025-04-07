@@ -6,7 +6,9 @@
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
 1. <a href="https://www.blackstonelibrary.com/stalin-volume-iii?sp=412295" target="_top">Stalin: Volume III (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/dp/1668023482/" target="_top">Abundance (Ezra Klein)</a>
+1. <a href="https://www.amazon.com/Price-Peace-Democracy-Maynard-Keynes/dp/0525509054/" target="_top">The Price of Peace: Money, Democracy, and the Life of John Maynard Keynes (Zachary D. Carter)</a>
 1. <a href="https://www.amazon.com/Fall-Civilizations-Stories-Greatness-Decline/dp/1335013415/" target="_top">Fall of Civilizations: Stories of Greatness and Decline (Paul Cooper)</a>
+1. <a href="https://www.amazon.com/War-Power-Who-Wins-Wars_and/dp/1541606973/" target="_top">War and Power: Who Wins Wars ― and Why (Phillips Payson O'Brien)</a>
 1. <a href="https://www.amazon.com/dp/1250391237/" target="_top">Careless People: A Cautionary Tale of Power, Greed, and Lost Idealism (Sarah Wynn-Williams)</a>
 1. <a href="https://www.amazon.com/dp/1612194192/" target="_top">Debt: The First 5,000 Years (David Graeber)</a>
 1. <a href="https://www.amazon.com/dp/1686203985/" target="_top">The Economic Consequences of the Peace (John Maynard Keynes)</a>

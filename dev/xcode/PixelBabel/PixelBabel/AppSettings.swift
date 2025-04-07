@@ -1,15 +1,22 @@
 import SwiftUI
 import Foundation
 
-class AppSettings: ObservableObject {
+class DefaultAppSettings
+{
+    public static let pixelSize: Int = 10
+}
+
+class AppSettings: ObservableObject
+{
     @Published var pixels: PixelMap
-    @Published var colorMode: ColorMode = ColorMode.monochrome
-    @Published var pixelSize: Int = 4
+    @Published var colorMode: ColorMode = ColorMode.color
+    @Published var pixelSize: Int = DefaultAppSettings.pixelSize
     @Published var soundEnabled: Bool = true
     @Published var hapticEnabled: Bool = true
     @Published var randomFixedImage: Bool = true
     @Published var randomFixedImagePeriod: RandomFixedImagePeriod = RandomFixedImagePeriod.sometimes
+
     init() {
-        pixels = PixelMap(ScreenWidth, ScreenHeight, scale: 4)
+        pixels = PixelMap(ScreenWidth, ScreenHeight, scale: DefaultAppSettings.pixelSize)
     }
 }
