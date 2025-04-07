@@ -1,10 +1,3 @@
-//
-//  PixelBabelApp.swift
-//  PixelBabel
-//
-//  Created by David Michaels on 3/29/25.
-//
-
 import SwiftUI
 
 @main

@@ -17,6 +17,6 @@ class AppSettings: ObservableObject
     @Published var randomFixedImagePeriod: RandomFixedImagePeriod = RandomFixedImagePeriod.sometimes
 
     init() {
-        pixels = PixelMap(ScreenWidth, ScreenHeight, scale: DefaultAppSettings.pixelSize)
+        self.pixels = PixelMap(ScreenWidth, ScreenHeight, scale: DefaultAppSettings.pixelSize)
     }
 }

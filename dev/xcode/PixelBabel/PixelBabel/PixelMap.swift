@@ -10,15 +10,23 @@ class PixelMap {
     private var _pixels: [UInt8]
     private var _pixelsWidth: Int
     private var _pixelsHeight: Int
-    private var _pixelsCount: Int
     private var _scale: Int = 1
 
-    init(_ width: Int, _ height: Int, scale: Int = 1) {
+    private let _pixelsListMax: Int = 2
+    private var _pixelsList: [[UInt8]]? = nil
+    private var _pixelsListDispatchQueue: DispatchQueue? = nil
+
+    init(_ width: Int, _ height: Int, scale: Int = 1, producer: Bool = true) {
+        print("PixelMap.init")
         self._pixelsWidth = width
         self._pixelsHeight = height
-        self._pixelsCount = self._pixelsWidth * self._pixelsHeight * ScreenDepth
         self._scale = scale
-        self._pixels = [UInt8](repeating: 0, count: self._pixelsCount)
+        self._pixels = [UInt8](repeating: 0, count: self._pixelsWidth * self._pixelsHeight * ScreenDepth)
+        if (producer) {
+            self._pixelsList = []
+            self._pixelsListDispatchQueue = DispatchQueue(label: "com.dmichaels.prufrock.PixelBabel.PixelMap.ACCESS", qos: .background)
+            // self._producePixelsList()
+        }
     }
 
     public var width: Int {
@@ -106,6 +114,29 @@ class PixelMap {
                     pixelMap._pixels[i + 1] = green
                     pixelMap._pixels[i + 2] = blue
                     pixelMap._pixels[i + 3] = transparency
+                }
+            }
+        }
+    }
+
+    private func _producePixelsList() {
+        DispatchQueue.global(qos: .background).async {
+            // This block of code runs OFF of the main thread (i.e. in the background).
+            if (self._pixelsList!.count < self._pixelsListMax) {
+                var additionalPixelsList: [[UInt8]] = []
+                for _ in 0..<(self._pixelsListMax - self._pixelsList!.count) {
+                    // let additionalPixels = self.generatePixels()
+                    let additionalPixels = [UInt8](repeating: 0, count: self._pixelsWidth * self._pixelsHeight * ScreenDepth)
+                    additionalPixelsList.append(additionalPixels)
+                }
+                if (additionalPixelsList.count > 0) {
+                    // This block of code is effectively to synchronize access
+                    // to pixelsList between (this) producer and consumer.
+                    self._pixelsListDispatchQueue!.async {
+                        print("PRODUCE-PIXELS: [\(additionalPixelsList.count)] to [\(self._pixelsList!.count)]")
+                        self._pixelsList!.append(contentsOf: additionalPixelsList)
+                        print("DONE-PRODUCE-PIXELS: [\(additionalPixelsList.count)] to [\(self._pixelsList!.count)]")
+                    }
                 }
             }
         }
