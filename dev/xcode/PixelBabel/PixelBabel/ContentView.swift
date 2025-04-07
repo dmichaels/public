@@ -79,7 +79,6 @@ struct RandomPixelGenerator {
 
     static func generate(settings: AppSettings, taps: Int = 0) -> CGImage?
     {
-        // var pixels: PixelMap = PixelMap(ScreenWidth, ScreenHeight, scale: settings.pixelSize)
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
         var image: CGImage? = nil
@@ -104,15 +103,12 @@ struct RandomPixelGenerator {
         }
 
         if (randomFixedImage) {
-            // pixels.load("flowers")
             settings.pixels.load("flowers")
         }
         else {
-            // pixels.randomize(settings)
             settings.pixels.randomize(settings)
         }
 
-        // pixels.data.withUnsafeMutableBytes { rawBuffer in
         settings.pixels.data.withUnsafeMutableBytes { rawBuffer in
             guard let baseAddress = rawBuffer.baseAddress else {
                 fatalError("Buffer has no base address")
