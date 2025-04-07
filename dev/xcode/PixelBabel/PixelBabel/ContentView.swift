@@ -138,8 +138,9 @@ struct RandomPixelGenerator {
 }
 
 struct ContentView_Previews: PreviewProvider {
+    static let settings = AppSettings()
     static var previews: some View {
         ContentView()
-            .environmentObject(AppSettings())
+            .environmentObject(settings)
     }
 }
