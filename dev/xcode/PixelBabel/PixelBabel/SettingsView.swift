@@ -6,7 +6,6 @@ import AVFoundation
 struct SettingsView: View {
     @EnvironmentObject var settings: AppSettings
     @Binding var showSettings: Bool
-    @State private var colorModeSelected: ColorMode = .color
     @State private var randomFixedImagePeriodSelected: RandomFixedImagePeriod = .sometimes
 
     var body: some View {
@@ -17,11 +16,10 @@ struct SettingsView: View {
                 Text("Color Mode")
                     .bold()
                     .lineLimit(1)
-                    //.frame(width: 100, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading)
                 Spacer()
-                Picker("Color Mode", selection: $colorModeSelected) {
+                Picker("Color Mode", selection: $settings.colorMode) {
                     ForEach(ColorMode.allCases) { mode in
                         Text(mode.rawValue)
                             .lineLimit(1)
@@ -33,8 +31,9 @@ struct SettingsView: View {
                 .frame(width: 200, alignment: .trailing)
                 .padding(.trailing)
                 .lineLimit(1)
-                .onChange(of: colorModeSelected) { newMode in
-                    settings.colorMode = newMode
+                .onChange(of: settings.colorMode) { newValue in
+                    settings.colorMode = newValue
+                    // settings.pixels.mode = newValue
                 }
             }
             
@@ -87,7 +86,7 @@ struct SettingsView: View {
             .padding(.top, 0)
             .onChange(of: settings.pixelSize) { newValue in
                 settings.pixelSize = newValue
-                settings.pixels.scale = newValue
+                // settings.pixels.scale = newValue
             }
 
             HStack {
@@ -141,8 +140,11 @@ struct SettingsView: View {
                     }
                 }
         )
-        .onAppear {
-            colorModeSelected = settings.colorMode
-        }
+        // .onDisappear {
+        //     // settings.pixels.mode = settings.colorMode
+        //     // settings.pixels.scale = settings.pixelSize
+        //     // settings.pixels.randomize()
+        //     print("SETTINGS-DISAPPEAR")
+        // }
     }
 }

@@ -25,10 +25,16 @@ struct ContentView: View
                     .scaledToFill()
                     .ignoresSafeArea()
                     .onChange(of: settings.colorMode) { _ in
-                        refreshRandomImage()
+                        settings.pixels.mode = settings.colorMode
+                        if (!showSettings) {
+                            refreshRandomImage()
+                        }
                     }
                     .onChange(of: settings.pixelSize) { _ in
-                        refreshRandomImage()
+                        settings.pixels.scale = settings.pixelSize
+                        if (!showSettings) {
+                            refreshRandomImage()
+                        }
                     }
                     .gesture(
                         DragGesture()
@@ -48,6 +54,8 @@ struct ContentView: View
             }
         }
         .onAppear {
+            // This is only called on first appearance;
+            // not called after coming back from settings view.
             refreshRandomImage()
         }
         // .onAppear(perform: prepareHaptics)
@@ -106,7 +114,8 @@ struct RandomPixelGenerator {
             settings.pixels.load("flowers")
         }
         else {
-            settings.pixels.randomize(settings)
+            print("ContentView: settings.pixels.randomize()")
+            settings.pixels.randomize()
         }
 
         settings.pixels.data.withUnsafeMutableBytes { rawBuffer in

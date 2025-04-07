@@ -11,12 +11,13 @@ class PixelMap {
     private var _pixelsWidth: Int
     private var _pixelsHeight: Int
     private var _scale: Int = 1
+    private var _mode: ColorMode = ColorMode.color
 
     private let _pixelsListMax: Int = 2
     private var _pixelsList: [[UInt8]]? = nil
     private var _pixelsListDispatchQueue: DispatchQueue? = nil
 
-    init(_ width: Int, _ height: Int, scale: Int = 1, producer: Bool = true) {
+    init(_ width: Int, _ height: Int, scale: Int = 1, mode: ColorMode = ColorMode.color, producer: Bool = true) {
         print("PixelMap.init")
         self._pixelsWidth = width
         self._pixelsHeight = height
@@ -42,14 +43,20 @@ class PixelMap {
         set { self._scale = newValue }
     }
 
+    public var mode: ColorMode {
+        get { return self._mode }
+        set { self._mode = newValue }
+    }
+
     public var data: [UInt8] {
         get { return self._pixels }
         set { self._pixels = newValue }
     }
 
-    public func randomize(_ settings: AppSettings)
+    public func randomize()
     {
-        PixelMap._randomize(self, settings: settings)
+        print("PixelMap.randomize")
+        PixelMap._randomize(self)
     }
 
     public func load(_ name: String)
@@ -77,16 +84,16 @@ class PixelMap {
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: self._pixelsWidth, height: self._pixelsHeight))
     }
 
-    private static func _randomize(_ pixelMap: PixelMap, settings: AppSettings)
+    private static func _randomize(_ pixelMap: PixelMap)
     {
-        let colorMode = settings.colorMode
+        print("PixelMap._randomize")
         for y in 0..<pixelMap.height {
             for x in 0..<pixelMap.width {
-                if (colorMode == ColorMode.monochrome) {
+                if (pixelMap._mode == ColorMode.monochrome) {
                     let value: UInt8 = UInt8.random(in: 0...1) * 255
                     PixelMap._write(pixelMap, x, y, red: value, green: value, blue: value)
                 }
-                else if colorMode == ColorMode.grayscale {
+                else if pixelMap._mode == ColorMode.grayscale {
                     let value = UInt8.random(in: 0...255)
                     PixelMap._write(pixelMap, x, y, red: value, green: value, blue: value)
                 }
@@ -126,8 +133,10 @@ class PixelMap {
                 var additionalPixelsList: [[UInt8]] = []
                 for _ in 0..<(self._pixelsListMax - self._pixelsList!.count) {
                     // let additionalPixels = self.generatePixels()
-                    let additionalPixels = [UInt8](repeating: 0, count: self._pixelsWidth * self._pixelsHeight * ScreenDepth)
-                    additionalPixelsList.append(additionalPixels)
+                    // let additionalPixels = [UInt8](repeating: 0, count: self._pixelsWidth * self._pixelsHeight * ScreenDepth)
+                    // var pixels = PixelMap(self._pixelsWidth, self._pixelsHeight, scale: self._scale)
+                    // pixels._randomize(
+                    // additionalPixelsList.append(additionalPixels)
                 }
                 if (additionalPixelsList.count > 0) {
                     // This block of code is effectively to synchronize access
