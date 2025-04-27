@@ -20,5 +20,67 @@
             landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "6AE75892-05EC-488B-9E97-2873C04D4010"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "PixelBabel/PixelMap.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "168"
+            endingLineNumber = "168"
+            landmarkName = "_write(_:_:_:red:green:blue:transparency:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "741A001B-718A-4C21-B796-74C3744A4D8F"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "PixelBabel/ContentView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "121"
+            endingLineNumber = "121"
+            landmarkName = "generate(settings:taps:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "741A001B-718A-4C21-B796-74C3744A4D8F - 88901c68876d915e"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "static PixelBabel.RandomPixelGenerator.generate(settings: PixelBabel.AppSettings, taps: Swift.Int) -&gt; Swift.Optional&lt;__C.CGImageRef&gt;"
+                  moduleName = "PixelBabel"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/dmichaels/home/public/dev/xcode/PixelBabel/PixelBabel/ContentView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "121"
+                  endingLineNumber = "121">
+               </Location>
+               <Location
+                  uuid = "741A001B-718A-4C21-B796-74C3744A4D8F - 7190d96fb2c0d572"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.UnsafeMutableRawBufferPointer) -&gt; () in static PixelBabel.RandomPixelGenerator.generate(settings: PixelBabel.AppSettings, taps: Swift.Int) -&gt; Swift.Optional&lt;__C.CGImageRef&gt;"
+                  moduleName = "PixelBabel"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/dmichaels/home/public/dev/xcode/PixelBabel/PixelBabel/ContentView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "122"
+                  endingLineNumber = "122">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
    </Breakpoints>
 </Bucket>

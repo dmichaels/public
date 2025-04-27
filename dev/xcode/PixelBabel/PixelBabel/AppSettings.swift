@@ -12,8 +12,8 @@ class AppSettings: ObservableObject
     @Published var pixels: PixelMap
     @Published var colorMode: ColorMode = DefaultAppSettings.colorMode
     @Published var pixelSize: Int = DefaultAppSettings.pixelSize
-    @Published var soundEnabled: Bool = true
-    @Published var hapticEnabled: Bool = true
+    @Published var soundEnabled: Bool = false // xyzzy
+    @Published var hapticEnabled: Bool = false // xyzzy
     @Published var randomFixedImage: Bool = true
     @Published var randomFixedImagePeriod: RandomFixedImagePeriod = RandomFixedImagePeriod.sometimes
 

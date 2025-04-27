@@ -33,7 +33,6 @@ struct SettingsView: View {
                 .lineLimit(1)
                 .onChange(of: settings.colorMode) { newValue in
                     settings.colorMode = newValue
-                    // settings.pixels.mode = newValue
                 }
             }
             

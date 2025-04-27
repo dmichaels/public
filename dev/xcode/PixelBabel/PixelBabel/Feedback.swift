@@ -10,7 +10,7 @@ struct Feedback
 
     init(_ settings: AppSettings) {
         self._settings = settings
-        self._prepareHaptics()
+        // self._prepareHaptics() // xyzzy
     }
     
     mutating func _prepareHaptics() {
