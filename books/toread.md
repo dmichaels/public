@@ -10,7 +10,7 @@
 1. <a href="https://www.amazon.com/Fall-Civilizations-Stories-Greatness-Decline/dp/1335013415/" target="_top">Fall of Civilizations: Stories of Greatness and Decline (Paul Cooper)</a>
 1. <a href="https://www.amazon.com/War-Power-Who-Wins-Wars_and/dp/1541606973/" target="_top">War and Power: Who Wins Wars ― and Why (Phillips Payson O'Brien)</a>
 1. <a href="https://www.amazon.com/dp/1250391237/" target="_top">Careless People: A Cautionary Tale of Power, Greed, and Lost Idealism (Sarah Wynn-Williams)</a>
-1. <a href="https://www.amazon.com/dp/B000GWDYOG/?coliid=I307CCN2NZXBKV" target="_top">Home Ludens: A Study of the Play Element in Culture (Johan Huizinga)</a>
+1. <a href="https://www.amazon.com/dp/B000GWDYOG/?coliid=I307CCN2NZXBKV" target="_top">Homo Ludens: A Study of the Play Element in Culture (Johan Huizinga)</a>
 1. <a href="https://www.amazon.com/dp/1612194192/" target="_top">Debt: The First 5,000 Years (David Graeber)</a>
 1. <a href="https://www.amazon.com/dp/1686203985/" target="_top">The Economic Consequences of the Peace (John Maynard Keynes)</a>
 1. <a href="https://www.amazon.com/dp/1804091197/" target="_top">How Not To Invest (Barry Ritholtz)</a>
