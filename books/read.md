@@ -31,7 +31,8 @@
   1. <a href="https://www.amazon.com/Splendid-Vile-Churchill-Family-Defiance/dp/0385348738/" target="_top">The Splendid and the Vile (Erik Larson)</a> _2025-03-24_
   1. <a href="https://www.amazon.com/Apple-China-Capture-Greatest-Company/dp/1668053373/" target="_top">Apple in China (Patrick McGree)</a> _2025-06-13_
   1. <a href="https://www.amazon.com/dp/1646871642/" target="_top">Deep Utopia: Life and Meaning in a Solved World (Nick Bostrom)</a> _2025-06-23_
-  1. <a href="https://www.amazon.com/Stalin-Paradoxes-1878-1928-Stephen-Kotkin/dp/0143127861/" target="_top">Stalin: Paradoxes of Power, 1878 - 1928 (Stephen Kotkin)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Stalin-Paradoxes-1878-1928-Stephen-Kotkin/dp/0143127861/" target="_top">Stalin: Paradoxes of Power, 1878 - 1928 (Stephen Kotkin)</a> _2025-06-29_
+  1. <a href="https://www.amazon.com/dp/1612194192/" target="_top">Debt: The First 5,000 Years (David Graeber)</a> _... in progress ..._
 
 **2024**:
 
