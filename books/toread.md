@@ -1,6 +1,5 @@
 <ins>**Books To Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="read.md">Books Read</a>
 
-1. <a href="" target="_top">Empire of AI: Dreams and Nightmares in Sam Altman's OpenAI (Karen Hao)</a>
 1. <a href="https://www.amazon.com/Diamond-Age-Illustrated-Primer-Spectra/dp/0553380966/" target="_top">The Diamond Age (Neal Stephenson)</a>
 1. <a href="https://www.amazon.com/Give-People-Money-Universal-Revolutionize/dp/1524758779/" target="_top">Give People Money (Annie Lowrey)</a>
 1. <a href="https://www.amazon.com/Jerusalem-Biography-Simon-Sebag-Montefiore/dp/0307280500/" target="_top">Jerusalem (Simon Sebag Montefiore )</a>
