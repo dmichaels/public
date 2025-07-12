@@ -33,7 +33,7 @@
   1. <a href="https://www.amazon.com/dp/1646871642/" target="_top">Deep Utopia: Life and Meaning in a Solved World (Nick Bostrom)</a> _2025-06-23_
   1. <a href="https://www.amazon.com/Stalin-Paradoxes-1878-1928-Stephen-Kotkin/dp/0143127861/" target="_top">Stalin: Paradoxes of Power, 1878 - 1928 (Stephen Kotkin)</a> _2025-06-29_
   1. <a href="https://www.amazon.com/dp/1612194192/" target="_top">Debt: The First 5,000 Years (David Graeber)</a> _2025-07-12_
-  1. <a href="" target="_top">Empire of AI: Dreams and Nightmares in Sam Altman's OpenAI (Karen Hao)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Empire-AI-Dreams-Nightmares-Altmans/dp/0593657500/" target="_top">Empire of AI: Dreams and Nightmares in Sam Altman's OpenAI (Karen Hao)</a> _... in progress ..._
 
 **2024**:
 
