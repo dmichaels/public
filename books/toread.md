@@ -1,5 +1,6 @@
 <ins>**Books To Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="read.md">Books Read</a>
 
+1. <a href="https://www.amazon.com/Haves-Have-Yachts-Dispatches-Ultrarich/dp/1668204487/" target="_top">The Haves and Have-Yachts: Dispatches on the Ultrarich (Evan Osnos)</a>
 1. <a href="https://www.amazon.com/Give-People-Money-Universal-Revolutionize/dp/1524758779/" target="_top">Give People Money (Annie Lowrey)</a>
 1. <a href="https://www.amazon.com/Jerusalem-Biography-Simon-Sebag-Montefiore/dp/0307280500/" target="_top">Jerusalem (Simon Sebag Montefiore )</a>
 1. <a href="https://www.amazon.com/Second-After-John-Matherson-Novel/dp/0765356864/" target="_top">One Second After (William R. Forstchen)</a>
