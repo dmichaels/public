@@ -34,7 +34,8 @@
   1. <a href="https://www.amazon.com/Stalin-Paradoxes-1878-1928-Stephen-Kotkin/dp/0143127861/" target="_top">Stalin: Paradoxes of Power, 1878 - 1928 (Stephen Kotkin)</a> _2025-06-29_
   1. <a href="https://www.amazon.com/dp/1612194192/" target="_top">Debt: The First 5,000 Years (David Graeber)</a> _2025-07-12_
   1. <a href="https://www.amazon.com/Empire-AI-Dreams-Nightmares-Altmans/dp/0593657500/" target="_top">Empire of AI: Dreams and Nightmares in Sam Altman's OpenAI (Karen Hao)</a> _2025-07-18_
-  1. <a href="https://www.amazon.com/Diamond-Age-Illustrated-Primer-Spectra/dp/0553380966/" target="_top">The Diamond Age (Neal Stephenson)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Diamond-Age-Illustrated-Primer-Spectra/dp/0553380966/" target="_top">The Diamond Age (Neal Stephenson)</a> _2025-07-24_
+  1. <a href="https://www.amazon.com/dp/0199926514" target="_top">The Undercover Economist, Revised and Updated Edition: Exposing Why the Rich Are Rich, the Poor Are Poor - and Why You Can Never Buy a Decent Used Car!</a> _... in progress ..._
 
 **2024**:
 
