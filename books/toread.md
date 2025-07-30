@@ -13,7 +13,7 @@
 1. <a href="https://www.amazon.com/dp/1250391237/" target="_top">Careless People: A Cautionary Tale of Power, Greed, and Lost Idealism (Sarah Wynn-Williams)</a>
 1. <a href="https://www.amazon.com/dp/B000GWDYOG/?coliid=I307CCN2NZXBKV" target="_top">Homo Ludens: A Study of the Play Element in Culture (Johan Huizinga)</a>
 1. <a href="https://www.amazon.com/dp/1686203985/" target="_top">The Economic Consequences of the Peace (John Maynard Keynes)</a>
-1. <a href="https://www.amazon.com/dp/1804091197/" target="_top">How Not To Invest (Barry Ritholtz)</a>
+1. <a href="https://www.amazon.com/dp/1804091197/" target="_top">How Not To Invest: The Ideas, Numbers, and Behaviors That Destroy Wealth and How to Avoid Them (Barry Ritholtz)</a>
 1. <a href="https://www.amazon.com/Waste-Land-World-Permanent-Crisis/dp/0593730321/" target="_top">Waste Land: A World in Permanent Crisis (Robert D. Kaplan)</a>
 1. <a href="https://www.amazon.com/Who-Government-Untold-Public-Service/dp/B0DHZ2ZXPM/" target="_top">Who is Government?: The Untold Story of Public Service (Michael Lewis)</a>
 1. <a href="https://www.amazon.com/Lost-Kingdom-History-Nationalism-Vladimir/dp/0141983132/" target="_top">Lost Kingdom: A History of Russian Nationalism from Ivan the Great to Vladimir Putin (Serhii Plokhy)</a>
