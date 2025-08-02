@@ -2,6 +2,8 @@
 
 1. <a href="https://www.amazon.com/Give-People-Money-Universal-Revolutionize/dp/1524758779/" target="_top">Give People Money (Annie Lowrey)</a>
 1. <a href="https://www.amazon.com/Jerusalem-Biography-Simon-Sebag-Montefiore/dp/0307280500/" target="_top">Jerusalem (Simon Sebag Montefiore )</a>
+1. <a href="https://www.amazon.com/Ordinary-Men-Reserve-Battalion-Solution/dp/0062303023/" target="_top">Ordinary Men: Reserve Police Battalion 101 and the Final Solution in Poland (Christopher R. Browning)</a>
+1. <a href="https://www.amazon.com/Eating-Dinosaur-Chuck-Klosterman/dp/1416544216/" target="_top">Eating the Dinosaur (Chuck Klosterman)</a>
 1. <a href="https://www.amazon.com/Second-After-John-Matherson-Novel/dp/0765356864/" target="_top">One Second After (William R. Forstchen)</a>
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
 1. <a href="https://www.blackstonelibrary.com/stalin-volume-iii?sp=412295" target="_top">Stalin: Volume III (Stephen Kotkin)</a>
@@ -20,7 +22,6 @@
 1. <a href="https://www.amazon.com/dp/1627793666/" target="_top">Putin (Philip Short)</a>
 1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin's People: How the KGB Took Back Russia and Then Took On the West (Catherine Belton)</a>
 1. <a href="https://www.amazon.com/dp/1324093463/" target="_top">Germany 1923: Hyperinflation, Hitler's Putsch, and Democracy in Crisis (Volker Ullrich)</a>
-1. <a href="https://www.amazon.com/Ordinary-Men-Reserve-Battalion-Solution/dp/0062303023/" target="_top">Ordinary Men: Reserve Police Battalion 101 and the Final Solution in Poland (Christopher R. Browning)</a>
 1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">Devil in the White City (Erik Larson)</a>
 1. <a href="https://www.amazon.com/Dead-Wake-Last-Crossing-Lusitania/dp/0307408876/" target="_top">Dead Wake (Erik Larson)</a>
 1. <a href="https://www.amazon.com/dp/B00AV68GF4/" target="_top">Krakatoa: The Day the World Exploded: August 27, 1883 (Simon Winchester)</a>
@@ -41,7 +42,6 @@
 1. <a href="https://www.amazon.com/Better-Never-Have-Been-Existence/dp/0199549265/" target="_top">Better Never to Have Been: The Harm of Coming into Existence (David Benatar)</a>
 1. <a href="https://www.amazon.com/Infinite-Resignation-Pessimism-Eugene-Thacker/dp/1912248190/" target="_top">Infinite Resignation (Eugene Thacker)</a>
 1. <a href="https://www.amazon.com/If-Then-Simulmatics-Corporation-Invented/dp/1631496107/" target="_top">If Then: How the Simulmatics Corporation Invented the Future (Jill Lepore)</a>
-1. <a href="https://www.amazon.com/Eating-Dinosaur-Chuck-Klosterman/dp/1416544216/" target="_top">Eating the Dinosaur (Chuck Klosterman)</a>
 1. <a href="https://www.amazon.com/dp/0199968977/" target="_top">The Uses of Pessimism: And the Danger of False Hope (Roger Scruton)</a>
 1. <a href="https://www.amazon.com/Man-Who-Sold-World-David/dp/0062024663/" target="_top">The Man Who Sold the World: David Bowie and the 1970s (Peter Doggett)</a>
 1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a>
