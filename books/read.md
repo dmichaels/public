@@ -60,6 +60,7 @@
   1. <a href="https://www.amazon.com/Nexus-Brief-History-Information-Networks-ebook/dp/B0CRP6SPL1/" target="_top">Nexus: A Brief History of Information Networks from the Stone Age to AI (Yuval Noah Harari)</a> _2024-11-10_
   1. <a href="https://www.amazon.com/Midnight-Moscow-Memoir-Russias-Against-ebook/dp/B0CH83CX9P/" target="_top">Midnight in Moscow: A Memoir from the Front Lines of Russia's War Against the West (John J. Sullivan)</a> _2024-12-22_
   1. <a href="https://www.amazon.com/Exvangelicals-Loving-Living-Leaving-Evangelical-ebook/dp/B0C1X8213B/" target="_top">The Exvangelicals: Loving, Living, and Leaving the White Evangelical Church (Sarah McCammon)</a> _2024-12-25_
+  1. <a href="https://www.amazon.com/Gutenberg-Parenthesis-Print-Lessons-Internet/dp/B0CJ88WJZQ/" target="_top">The Gutenberg Parenthesis: The Age of Print and Its Lessons for the Age of the Internet (Jeff Jarvis)</a> _... in progress ..._
 
 **2023**:
 
