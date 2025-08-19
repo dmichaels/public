@@ -38,6 +38,7 @@
   1. <a href="https://www.amazon.com/dp/0199926514" target="_top">The Undercover Economist, Revised and Updated Edition: Exposing Why the Rich Are Rich, the Poor Are Poor - and Why You Can Never Buy a Decent Used Car! (Tim Harford)</a> _2025-07-31_
   1. <a href="https://www.amazon.com/Haves-Have-Yachts-Dispatches-Ultrarich/dp/1668204487/" target="_top">The Haves and Have-Yachts: Dispatches on the Ultrarich (Evan Osnos)</a> _2025-08-14_
   1. <a href="https://www.amazon.com/Eating-Dinosaur-Chuck-Klosterman/dp/1416544216/" target="_top">Eating the Dinosaur (Chuck Klosterman)</a> _2025-08-18_
+  1. <a href="https://www.amazon.com/Gutenberg-Parenthesis-Print-Lessons-Internet/dp/B0CJ88WJZQ/" target="_top">The Gutenberg Parenthesis: The Age of Print and Its Lessons for the Age of the Internet (Jeff Jarvis)</a> _... in progress ..._
 
 **2024**:
 
@@ -60,7 +61,6 @@
   1. <a href="https://www.amazon.com/Nexus-Brief-History-Information-Networks-ebook/dp/B0CRP6SPL1/" target="_top">Nexus: A Brief History of Information Networks from the Stone Age to AI (Yuval Noah Harari)</a> _2024-11-10_
   1. <a href="https://www.amazon.com/Midnight-Moscow-Memoir-Russias-Against-ebook/dp/B0CH83CX9P/" target="_top">Midnight in Moscow: A Memoir from the Front Lines of Russia's War Against the West (John J. Sullivan)</a> _2024-12-22_
   1. <a href="https://www.amazon.com/Exvangelicals-Loving-Living-Leaving-Evangelical-ebook/dp/B0C1X8213B/" target="_top">The Exvangelicals: Loving, Living, and Leaving the White Evangelical Church (Sarah McCammon)</a> _2024-12-25_
-  1. <a href="https://www.amazon.com/Gutenberg-Parenthesis-Print-Lessons-Internet/dp/B0CJ88WJZQ/" target="_top">The Gutenberg Parenthesis: The Age of Print and Its Lessons for the Age of the Internet (Jeff Jarvis)</a> _... in progress ..._
 
 **2023**:
 
