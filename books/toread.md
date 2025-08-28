@@ -1,5 +1,7 @@
 <ins>**Books To Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="read.md">Books Read</a>
 
+1. <a href="https://www.amazon.com/dp/1631496085" target="_top">We the People: A History of the U.S. Constitution (Jill Lepore)</a>
+1. <a href="https://www.amazon.com/When-Everyone-Knows-That-Knowledge/dp/1668011573/" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a>
 1. <a href="https://www.amazon.com/Give-People-Money-Universal-Revolutionize/dp/1524758779/" target="_top">Give People Money (Annie Lowrey)</a>
 1. <a href="https://www.amazon.com/Jerusalem-Biography-Simon-Sebag-Montefiore/dp/0307280500/" target="_top">Jerusalem (Simon Sebag Montefiore )</a>
 1. <a href="https://www.amazon.com/Ordinary-Men-Reserve-Battalion-Solution/dp/0062303023/" target="_top">Ordinary Men: Reserve Police Battalion 101 and the Final Solution in Poland (Christopher R. Browning)</a>
@@ -47,7 +49,6 @@
 1. <a href="https://www.amazon.com/Man-Who-Sold-World-David/dp/0062024663/" target="_top">The Man Who Sold the World: David Bowie and the 1970s (Peter Doggett)</a>
 1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a>
 1. <a href="https://www.amazon.com/Report-Greco-Nikos-Kazantzakes/dp/0571195075/" target="_top">Report to Greco (Nikos Kazantzakis)</a>
-1. <a href="https://www.amazon.com/When-Everyone-Knows-That-Knowledge/dp/1668011573/" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a>
 1. <a href="https://www.amazon.com/If-War-Goes-Reflections-Politics/dp/1786894459/" target="_top">If the War Goes On (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/Road-Cormac-McCarthy/dp/0307387895/" target="_top">The Road (Cormac McCarthy)</a>
 1. <a href="https://www.amazon.com/Beach-Nevil-Shute/dp/0307473996/" target="_top">On the Beach (Neville Shute)</a>
