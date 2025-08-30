@@ -39,7 +39,8 @@
   1. <a href="https://www.amazon.com/Haves-Have-Yachts-Dispatches-Ultrarich/dp/1668204487/" target="_top">The Haves and Have-Yachts: Dispatches on the Ultrarich (Evan Osnos)</a> _2025-08-14_
   1. <a href="https://www.amazon.com/Eating-Dinosaur-Chuck-Klosterman/dp/1416544216/" target="_top">Eating the Dinosaur (Chuck Klosterman)</a> _2025-08-18_
   1. <a href="https://www.amazon.com/Gutenberg-Parenthesis-Print-Lessons-Internet/dp/B0CJ88WJZQ/" target="_top">The Gutenberg Parenthesis: The Age of Print and Its Lessons for the Age of the Internet (Jeff Jarvis)</a> _2025-08-28_
-1. <a href="https://www.amazon.com/Who-Government-Untold-Public-Service/dp/B0DHZ2ZXPM/" target="_top">Who is Government?: The Untold Story of Public Service (Michael Lewis)</a> _2025-08-29_
+ 1. <a href="https://www.amazon.com/Who-Government-Untold-Public-Service/dp/B0DHZ2ZXPM/" target="_top">Who is Government?: The Untold Story of Public Service (Michael Lewis)</a> _2025-08-29_
+ 1. <a href="https://www.amazon.com/Sports-Gene-Extraordinary-Athletic-Performance/dp/161723012X/" target="_top">The Sports Gene: Inside the Science of Extraordinary Athletic Performance (David Epstein)</a> _... in progress ..._
 
 **2024**:
 
