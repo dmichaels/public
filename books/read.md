@@ -42,7 +42,8 @@
  1. <a href="https://www.amazon.com/Who-Government-Untold-Public-Service/dp/B0DHZ2ZXPM/" target="_top">Who is Government?: The Untold Story of Public Service (Michael Lewis)</a> _2025-08-29_
  1. <a href="https://www.amazon.com/Sports-Gene-Extraordinary-Athletic-Performance/dp/161723012X/" target="_top">The Sports Gene: Inside the Science of Extraordinary Athletic Performance (David Epstein)</a> _2025-08-31_
  1. <a href="https://www.amazon.com/Just-My-Type-About-Fonts/dp/1592407463/" target="_top">Just My Type: A Book About Fonts (Simon Garfield)</a> _2025-09-02_
- 1. <a href="https://www.amazon.com/Proto-Ancient-Language-Went-Global/dp/1639732586/" target="_top">Proto: How One Ancient Language Went Global (Laura Spinney)</a> _... in progress ..._
+ 1. <a href="https://www.amazon.com/Proto-Ancient-Language-Went-Global/dp/1639732586/" target="_top">Proto: How One Ancient Language Went Global (Laura Spinney)</a> _2025-09-05_
+ 1. <a href="https://www.amazon.com/Breakneck-Chinas-Quest-Engineer-Future/dp/1324106034/" target="_top">Breakneck: China's Quest to Engineer the Future</a> _... in progress ..._
 
 **2024**:
 
