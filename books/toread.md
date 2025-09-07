@@ -7,7 +7,6 @@
 1. <a href="https://www.amazon.com/Hijacked-Neoliberalism-against-Workers-Lectures/dp/1009275399/" target="_top">Hijacked: How Neoliberalism Turned the Work Ethic against Workers and How Workers Can Take It Back (Elizabeth Anderson)</a>
 1. <a href="https://www.amazon.com/Give-People-Money-Universal-Revolutionize/dp/1524758779/" target="_top">Give People Money (Annie Lowrey)</a>
 1. <a href="https://www.amazon.com/Why-Read-Classics-Italo-Calvino-ebook/dp/B00E9FYU9Y/" target="_top">Why Read the Classics? (Italo Calvino)</a>
-1. <a href="https://www.amazon.com/Worlds-Otherwise-Penguin-Science-Fiction/dp/0241509750/" target="_top">Warm Worlds and Otherwise (James Tiptree Jr.)</a>
 1. <a href="https://www.amazon.com/Jerusalem-Biography-Simon-Sebag-Montefiore/dp/0307280500/" target="_top">Jerusalem (Simon Sebag Montefiore )</a>
 1. <a href="https://www.amazon.com/Ordinary-Men-Reserve-Battalion-Solution/dp/0062303023/" target="_top">Ordinary Men: Reserve Police Battalion 101 and the Final Solution in Poland (Christopher R. Browning)</a>
 1. <a href="https://www.amazon.com/gp/product/0399184139/" target="_top">But What If We're Wrong?: Thinking About the Present As If It Were the Past (Chuck Klosterman)</a>
