@@ -1,7 +1,6 @@
 <ins>**Books To Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="read.md">Books Read</a>
 
 1. <a href="https://www.amazon.com/Essays-Collectors-Library-Essential-Thinkers/dp/1904919596/" target="_top">Selected Essays (Michel De Montaigne)</a>
-1. <a href="https://www.amazon.com/dp/1631496085" target="_top">We the People: A History of the U.S. Constitution (Jill Lepore)</a>
 1. <a href="https://www.amazon.com/When-Everyone-Knows-That-Knowledge/dp/1668011573/" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a>
 1. <a href="https://www.amazon.com/Right-Oblivion-Privacy-Good-Life/dp/067430490X/" target="_top">The Right to Oblivion: Privacy and the Good Life (Lowry Pressly)</a>
 1. <a href="https://www.amazon.com/Human-Condition-Second-Hannah-Arendt/dp/022658660X/" target="_top">The Human Condition (Hannah Arendt)</a>

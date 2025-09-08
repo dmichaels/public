@@ -45,6 +45,7 @@
  1. <a href="https://www.amazon.com/Proto-Ancient-Language-Went-Global/dp/1639732586/" target="_top">Proto: How One Ancient Language Went Global (Laura Spinney)</a> _2025-09-05_
  1. <a href="https://www.amazon.com/Breakneck-Chinas-Quest-Engineer-Future/dp/1324106034/" target="_top">Breakneck: China's Quest to Engineer the Future (Dan Wang)</a> _2025-09-07_
  1. <a href="https://www.amazon.com/Worlds-Otherwise-Penguin-Science-Fiction/dp/0241509750/" target="_top">Warm Worlds and Otherwise (James Tiptree Jr.)</a> _2025-09-08_
+ 1. <a href="https://www.amazon.com/dp/1631496085" target="_top">We the People: A History of the U.S. Constitution (Jill Lepore)</a> _... in progress ..._
 
 **2024**:
 
