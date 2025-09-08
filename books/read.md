@@ -43,7 +43,7 @@
  1. <a href="https://www.amazon.com/Sports-Gene-Extraordinary-Athletic-Performance/dp/161723012X/" target="_top">The Sports Gene: Inside the Science of Extraordinary Athletic Performance (David Epstein)</a> _2025-08-31_
  1. <a href="https://www.amazon.com/Just-My-Type-About-Fonts/dp/1592407463/" target="_top">Just My Type: A Book About Fonts (Simon Garfield)</a> _2025-09-02_
  1. <a href="https://www.amazon.com/Proto-Ancient-Language-Went-Global/dp/1639732586/" target="_top">Proto: How One Ancient Language Went Global (Laura Spinney)</a> _2025-09-05_
- 1. <a href="https://www.amazon.com/Breakneck-Chinas-Quest-Engineer-Future/dp/1324106034/" target="_top">Breakneck: China's Quest to Engineer the Future</a> _2025-09-07_
+ 1. <a href="https://www.amazon.com/Breakneck-Chinas-Quest-Engineer-Future/dp/1324106034/" target="_top">Breakneck: China's Quest to Engineer the Future (Dan Wang)</a> _2025-09-07_
  1. <a href="https://www.amazon.com/Worlds-Otherwise-Penguin-Science-Fiction/dp/0241509750/" target="_top">Warm Worlds and Otherwise (James Tiptree Jr.)</a> _2025-08-08_
 
 **2024**:
