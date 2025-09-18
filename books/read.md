@@ -97,7 +97,7 @@
 
   1. <a href="https://www.amazon.com/Galapagos-Novel-Fiction-Kurt-Vonnegut/dp/0385333870/">Galápagos (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Sick-Souls-Healthy-Minds-William/dp/0691216711/">Sick Souls, Healthy Minds: How William James Can Save Your Life (John Kaag)</a>
-  1. <a href="https://www.amazon.com/Don-Quixote-Miguel-Cervantes/dp/0060934344/">The Ingenious Gentleman Don Quixote of La Mancha (Miguel Cervantes)</a>
+  1. <a href="https://www.amazon.com/Don-Quixote-Miguel-Cervantes/dp/0060934344/">Don Quixote (Miguel Cervantes)</a>
   1. <a href="https://www.amazon.com/Crime-Punishment-Volokhonsky-Translation-Classics/dp/0679734503/">Crime and Punishment (Fyodor Dostoevsky)</a>
   1. <a href="https://www.amazon.com/Brave-New-World-Revisited/dp/0060776099/">Brave New World (Aldous Huxley)</a>
   1. <a href="https://www.amazon.com/Emperor-All-Maladies-Biography-Cancer/dp/1439170916/">The Emperor of All Maladies: A Biography of Cancer (Siddhartha Mukherjee)</a>
