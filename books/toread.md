@@ -3,6 +3,7 @@
 1. <a href="https://www.amazon.com/Essays-Collectors-Library-Essential-Thinkers/dp/1904919596/" target="_top">Selected Essays (Michel De Montaigne)</a>
 1. <a href="https://www.amazon.com/When-Everyone-Knows-That-Knowledge/dp/1668011573/" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a>
 1. <a href="https://www.amazon.com/Right-Oblivion-Privacy-Good-Life/dp/067430490X/" target="_top">The Right to Oblivion: Privacy and the Good Life (Lowry Pressly)</a>
+1. <a href="https://www.amazon.com/Citizens-Chronicle-Revolution-Simon-Schama/dp/0679726101/" target="_top">Citizens: A Chronicle of the French Revolution (Simon Schama)</a>
 1. <a href="https://www.amazon.com/dp/166808435X/" target="_top">Notes on Being a Man (Scott Galloway)</a>
 1. <a href="https://www.amazon.com/Human-Condition-Second-Hannah-Arendt/dp/022658660X/" target="_top">The Human Condition (Hannah Arendt)</a>
 1. <a href="https://www.amazon.com/Hijacked-Neoliberalism-against-Workers-Lectures/dp/1009275399/" target="_top">Hijacked: How Neoliberalism Turned the Work Ethic against Workers and How Workers Can Take It Back (Elizabeth Anderson)</a>
