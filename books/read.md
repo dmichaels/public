@@ -46,7 +46,8 @@
  1. <a href="https://www.amazon.com/Breakneck-Chinas-Quest-Engineer-Future/dp/1324106034/" target="_top">Breakneck: China's Quest to Engineer the Future (Dan Wang)</a> _2025-09-07_
  1. <a href="https://www.amazon.com/Worlds-Otherwise-Penguin-Science-Fiction/dp/0241509750/" target="_top">Warm Worlds and Otherwise (James Tiptree Jr.)</a> _2025-09-08_
  1. <a href="https://www.amazon.com/dp/1631496085" target="_top">We the People: A History of the U.S. Constitution (Jill Lepore)</a> _2025-09-19_
- 1. <a href="https://www.amazon.com/Dominion-Christian-Revolution-Remade-World/dp/1541675592/" target="_top">Dominion: How the Christian Revolution Remade the World (Tom Holland)</a> _... in progress ..._
+ 1. <a href="https://www.amazon.com/Dominion-Christian-Revolution-Remade-World/dp/1541675592/" target="_top">Dominion: How the Christian Revolution Remade the World (Tom Holland)</a> _2025-09-26_
+1. <a href="https://www.amazon.com/Citizens-Chronicle-Revolution-Simon-Schama/dp/0679726101/" target="_top">Citizens: A Chronicle of the French Revolution (Simon Schama)</a> _... in progress ..._
 
 **2024**:
 
