@@ -4,6 +4,7 @@
 1. <a href="https://www.amazon.com/Right-Oblivion-Privacy-Good-Life/dp/067430490X/" target="_top">The Right to Oblivion: Privacy and the Good Life (Lowry Pressly)</a>
 1. <a href="https://www.amazon.com/dp/166808435X/" target="_top">Notes on Being a Man (Scott Galloway)</a>
 1. <a href="https://www.amazon.com/Human-Condition-Second-Hannah-Arendt/dp/022658660X/" target="_top">The Human Condition (Hannah Arendt)</a>
+1. <a href="https://www.amazon.com/dp/0374518793/" target="_top">Auto-da-Fé (Elias Canetti)</a>
 1. <a href="https://www.amazon.com/Hijacked-Neoliberalism-against-Workers-Lectures/dp/1009275399/" target="_top">Hijacked: How Neoliberalism Turned the Work Ethic against Workers and How Workers Can Take It Back (Elizabeth Anderson)</a>
 1. <a href="https://www.amazon.com/dp/0525436332/" target="_top">Metropolis: A History of the City, Humankind's Greatest Invention (Ben Wilson)</a>
 1. <a href="https://www.amazon.com/Give-People-Money-Universal-Revolutionize/dp/1524758779/" target="_top">Give People Money (Annie Lowrey)</a>
