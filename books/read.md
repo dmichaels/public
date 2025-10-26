@@ -50,7 +50,7 @@
  1. <a href="https://www.amazon.com/Citizens-Chronicle-Revolution-Simon-Schama/dp/0679726101/" target="_top">Citizens: A Chronicle of the French Revolution (Simon Schama)</a> _2025-10-13_
  1. <a href="https://www.amazon.com/When-Everyone-Knows-That-Knowledge/dp/1668011573/" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a> _2025-10-19_
  1. <a href="https://www.amazon.com/dp/B0FVY4B4LN" target="_top">The Book Rat's Daughter: A Memoir (Carolyn Michaels Kerr)</a> _2025-10-20_
-1. <a href="https://www.amazon.com/dp/0374518793/" target="_top" color="green">Auto-da-Fé (Elias Canetti)</a> _... in progress ..._
+1. <a href="https://www.amazon.com/dp/0374518793/" target="_top" style="color:red">Auto-da-Fé (Elias Canetti)</a> _... in progress ..._
 
 **2024**:
 
