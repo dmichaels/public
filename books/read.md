@@ -18,14 +18,14 @@
   1. <a href="https://www.amazon.com/Source-Code-Beginnings-Bill-Gates/dp/059380158X/" target="_top">Source Code: My Beginnings (Bill Gates)</a> _2025-02-19_
   1. <a href="https://www.amazon.com/Temptation-Exist-M-Cioran/dp/1611457386/" target="_top">The Temptation to Exist (E.M. Cioran)</a> _2025-02-22_
   1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Songs of a Dead Dreamer (Thomas Ligotti)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-02-23_
-  1. <a href="https://www.amazon.com/Stoner-York-Review-Books-Classics/dp/1590171993/" target="_top">Stoner (John Williams)</a> _2025-02-24_
-  1. <a href="https://www.amazon.com/Saturday-Ian-McEwan/dp/1400076196/" target="_top">Saturday (Ian McEwan)</a> _2025-02-27_
-  1. <a href="https://www.amazon.com/Man-Without-Qualities-Vol-Introduction/dp/0679767878/" target="_top">The Man Without Qualities (Robert Musil)</a> _2025-03-07_
-  1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> _2025-03-09_
+  1. <a href="https://www.amazon.com/Stoner-York-Review-Books-Classics/dp/1590171993/" target="_top">Stoner (John Williams)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-02-24_
+  1. <a href="https://www.amazon.com/Saturday-Ian-McEwan/dp/1400076196/" target="_top">Saturday (Ian McEwan)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-02-27_
+  1. <a href="https://www.amazon.com/Man-Without-Qualities-Vol-Introduction/dp/0679767878/" target="_top">The Man Without Qualities (Robert Musil)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-03-07_
+  1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-03-09_
   1. <a href="https://www.amazon.com/Autocracy-Inc-Dictators-Want-World/dp/0385549938/" target="_top">Autocracy Inc.: The Dictators Who Want to Run the World (Anne Applebaum)</a> _2025-03-10_
   1. <a href="https://www.amazon.com/Freedom-Timothy-Snyder/dp/0593728726/" target="_top">On Freedom (Timothy Snyder)</a> _2025-03-12_
-  1. <a href="https://www.amazon.com/Yellow-Wallpaper-Charlotte-Perkins-Gilman/dp/1684222273/" target="_top">The Yellow Wallpaper (Charlotte Perkins Gilman)</a> _2025-03-12_
-  1. <a href="https://www.amazon.com/Orbital-Samantha-Harvey/dp/0802163629/" target="_top">Orbital (Samantha Harvey)</a> _2025-03-13_
+  1. <a href="https://www.amazon.com/Yellow-Wallpaper-Charlotte-Perkins-Gilman/dp/1684222273/" target="_top">The Yellow Wallpaper (Charlotte Perkins Gilman)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-03-12_
+  1. <a href="https://www.amazon.com/Orbital-Samantha-Harvey/dp/0802163629/" target="_top">Orbital (Samantha Harvey)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-03-13_
   1. <a href="https://www.amazon.com/Garden-Beasts-Terror-American-Hitlers/dp/030740885X/" target="_top">In the Garden of Beasts (Erik Larson)</a> _2025-03-16_
   1. <a href="https://www.amazon.com/Hitler-Downfall-1939-1945-Volker-Ullrich/dp/1101872063/" target="_top">Hitler: Downfall 1939 - 1945 (Volker Ullrich)</a> _2025-03-21_
   1. <a href="https://www.amazon.com/Splendid-Vile-Churchill-Family-Defiance/dp/0385348738/" target="_top">The Splendid and the Vile (Erik Larson)</a> _2025-03-24_
@@ -34,7 +34,7 @@
   1. <a href="https://www.amazon.com/Stalin-Paradoxes-1878-1928-Stephen-Kotkin/dp/0143127861/" target="_top">Stalin: Paradoxes of Power, 1878 - 1928 (Stephen Kotkin)</a> _2025-06-29_
   1. <a href="https://www.amazon.com/dp/1612194192/" target="_top">Debt: The First 5,000 Years (David Graeber)</a> _2025-07-12_
   1. <a href="https://www.amazon.com/Empire-AI-Dreams-Nightmares-Altmans/dp/0593657500/" target="_top">Empire of AI: Dreams and Nightmares in Sam Altman's OpenAI (Karen Hao)</a> _2025-07-18_
-  1. <a href="https://www.amazon.com/Diamond-Age-Illustrated-Primer-Spectra/dp/0553380966/" target="_top">The Diamond Age (Neal Stephenson)</a> _2025-07-24_
+  1. <a href="https://www.amazon.com/Diamond-Age-Illustrated-Primer-Spectra/dp/0553380966/" target="_top">The Diamond Age (Neal Stephenson)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-07-24_
   1. <a href="https://www.amazon.com/dp/0199926514" target="_top">The Undercover Economist, Revised and Updated Edition: Exposing Why the Rich Are Rich, the Poor Are Poor - and Why You Can Never Buy a Decent Used Car! (Tim Harford)</a> _2025-07-31_
   1. <a href="https://www.amazon.com/Haves-Have-Yachts-Dispatches-Ultrarich/dp/1668204487/" target="_top">The Haves and Have-Yachts: Dispatches on the Ultrarich (Evan Osnos)</a> _2025-08-14_
   1. <a href="https://www.amazon.com/Eating-Dinosaur-Chuck-Klosterman/dp/1416544216/" target="_top">Eating the Dinosaur (Chuck Klosterman)</a> _2025-08-18_
@@ -44,7 +44,7 @@
  1. <a href="https://www.amazon.com/Just-My-Type-About-Fonts/dp/1592407463/" target="_top">Just My Type: A Book About Fonts (Simon Garfield)</a> _2025-09-02_
  1. <a href="https://www.amazon.com/Proto-Ancient-Language-Went-Global/dp/1639732586/" target="_top">Proto: How One Ancient Language Went Global (Laura Spinney)</a> _2025-09-05_
  1. <a href="https://www.amazon.com/Breakneck-Chinas-Quest-Engineer-Future/dp/1324106034/" target="_top">Breakneck: China's Quest to Engineer the Future (Dan Wang)</a> _2025-09-07_
- 1. <a href="https://www.amazon.com/Worlds-Otherwise-Penguin-Science-Fiction/dp/0241509750/" target="_top">Warm Worlds and Otherwise (James Tiptree Jr.)</a> _2025-09-08_
+ 1. <a href="https://www.amazon.com/Worlds-Otherwise-Penguin-Science-Fiction/dp/0241509750/" target="_top">Warm Worlds and Otherwise (James Tiptree Jr.)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-09-08_
  1. <a href="https://www.amazon.com/dp/1631496085" target="_top">We the People: A History of the U.S. Constitution (Jill Lepore)</a> _2025-09-19_
  1. <a href="https://www.amazon.com/Dominion-Christian-Revolution-Remade-World/dp/1541675592/" target="_top">Dominion: How the Christian Revolution Remade the World (Tom Holland)</a> _2025-09-26_
  1. <a href="https://www.amazon.com/Citizens-Chronicle-Revolution-Simon-Schama/dp/0679726101/" target="_top">Citizens: A Chronicle of the French Revolution (Simon Schama)</a> _2025-10-13_
