@@ -57,17 +57,17 @@
 
   1. <a href="https://www.amazon.com/Democracy-Awakening-Notes-State-America/dp/0593652967/" target="_top">Democracy Awakening: Notes and the State of America (Heather Cox Richardson)</a>
   1. <a href="https://www.amazon.com/Hackers-Mind-Powerful-Societys-Rules/dp/1324074531/" target="_top">A Hacker's Mind: How the Powerful Bend Society's Rules, and How to Bend Them Back (Bruce Schneier)</a>
-  1. <a href="https://www.amazon.com/Nose-Other-Stories-Russian-Library/dp/0231190697/" target="_top">The Nose (Nikolai Gogol)</a> _2024-02-04_
+  1. <a href="https://www.amazon.com/Nose-Other-Stories-Russian-Library/dp/0231190697/" target="_top">The Nose (Nikolai Gogol)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2024-02-04_
   1. <a href="https://www.amazon.com/One-Nation-Under-Guns-Threatens/dp/0593594312/" target="_top">One Nation Under Guns: How Gun Culture Distorts Our History and Threatens Our Democracy (Dominic Erdozain)</a>
   1. <a href="https://www.amazon.com/Doom-Politics-Catastrophe-Niall-Ferguson/dp/0593297393/" target="_top">Doom: The Politics of Catastrophe (Niall Ferguson)</a>
   1. <a href="https://www.amazon.com/Spinoza-Freedoms-Messiah-Jewish-Lives/dp/0300281862/" target="_top">Spinoza: Freedom's Messiah (Ian Buruma)</a>
   1. <a href="https://www.amazon.com/Burn-Book-Tech-Love-Story/dp/1982163909/" target="_top">Burn Book: A Tech Love Story (Kara Swisher)</a>
   1. <a href="https://www.amazon.com/Anxious-Generation-Rewiring-Childhood-Epidemic/dp/0593655036/" target="_top">The Anxious Generation (Jonathan Haidt)</a> _2025-05-11_
-  1. <a href="https://www.amazon.com/Wall-Marlen-Haushofer/dp/0811231941/" target="_top">The Wall (Marlen Haushofer)</a>
+  1. <a href="https://www.amazon.com/Wall-Marlen-Haushofer/dp/0811231941/" target="_top">The Wall (Marlen Haushofer)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Unfinished-Love-Story-Personal-History/dp/1982108665/" target="_top">An Unfinished Love Story: A Personal History of the 1960s (Doris Kearns Goodwin)</a>
-  1. <a href="https://www.amazon.com/Underworld-Novel-Don-DeLillo/dp/0684848155/" target="_top">Underworld (Don DeLillo)</a>
+  1. <a href="https://www.amazon.com/Underworld-Novel-Don-DeLillo/dp/0684848155/" target="_top">Underworld (Don DeLillo)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Democracy-Solidarity-Cultural-Americas-Political/dp/0300274378/" target="_top">Democracy and Solidarity: On the Cultural Roots of America's Political Crisis (James Davison Hunter)</a>
-  1. <a href="https://www.amazon.com/Beneath-Wheel-Hermann-Hesse/dp/031242230X/" target="_top">Beneath the Wheel (Herman Hesse)</a>
+  1. <a href="https://www.amazon.com/Beneath-Wheel-Hermann-Hesse/dp/031242230X/" target="_top">Beneath the Wheel (Herman Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Triumph-Yuppies-America-Eighties-Creation/dp/1538725991/" target="_top">Triumph of the Yuppies: America, the Eighties, and the Creation of an Unequal Nation (Tom McGrath)</a>
   1. <a href="https://www.amazon.com/Broken-Code-Facebook-Harmful-Secrets-ebook/dp/B0BS354RMX/" target="_top">Broken Code: Inside Facebook and the Fight to Expose Its Harmful Secrets (Jeff Horwitz)</a> _2025-08-12_
   1. <a href="https://www.amazon.com/Keeping-Faith-Democracy-Riveted-Nation-ebook/dp/B0CN8VH515/" target="_top">Keeping the Faith: God, Democracy, and the Trial That Riveted a Nation (Brenda Wineapple)</a>
@@ -77,7 +77,7 @@
 
 **2023**:
 
-  1. <a href="https://www.amazon.com/White-Noise-Don-DeLillo-ebook/dp/B001R11CAI/">White Noise (Don DeLillo)</a>
+  1. <a href="https://www.amazon.com/White-Noise-Don-DeLillo-ebook/dp/B001R11CAI/">White Noise (Don DeLillo)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Free-World-Art-Thought-Cold-ebook/dp/B088DQ4QZR/">The Free World: Art and Thought in the Cold War (Louis Menand)</a>
   1. <a href="https://www.amazon.com/Cold-Blood-Vintage-International-ebook/dp/B000FC1IRM/">In Cold Blood (Truman Capote)</a>
   1. <a href="https://www.amazon.com/Chip-War-Worlds-Critical-Technology-ebook/dp/B09RX5F238/">Chip War (Chris Miller)</a>
@@ -94,7 +94,7 @@
   1. <a href="https://www.amazon.com/War-How-Conflict-Shaped-Us-ebook/dp/B082ZR5L25/">War: How Conflict Shaped Us (Magaret MacMillan)</a>
   1. <a href="https://www.amazon.com/Day-Life-Abed-Salama-Jerusalem/dp/1250854962/">A Day in the Life of Abed Salama (Nathan Thrall)</a>
   1. <a href="https://www.amazon.com/Fancy-Bear-Goes-Phishing-Extraordinary-ebook/dp/B0BBC8LG9P/">Fancy Bear Goes Phishing: The Dark History of the Information Age in Five Extraordinary Hacks (Scott J. Shapiro)</a>
-  1. <a href="https://www.amazon.com/MANIAC-Benjamin-Labatut/dp/0593654498/">The Maniac (Benjamin Labatut)</a>
+  1. <a href="https://www.amazon.com/MANIAC-Benjamin-Labatut/dp/0593654498/">The Maniac (Benjamin Labatut)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Doppelganger-Trip-Into-Mirror-World/dp/1802061959/">Doppelganger: A Trip into the Mirror World (Naomi Klein)</a>
   1. <a href="https://www.amazon.com/Determined-Science-Life-without-Free/dp/0525560971/">Determined: A Science of Life Without Free Will (Robert M. Sapolsky)</a>
 
