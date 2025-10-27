@@ -5,7 +5,7 @@
   1. <a href="https://www.amazon.com/Being-You-New-Science-Consciousness/dp/1524742872/" target="_top">Being You: A New Science of Consciousness (Anil Seth)</a> _2025-01-11_
   1. <a href="https://www.amazon.com/Genesis-Artificial-Intelligence-Human-Spirit/dp/0316581291/" target="_top">Genesis: Artificial Intelligence, Hope, and the Human Spirit (Henry Kissinger, Craig Mundle, Eric Schmidt, Niall Ferguson)</a> _2025-01-18_
   1. <a href="https://www.amazon.com/Captive-Mind-Czeslaw-Milosz/dp/0679728562/" target="_top">The Captive Mind (Czesław Miłosz)</a> _2025-01-20_
-  1. <a href="https://www.amazon.com/Italo-Calvino-Traveler-Everymans-12-2-1992/dp/B00HTJXZSY/" target="_top">If on a Winter's Night a Traveler (Italo Calvino)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png"/> _2025-01-23_
+  1. <a href="https://www.amazon.com/Italo-Calvino-Traveler-Everymans-12-2-1992/dp/B00HTJXZSY/" target="_top">If on a Winter's Night a Traveler (Italo Calvino)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="20"/> _2025-01-23_
   1. <a href="https://www.amazon.com/Island-Center-World-Manhattan-Forgotten/dp/1400078679/" target="_top">The Island at the Center of the World: The Epic Story of Dutch Manhattan (Russell Shorto)</a> _2025-01-27_
   1. <a href="https://www.amazon.com/How-Economics-Explains-World-Humanity/dp/0063383780/" target="_top">How Economics Explains the World: A Short History of Humanity (Andrew Leigh)</a> _2025-01-29_
   1. <a href="https://www.amazon.com/1959-Everything-Changed-Fred-Kaplan/dp/0470602031/" target="_top">1959: The Year Everything Changed (Fred Kaplan)</a> _2025-02-01_
