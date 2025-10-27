@@ -178,7 +178,7 @@
   1. <a href="https://www.amazon.com/Half-Has-Never-Been-Told/dp/0465049664/">The Half Has Never Been Told (Edward Baptist)</a>
   1. <a href="https://www.amazon.com/Permanent-Record-Edward-Snowden/dp/1250772907/">Permanent Record (Edward Snowden)</a>
   1. <a href="https://www.amazon.com/These-Truths-History-United-States/dp/0393635244/">These Truths: A History of the United States (Jill Lepore)</a>
-  1. <a href="https://www.amazon.com/Antisocial-Extremists-Techno-Utopians-Hijacking-Conversation/dp/0525522263/">Antisocial (Andrew Marantz)</a>
+  1. <a href="https://www.amazon.com/Antisocial-Extremists-Techno-Utopians-Hijacking-Conversation/dp/0525522263/">Antisocial: Online Extremists, Techno-Utopians, and the Hijacking of the American Conversation (Andrew Marantz)</a>
   1. <a href="https://www.amazon.com/Human-Compatible-Artificial-Intelligence-Problem/dp/0525558632/">Human Compatible: Artificial Intelligence and the Problem of Control (Stuart Russell)</a>
   1. <a href="https://www.amazon.com/Beginning-was-Command-Line/dp/0380815931/">In the Beginning was the Command-Line (Neal Stephenson)</a>
   1. <a href="https://www.amazon.com/Possible-Minds-Twenty-Five-Ways-Looking/dp/0525558012/">Possible Minds: Twenty-Five Ways of Looking at AI (John Brockman)</a>
