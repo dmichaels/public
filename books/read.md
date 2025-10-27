@@ -79,7 +79,7 @@
 
   1. <a href="https://www.amazon.com/White-Noise-Don-DeLillo-ebook/dp/B001R11CAI/">White Noise (Don DeLillo)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Free-World-Art-Thought-Cold-ebook/dp/B088DQ4QZR/">The Free World: Art and Thought in the Cold War (Louis Menand)</a>
-  1. <a href="https://www.amazon.com/Cold-Blood-Vintage-International-ebook/dp/B000FC1IRM/">In Cold Blood (Truman Capote)</a>
+  1. <a href="https://www.amazon.com/Cold-Blood-Vintage-International-ebook/dp/B000FC1IRM/">In Cold Blood (Truman Capote)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Chip-War-Worlds-Critical-Technology-ebook/dp/B09RX5F238/">Chip War (Chris Miller)</a>
   1. <a href="https://www.amazon.com/Understandable-Economics-Because-Understanding-Important-ebook/dp/B0B3SLK3K2/">Understandable Economics (Howard Yaruss)</a> _2023-02-25_
   1. <a href="https://www.amazon.com/How-World-Really-Works-Science-ebook/dp/B09CDB69WT/">How the World Really Works: The Science Behind How We Got Here and Where We're Going (Vaclav Smil)</a>
@@ -100,13 +100,13 @@
 
 **2022**:
 
-  1. <a href="https://www.amazon.com/Galapagos-Novel-Fiction-Kurt-Vonnegut/dp/0385333870/">Galápagos (Kurt Vonnegut)</a>
+  1. <a href="https://www.amazon.com/Galapagos-Novel-Fiction-Kurt-Vonnegut/dp/0385333870/">Galápagos (Kurt Vonnegut)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Sick-Souls-Healthy-Minds-William/dp/0691216711/">Sick Souls, Healthy Minds: How William James Can Save Your Life (John Kaag)</a>
-  1. <a href="https://www.amazon.com/Don-Quixote-Miguel-Cervantes/dp/0060934344/">Don Quixote (Miguel Cervantes)</a>
-  1. <a href="https://www.amazon.com/Crime-Punishment-Volokhonsky-Translation-Classics/dp/0679734503/">Crime and Punishment (Fyodor Dostoevsky)</a>
-  1. <a href="https://www.amazon.com/Brave-New-World-Revisited/dp/0060776099/">Brave New World (Aldous Huxley)</a>
+  1. <a href="https://www.amazon.com/Don-Quixote-Miguel-Cervantes/dp/0060934344/">Don Quixote (Miguel Cervantes)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Crime-Punishment-Volokhonsky-Translation-Classics/dp/0679734503/">Crime and Punishment (Fyodor Dostoevsky)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Brave-New-World-Revisited/dp/0060776099/">Brave New World (Aldous Huxley)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Emperor-All-Maladies-Biography-Cancer/dp/1439170916/">The Emperor of All Maladies: A Biography of Cancer (Siddhartha Mukherjee)</a>
-  1. <a href="https://www.amazon.com/Middlemarch-Penguin-Classics-George-Eliot-ebook/dp/B00SI02C8W/">Middlemarch (George Eliot)</a>
+  1. <a href="https://www.amazon.com/Middlemarch-Penguin-Classics-George-Eliot-ebook/dp/B00SI02C8W/">Middlemarch (George Eliot)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Magna-Carta-Liberty-Dan-Jones-ebook/dp/B00SI025YI/">Magna Carta: The Birth of Liberty (Dan Jones)</a>
   1. <a href="https://www.amazon.com/Journey-Edge-Reason-Life-G%C3%B6del-ebook/dp/B08L5KB2J8/">Journey to the Edge of Reason: The Life of Kurt Gödel (Stephen Budiansky)</a>
   1. <a href="https://www.amazon.com/Code-Breaker-Jennifer-Doudna-Editing-ebook/dp/B08G1XNG7J/">The Code Breaker: Jennifer Doudna, Gene Editing, and the Future of the Human Race (Walter Isaacson)</a>
@@ -129,18 +129,18 @@
 **2021**:
 
   1. <a href="https://www.amazon.com/Rationality-What-Seems-Scarce-Matters-ebook/dp/B08WK3JNLT/">Rationality: What It Is, Why It Seems Scarce, Why It Matters (Steven Pinker)</a>
-  1. <a href="https://www.amazon.com/Fun-Home-Tragicomic-Alison-Bechdel/dp/0618871713/">Fun Home (Alison Bechdel)</a>
+  1. <a href="https://www.amazon.com/Fun-Home-Tragicomic-Alison-Bechdel/dp/0618871713/">Fun Home (Alison Bechdel)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Feline-Philosophy-Cats-Meaning-Life/dp/1250800250/">Feline Philosophy (John Gray)</a>
   1. <a href="https://www.amazon.com/Amazon-Unbound-Invention-Global-Empire/dp/1982132620/">Amazon Unbound (Brad Stone)</a>
   1. <a href="https://www.amazon.com/World-Beyond-Your-Head-Distraction/dp/0374535914/">The World Beyond Your Head (Matthew Crawford)</a>
-  1. <a href="https://www.amazon.com/War-Peace-Penguin-Classics-Deluxe/dp/0143039997/">War and Peace (Leo Tolstoy)</a>
+  1. <a href="https://www.amazon.com/War-Peace-Penguin-Classics-Deluxe/dp/0143039997/">War and Peace (Leo Tolstoy)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 
 **2020**:
 
-  1. <a href="https://www.amazon.com/Call-Me-Your-Name-Novel/dp/1250169445/">Call Me By Your Name (André Aciman)</a>
+  1. <a href="https://www.amazon.com/Call-Me-Your-Name-Novel/dp/1250169445/">Call Me By Your Name (André Aciman)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/This-America-Nation-Jill-Lepore/dp/1631496417/">The Case for the Nation (Jill Lepore)</a>
   1. <a href="https://www.amazon.com/Usefulness-Useless-Knowledge-Abraham-Flexner/dp/0691174768/">The Usefulness of Useless Knowledge (Abraham Flexner, Robber Dijkgraaf)</a>
-  1. <a href="https://www.amazon.com/Hadji-Murat-Vintage-Classics-Tolstoy/dp/0307951340/">Hadji Murat (Leo Tolstoy)</a>
+  1. <a href="https://www.amazon.com/Hadji-Murat-Vintage-Classics-Tolstoy/dp/0307951340/">Hadji Murat (Leo Tolstoy)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Money-Unauthorized-Biography-Coinage-Cryptocurrencies/dp/0345803558/">Money: The Unauthorized Biography -- From Coinage to Cryptocurrencies (Felix Martin)</a>
   1. <a href="https://www.amazon.com/Talking-Back-Black-Truths-Americas/dp/1942658583/">Talking Back Talking Black (John McWhorter)</a>
   1. <a href="https://www.amazon.com/Elon-Musk-SpaceX-Fantastic-Future/dp/006230125X/">Elon Musk (Ashlee Vance)</a>
@@ -150,16 +150,16 @@
   1. <a href="https://www.amazon.com/Shortest-History-Germany-Merkel_A-Retelling/dp/1615195696/">The Shortest History of Germany (James Hawes)</a>
   1. <a href="https://www.amazon.com/Third-Reich-History-Nazi-Germany/dp/1451651147/">The Third Reich: A History of Nazi Germany (Thomas Childers)</a>
   1. <a href="https://www.amazon.com/Hitler-Ascent-1889-1939-Volker-Ullrich/dp/1101872055/">Hitler: Ascent 1889 - 1939 (Volker Ullrich)</a>
-  1. <a href="https://www.amazon.com/Silence-Novel-Don-DeLillo/dp/1982164557/">The Silence (Don DeLillo)</a>
-  1. <a href="https://www.amazon.com/Chess-Story-Review-Books-Classics/dp/1590171691/">Chess Story (Stefan Zweig)</a>
+  1. <a href="https://www.amazon.com/Silence-Novel-Don-DeLillo/dp/1982164557/">The Silence (Don DeLillo)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Chess-Story-Review-Books-Classics/dp/1590171691/">Chess Story (Stefan Zweig)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Apropos-Nothing-Woody-Allen/dp/1951627342/">Apropos of Nothing (Woody Allen)</a>
-  1. <a href="https://www.amazon.com/Dangling-Penguin-Classics-Saul-Bellow/dp/0143039873/">The Dangling Man (Saul Bellow)</a>
+  1. <a href="https://www.amazon.com/Dangling-Penguin-Classics-Saul-Bellow/dp/0143039873/">The Dangling Man (Saul Bellow)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 
 **2019**:
 
-  1. <a href="https://www.amazon.com/Anna-Karenina-Leo-Tolstoy/dp/0143035002/">Anna Karenina (Leo Tolstoy)</a>
-  1. <a href="https://www.amazon.com/Double-Gambler-Vintage-Classics/dp/0375719016/">The Double (Fyodor Dostoevsky)</a>
-  1. <a href="https://www.amazon.com/Fall-Albert-Camus/dp/0679720227/">The Fall (Albert Camus)</a>
+  1. <a href="https://www.amazon.com/Anna-Karenina-Leo-Tolstoy/dp/0143035002/">Anna Karenina (Leo Tolstoy)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Double-Gambler-Vintage-Classics/dp/0375719016/">The Double (Fyodor Dostoevsky)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Fall-Albert-Camus/dp/0679720227/">The Fall (Albert Camus)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Naked-Money-Revealing-Financial-System/dp/0393353737/">Naked Money (Charles Wheelan)</a>
   1. <a href="https://www.amazon.com/Ascent-Money-Financial-History-World/dp/0143116177/">The Ascent of Money (Niall Ferguson)</a>
   1. <a href="https://www.amazon.com/Naked-Economics-Undressing-Dismal-Science/dp/0393356493">Naked Economics (Charles Wheelan)</a>
@@ -168,7 +168,7 @@
   1. <a href="https://www.amazon.com/Talking-Daughter-About-Economy-Works/dp/0374538492/">Talking to My Daughter About the Ecomony (Yanis Varoufakis)</a>
   1. <a href="https://www.amazon.com/Conscious-Brief-Guide-Fundamental-Mystery/dp/0062906712/">Consciousness (Annaka Harris)</a>
   1. <a href="https://www.amazon.com/Adam-Smith-Economics-Jesse-Norman/dp/0465061974/">Adam Smith: Father of Economics (Jess Norman)</a>
-  1. <a href="https://www.amazon.com/Exhalation-Ted-Chiang/dp/1101972084/">Exhalation: Stories (Ted Chiang)</a>
+  1. <a href="https://www.amazon.com/Exhalation-Ted-Chiang/dp/1101972084/">Exhalation: Stories (Ted Chiang)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/War-Normal-People-Disappearing-Universal/dp/0316414212/">The War on Normal People (Andrew Yang)</a>
   1. <a href="https://www.amazon.com/Nigger-Strange-Career-Troublesome-Introduction/dp/0593316525/">Nigger: The Strange Career of a Troublesome Word (Randall Kennedy)</a>
   1. <a href="https://www.amazon.com/Coddling-American-Mind-Intentions-Generation/dp/0735224919/">The Coddling of the American Mind (Greg Lukianoff & Jonathan Haidt)</a>
@@ -184,9 +184,9 @@
   1. <a href="https://www.amazon.com/Possible-Minds-Twenty-Five-Ways-Looking/dp/0525558012/">Possible Minds: Twenty-Five Ways of Looking at AI (John Brockman)</a>
   1. <a href="https://www.amazon.com/Between-World-Me-Ta-Nehisi-Coates/dp/0812993543/">Between the World and Me (Ta-Nehisi Coates)</a>
   1. <a href="https://www.amazon.com/Stories-Your-Life-Others-Chiang/dp/1101972122/">Stories of Your Life and Others (Ted Chiang)</a>
-  1. <a href="https://www.amazon.com/Children-Men-P-D-James/dp/0307275434/">The Children of Men (P.D. James)</a>
+  1. <a href="https://www.amazon.com/Children-Men-P-D-James/dp/0307275434/">The Children of Men (P.D. James)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/UNIX-History-Memoir-Brian-Kernighan/dp/1695978552/">UNIX: A History and a Memoir (Brian Kernighan)</a>
-  1. <a href="https://www.amazon.com/Sabrina-Nick-Drnaso/dp/177046316X/">Sabrina (Nick Drnaso)</a>
+  1. <a href="https://www.amazon.com/Sabrina-Nick-Drnaso/dp/177046316X/">Sabrina (Nick Drnaso)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 
 **2018**:
 
@@ -203,17 +203,17 @@
   1. <a href="https://www.amazon.com/You-Want-Talk-About-Race/dp/1580058825/">So You Want to Talk About Race (Ijeoma Oluo)</a>
   1. <a href="https://www.amazon.com/Lifes-Greatest-Secret-Crack-Genetic/dp/0465062679/">Life's Greatest Secret: The Race to Crack the Genetic Code (Matthew Cobb)</a>
   1. <a href="https://www.amazon.com/Brief-History-Everyone-Ever-Lived/dp/1615194045/">A Brief History of Everyone Who Ever Lived (Adam Charles Rutherford)</a>
-  1. <a href="https://www.amazon.com/Heart-Darkness-Joseph-Conrad/dp/1673303056/">Heart of Darkness (Joseph Conrad)</a>
-  1. <a href="https://www.amazon.com/Death-Venice-Literary-Classic-Annotated/dp/B09Y5C57TY/">Death in Venice (Thomas Mann)</a>
-  1. <a href="https://www.amazon.com/Stranger-Albert-Camus/dp/0679720200/">The Stranger (Albert Camus)</a>
+  1. <a href="https://www.amazon.com/Heart-Darkness-Joseph-Conrad/dp/1673303056/">Heart of Darkness (Joseph Conrad)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Death-Venice-Literary-Classic-Annotated/dp/B09Y5C57TY/">Death in Venice (Thomas Mann)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Stranger-Albert-Camus/dp/0679720200/">The Stranger (Albert Camus)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Darkness-Visible-Madness-William-Styron/dp/0679736395/">Darkness Visible (William Styron)</a>
   1. <a href="https://www.amazon.com/Girl-Baggage-Claim-Explaining-Contemporaries/dp/1101972068/">The Girl at the Baggage Claim (Gish Jan)</a>
   1. <a href="https://www.amazon.com/Making-Things-Right-Philosophy-Working/dp/0143130943/">Making Things Right: The Simple Philosophy of a Working Life (Ole Thorstensen)</a>
   1. <a href="https://www.amazon.com/Inside-Dog-What-Dogs-Smell/dp/1416583432/">Inside of a Dog (Alexandra Horowitz)</a>
   1. <a href="https://www.amazon.com/Our-Magnificent-Bastard-Tongue-History/dp/1592404944/">Our Magnificent Bastard Tongue (John McWhorter)</a>
   1. <a href="https://www.amazon.com/Romance-Three-Legs-Obsessive-Perfect/dp/1596915242/">A Romance on Three Legs: Glenn Gould's Obsessive Quest for the Perfect Piano (Katie Hafner)</a>
-  1. <a href="https://www.amazon.com/Home-After-Dark-David-Small/dp/0871403153/">Home After Dark (David Small)</a>
-  1. <a href="https://www.amazon.com/Gullivers-Travels-Penguin-Classics-Jonathan/dp/0141439491/">Gulliver's Travels (Jonathan Swift)</a>
+  1. <a href="https://www.amazon.com/Home-After-Dark-David-Small/dp/0871403153/">Home After Dark (David Small)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Gullivers-Travels-Penguin-Classics-Jonathan/dp/0141439491/">Gulliver's Travels (Jonathan Swift)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 
 **2000-2017**
 
