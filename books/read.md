@@ -62,7 +62,7 @@
   1. <a href="https://www.amazon.com/Doom-Politics-Catastrophe-Niall-Ferguson/dp/0593297393/" target="_top">Doom: The Politics of Catastrophe (Niall Ferguson)</a>
   1. <a href="https://www.amazon.com/Spinoza-Freedoms-Messiah-Jewish-Lives/dp/0300281862/" target="_top">Spinoza: Freedom's Messiah (Ian Buruma)</a>
   1. <a href="https://www.amazon.com/Burn-Book-Tech-Love-Story/dp/1982163909/" target="_top">Burn Book: A Tech Love Story (Kara Swisher)</a>
-  1. <a href="https://www.amazon.com/Anxious-Generation-Rewiring-Childhood-Epidemic/dp/0593655036/" target="_top">The Anxious Generation (Jonathan Haidt)</a> _2025-05-11_
+  1. <a href="https://www.amazon.com/Anxious-Generation-Rewiring-Childhood-Epidemic/dp/0593655036/" target="_top">The Anxious Generation: How the Great Rewiring of Childhood Is Causing an Epidemic of Mental Illness (Jonathan Haidt)</a> _2025-05-11_
   1. <a href="https://www.amazon.com/Wall-Marlen-Haushofer/dp/0811231941/" target="_top">The Wall (Marlen Haushofer)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Unfinished-Love-Story-Personal-History/dp/1982108665/" target="_top">An Unfinished Love Story: A Personal History of the 1960s (Doris Kearns Goodwin)</a>
   1. <a href="https://www.amazon.com/Underworld-Novel-Don-DeLillo/dp/0684848155/" target="_top">Underworld (Don DeLillo)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
