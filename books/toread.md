@@ -1,5 +1,6 @@
 <ins>**Books To Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="read.md">Books Read</a>
 
+1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/Essays-Collectors-Library-Essential-Thinkers/dp/1904919596/" target="_top">Selected Essays (Michel De Montaigne)</a>
 1. <a href="https://www.amazon.com/Right-Oblivion-Privacy-Good-Life/dp/067430490X/" target="_top">The Right to Oblivion: Privacy and the Good Life (Lowry Pressly)</a>
 1. <a href="https://www.amazon.com/dp/166808435X/" target="_top">Notes on Being a Man (Scott Galloway)</a>
@@ -13,7 +14,6 @@
 1. <a href="https://www.amazon.com/gp/product/0399184139/" target="_top">But What If We're Wrong?: Thinking About the Present As If It Were the Past (Chuck Klosterman)</a>
 1. <a href="https://www.amazon.com/When-We-Cease-Understand-World/dp/1681375664/" target="_top">When We Cease to Understand the World (Benjamin Labatut)</a>
 1. <a href="https://www.amazon.com/Second-After-John-Matherson-Novel/dp/0765356864/" target="_top">One Second After (William R. Forstchen)</a>
-1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
 1. <a href="https://www.blackstonelibrary.com/stalin-volume-iii?sp=412295" target="_top">Stalin: Volume III (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/dp/1668023482/" target="_top">Abundance (Ezra Klein)</a>
 1. <a href="https://www.amazon.com/Price-Peace-Democracy-Maynard-Keynes/dp/0525509054/" target="_top">The Price of Peace: Money, Democracy, and the Life of John Maynard Keynes (Zachary D. Carter)</a>
