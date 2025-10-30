@@ -1,6 +1,7 @@
 <ins>**Books To Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="read.md">Books Read</a>
 
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
+1. <a href="https://www.amazon.com/Mao-Story-Jung-Chang/dp/0679746323/" target="_top">Mao: The Unknown Story (Jung Chang, Jon Halliday)</a>
 1. <a href="https://www.amazon.com/Essays-Collectors-Library-Essential-Thinkers/dp/1904919596/" target="_top">Selected Essays (Michel De Montaigne)</a>
 1. <a href="https://www.amazon.com/Right-Oblivion-Privacy-Good-Life/dp/067430490X/" target="_top">The Right to Oblivion: Privacy and the Good Life (Lowry Pressly)</a>
 1. <a href="https://www.amazon.com/dp/166808435X/" target="_top">Notes on Being a Man (Scott Galloway)</a>
