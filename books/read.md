@@ -176,7 +176,7 @@
   1. <a href="https://www.amazon.com/Letter-Birmingham-Jail-Penguin-Modern/dp/0241339464/">Letter from Birmingham Jail (Martin Luther King, Jr.)</a>
   1. <a href="https://www.amazon.com/Fire-Next-Time-James-Baldwin/dp/067974472X/">The Fire Next Time (James Baldwin)</a>
   1. <a href="https://www.amazon.com/Narrative-Life-Frederick-Douglass/dp/0486284999/">Narrative of the Life of Frederick Douglass (Frederick Douglass)</a>
-  1. <a href="https://www.amazon.com/Half-Has-Never-Been-Told/dp/0465049664/">The Half Has Never Been Told (Edward Baptist)</a>
+  1. <a href="https://www.amazon.com/Half-Has-Never-Been-Told/dp/0465049664/">The Half Has Never Been Told: Slavery and the Making of American Capitalism (Edward Baptist)</a>
   1. <a href="https://www.amazon.com/Permanent-Record-Edward-Snowden/dp/1250772907/">Permanent Record (Edward Snowden)</a>
   1. <a href="https://www.amazon.com/These-Truths-History-United-States/dp/0393635244/">These Truths: A History of the United States (Jill Lepore)</a>
   1. <a href="https://www.amazon.com/Antisocial-Extremists-Techno-Utopians-Hijacking-Conversation/dp/0525522263/">Antisocial: Online Extremists, Techno-Utopians, and the Hijacking of the American Conversation (Andrew Marantz)</a>
