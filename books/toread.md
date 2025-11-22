@@ -1,5 +1,6 @@
 <ins>**Books To Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="read.md">Books Read</a>
 
+1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a>
 1. <a href="https://www.amazon.com/Scarlet-Pimpernel-Baroness-Orczy/dp/B09325S6XH/" target="_top">The Scarlet Pimpernel (Baroness Orczy)</a>
 1. <a href="https://www.amazon.com/Women-Novel-Kristin-Hannah-ebook/dp/B0C1X97LW7/" target="_top">The Women (Kristin Hannah)</a>
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
@@ -94,7 +95,6 @@
 1. <a href="https://www.amazon.com/Human-Use-Beings-Cybernetics-Society/dp/0306803208/" target="_top">The Human Use of Human Beings (Norbert Wiener)</a>
 1. <a href="https://www.amazon.com/Berlin-Jason-Lutes/dp/1770464069/" target="_top">Berlin (Jason Lutes)</a>
 1. <a href="https://www.amazon.com/Saga-Compendium-Brian-K-Vaughan/dp/153431346X/" target="_top">Saga (Brian K. Vaughan)</a>
-1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a>
 1. <a href="https://www.amazon.com/Lives-Cell-Notes-Biology-Watcher/dp/0140047433/" target="_top">The Lives of Cells (Lewis Thomas)</a>
 1. <a href="https://www.amazon.com/Human-Bondage-Literary-Classic-Annotated-ebook/dp/B0B57TY492/" target="_top">Of Human Bondage (W. Somerset Maugham)</a>
 1. <a href="https://www.amazon.com/My-Antonia-Willa-Cather-ebook/dp/B004IPPINC/" target="_top">My Ántonia (Willa Cather)</a>
