@@ -14,7 +14,7 @@
   1. <a href="https://www.amazon.com/Material-World-Materials-Modern-Civilization/dp/0593534344/" target="_top">Material World: A Substantial Story of Our Past and Future (Ed Conway)</a> _2025-02-12_
   1. <a href="https://www.amazon.com/Character-Limit-Elon-Destroyed-Twitter/dp/059365613X/" target="_top">Character Limit: How Elon Musk Destroyed Twitter (Kate Conger, Ryan Mac)</a> _2025-02-16_
   1. <a href="https://www.amazon.com/Chesil-Beach-Ian-McEwan/dp/0307386171/" target="_top">On Chesil Beach (Ian McEwan)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-02-16_
-  1. <a href="https://www.amazon.com/Conspiracy-against-Human-Race-Contrivance/dp/0143133144/" target="_top">The Conspiracy Against the Human Race (Thomas Ligotti)</a> _2025-02-18_
+  1. <a href="https://www.amazon.com/Conspiracy-against-Human-Race-Contrivance/dp/0143133144/" target="_top">The Conspiracy Against the Human Race: A Contrivance of Horror (Thomas Ligotti)</a> _2025-02-18_
   1. <a href="https://www.amazon.com/Source-Code-Beginnings-Bill-Gates/dp/059380158X/" target="_top">Source Code: My Beginnings (Bill Gates)</a> _2025-02-19_
   1. <a href="https://www.amazon.com/Temptation-Exist-M-Cioran/dp/1611457386/" target="_top">The Temptation to Exist (E.M. Cioran)</a> _2025-02-22_
   1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Songs of a Dead Dreamer (Thomas Ligotti)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-02-23_
