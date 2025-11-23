@@ -114,7 +114,7 @@
   1. <a href="https://www.amazon.com/Code-Breaker-Jennifer-Doudna-Editing-ebook/dp/B08G1XNG7J/">The Code Breaker: Jennifer Doudna, Gene Editing, and the Future of the Human Race (Walter Isaacson)</a>
   1. <a href="https://www.amazon.com/Man-Future-Visionary-Life-Neumann-ebook/dp/B098TYZN67/">The Man from the Future: The Visionary Life of John von Neumann (Ananyo Bhattacharya)</a>
   1. <a href="https://www.amazon.com/Turings-Cathedral-Origins-Digital-Universe-ebook/dp/B005IEGK5C/">Turing's Cathedral: The Origins of the Digital Universe (George Dyson)</a>
-  1. <a href="https://www.amazon.com/Vital-Question-Evolution-Origins-Complex-ebook/dp/B00OD8Z4JW/">The Vital Question (Nick Lane)</a>
+  1. <a href="https://www.amazon.com/Vital-Question-Evolution-Origins-Complex-ebook/dp/B00OD8Z4JW/">The Vital Question: Energy, Evolution, and the Origins of Complex Life (Nick Lane)</a>
   1. <a href="https://www.amazon.com/Just-Fun-Story-Accidental-Revolutionary/dp/0066620724/">Just For Fun (Linus Torvalds)</a>
   1. <a href="https://www.amazon.com/Journey-Humanity-History-Inequality-Implications/dp/0593186001/">The Journey of Humanity: The Origins of Wealth and Inequality (Oded Galor)</a>
   1. <a href="https://www.amazon.com/Other-Minds-Octopus-Origins-Consciousness/dp/0374537194/">Other Minds: The Octopus, the Sea, and the Deep Origins of Consciousness (Peter Godfrey-Smith)</a>
