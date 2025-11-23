@@ -122,7 +122,7 @@
   1. <a href="https://www.amazon.com/True-Believer-Thoughts-Movements-Perennial/dp/0060505915/">The True Believer (Eric Hoffer)</a>
   1. <a href="https://www.amazon.com/Destructionists-Twenty-Five-Crack-Up-Republican-Party/dp/0385548133/">The Destructionists: The Twenty-Five-Year Crack-Up of the Republican Party (Dana Milbank)</a>
   1. <a href="https://www.amazon.com/Confidence-Man-Making-Breaking-America/dp/0593297342/">Confidence Man: The Making of Donald Trump and the Breaking of Ameica (Maggie Haberman)</a>
-  1. <a href="https://www.amazon.com/Nazi-Seizure-Power-Experience-1930-1935/dp/0531064395/">The Nazi Seizure of Power (William Sheridan Allen)</a>
+  1. <a href="https://www.amazon.com/Nazi-Seizure-Power-Experience-1930-1935/dp/0531064395/">The Nazi Seizure of Power: The Experience of a Single German Town 1930-1935 (William Sheridan Allen)</a>
   1. <a href="https://www.amazon.com/You-Are-Expected-Understand-This/dp/0691208484/">You Are Not Expected to Understand This: How 26 Lines of Code Changed the World (Torie Bosch)</a>
   1. <a href="https://www.amazon.com/End-World-Just-Beginning-Globalization/dp/006323047X/">The End of the World Is Just the Beginning: Mapping the Collapse of Globalization (Peter Zeihan)</a>
   1. <a href="https://www.amazon.com/AI-Revolution-Medicine-GPT-4-Beyond/dp/0138200130/">The AI Revolution in Medicine: GPT-4 and Beyond (Peter Less, Carey Goldberg, Issac Kohane)</a>
