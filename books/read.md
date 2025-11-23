@@ -119,7 +119,7 @@
   1. <a href="https://www.amazon.com/Journey-Humanity-History-Inequality-Implications/dp/0593186001/">The Journey of Humanity: The Origins of Wealth and Inequality (Oded Galor)</a>
   1. <a href="https://www.amazon.com/Other-Minds-Octopus-Origins-Consciousness/dp/0374537194/">Other Minds: The Octopus, the Sea, and the Deep Origins of Consciousness (Peter Godfrey-Smith)</a>
   1. <a href="https://www.amazon.com/Why-We-Did-Travelogue-Republican/dp/0063161478/">Why We Did It: A Travelogue from the Republican Road to Hell (Tim Miller)</a>
-  1. <a href="https://www.amazon.com/True-Believer-Thoughts-Movements-Perennial/dp/0060505915/">The True Believer (Eric Hoffer)</a>
+  1. <a href="https://www.amazon.com/True-Believer-Thoughts-Movements-Perennial/dp/0060505915/">The True Believer: Thoughts on the Nature of Mass Movements (Eric Hoffer)</a>
   1. <a href="https://www.amazon.com/Destructionists-Twenty-Five-Crack-Up-Republican-Party/dp/0385548133/">The Destructionists: The Twenty-Five-Year Crack-Up of the Republican Party (Dana Milbank)</a>
   1. <a href="https://www.amazon.com/Confidence-Man-Making-Breaking-America/dp/0593297342/">Confidence Man: The Making of Donald Trump and the Breaking of Ameica (Maggie Haberman)</a>
   1. <a href="https://www.amazon.com/Nazi-Seizure-Power-Experience-1930-1935/dp/0531064395/">The Nazi Seizure of Power: The Experience of a Single German Town 1930-1935 (William Sheridan Allen)</a>
