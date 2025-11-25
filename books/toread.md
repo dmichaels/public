@@ -1,5 +1,6 @@
 <ins>**Books To Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="read.md">Books Read</a>
 
+1. <a href="https://www.amazon.com/dp/159017951X?/" target="_top">Memories: From Moscow to the Black Sea (Teffi)</a>
 1. <a href="https://www.amazon.com/Scarlet-Pimpernel-Baroness-Orczy/dp/B09325S6XH/" target="_top">The Scarlet Pimpernel (Baroness Orczy)</a>
 1. <a href="https://www.amazon.com/Women-Novel-Kristin-Hannah-ebook/dp/B0C1X97LW7/" target="_top">The Women (Kristin Hannah)</a>
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
