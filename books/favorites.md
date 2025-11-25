@@ -3,18 +3,19 @@
 Some Favorite Books:
 
     1. Moby Dick (Herman Melville)
+    1. Don Quixote (Miguel Cervantes)
     1. Lolita (Vladimir Nabokov)
     1. Rabbit Tetralogy (John Updike)
-    1. Infinite Jest (David Foster Wallace)
     1. The Glass Bead Game (Herman Hesse)
     1. Anna Karenina (Leo Tolstoy)
     1. Gulliver's Travels (Jonathan Swift)
     1. Crime and Punishment (Fyodor Dostoevsky)
+    1. Notes from the Underground (Fyodor Dostoevsky)
     1. Stoner (John Williams)
+    1. Infinite Jest (David Foster Wallace)
     1. The Pale King (David Foster Wallace)
 
     1. The Blank Slate (Steven Pinker)
-    1. The Ingenious Gentleman Don Quixote of La Mancha (Miguel Cervantes)
     1. Betraying Spinoza (Rebecca Goldstein)
     1. Darwin's Dangerous Idea (Daniel Dennett)
     1. The Selfish Gene (Richard Dawkins)
