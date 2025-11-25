@@ -18,6 +18,7 @@ Some Favorite Fiction:
   1. Infinite Jest (David Foster Wallace)
   1. The Pale King (David Foster Wallace)
   1. The Real Life of Sebastian Knight (Vladimir Nabokov)
+  1. The Death of Ivan Ilyich (Leo Tolstoy)
   1. Zorba the Greek (Nikos Kazantzakis)
   1. The Adventures of Huckleberry Finn (Mark Twain)
   1. The Catcher in the Rye (J.D. Salinger)
