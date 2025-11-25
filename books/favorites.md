@@ -14,6 +14,7 @@ Some Favorite Fiction:
   1. Stoner (John Williams)
   1. Infinite Jest (David Foster Wallace)
   1. The Pale King (David Foster Wallace)
+  1. The Real Life of Sebastian Knight (Vladimir Nabokov)
 
 Some Favorite Non-Fiction:
 
