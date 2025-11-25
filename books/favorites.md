@@ -10,6 +10,7 @@ Some Favorite Fiction:
   1. American Pastoral (Philip Roth)
   1. Anna Karenina (Leo Tolstoy)
   1. War and Peace (Leo Tolstoy)
+  1. Candide (Voltaire)
   1. Gulliver's Travels (Jonathan Swift)
   1. Crime and Punishment (Fyodor Dostoevsky)
   1. Notes from the Underground (Fyodor Dostoevsky)
