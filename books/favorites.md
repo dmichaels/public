@@ -18,6 +18,8 @@ Some Favorite Fiction:
   1. Infinite Jest (David Foster Wallace)
   1. The Pale King (David Foster Wallace)
   1. The Real Life of Sebastian Knight (Vladimir Nabokov)
+  1. The Adventures of Huckleberry Finn (Mark Twain)
+  1. The Catcher in the Rye (J.D. Salinger)
 
 Some Favorite Non-Fiction:
 
@@ -30,6 +32,7 @@ Some Favorite Non-Fiction:
   1. Self-Consciousness (John Updike)
   1. Confessions of a Philosopher (Bryan Magee)
   1. Hitch-22 (Christopher Hitchens)
+  1. On Liberty (John Stuart Mill)
   1. The True Believer (Eric Hoffer)
   1. Sapiens (Yuval Noah Harari)
   1. Civilization: The West and the Rest (Niall Ferguson)
