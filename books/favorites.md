@@ -37,3 +37,4 @@ Some Favorite Non-Fiction:
   1. These Truths: A History of the United States (Jill Lepore)
   1. A Mencken Chrestomathy (H.L. Mencken)
   1. The Machine Stops (E. M. Forster)
+  1. The Nazi Seizure of Power: The Experience of a Single German Town 1930-1935 (William Sheridan Allen)
