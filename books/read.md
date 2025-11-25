@@ -1,4 +1,4 @@
-<ins>**Books Read**</ins>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="toread.md">Books To Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
+**Books Read**&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="toread.md">Books To Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
