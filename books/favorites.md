@@ -20,6 +20,7 @@ Some Favorite Fiction:
   1. The Real Life of Sebastian Knight (Vladimir Nabokov)
   1. The Adventures of Huckleberry Finn (Mark Twain)
   1. The Catcher in the Rye (J.D. Salinger)
+  1. Franny and Zooey (J.D. Salinger)
 
 Some Favorite Non-Fiction:
 
