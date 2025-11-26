@@ -40,6 +40,7 @@ Some Favorite Non-Fiction:
   1. On Liberty (John Stuart Mill)
   1. The True Believer (Eric Hoffer)
   1. Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)
+  1. I A a Strange Loop (Douglas Hofstadter)
   1. Sapiens (Yuval Noah Harari)
   1. Civilization: The West and the Rest (Niall Ferguson)
   1. The World of Yesterday (Stefan Zweig)
