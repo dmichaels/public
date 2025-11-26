@@ -21,6 +21,7 @@ Some Favorite Fiction:
   1. The Death of Ivan Ilyich (Leo Tolstoy)
   1. The Metamorphosis (Franz Kafka)
   1. Zorba the Greek (Nikos Kazantzakis)
+  1. The Picture of Dorian Gray ()
   1. The Adventures of Huckleberry Finn (Mark Twain)
   1. The Catcher in the Rye (J.D. Salinger)
   1. Franny and Zooey (J.D. Salinger)
