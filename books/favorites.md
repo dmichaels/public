@@ -39,6 +39,7 @@ Some Favorite Non-Fiction:
   1. Hitch-22 (Christopher Hitchens)
   1. On Liberty (John Stuart Mill)
   1. The True Believer (Eric Hoffer)
+  1. G%C3%B6del, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)
   1. Sapiens (Yuval Noah Harari)
   1. Civilization: The West and the Rest (Niall Ferguson)
   1. The World of Yesterday (Stefan Zweig)
