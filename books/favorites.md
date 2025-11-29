@@ -28,6 +28,9 @@ Some Favorite Fiction:
   1. Franny and Zooey (J.D. Salinger)
   1. Lord of the Flies (William Golding)
   1. The Stranger (Albert Camus)
+  1. The Great Divorce (C.S. Lewis)
+  1. Hamlet (William Shakespeare)
+  1. Frankenstein (Mary Shelley)
 
 
 Some Favorite Non-Fiction:
@@ -41,6 +44,8 @@ Some Favorite Non-Fiction:
   1. Self-Consciousness (John Updike)
   1. Confessions of a Philosopher (Bryan Magee)
   1. Hitch-22 (Christopher Hitchens)
+  1. God Is Not Great: How Religion Poisons Everything (Christopher Hitchens)
+  1. The God Delusion (Richard Dawkins)
   1. On Liberty (John Stuart Mill)
   1. The True Believer (Eric Hoffer)
   1. Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)
@@ -55,7 +60,10 @@ Some Favorite Non-Fiction:
   1. What is Life? (Erwin Schrödinger)
   1. These Truths: A History of the United States (Jill Lepore)
   1. A Mencken Chrestomathy (H.L. Mencken)
-  1. The Machine Stops (E. M. Forster)
+  1. The Machine Stops (E.M. Forster)
   1. The Nazi Seizure of Power: The Experience of a Single German Town 1930-1935 (William Sheridan Allen)
   1. Nothing to Be Frightened Of (Julian Barnes)
   1. Material World: A Substantial Story of Our Past and Future (Ed Conway)
+  1. The Man Who Mistook His Wife for a Hat: And Other Clinical Tales (Oliver Sacks)
+  1. UNIX: A History and a Memoir (Brian Kernighan)
+  1. Diary of a Young Girl (Anne Frank)
