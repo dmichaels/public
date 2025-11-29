@@ -31,6 +31,7 @@ Some Favorite Fiction:
   1. The Great Divorce (C.S. Lewis)
   1. Hamlet (William Shakespeare)
   1. Frankenstein (Mary Shelley)
+  1. A Separate Peace (John Knowles)
 
 
 Some Favorite Non-Fiction:
