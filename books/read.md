@@ -53,8 +53,9 @@
  1. <a href="https://www.amazon.com/dp/0374518793/" target="_top">Auto-da-Fé (Elias Canetti)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-10-26_
  1. <a href="https://www.amazon.com/Until-End-Time-Evolving-Universe/dp/0525432175/" target="_top">Until the End of Time: Mind, Matter, and Our Search for Meaning in an Evolving Universe (Brian Greene)</a> _2025-11-01_
  1. <a href="https://www.amazon.com/Vietnam-Tragedy-1945-1975-Max-Hastings/dp/0062405675/" target="_top">Vietnam: An Epic Tragedy, 1945-1975 (Max Hastings)</a> _2025-11-25_
+1. <a href="https://www.amazon.com/dp/159017951X?/" target="_top">Memories: From Moscow to the Black Sea (Teffi)</a> _2025-11-30_
  1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
-1. <a href="https://www.amazon.com/dp/159017951X?/" target="_top">Memories: From Moscow to the Black Sea (Teffi)</a> _... in progress ..._
+ 1. <a href="https://www.amazon.com/Conflict-Visions-Ideological-Political-Struggles/dp/0465002056/" target="_top">A Conflict of Visions (Thomas Sowell)</a> _... in progress ..._
 
 **2024**:
 
