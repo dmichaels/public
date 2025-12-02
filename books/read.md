@@ -55,7 +55,7 @@
  1. <a href="https://www.amazon.com/Vietnam-Tragedy-1945-1975-Max-Hastings/dp/0062405675/" target="_top">Vietnam: An Epic Tragedy, 1945-1975 (Max Hastings)</a> _2025-11-25_
 1. <a href="https://www.amazon.com/dp/159017951X?/" target="_top">Memories: From Moscow to the Black Sea (Teffi)</a> _2025-11-30_
  1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
- 1. <a href="https://www.amazon.com/Conflict-Visions-Ideological-Political-Struggles/dp/0465002056/" target="_top">A Conflict of Visions (Thomas Sowell)</a> _... in progress ..._
+ 1. <a href="https://www.amazon.com/Conflict-Visions-Ideological-Political-Struggles/dp/0465002056/" target="_top">A Conflict of Visions: Ideological Origins of Political Struggles (Thomas Sowell)</a> _... in progress ..._
 
 **2024**:
 
