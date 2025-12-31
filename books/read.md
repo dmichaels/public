@@ -1,5 +1,8 @@
 **Books Read**&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="toread.md">Books To Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
+**2026**:
+  1. <a href="https://www.amazon.com/dp/0300233744" target="_top">The Master of Contradictions: Thomas Mann and the Making of "The Magic Mountain" (Morten Høi Jensen )</a> _... in progress ..._
+
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
   1. <a href="https://www.amazon.com/Being-You-New-Science-Consciousness/dp/1524742872/" target="_top">Being You: A New Science of Consciousness (Anil Seth)</a> _2025-01-11_
@@ -54,7 +57,7 @@
  1. <a href="https://www.amazon.com/Until-End-Time-Evolving-Universe/dp/0525432175/" target="_top">Until the End of Time: Mind, Matter, and Our Search for Meaning in an Evolving Universe (Brian Greene)</a> _2025-11-01_
  1. <a href="https://www.amazon.com/Vietnam-Tragedy-1945-1975-Max-Hastings/dp/0062405675/" target="_top">Vietnam: An Epic Tragedy, 1945-1975 (Max Hastings)</a> _2025-11-25_
 1. <a href="https://www.amazon.com/dp/159017951X?/" target="_top">Memories: From Moscow to the Black Sea (Teffi)</a> _2025-11-30_
- 1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
+ 1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-12-31_
 
 **2024**:
 
