@@ -6,6 +6,7 @@ Some Favorite Fiction:
   1. Don Quixote (Miguel Cervantes)
   1. Lolita (Vladimir Nabokov)
   1. Rabbit Tetralogy (John Updike)
+  1. The Magic Mountain (Thomas Mann)
   1. The Glass Bead Game (Herman Hesse)
   1. American Pastoral (Philip Roth)
   1. Anna Karenina (Leo Tolstoy)
