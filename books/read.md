@@ -2,6 +2,7 @@
 
 **2026**:
   1. <a href="https://www.amazon.com/dp/0300233744" target="_top">The Master of Contradictions: Thomas Mann and the Making of "The Magic Mountain" (Morten Høi Jensen )</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a> _... in deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
