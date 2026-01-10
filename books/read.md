@@ -1,7 +1,7 @@
 **Books Read**&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="toread.md">Books To Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
 **2026**:
-  1. <a href="https://www.amazon.com/dp/0300233744" target="_top">The Master of Contradictions: Thomas Mann and the Making of "The Magic Mountain" (Morten Høi Jensen )</a> _2026-01-04_
+  1. <a href="https://www.amazon.com/dp/0300233744" target="_top">The Master of Contradictions: Thomas Mann and the Making of "The Magic Mountain" (Morten Høi Jensen)</a> _2026-01-04_
   1. <a href="https://www.amazon.com/War-That-Ended-Peace-Road/dp/0812980662/" target="_top">The War that Ended Peace: The Road to 1914 (Margaret MacMillan)</a> _... in progress ..._
   1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a> _... on deck ..._
 
