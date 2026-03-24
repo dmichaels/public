@@ -32,6 +32,7 @@ Some Favorite Fiction:
   1. The Great Divorce (C.S. Lewis)
   1. Hamlet (William Shakespeare)
   1. Frankenstein (Mary Shelley)
+  1. Nineteen Eighty-Four (George Orwell)
   1. A Separate Peace (John Knowles)
 
 
@@ -41,6 +42,7 @@ Some Favorite Non-Fiction:
   1. Betraying Spinoza (Rebecca Goldstein)
   1. Darwin's Dangerous Idea (Daniel Dennett)
   1. The Selfish Gene (Richard Dawkins)
+  1. Dominion (Tom Holland)
   1. The Stuff of Thought (Steven Pinker)
   1. The Conspiracy Against the Human Race (Thomas Ligotti)
   1. Self-Consciousness (John Updike)
