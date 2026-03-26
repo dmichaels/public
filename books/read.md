@@ -167,6 +167,7 @@
   1. <a href="https://www.amazon.com/Chess-Story-Review-Books-Classics/dp/1590171691/">Chess Story (Stefan Zweig)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Apropos-Nothing-Woody-Allen/dp/1951627342/">Apropos of Nothing (Woody Allen)</a>
   1. <a href="https://www.amazon.com/Dangling-Penguin-Classics-Saul-Bellow/dp/0143039873/">The Dangling Man (Saul Bellow)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Seize-Penguin-Classics-Saul-Bellow/dp/0142437611/">Sieze the Day (Saul Bellow)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 
 **2019**:
 
