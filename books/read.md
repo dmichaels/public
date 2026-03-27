@@ -8,7 +8,8 @@
   1. <a href="https://www.amazon.com/History-Iran-Empire-Mind/dp/0465098762/" target="_top">Empire of the Mind: A History of Iran (Michael Axworthy)</a> _2026-03-14_
   1. <a href="https://www.amazon.com/dp/0143105434?" target="_top">Wuthering Heights (Emily Brontë)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-03-22_
   1. <a href="https://www.amazon.com/Mattering-Instinct-Deepest-Longing-Divides/dp/1324096853/" target="_top">The Mattering Instinct: How Our Deepest Longing Drives Us and Divides Us (Rebecca Newberger Goldstein)</a> _2026-03-24_
-  1. <a href="" target="_top">Herzog (Saul Bellow)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-03-27_
+  1. <a href="https://www.amazon.com/Herzog-Penguin-Modern-Classics-2001-04-26/dp/B01K0U4N70/" target="_top">Herzog (Saul Bellow)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-03-27_
+  1. <a href="https://www.amazon.com/dp/037571457X" target="_top">Persepolis: The Story of a Childhood (Marjane Satrapi)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
