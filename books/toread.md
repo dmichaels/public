@@ -1,7 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
 1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a>
-1. <a href="https://www.amazon.com/Conflict-Visions-Ideological-Political-Struggles/dp/0465002056/" target="_top">A Conflict of Visions: Ideological Origins of Political Struggles (Thomas Sowell)</a>
 1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">Tartar Steppe (Dino Buzzati)</a>
 1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
 1. <a href="https://www.amazon.com/Scarlet-Pimpernel-Baroness-Orczy/dp/B09325S6XH/" target="_top">The Scarlet Pimpernel (Baroness Orczy)</a>
