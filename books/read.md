@@ -12,7 +12,7 @@
   1. <a href="https://www.amazon.com/Conflict-Visions-Ideological-Political-Struggles/dp/0465002056/" target="_top">A Conflict of Visions: Ideological Origins of Political Struggles (Thomas Sowell)</a> _2026-03-29_
   1. <a href="https://www.amazon.com/dp/037571457X" target="_top">Persepolis: The Story of a Childhood (Marjane Satrapi)</a>  _2026-03-30_
   1. <a href="https://www.amazon.com/Screwtape-Letters-C-S-Lewis/dp/0060652934/" target="_top">The Screwtape Letters (C.S. Lewis)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-03-31_
-  1. <a href="https://www.amazon.com/Crooked-Timber-Humanity-Chapters-History/dp/0691155933/" target="_top">The Crooked Timber of Humanity: Chapters in the History of Ideas (Isaiah Berlin)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
+  1. <a href="https://www.amazon.com/Crooked-Timber-Humanity-Chapters-History/dp/0691155933/" target="_top">The Crooked Timber of Humanity: Chapters in the History of Ideas (Isaiah Berlin)</a>  _... in progress ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
