@@ -1,6 +1,5 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
-1. <a href="https://www.amazon.com/dp/069115600X" target="_top">The Hedgehog and the Fox: An Essay on Tolstoy's View of History (Isaiah Berlin)</a>
 1. <a href="https://www.amazon.com/dp/0691182876" target="_top">The Sense of Reality: Studies in Ideas and Their History (Isaiah Berlin)</a>
 1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a>
 1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">Tartar Steppe (Dino Buzzati)</a>
