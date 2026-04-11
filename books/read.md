@@ -339,6 +339,7 @@
   1. <a href="https://www.amazon.com/Amsterdam-History-Worlds-Most-Liberal/dp/0307743756/" target="_top">Amsterdam: A History of the World's Most Liberal City (Russell Shorto)</a>
   1. <a href="https://www.amazon.com/Code-Book-Science-Secrecy-Cryptography-ebook/dp/B004IK8PLE/">The Code Book: The Science of Secrecy from Ancient Egypt to Quantum Cryptography (Simon Singh)</a>
   1. <a href="https://www.amazon.com/Fermats-Enigma-Greatest-Mathematical-Problem/dp/0385493622/">Fermat's Enigma: The Epic Quest to Solve the World's Greatest Mathematical Problem (Simon Singh)</a>
+  1. <a href="https://www.amazon.com/Oedipus-Rex-Sophocles/dp/B09QNYJFMD/">Oedipus Rex (Sophocles)</a>
   1. <a href="https://www.amazon.com/Who-Am-Memoir-Pete-Townshend-ebook/dp/B007OWRBJK/">Who I Am: Memoir (Pete Townshend)</a>
   1. <a href="https://www.amazon.com/Licks-Love-Stories-Sequel-Remembered/dp/0345442016/">Licks of Love (John Updike)</a>
   1. <a href="https://www.amazon.com/Self-Consciousness-John-Updike/dp/039457222X/">Self-Consciousness (John Updike)</a>
