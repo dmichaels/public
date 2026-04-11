@@ -272,6 +272,7 @@
   1. <a href="https://www.amazon.com/Madame-Penguin-Classics-Gustave-Flaubert/dp/0140449124/">Madame Bovary (Gustave Flaubert)</a>
   1. <a href="https://www.amazon.com/Passage-India-M-Forster/dp/163360540X/">A Passage to India (E.M. Forster)</a>
   1. <a href="https://www.amazon.com/Machine-Stops-M-Forster/dp/1434442047/">The Machine Stops (E.M. Forster)</a>
+  1. <a href="https://www.amazon.com/Goethes-Faust-Johann-Wolfgang-Goethe/dp/0385031149/">Faust (Johann Wolfgang von Goethe)</a>
   1. <a href="https://www.amazon.com/36-Arguments-Existence-God-Contemporaries/dp/0307456714/">36 Arguments for the Existence of God: A Work of Fiction (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Betraying-Spinoza-Renegade-Modernity-Encounters/dp/0805211594/">Betraying Spinoza (Rebecca Goldstein)</a>
   1. <a href="https://www.amazon.com/Plato-Googleplex-Philosophy-Wont-Away/dp/0307456722/">Plato at the Googleplex: Why Philosophy Won't Go Away (Rebecca Goldstein)</a>
@@ -305,6 +306,7 @@
   1. <a href="https://www.amazon.com/Moral-Politics-Liberals-Conservatives-Think/dp/022641129X/">Moral Politics: How Liberals and Conservatives Think (George Lakoff)</a>
   1. <a href="https://www.amazon.com/Scattershot-Bipolar-Family-David-Lovelace/dp/0525950788/">Scattershot: My Bipolar Family (David Lovelace)</a>
   1. <a href="https://www.amazon.com/Giver-Quartet-Lois-Lowry/dp/0544336267/">The Giver (Lois Lowry)</a>
+  1. <a href="https://www.amazon.com/Prince-Readers-Library-Classics/dp/1954839278/">The Prince (Niccolò Machiavelli)</a>
   1. <a href="https://www.amazon.com/Every-Love-Story-Ghost-Wallace-ebook/dp/B007V65ODE/">Every Love Story Is a Ghost Story: A Life of David Foster Wallace (D.T. Max)</a>
   1. <a href="https://www.amazon.com/At-Home-World-Joyce-Maynard-ebook/dp/B0032N1ULK/">At Home in the World: A Memoir (Joyce Maynard)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
