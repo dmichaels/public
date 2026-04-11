@@ -3,6 +3,10 @@
 1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a>
 1. <a href="https://www.amazon.com/Tin-Drum-G%C3%BCnter-Grass/dp/0547339100/" target="_top">The Tin Drum (Günter Grass)</a>
 1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a>
+1. <a href="https://www.amazon.com/Sabbaths-Theater-Philip-Roth/dp/0679772596/" target="_top">Sabbath's Theater (Philip Roth)</a>
+1. <a href="https://www.amazon.com/Death-Virgil-Hermann-Broch/dp/0679755489/" target="_top">The Death of Virgil (Hermann Broch)</a>
+1. <a href="https://www.amazon.com/Notebook-Malte-Laurids-Brigge/dp/1773239880/" target="_top">The Notebooks of Malte Laurids Brigge (Rainer Maria Rilke)</a>
+1. <a href="https://www.amazon.com/Demons-Novel-Three-Vintage-Classics/dp/0679734511/" target="_top">Demons (Fyodor Dostoevsky)</a>
 1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">Tartar Steppe (Dino Buzzati)</a>
 1. <a href="https://www.amazon.com/Invisible-Cities-Anniversary-Italo-Calvino/dp/0063417626/" target="_top">Invisible Cities (Italo Calvino)</a>
 1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
