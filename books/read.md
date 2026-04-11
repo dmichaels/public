@@ -87,7 +87,6 @@
   1. <a href="https://www.amazon.com/Underworld-Novel-Don-DeLillo/dp/0684848155/" target="_top">Underworld (Don DeLillo)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Democracy-Solidarity-Cultural-Americas-Political/dp/0300274378/" target="_top">Democracy and Solidarity: On the Cultural Roots of America's Political Crisis (James Davison Hunter)</a>
   1. <a href="https://www.amazon.com/Beneath-Wheel-Hermann-Hesse/dp/031242230X/" target="_top">Beneath the Wheel (Herman Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
-  1. <a href="https://www.amazon.com/Steppenwolf-Novel-Hermann-Hesse/dp/0312278675/" target="_top">Steppenwolf (Herman Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/Triumph-Yuppies-America-Eighties-Creation/dp/1538725991/" target="_top">Triumph of the Yuppies: America, the Eighties, and the Creation of an Unequal Nation (Tom McGrath)</a>
   1. <a href="https://www.amazon.com/Broken-Code-Facebook-Harmful-Secrets-ebook/dp/B0BS354RMX/" target="_top">Broken Code: Inside Facebook and the Fight to Expose Its Harmful Secrets (Jeff Horwitz)</a> _2025-08-12_
   1. <a href="https://www.amazon.com/Keeping-Faith-Democracy-Riveted-Nation-ebook/dp/B0CN8VH515/" target="_top">Keeping the Faith: God, Democracy, and the Trial That Riveted a Nation (Brenda Wineapple)</a>
@@ -289,8 +288,9 @@
   1. <a href="https://www.amazon.com/Letter-Christian-Nation-Sam-Harris/dp/0307278778/">Letter to a Christian Nation (Sam Harris)</a>
   1. <a href="https://www.amazon.com/Lying-Sam-Harris/dp/1940051002/">Lying (Sam Harris)</a>
   1. <a href="https://www.amazon.com/Moral-Landscape-Science-Determine-Values/dp/143917122X/">The Moral Landscape: How Science Can Determine Human Values (Sam Harris)</a>
-  1. <a href="https://www.amazon.com/Glass-Bead-Game-Magister-Novel/dp/0312278497/">The Glass Bead Game (Hermann Hesse)</a>
-  1. <a href="https://www.amazon.com/Siddhartha-Indian-Penguin-Twentieth-Century-Classics/dp/0141181230/">Siddhartha (Hermann Hesse)</a>
+  1. <a href="https://www.amazon.com/Glass-Bead-Game-Magister-Novel/dp/0312278497/">The Glass Bead Game (Hermann Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Steppenwolf-Novel-Hermann-Hesse/dp/0312278675/" target="_top">Steppenwolf (Herman Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Siddhartha-Indian-Penguin-Twentieth-Century-Classics/dp/0141181230/">Siddhartha (Hermann Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
   1. <a href="https://www.amazon.com/God-Not-Great-Religion-Everything/dp/B00G3ZR1OO/">God Is Not Great: How Religion Poisons Everything (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Hitch-22-Memoir-Christopher-Hitchens/dp/0446540331/">Hitch-22: A Memoir (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Letters-Young-Contrarian-Mentoring-Paperback/dp/0465030335/">Letters to a Young Contrarian (Christopher Hitchens)</a>
