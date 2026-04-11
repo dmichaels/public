@@ -10,6 +10,8 @@
 1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">Tartar Steppe (Dino Buzzati)</a>
 1. <a href="https://www.amazon.com/Invisible-Cities-Anniversary-Italo-Calvino/dp/0063417626/" target="_top">Invisible Cities (Italo Calvino)</a>
 1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
+1. <a href="https://www.amazon.com/Finland-Station-Writing-History-Classics/dp/0374533458/" target="_top">To the Finland Station: A Study in the Acting and Writing of History (Edmund Wilson)</a>
+1. <a href="https://www.amazon.com/Reappraisals-Reflections-Forgotten-Twentieth-Century/dp/0143115057/" target="_top">Reappraisals: Reflections on the Forgotten Twentieth Century (Tony Judt)</a>
 1. <a href="https://www.amazon.com/Scarlet-Pimpernel-Baroness-Orczy/dp/B09325S6XH/" target="_top">The Scarlet Pimpernel (Baroness Orczy)</a>
 1. <a href="https://www.amazon.com/Women-Novel-Kristin-Hannah-ebook/dp/B0C1X97LW7/" target="_top">The Women (Kristin Hannah)</a>
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
