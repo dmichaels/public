@@ -8,6 +8,7 @@
 1. <a href="https://www.amazon.com/Notebook-Malte-Laurids-Brigge/dp/1773239880/" target="_top">The Notebooks of Malte Laurids Brigge (Rainer Maria Rilke)</a>
 1. <a href="https://www.amazon.com/Demons-Novel-Three-Vintage-Classics/dp/0679734511/" target="_top">Demons (Fyodor Dostoevsky)</a>
 1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">Tartar Steppe (Dino Buzzati)</a>
+1. <a href="https://www.amazon.com/dp/0060932236" target="_top">Essays of E.B. White (E.B. White)</a>
 1. <a href="https://www.amazon.com/Invisible-Cities-Anniversary-Italo-Calvino/dp/0063417626/" target="_top">Invisible Cities (Italo Calvino)</a>
 1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
 1. <a href="https://www.amazon.com/Finland-Station-Writing-History-Classics/dp/0374533458/" target="_top">To the Finland Station: A Study in the Acting and Writing of History (Edmund Wilson)</a>
