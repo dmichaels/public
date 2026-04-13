@@ -15,7 +15,7 @@
   1. <a href="https://www.amazon.com/World-Appears-Journey-into-Consciousness/dp/198488199X/">A World Appears: A Journey into Consciousness (Michael Pollan)</a>  _2026-04-05_
   1. <a href="https://www.amazon.com/Crooked-Timber-Humanity-Chapters-History/dp/0691155933/" target="_top">The Crooked Timber of Humanity: Chapters in the History of Ideas (Isaiah Berlin)</a>  _2026-04-09_
   1. <a href="https://www.amazon.com/dp/069115600X" target="_top">The Hedgehog and the Fox: An Essay on Tolstoy's View of History (Isaiah Berlin)</a> _2026-04-11_
-  1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
   1. <a href="https://www.amazon.com/dp/069115760X" target="_top">The Power of Ideas (Isaiah Berlin)</a> _... in progress ..._
 
 **2025**:
