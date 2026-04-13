@@ -1,6 +1,5 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
-1. <a href="https://www.amazon.com/Tin-Drum-G%C3%BCnter-Grass/dp/0547339100/" target="_top">The Tin Drum (Günter Grass)</a>
 1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a>
 1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a>
 1. <a href="https://www.amazon.com/Sabbaths-Theater-Philip-Roth/dp/0679772596/" target="_top">Sabbath's Theater (Philip Roth)</a>
