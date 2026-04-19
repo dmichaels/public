@@ -7,6 +7,7 @@ Some Favorite Fiction:
   1. Lolita (Vladimir Nabokov)
   1. Rabbit Tetralogy (John Updike)
   1. The Magic Mountain (Thomas Mann)
+  1. The Tin Drum (Günter Grass)
   1. The Glass Bead Game (Herman Hesse)
   1. American Pastoral (Philip Roth)
   1. Anna Karenina (Leo Tolstoy)
@@ -33,7 +34,6 @@ Some Favorite Fiction:
   1. Hamlet (William Shakespeare)
   1. Frankenstein (Mary Shelley)
   1. Nineteen Eighty-Four (George Orwell)
-  1. A Separate Peace (John Knowles)
   1. The Screwtape Letters (C.S. Lewis)
 
 
