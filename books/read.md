@@ -17,7 +17,7 @@
   1. <a href="https://www.amazon.com/dp/069115600X" target="_top">The Hedgehog and the Fox: An Essay on Tolstoy's View of History (Isaiah Berlin)</a> _2026-04-11_
   1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-13_
 1. <a href="https://www.amazon.com/Tin-Drum-G%C3%BCnter-Grass/dp/0547339100/" target="_top">The Tin Drum (Günter Grass)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-20_
-1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">Tartar Steppe (Dino Buzzati)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
+1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">The Tartar Steppe (Dino Buzzati)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
