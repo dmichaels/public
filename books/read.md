@@ -18,7 +18,7 @@
   1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-13_
 1. <a href="https://www.amazon.com/Tin-Drum-G%C3%BCnter-Grass/dp/0547339100/" target="_top">The Tin Drum (Günter Grass)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-20_
 1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">The Tartar Steppe (Dino Buzzati)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-22_
-1. <a href="https://www.amazon.com/Periodic-Everymans-Library-Contemporary-Classics/dp/0805210415/" target="_top">The Periodic Table (Primo Levi)</a>  _... in progres ..._
+1. <a href="https://www.amazon.com/Periodic-Everymans-Library-Contemporary-Classics/dp/0805210415/" target="_top">The Periodic Table (Primo Levi)</a>  _... in progress ..._
 1. <a href="https://www.amazon.com/dp/0156035340" target="_top">Peeling the Onion (Günter Grass)</a> _... on deck ..._
 
 **2025**:
