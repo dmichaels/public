@@ -1,5 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
+1. <a href="https://www.amazon.com/Speak-Memory-Autobiography-Vladimir-Nabokov/dp/0679723390/" target="_top">Speak, Memory (Vladimir Nabokov)</a>
 1. <a href="https://www.amazon.com/Cat-Mouse-Gunter-Grass/dp/0156155516/" target="_top">Cat and Mouse (Günter Grass)</a>
 1. <a href="https://www.amazon.com/dp/069115760X" target="_top">The Power of Ideas (Isaiah Berlin)</a>
 1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a>
