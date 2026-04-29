@@ -442,6 +442,7 @@
   1. <a href="https://www.amazon.com/Cats-Cradle-Novel-Kurt-Vonnegut/dp/038533348X/">Cat's Cradle (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Player-Piano-Novel-Kurt-Vonnegut/dp/0385333781/">Player Piano (Kurt Vonnegut)</a>
   1. <a href="https://www.amazon.com/Welcome-Monkey-House-Collection-Short/dp/0385333501/">Welcome to the Monkey House: A Collection of Short Works (Kurt Vonnegut)</a>
+  1. <a href="https://www.amazon.com/Wisdom-Insecurity-Message-Age-Anxiety/dp/0307741206/">The Wisdom of Insecurity (Alan Watts)</a>
   1. <a href="https://www.amazon.com/Ethan-Frome-Edith-Wharton/dp/1704067421/">Ethan Frome (Edith Wharton)</a>
   1. <a href="https://www.amazon.com/Highland-Road-Sane-Living-Mentally/dp/0679407243/">9 Highland Road: Sane Living for the Mentally Ill (Michael Winerip)</a>
   1. <a href="https://www.amazon.com/Black-Seventy-fifth-Anniversary-Richard-Wright/dp/0062964135/">Black Boy (Richard Wright)</a>
