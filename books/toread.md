@@ -4,6 +4,8 @@
 1. <a href="https://www.amazon.com/Speak-Memory-Autobiography-Vladimir-Nabokov/dp/0679723390/" target="_top">Speak, Memory (Vladimir Nabokov)</a>
 1. <a href="https://www.amazon.com/Cat-Mouse-Gunter-Grass/dp/0156155516/" target="_top">Cat and Mouse (Günter Grass)</a>
 1. <a href="https://www.amazon.com/dp/069115760X" target="_top">The Power of Ideas (Isaiah Berlin)</a>
+1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
+1. <a href="https://www.amazon.com/Perfectionists-Precision-Engineers-Created-Modern-ebook/dp/B072BFJB3Z/" target="_top">The Perfectionists: How Precision Engineers Created the Modern World (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a>
 1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a>
 1. <a href="https://www.amazon.com/Sabbaths-Theater-Philip-Roth/dp/0679772596/" target="_top">Sabbath's Theater (Philip Roth)</a>
@@ -13,7 +15,6 @@
 1. <a href="https://www.amazon.com/Demian-Story-Sinclairs-Penguin-Classics/dp/0143106783/" target="_top">Demian (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/dp/0060932236" target="_top">Essays of E.B. White (E.B. White)</a>
 1. <a href="https://www.amazon.com/Invisible-Cities-Anniversary-Italo-Calvino/dp/0063417626/" target="_top">Invisible Cities (Italo Calvino)</a>
-1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
 1. <a href="https://www.amazon.com/Finland-Station-Writing-History-Classics/dp/0374533458/" target="_top">To the Finland Station: A Study in the Acting and Writing of History (Edmund Wilson)</a>
 1. <a href="https://www.amazon.com/Reappraisals-Reflections-Forgotten-Twentieth-Century/dp/0143115057/" target="_top">Reappraisals: Reflections on the Forgotten Twentieth Century (Tony Judt)</a>
 1. <a href="https://www.amazon.com/Scarlet-Pimpernel-Baroness-Orczy/dp/B09325S6XH/" target="_top">The Scarlet Pimpernel (Baroness Orczy)</a>
