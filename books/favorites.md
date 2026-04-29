@@ -35,6 +35,8 @@ Some Favorite Fiction:
   1. Frankenstein (Mary Shelley)
   1. Nineteen Eighty-Four (George Orwell)
   1. The Screwtape Letters (C.S. Lewis)
+  1. A Clockwork Orange (Anthony Burgess)
+  1. The Machine Stops (E.M. Forster)
 
 
 Some Favorite Non-Fiction:
@@ -67,8 +69,8 @@ Some Favorite Non-Fiction:
   1. What is Life? (Erwin Schrödinger)
   1. These Truths: A History of the United States (Jill Lepore)
   1. A Mencken Chrestomathy (H.L. Mencken)
-  1. The Machine Stops (E.M. Forster)
   1. The Nazi Seizure of Power: The Experience of a Single German Town 1930-1935 (William Sheridan Allen)
+  1. The Idea Factory: Bell Labs and the Great Age of American Innovation (Jon Gertner)
   1. Nothing to Be Frightened Of (Julian Barnes)
   1. Material World: A Substantial Story of Our Past and Future (Ed Conway)
   1. The Man Who Mistook His Wife for a Hat: And Other Clinical Tales (Oliver Sacks)
