@@ -51,6 +51,8 @@ Some Favorite Non-Fiction:
   1. Hitch-22 (Christopher Hitchens)
   1. God Is Not Great: How Religion Poisons Everything (Christopher Hitchens)
   1. The God Delusion (Richard Dawkins)
+  1. The Information: A History, A Theory, A Flood (James Gleick)
+  1. The Wisdom of Insecurity (Alan Watts)
   1. On Liberty (John Stuart Mill)
   1. The True Believer (Eric Hoffer)
   1. Gödel, Escher, Bach: An Eternal Golden Braid (Douglas Hofstadter)
