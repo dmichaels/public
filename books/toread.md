@@ -1,5 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
+1. <a href="https://www.amazon.com/Open-Autobiography-Andre-Agassi/dp/0307388409/" target="_top">Open: An Autobiography (Andre Agassi)</a>
 1. <a href="https://www.amazon.com/Clausewitz-Short-Introduction-Michael-Howard/dp/0192802577/" target="_top">Clausewitz: A Very Short Introduction (Michael Howard)</a>
 1. <a href="https://www.amazon.com/dp/0029035910/" target="_top">The Causes of War (Geoffrey Blainey)</a>
 1. <a href="https://www.amazon.com/Speak-Memory-Autobiography-Vladimir-Nabokov/dp/0679723390/" target="_top">Speak, Memory (Vladimir Nabokov)</a>
@@ -7,6 +8,7 @@
 1. <a href="https://www.amazon.com/dp/069115760X" target="_top">The Power of Ideas (Isaiah Berlin)</a>
 1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
 1. <a href="https://www.amazon.com/Perfectionists-Precision-Engineers-Created-Modern-ebook/dp/B072BFJB3Z/" target="_top">The Perfectionists: How Precision Engineers Created the Modern World (Simon Winchester)</a>
+1. <a href="https://www.amazon.com/Metaphysical-Club-Story-Ideas-America/dp/0374528497/" target="_top">The Metaphysical Club (Louis Menard)</a>
 1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a>
 1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a>
 1. <a href="https://www.amazon.com/Sabbaths-Theater-Philip-Roth/dp/0679772596/" target="_top">Sabbath's Theater (Philip Roth)</a>
@@ -18,6 +20,7 @@
 1. <a href="https://www.amazon.com/Invisible-Cities-Anniversary-Italo-Calvino/dp/0063417626/" target="_top">Invisible Cities (Italo Calvino)</a>
 1. <a href="https://www.amazon.com/Finland-Station-Writing-History-Classics/dp/0374533458/" target="_top">To the Finland Station: A Study in the Acting and Writing of History (Edmund Wilson)</a>
 1. <a href="https://www.amazon.com/Reappraisals-Reflections-Forgotten-Twentieth-Century/dp/0143115057/" target="_top">Reappraisals: Reflections on the Forgotten Twentieth Century (Tony Judt)</a>
+1. <a href="https://www.amazon.com/Mosquito-Human-History-Deadliest-Predator/dp/1524743429/" target="_top">The Mosquito: A Human History of Our Deadliest Predator (Timothy C. Winegard)</a>
 1. <a href="https://www.amazon.com/Scarlet-Pimpernel-Baroness-Orczy/dp/B09325S6XH/" target="_top">The Scarlet Pimpernel (Baroness Orczy)</a>
 1. <a href="https://www.amazon.com/Women-Novel-Kristin-Hannah-ebook/dp/B0C1X97LW7/" target="_top">The Women (Kristin Hannah)</a>
 1. <a href="https://www.amazon.com/Stalin-Waiting-1929-1941-Stephen-Kotkin/dp/0143132156/" target="_top">Stalin: Waiting for Hitler, 1929 - 1941 (Stephen Kotkin)</a>
