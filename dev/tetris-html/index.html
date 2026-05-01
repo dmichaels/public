@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>David Michaels' 1997 Tetris — HTML5 Canvas Port</title>
+<style>
+  :root { --panel:#d6d6d6; --shadow:#777; --dark:#555; --light:#eee; --ink:#111; }
+  html, body { height:100%; margin:0; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: #9a9a9a;
+    color: var(--ink);
+    display:grid;
+    place-items:center;
+  }
+  .shell {
+    background: var(--panel);
+    border: 2px solid;
+    border-color: var(--light) var(--dark) var(--dark) var(--light);
+    box-shadow: 0 18px 50px rgba(0,0,0,.35);
+    padding: 12px;
+    max-width: min(96vw, 760px);
+  }
+  h1 { font-size: 18px; margin: 0 0 10px; font-weight: 700; }
+  .game { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+  canvas {
+    background:#808080;
+    border: 3px solid;
+    border-color: #666 #f5f5f5 #f5f5f5 #666;
+    image-rendering: pixelated;
+    outline: none;
+  }
+  .side {
+    width: 230px;
+    display:grid;
+    gap:10px;
+  }
+  .box {
+    background:#c9c9c9;
+    border:2px solid;
+    border-color:#777 #eee #eee #777;
+    padding:10px;
+  }
+  .row { display:flex; justify-content:space-between; gap:8px; margin:4px 0; }
+  button, label.buttonish {
+    font: inherit;
+    background:#dcdcdc;
+    border:2px solid;
+    border-color:#fff #777 #777 #fff;
+    padding:5px 8px;
+    cursor:pointer;
+    user-select:none;
+  }
+  button:active, label.buttonish:active { border-color:#777 #fff #fff #777; }
+  .buttons { display:flex; flex-wrap:wrap; gap:6px; }
+  .touch-controls {
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:8px;
+  }
+  .touch-controls button {
+    min-height:48px;
+    font-weight:700;
+    touch-action: manipulation;
+  }
+  .touch-controls .drop { grid-column: 1 / -1; min-height:56px; }
+  .muted { font-size:12px; color:#333; line-height:1.35; }
+  kbd { background:#eee; border:1px solid #999; border-radius:3px; padding:1px 4px; font-size:12px; }
+
+/* Surgical mobile-button containment patch */
+.side,
+.sidebar,
+.right,
+.right-panel,
+aside,
+.panel-column {
+  min-width: 0;
+}
+
+.controls,
+.touch-controls,
+.mobile-controls {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+.controls button,
+.touch-controls button,
+.mobile-controls button {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 0;
+  padding-left: 10px;
+  padding-right: 10px;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .controls,
+  .touch-controls,
+  .mobile-controls {
+    gap: 6px;
+  }
+
+  .controls button,
+  .touch-controls button,
+  .mobile-controls button {
+    font-size: 0.95rem;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
+
+
+/* Five-button mobile control row: keep inside existing panel */
+.controls button,
+.touch-controls button,
+.mobile-controls button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+  font-size: 0.85rem;
+}
+
+.controls,
+.touch-controls,
+.mobile-controls {
+  gap: 5px;
+}
+
+</style>
+</head>
+<body>
+  <main class="shell">
+    <h1>1997 Java Tetris applet → HTML5 Canvas port</h1>
+    <div class="game">
+            <div>
+      <canvas id="board" width="238" height="468" tabindex="0" aria-label="Tetris board"></canvas>
+        <div class="box touch-controls" aria-label="Touch controls">
+          <button id="moveLeft" type="button">←</button>
+          <button id="rotateLeft" type="button" aria-label="Rotate left">⟲</button>
+          <button id="softDown" type="button" aria-label="Move down one row">↓</button>
+          <button id="rotateRight" type="button" aria-label="Rotate right">⟳</button>
+          <button id="moveRight" type="button">→</button>
+        </div>
+            </div>
+      <section class="side">
+        <div class="box">
+          <div class="row"><strong>Status</strong><span id="status">Ready</span></div>
+          <div class="row"><span>Pieces</span><span id="pieces">0</span></div>
+          <div class="row"><span>Lines</span><span id="lines">0</span></div>
+          <div class="row"><span>Tetrises</span><span id="tetrises">0</span></div>
+          <div class="row"><span>Speed</span><span id="speed">800ms</span></div>
+        </div>
+        <div class="box">
+          <strong>Next</strong><br />
+          <canvas id="next" width="112" height="112" aria-label="Next piece preview"></canvas>
+        </div>
+        <div class="box buttons">
+          <button id="newGame">New Game</button>
+          <button id="pause">Pause</button>
+          <button id="resume">Resume</button>
+          <label class="buttonish"><input id="extended" type="checkbox" /> Extended pieces</label>
+          <label class="buttonish"><input id="upsideDown" type="checkbox" /> Upside down</label>
+        </div>
+        <div class="box muted">
+          <strong>Keys</strong><br />
+          <kbd>←</kbd>/<kbd>J</kbd> left, <kbd>→</kbd>/<kbd>L</kbd> right, <kbd>↓</kbd> down,<br />
+          <kbd>↑</kbd>/<kbd>K</kbd> rotate left, <kbd>End</kbd>/<kbd>I</kbd> rotate right,<br />
+          <kbd>Space</kbd>/<kbd>Enter</kbd>/<kbd>0</kbd> drop, <kbd>P</kbd> pause/resume.<br />
+          Touch buttons: move left/right, rotate left/right, and drop all the way.<br />
+          Debug: <kbd>Ctrl-D</kbd>, then <kbd>PgUp</kbd>, <kbd>X</kbd>, <kbd>N</kbd>, <kbd>0</kbd>–<kbd>7</kbd>.
+        </div>
+      </section>
+    </div>
+  </main>
+<script>
+(() => {
+  const TYPES = { TRIVIAL:0, ONE:1, TWO:2, THREE:3, FOUR:4, FIVE:5, SIX:6, SEVEN:7,
+    EXT1:8, EXT2:9, EXT3:10, EXT4:11, EXT5:12, EXT6:13, EXT7:14, EXT8:15 };
+
+  const COLORS = [
+    [125,75,125], [200,20,20], [20,200,20], [80,150,100], [220,220,50], [255,0,255], [40,220,220], [100,100,200],
+    [60,60,130], [150,50,100], [200,100,80], [233,33,83], [83,83,233], [93,63,33], [193,63,133], [93,163,33]
+  ];
+
+  function clamp(n) { return Math.max(0, Math.min(255, Math.round(n))); }
+  function rgb(c) { return `rgb(${clamp(c[0])},${clamp(c[1])},${clamp(c[2])})`; }
+  function brightness(c) { return Math.round(((c[0]+c[1]+c[2])/3)*.25 + (c[0]*.30 + c[1]*.59 + c[2]*.11)*.75); }
+  function shadow(c) {
+    const b = brightness(c), max = 255; let r=c[0], g=c[1], bl=c[2];
+    if (b < .15*max) { r += 30*(max-r)/100; g += 30*(max-g)/100; bl += 30*(max-bl)/100; }
+    else if (b > .77*max) { r -= 45*r/100; g -= 45*g/100; bl -= 45*bl/100; }
+    else { const f = 60 - (b * (60-35) / max); r -= f*r/100; g -= f*g/100; bl -= f*bl/100; }
+    return [r,g,bl];
+  }
+  function highlight(c) {
+    const b = brightness(c), max = 255; let r=c[0], g=c[1], bl=c[2];
+    if (b < .15*max) { r += 50*(max-r)/100; g += 50*(max-g)/100; bl += 50*(max-bl)/100; }
+    else if (b > .77*max) { r -= 20*r/100; g -= 20*g/100; bl -= 20*bl/100; }
+    else { const f = 40 + (b * (70-40) / max); r += f*(max-r)/100; g += f*(max-g)/100; bl += f*(max-bl)/100; }
+    return [r,g,bl];
+  }
+  function darker(c) { return [c[0]*.7, c[1]*.7, c[2]*.7]; }
+
+  class BlockData {
+    constructor(size) { this.size=size; this.map=[]; this.xoffset=0; this.yoffset=0; this.width=1; this.height=1; }
+    setBlock(i,x,y) { this.map[i]={x,y}; this.recalc(); }
+    set(xoff,yoff) { this.xoffset=xoff; this.yoffset=yoff; this.recalc(); }
+    copyFrom(other) { this.map = other.map.map(p => ({x:p.x,y:p.y})); this.xoffset=other.xoffset; this.yoffset=other.yoffset; this.width=other.width; this.height=other.height; }
+    recalc() { let w=0,h=0; for (const p of this.map) { if (!p) continue; w=Math.max(w,p.x+1); h=Math.max(h,p.y+1); } this.width=w||1; this.height=h||1; }
+  }
+  function createBlockData(size) { return [0,1,2,3].map(() => new BlockData(size)); }
+
+  function shape(type) {
+    const b = (size) => createBlockData(size);
+    let d;
+    switch (type) {
+      case 0: d=b(1); d[0].setBlock(0,0,0); d[0].set(0,0); break;
+      case 1: d=b(4); [[0,0],[0,1],[0,2],[0,3]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(1,0); [[0,0],[1,0],[2,0],[3,0]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,1); break;
+      case 2: d=b(4); [[0,0],[0,1],[1,2],[0,2]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(1,0); [[0,0],[1,0],[2,0],[0,1]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,0); [[0,0],[1,0],[1,1],[1,2]].forEach((p,i)=>d[2].setBlock(i,p[0],p[1])); d[2].set(1,0); [[2,0],[0,1],[1,1],[2,1]].forEach((p,i)=>d[3].setBlock(i,p[0],p[1])); d[3].set(0,0); return d;
+      case 3: d=b(4); [[1,0],[1,1],[0,2],[1,2]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(1,0); [[0,0],[0,1],[1,1],[2,1]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,0); [[0,0],[1,0],[0,1],[0,2]].forEach((p,i)=>d[2].setBlock(i,p[0],p[1])); d[2].set(1,0); [[0,0],[1,0],[2,0],[2,1]].forEach((p,i)=>d[3].setBlock(i,p[0],p[1])); d[3].set(0,0); return d;
+      case 4: d=b(4); [[0,0],[0,1],[1,1],[0,2]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(1,0); [[0,0],[1,0],[2,0],[1,1]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,1); [[1,0],[0,1],[1,1],[1,2]].forEach((p,i)=>d[2].setBlock(i,p[0],p[1])); d[2].set(0,0); [[1,0],[0,1],[1,1],[2,1]].forEach((p,i)=>d[3].setBlock(i,p[0],p[1])); d[3].set(0,0); return d;
+      case 5: d=b(4); [[0,0],[0,1],[1,1],[1,2]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(1,0); [[1,0],[2,0],[0,1],[1,1]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,0); break;
+      case 6: d=b(4); [[1,0],[0,1],[1,1],[0,2]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(1,0); [[0,0],[1,0],[1,1],[2,1]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,0); break;
+      case 7: d=b(4); [[0,0],[1,0],[0,1],[1,1]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(1,1); break;
+      case 8: d=b(1); d[0].setBlock(0,0,0); d[0].set(0,0); break;
+      case 9: d=b(2); [[0,0],[0,1]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(0,0); [[0,0],[1,0]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,0); break;
+      case 10: d=b(2); [[0,0],[1,1]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(0,0); [[1,0],[0,1]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,0); break;
+      case 11: d=b(3); [[0,0],[0,1],[0,2]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(1,0); [[0,0],[1,0],[2,0]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,1); break;
+      case 12: d=b(3); [[0,0],[0,1],[1,1]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(1,0); [[1,0],[0,1],[1,1]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,0); [[0,0],[1,0],[1,1]].forEach((p,i)=>d[2].setBlock(i,p[0],p[1])); d[2].set(0,0); [[0,0],[1,0],[0,1]].forEach((p,i)=>d[3].setBlock(i,p[0],p[1])); d[3].set(0,0); return d;
+      case 13: d=b(3); [[0,0],[1,1],[2,2]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(0,0); [[2,0],[1,1],[0,2]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,0); break;
+      case 14: d=b(3); [[0,0],[2,0],[1,1]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(0,0); [[2,0],[1,1],[2,2]].forEach((p,i)=>d[1].setBlock(i,p[0],p[1])); d[1].set(0,0); [[1,1],[0,2],[2,2]].forEach((p,i)=>d[2].setBlock(i,p[0],p[1])); d[2].set(0,0); [[0,0],[1,1],[0,2]].forEach((p,i)=>d[3].setBlock(i,p[0],p[1])); d[3].set(0,0); return d;
+      case 15: d=b(4); [[1,0],[0,1],[2,1],[1,2]].forEach((p,i)=>d[0].setBlock(i,p[0],p[1])); d[0].set(0,0); break;
+      default: return shape(1);
+    }
+    for (let i=1;i<4;i++) if (d[i].map.length===0) d[i].copyFrom(d[i%2===1 && d[1].map.length ? 1 : 0]);
+    return d;
+  }
+
+  class Piece {
+    constructor(game, type=null) {
+      this.game = game;
+      this.type = type ?? game.randomType();
+      this.data = shape(this.type);
+      this.rotation = 0;
+      this.x = Math.floor(game.cols / 2) - 1;
+      this.y = -this.h;
+      this.color = COLORS[this.type].slice();
+    }
+    get d() { return this.data[this.rotation]; }
+    get w() { return this.d.width; }
+    get h() { return this.d.height; }
+    cells(rot=this.rotation, x=this.x, y=this.y) { return this.data[rot].map.map(p => ({x:x+p.x, y:y+p.y})); }
+    canMove(rot,x,y) {
+      const d = this.data[rot];
+      if (y < 0 && y + d.height <= 0) return false;
+      if (x < 0 || x + d.width > this.game.cols || y + d.height > this.game.rows) return false;
+      return d.map.every(p => !this.game.occupied(x+p.x, y+p.y));
+    }
+    move(x,y,rot=this.rotation) { if (!this.canMove(rot,x,y)) return false; this.x=x; this.y=y; this.rotation=rot; return true; }
+    left(){ return this.move(this.x-1,this.y); }
+    right(){ return this.move(this.x+1,this.y); }
+    down(){ return this.move(this.x,this.y+1); }
+    up(){ return this.move(this.x,this.y-1); }
+    rotate(delta) { let r=(this.rotation+delta)%4; if (r<0) r+=4; const cur=this.data[this.rotation], nxt=this.data[r]; return this.move(this.x + nxt.xoffset - cur.xoffset, this.y + nxt.yoffset - cur.yoffset, r); }
+  }
+
+  class Game {
+    constructor() {
+      this.canvas = document.getElementById('board'); this.ctx = this.canvas.getContext('2d');
+      this.nextCanvas = document.getElementById('next'); this.nextCtx = this.nextCanvas.getContext('2d');
+      this.cols=10; this.rows=20; this.block=23; this.border=4; this.speed=800;
+      this.grid=[]; this.timer=null; this.current=null; this.next=null; this.paused=true; this.debug=false; this.extended=false; this.upsideDown=false;
+      this.pieces=0; this.lines=0; this.tetrises=0;
+      this.resizeCanvas(); this.bind(); this.newGame();
+    }
+    bind() {
+      document.getElementById('newGame').onclick=()=>this.newGame();
+      document.getElementById('pause').onclick=()=>this.setPause(true);
+      document.getElementById('resume').onclick=()=>this.setPause(false);
+      document.getElementById('extended').onchange=e=>{ this.extended=e.target.checked; this.newGame(); };
+      document.getElementById('upsideDown').onchange=e=>{ this.upsideDown=e.target.checked; this.draw(); };
+      this.bindTouchButton('rotateLeft', () => this.current?.rotate(-1));
+      this.bindTouchButton('rotateRight', () => this.current?.rotate(1));
+      this.bindTouchButton('softDown', () => this.hardDrop());
+      this.bindTouchButton('hardDrop', () => this.hardDrop());
+      window.addEventListener('keydown', e => this.key(e));
+      this.canvas.addEventListener('click', () => this.canvas.focus());
+    }
+    bindTouchButton(id, action) {
+      const button = document.getElementById(id);
+      if (!button) return;
+      const run = (e) => {
+        e.preventDefault();
+        if (!this.paused) { action(); this.draw(); }
+        this.canvas.focus();
+      };
+      if (window.PointerEvent) button.addEventListener('pointerdown', run);
+      else button.addEventListener('click', run);
+    }
+    resizeCanvas() { this.canvas.width=this.cols*this.block+this.border*2; this.canvas.height=this.rows*this.block+this.border*2; }
+    randomType() { const n = this.extended ? 15 : 7; return 1 + Math.floor(Math.random()*n); }
+    occupied(x,y) { return x>=0 && x<this.cols && y>=0 && y<this.rows && !!this.grid[y][x]; }
+    newGame() {
+      this.grid = Array.from({length:this.rows}, () => Array(this.cols).fill(null));
+      this.current=null; this.next=null; this.pieces=0; this.lines=0; this.tetrises=0; this.speed=800; this.paused=false;
+      this.newPiece(); this.startTimer(); this.updateStats('Running'); this.canvas.focus(); this.draw();
+    }
+    setPause(p) { this.paused=p; if (p) this.stopTimer(); else if (!this.debug) this.startTimer(); this.updateStats(p?'Paused':(this.debug?'Debug':'Running')); this.draw(); this.canvas.focus(); }
+    toggleDebug() { this.debug=!this.debug; if (this.debug) this.stopTimer(); else if (!this.paused) this.startTimer(); this.updateStats(this.debug?'Debug':(this.paused?'Paused':'Running')); }
+    startTimer() { this.stopTimer(); if (!this.paused && !this.debug) this.timer=setInterval(()=>this.tick(), this.speed); }
+    stopTimer() { if (this.timer) clearInterval(this.timer); this.timer=null; }
+    updateStats(status) {
+      document.getElementById('status').textContent=status;
+      document.getElementById('pieces').textContent=this.pieces;
+      document.getElementById('lines').textContent=this.lines;
+      document.getElementById('tetrises').textContent=this.tetrises;
+      document.getElementById('speed').textContent=this.speed+'ms';
+      this.drawNext();
+    }
+    tick() { if (!this.current.down()) { this.dropPiece(); this.newPiece(); } this.draw(); }
+    hardDrop() { if (!this.current || this.paused) return; while(this.current.down()){} if(!this.debug){ this.dropPiece(); this.newPiece(); } this.draw(); }
+    newPiece(type=null) {
+      if (this.current && !this.debug) return;
+      if (this.current && this.debug) this.dropPiece();
+      this.current = type !== null ? new Piece(this,type) : (this.next || new Piece(this));
+      this.next = new Piece(this);
+      if (!this.current.down()) { this.gameOver(); return; }
+      this.updateStats(this.debug?'Debug':(this.paused?'Paused':'Running'));
+    }
+    gameOver() {
+      this.stopTimer(); this.updateStats('Game over');
+      setTimeout(()=>{ this.flashBoard(); }, 10);
+      this.paused=true;
+    }
+    dropPiece() {
+      const piece=this.current; if (!piece) return; this.current=null;
+      for (const c of piece.cells()) if (c.y>=0 && c.y<this.rows && c.x>=0 && c.x<this.cols) this.grid[c.y][c.x]={type:piece.type, color:piece.color.slice()};
+      const removed=this.clearLines(); this.lines += removed; if (removed>=4) this.tetrises++; this.pieces++;
+      if (removed && this.speed>125) { this.speed=Math.max(125, this.speed-75); this.startTimer(); }
+      this.updateStats(this.debug?'Debug':(this.paused?'Paused':'Running'));
+    }
+    clearLines() {
+      let n=0;
+      for (let y=this.rows-1; y>=0; y--) {
+        if (this.grid[y].every(Boolean)) { this.grid.splice(y,1); this.grid.unshift(Array(this.cols).fill(null)); n++; y++; }
+      }
+      return n;
+    }
+    flashBoard() { for(let y=0;y<this.rows;y++) for(let x=0;x<this.cols;x++) this.grid[y][x]={type:0, color:[Math.random()*255,Math.random()*255,Math.random()*255]}; this.draw(); }
+    key(e) {
+      const k=e.key, code=e.code; let used=true;
+      if (this.paused) { if (k.toLowerCase()==='p' || k.toLowerCase()==='r') this.setPause(false); else used=false; if(used)e.preventDefault(); return; }
+      if (e.ctrlKey && k.toLowerCase()==='d') { this.toggleDebug(); }
+      else if ((k===' ' || k==='Enter' || k==='0')) this.hardDrop();
+      else if (k==='ArrowLeft' || k.toLowerCase()==='j') this.current?.left();
+      else if (k==='ArrowRight' || k.toLowerCase()==='l') this.current?.right();
+      else if (k==='ArrowDown') this.tick();
+      else if (k==='ArrowUp' || k.toLowerCase()==='k') this.current?.rotate(-1);
+      else if (code==='End' || k.toLowerCase()==='i') this.current?.rotate(1);
+      else if (k.toLowerCase()==='p') this.setPause(true);
+      else if (this.debug && code==='PageUp') this.current?.up();
+      else if (this.debug && k.toLowerCase()==='x') this.dropPiece();
+      else if (this.debug && k.toLowerCase()==='n') this.newPiece();
+      else if (this.debug && /^[1-7]$/.test(k)) { this.current = new Piece(this, Number(k)); }
+      else used=false;
+      if (used) { e.preventDefault(); this.draw(); }
+    }
+    boardY(y) { return this.upsideDown ? this.rows-1-y : y; }
+    draw() {
+      const ctx=this.ctx; ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+      ctx.fillStyle='#808080'; ctx.fillRect(this.border,this.border,this.cols*this.block,this.rows*this.block);
+      for (let y=0;y<this.rows;y++) for(let x=0;x<this.cols;x++) if(this.grid[y][x]) this.drawBlock(ctx,x,this.boardY(y),this.grid[y][x].color);
+      if (this.current) for (const c of this.current.cells()) if (c.y>=0) this.drawBlock(ctx,c.x,this.boardY(c.y),this.current.color);
+      this.drawBorder(ctx,0,0,this.canvas.width,this.canvas.height);
+      if (this.paused) this.overlay(document.getElementById('status').textContent);
+    }
+    overlay(text) { const ctx=this.ctx; ctx.save(); ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(this.border,this.border,this.cols*this.block,this.rows*this.block); ctx.fillStyle='white'; ctx.font='bold 26px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text, this.canvas.width/2, this.canvas.height/2); ctx.restore(); }
+    drawNext() {
+      const ctx=this.nextCtx; ctx.clearRect(0,0,this.nextCanvas.width,this.nextCanvas.height); ctx.fillStyle='#808080'; ctx.fillRect(0,0,this.nextCanvas.width,this.nextCanvas.height); if(!this.next)return;
+      const d=this.next.d; const ox=Math.floor((this.nextCanvas.width - d.width*this.block)/2); const oy=Math.floor((this.nextCanvas.height - d.height*this.block)/2);
+      for (const p of d.map) this.drawBlock(ctx, p.x, p.y, this.next.color, ox, oy);
+      this.drawBorder(ctx,0,0,this.nextCanvas.width,this.nextCanvas.height);
+    }
+    drawBlock(ctx,x,y,color,ox=this.border,oy=this.border) {
+      const s=this.block, px=ox+x*s, py=oy+y*s, hi=highlight(color), sh=shadow(color);
+      ctx.fillStyle=rgb(color); ctx.fillRect(px+2,py+2,s-4,s-4);
+      ctx.strokeStyle=rgb(darker(hi)); ctx.beginPath(); ctx.moveTo(px,py+s-1); ctx.lineTo(px,py); ctx.lineTo(px+s-1,py); ctx.stroke();
+      ctx.strokeStyle=rgb(darker(sh)); ctx.beginPath(); ctx.moveTo(px,py+s-1); ctx.lineTo(px+s-1,py+s-1); ctx.lineTo(px+s-1,py); ctx.stroke();
+      ctx.strokeStyle=rgb(hi); ctx.beginPath(); ctx.moveTo(px+1,py+s-2); ctx.lineTo(px+1,py+1); ctx.lineTo(px+s-2,py+1); ctx.stroke();
+      ctx.strokeStyle=rgb(sh); ctx.beginPath(); ctx.moveTo(px+1,py+s-2); ctx.lineTo(px+s-2,py+s-2); ctx.lineTo(px+s-2,py+1); ctx.stroke();
+    }
+    drawBorder(ctx,x,y,w,h) {
+      ctx.strokeStyle='#777'; ctx.beginPath(); ctx.moveTo(x,y+h-1); ctx.lineTo(x,y); ctx.lineTo(x+w-1,y); ctx.stroke();
+      ctx.strokeStyle='#eee'; ctx.beginPath(); ctx.moveTo(x,y+h-1); ctx.lineTo(x+w-1,y+h-1); ctx.lineTo(x+w-1,y); ctx.stroke();
+      ctx.strokeStyle='#555'; ctx.beginPath(); ctx.moveTo(x+1,y+h-2); ctx.lineTo(x+1,y+1); ctx.lineTo(x+w-2,y+1); ctx.stroke();
+      ctx.strokeStyle='#fff'; ctx.beginPath(); ctx.moveTo(x+1,y+h-2); ctx.lineTo(x+w-2,y+h-2); ctx.lineTo(x+w-2,y+1); ctx.stroke();
+    }
+  }
+  new Game();
+})();
+</script>
+
+<script>
+/* Touch move-button compatibility patch: make ← and → use the same path as keyboard arrows. */
+(function () {
+  function pressKey(key) {
+    window.dispatchEvent(new KeyboardEvent("keydown", {
+      key: key,
+      bubbles: true,
+      cancelable: true
+    }));
+  }
+
+  function bindMoveButton(id, key) {
+    const b = document.getElementById(id);
+    if (!b) return;
+    const run = function (e) {
+      e.preventDefault();
+      pressKey(key);
+    };
+    b.addEventListener("click", run);
+    b.addEventListener("touchstart", run, { passive: false });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      bindMoveButton("moveLeft", "ArrowLeft");
+      bindMoveButton("moveRight", "ArrowRight");
+    });
+  } else {
+    bindMoveButton("moveLeft", "ArrowLeft");
+    bindMoveButton("moveRight", "ArrowRight");
+  }
+})();
+</script>
+
+
+<script>
+/* Mobile layout tweak: move controls panel directly under the canvas */
+(function () {
+  function moveControls() {
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return;
+
+    // find one of the control buttons, then its containing panel
+    const btn = document.getElementById('moveLeft') || document.getElementById('softDown');
+    if (!btn) return;
+
+    let panel = btn.closest('div');
+    // walk up until we hit a panel-looking container (has multiple buttons)
+    while (panel && panel.querySelectorAll('button').length < 3) {
+      panel = panel.parentElement;
+    }
+    if (!panel) return;
+
+    const container = canvas.parentElement;
+    if (window.innerWidth <= 700) {
+      // insert after canvas container
+      if (container && panel && container.parentElement) {
+        container.parentElement.insertBefore(panel, container.nextSibling);
+      }
+    }
+  }
+
+  window.addEventListener('load', moveControls);
+  window.addEventListener('resize', moveControls);
+})();
+</script>
+
+</body>
+</html>
