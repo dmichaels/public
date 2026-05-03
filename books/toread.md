@@ -1,5 +1,7 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
+1. <a href="https://www.amazon.com/dp/1250237483/" target="_top">Blindsight (Peter Watts)</a>
+1. <a href="https://www.amazon.com/Hells-Angels-Strange-Terrible-Saga/dp/0345410084/" target="_top">Hell's Angels (Hunter S. Thompson)</a>
 1. <a href="https://www.amazon.com/Clausewitz-Short-Introduction-Michael-Howard/dp/0192802577/" target="_top">Clausewitz: A Very Short Introduction (Michael Howard)</a>
 1. <a href="https://www.amazon.com/dp/0029035910/" target="_top">The Causes of War (Geoffrey Blainey)</a>
 1. <a href="https://www.amazon.com/Speak-Memory-Autobiography-Vladimir-Nabokov/dp/0679723390/" target="_top">Speak, Memory (Vladimir Nabokov)</a>
