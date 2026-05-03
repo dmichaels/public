@@ -22,6 +22,7 @@
 1. <a href="https://www.amazon.com/When-We-Cease-Understand-World/dp/1681375664/" target="_top">When We Cease to Understand the World (Benjamin Labatut)</a> _2026-04-25_
 1. <a href="https://www.amazon.com/dp/0156035340" target="_top">Peeling the Onion (Günter Grass)</a> _2026-04-29_
 1. <a href="https://www.amazon.com/Open-Autobiography-Andre-Agassi/dp/0307388409/" target="_top">Open: An Autobiography (Andre Agassi)</a> _... in progress ..._
+1. <a href="https://www.amazon.com/dp/1250237483/" target="_top">Blindsight (Peter Watts)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... on deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
