@@ -8,6 +8,7 @@
 1. <a href="https://www.amazon.com/dp/069115760X" target="_top">The Power of Ideas (Isaiah Berlin)</a>
 1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
 1. <a href="https://www.amazon.com/Perfectionists-Precision-Engineers-Created-Modern-ebook/dp/B072BFJB3Z/" target="_top">The Perfectionists: How Precision Engineers Created the Modern World (Simon Winchester)</a>
+1. <a href="https://www.amazon.com/Denial-Death-Ernest-Becker/dp/0684832402/" target="_top">The Denial of Death (Ernest Becker)</a>
 1. <a href="https://www.amazon.com/Metaphysical-Club-Story-Ideas-America/dp/0374528497/" target="_top">The Metaphysical Club (Louis Menard)</a>
 1. <a href="https://www.amazon.com/Washington-Life-Ron-Chernow/dp/0143119966/" target="_top">Washington: A Life (Ron Chernow)</a>
 1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a>
