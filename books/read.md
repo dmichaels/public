@@ -16,13 +16,14 @@
   1. <a href="https://www.amazon.com/Crooked-Timber-Humanity-Chapters-History/dp/0691155933/" target="_top">The Crooked Timber of Humanity: Chapters in the History of Ideas (Isaiah Berlin)</a>  _2026-04-09_
   1. <a href="https://www.amazon.com/dp/069115600X" target="_top">The Hedgehog and the Fox: An Essay on Tolstoy's View of History (Isaiah Berlin)</a> _2026-04-11_
   1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-13_
-1. <a href="https://www.amazon.com/Tin-Drum-G%C3%BCnter-Grass/dp/0547339100/" target="_top">The Tin Drum (Günter Grass)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-20_
-1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">The Tartar Steppe (Dino Buzzati)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-22_
-1. <a href="https://www.amazon.com/Periodic-Everymans-Library-Contemporary-Classics/dp/0805210415/" target="_top">The Periodic Table (Primo Levi)</a>  _2026-04-24_
-1. <a href="https://www.amazon.com/When-We-Cease-Understand-World/dp/1681375664/" target="_top">When We Cease to Understand the World (Benjamin Labatut)</a> _2026-04-25_
-1. <a href="https://www.amazon.com/dp/0156035340" target="_top">Peeling the Onion (Günter Grass)</a> _2026-04-29_
-1. <a href="https://www.amazon.com/Open-Autobiography-Andre-Agassi/dp/0307388409/" target="_top">Open: An Autobiography (Andre Agassi)</a> _... in progress ..._
-1. <a href="https://www.amazon.com/dp/1250237483/" target="_top">Blindsight (Peter Watts)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... on deck ..._
+  1. <a href="https://www.amazon.com/Tin-Drum-G%C3%BCnter-Grass/dp/0547339100/" target="_top">The Tin Drum (Günter Grass)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-20_
+  1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">The Tartar Steppe (Dino Buzzati)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-22_
+  1. <a href="https://www.amazon.com/Periodic-Everymans-Library-Contemporary-Classics/dp/0805210415/" target="_top">The Periodic Table (Primo Levi)</a>  _2026-04-24_
+  1. <a href="https://www.amazon.com/When-We-Cease-Understand-World/dp/1681375664/" target="_top">When We Cease to Understand the World (Benjamin Labatut)</a> _2026-04-25_
+  1. <a href="https://www.amazon.com/dp/0156035340" target="_top">Peeling the Onion (Günter Grass)</a> _2026-04-29_
+  1. <a href="https://www.amazon.com/Open-Autobiography-Andre-Agassi/dp/0307388409/" target="_top">Open: An Autobiography (Andre Agassi)</a> _2026-05-03_
+  1. <a href="https://www.amazon.com/Clausewitz-Short-Introduction-Michael-Howard/dp/0192802577/" target="_top">Clausewitz: A Very Short Introduction (Michael Howard)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/dp/1250237483/" target="_top">Blindsight (Peter Watts)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... on deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
@@ -77,7 +78,7 @@
  1. <a href="https://www.amazon.com/dp/0374518793/" target="_top">Auto-da-Fé (Elias Canetti)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-10-26_
  1. <a href="https://www.amazon.com/Until-End-Time-Evolving-Universe/dp/0525432175/" target="_top">Until the End of Time: Mind, Matter, and Our Search for Meaning in an Evolving Universe (Brian Greene)</a> _2025-11-01_
  1. <a href="https://www.amazon.com/Vietnam-Tragedy-1945-1975-Max-Hastings/dp/0062405675/" target="_top">Vietnam: An Epic Tragedy, 1945-1975 (Max Hastings)</a> _2025-11-25_
-1. <a href="https://www.amazon.com/dp/159017951X?/" target="_top">Memories: From Moscow to the Black Sea (Teffi)</a> _2025-11-30_
+ 1. <a href="https://www.amazon.com/dp/159017951X?/" target="_top">Memories: From Moscow to the Black Sea (Teffi)</a> _2025-11-30_
  1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-12-31_
 
 **2024**:
