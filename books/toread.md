@@ -44,6 +44,7 @@
 1. <a href="https://www.amazon.com/dp/1668023482/" target="_top">Abundance (Ezra Klein)</a>
 1. <a href="https://www.amazon.com/Price-Peace-Democracy-Maynard-Keynes/dp/0525509054/" target="_top">The Price of Peace: Money, Democracy, and the Life of John Maynard Keynes (Zachary D. Carter)</a>
 1. <a href="https://www.amazon.com/Fall-Civilizations-Stories-Greatness-Decline/dp/1335013415/" target="_top">Fall of Civilizations: Stories of Greatness and Decline (Paul Cooper)</a>
+1. <a href="https://www.amazon.com/Lessons-History-Will-Durant/dp/143914995X/" target="_top">The Lessons of History (Will & Ariel Durant)</a>
 1. <a href="https://www.amazon.com/War-Power-Who-Wins-Wars_and/dp/1541606973/" target="_top">War and Power: Who Wins Wars ― and Why (Phillips Payson O'Brien)</a>
 1. <a href="https://www.amazon.com/dp/1250391237/" target="_top">Careless People: A Cautionary Tale of Power, Greed, and Lost Idealism (Sarah Wynn-Williams)</a>
 1. <a href="https://www.amazon.com/dp/B000GWDYOG/?coliid=I307CCN2NZXBKV" target="_top">Homo Ludens: A Study of the Play Element in Culture (Johan Huizinga)</a>
