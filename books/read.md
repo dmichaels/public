@@ -24,6 +24,7 @@
   1. <a href="https://www.amazon.com/Open-Autobiography-Andre-Agassi/dp/0307388409/" target="_top">Open: An Autobiography (Andre Agassi)</a> _2026-05-03_
   1. <a href="https://www.amazon.com/Clausewitz-Short-Introduction-Michael-Howard/dp/0192802577/" target="_top">Clausewitz: A Very Short Introduction (Michael Howard)</a> _2026-05-04_
   1. <a href="https://www.amazon.com/dp/1250237483/" target="_top">Blindsight (Peter Watts)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
+ 1. <a href="https://www.amazon.com/Hells-Angels-Strange-Terrible-Saga/dp/0345410084/" target="_top">Hell's Angels (Hunter S. Thompson)</a> _... on deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
