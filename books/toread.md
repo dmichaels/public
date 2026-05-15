@@ -32,7 +32,6 @@
 1. <a href="https://www.amazon.com/Human-Condition-Second-Hannah-Arendt/dp/022658660X/" target="_top">The Human Condition (Hannah Arendt)</a>
 1. <a href="https://www.amazon.com/Hijacked-Neoliberalism-against-Workers-Lectures/dp/1009275399/" target="_top">Hijacked: How Neoliberalism Turned the Work Ethic against Workers and How Workers Can Take It Back (Elizabeth Anderson)</a>
 1. <a href="https://www.amazon.com/Give-People-Money-Universal-Revolutionize/dp/1524758779/" target="_top">Give People Money (Annie Lowrey)</a>
-1. <a href="https://www.amazon.com/Mans-Search-Meaning-Viktor-Frankl/dp/0807014273/" target="_top">Man's Search for Meaning (Victor Frankl)</a>
 1. <a href="https://www.amazon.com/Why-Read-Classics-Italo-Calvino-ebook/dp/B00E9FYU9Y/" target="_top">Why Read the Classics? (Italo Calvino)</a>
 1. <a href="https://www.amazon.com/Jerusalem-Biography-Simon-Sebag-Montefiore/dp/0307280500/" target="_top">Jerusalem (Simon Sebag Montefiore )</a>
 1. <a href="https://www.amazon.com/Ordinary-Men-Reserve-Battalion-Solution/dp/0062303023/" target="_top">Ordinary Men: Reserve Police Battalion 101 and the Final Solution in Poland (Christopher R. Browning)</a>
