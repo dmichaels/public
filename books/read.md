@@ -25,7 +25,7 @@
   1. <a href="https://www.amazon.com/Clausewitz-Short-Introduction-Michael-Howard/dp/0192802577/" target="_top">Clausewitz: A Very Short Introduction (Michael Howard)</a> _2026-05-04_
   1. <a href="https://www.amazon.com/dp/1250237483/" target="_top">Blindsight (Peter Watts)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-05-11_
   1. <a href="https://www.amazon.com/Hells-Angels-Strange-Terrible-Saga/dp/0345410084/" target="_top">Hell's Angels: A Strange and Terrible Saga (Hunter S. Thompson)</a> _2026-05-15_
-  1. <a href="https://www.amazon.com/Mans-Search-Meaning-Viktor-Frankl/dp/0807014273/" target="_top">Man's Search for Meaning (Victor Frankl)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Mans-Search-Meaning-Viktor-Frankl/dp/0807014273/" target="_top">Man's Search for Meaning (Victor Frankl)</a> _2026-05-16_
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
