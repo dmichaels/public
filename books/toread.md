@@ -3,7 +3,7 @@
 1. <a href="https://www.amazon.com/dp/0226106713/" target="_top">On the Heights of Despair (E.M. Cioran)</a>
 1. <a href="https://www.amazon.com/dp/0029035910/" target="_top">The Causes of War (Geoffrey Blainey)</a>
 1. <a href="https://www.amazon.com/Speak-Memory-Autobiography-Vladimir-Nabokov/dp/0679723390/" target="_top">Speak, Memory (Vladimir Nabokov)</a>
-1. <a href="https://www.amazon.com/Great-Shark-Hunt-Strange-Papers/dp/0743250451/" target="_top">he Great Shark Hunt: Strange Tales from a Strange Time (Hunter S. Thompson)</a>
+1. <a href="https://www.amazon.com/Great-Shark-Hunt-Strange-Papers/dp/0743250451/" target="_top">The Great Shark Hunt: Strange Tales from a Strange Time (Hunter S. Thompson)</a>
 1. <a href="https://www.amazon.com/Cat-Mouse-Gunter-Grass/dp/0156155516/" target="_top">Cat and Mouse (Günter Grass)</a>
 1. <a href="https://www.amazon.com/dp/069115760X" target="_top">The Power of Ideas (Isaiah Berlin)</a>
 1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
