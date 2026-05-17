@@ -36,6 +36,7 @@ Some Favorite Fiction:
   1. Nineteen Eighty-Four (George Orwell)
   1. The Screwtape Letters (C.S. Lewis)
   1. A Clockwork Orange (Anthony Burgess)
+  1. Brideshead Revisted (Evelyn Waugh)
   1. The Machine Stops (E.M. Forster)
 
 
@@ -75,4 +76,5 @@ Some Favorite Non-Fiction:
   1. Material World: A Substantial Story of Our Past and Future (Ed Conway)
   1. The Man Who Mistook His Wife for a Hat: And Other Clinical Tales (Oliver Sacks)
   1. UNIX: A History and a Memoir (Brian Kernighan)
+  1. Nonzero (Robert Wright)
   1. Diary of a Young Girl (Anne Frank)
