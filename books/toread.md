@@ -1,7 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
 1. <a href="https://www.amazon.com/dp/0226106713/" target="_top">On the Heights of Despair (E.M. Cioran)</a>
-1. <a href="https://www.amazon.com/Rebel-Essay-Man-Revolt/dp/0679733841/" target="_top">The Rebel (Albert Camus)</a>
 1. <a href="https://www.amazon.com/dp/0029035910/" target="_top">The Causes of War (Geoffrey Blainey)</a>
 1. <a href="https://www.amazon.com/Speak-Memory-Autobiography-Vladimir-Nabokov/dp/0679723390/" target="_top">Speak, Memory (Vladimir Nabokov)</a>
 1. <a href="https://www.amazon.com/Great-Shark-Hunt-Strange-Papers/dp/0743250451/" target="_top">The Great Shark Hunt: Strange Tales from a Strange Time (Hunter S. Thompson)</a>
