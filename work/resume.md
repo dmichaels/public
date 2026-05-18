@@ -8,6 +8,8 @@ LinkedIn: https://www.linkedin.com/in/david-michaels-b6b7621 <br />
 
 <ins>**Summary**
 
+* Retired!
+
 * Most recent work with Java, Kotlin, Sping Boot, Groovy, PHP, C, Node.js, MySQL, Vertica, Linux for backend services, transaction and other data processing, feeds, search, APIs, some authentication, etc; as well as backoffice tools and UI dashboards using React, Angular, JavaScript, Node.js. Previously, similar in .NET, C#, SQL Server.
 
 * Dotcom boom era large scale Web related infrastructure apps, tools, APIs, dashboards, in C++, VB, ASP, XSLT.
