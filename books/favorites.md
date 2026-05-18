@@ -5,7 +5,7 @@ Some Favorite Fiction:
   1. Moby Dick (Herman Melville)
   1. Don Quixote (Miguel Cervantes)
   1. Lolita (Vladimir Nabokov)
-  1. Rabbit Tetralogy (John Updike)
+  1. The Rabbit Tetralogy (John Updike)
   1. The Magic Mountain (Thomas Mann)
   1. The Tin Drum (Günter Grass)
   1. The Glass Bead Game (Herman Hesse)
