@@ -322,6 +322,7 @@
   1. <a href="https://www.amazon.com/Scattershot-Bipolar-Family-David-Lovelace/dp/0525950788/">Scattershot: My Bipolar Family (David Lovelace)</a>
   1. <a href="https://www.amazon.com/Giver-Quartet-Lois-Lowry/dp/0544336267/">The Giver (Lois Lowry)</a>
   1. <a href="https://www.amazon.com/Prince-Readers-Library-Classics/dp/1954839278/">The Prince (Niccolò Machiavelli)</a>
+  1. <a href="https://www.amazon.com/Guitar-Zero-Science-Becoming-Musical/dp/0143122789/">Guitar Zero: The Science of Becoming Musical at Any Age (Gary Marcus)</a>
   1. <a href="https://www.amazon.com/Every-Love-Story-Ghost-Wallace-ebook/dp/B007V65ODE/">Every Love Story Is a Ghost Story: A Life of David Foster Wallace (D.T. Max)</a>
   1. <a href="https://www.amazon.com/At-Home-World-Joyce-Maynard-ebook/dp/B0032N1ULK/">At Home in the World: A Memoir (Joyce Maynard)</a>
   1. <a href="https://www.amazon.com/Moby-Dick-Penguin-Classics-Herman-Melville/dp/0142437247/">Moby Dick (Herman Melville)</a>
