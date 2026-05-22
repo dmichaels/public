@@ -27,8 +27,8 @@
   1. <a href="https://www.amazon.com/Hells-Angels-Strange-Terrible-Saga/dp/0345410084/" target="_top">Hell's Angels: A Strange and Terrible Saga (Hunter S. Thompson)</a> _2026-05-15_
   1. <a href="https://www.amazon.com/Mans-Search-Meaning-Viktor-Frankl/dp/0807014273/" target="_top">Man's Search for Meaning (Victor Frankl)</a> _2026-05-16_
   1. <a href="https://www.amazon.com/Pnin-Vladimir-Nabokov/dp/0679723412/" target="_top">Pnin (Vladimir Nabokov)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-05-18_
-  1. <a href="https://www.amazon.com/Speak-Memory-Autobiography-Vladimir-Nabokov/dp/0679723390/" target="_top">Speak, Memory (Vladimir Nabokov)</a> ..._ in progress ..._
-  1. <a href="https://www.amazon.com/Rebel-Essay-Man-Revolt/dp/0679733841/" target="_top">The Rebel (Albert Camus)</a> _... on deck ..._
+  1. <a href="https://www.amazon.com/Speak-Memory-Autobiography-Vladimir-Nabokov/dp/0679723390/" target="_top">Speak, Memory (Vladimir Nabokov)</a> _2026-05-22_
+  1. <a href="https://www.amazon.com/Rebel-Essay-Man-Revolt/dp/0679733841/" target="_top">The Rebel (Albert Camus)</a> _... in progress ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
