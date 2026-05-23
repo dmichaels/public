@@ -1,7 +1,7 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
 1. <a href="https://www.amazon.com/dp/0226106713/" target="_top">On the Heights of Despair (E.M. Cioran)</a>
-  1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a> _... in progress ..._
+1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
 1. <a href="https://www.amazon.com/dp/0029035910/" target="_top">The Causes of War (Geoffrey Blainey)</a>
 1. <a href="https://www.amazon.com/Great-Shark-Hunt-Strange-Papers/dp/0743250451/" target="_top">The Great Shark Hunt: Strange Tales from a Strange Time (Hunter S. Thompson)</a>
 1. <a href="https://www.amazon.com/Cat-Mouse-Gunter-Grass/dp/0156155516/" target="_top">Cat and Mouse (Günter Grass)</a>
@@ -62,7 +62,6 @@
 1. <a href="https://www.amazon.com/Gulag-History-Anne-Applebaum-ebook/dp/B0012SCJ9Y" target="_top">Gulag: A History (Anne Applebaum)</a>
 1. <a href="https://www.amazon.com/dp/0520208234/" target="_top">Magnetic Mountain: Stalinism as a Civilization (Stephen Kotkin)</a>
 1. <a href="https://www.amazon.com/dp/1324051191/" target="_top">The Russo-Ukrainian War: The Return of History (Serhii Plokhy)</a>
-1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a>
 1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Grimscribe (Thomas Ligotti)</a>
 1. <a href="https://www.amazon.com/Gilded-Age-Illustrated-First-Anniversary/dp/195243355X/" target="_top">The Gilded Age (Mark Twain, Charles Dudley Warner)</a>
 1. <a href="https://www.amazon.com/dp/1597805394/" target="_top">Permutation City (Greg Egan)</a>
