@@ -1,6 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
-1. <a href="https://www.amazon.com/Am-Not-Robot-Almost-Everything-ebook/dp/B0FPG1C5V4/" target="_top">I Am Not a Robot: My Year Using AI to Do (Almost) Everything (Joanna Stern)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+1. <a href="https://www.amazon.com/Am-Not-Robot-Almost-Everything-ebook/dp/B0FPG1C5V4/" target="_top">I Am Not a Robot: My Year Using AI to Do (Almost) Everything (Joanna Stern)</a>
 1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a>
 1. <a href="https://www.amazon.com/dp/0226106713/" target="_top">On the Heights of Despair (E.M. Cioran)</a>
