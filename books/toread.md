@@ -1,6 +1,7 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
 1. <a href="https://www.amazon.com/Steve-Jobs-Exile-Remaking-Visionary/dp/0593716698" target="_top">Steve Jobs in Exile: The Untold Story of NeXT and the Remaking of an American Visionary</a>
+1. <a href="https://www.amazon.com/Denial-Death-Ernest-Becker/dp/0684832402/" target="_top">The Denial of Death (Ernest Becker)</a>
 1. <a href="https://www.amazon.com/Am-Not-Robot-Almost-Everything-ebook/dp/B0FPG1C5V4/" target="_top">I Am Not a Robot: My Year Using AI to Do (Almost) Everything (Joanna Stern)</a>
 1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a>
@@ -11,7 +12,6 @@
 1. <a href="https://www.amazon.com/Cat-Mouse-Gunter-Grass/dp/0156155516/" target="_top">Cat and Mouse (Günter Grass)</a>
 1. <a href="https://www.amazon.com/dp/069115760X" target="_top">The Power of Ideas (Isaiah Berlin)</a>
 1. <a href="https://www.amazon.com/Perfectionists-Precision-Engineers-Created-Modern-ebook/dp/B072BFJB3Z/" target="_top">The Perfectionists: How Precision Engineers Created the Modern World (Simon Winchester)</a>
-1. <a href="https://www.amazon.com/Denial-Death-Ernest-Becker/dp/0684832402/" target="_top">The Denial of Death (Ernest Becker)</a>
 1. <a href="https://www.amazon.com/Metaphysical-Club-Story-Ideas-America/dp/0374528497/" target="_top">The Metaphysical Club (Louis Menard)</a>
 1. <a href="https://www.amazon.com/Washington-Life-Ron-Chernow/dp/0143119966/" target="_top">Washington: A Life (Ron Chernow)</a>
 1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a>
