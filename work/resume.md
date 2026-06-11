@@ -23,7 +23,7 @@ LinkedIn: https://www.linkedin.com/in/david-michaels-b6b7621 <br />
 * Previously granted *secret* clearance.
 
 * Some notable skills/experience (to varying degrees):
-  - Pytho, Java, Kotlin, Spring Boot, Groovy, PHP, C, C++, Node.js, JavaScript, React, Angular, HTML/CSS, .NET/C#, MySQL, Vertica, Redis, Linux & CLI tools, autotools, Git/GitLab/GitHub, Apache server, Nginx, REST APIs, OAuth2, Kafka, data flows, Lucene/Solr.
+  - Python, Java, Kotlin, Spring Boot, Groovy, PHP, C, C++, Node.js, JavaScript, React, Angular, HTML/CSS, .NET/C#, MySQL, Vertica, Redis, Linux & CLI tools, autotools, Git/GitLab/GitHub, Apache server, Nginx, REST APIs, OAuth2, Kafka, data flows, Lucene/Solr.
 
 <ins>**Harvard University School |** May 2022 to April 2025 </ins> <br />
 Backend software engineer for the Department of Biomedical Informatics. Working primarily on the Clinical Genome Analysis Platform (CGAP). Mostly Python; a multitude of AWS services, e.g. ElasticSearch; React, JavaScript; et cetera.
