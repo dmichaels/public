@@ -31,8 +31,8 @@
   1. <a href="https://www.amazon.com/Rebel-Essay-Man-Revolt/dp/0679733841/" target="_top">The Rebel (Albert Camus)</a> _2026-05-28_
   1. <a href="https://www.amazon.com/Chimpanzee-Politics-Power-among-Apes/dp/0801886562/" target="_top">Chimpanzee Politics: Power and Sex among Apes (Frans de Waal)</a> _2026-06-08_
   1. <a href="https://www.amazon.com/dp/0553387294/" target="_top">On Fire for God: Fear, Shame, Poverty, and the Making of the Christian Right - a Personal History (Josiah Hesse)</a> _2026-06-12_
-  1. <a href="https://www.amazon.com/Steve-Jobs-Exile-Remaking-Visionary/dp/0593716698" target="_top">Steve Jobs in Exile: The Untold Story of NeXT and the Remaking of an American Visionary</a> _... in progress ..._
-  1. <a href="https://www.amazon.com/Denial-Death-Ernest-Becker/dp/0684832402/" target="_top">The Denial of Death (Ernest Becker)</a> _... on deck ..._
+  1. <a href="https://www.amazon.com/Steve-Jobs-Exile-Remaking-Visionary/dp/0593716698" target="_top">Steve Jobs in Exile: The Untold Story of NeXT and the Remaking of an American Visionary</a> _2026-06-14_
+  1. <a href="https://www.amazon.com/Denial-Death-Ernest-Becker/dp/0684832402/" target="_top">The Denial of Death (Ernest Becker)</a> _... in progress ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
