@@ -3,6 +3,7 @@
 1. <a href="https://www.amazon.com/Kingdom-Fear-Loathsome-Star-Crossed-American-ebook/dp/B005HF3P2S/" target="_top">Kingdom of Fear: Loathsome Secrets of a Star-Crossed Child in the Final Days of the American Century (Hunter S. Thompson)</a>
 1. <a href="https://www.amazon.com/dp/0143039539/" target="_top">The Portable Dorothy Parker (Dorothy Parker)</a>
 1. <a href="https://www.amazon.com/dp/1982134593/" target="_top">Apple: The First 50 Years (David Pogue)</a>
+1. <a href="https://www.amazon.com/Cheap-Novelties-Pleasures-Urban-Decay/dp/0140159975/" target="_top">Cheap Novelties: The Pleasures of Urban Decay (Ben Katchor)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 1. <a href="https://www.amazon.com/Am-Not-Robot-Almost-Everything-ebook/dp/B0FPG1C5V4/" target="_top">I Am Not a Robot: My Year Using AI to Do (Almost) Everything (Joanna Stern)</a>
 1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a>
