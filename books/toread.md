@@ -1,6 +1,5 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
-1. <a href="https://www.amazon.com/Pride-Prejudice-Jane-Austen/dp/0141439513/" target="_top">Pride and Prejudice (Jane Austen)</a>
 1. <a href="https://www.amazon.com/Kingdom-Fear-Loathsome-Star-Crossed-American-ebook/dp/B005HF3P2S/" target="_top">Kingdom of Fear: Loathsome Secrets of a Star-Crossed Child in the Final Days of the American Century (Hunter S. Thompson)</a>
 1. <a href="https://www.amazon.com/dp/0143039539/" target="_top">The Portable Dorothy Parker (Dorothy Parker)</a>
 1. <a href="https://www.amazon.com/dp/1982134593/" target="_top">Apple: The First 50 Years (David Pogue)</a>
