@@ -35,7 +35,7 @@
   1. <a href="https://www.amazon.com/Denial-Death-Ernest-Becker/dp/0684832402/" target="_top">The Denial of Death (Ernest Becker)</a> _2026-06-23_
   1. <a href="https://www.amazon.com/dp/1805333267/" target="_top">A Time to Be Born (Dawn Powell)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-06-28_
   1. <a href="https://www.amazon.com/dp/0374529264/" target="_top">Memoirs of Hadrian (Marguerite Yourcenar)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-03_
-  1. <a href="https://www.amazon.com/Pride-Prejudice-Jane-Austen/dp/0141439513/" target="_top">Pride and Prejudice (Jane Austen)</a> _2026-07-07_
+  1. <a href="https://www.amazon.com/Pride-Prejudice-Jane-Austen/dp/0141439513/" target="_top">Pride and Prejudice (Jane Austen)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-07_
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
