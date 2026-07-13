@@ -38,7 +38,7 @@
   1. <a href="https://www.amazon.com/Pride-Prejudice-Jane-Austen/dp/0141439513/" target="_top">Pride and Prejudice (Jane Austen)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-07_
   1. <a href="https://www.amazon.com/Demian-Story-Sinclairs-Penguin-Classics/dp/0143106783/" target="_top">Demian (Hermann Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-09_
   1. <a href="https://www.amazon.com/TheDispossessed-Ursula-Author-Aug-12-1999-Paperback/dp/B005HN9BSW/" target="_top">The Dispossessed (Ursula K. Le Guin)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-12_
-  1. <a href=""https://www.amazon.com/We-Yevgeny-Zamyatin/dp/0140185852/ target="_top">We (Yevgeny Zamyatin)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
+  1. <a href="https://www.amazon.com/We-Yevgeny-Zamyatin/dp/0140185852/" target="_top">We (Yevgeny Zamyatin)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... in progress ..._
   1. <a href="https://www.amazon.com/dp/0679728759/" target="_top">Blood Meridian (Cormac McCarthy)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _... on deck ..._
 
 **2025**:
