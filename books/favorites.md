@@ -12,6 +12,7 @@ Some Favorite Fiction:
   1. American Pastoral (Philip Roth)
   1. Anna Karenina (Leo Tolstoy)
   1. War and Peace (Leo Tolstoy)
+  1. Blood Meridian (Cormac McCarthy)
   1. Candide (Voltaire)
   1. Gulliver's Travels (Jonathan Swift)
   1. Crime and Punishment (Fyodor Dostoevsky)
@@ -78,3 +79,4 @@ Some Favorite Non-Fiction:
   1. UNIX: A History and a Memoir (Brian Kernighan)
   1. Nonzero (Robert Wright)
   1. Diary of a Young Girl (Anne Frank)
+  1. Scattershot (David Lovelace)
