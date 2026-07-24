@@ -1,6 +1,7 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
   1. <a href="https://www.amazon.com/Suttree-Cormac-McCarthy/dp/0679736328/" target="_top">Suttre (Cormac McCarthy)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Notes-Blood-Meridian-Southwestern-Collection/dp/0292718217/" target="_top">Notes on Blood Meridian (John Sepich)</a>
   1. <a href="https://www.amazon.com/Books-Are-Made-Out-Influences/dp/1477330844/" target="_top">Books Are Made Out of Books: A Guide to Cormac McCarthy's Literary Influences (Michael Lynn Crews)</a>
   1. <a href="https://www.amazon.com/gp/product/067973225X/" target="_top">As I Lay Dying (William Faulkner)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
 1. <a href="https://www.amazon.com/Kingdom-Fear-Loathsome-Star-Crossed-American-ebook/dp/B005HF3P2S/" target="_top">Kingdom of Fear: Loathsome Secrets of a Star-Crossed Child in the Final Days of the American Century (Hunter S. Thompson)</a>
