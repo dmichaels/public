@@ -1,21 +1,21 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
-  1. <a href="https://www.amazon.com/Suttree-Cormac-McCarthy/dp/0679736328/" target="_top">Suttre (Cormac McCarthy)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Suttree-Cormac-McCarthy/dp/0679736328/" target="_top">Suttre (Cormac McCarthy)</a> &#128214;
   1. <a href="https://www.amazon.com/Notes-Blood-Meridian-Southwestern-Collection/dp/0292718217/" target="_top">Notes on Blood Meridian (John Sepich)</a>
   1. <a href="https://www.amazon.com/Books-Are-Made-Out-Influences/dp/1477330844/" target="_top">Books Are Made Out of Books: A Guide to Cormac McCarthy's Literary Influences (Michael Lynn Crews)</a>
-  1. <a href="https://www.amazon.com/gp/product/067973225X/" target="_top">As I Lay Dying (William Faulkner)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/gp/product/067973225X/" target="_top">As I Lay Dying (William Faulkner)</a> &#128214;
 1. <a href="https://www.amazon.com/Kingdom-Fear-Loathsome-Star-Crossed-American-ebook/dp/B005HF3P2S/" target="_top">Kingdom of Fear: Loathsome Secrets of a Star-Crossed Child in the Final Days of the American Century (Hunter S. Thompson)</a>
-1. <a href="https://www.amazon.com/dp/0143039539/" target="_top">The Portable Dorothy Parker (Dorothy Parker)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+1. <a href="https://www.amazon.com/dp/0143039539/" target="_top">The Portable Dorothy Parker (Dorothy Parker)</a> &#128214;
 1. <a href="https://www.amazon.com/dp/1982134593/" target="_top">Apple: The First 50 Years (David Pogue)</a>
-1. <a href="https://www.amazon.com/Cheap-Novelties-Pleasures-Urban-Decay/dp/0140159975/" target="_top">Cheap Novelties: The Pleasures of Urban Decay (Ben Katchor)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+1. <a href="https://www.amazon.com/Cheap-Novelties-Pleasures-Urban-Decay/dp/0140159975/" target="_top">Cheap Novelties: The Pleasures of Urban Decay (Ben Katchor)</a> &#128214;
 1. <a href="https://www.amazon.com/Am-Not-Robot-Almost-Everything-ebook/dp/B0FPG1C5V4/" target="_top">I Am Not a Robot: My Year Using AI to Do (Almost) Everything (Joanna Stern)</a>
-1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
-1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+1. <a href="https://www.amazon.com/Narcissus-Goldmund-Novel-Hermann-Hesse/dp/0312421672/" target="_top">Narcissus and Goldmund (Hermann Hesse)</a> &#128214;
+1. <a href="https://www.amazon.com/Quiet-American-Penguin-Classics-Deluxe/dp/0143039024/" target="_top">The Quiet American (Graham Greene)</a> &#128214;
 1. <a href="https://www.amazon.com/dp/0226106713/" target="_top">On the Heights of Despair (E.M. Cioran)</a>
 1. <a href="https://www.amazon.com/Beginning-Infinity-Explanations-Transform-World/dp/0143121359/" target="_top">The Beginning of Infinity: Explanations That Transform the World (David Deutsch)</a>
 1. <a href="https://www.amazon.com/dp/0029035910/" target="_top">The Causes of War (Geoffrey Blainey)</a>
 1. <a href="https://www.amazon.com/Great-Shark-Hunt-Strange-Papers/dp/0743250451/" target="_top">The Great Shark Hunt: Strange Tales from a Strange Time (Hunter S. Thompson)</a>
-1. <a href="https://www.amazon.com/Cat-Mouse-Gunter-Grass/dp/0156155516/" target="_top">Cat and Mouse (Günter Grass)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+1. <a href="https://www.amazon.com/Cat-Mouse-Gunter-Grass/dp/0156155516/" target="_top">Cat and Mouse (Günter Grass)</a> &#128214;
 1. <a href="https://www.amazon.com/dp/069115760X" target="_top">The Power of Ideas (Isaiah Berlin)</a>
 1. <a href="https://www.amazon.com/Perfectionists-Precision-Engineers-Created-Modern-ebook/dp/B072BFJB3Z/" target="_top">The Perfectionists: How Precision Engineers Created the Modern World (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/Metaphysical-Club-Story-Ideas-America/dp/0374528497/" target="_top">The Metaphysical Club (Louis Menard)</a>
