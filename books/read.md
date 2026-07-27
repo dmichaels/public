@@ -1,13 +1,11 @@
 **Books Read**&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="toread.md">Books To Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
 **2026**:
-<pre>
   1. <a href="https://www.amazon.com/dp/0300233744" target="_top">The Master of Contradictions: Thomas Mann and the Making of "The Magic Mountain" (Morten Høi Jensen)</a> _2026-01-04_
   1. <a href="https://www.amazon.com/War-That-Ended-Peace-Road/dp/0812980662/" target="_top">The War that Ended Peace: The Road to 1914 (Margaret MacMillan)</a> _2026-02-25_
   1. <a href="https://www.amazon.com/dp/0143122797" target="_top">The Idea Factory: Bell Labs and the Great Age of American Innovation (Jon Gertner)</a> _2026-02-28_
   1. <a href="https://www.amazon.com/Metropolis-History-Humankinds-Greatest-Invention/dp/0525436332" target="_top">Metropolis: A History of the City, Humankind's Greatest Invention (Ben Wilson)</a> _2026-03-09_
   1. <a href="https://www.amazon.com/dp/0143105434?" target="_top">Wuthering Heights (Emily Brontë)</a>&nbsp;<img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-03-22_
-  </pre>
   1. <a href="https://www.amazon.com/History-Iran-Empire-Mind/dp/0465098762/" target="_top">Empire of the Mind: A History of Iran (Michael Axworthy)</a> _2026-03-14_
   1. <a href="https://www.amazon.com/dp/0143105434?" target="_top">Wuthering Heights (Emily Brontë)</a>&nbsp;<img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-03-22_
   1. <a href="https://www.amazon.com/Mattering-Instinct-Deepest-Longing-Divides/dp/1324096853/" target="_top">The Mattering Instinct: How Our Deepest Longing Drives Us and Divides Us (Rebecca Newberger Goldstein)</a> _2026-03-24_
