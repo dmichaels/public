@@ -17,30 +17,30 @@
   1. <a href="https://www.amazon.com/Crooked-Timber-Humanity-Chapters-History/dp/0691155933/" target="_top">The Crooked Timber of Humanity: Chapters in the History of Ideas (Isaiah Berlin)</a>  _2026-04-09_
   1. <a href="https://www.amazon.com/dp/069115600X" target="_top">The Hedgehog and the Fox: An Essay on Tolstoy's View of History (Isaiah Berlin)</a> _2026-04-11_
   1. <a href="https://www.amazon.com/Nausea-Directions-Paperbook-Jean-Paul-Sartre/dp/0811220303/" target="_top">Nausea (Jean-Paul Sartre)</a> &#128214; _2026-04-13_
-  1. <a href="https://www.amazon.com/Tin-Drum-G%C3%BCnter-Grass/dp/0547339100/" target="_top">The Tin Drum (Günter Grass)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-20_
-  1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">The Tartar Steppe (Dino Buzzati)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-04-22_
+  1. <a href="https://www.amazon.com/Tin-Drum-G%C3%BCnter-Grass/dp/0547339100/" target="_top">The Tin Drum (Günter Grass)</a> &#128214; _2026-04-20_
+  1. <a href="https://www.amazon.com/dp/1786891646/" target="_top">The Tartar Steppe (Dino Buzzati)</a> &#128214; _2026-04-22_
   1. <a href="https://www.amazon.com/Periodic-Everymans-Library-Contemporary-Classics/dp/0805210415/" target="_top">The Periodic Table (Primo Levi)</a>  _2026-04-24_
   1. <a href="https://www.amazon.com/When-We-Cease-Understand-World/dp/1681375664/" target="_top">When We Cease to Understand the World (Benjamin Labatut)</a> _2026-04-25_
   1. <a href="https://www.amazon.com/dp/0156035340" target="_top">Peeling the Onion (Günter Grass)</a> _2026-04-29_
   1. <a href="https://www.amazon.com/Open-Autobiography-Andre-Agassi/dp/0307388409/" target="_top">Open: An Autobiography (Andre Agassi)</a> _2026-05-03_
   1. <a href="https://www.amazon.com/Clausewitz-Short-Introduction-Michael-Howard/dp/0192802577/" target="_top">Clausewitz: A Very Short Introduction (Michael Howard)</a> _2026-05-04_
-  1. <a href="https://www.amazon.com/dp/1250237483/" target="_top">Blindsight (Peter Watts)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-05-11_
+  1. <a href="https://www.amazon.com/dp/1250237483/" target="_top">Blindsight (Peter Watts)</a> &#128214; _2026-05-11_
   1. <a href="https://www.amazon.com/Hells-Angels-Strange-Terrible-Saga/dp/0345410084/" target="_top">Hell's Angels: A Strange and Terrible Saga (Hunter S. Thompson)</a> _2026-05-15_
   1. <a href="https://www.amazon.com/Mans-Search-Meaning-Viktor-Frankl/dp/0807014273/" target="_top">Man's Search for Meaning (Victor Frankl)</a> _2026-05-16_
-  1. <a href="https://www.amazon.com/Pnin-Vladimir-Nabokov/dp/0679723412/" target="_top">Pnin (Vladimir Nabokov)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-05-18_
+  1. <a href="https://www.amazon.com/Pnin-Vladimir-Nabokov/dp/0679723412/" target="_top">Pnin (Vladimir Nabokov)</a> &#128214; _2026-05-18_
   1. <a href="https://www.amazon.com/Speak-Memory-Autobiography-Vladimir-Nabokov/dp/0679723390/" target="_top">Speak, Memory (Vladimir Nabokov)</a> _2026-05-22_
   1. <a href="https://www.amazon.com/Rebel-Essay-Man-Revolt/dp/0679733841/" target="_top">The Rebel (Albert Camus)</a> _2026-05-28_
   1. <a href="https://www.amazon.com/Chimpanzee-Politics-Power-among-Apes/dp/0801886562/" target="_top">Chimpanzee Politics: Power and Sex among Apes (Frans de Waal)</a> _2026-06-08_
   1. <a href="https://www.amazon.com/dp/0553387294/" target="_top">On Fire for God: Fear, Shame, Poverty, and the Making of the Christian Right - A Personal History (Josiah Hesse)</a> _2026-06-12_
   1. <a href="https://www.amazon.com/Steve-Jobs-Exile-Remaking-Visionary/dp/0593716698" target="_top">Steve Jobs in Exile: The Untold Story of NeXT and the Remaking of an American Visionary</a> _2026-06-14_
   1. <a href="https://www.amazon.com/Denial-Death-Ernest-Becker/dp/0684832402/" target="_top">The Denial of Death (Ernest Becker)</a> _2026-06-23_
-  1. <a href="https://www.amazon.com/dp/1805333267/" target="_top">A Time to Be Born (Dawn Powell)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-06-28_
-  1. <a href="https://www.amazon.com/dp/0374529264/" target="_top">Memoirs of Hadrian (Marguerite Yourcenar)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-03_
-  1. <a href="https://www.amazon.com/Pride-Prejudice-Jane-Austen/dp/0141439513/" target="_top">Pride and Prejudice (Jane Austen)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-07_
-  1. <a href="https://www.amazon.com/Demian-Story-Sinclairs-Penguin-Classics/dp/0143106783/" target="_top">Demian (Hermann Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-09_
-  1. <a href="https://www.amazon.com/TheDispossessed-Ursula-Author-Aug-12-1999-Paperback/dp/B005HN9BSW/" target="_top">The Dispossessed (Ursula K. Le Guin)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-12_
-  1. <a href="https://www.amazon.com/We-Yevgeny-Zamyatin/dp/0140185852/" target="_top">We (Yevgeny Zamyatin)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-16_
-  1. <a href="https://www.amazon.com/dp/0679728759/" target="_top">Blood Meridian (Cormac McCarthy)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-07-23_
+  1. <a href="https://www.amazon.com/dp/1805333267/" target="_top">A Time to Be Born (Dawn Powell)</a> &#128214; _2026-06-28_
+  1. <a href="https://www.amazon.com/dp/0374529264/" target="_top">Memoirs of Hadrian (Marguerite Yourcenar)</a> &#128214; _2026-07-03_
+  1. <a href="https://www.amazon.com/Pride-Prejudice-Jane-Austen/dp/0141439513/" target="_top">Pride and Prejudice (Jane Austen)</a> &#128214; _2026-07-07_
+  1. <a href="https://www.amazon.com/Demian-Story-Sinclairs-Penguin-Classics/dp/0143106783/" target="_top">Demian (Hermann Hesse)</a> &#128214; _2026-07-09_
+  1. <a href="https://www.amazon.com/TheDispossessed-Ursula-Author-Aug-12-1999-Paperback/dp/B005HN9BSW/" target="_top">The Dispossessed (Ursula K. Le Guin)</a> &#128214; _2026-07-12_
+  1. <a href="https://www.amazon.com/We-Yevgeny-Zamyatin/dp/0140185852/" target="_top">We (Yevgeny Zamyatin)</a> &#128214; _2026-07-16_
+  1. <a href="https://www.amazon.com/dp/0679728759/" target="_top">Blood Meridian (Cormac McCarthy)</a> &#128214; _2026-07-23_
   1. <a href="https://www.amazon.com/My-Confession-Recollections-Samuel-Chamberlain/dp/B0CH25MGGQ/" target="_top">My Confession: Recollections of a Rogue (Samuel Chamberlain)</a> _... in progress ..._
 
 **2025**:
@@ -48,7 +48,7 @@
   1. <a href="https://www.amazon.com/Being-You-New-Science-Consciousness/dp/1524742872/" target="_top">Being You: A New Science of Consciousness (Anil Seth)</a> _2025-01-11_
   1. <a href="https://www.amazon.com/Genesis-Artificial-Intelligence-Human-Spirit/dp/0316581291/" target="_top">Genesis: Artificial Intelligence, Hope, and the Human Spirit (Henry Kissinger, Craig Mundle, Eric Schmidt, Niall Ferguson)</a> _2025-01-18_
   1. <a href="https://www.amazon.com/Captive-Mind-Czeslaw-Milosz/dp/0679728562/" target="_top">The Captive Mind (Czesław Miłosz)</a> _2025-01-20_
-  1. <a href="https://www.amazon.com/Italo-Calvino-Traveler-Everymans-12-2-1992/dp/B00HTJXZSY/" target="_top">If on a Winter's Night a Traveler (Italo Calvino)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-01-23_
+  1. <a href="https://www.amazon.com/Italo-Calvino-Traveler-Everymans-12-2-1992/dp/B00HTJXZSY/" target="_top">If on a Winter's Night a Traveler (Italo Calvino)</a> &#128214; _2025-01-23_
   1. <a href="https://www.amazon.com/Island-Center-World-Manhattan-Forgotten/dp/1400078679/" target="_top">The Island at the Center of the World: The Epic Story of Dutch Manhattan (Russell Shorto)</a> _2025-01-27_
   1. <a href="https://www.amazon.com/How-Economics-Explains-World-Humanity/dp/0063383780/" target="_top">How Economics Explains the World: A Short History of Humanity (Andrew Leigh)</a> _2025-01-29_
   1. <a href="https://www.amazon.com/1959-Everything-Changed-Fred-Kaplan/dp/0470602031/" target="_top">1959: The Year Everything Changed (Fred Kaplan)</a> _2025-02-01_
@@ -56,19 +56,19 @@
   1. <a href="https://www.amazon.com/Nineties-Book-Chuck-Klosterman/dp/0735217963/" target="_top">The Nineties (Chuck Klosterman)</a> _2025-02-09_
   1. <a href="https://www.amazon.com/Material-World-Materials-Modern-Civilization/dp/0593534344/" target="_top">Material World: A Substantial Story of Our Past and Future (Ed Conway)</a> _2025-02-12_
   1. <a href="https://www.amazon.com/Character-Limit-Elon-Destroyed-Twitter/dp/059365613X/" target="_top">Character Limit: How Elon Musk Destroyed Twitter (Kate Conger, Ryan Mac)</a> _2025-02-16_
-  1. <a href="https://www.amazon.com/Chesil-Beach-Ian-McEwan/dp/0307386171/" target="_top">On Chesil Beach (Ian McEwan)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-02-16_
+  1. <a href="https://www.amazon.com/Chesil-Beach-Ian-McEwan/dp/0307386171/" target="_top">On Chesil Beach (Ian McEwan)</a> &#128214; _2025-02-16_
   1. <a href="https://www.amazon.com/Conspiracy-against-Human-Race-Contrivance/dp/0143133144/" target="_top">The Conspiracy Against the Human Race: A Contrivance of Horror (Thomas Ligotti)</a> _2025-02-18_
   1. <a href="https://www.amazon.com/Source-Code-Beginnings-Bill-Gates/dp/059380158X/" target="_top">Source Code: My Beginnings (Bill Gates)</a> _2025-02-19_
   1. <a href="https://www.amazon.com/Temptation-Exist-M-Cioran/dp/1611457386/" target="_top">The Temptation to Exist (E.M. Cioran)</a> _2025-02-22_
-  1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Songs of a Dead Dreamer (Thomas Ligotti)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-02-23_
-  1. <a href="https://www.amazon.com/Stoner-York-Review-Books-Classics/dp/1590171993/" target="_top">Stoner (John Williams)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-02-24_
-  1. <a href="https://www.amazon.com/Saturday-Ian-McEwan/dp/1400076196/" target="_top">Saturday (Ian McEwan)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-02-27_
-  1. <a href="https://www.amazon.com/Man-Without-Qualities-Vol-Introduction/dp/0679767878/" target="_top">The Man Without Qualities (Robert Musil)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-03-07_
-  1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-03-09_
+  1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Songs of a Dead Dreamer (Thomas Ligotti)</a> <im&#128214; _2025-02-23_
+  1. <a href="https://www.amazon.com/Stoner-York-Review-Books-Classics/dp/1590171993/" target="_top">Stoner (John Williams)</a> &#128214; _2025-02-24_
+  1. <a href="https://www.amazon.com/Saturday-Ian-McEwan/dp/1400076196/" target="_top">Saturday (Ian McEwan)</a> &#128214; _2025-02-27_
+  1. <a href="https://www.amazon.com/Man-Without-Qualities-Vol-Introduction/dp/0679767878/" target="_top">The Man Without Qualities (Robert Musil)</a> &#128214; _2025-03-07_
+  1. <a href="https://www.amazon.com/My-Work-Not-Yet-Done/dp/0753516888/" target="_top">My Work Is Not Yet Done (Thomas Ligotti)</a> &#128214; _2025-03-09_
   1. <a href="https://www.amazon.com/Autocracy-Inc-Dictators-Want-World/dp/0385549938/" target="_top">Autocracy Inc.: The Dictators Who Want to Run the World (Anne Applebaum)</a> _2025-03-10_
   1. <a href="https://www.amazon.com/Freedom-Timothy-Snyder/dp/0593728726/" target="_top">On Freedom (Timothy Snyder)</a> _2025-03-12_
-  1. <a href="https://www.amazon.com/Yellow-Wallpaper-Charlotte-Perkins-Gilman/dp/1684222273/" target="_top">The Yellow Wallpaper (Charlotte Perkins Gilman)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-03-12_
-  1. <a href="https://www.amazon.com/Orbital-Samantha-Harvey/dp/0802163629/" target="_top">Orbital (Samantha Harvey)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-03-13_
+  1. <a href="https://www.amazon.com/Yellow-Wallpaper-Charlotte-Perkins-Gilman/dp/1684222273/" target="_top">The Yellow Wallpaper (Charlotte Perkins Gilman)</a> &#128214; _2025-03-12_
+  1. <a href="https://www.amazon.com/Orbital-Samantha-Harvey/dp/0802163629/" target="_top">Orbital (Samantha Harvey)</a> &#128214; _2025-03-13_
   1. <a href="https://www.amazon.com/Garden-Beasts-Terror-American-Hitlers/dp/030740885X/" target="_top">In the Garden of Beasts: Love, Terror, and an American Family in Hitler's Berlin (Erik Larson)</a> _2025-03-16_
   1. <a href="https://www.amazon.com/Hitler-Downfall-1939-1945-Volker-Ullrich/dp/1101872063/" target="_top">Hitler: Downfall 1939 - 1945 (Volker Ullrich)</a> _2025-03-21_
   1. <a href="https://www.amazon.com/Splendid-Vile-Churchill-Family-Defiance/dp/0385348738/" target="_top">The Splendid and the Vile: A Saga of Churchill, Family, and Defiance During the Blitz (Erik Larson)</a> _2025-03-24_
@@ -77,7 +77,7 @@
   1. <a href="https://www.amazon.com/Stalin-Paradoxes-1878-1928-Stephen-Kotkin/dp/0143127861/" target="_top">Stalin: Paradoxes of Power, 1878 - 1928 (Stephen Kotkin)</a> _2025-06-29_
   1. <a href="https://www.amazon.com/dp/1612194192/" target="_top">Debt: The First 5,000 Years (David Graeber)</a> _2025-07-12_
   1. <a href="https://www.amazon.com/Empire-AI-Dreams-Nightmares-Altmans/dp/0593657500/" target="_top">Empire of AI: Dreams and Nightmares in Sam Altman's OpenAI (Karen Hao)</a> _2025-07-18_
-  1. <a href="https://www.amazon.com/Diamond-Age-Illustrated-Primer-Spectra/dp/0553380966/" target="_top">The Diamond Age (Neal Stephenson)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-07-24_
+  1. <a href="https://www.amazon.com/Diamond-Age-Illustrated-Primer-Spectra/dp/0553380966/" target="_top">The Diamond Age (Neal Stephenson)</a> &#128214; _2025-07-24_
   1. <a href="https://www.amazon.com/dp/0199926514" target="_top">The Undercover Economist, Revised and Updated Edition: Exposing Why the Rich Are Rich, the Poor Are Poor - and Why You Can Never Buy a Decent Used Car! (Tim Harford)</a> _2025-07-31_
   1. <a href="https://www.amazon.com/Haves-Have-Yachts-Dispatches-Ultrarich/dp/1668204487/" target="_top">The Haves and Have-Yachts: Dispatches on the Ultrarich (Evan Osnos)</a> _2025-08-14_
   1. <a href="https://www.amazon.com/Eating-Dinosaur-Chuck-Klosterman/dp/1416544216/" target="_top">Eating the Dinosaur (Chuck Klosterman)</a> _2025-08-18_
@@ -87,33 +87,33 @@
  1. <a href="https://www.amazon.com/Just-My-Type-About-Fonts/dp/1592407463/" target="_top">Just My Type: A Book About Fonts (Simon Garfield)</a> _2025-09-02_
  1. <a href="https://www.amazon.com/Proto-Ancient-Language-Went-Global/dp/1639732586/" target="_top">Proto: How One Ancient Language Went Global (Laura Spinney)</a> _2025-09-05_
  1. <a href="https://www.amazon.com/Breakneck-Chinas-Quest-Engineer-Future/dp/1324106034/" target="_top">Breakneck: China's Quest to Engineer the Future (Dan Wang)</a> _2025-09-07_
- 1. <a href="https://www.amazon.com/Worlds-Otherwise-Penguin-Science-Fiction/dp/0241509750/" target="_top">Warm Worlds and Otherwise (James Tiptree Jr.)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-09-08_
+ 1. <a href="https://www.amazon.com/Worlds-Otherwise-Penguin-Science-Fiction/dp/0241509750/" target="_top">Warm Worlds and Otherwise (James Tiptree Jr.)</a> &#128214; _2025-09-08_
  1. <a href="https://www.amazon.com/dp/1631496085" target="_top">We the People: A History of the U.S. Constitution (Jill Lepore)</a> _2025-09-19_
  1. <a href="https://www.amazon.com/Dominion-Christian-Revolution-Remade-World/dp/1541675592/" target="_top">Dominion: How the Christian Revolution Remade the World (Tom Holland)</a> _2025-09-26_
  1. <a href="https://www.amazon.com/Citizens-Chronicle-Revolution-Simon-Schama/dp/0679726101/" target="_top">Citizens: A Chronicle of the French Revolution (Simon Schama)</a> _2025-10-13_
  1. <a href="https://www.amazon.com/When-Everyone-Knows-That-Knowledge/dp/1668011573/" target="_top">When Everyone Knows That Everyone Knows: Common Knowledge and the Mysteries of Money, Power, and Everyday Life (Steven Pinker)</a> _2025-10-19_
  1. <a href="https://www.amazon.com/dp/B0FVY4B4LN" target="_top">The Book Rat's Daughter: A Memoir (Carolyn Michaels Kerr)</a> _2025-10-20_
- 1. <a href="https://www.amazon.com/dp/0374518793/" target="_top">Auto-da-Fé (Elias Canetti)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-10-26_
+ 1. <a href="https://www.amazon.com/dp/0374518793/" target="_top">Auto-da-Fé (Elias Canetti)</a> &#128214; _2025-10-26_
  1. <a href="https://www.amazon.com/Until-End-Time-Evolving-Universe/dp/0525432175/" target="_top">Until the End of Time: Mind, Matter, and Our Search for Meaning in an Evolving Universe (Brian Greene)</a> _2025-11-01_
  1. <a href="https://www.amazon.com/Vietnam-Tragedy-1945-1975-Max-Hastings/dp/0062405675/" target="_top">Vietnam: An Epic Tragedy, 1945-1975 (Max Hastings)</a> _2025-11-25_
  1. <a href="https://www.amazon.com/dp/159017951X?/" target="_top">Memories: From Moscow to the Black Sea (Teffi)</a> _2025-11-30_
- 1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2025-12-31_
+ 1. <a href="https://www.amazon.com/Magic-Mountain-Thomas-Mann/dp/0679772871/" target="_top">The Magic Mountain (Thomas Mann)</a> &#128214; _2025-12-31_
 
 **2024**:
 
   1. <a href="https://www.amazon.com/Democracy-Awakening-Notes-State-America/dp/0593652967/" target="_top">Democracy Awakening: Notes and the State of America (Heather Cox Richardson)</a>
   1. <a href="https://www.amazon.com/Hackers-Mind-Powerful-Societys-Rules/dp/1324074531/" target="_top">A Hacker's Mind: How the Powerful Bend Society's Rules, and How to Bend Them Back (Bruce Schneier)</a>
-  1. <a href="https://www.amazon.com/Nose-Other-Stories-Russian-Library/dp/0231190697/" target="_top">The Nose (Nikolai Gogol)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2024-02-04_
+  1. <a href="https://www.amazon.com/Nose-Other-Stories-Russian-Library/dp/0231190697/" target="_top">The Nose (Nikolai Gogol)</a> &#128214; _2024-02-04_
   1. <a href="https://www.amazon.com/One-Nation-Under-Guns-Threatens/dp/0593594312/" target="_top">One Nation Under Guns: How Gun Culture Distorts Our History and Threatens Our Democracy (Dominic Erdozain)</a>
   1. <a href="https://www.amazon.com/Doom-Politics-Catastrophe-Niall-Ferguson/dp/0593297393/" target="_top">Doom: The Politics of Catastrophe (Niall Ferguson)</a>
   1. <a href="https://www.amazon.com/Spinoza-Freedoms-Messiah-Jewish-Lives/dp/0300281862/" target="_top">Spinoza: Freedom's Messiah (Ian Buruma)</a>
   1. <a href="https://www.amazon.com/Burn-Book-Tech-Love-Story/dp/1982163909/" target="_top">Burn Book: A Tech Love Story (Kara Swisher)</a>
   1. <a href="https://www.amazon.com/Anxious-Generation-Rewiring-Childhood-Epidemic/dp/0593655036/" target="_top">The Anxious Generation: How the Great Rewiring of Childhood Is Causing an Epidemic of Mental Illness (Jonathan Haidt)</a> _2025-05-11_
-  1. <a href="https://www.amazon.com/Wall-Marlen-Haushofer/dp/0811231941/" target="_top">The Wall (Marlen Haushofer)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Wall-Marlen-Haushofer/dp/0811231941/" target="_top">The Wall (Marlen Haushofer)</a> &#128214;
   1. <a href="https://www.amazon.com/Unfinished-Love-Story-Personal-History/dp/1982108665/" target="_top">An Unfinished Love Story: A Personal History of the 1960s (Doris Kearns Goodwin)</a>
-  1. <a href="https://www.amazon.com/Underworld-Novel-Don-DeLillo/dp/0684848155/" target="_top">Underworld (Don DeLillo)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Underworld-Novel-Don-DeLillo/dp/0684848155/" target="_top">Underworld (Don DeLillo)</a> &#128214;
   1. <a href="https://www.amazon.com/Democracy-Solidarity-Cultural-Americas-Political/dp/0300274378/" target="_top">Democracy and Solidarity: On the Cultural Roots of America's Political Crisis (James Davison Hunter)</a>
-  1. <a href="https://www.amazon.com/Beneath-Wheel-Hermann-Hesse/dp/031242230X/" target="_top">Beneath the Wheel (Herman Hesse)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Beneath-Wheel-Hermann-Hesse/dp/031242230X/" target="_top">Beneath the Wheel (Herman Hesse)</a> &#128214;
   1. <a href="https://www.amazon.com/Triumph-Yuppies-America-Eighties-Creation/dp/1538725991/" target="_top">Triumph of the Yuppies: America, the Eighties, and the Creation of an Unequal Nation (Tom McGrath)</a>
   1. <a href="https://www.amazon.com/Broken-Code-Facebook-Harmful-Secrets-ebook/dp/B0BS354RMX/" target="_top">Broken Code: Inside Facebook and the Fight to Expose Its Harmful Secrets (Jeff Horwitz)</a> _2025-08-12_
   1. <a href="https://www.amazon.com/Keeping-Faith-Democracy-Riveted-Nation-ebook/dp/B0CN8VH515/" target="_top">Keeping the Faith: God, Democracy, and the Trial That Riveted a Nation (Brenda Wineapple)</a>
@@ -123,7 +123,7 @@
 
 **2023**:
 
-  1. <a href="https://www.amazon.com/White-Noise-Don-DeLillo-ebook/dp/B001R11CAI/">White Noise (Don DeLillo)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/White-Noise-Don-DeLillo-ebook/dp/B001R11CAI/">White Noise (Don DeLillo)</a> &#128214;
   1. <a href="https://www.amazon.com/Free-World-Art-Thought-Cold-ebook/dp/B088DQ4QZR/">The Free World: Art and Thought in the Cold War (Louis Menand)</a>
   1. <a href="https://www.amazon.com/Cold-Blood-Vintage-International-ebook/dp/B000FC1IRM/">In Cold Blood (Truman Capote)</a>
   1. <a href="https://www.amazon.com/Chip-War-Worlds-Critical-Technology-ebook/dp/B09RX5F238/">Chip War (Chris Miller)</a>
@@ -140,19 +140,19 @@
   1. <a href="https://www.amazon.com/War-How-Conflict-Shaped-Us-ebook/dp/B082ZR5L25/">War: How Conflict Shaped Us (Magaret MacMillan)</a>
   1. <a href="https://www.amazon.com/Day-Life-Abed-Salama-Jerusalem/dp/1250854962/">A Day in the Life of Abed Salama (Nathan Thrall)</a>
   1. <a href="https://www.amazon.com/Fancy-Bear-Goes-Phishing-Extraordinary-ebook/dp/B0BBC8LG9P/">Fancy Bear Goes Phishing: The Dark History of the Information Age in Five Extraordinary Hacks (Scott J. Shapiro)</a>
-  1. <a href="https://www.amazon.com/MANIAC-Benjamin-Labatut/dp/0593654498/">The Maniac (Benjamin Labatut)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/MANIAC-Benjamin-Labatut/dp/0593654498/">The Maniac (Benjamin Labatut)</a> &#128214;
   1. <a href="https://www.amazon.com/Doppelganger-Trip-Into-Mirror-World/dp/1802061959/">Doppelganger: A Trip into the Mirror World (Naomi Klein)</a>
   1. <a href="https://www.amazon.com/Determined-Science-Life-without-Free/dp/0525560971/">Determined: A Science of Life Without Free Will (Robert M. Sapolsky)</a>
 
 **2022**:
 
-  1. <a href="https://www.amazon.com/Galapagos-Novel-Fiction-Kurt-Vonnegut/dp/0385333870/">Galápagos (Kurt Vonnegut)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Galapagos-Novel-Fiction-Kurt-Vonnegut/dp/0385333870/">Galápagos (Kurt Vonnegut)</a> &#128214;
   1. <a href="https://www.amazon.com/Sick-Souls-Healthy-Minds-William/dp/0691216711/">Sick Souls, Healthy Minds: How William James Can Save Your Life (John Kaag)</a>
-  1. <a href="https://www.amazon.com/Don-Quixote-Miguel-Cervantes/dp/0060934344/">Don Quixote (Miguel Cervantes)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
-  1. <a href="https://www.amazon.com/Crime-Punishment-Volokhonsky-Translation-Classics/dp/0679734503/">Crime and Punishment (Fyodor Dostoevsky)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
-  1. <a href="https://www.amazon.com/Brave-New-World-Revisited/dp/0060776099/">Brave New World (Aldous Huxley)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Don-Quixote-Miguel-Cervantes/dp/0060934344/">Don Quixote (Miguel Cervantes)</a> &#128214;
+  1. <a href="https://www.amazon.com/Crime-Punishment-Volokhonsky-Translation-Classics/dp/0679734503/">Crime and Punishment (Fyodor Dostoevsky)</a> &#128214;
+  1. <a href="https://www.amazon.com/Brave-New-World-Revisited/dp/0060776099/">Brave New World (Aldous Huxley)</a> &#128214;
   1. <a href="https://www.amazon.com/Emperor-All-Maladies-Biography-Cancer/dp/1439170916/">The Emperor of All Maladies: A Biography of Cancer (Siddhartha Mukherjee)</a>
-  1. <a href="https://www.amazon.com/Middlemarch-Penguin-Classics-George-Eliot-ebook/dp/B00SI02C8W/">Middlemarch (George Eliot)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Middlemarch-Penguin-Classics-George-Eliot-ebook/dp/B00SI02C8W/">Middlemarch (George Eliot)</a> &#128214;
   1. <a href="https://www.amazon.com/Magna-Carta-Liberty-Dan-Jones-ebook/dp/B00SI025YI/">Magna Carta: The Birth of Liberty (Dan Jones)</a>
   1. <a href="https://www.amazon.com/Journey-Edge-Reason-Life-G%C3%B6del-ebook/dp/B08L5KB2J8/">Journey to the Edge of Reason: The Life of Kurt Gödel (Stephen Budiansky)</a>
   1. <a href="https://www.amazon.com/Code-Breaker-Jennifer-Doudna-Editing-ebook/dp/B08G1XNG7J/">The Code Breaker: Jennifer Doudna, Gene Editing, and the Future of the Human Race (Walter Isaacson)</a>
@@ -175,11 +175,11 @@
 **2021**:
 
   1. <a href="https://www.amazon.com/Rationality-What-Seems-Scarce-Matters-ebook/dp/B08WK3JNLT/">Rationality: What It Is, Why It Seems Scarce, Why It Matters (Steven Pinker)</a>
-  1. <a href="https://www.amazon.com/Fun-Home-Tragicomic-Alison-Bechdel/dp/0618871713/">Fun Home (Alison Bechdel)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/Fun-Home-Tragicomic-Alison-Bechdel/dp/0618871713/">Fun Home (Alison Bechdel)</a> &#128214;
   1. <a href="https://www.amazon.com/Feline-Philosophy-Cats-Meaning-Life/dp/1250800250/">Feline Philosophy (John Gray)</a>
   1. <a href="https://www.amazon.com/Amazon-Unbound-Invention-Global-Empire/dp/1982132620/">Amazon Unbound (Brad Stone)</a>
   1. <a href="https://www.amazon.com/World-Beyond-Your-Head-Distraction/dp/0374535914/">The World Beyond Your Head (Matthew Crawford)</a>
-  1. <a href="https://www.amazon.com/War-Peace-Penguin-Classics-Deluxe/dp/0143039997/">War and Peace (Leo Tolstoy)</a> <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
+  1. <a href="https://www.amazon.com/War-Peace-Penguin-Classics-Deluxe/dp/0143039997/">War and Peace (Leo Tolstoy)</a> &#128214;
 
 **2020**:
 
