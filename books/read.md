@@ -6,7 +6,7 @@
   1. <a href="https://www.amazon.com/dp/0143122797" target="_top">The Idea Factory: Bell Labs and the Great Age of American Innovation (Jon Gertner)</a> _2026-02-28_
   1. <a href="https://www.amazon.com/Metropolis-History-Humankinds-Greatest-Invention/dp/0525436332" target="_top">Metropolis: A History of the City, Humankind's Greatest Invention (Ben Wilson)</a> _2026-03-09_
   1. <a href="https://www.amazon.com/History-Iran-Empire-Mind/dp/0465098762/" target="_top">Empire of the Mind: A History of Iran (Michael Axworthy)</a> _2026-03-14_
-  1. <a href="https://www.amazon.com/dp/0143105434?" target="_top">Wuthering Heights (Emily Brontë)</a>&nbsp;foo<img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-03-22_
+  1. <a href="https://www.amazon.com/dp/0143105434?" target="_top">Wuthering Heights (Emily Brontë)</a><img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-03-22_
   1. <a href="https://www.amazon.com/Mattering-Instinct-Deepest-Longing-Divides/dp/1324096853/" target="_top">The Mattering Instinct: How Our Deepest Longing Drives Us and Divides Us (Rebecca Newberger Goldstein)</a> _2026-03-24_
   1. <a href="https://www.amazon.com/Herzog-Penguin-Modern-Classics-2001-04-26/dp/B01K0U4N70/" target="_top">Herzog (Saul Bellow)</a>&nbsp;<img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/> _2026-03-27_
   1. <a href="https://www.amazon.com/Conflict-Visions-Ideological-Political-Struggles/dp/0465002056/" target="_top">A Conflict of Visions: Ideological Origins of Political Struggles (Thomas Sowell)</a> _2026-03-29_
