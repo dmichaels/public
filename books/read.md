@@ -264,18 +264,18 @@
 
 **2000-2017**
 
-  1. <a href="https://www.amazon.com/Hitchhikers-Guide-Galaxy-Douglas-Adams/dp/0345418913/">The Hitchhiker's Guide to the Galaxy (Douglas Adams)</a>
-  1. <a href="https://www.amazon.com/Gods-Debris-Experiment-Scott-Adams/dp/0740747878/">God's Debris: A Thought Experiment (Scott Adams)</a>
-  1. <a href="https://www.amazon.com/Religion-War-Scott-Adams/dp/0740747886/">The Religion War (Scott Adams)</a>
-  1. <a href="https://www.amazon.com/Hope-Tragedy-Novel-Shalom-Auslander/dp/1594486468/">Hope: A Tragedy (Shalom Auslander)</a>
-  1. <a href="https://www.amazon.com/Sense-Ending-Julian-Barnes/dp/0307947726/">The Sense of an Ending (Julian Barnes)</a>
+  1. <a href="https://www.amazon.com/Hitchhikers-Guide-Galaxy-Douglas-Adams/dp/0345418913/">The Hitchhiker's Guide to the Galaxy (Douglas Adams)</a> &#128214;
+  1. <a href="https://www.amazon.com/Gods-Debris-Experiment-Scott-Adams/dp/0740747878/">God's Debris: A Thought Experiment (Scott Adams)</a> &#128214;
+  1. <a href="https://www.amazon.com/Religion-War-Scott-Adams/dp/0740747886/">The Religion War (Scott Adams)</a> &#128214;
+  1. <a href="https://www.amazon.com/Hope-Tragedy-Novel-Shalom-Auslander/dp/1594486468/">Hope: A Tragedy (Shalom Auslander)</a> &#128214;
+  1. <a href="https://www.amazon.com/Sense-Ending-Julian-Barnes/dp/0307947726/">The Sense of an Ending (Julian Barnes)</a> &#128214;
   1. <a href="https://www.amazon.com/Nothing-Be-Frightened-Julian-Barnes-ebook/dp/B001ANYC9Q/">Nothing to Be Frightened Of: A Memoir (Julian Barnes)</a>
   1. <a href="https://www.amazon.com/Glock-Americas-Paul-M-Barrett/dp/0307719952/">Glock: The Rise of America's Gun (Paul M. Barrett)</a>
   1. <a href="https://www.amazon.com/Gun-Guys-Road-Vintage-Departures/dp/0307742504/">Gun Guys: A Road Trip (Dan Baum)</a>
   1. <a href="https://www.amazon.com/Duel-Sun-Beardsley-Americas-Greatest/dp/1594866287/">Duel in the Sun: Alberto Salazar, Dick Beardsley, and America's Greatest Marathon (John Brant)</a>
   1. <a href="https://www.amazon.com/Paradise-Drive-Always-Future-Tense-ebook/dp/B000FC1Q2Y/">On Paradise Drive: How We Live Now (And Always Have) in the Future Tense (David Brooks)</a>
   1. <a href="https://www.amazon.com/Social-Animal-Sources-Character-Achievement/dp/0812979370/">The Social Animal: The Hidden Sources of Love, Character, and Achievement (David Brooks)</a>
-  1. <a href="https://www.amazon.com/Clockwork-Orange-Anthony-Burgess/dp/0393341763/">A Clockwork Orange (Anthony Burgess)</a>
+  1. <a href="https://www.amazon.com/Clockwork-Orange-Anthony-Burgess/dp/0393341763/">A Clockwork Orange (Anthony Burgess)</a> &#128214;
   1. <a href="https://www.amazon.com/Mean-Genes-Taming-Primal-Instincts/dp/0465031242/">Mean Genes (Terry Burnham, Jay Phelan)</a>
   1. <a href="https://www.amazon.com/dp/0525564454/">The Myth of Sisyphus (Albert Camus)</a>
   1. <a href="https://www.amazon.com/Selfish-Gene-Anniversary-Landmark-Science/dp/0198788606/">The Selfish Gene (Richard Dawkins)</a>
