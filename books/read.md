@@ -1,11 +1,6 @@
 **Books Read**&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="toread.md">Books To Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
 **2026**:
-<ul>
-<li>
-abc def <img src="https://cdn-icons-png.flaticon.com/512/5402/5402751.png" height="24" align="top"/>
-</li>
-</ul>
   1. <a href="https://www.amazon.com/dp/0300233744" target="_top">The Master of Contradictions: Thomas Mann and the Making of "The Magic Mountain" (Morten Høi Jensen)</a> _2026-01-04_
   1. <a href="https://www.amazon.com/War-That-Ended-Peace-Road/dp/0812980662/" target="_top">The War that Ended Peace: The Road to 1914 (Margaret MacMillan)</a> _2026-02-25_
   1. <a href="https://www.amazon.com/dp/0143122797" target="_top">The Idea Factory: Bell Labs and the Great Age of American Innovation (Jon Gertner)</a> _2026-02-28_
