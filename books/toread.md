@@ -123,7 +123,6 @@
 1. <a href="https://www.amazon.com/Saga-Compendium-Brian-K-Vaughan/dp/153431346X/" target="_top">Saga (Brian K. Vaughan)</a>
 1. <a href="https://www.amazon.com/Lives-Cell-Notes-Biology-Watcher/dp/0140047433/" target="_top">The Lives of Cells (Lewis Thomas)</a>
 1. <a href="https://www.amazon.com/Human-Bondage-Literary-Classic-Annotated-ebook/dp/B0B57TY492/" target="_top">Of Human Bondage (W. Somerset Maugham)</a>
-1. <a href="https://www.amazon.com/My-Antonia-Willa-Cather-ebook/dp/B004IPPINC/" target="_top">My Ántonia (Willa Cather)</a>
 1. <a href="https://www.amazon.com/Pioneers-Willa-Cather-ebook/dp/B0711X6LQ1/" target="_top">O Pioneers! (Willa Cather)</a>
 1. <a href="https://www.amazon.com/Farewell-Alms-Economic-History-Princeton/dp/0691141282/" target="_top">A Farewell to Alms: A Brief Economic History of the World (Gregory Clark)</a>
 1. <a href="https://www.amazon.com/Blueprint-Evolutionary-Origins-Good-Society/dp/0316230049/" target="_top">Blueprint: The Evolutionary Origins of a Good Society (Nicholas A. Christakis)</a>

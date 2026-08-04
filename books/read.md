@@ -43,6 +43,7 @@
   1. <a href="https://www.amazon.com/dp/0679728759/" target="_top">Blood Meridian (Cormac McCarthy)</a> &#128214; _2026-07-23_
   1. <a href="https://www.amazon.com/My-Confession-Recollections-Samuel-Chamberlain/dp/B0CH25MGGQ/" target="_top">My Confession: Recollections of a Rogue (Samuel Chamberlain)</a> _2026-07-28_
   1. <a href="https://www.amazon.com/gp/product/067973225X/" target="_top">As I Lay Dying (William Faulkner)</a> &#128214; _2026-08-02_
+1. <a href="https://www.amazon.com/My-Antonia-Willa-Cather-ebook/dp/B004IPPINC/" target="_top">My Ántonia (Willa Cather)</a>
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
@@ -471,4 +472,6 @@
   1. <a href="https://www.amazon.com/Ethan-Frome-Edith-Wharton/dp/1704067421/">Ethan Frome (Edith Wharton)</a> &#128214;
   1. <a href="https://www.amazon.com/Highland-Road-Sane-Living-Mentally/dp/0679407243/">9 Highland Road: Sane Living for the Mentally Ill (Michael Winerip)</a>
   1. <a href="https://www.amazon.com/Black-Seventy-fifth-Anniversary-Richard-Wright/dp/0062964135/">Black Boy (Richard Wright)</a>
+  1. The Hobbit (J.R.R. Tolkien)</a>
+  1. They Do It with Mirrors (Agatha Christie)</a>
   1. And more ...
