@@ -62,7 +62,7 @@
   1. <a href="https://www.amazon.com/Conspiracy-against-Human-Race-Contrivance/dp/0143133144/" target="_top">The Conspiracy Against the Human Race: A Contrivance of Horror (Thomas Ligotti)</a> _2025-02-18_
   1. <a href="https://www.amazon.com/Source-Code-Beginnings-Bill-Gates/dp/059380158X/" target="_top">Source Code: My Beginnings (Bill Gates)</a> _2025-02-19_
   1. <a href="https://www.amazon.com/Temptation-Exist-M-Cioran/dp/1611457386/" target="_top">The Temptation to Exist (E.M. Cioran)</a> _2025-02-22_
-  1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Songs of a Dead Dreamer (Thomas Ligotti)</a> <im&#128214; _2025-02-23_
+  1. <a href="https://www.amazon.com/Songs-Dreamer-Grimscribe-Thomas-Ligotti/dp/0143107763/" target="_top">Songs of a Dead Dreamer (Thomas Ligotti)</a> &#128214; _2025-02-23_
   1. <a href="https://www.amazon.com/Stoner-York-Review-Books-Classics/dp/1590171993/" target="_top">Stoner (John Williams)</a> &#128214; _2025-02-24_
   1. <a href="https://www.amazon.com/Saturday-Ian-McEwan/dp/1400076196/" target="_top">Saturday (Ian McEwan)</a> &#128214; _2025-02-27_
   1. <a href="https://www.amazon.com/Man-Without-Qualities-Vol-Introduction/dp/0679767878/" target="_top">The Man Without Qualities (Robert Musil)</a> &#128214; _2025-03-07_
