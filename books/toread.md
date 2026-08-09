@@ -61,7 +61,6 @@
 1. <a href="https://www.amazon.com/dp/1627793666/" target="_top">Putin (Philip Short)</a>
 1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin's People: How the KGB Took Back Russia and Then Took On the West (Catherine Belton)</a>
 1. <a href="https://www.amazon.com/dp/1324093463/" target="_top">Germany 1923: Hyperinflation, Hitler's Putsch, and Democracy in Crisis (Volker Ullrich)</a>
-1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">Devil in the White City (Erik Larson)</a>
 1. <a href="https://www.amazon.com/Dead-Wake-Last-Crossing-Lusitania/dp/0307408876/" target="_top">Dead Wake (Erik Larson)</a>
 1. <a href="https://www.amazon.com/dp/B00AV68GF4/" target="_top">Krakatoa: The Day the World Exploded: August 27, 1883 (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/Exactly-Precision-Engineers-Created-Modern/dp/0008241783/" target="_top">Exactly (Simon Winchester)</a>
