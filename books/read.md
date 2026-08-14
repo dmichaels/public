@@ -45,6 +45,7 @@
   1. <a href="https://www.amazon.com/gp/product/067973225X/" target="_top">As I Lay Dying (William Faulkner)</a> &#128214; _2026-08-02_
   1. <a href="https://www.amazon.com/My-Antonia-Willa-Cather-ebook/dp/B004IPPINC/" target="_top">My Ántonia (Willa Cather)</a> &#128214; _2026-08-08_
   1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">The Devil in the White City (Erik Larson)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Here-There-Everywhere-Recording-Beatles/dp/1592402690" target="_top">Here, There and Everywhere: My Life Recording the Music of the Beatles (Geoff Emerick)</a> _... on deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
