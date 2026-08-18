@@ -1,5 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
+  1. <a href="https://www.amazon.com/dp/B00AV68GF4/" target="_top">Krakatoa: The Day the World Exploded: August 27, 1883 (Simon Winchester)</a>
   1. <a href="https://www.amazon.com/dp/0743235657" target="_top">Shout!: The Beatles in Their Generation (Philip Norman)</a>
   1. <a href="https://www.amazon.com/dp/1101903295/" target="_top">Tune In: The Beatles: All These Years (Mark Lewisohn)</a>
   1. <a href="https://www.amazon.com/Suttree-Cormac-McCarthy/dp/0679736328/" target="_top">Suttre (Cormac McCarthy)</a> &#128214;
@@ -93,7 +94,6 @@
 1. <a href="https://www.amazon.com/Basic-Economics-Thomas-Sowell/dp/0465060730/" target="_top">Basic Economics (Thomas Sowell)</a>
 1. <a href="https://www.amazon.com/Best-All-Possible-Worlds-Leibniz/dp/1324093943/" target="_top">The Best of All Possible Worlds: A Life of Leibniz in Seven Pivotal Days (Michael Kempe)</a>
 1. <a href="https://www.amazon.com/Pilgrim-Tinker-Harper-Perennial-Classics/dp/0061233323/" target="_top">Pilgrim at Tinker Creek (Annie Dillard)</a>
-1. <a href="https://www.amazon.com/Rigor-Angels-Heisenberg-Ultimate-Reality/dp/0593315073/" target="_top">The Rigor of Angels: Borges, Heisenberg, Kant, and the Ultimate Nature of Reality (William Egginton)</a>
 1. <a href="https://www.amazon.com/Recoding-America-Government-Failing-Digital/dp/1250266777/" target="_top">Recoding America: Why Government Is Failing in the Digital Age and How We Can Do Better (Jennifer Pahlka)</a>
 1. <a href="https://www.amazon.com/Europeans-Orlando-Figes/dp/0141979437/" target="_top">The Europeans (Orlando Figes)</a>
 1. <a href="https://www.amazon.com/Red-Prince-Secret-Habsburg-Archduke/dp/0465018971/" target="_top">The Red Prince: The Secret Lives of a Habsburg Archduke (Timothy Snyder)</a>
