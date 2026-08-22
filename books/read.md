@@ -46,8 +46,8 @@
   1. <a href="https://www.amazon.com/My-Antonia-Willa-Cather-ebook/dp/B004IPPINC/" target="_top">My Ántonia (Willa Cather)</a> &#128214; _2026-08-08_
   1. <a href="https://www.amazon.com/Devil-White-City-Madness-Changed/dp/0375725601/" target="_top">The Devil in the White City (Erik Larson)</a> _2026-08-14_
   1. <a href="https://www.amazon.com/Here-There-Everywhere-Recording-Beatles/dp/1592402690" target="_top">Here, There and Everywhere: My Life Recording the Music of the Beatles (Geoff Emerick)</a> _2026-08-17_
-  1. <a href="https://www.amazon.com/Rigor-Angels-Heisenberg-Ultimate-Reality/dp/0593315073/" target="_top">The Rigor of Angels: Borges, Heisenberg, Kant, and the Ultimate Nature of Reality (William Egginton)</a> _... in progress ..._
-  1. <a href="https://www.amazon.com/Einstein-Life-Universe-Walter-Isaacson/dp/0743264746" target="_top">Einstein: His Life and Universe (Walter Isaacson)</a> _... on deck ..._
+  1. <a href="https://www.amazon.com/Rigor-Angels-Heisenberg-Ultimate-Reality/dp/0593315073/" target="_top">The Rigor of Angels: Borges, Heisenberg, Kant, and the Ultimate Nature of Reality (William Egginton)</a> _2026-08-22_
+  1. <a href="https://www.amazon.com/Einstein-Life-Universe-Walter-Isaacson/dp/0743264746" target="_top">Einstein: His Life and Universe (Walter Isaacson)</a> _... in progress ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
