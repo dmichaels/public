@@ -49,6 +49,7 @@
   1. <a href="https://www.amazon.com/Rigor-Angels-Heisenberg-Ultimate-Reality/dp/0593315073/" target="_top">The Rigor of Angels: Borges, Heisenberg, Kant, and the Ultimate Nature of Reality (William Egginton)</a> _2026-08-22_
   1. <a href="https://www.amazon.com/Einstein-Life-Universe-Walter-Isaacson/dp/0743264746" target="_top">Einstein: His Life and Universe (Walter Isaacson)</a> _2026-08-26_
   1. <a href="https://www.amazon.com/dp/B00AV68GF4/" target="_top">Krakatoa: The Day the World Exploded: August 27, 1883 (Simon Winchester)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Order-Time-Carlo-Rovelli/dp/0735216118" target="_top">The Order of Time (Carlo Rovelli)</a> _... on deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
