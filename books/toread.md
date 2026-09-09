@@ -1,6 +1,5 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
-  1. <a href="https://www.amazon.com/Order-Time-Carlo-Rovelli/dp/0735216118" target="_top">The Order of Time (Carlo Rovelli)</a>
   1. <a href="https://www.amazon.com/Telephone-New-History-James-Gleick/dp/0374618941/" target="_top">The Telephone: A New History (James Gleick)</a>
   1. <a href="https://www.amazon.com/Order-Time-Carlo-Rovelli/dp/0735216118" target="_top">The Order of Time (Carlo Rovelli)</a>
   1. <a href="https://www.amazon.com/dp/0743235657" target="_top">Shout!: The Beatles in Their Generation (Philip Norman)</a>

@@ -52,6 +52,7 @@
   1. <a href="https://www.amazon.com/Time-Travel-History-James-Gleick/dp/0307908798/" target="_top">Time Travel (James Gleick)</a> _2026-09-07_
   1. <a href="https://www.amazon.com/Accidental-Universe-World-Thought-Knew/dp/034580595X" target="_top">The Accidental Universe: The World You Thought You Knew (Alan Lightman)</a> _2026-09-09_
   1. <a href="https://www.amazon.com/Strangest-Man-Hidden-Dirac-Mystic/dp/0465022103" target="_top">The Strangest Man: The Hidden Life of Paul Dirac, Mystic of the Atom (Graham Farmelo)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Order-Time-Carlo-Rovelli/dp/0735216118" target="_top">The Order of Time (Carlo Rovelli)</a> _... on deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
