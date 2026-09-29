@@ -54,8 +54,8 @@
   1. <a href="https://www.amazon.com/Strangest-Man-Hidden-Dirac-Mystic/dp/0465022103" target="_top">The Strangest Man: The Hidden Life of Paul Dirac, Mystic of the Atom (Graham Farmelo)</a> _2026-09-18_
   1. <a href="https://www.amazon.com/dp/0393326047" target="_top">Einstein's Clocks and Poincare's Maps: Empires of Time (Peter Galison)</a> _2026-09-23_
   1. <a href="https://www.amazon.com/Order-Time-Carlo-Rovelli/dp/0735216118" target="_top">The Order of Time (Carlo Rovelli)</a> _2026-09-25_
-  1. <a href="https://www.amazon.com/Rise-Fall-Artificial-State/dp/1324098422/" target="_top">The Rise and Fall of the Artificial State (Jill Lepore)</a> _... in progress ..._
-  1. <a href="https://www.amazon.com/dp/0374620431/" target="_top">In the Realm of the Last Man: A Memoir (Francis Fukuyama)</a> _... on deck ..._
+  1. <a href="https://www.amazon.com/Rise-Fall-Artificial-State/dp/1324098422/" target="_top">The Rise and Fall of the Artificial State (Jill Lepore)</a> _2026-09-29_
+  1. <a href="https://www.amazon.com/dp/0374620431/" target="_top">In the Realm of the Last Man: A Memoir (Francis Fukuyama)</a> _... in progress ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
