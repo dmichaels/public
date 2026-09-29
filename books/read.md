@@ -338,6 +338,7 @@
   1. <a href="https://www.amazon.com/Mortality-Christopher-Hitchens/dp/1455502766/">Mortality (Christopher Hitchens)</a>
   1. <a href="https://www.amazon.com/Leonardo-Vinci-Walter-Isaacson/dp/1501139169/">Leonardo da Vinci (Walter Isaacson)</a>
   1. <a href="https://www.amazon.com/Steve-Jobs-Walter-Isaacson/dp/1451648537/">Steve Jobs (Walter Isaacson)</a>
+  1. <a href="https://www.amazon.com/Every-Last-Tie-Unabomber-Family/dp/0822359804/">Every Last Tie: The Story of the Unabomber and His Family (David Kaczynski)</a>
   1. <a href="https://www.amazon.com/Poisonwood-Bible-Novel-Barbara-Kingsolver/dp/0061577073/">The Poisonwood Bible (Barbara Kingsolver)</a> &#128214;
   1. <a href="https://www.amazon.com/Age-Spiritual-Machines-Computers-Intelligence/dp/0140282025/">The Age of Spiritual Machines: When Computers Exceed Human Intelligence (Ray Kurzweil)</a>
   1. <a href="https://www.amazon.com/Singularity-Near-Humans-Transcend-Biology/dp/0143037889/">The Singularity Is Near: When Humans Transcend Biology (Ray Kurzweil)</a>
