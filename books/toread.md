@@ -3,6 +3,7 @@
   1. <a href="https://www.amazon.com/Dream-Machine-Licklider-Revolution-Computing/dp/0670899763/" target="_top">The Dream Machine (Mitchell Waldrop)</a>
   1. <a href="https://www.amazon.com/Human-Condition-Second-Hannah-Arendt/dp/022658660X/" target="_top">The Human Condition (Hannah Arendt)</a>
   1. <a href="https://www.amazon.com/Telephone-New-History-James-Gleick/dp/0374618941/" target="_top">The Telephone: A New History (James Gleick)</a>
+  1. <a href="https://www.amazon.com/dp/1451677618" target="_top">The Making of the Atomic Bomb: 25th Anniversary Edition (Richard Rhodes)</a>
   1. <a href="https://www.amazon.com/dp/0743235657" target="_top">Shout!: The Beatles in Their Generation (Philip Norman)</a>
   1. <a href="https://www.amazon.com/dp/1101903295/" target="_top">Tune In: The Beatles: All These Years (Mark Lewisohn)</a>
   1. <a href="https://www.amazon.com/Suttree-Cormac-McCarthy/dp/0679736328/" target="_top">Suttre (Cormac McCarthy)</a> &#128214;
