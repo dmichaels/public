@@ -57,6 +57,7 @@
   1. <a href="https://www.amazon.com/Rise-Fall-Artificial-State/dp/1324098422/" target="_top">The Rise and Fall of the Artificial State (Jill Lepore)</a> _2026-09-29_
   1. <a href="https://www.amazon.com/dp/0374620431/" target="_top">In the Realm of the Last Man: A Memoir (Francis Fukuyama)</a> _2026-10-02_
   1. <a href="https://www.amazon.com/Perfectionists-Precision-Engineers-Created-Modern-ebook/dp/B072BFJB3Z/" target="_top">The Perfectionists: How Precision Engineers Created the Modern World (Simon Winchester)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/gp/product/0300246757/" target="_top">Seeing Like a State: How Certain Schemes to Improve the Human Condition Have Failed (James C. Scott)</a> _... on deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
