@@ -22,7 +22,6 @@
 1. <a href="https://www.amazon.com/Great-Shark-Hunt-Strange-Papers/dp/0743250451/" target="_top">The Great Shark Hunt: Strange Tales from a Strange Time (Hunter S. Thompson)</a>
 1. <a href="https://www.amazon.com/Cat-Mouse-Gunter-Grass/dp/0156155516/" target="_top">Cat and Mouse (Günter Grass)</a> &#128214;
 1. <a href="https://www.amazon.com/dp/069115760X" target="_top">The Power of Ideas (Isaiah Berlin)</a>
-1. <a href="https://www.amazon.com/Perfectionists-Precision-Engineers-Created-Modern-ebook/dp/B072BFJB3Z/" target="_top">The Perfectionists: How Precision Engineers Created the Modern World (Simon Winchester)</a>
 1. <a href="https://www.amazon.com/Metaphysical-Club-Story-Ideas-America/dp/0374528497/" target="_top">The Metaphysical Club (Louis Menard)</a>
 1. <a href="https://www.amazon.com/Washington-Life-Ron-Chernow/dp/0143119966/" target="_top">Washington: A Life (Ron Chernow)</a>
 1. <a href="https://www.amazon.com/Buddenbrooks-Decline-Family-Everymans-Library/dp/0679417370/" target="_top">Buddenbrooks (Thomas Mann)</a>
