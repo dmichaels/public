@@ -1,6 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
-  1. <a href="https://www.amazon.com/East-Eden-John-Steinbeck-Centennial/dp/0142004235/" target="_top">East of Eden (John Steinbeck)</a>
+  1. <a href="https://www.amazon.com/East-Eden-John-Steinbeck-Centennial/dp/0142004235/" target="_top">East of Eden (John Steinbeck)</a> &#128214;
   1. <a href="https://www.amazon.com/Dream-Machine-Licklider-Revolution-Computing/dp/0670899763/" target="_top">The Dream Machine (Mitchell Waldrop)</a>
   1. <a href="https://www.amazon.com/Human-Condition-Second-Hannah-Arendt/dp/022658660X/" target="_top">The Human Condition (Hannah Arendt)</a>
   1. <a href="https://www.amazon.com/Telephone-New-History-James-Gleick/dp/0374618941/" target="_top">The Telephone: A New History (James Gleick)</a>
