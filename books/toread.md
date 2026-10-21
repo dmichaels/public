@@ -1,5 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
+  1. <a href="https://www.amazon.com/Last-Best-Place-Internet-Wikipedia/dp/0393881881" target="_top">The Last Best Place on the Internet: A Human History of Wikipedia (Richard Cooke)</a>
   1. <a href="https://www.amazon.com/dp/0691161038" target="_top">Two Cheers for Anarchism: Six Easy Pieces on Autonomy, Dignity, and Meaningful Work and Play (James C. Scott)</a>
   1. <a href="https://www.amazon.com/East-Eden-John-Steinbeck-Centennial/dp/0142004235/" target="_top">East of Eden (John Steinbeck)</a> &#128214;
   1. <a href="https://www.amazon.com/Dream-Machine-Licklider-Revolution-Computing/dp/0670899763/" target="_top">The Dream Machine (Mitchell Waldrop)</a>
