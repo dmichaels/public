@@ -60,7 +60,6 @@
   1. <a href="https://www.amazon.com/gp/product/0300246757/" target="_top">Seeing Like a State: How Certain Schemes to Improve the Human Condition Have Failed (James C. Scott)</a> _2026-10-10_
   1. <a href="https://www.amazon.com/Canticle-Leibowitz-Walter-Miller-Jr/dp/0553273817" target="_top">A Canticle for Leibowitz (Walter M. Miller Jr.)</a> &#128214; _2026-10-15_
   1. <a href="https://www.amazon.com/dp/0593701283" target="_top">Weimar Germany: The Death of a Democracy (Victor Sebestyen)</a> _2026-10-22_
-  1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin's People: How the KGB Took Back Russia and Then Took On the West (Catherine Belton)</a> _... in progress ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
