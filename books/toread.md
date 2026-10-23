@@ -1,5 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
+  1. <a href="https://www.amazon.com/Kingdom-Village-One-Thousand-Year-History-Moscow/dp/0593318455" target="_top">A Kingdom and a Village: A One-Thousand-Year History of Moscow (Simon Morrison)</a>
   1. <a href="https://www.amazon.com/Last-Best-Place-Internet-Wikipedia/dp/0393881881" target="_top">The Last Best Place on the Internet: A Human History of Wikipedia (Richard Cooke)</a>
   1. <a href="https://www.amazon.com/dp/0691161038" target="_top">Two Cheers for Anarchism: Six Easy Pieces on Autonomy, Dignity, and Meaningful Work and Play (James C. Scott)</a>
   1. <a href="https://www.amazon.com/East-Eden-John-Steinbeck-Centennial/dp/0142004235/" target="_top">East of Eden (John Steinbeck)</a> &#128214;
@@ -66,7 +67,6 @@
 1. <a href="https://www.amazon.com/Lost-Kingdom-History-Nationalism-Vladimir/dp/0141983132/" target="_top">Lost Kingdom: A History of Russian Nationalism from Ivan the Great to Vladimir Putin (Serhii Plokhy)</a>
 1. <a href="https://www.amazon.com/dp/0844750549/" target="_top">Riding the Tiger: Vladimir Putin's Russia and the Uses of War (Leon Aron)</a>
 1. <a href="https://www.amazon.com/dp/1627793666/" target="_top">Putin (Philip Short)</a>
-1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin's People: How the KGB Took Back Russia and Then Took On the West (Catherine Belton)</a>
 1. <a href="https://www.amazon.com/dp/1324093463/" target="_top">Germany 1923: Hyperinflation, Hitler's Putsch, and Democracy in Crisis (Volker Ullrich)</a>
 1. <a href="https://www.amazon.com/Dead-Wake-Last-Crossing-Lusitania/dp/0307408876/" target="_top">Dead Wake (Erik Larson)</a>
 1. <a href="https://www.amazon.com/dp/140009593X/" target="_top">Iron Curtain: The Crushing of Eastern Europe, 1944 - 1956 (Anne Applebaum)</a>
