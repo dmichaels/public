@@ -7,7 +7,7 @@
   1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin's People: How the KGB Took Back Russia and Then Took On the West (Catherine Belton)</a>
   1. <a href="https://www.amazon.com/dp/0691161038" target="_top">Two Cheers for Anarchism: Six Easy Pieces on Autonomy, Dignity, and Meaningful Work and Play (James C. Scott)</a>
   1. <a href="https://www.amazon.com/East-Eden-John-Steinbeck-Centennial/dp/0142004235/" target="_top">East of Eden (John Steinbeck)</a> &#128214;
-  1. <a href="https://www.amazon.com/Dream-Machine-Licklider-Revolution-Computing/dp/0670899763/" target="_top">The Dream Machine (Mitchell Waldrop)</a>
+  1. <a href="https://www.amazon.com/Dream-Machine-Licklider-Revolution-Computing/dp/0670899763/" target="_top">The Dream Machine: J.C.R. Licklider and the Revolution That Made Computing Personal (Mitchell Waldrop)</a>
   1. <a href="https://www.amazon.com/Human-Condition-Second-Hannah-Arendt/dp/022658660X/" target="_top">The Human Condition (Hannah Arendt)</a>
   1. <a href="https://www.amazon.com/dp/1451677618" target="_top">The Making of the Atomic Bomb: 25th Anniversary Edition (Richard Rhodes)</a>
   1. <a href="https://www.amazon.com/dp/0743235657" target="_top">Shout!: The Beatles in Their Generation (Philip Norman)</a>
