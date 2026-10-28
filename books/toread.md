@@ -1,6 +1,8 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
-  1. <a href="https://www.amazon.com/Origins-Political-Order-Prehuman-Revolution/dp/0374533229" target="_top">The Origins of Political Order: From Prehuman Times to the French Revolution (Francis Fukuyama )</a>
+  1. <a href="https://www.amazon.com/dp/1324051299" target="_top">Kobuk the Destroyer: And Other Tales from the Wild, Unseen World of Test Engineering (Alex Davies)</a>
+  1. <a href="https://www.amazon.com/dp/1324131659" target="_top">Blockers: Rebels in the Deep State (Michael Lewis)</a>
+  1. <a href="https://www.amazon.com/Origins-Political-Order-Prehuman-Revolution/dp/0374533229" target="_top">The Origins of Political Order: From Prehuman Times to the French Revolution (Francis Fukuyama)</a>
   1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin's People: How the KGB Took Back Russia and Then Took On the West (Catherine Belton)</a>
   1. <a href="https://www.amazon.com/dp/0691161038" target="_top">Two Cheers for Anarchism: Six Easy Pieces on Autonomy, Dignity, and Meaningful Work and Play (James C. Scott)</a>
   1. <a href="https://www.amazon.com/East-Eden-John-Steinbeck-Centennial/dp/0142004235/" target="_top">East of Eden (John Steinbeck)</a> &#128214;
