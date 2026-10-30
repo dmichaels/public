@@ -61,7 +61,8 @@
   1. <a href="https://www.amazon.com/Canticle-Leibowitz-Walter-Miller-Jr/dp/0553273817" target="_top">A Canticle for Leibowitz (Walter M. Miller Jr.)</a> &#128214; _2026-10-15_
   1. <a href="https://www.amazon.com/dp/0593701283" target="_top">Weimar Germany: The Death of a Democracy (Victor Sebestyen)</a> _2026-10-22_
   1. <a href="https://www.amazon.com/Last-Best-Place-Internet-Wikipedia/dp/0393881881" target="_top">The Last Best Place on the Internet: A Human History of Wikipedia (Richard Cooke)</a> _2026-10-25_
-  1. <a href="https://www.amazon.com/Kingdom-Village-One-Thousand-Year-History-Moscow/dp/0593318455" target="_top">A Kingdom and a Village: A One-Thousand-Year History of Moscow (Simon Morrison)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/Kingdom-Village-One-Thousand-Year-History-Moscow/dp/0593318455" target="_top">A Kingdom and a Village: A One-Thousand-Year History of Moscow (Simon Morrison)</a> _2026-10-30_
+  1. <a href="https://www.amazon.com/dp/1324051299" target="_top">Kobuk the Destroyer: And Other Tales from the Wild, Unseen World of Test Engineering (Alex Davies)</a>
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
