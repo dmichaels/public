@@ -1,6 +1,5 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
-  1. <a href="https://www.amazon.com/dp/1324131659" target="_top">Blockers: Rebels in the Deep State (Michael Lewis)</a>
   1. <a href="https://www.amazon.com/Telephone-New-History-James-Gleick/dp/0374618941/" target="_top">The Telephone: A New History (James Gleick)</a>
   1. <a href="https://www.amazon.com/Origins-Political-Order-Prehuman-Revolution/dp/0374533229" target="_top">The Origins of Political Order: From Prehuman Times to the French Revolution (Francis Fukuyama)</a>
   1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin's People: How the KGB Took Back Russia and Then Took On the West (Catherine Belton)</a>
