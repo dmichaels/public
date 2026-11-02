@@ -64,6 +64,7 @@
   1. <a href="https://www.amazon.com/Kingdom-Village-One-Thousand-Year-History-Moscow/dp/0593318455" target="_top">A Kingdom and a Village: A One-Thousand-Year History of Moscow (Simon Morrison)</a> _2026-10-30_
   1. <a href="https://www.amazon.com/dp/1324051299" target="_top">Kobuk the Destroyer: And Other Tales from the Wild, Unseen World of Test Engineering (Alex Davies)</a> _2026-11-01_
   1. <a href="https://www.amazon.com/Putins-People-Took-Back-Russia/dp/1250787327/" target="_top">Putin's People: How the KGB Took Back Russia and Then Took On the West (Catherine Belton)</a> _... in progress ..._
+  1. <a href="https://www.amazon.com/dp/0395957915" target="_top">The Seven Mysteries Of Life: An Exploration of Science and Philosophy – A Quest for Knowledge and Discovery Across Interconnected Disciplines (Guy Murchie)</a> _... on deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
