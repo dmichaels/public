@@ -1,5 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
+  1. <a href="https://www.amazon.com/dp/0395957915" target="_top">The Seven Mysteries Of Life: An Exploration of Science and Philosophy – A Quest for Knowledge and Discovery Across Interconnected Disciplines (Guy Murchie)</a>
   1. <a href="https://www.amazon.com/dp/1324131659" target="_top">Blockers: Rebels in the Deep State (Michael Lewis)</a>
   1. <a href="https://www.amazon.com/Telephone-New-History-James-Gleick/dp/0374618941/" target="_top">The Telephone: A New History (James Gleick)</a>
   1. <a href="https://www.amazon.com/Origins-Political-Order-Prehuman-Revolution/dp/0374533229" target="_top">The Origins of Political Order: From Prehuman Times to the French Revolution (Francis Fukuyama)</a>
