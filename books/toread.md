@@ -1,7 +1,6 @@
 <a href="read.md">Books Read</a>&nbsp;&nbsp;|&nbsp;&nbsp;**Books To Read**&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<a href="favorites.md">Some Favorites</a>
 
   1. <a href="https://www.amazon.com/dp/1324131659" target="_top">Blockers: Rebels in the Deep State (Michael Lewis)</a>
-  1. <a href="https://www.amazon.com/Telephone-New-History-James-Gleick/dp/0374618941/" target="_top">The Telephone: A New History (James Gleick)</a>
   1. <a href="https://www.amazon.com/Origins-Political-Order-Prehuman-Revolution/dp/0374533229" target="_top">The Origins of Political Order: From Prehuman Times to the French Revolution (Francis Fukuyama)</a>
   1. <a href="https://www.amazon.com/East-Eden-John-Steinbeck-Centennial/dp/0142004235/" target="_top">East of Eden (John Steinbeck)</a> &#128214;
   1. <a href="https://www.amazon.com/Dream-Machine-Licklider-Revolution-Computing/dp/0670899763/" target="_top">The Dream Machine: J.C.R. Licklider and the Revolution That Made Computing Personal (Mitchell Waldrop)</a>
