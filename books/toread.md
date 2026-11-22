@@ -112,7 +112,6 @@
 1. <a href="https://www.amazon.com/Swanns-Way-Search-Penguin-Classics/dp/0142437964/" target="_top">Swan's Way: In Search of Lost Time Volume I (Marcel Proust)</a>
 1. <a href="https://www.amazon.com/Armies-Night-History-Novel/dp/0452272793/" target="_top">The Armies of the Night (Norman Mailer)</a>
 1. <a href="https://www.amazon.com/Swiss-Watching-3rd-Inside-Honey/dp/1473677416/" target="_top">Swiss Watching (Diccon Bewes)</a>
-1. <a href="https://www.amazon.com/Most-Elegant-Equation-Euler%C2%92s-Mathematics/dp/0465093779/" target="_top">A Most Elegant Equation (David Stipp)</a>
 1. <a href="https://www.amazon.com/Escape-Rome-Prosperity-Princeton-Economic/dp/0691216738/" target="_top">Escape From Rome: The Failure of Empire and the Road to Prosperity (Walter Scheidel)</a>
 1. <a href="https://www.amazon.com/Harriet-Beecher-Stowe-Ministers-Oldtown/dp/0940450011/" target="_top">Uncle Tom's Cabin (Harriet Beecher Stowe)</a>
 1. <a href="https://www.amazon.com/Coercion-Capital-European-States-D/dp/1557863687/" target="_top">Coercion, Capital, and European States AD 990-1992 (Charles Tilly)</a>
