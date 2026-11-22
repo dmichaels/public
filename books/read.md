@@ -68,7 +68,7 @@
   1. <a href="https://www.amazon.com/dp/0395957915" target="_top">The Seven Mysteries Of Life: An Exploration of Science and Philosophy – A Quest for Knowledge and Discovery Across Interconnected Disciplines (Guy Murchie)</a> _2026-11-16_
   1. <a href="https://www.amazon.com/Telephone-New-History-James-Gleick/dp/0374618941/" target="_top">The Telephone: A New History (James Gleick)</a> _2026-11-21_
   1. <a href="https://www.amazon.com/Tinkers-10th-Anniversary-Paul-Harding/dp/1942658605" target="_top">Tinkers (Paul Harding)</a> _... in progress ..._
-  1. <a href="https://www.amazon.com/Most-Elegant-Equation-Euler%C2%92s-Mathematics/dp/0465093779/" target="_top">A Most Elegant Equation (David Stipp)</a> _... on deck ..._
+  1. <a href="https://www.amazon.com/Most-Elegant-Equation-Euler%C2%92s-Mathematics/dp/0465093779/" target="_top">A Most Elegant Equation: : Euler's Formula and the Beauty of Mathematics (David Stipp)</a> _... on deck ..._
 
 **2025**:
   1. <a href="https://www.amazon.com/Edge-Art-Risking-Everything/dp/1594204128/" target="_top">On the Edge (Nate Silver)</a> _2025-01-04_
